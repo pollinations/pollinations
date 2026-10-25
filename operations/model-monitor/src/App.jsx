@@ -70,6 +70,7 @@ const MODEL_TYPES = [
     { key: "realtime", title: "Realtime" },
     { key: "3d", title: "3D" },
     { key: "text", title: "Text" },
+    { key: "decision", title: "Decision" },
     { key: "embedding", title: "Embedding" },
 ];
 
@@ -113,7 +114,7 @@ const EXTERNAL_LINKS = [
         showLabel: true,
     },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        href: "https://discord.gg/k9F7SyTgqn",
         label: "Discord",
         icon: <DiscordIcon className="h-4 w-4" />,
     },

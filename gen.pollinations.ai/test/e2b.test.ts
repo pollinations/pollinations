@@ -289,6 +289,18 @@ test("create pays the lease up front and hides the sandbox from other users", as
     expect(e2b.sandboxes).toEqual([]);
 });
 
+test("a lease that runs out pauses the sandbox unless the caller asks E2B to kill it", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+
+    // E2B's SDKs omit autoPause unless told `lifecycle.onTimeout`.
+    expect((await createSandbox(owner.key)).status).toBe(201);
+    expect((await createSandbox(owner.key, { autoPause: false })).status).toBe(
+        201,
+    );
+    expect(e2b.sandboxes.map((s) => s.autoPause)).toEqual([true, false]);
+});
+
 test("a running sandbox pays only past its lease; pausing gives up the rest", async () => {
     const e2b = stubE2b();
     const owner = await sandboxKey();
@@ -428,13 +440,13 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     expect(autoResume.status).toBe(400);
     expect((await post(owner.key, "/sandboxes/sbx1/fork")).status).toBe(403);
 
-    // A user may run three sandboxes at once.
-    for (let i = 0; i < 3; i++) {
+    // A user may run eight sandboxes at once.
+    for (let i = 0; i < 8; i++) {
         expect((await createSandbox(owner.key)).status).toBe(201);
     }
     expect((await createSandbox(owner.key)).status).toBe(429);
-    expect(e2b.sandboxes).toHaveLength(3);
-    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
+    expect(e2b.sandboxes).toHaveLength(8);
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(8));
 });
 
 test("a timeout over 10 minutes keeps the sandbox, paying 10 minutes at a time", async () => {
@@ -543,7 +555,6 @@ test("like E2B's timeout, a later timeout or a pause ends the keep, and connect 
 test("the cron renews kept sandboxes until their timeout, resumes paused ones, and ends a keep its key or owner cannot pay", async () => {
     const e2b = stubE2b();
     const db = drizzle(env.DB);
-    // Each user runs at most three sandboxes.
     const owner = await sandboxKey();
     const other = await sandboxKey();
     const broke = await sandboxKey(0);
@@ -588,7 +599,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         }),
         sandbox("dashboard", viewer.userId),
         sandbox("later", other.userId, { endAt: inSeconds(1800) }),
-        // Another user's: `other` already runs three, the most it may.
+        // Not kept.
         sandbox("unkept", broke.userId),
         sandbox("broke", broke.userId),
         sandbox("capped", capped.userId),
@@ -684,17 +695,20 @@ test("the account owner's session token runs sandboxes without a key scope", asy
     expect((await createSandbox(token)).status).toBe(201);
 });
 
-test("the dashboard prices a lease as gen charges it", async () => {
+test("anyone can read the prices, and they match what gen charges", async () => {
     stubE2b();
-    const owner = await sandboxKey();
-    const pricing = await (await call(owner.key, "/pricing")).json<{
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/alpha/e2b/pricing",
+    );
+    expect(response.status).toBe(200);
+    const pricing = await response.json<{
         maxRunning: number;
         vcpuSecond: number;
         gibSecond: number;
         templates: Record<string, { cpuCount: number; memoryMB: number }>;
     }>();
     expect(pricing).toMatchObject({
-        maxRunning: 3,
+        maxRunning: 8,
         templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
     });
     // The fake's 2 vCPU, 512 MiB sandbox for 300 s.

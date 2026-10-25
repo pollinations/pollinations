@@ -198,6 +198,9 @@ export const CHAT_PARAMETERS = {
         "n",
         "prediction",
     ],
+    // InferencePort Lightning routers: /v1/models lists temperature, stop and
+    // max_tokens as the sampling controls, plus tools and JSON mode.
+    inferenceportLightning: [...TOOL_CHAT, "temperature", "stop"],
     deepinfraReasoning: [...EXTENDED_CHAT, "reasoning_effort", "n"],
     openRouterGemma: [
         ...EXTENDED_CHAT,
@@ -231,7 +234,6 @@ export const CHAT_PARAMETERS = {
         ...SAMPLING,
         ...TOOLS,
         ...PENALTIES,
-        ...LOGPROBS,
         ...OPENROUTER_REASONING,
         "top_k",
         "min_p",
@@ -251,6 +253,19 @@ export const CHAT_PARAMETERS = {
         "seed",
         "response_format",
         "stop",
+    ],
+    // Shared by the Together and DeepInfra FP4 endpoints: neither accepts seed,
+    // and only Together lists logprobs.
+    openRouterNemotronSuperVl: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...PENALTIES,
+        "stop",
+        "top_k",
+        "min_p",
+        "repetition_penalty",
+        "logit_bias",
+        ...OPENROUTER_REASONING,
     ],
     mimo: [...SAMPLED_CHAT, ...PENALTIES, ...OPENROUTER_REASONING],
     openRouterGlm53: [
@@ -279,11 +294,6 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "repetition_penalty",
         "seed",
-    ],
-    openRouterMinimax27FirstParty: [
-        ...TOOL_CHAT,
-        ...SAMPLING,
-        ...OPENROUTER_REASONING,
     ],
     openRouterMuseGlimmer: [
         ...SAMPLED_CHAT,
@@ -327,6 +337,27 @@ export const CHAT_PARAMETERS = {
         "top_p",
     ],
     museSpark: [...CHAT, "temperature", "tools"],
+    // OpenRouter endpoint parameters (2026-10-12); Meta is its only endpoint.
+    openRouterMuseWonder: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "repetition_penalty",
+        "structured_outputs",
+        "top_k",
+    ],
+    // Vercel catalog parameters (2026-10-12): no top_p, top_k, or
+    // repetition_penalty.
+    vercelMuseWonder: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
     mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     mistralLarge4: [...SAMPLED_CHAT, ...PENALTIES, "seed", "reasoning_effort"],
     vercelMistralLarge4: [
@@ -360,24 +391,6 @@ export const CHAT_PARAMETERS = {
         "temperature",
         "top_p",
         "top_k",
-        ...PENALTIES,
-        "repetition_penalty",
-        "stop",
-        "seed",
-        ...OPENROUTER_REASONING,
-        "reasoning_effort",
-    ],
-    // Phala fallback route for Hy3 (2026-09-18): distinct provider from
-    // Novita primary, adds min_p over Novita's parameter surface.
-    openRouterHy3Phala: [
-        "max_tokens",
-        "stream",
-        ...TOOLS,
-        "structured_outputs",
-        "temperature",
-        "top_p",
-        "top_k",
-        "min_p",
         ...PENALTIES,
         "repetition_penalty",
         "stop",
@@ -485,12 +498,6 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "repetition_penalty",
         "seed",
-        "reasoning_effort",
-    ],
-    qwen38Reka: [
-        ...EXTENDED_CHAT,
-        ...OPENROUTER_REASONING,
-        "structured_outputs",
         "reasoning_effort",
     ],
     qwen38Max: [...EXTENDED_CHAT, ...OPENROUTER_REASONING, "reasoning_effort"],

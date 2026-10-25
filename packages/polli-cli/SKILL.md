@@ -1,6 +1,6 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, publish a static site, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
@@ -19,12 +19,16 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
 - User wants to create or update a hosted prompt **agent**
+- User wants to **publish a website or web app** they built
+
+For agent-assisted login, use `polli --json auth login --no-browser`. Read stderr while the command runs and show the user the verification URL and user code so they can review access. On approval, stdout contains one JSON result: `{"authenticated":true}`. Tokens are stored locally and never included in that result.
 
 ## Quick reference
 
 | Intent | Command |
 |---|---|
 | Log in once | `polli auth login` |
+| Agent-assisted login | `polli --json auth login --no-browser` |
 | Store an existing key | `printf '%s' "$POLLINATIONS_API_KEY" \| polli auth login --with-token` |
 | Generate image | `polli gen image "<prompt>" --output out.png` |
 | Generate text | `polli gen text "<prompt>"` |
@@ -41,7 +45,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
-| Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
+| Filter models by type | `polli models --type image` (text, decision, image, audio, video, 3d, embedding) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
 | Developer earnings | `polli earnings` (`--days <n>`) |
@@ -51,7 +55,8 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
 | Start a Linux sandbox (alpha) | `polli sandbox create` (`--timeout <seconds>` to keep it running without ssh, `0` until you pause or kill it; `pollinations-large` as the template for 4 vCPU and 8 GB; then `list`, `logs <id>`, `timeout <id> <seconds>`, `pause <id>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
-| ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli` |
+| ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli`. Port forwarding (`ssh -L 3000:localhost:3000 <sandbox-id>.polli`) and VS Code Remote-SSH work. An open connection keeps the sandbox running and paid; it pauses 15–20 minutes after the last one closes (5–10 on Windows) |
+| Publish a static site | `polli sites deploy ./dist --name my-app` (prints `https://my-app.pollinations.app`; then `list`, `delete <name>`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -125,6 +130,13 @@ Text-to-sound-effect via ElevenLabs (aliases: `sfx`, `sound-effects`). `--durati
 polli gen audio "Bonjour, ceci est un test" --model elevenlabs/eleven-multilingual-v2 --voice rachel --output fr.mp3
 ```
 Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2`) — a non-alpha alternative to the default v3.
+
+### Estimate the cost before generating
+```bash
+polli gen image "a fox" --model flux --estimate
+polli gen video "a spacecraft landing on mars" --model veo --duration 8 --audio --estimate
+```
+`--estimate` reads the public model list (`/image/models`), prints the estimated Pollen for that request and exits without generating. Per-image, per-megapixel and per-second rates give a number; token-billed models (e.g. `gpt-image-2`, `nanobanana`) print `estimate: unknown` with their rates, because the charge depends on usage the provider reports afterwards. `--json` adds `pollen` (null when unknown) and the per-rate `lines`.
 
 ### Generate video
 ```bash
@@ -230,9 +242,18 @@ polli agents update <id> --config agent.json
 polli agents sync <id>
 polli agents delete <id>
 ```
-Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Updates are partial: send only the fields to change; the rest keep their values. `sync` deploys the latest GitHub revision of a code agent.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers` (add `composio` to act in the caller's own accounts, such as a GitHub commit; callers connect apps at https://enter.pollinations.ai/account#connectors); create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Updates are partial: send only the fields to change; the rest keep their values. `sync` deploys the latest GitHub revision of a code agent.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
+
+### Publish a static site
+```bash
+npm run build
+polli sites deploy ./dist --name my-app   # → https://my-app.pollinations.app
+polli sites list
+polli sites delete my-app
+```
+Publishes a folder of static files with an `index.html`; unknown paths serve `index.html`, so single-page apps route on the client. Deploying the same name again replaces the site and uploads only changed files. Names are 3–32 lowercase letters, digits and hyphens, starting with a letter; the first deploy claims the name. Limits: 5 sites per account, 200 MB and 1,000 files per site, 25 MiB per file. Dotfiles and `node_modules` are not uploaded. Sites are public: never put an API key in them. To call Pollinations from a site, let visitors sign in with their own Pollen (see [Connect User Wallets](https://gen.pollinations.ai/docs/llm.txt?section=byop)). Share the URL the command prints rather than composing one from the name.
 
 ### Manage API keys
 ```bash
@@ -244,7 +265,7 @@ polli keys create --name "server" --models black-forest-labs/flux.1-schnell tong
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # every text model plus FLUX.1 Schnell
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
+`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness
@@ -260,8 +281,8 @@ polli harness dsh off               # restore the config backed up before "on"
 polli harness hermes on             # login if needed, mint key "polli-harness-hermes", add provider + Polli skill
 polli harness hermes on --model deepseek/deepseek-v4-flash # use the model ID from `polli models`
 polli harness hermes off            # restore the config backed up before "on"
-polli harness opencode on           # enable the Pollinations OpenCode plugin
-polli harness opencode off          # remove the plugin setup and stored key
+polli harness opencode on           # add the Pollinations provider (OpenCode 1.x and 2.x)
+polli harness opencode off          # remove the provider setup and stored key
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
 polli harness pi on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness pi off                # restore the Pi config backed up before "on"
@@ -272,7 +293,7 @@ polli harness tgpt off              # restore tgpt's previous configuration
 ```
 Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, Hermes Agent, OpenCode, OpenClaw, Pi, and tgpt require their installed commands.
 
-Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode adds a `pollinations` provider (read by both 1.x and 2.x) and stores its dedicated key in the provider's options. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

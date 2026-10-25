@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createBedrockNativeConfig } from "../../../src/text/configs/providerConfigs.js";
+import {
+    createAnthropicConfig,
+    createBedrockNativeConfig,
+} from "../../../src/text/configs/providerConfigs.js";
 import { chatToResponsesRequest } from "../../../src/text/responses/chatRequest.js";
 import { pdfFileParts } from "../../../src/text/transforms/pdfFileParts.js";
 import type { ChatMessage } from "../../../src/text/types.js";
@@ -32,12 +35,20 @@ function filePart(provider: string, file: Record<string, unknown>) {
 
 describe("pdfFileParts", () => {
     it.each([
-        { file_data: DATA_URL },
-        { file_data: PDF, mime_type: "application/pdf" },
+        [createAnthropicConfig, { file_data: DATA_URL }],
+        [
+            createAnthropicConfig,
+            { file_data: PDF, mime_type: "application/pdf" },
+        ],
+        [createBedrockNativeConfig, { file_data: DATA_URL }],
+        [
+            createBedrockNativeConfig,
+            { file_data: PDF, mime_type: "application/pdf" },
+        ],
     ])(
-        "sends Bedrock raw PDF bytes Portkey maps to a document (%o)",
-        (file) => {
-            const provider = createBedrockNativeConfig().provider;
+        "sends raw PDF bytes Portkey maps to a document (%o, %o)",
+        (config, file) => {
+            const provider = config().provider;
             expect(filePart(provider, file)).toEqual({
                 type: "file",
                 file: {

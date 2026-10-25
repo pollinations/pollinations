@@ -2,10 +2,18 @@ import {
     Alert,
     Button,
     ButtonGroup,
+    CheckIcon,
+    ChevronIcon,
     Chip,
     ClockIcon,
     ConfirmationDialog,
     CopyField,
+    DialogBody,
+    DialogHeader,
+    Dropdown,
+    DropdownItem,
+    Field,
+    IconButton,
     InlineLink,
     Input,
     PauseIcon,
@@ -15,14 +23,22 @@ import {
     Section,
     Surface,
     TabButton,
+    TerminalIcon,
     Text,
     TrashIcon,
+    WalletIcon,
+    XIcon,
 } from "@pollinations/ui";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import { useCallback, useEffect, useState } from "react";
 import { genFetch } from "../api.ts";
+import { genDocsUrl } from "../config.ts";
+import { generateFunName } from "../lib/fun-name.ts";
+import { ModelFormRow } from "./community-endpoints/model-form-row.tsx";
 import { ResourceConfirmationContent } from "./community-endpoints/resource-confirmation-content.tsx";
 import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
+import { ResourceDialog } from "./layout/resource-dialog.tsx";
 
 // Gen serves E2B's API here and keeps the sandbox rules and billing.
 const E2B_PATH = "/alpha/e2b";
@@ -33,6 +49,8 @@ type Sandbox = Size & {
     sandboxID: string;
     templateID: string;
     alias?: string;
+    // E2B's metadata; `name` is the name given at create.
+    metadata?: Record<string, string>;
     state: "running" | "paused";
     // When its current run started: at the create or the last resume.
     startedAt: string;
@@ -40,11 +58,13 @@ type Sandbox = Size & {
     endAt: string;
 };
 
-type Pricing = {
+type Rates = { vcpuSecond: number; gibSecond: number };
+
+// Each template has its provider's rates; the top level's are other E2B
+// templates'.
+type Pricing = Rates & {
     maxRunning: number;
-    vcpuSecond: number;
-    gibSecond: number;
-    templates: Record<string, Size>;
+    templates: Record<string, Size & Rates>;
 };
 
 // E2B's longest timeout, about 68 years: gen keeps the sandbox running until
@@ -68,28 +88,58 @@ const SSH_SETUP =
 const TEMPLATE_NAME = /^([a-z0-9_-]+\/)?[a-z0-9_-]+(:[a-z0-9._-]+)?$/;
 
 type Pending =
-    | { action: "create"; template: string }
+    // notFound: E2B answered the create that it has no such template.
+    | {
+          action: "create";
+          name: string;
+          template: string;
+          custom?: boolean;
+          notFound?: boolean;
+      }
     | { action: "connect"; sandbox: Sandbox }
     // Ends a running sandbox's "Until I stop it" after a while.
     | { action: "limit"; sandbox: Sandbox }
     | { action: "kill"; sandbox: Sandbox };
 
+// Gen takes the Pollen 10 minutes at a time and refuses a step the wallet
+// can't pay with 402.
+const NO_POLLEN = "Not enough Pollen to pay for the next 10 minutes.";
+
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
     const response = await genFetch(`${E2B_PATH}${path}`, { method, body });
+    // Gen's 402 message is for API callers, with a top-up URL to follow.
+    if (response.status === 402) throw new Error(NO_POLLEN);
     if (!response.ok) throw new Error(await readError(response));
     // Pause and kill answer 204 with no body.
     const text = await response.text();
     return (text ? JSON.parse(text) : undefined) as T;
 }
 
-const perSecond = (pricing: Pricing, size: Size) =>
-    size.cpuCount * pricing.vcpuSecond +
-    (size.memoryMB / 1024) * pricing.gibSecond;
+// E2B names a sandbox's template by id, and by name in `alias`.
+const templateOf = (sandbox: Sandbox) => sandbox.alias ?? sandbox.templateID;
+
+const perSecond = (pricing: Pricing, template: string, size: Size) => {
+    const { vcpuSecond, gibSecond } = pricing.templates[template] ?? pricing;
+    return size.cpuCount * vcpuSecond + (size.memoryMB / 1024) * gibSecond;
+};
 
 const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
 
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
-    `${cpuCount} vCPU, ${memoryMB / 1024} GB`;
+    `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
+
+// An always-on sandbox runs about 720 hours a month.
+const HOURS_PER_MONTH = 720;
+
+const TEMPLATE_LABELS: Record<string, string> = {
+    pollinations: "Pollinations (E2B)",
+    "pollinations-large": "Pollinations Large (E2B)",
+    "pollinations-azure": "Pollinations (Azure)",
+    "pollinations-azure-large": "Pollinations Large (Azure)",
+    "pollinations-azure-xl": "Pollinations XL (Azure)",
+};
+
+const templateLabel = (id: string) => TEMPLATE_LABELS[id] ?? id;
 
 // Past half of E2B's longest timeout, it runs until it's stopped.
 const forever = (until: string) =>
@@ -97,22 +147,141 @@ const forever = (until: string) =>
 
 function customError(seconds: number) {
     if (!(seconds > 0)) return "Enter how long, e.g. 2 hours.";
-    if (seconds < 600) return "At least 10 minutes.";
+    if (seconds < 600) return "Minimum 10 minutes";
     if (seconds > FOREVER) return "That’s longer than Until I stop it.";
     return null;
 }
 
-// What the pending action's sandbox costs an hour, or per vCPU and GB when
-// the template's size isn't known.
-function perHour(pricing: Pricing, pending: Pending) {
-    if (pending.action === "create") {
-        const size = pricing.templates[pending.template];
-        if (!size) {
-            return `${pollen(pricing.vcpuSecond * 3600)} per vCPU and ${pollen(pricing.gibSecond * 3600)} per GB, depending on the template’s size`;
-        }
-        return `${pollen(perSecond(pricing, size) * 3600)} (${sizeLabel(size)})`;
-    }
-    return pollen(perSecond(pricing, pending.sandbox) * 3600);
+function TemplatePicker({
+    pricing,
+    template,
+    custom,
+    error,
+    onChange,
+}: {
+    pricing: Pricing;
+    template: string;
+    custom: boolean;
+    error: string | null;
+    onChange: (template: string, custom?: boolean) => void;
+}) {
+    const option = (id: string, size: Size) => (
+        <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
+            <span className="font-semibold">{templateLabel(id)}</span>
+            <span className="text-xs font-normal text-theme-text-muted">
+                {sizeLabel(size)} ·{" "}
+                {pollen(perSecond(pricing, id, size) * 3600)}
+                /hour
+            </span>
+        </span>
+    );
+    return (
+        <ModelFormRow
+            label="Template"
+            note={
+                error && (
+                    <p
+                        id="sandbox-template-error"
+                        className="text-xs text-intent-danger-text"
+                    >
+                        {error}
+                    </p>
+                )
+            }
+        >
+            <div className="space-y-2">
+                <Dropdown
+                    portalled={false}
+                    className="w-[var(--reference-width)] min-w-0 p-1"
+                    trigger={(open) => (
+                        <Button
+                            type="button"
+                            aria-label="Choose sandbox template"
+                            className="w-full min-w-0 self-stretch justify-between gap-2"
+                        >
+                            <span className="min-w-0 truncate">
+                                {custom
+                                    ? "Other E2B template"
+                                    : templateLabel(template)}
+                            </span>
+                            {!custom && pricing.templates[template] && (
+                                <span className="ml-auto whitespace-nowrap text-xs font-normal">
+                                    {pollen(
+                                        perSecond(
+                                            pricing,
+                                            template,
+                                            pricing.templates[template],
+                                        ) * 3600,
+                                    )}
+                                    /hour
+                                </span>
+                            )}
+                            <ChevronIcon
+                                expanded={open}
+                                className="h-4 w-4 shrink-0"
+                            />
+                        </Button>
+                    )}
+                >
+                    {(close) => (
+                        <>
+                            {Object.entries(pricing.templates).map(
+                                ([id, size]) => (
+                                    <DropdownItem
+                                        key={id}
+                                        aria-pressed={
+                                            !custom && template === id
+                                        }
+                                        onClick={() => {
+                                            onChange(id);
+                                            close();
+                                        }}
+                                    >
+                                        {option(id, size)}
+                                        <CheckIcon
+                                            className={`h-4 w-4 shrink-0 ${!custom && template === id ? "" : "invisible"}`}
+                                        />
+                                    </DropdownItem>
+                                ),
+                            )}
+                            <DropdownItem
+                                aria-pressed={custom}
+                                onClick={() => {
+                                    onChange("", true);
+                                    close();
+                                }}
+                            >
+                                <span className="flex-1">
+                                    Other E2B template
+                                </span>
+                                <CheckIcon
+                                    className={`h-4 w-4 shrink-0 ${custom ? "" : "invisible"}`}
+                                />
+                            </DropdownItem>
+                        </>
+                    )}
+                </Dropdown>
+                {custom && (
+                    <Field.Input asChild>
+                        <Input
+                            className="w-full"
+                            aria-label="E2B template name"
+                            placeholder="e.g. claude or team/name:tag"
+                            value={template}
+                            required
+                            error={!!error}
+                            aria-describedby={
+                                error ? "sandbox-template-error" : undefined
+                            }
+                            onChange={(event) =>
+                                onChange(event.currentTarget.value, true)
+                            }
+                        />
+                    </Field.Input>
+                )}
+            </div>
+        </ModelFormRow>
+    );
 }
 
 function SandboxCard({
@@ -141,15 +310,22 @@ function SandboxCard({
                     <Text
                         tone="strong"
                         weight="semibold"
-                        className="break-all font-mono"
+                        className={
+                            sandbox.metadata?.name
+                                ? "break-all"
+                                : "break-all font-mono"
+                        }
                     >
-                        {sandbox.sandboxID}
+                        {sandbox.metadata?.name ?? sandbox.sandboxID}
                     </Text>
                     <Text size="sm" tone="muted">
-                        {sandbox.alias ?? sandbox.templateID} ·{" "}
+                        {templateLabel(templateOf(sandbox))} ·{" "}
                         {sizeLabel(sandbox)} ·{" "}
-                        {pollen(perSecond(pricing, sandbox) * 3600)} an hour
-                        while running
+                        {pollen(
+                            perSecond(pricing, templateOf(sandbox), sandbox) *
+                                3600,
+                        )}{" "}
+                        an hour while running
                     </Text>
                 </div>
                 <Chip intent={running ? "success" : "neutral"} size="md">
@@ -189,6 +365,7 @@ function SandboxCard({
                 {running && (
                     <Button
                         size="sm"
+                        intent="commit"
                         icon={<PauseIcon />}
                         disabled={busy}
                         onClick={onPause}
@@ -216,7 +393,6 @@ export function Sandboxes() {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
-    const [template, setTemplate] = useState("pollinations");
     const [pending, setPending] = useState<Pending | null>(null);
     const [amount, setAmount] = useState("1");
     const [unit, setUnit] = useState(3600);
@@ -245,7 +421,6 @@ export function Sandboxes() {
     }, [load]);
 
     async function run(id: string, action: () => Promise<unknown>) {
-        setPending(null);
         setBusyId(id);
         setActionError(null);
         try {
@@ -260,10 +435,14 @@ export function Sandboxes() {
         }
     }
 
+    const template = pending?.action === "create" ? pending.template : "";
     const templateError =
         template.trim() && !TEMPLATE_NAME.test(template.trim())
             ? "Not a template name. Use lowercase letters, digits, - and _, e.g. claude or team/name:tag."
-            : null;
+            : pending?.action === "create" && pending.notFound
+              ? `There’s no public template “${template.trim()}”. Check the name, or pick Pollinations.`
+              : null;
+    const creating = busyId === "new";
 
     const seconds = untilStopped ? FOREVER : Math.round(Number(amount) * unit);
     const durationError = untilStopped ? null : customError(seconds);
@@ -276,26 +455,48 @@ export function Sandboxes() {
     const now = Date.now();
     const from = addTo ? Date.parse(addTo.endAt) : now;
     const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
+    const loading = !pricing && !loadError;
+    const running = sandboxes.filter((s) => s.state === "running").length;
+    const full = !!pricing && running >= pricing.maxRunning;
+    const spends = pending && pending.action !== "kill";
+    const canConfirm =
+        !!pending &&
+        (pending.action === "kill" ||
+            (!durationError &&
+                (pending.action !== "create" ||
+                    (!!template.trim() &&
+                        !templateError &&
+                        !full &&
+                        !creating))));
 
     function confirm() {
-        if (!pending) return;
+        if (!pending || !canConfirm) return;
         if (pending.action === "create") {
-            // The same request as `polli sandbox create`.
+            // The same request as `polli sandbox create`. The dialog stays
+            // open until it's done, so a template E2B doesn't have can be
+            // fixed in place.
             void run("new", () =>
                 e2b("/sandboxes", "POST", {
-                    templateID: pending.template,
+                    templateID: pending.template.trim(),
                     timeout,
                     autoPause: true,
-                }).catch((error: Error) => {
-                    throw /not found/i.test(error.message)
-                        ? new Error(
-                              `There’s no public template “${pending.template}”. Check the name, or start with pollinations.`,
-                          )
-                        : error;
-                }),
+                    ...(pending.name.trim() && {
+                        metadata: { name: pending.name.trim() },
+                    }),
+                }).then(
+                    () => setPending(null),
+                    (error: Error) => {
+                        if (!/not found/i.test(error.message)) {
+                            setPending(null);
+                            throw error;
+                        }
+                        setPending({ ...pending, notFound: true });
+                    },
+                ),
             );
             return;
         }
+        setPending(null);
         const id = pending.sandbox.sandboxID;
         // Connect sets the time from now and, unlike timeout, never shortens
         // it, so a keep set from the CLI stays. A time limit is meant to
@@ -311,30 +512,49 @@ export function Sandboxes() {
         );
     }
 
-    const loading = !pricing && !loadError;
-    const running = sandboxes.filter((s) => s.state === "running").length;
-    const full = !!pricing && running >= pricing.maxRunning;
-    const spends = pending && pending.action !== "kill";
+    const createAction = (
+        <Button
+            type="button"
+            icon={<TerminalIcon />}
+            aria-busy={creating}
+            aria-haspopup="dialog"
+            disabled={full || creating}
+            onClick={() =>
+                setPending({
+                    action: "create",
+                    name: generateFunName(),
+                    template: "pollinations",
+                })
+            }
+        >
+            {creating ? "Creating…" : "Create"}
+        </Button>
+    );
 
     return (
         <Section
             title="Sandboxes"
+            intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
-                <Button
-                    size="sm"
-                    icon={<RefreshIcon />}
-                    disabled={loading}
-                    onClick={() => void load()}
-                >
-                    Refresh
-                </Button>
+                <ButtonGroup>
+                    <IconButton
+                        size="md"
+                        variant="ghost"
+                        title="Refresh"
+                        disabled={loading}
+                        onClick={() => void load()}
+                    >
+                        <RefreshIcon className="h-4 w-4" />
+                    </IconButton>
+                    {sandboxes.length > 0 && createAction}
+                </ButtonGroup>
             }
         >
             {loadError && <LoadError onRetry={load}>{loadError}</LoadError>}
             {actionError && (
                 <Alert intent="danger">
                     {actionError}
-                    {/top.up/i.test(actionError) && (
+                    {actionError === NO_POLLEN && (
                         <>
                             {" "}
                             <InlineLink href="/pollen">Go to Pollen</InlineLink>
@@ -345,88 +565,13 @@ export function Sandboxes() {
             <SectionContent loading={loading}>
                 {pricing && (
                     <div className="flex flex-col gap-3">
-                        <form
-                            className="flex flex-wrap items-end gap-2"
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                setPending({
-                                    action: "create",
-                                    template: template.trim(),
-                                });
-                            }}
-                        >
-                            <div className="flex min-w-48 flex-1 flex-col gap-1">
-                                <label
-                                    htmlFor="sandbox-template"
-                                    className="text-sm text-theme-text-muted"
-                                >
-                                    Template
-                                </label>
-                                <Input
-                                    id="sandbox-template"
-                                    value={template}
-                                    list="sandbox-templates"
-                                    required
-                                    error={!!templateError}
-                                    aria-describedby="sandbox-template-help"
-                                    onChange={(event) =>
-                                        setTemplate(event.currentTarget.value)
-                                    }
-                                />
-                                <datalist id="sandbox-templates">
-                                    {Object.keys(pricing.templates).map(
-                                        (id) => (
-                                            <option key={id} value={id} />
-                                        ),
-                                    )}
-                                </datalist>
-                            </div>
-                            <Button
-                                type="submit"
-                                intent="commit"
-                                icon={<PlusIcon />}
-                                disabled={
-                                    full || busyId === "new" || !!templateError
-                                }
-                            >
-                                {busyId === "new"
-                                    ? "Creating…"
-                                    : "Create sandbox"}
-                            </Button>
-                        </form>
-                        {templateError ? (
-                            <p
-                                id="sandbox-template-help"
-                                className="text-sm text-intent-danger-text"
-                            >
-                                {templateError}
-                            </p>
-                        ) : (
-                            <Text
-                                id="sandbox-template-help"
-                                size="sm"
-                                tone="muted"
-                            >
-                                {Object.entries(pricing.templates)
-                                    .map(
-                                        ([id, size]) =>
-                                            `${id} (${sizeLabel(size)}, ${pollen(perSecond(pricing, size) * 3600)} an hour)`,
-                                    )
-                                    .join(" and ")}{" "}
-                                come with polli logged in. Or any public E2B
-                                template, e.g. claude, codex, opencode or base;
-                                team/name:tag works too.{" "}
-                                <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
-                                    See E2B’s templates
-                                </InlineLink>
+                        {sandboxes.length > 0 && (
+                            <Text size="sm" tone={full ? "strong" : "muted"}>
+                                {running} of {pricing.maxRunning} running.
+                                {full &&
+                                    " Pause or kill one to start or resume another."}
                             </Text>
                         )}
-                        <Text size="sm" tone={full ? "strong" : "muted"}>
-                            {running} of {pricing.maxRunning} running at once.{" "}
-                            {full
-                                ? "Pause or kill one to start or resume another."
-                                : "Paused sandboxes don’t count and cost nothing."}
-                        </Text>
                         <div className="flex flex-col gap-2" aria-live="polite">
                             {sandboxes.map((sandbox) => (
                                 <SandboxCard
@@ -461,176 +606,393 @@ export function Sandboxes() {
                                 />
                             ))}
                             {!sandboxes.length && (
-                                <Text size="sm" tone="muted">
-                                    No sandboxes yet.
-                                </Text>
+                                <Surface className="p-6 text-center">
+                                    <div className="mb-2">{createAction}</div>
+                                    <p className="text-sm text-theme-text-muted">
+                                        Run code and agents in your own sandbox.
+                                    </p>
+                                </Surface>
                             )}
                         </div>
                     </div>
                 )}
             </SectionContent>
-            <div className="flex flex-col gap-1">
-                <Text size="sm" tone="strong" weight="semibold">
-                    How time works
-                </Text>
-                <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-theme-text-muted">
+            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                    Pay with{" "}
+                    <span className="inline-flex items-center gap-1 align-middle whitespace-nowrap">
+                        <WalletKindIcon kind="tier" /> Quest Pollen
+                    </span>{" "}
+                    or{" "}
+                    <span className="inline-flex items-center gap-1 align-middle whitespace-nowrap">
+                        <WalletKindIcon kind="paid" /> Paid Pollen
+                    </span>{" "}
+                    in 10-minute steps.
                     {pricing && (
-                        <li>
-                            A running sandbox costs{" "}
-                            {pollen(pricing.vcpuSecond * 3600)} per vCPU and{" "}
-                            {pollen(pricing.gibSecond * 3600)} per GB of memory
-                            an hour.
-                        </li>
-                    )}
-                    <li>
-                        While it runs, time comes out of your Pollen 10 minutes
-                        at a time.
-                    </li>
-                    <li>
-                        When the time is up, the sandbox pauses. Paused
-                        sandboxes keep their files and cost nothing.
-                    </li>
-                    <li>Unused time isn’t refunded.</li>
-                </ul>
-            </div>
-            <div className="flex flex-col gap-2">
-                <Text size="sm" tone="strong" weight="semibold">
-                    Connect with ssh
-                </Text>
-                <Text size="sm" tone="muted">
-                    Set up polli once:
-                </Text>
-                <CopyField
-                    label="Copy the polli setup command"
-                    value={SSH_SETUP}
-                />
-                <Text size="sm" tone="muted">
-                    Then copy a sandbox’s ssh command above. ssh resumes a
-                    paused sandbox and adds 10 minutes at a time while you’re
-                    connected.
-                </Text>
+                        <>
+                            {" "}
+                            {Object.entries(pricing.templates).map(
+                                ([template, size]) => {
+                                    const hourly =
+                                        perSecond(pricing, template, size) *
+                                        3600;
+                                    return (
+                                        <span key={template}>
+                                            {templateLabel(template)} (
+                                            {sizeLabel(size)}): {pollen(hourly)}{" "}
+                                            an hour, about{" "}
+                                            {pollen(hourly * HOURS_PER_MONTH)} a
+                                            month if always on.{" "}
+                                        </span>
+                                    );
+                                },
+                            )}
+                            Up to {pricing.maxRunning} running at once; pause or
+                            kill one to free a slot.
+                        </>
+                    )}{" "}
+                    Sandboxes pause when time runs out. A paused sandbox costs
+                    nothing and keeps its files. Unused time isn’t refunded.
+                </span>
+            </p>
+            <div className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <p>
+                        Connect to your sandbox with SSH: run this once, then
+                        use the ssh command on its card. A paused sandbox
+                        resumes, and it keeps running while you’re connected,
+                        paid 10 minutes at a time.
+                    </p>
+                    <CopyField
+                        label="Copy the polli setup command"
+                        value={SSH_SETUP}
+                    />
+                </div>
             </div>
 
             <ConfirmationDialog
-                open={!!pending}
-                title={
-                    !pending
-                        ? ""
-                        : pending.action === "create"
-                          ? "Create sandbox?"
-                          : pending.action === "kill"
-                            ? "Kill sandbox?"
-                            : pending.action === "limit"
-                              ? "Set a time limit?"
-                              : pending.sandbox.state === "running"
-                                ? "Add time?"
-                                : "Resume sandbox?"
-                }
-                intent={spends ? "commit" : "danger"}
-                confirmIcon={spends ? <PlayIcon /> : undefined}
-                confirmLabel={
-                    !pending
-                        ? ""
-                        : pending.action === "create"
-                          ? "Create"
-                          : pending.action === "kill"
-                            ? "Kill"
-                            : pending.action === "limit"
-                              ? "Set time limit"
-                              : addTo
-                                ? "Add time"
-                                : "Resume"
-                }
-                confirmDisabled={!!spends && !!durationError}
+                open={pending?.action === "kill"}
+                title="Kill sandbox?"
+                confirmLabel="Kill"
                 onConfirm={confirm}
                 onCancel={() => setPending(null)}
             >
-                {pending?.action === "kill" && (
-                    <ResourceConfirmationContent
-                        resource={pending.sandbox.sandboxID}
-                    >
-                        This deletes the sandbox and its files and can’t be
-                        undone. Unused time isn’t refunded.
-                    </ResourceConfirmationContent>
-                )}
-                {spends && pricing && (
-                    <>
-                        <ResourceConfirmationContent
-                            resource={
-                                pending.action === "create"
-                                    ? pending.template
-                                    : pending.sandbox.sandboxID
-                            }
-                        >
-                            {addTo ? "Add" : "Run it for"}
-                        </ResourceConfirmationContent>
-                        <div className="flex flex-col gap-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    step="any"
-                                    inputMode="decimal"
-                                    aria-label="How long"
-                                    value={amount}
-                                    error={!!durationError}
-                                    className="w-20"
-                                    onFocus={() => setUntilStopped(false)}
-                                    onChange={(event) =>
-                                        setAmount(event.currentTarget.value)
-                                    }
-                                />
-                                <ButtonGroup>
-                                    {UNITS.map((option) => (
-                                        <TabButton
-                                            key={option.seconds}
-                                            size="sm"
-                                            active={
-                                                !untilStopped &&
-                                                unit === option.seconds
-                                            }
-                                            onClick={() => {
-                                                setUnit(option.seconds);
-                                                setUntilStopped(false);
-                                            }}
-                                        >
-                                            {option.label}
-                                        </TabButton>
-                                    ))}
-                                    {pending.action !== "limit" && (
-                                        <TabButton
-                                            size="sm"
-                                            active={untilStopped}
-                                            onClick={() =>
-                                                setUntilStopped(true)
-                                            }
-                                        >
-                                            Until I stop it
-                                        </TabButton>
-                                    )}
-                                </ButtonGroup>
-                            </div>
-                            {durationError && (
-                                <p className="text-sm text-intent-danger-text">
-                                    {durationError}
-                                </p>
-                            )}
-                        </div>
-                        {!durationError && (
-                            <Alert intent="info">
-                                Runs until{" "}
-                                {timeout === FOREVER
-                                    ? "you pause or kill it"
-                                    : new Date(
-                                          now + timeout * 1000,
-                                      ).toLocaleString()}
-                                , 10 minutes at a time. From your Pollen each
-                                hour: {perHour(pricing, pending)}.
-                            </Alert>
-                        )}
-                    </>
-                )}
+                <ResourceConfirmationContent
+                    resource={
+                        pending?.action === "kill"
+                            ? pending.sandbox.sandboxID
+                            : ""
+                    }
+                >
+                    This deletes the sandbox and its files and can’t be undone.
+                    Unused time isn’t refunded.
+                </ResourceConfirmationContent>
             </ConfirmationDialog>
+            <ResourceDialog
+                open={!!spends}
+                onOpenChange={(open) => !open && !creating && setPending(null)}
+                size="lg"
+            >
+                <form
+                    className="flex min-h-0 flex-1 flex-col"
+                    noValidate
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        confirm();
+                    }}
+                >
+                    <DialogBody
+                        actions={
+                            <>
+                                <Button
+                                    type="button"
+                                    intent="neutral"
+                                    icon={<XIcon />}
+                                    disabled={creating}
+                                    onClick={() => setPending(null)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    intent="commit"
+                                    icon={
+                                        pending?.action === "create" ? (
+                                            <TerminalIcon />
+                                        ) : (
+                                            <PlayIcon />
+                                        )
+                                    }
+                                    aria-busy={creating}
+                                    disabled={!canConfirm}
+                                >
+                                    {!pending
+                                        ? ""
+                                        : pending.action === "create"
+                                          ? "Create"
+                                          : pending.action === "limit"
+                                            ? "Set time limit"
+                                            : addTo
+                                              ? "Add time"
+                                              : "Resume"}
+                                </Button>
+                            </>
+                        }
+                    >
+                        <DialogHeader
+                            inBody
+                            title={
+                                !pending
+                                    ? ""
+                                    : pending.action === "create"
+                                      ? "Create sandbox"
+                                      : pending.action === "limit"
+                                        ? "Set a time limit"
+                                        : addTo
+                                          ? "Add time"
+                                          : "Resume sandbox"
+                            }
+                            description={
+                                pending?.action === "create" && (
+                                    <>
+                                        Choose a template and how long to run
+                                        it.{" "}
+                                        <InlineLink
+                                            href={genDocsUrl("#tag/sandboxes")}
+                                        >
+                                            Read the guide
+                                        </InlineLink>
+                                    </>
+                                )
+                            }
+                        />
+                        {spends && pending.action !== "create" && (
+                            <Surface>
+                                <dl className="grid gap-2 text-sm sm:grid-cols-[11rem_minmax(0,1fr)]">
+                                    {pending.sandbox.metadata?.name && (
+                                        <>
+                                            <dt className="font-semibold text-theme-text-strong">
+                                                Name
+                                            </dt>
+                                            <dd className="break-all">
+                                                {pending.sandbox.metadata.name}
+                                            </dd>
+                                        </>
+                                    )}
+                                    <dt className="font-semibold text-theme-text-strong">
+                                        ID
+                                    </dt>
+                                    <dd className="break-all font-mono">
+                                        {pending.sandbox.sandboxID}
+                                    </dd>
+                                    <dt className="font-semibold text-theme-text-strong">
+                                        Status
+                                    </dt>
+                                    <dd>
+                                        <Chip
+                                            size="sm"
+                                            intent={
+                                                pending.sandbox.state ===
+                                                "running"
+                                                    ? "success"
+                                                    : "neutral"
+                                            }
+                                        >
+                                            {pending.sandbox.state === "running"
+                                                ? "Running"
+                                                : "Paused"}
+                                        </Chip>
+                                    </dd>
+                                    <dt className="font-semibold text-theme-text-strong">
+                                        Template
+                                    </dt>
+                                    <dd>
+                                        {templateLabel(
+                                            templateOf(pending.sandbox),
+                                        )}
+                                        <span className="text-theme-text-muted">
+                                            {" "}
+                                            · {sizeLabel(pending.sandbox)}
+                                        </span>
+                                    </dd>
+                                    {pricing && (
+                                        <>
+                                            <dt className="font-semibold text-theme-text-strong">
+                                                Hourly cost
+                                            </dt>
+                                            <dd>
+                                                {pollen(
+                                                    perSecond(
+                                                        pricing,
+                                                        templateOf(
+                                                            pending.sandbox,
+                                                        ),
+                                                        pending.sandbox,
+                                                    ) * 3600,
+                                                )}
+                                            </dd>
+                                        </>
+                                    )}
+                                </dl>
+                            </Surface>
+                        )}
+                        {spends && pricing && (
+                            <>
+                                <Surface className="space-y-4">
+                                    {pending.action === "create" && (
+                                        <>
+                                            <ModelFormRow
+                                                label="Name"
+                                                help="Shown in your sandbox list. It can’t be changed later."
+                                            >
+                                                <Field.Input asChild>
+                                                    <Input
+                                                        className="w-full"
+                                                        value={pending.name}
+                                                        onChange={(event) =>
+                                                            setPending({
+                                                                ...pending,
+                                                                name: event
+                                                                    .currentTarget
+                                                                    .value,
+                                                            })
+                                                        }
+                                                    />
+                                                </Field.Input>
+                                            </ModelFormRow>
+                                            <TemplatePicker
+                                                pricing={pricing}
+                                                template={template}
+                                                custom={!!pending.custom}
+                                                error={templateError}
+                                                onChange={(template, custom) =>
+                                                    setPending({
+                                                        action: "create",
+                                                        name: pending.name,
+                                                        template,
+                                                        custom,
+                                                    })
+                                                }
+                                            />
+                                        </>
+                                    )}
+                                    <ModelFormRow
+                                        label={
+                                            addTo ? "Add time" : "Run it for"
+                                        }
+                                        help={
+                                            pending.action === "limit"
+                                                ? "At least 10 minutes. The sandbox pauses when time runs out."
+                                                : "At least 10 minutes. Choose Until I stop it to keep running until you pause or kill it."
+                                        }
+                                        note={
+                                            <Chip
+                                                id="sandbox-duration-status"
+                                                size="sm"
+                                                intent={
+                                                    durationError
+                                                        ? "danger"
+                                                        : "info"
+                                                }
+                                                className="polli:h-auto polli:max-w-full polli:py-1 polli:leading-snug"
+                                            >
+                                                <ClockIcon className="h-3 w-3 shrink-0" />
+                                                {durationError ||
+                                                    (timeout === FOREVER
+                                                        ? "Will run until you pause or kill it"
+                                                        : `Will run until ${new Date(now + timeout * 1000).toLocaleString()}`)}
+                                            </Chip>
+                                        }
+                                    >
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Field.Input asChild>
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    step="any"
+                                                    inputMode="decimal"
+                                                    aria-label="How long"
+                                                    aria-describedby="sandbox-duration-status"
+                                                    value={amount}
+                                                    error={!!durationError}
+                                                    className="w-20"
+                                                    onFocus={() =>
+                                                        setUntilStopped(false)
+                                                    }
+                                                    onChange={(event) =>
+                                                        setAmount(
+                                                            event.currentTarget
+                                                                .value,
+                                                        )
+                                                    }
+                                                />
+                                            </Field.Input>
+                                            <ButtonGroup aria-label="Duration unit">
+                                                {UNITS.map((option) => (
+                                                    <TabButton
+                                                        key={option.seconds}
+                                                        size="sm"
+                                                        active={
+                                                            !untilStopped &&
+                                                            unit ===
+                                                                option.seconds
+                                                        }
+                                                        onClick={() => {
+                                                            setUnit(
+                                                                option.seconds,
+                                                            );
+                                                            setUntilStopped(
+                                                                false,
+                                                            );
+                                                        }}
+                                                    >
+                                                        {option.label}
+                                                    </TabButton>
+                                                ))}
+                                                {pending.action !== "limit" && (
+                                                    <TabButton
+                                                        size="sm"
+                                                        active={untilStopped}
+                                                        onClick={() =>
+                                                            setUntilStopped(
+                                                                true,
+                                                            )
+                                                        }
+                                                    >
+                                                        Until I stop it
+                                                    </TabButton>
+                                                )}
+                                            </ButtonGroup>
+                                        </div>
+                                    </ModelFormRow>
+                                </Surface>
+                                {pending.action === "create" && (
+                                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                                        <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                        {/* E2B tells only the team that built a
+                                            template its size, so another team's
+                                            template is priced once it runs. */}
+                                        <span>
+                                            Pollinations templates include the{" "}
+                                            <InlineLink href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli">
+                                                polli CLI
+                                            </InlineLink>
+                                            , already signed in. Any other{" "}
+                                            <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
+                                                public E2B template
+                                            </InlineLink>{" "}
+                                            works too; its hourly cost shows on
+                                            its card once it starts.
+                                        </span>
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </DialogBody>
+                </form>
+            </ResourceDialog>
         </Section>
     );
 }

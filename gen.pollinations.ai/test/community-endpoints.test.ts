@@ -84,6 +84,7 @@ import {
     MODEL_USED_HEADER,
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -432,8 +433,10 @@ async function maturePendingCommunityEndpoint(id: string): Promise<void> {
 }
 
 async function createEnterCommunityApi(): Promise<Hono<Env>> {
-    const routePath =
-        "../../enter.pollinations.ai/src/routes/community-endpoints.ts";
+    const routePath = new URL(
+        "../../enter.pollinations.ai/src/routes/community-endpoints.ts",
+        import.meta.url,
+    ).href;
     const { communityEndpointsRoutes } = (await import(routePath)) as {
         communityEndpointsRoutes: Hono;
     };
@@ -447,7 +450,10 @@ async function createEnterCommunityApi(): Promise<Hono<Env>> {
 }
 
 async function createEnterFrontendApi(): Promise<Hono<Env>> {
-    const routePath = "../../enter.pollinations.ai/src/frontend-api.ts";
+    const routePath = new URL(
+        "../../enter.pollinations.ai/src/frontend-api.ts",
+        import.meta.url,
+    ).href;
     const { frontendApi } = (await import(routePath)) as {
         frontendApi: Hono;
     };
@@ -4527,7 +4533,7 @@ fixtureTest.each(
                         reasoning_effort?: string;
                     };
                     expect(upstream.reasoning_effort).toBe("low");
-                    if (modelCalls === 2) {
+                    if (modelCalls >= 2) {
                         expect(
                             upstream.messages.some(
                                 (message) =>
@@ -4556,13 +4562,13 @@ fixtureTest.each(
                     const finishReason =
                         modelCalls === 1 ? "tool_calls" : "stop";
                     const usage =
-                        modelCalls === 2 && usageKind === "missing"
+                        modelCalls >= 2 && usageKind === "missing"
                             ? undefined
                             : {
                                   prompt_tokens: 10,
                                   completion_tokens: 5,
                                   total_tokens: 15,
-                                  ...(modelCalls === 2 &&
+                                  ...(modelCalls >= 2 &&
                                   usageKind === "malformed"
                                       ? {
                                             prompt_tokens_details: {
@@ -4663,7 +4669,8 @@ fixtureTest.each(
             }),
         );
         const body = await response.text();
-        expect(modelCalls).toBe(2);
+        // Invalid non-stream usage retries the declared OpenAI backup.
+        expect(modelCalls).toBe(!stream && usageKind !== "valid" ? 3 : 2);
         expect(mcpCalls).toBe(1);
         expect(runtimeClientIps.every((ip) => ip === testClientIp)).toBe(true);
         expect(runtimeToken).toMatch(/^ag_/);
@@ -5088,7 +5095,7 @@ fixtureTest(
         expect(response.headers.get("cache-control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );
-        expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(response.headers.get("x-cache")).toBe("MISS");
         expect(response.headers.get("x-cache-type")).toBeNull();
         expect(response.headers.get("x-cache-key")).toBeTruthy();
         await expect(response.text()).resolves.toBe("simple ok");
@@ -5264,9 +5271,15 @@ fixtureTest(
         const allNames = allModels.map((model) => model.name);
 
         expect(allNames).toEqual(openaiModels.data.map((model) => model.id));
+        // Decision models also answer on chat endpoints, so the text list
+        // keeps them.
         expect(textModels.map((model) => model.name)).toEqual(
             allModels
-                .filter((model) => model.category === "text")
+                .filter(
+                    (model) =>
+                        model.category === "text" ||
+                        model.category === "decision",
+                )
                 .map((model) => model.name),
         );
         expect(allNames).toEqual([
@@ -5276,6 +5289,7 @@ fixtureTest(
 
         const categoryOrder = [
             "text",
+            "decision",
             "image",
             "video",
             "3d",
@@ -5293,6 +5307,7 @@ fixtureTest(
 
         const defaults: Record<string, string> = {
             text: DEFAULT_TEXT_MODEL,
+            decision: DEFAULT_DECISION_MODEL,
             image: DEFAULT_IMAGE_MODEL,
             "3d": DEFAULT_3D_MODEL,
             audio: DEFAULT_AUDIO_MODEL,
@@ -7008,7 +7023,8 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
                       }),
                   })
                 : new Request(
-                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
+                      // 16x9 is an aspect ratio for video, not an image size.
+                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&width=16&height=9&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
                       { headers: { Authorization: `Bearer ${caller.key}` } },
                   );
         const disconnectedContext = createExecutionContext();

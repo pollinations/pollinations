@@ -7,9 +7,26 @@ import {
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getGrantedOAuthScope,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import { parseAuthorizeRedirectUrl } from "@shared/auth/redirect-uri.ts";
+import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
+
+describe("getGrantedOAuthScope", () => {
+    it.each([
+        [[], [], undefined],
+        [["generate"], [], "generate"],
+        [["generate", "usage", "keys"], ["usage"], "generate usage"],
+        [["usage"], [], ""],
+        [["unknown"], [], ""],
+    ])("echoes granted scopes for %j", (requested, granted, expected) => {
+        expect(getGrantedOAuthScope(new Set(requested), granted)).toBe(
+            expected,
+        );
+    });
+});
 
 describe("getAuthorizeInitialPermissions", () => {
     it("uses the consent defaults when url params are absent", () => {
@@ -156,10 +173,34 @@ describe("model category selection", () => {
 
     it("stores every category as all models and keeps none distinct", () => {
         const all = readModelSelection(null);
-        expect(all.categories.size).toBe(7);
+        expect([...all.categories].sort()).toEqual(
+            [...MODEL_CATEGORIES].sort(),
+        );
         expect(writeModelSelection(all)).toBeNull();
         expect(
             writeModelSelection({ categories: new Set(), models: [] }),
         ).toEqual([]);
+    });
+});
+
+describe("parseAuthorizeRedirectUrl", () => {
+    it.each([
+        "https://app.example/callback?x=1",
+        "http://localhost:5173/",
+        "http://127.0.0.1:8080/cb",
+        "http://[::1]:3000/cb",
+        "myapp://callback",
+    ])("accepts %s", (url) => {
+        expect(parseAuthorizeRedirectUrl(url)?.href).toBe(new URL(url).href);
+    });
+
+    it.each([
+        " JavaScript:void(0)",
+        "java\tscript://app.example/%0avoid(0)",
+        "data:text/html,hello",
+        "file:///C:/app/index.html",
+        "not a url",
+    ])("rejects %j", (url) => {
+        expect(parseAuthorizeRedirectUrl(url)).toBeNull();
     });
 });

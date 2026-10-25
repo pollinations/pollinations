@@ -1,6 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -23,7 +22,12 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
-import { publicChatChoices, publicChatStream } from "./chat/public.ts";
+import {
+    publicChatChoices,
+    publicChatStream,
+    publicUsage,
+    withoutPayg,
+} from "./chat/public.ts";
 import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
@@ -52,29 +56,6 @@ type TextContext = Context<Env>;
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
-}
-
-function prepareRequestParameters(
-    requestParams: RequestData,
-    modelDefinition: ModelDefinition,
-): RequestData {
-    const isAudioModel =
-        modelDefinition.outputModalities?.includes("audio") ?? false;
-    if (!isAudioModel) return requestParams;
-
-    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
-    const audioFormat = requestParams.stream ? "pcm16" : "mp3";
-
-    return {
-        ...requestParams,
-        modalities: requestParams.modalities || ["text", "audio"],
-        audio: requestParams.audio
-            ? {
-                  ...requestParams.audio,
-                  format: requestParams.audio.format || audioFormat,
-              }
-            : { voice, format: audioFormat },
-    };
 }
 
 /**
@@ -206,34 +187,25 @@ function usageHeaders(
     return headers;
 }
 
-function publicCompletionUsage(
-    usage: ChatCompletion["usage"],
-): ChatCompletion["usage"] {
-    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
-        return usage;
-    }
-
-    const {
-        cost: _cost,
-        search_context_size: _searchContextSize,
-        ...publicUsage
-    } = usage;
-    return publicUsage;
-}
-
 function publicChatCompletion(
     completion: ChatCompletion,
     isVercel: boolean,
 ): ChatCompletion {
-    const usage = publicCompletionUsage(completion.usage);
-    if (!isVercel && usage === completion.usage) return completion;
-    const publicCompletion = {
+    const usage = publicUsage(completion.usage);
+    // InferencePort also attaches its `payg_*` ledger to the top level of
+    // non-streaming responses; the stream path strips it in public.ts.
+    const hasPaygTopLevel = Object.keys(completion).some((key) =>
+        key.startsWith("payg_"),
+    );
+    if (!isVercel && !hasPaygTopLevel && usage === completion.usage)
+        return completion;
+    const publicCompletion = withoutPayg({
         ...completion,
         usage,
         choices: isVercel
             ? publicChatChoices(completion.choices)
             : completion.choices,
-    };
+    });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
             value: completion.fallbackTarget,
@@ -417,9 +389,7 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = isVercel
-                ? publicChatStream(clientBody)
-                : clientBody;
+            completion.responseStream = publicChatStream(clientBody);
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),
@@ -456,11 +426,7 @@ export async function handleTextContentLocal(
     c: TextContext,
     body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
-        getChatRequestData(body),
-        c.var.model.definition,
-    );
-    return generateTextResponse(c, requestData, true);
+    return generateTextResponse(c, getChatRequestData(body), true);
 }
 
 export async function handleSimpleTextLocal(
@@ -469,9 +435,9 @@ export async function handleSimpleTextLocal(
     model: string,
     query: GenerateTextRequestQueryParams,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
+    return generateTextResponse(
+        c,
         getSimpleTextRequestData(prompt, model, query),
-        c.var.model.definition,
+        true,
     );
-    return generateTextResponse(c, requestData, true);
 }

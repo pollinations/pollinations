@@ -14,6 +14,12 @@ import type {
 type ChatMessage = CreateChatCompletionRequest["messages"][number];
 type ChatPart = Record<string, unknown>;
 
+// Gemini signs its tool calls and rejects a replayed call without the
+// signature, but Anthropic clients replay only thinking signatures. So the
+// signature travels in an empty thinking block, prefixed to tell it apart
+// from Claude's.
+export const GEMINI_SIGNATURE_PREFIX = "gemini:";
+
 export class MessagesRequestError extends Error {
     override readonly name = "MessagesRequestError";
 }
@@ -101,21 +107,34 @@ function userMessages(content: MessagesContentBlock[]): ChatMessage[] {
 
 function assistantMessage(content: MessagesContentBlock[]): ChatMessage {
     const parts: ChatPart[] = [];
-    const toolCalls = [];
+    const toolCalls: {
+        id: string;
+        type: "function";
+        function: {
+            name: string;
+            arguments: string;
+            thought_signature?: string;
+        };
+    }[] = [];
+    let thoughtSignature: string | undefined;
     for (const block of content) {
         if (block.type === "tool_use") {
             toolCalls.push({
                 id: block.id,
-                type: "function" as const,
+                type: "function",
                 function: {
                     name: block.name,
                     arguments: JSON.stringify(block.input ?? {}),
                 },
             });
         } else if (block.type === "thinking") {
-            // Only Claude signs its thinking, and Claude needs signed blocks
-            // replayed; other providers reject a thinking part.
-            if (block.signature) {
+            if (block.signature?.startsWith(GEMINI_SIGNATURE_PREFIX)) {
+                thoughtSignature = block.signature.slice(
+                    GEMINI_SIGNATURE_PREFIX.length,
+                );
+            } else if (block.signature) {
+                // Claude needs its signed thinking replayed; other providers
+                // reject a thinking part.
                 parts.push({
                     type: "thinking",
                     thinking: block.thinking,
@@ -127,6 +146,10 @@ function assistantMessage(content: MessagesContentBlock[]): ChatMessage {
         } else {
             parts.push(contentPart(block));
         }
+    }
+    // Gemini signs only the first call of a step.
+    if (thoughtSignature && toolCalls[0]) {
+        toolCalls[0].function.thought_signature = thoughtSignature;
     }
     // Plain text stays a string, which every provider accepts.
     const plain = parts.every(
@@ -228,9 +251,50 @@ function tools(request: CreateMessageRequest) {
     };
 }
 
-/** Translate a Messages request into the Chat Completions request it runs as. */
+/**
+ * Replaces the oldest images, including screenshots inside tool results, with
+ * a short note once the conversation holds more than the model accepts.
+ * Claude Code keeps every image it reads and assumes Anthropic's limit, so
+ * otherwise every later request fails, its own /compact included.
+ */
+function omitOldestImages(
+    messages: CreateMessageRequest["messages"],
+    maxImages: number,
+): CreateMessageRequest["messages"] {
+    const images = messages
+        .flatMap((message) =>
+            typeof message.content === "string" ? [] : message.content,
+        )
+        .flatMap((block) =>
+            block.type === "tool_result" && Array.isArray(block.content)
+                ? block.content
+                : [block],
+        )
+        .filter((block) => block.type === "image");
+    const omitted = new Set<MessagesContentBlock>(
+        images.slice(0, images.length - maxImages),
+    );
+    const note = `[image omitted: over the ${maxImages}-image limit]`;
+    const replace = <T extends MessagesContentBlock>(block: T): T =>
+        (block.type === "image" && omitted.has(block)
+            ? { type: "text", text: note, ...cacheControl(block) }
+            : block.type === "tool_result" && Array.isArray(block.content)
+              ? { ...block, content: block.content.map(replace) }
+              : block) as T;
+    return messages.map((message) =>
+        typeof message.content === "string"
+            ? message
+            : { ...message, content: message.content.map(replace) },
+    );
+}
+
+/**
+ * Translate a Messages request into the Chat Completions request it runs as.
+ * `maxImages` is the model's declared image limit.
+ */
 export function messagesToChatRequest(
     request: CreateMessageRequest,
+    maxImages = Number.POSITIVE_INFINITY,
 ): CreateChatCompletionRequest {
     const system =
         request.system === undefined
@@ -247,8 +311,15 @@ export function messagesToChatRequest(
     const effort = reasoningEffort(request);
     return {
         model: request.model,
-        messages: [...system, ...request.messages.flatMap(chatMessages)],
-        max_tokens: request.max_tokens,
+        messages: [
+            ...system,
+            ...omitOldestImages(request.messages, maxImages).flatMap(
+                chatMessages,
+            ),
+        ],
+        // Claude Code checks a model with max_tokens 1 (start-up, /model, key
+        // and quota checks), but OpenAI Responses models reject fewer than 16.
+        max_tokens: Math.max(request.max_tokens, 16),
         stream: request.stream ?? false,
         ...(request.stop_sequences?.length && {
             stop: request.stop_sequences,
@@ -318,6 +389,16 @@ export function chatToMessagesResponse(
         });
     }
     if (message?.content) content.push({ type: "text", text: message.content });
+    const thoughtSignature = message?.tool_calls?.find(
+        (call) => call.function.thought_signature,
+    )?.function.thought_signature;
+    if (thoughtSignature) {
+        content.push({
+            type: "thinking",
+            thinking: "",
+            signature: GEMINI_SIGNATURE_PREFIX + thoughtSignature,
+        });
+    }
     for (const call of message?.tool_calls ?? []) {
         content.push({
             type: "tool_use",

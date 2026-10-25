@@ -121,12 +121,15 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         setBilling(initialBilling);
     }, [initialBilling]);
 
-    const hasSavedCard = Boolean(
-        billing?.paymentMethods.some(
-            (method) => method.type === "card" && !method.wallet,
-        ),
-    );
-    const publishableKey = hasSavedCard ? billing?.publishableKey : undefined;
+    // Our pay pop-up charges a saved card (default first, as Billing lists
+    // them) and taxes by the billing address. Missing either, Buy goes
+    // straight to Stripe's page, which asks for it.
+    const payCard = billing?.billingDetailsComplete
+        ? billing.paymentMethods.find(
+              (method) => method.type === "card" && !method.wallet,
+          )
+        : undefined;
+    const publishableKey = payCard ? billing?.publishableKey : undefined;
     useEffect(() => {
         if (publishableKey) preloadStripe(publishableKey);
     }, [publishableKey]);
@@ -140,8 +143,12 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const cryptoCheckoutParams = new URLSearchParams(checkoutParams);
     cryptoCheckoutParams.set("payment_method", "crypto");
     const status = billing ? autoTopUpStatus(billing) : null;
+    // Returning buyers mostly buy the same pack again.
     const selectedPack =
         chosenPack ??
+        POLLEN_PACKS.find(
+            (pack) => pack.amountUsd === billing?.lastPackPollen,
+        ) ??
         POLLEN_PACKS.find(
             (pack) => pack.amountUsd === billing?.autoTopUp.packAmountUsd,
         ) ??
@@ -199,7 +206,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
 
     function startCheckout() {
         if (!selectedPack) return;
-        if (!hasSavedCard) {
+        if (!payCard) {
             window.location.href = hostedCheckoutHref(
                 selectedPack.packKey,
                 checkoutParams.toString(),
@@ -442,20 +449,17 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 </div>
             </section>
 
-            <PackCheckoutDialog
-                open={checkoutOpen}
-                onOpenChange={setCheckoutOpen}
-                pack={selectedPack ?? (POLLEN_PACKS[0] as PollenPack)}
-                checkoutQuery={checkoutParams.toString()}
-                onCredited={onWalletChange}
-                onCompleteDetails={() =>
-                    openBillingPortal(
-                        returnToTopUp,
-                        undefined,
-                        selectedPack?.packKey,
-                    )
-                }
-            />
+            {payCard && (
+                <PackCheckoutDialog
+                    open={checkoutOpen}
+                    onOpenChange={setCheckoutOpen}
+                    pack={selectedPack ?? (POLLEN_PACKS[0] as PollenPack)}
+                    checkoutQuery={checkoutParams.toString()}
+                    onCredited={onWalletChange}
+                    card={payCard}
+                    billingAddress={billing?.billingDetails ?? null}
+                />
+            )}
         </div>
     );
 };

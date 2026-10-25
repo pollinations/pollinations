@@ -9,7 +9,7 @@ export interface PollinationsConfig {
     textTimeout?: number;
     /** Timeout in ms for image requests (default: 600000 = 10min) */
     imageTimeout?: number;
-    /** Timeout in ms for video requests (default: 1200000 = 20min) */
+    /** Timeout in ms for video and 3D requests (default: 1200000 = 20min) */
     videoTimeout?: number;
 }
 
@@ -83,6 +83,26 @@ export interface ImageResponse {
     url: string;
 }
 
+/** A finished async media job's binary file (image, video, audio, or 3D). */
+export interface MediaJobResult {
+    buffer: ArrayBuffer;
+    contentType: string;
+}
+
+/** A cached request may complete immediately instead of returning an id. */
+export type MediaJobSubmission =
+    | { id: string; status: "pending" | "succeeded"; status_url: string }
+    | { status: "succeeded"; result: MediaJobResult };
+
+export interface MediaJobStatus {
+    id: string;
+    status: "pending" | "succeeded" | "failed";
+    created_at: number;
+    completed_at?: number;
+    result_url?: string;
+    error?: { httpStatus: number; message: string };
+}
+
 // ============================================================================
 // Video Generation
 // ============================================================================
@@ -120,6 +140,20 @@ export interface VideoResponse {
     /** Content type (video/mp4) */
     contentType: string;
     /** The URL that was used to generate the video */
+    url: string;
+}
+
+export interface Model3dGenerateOptions extends RequestOptions {
+    model?: string;
+    referenceImage?: string | string[];
+    resolution?: "low" | "medium" | "high";
+    seed?: number;
+    safe?: boolean;
+}
+
+export interface Model3dResponse {
+    buffer: ArrayBuffer;
+    contentType: string;
     url: string;
 }
 
@@ -492,6 +526,33 @@ export interface AudioSpeechOptions extends AudioGenerateOptions {
     referenceAudio?: string;
 }
 
+export interface AudioSpeechWithTimestampsOptions extends RequestOptions {
+    model?: AudioModel;
+    voice?: AudioVoice;
+    responseFormat?: "mp3" | "opus" | "aac" | "wav" | "pcm";
+    seed?: number;
+}
+
+export interface SpeechAlignment {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+export interface SpeechWordTiming {
+    word: string;
+    start: number;
+    end: number;
+}
+
+export interface AudioSpeechWithTimestampsResponse {
+    audio_base64: string;
+    alignment?: SpeechAlignment | null;
+    normalized_alignment?: SpeechAlignment | null;
+    /** Words from normalized text, or [] when normalized timings are unavailable. */
+    words: SpeechWordTiming[];
+}
+
 /** File-based voice conversion or speech isolation. */
 export interface AudioTransformOptions extends RequestOptions {
     operation: "voice-changer" | "voice-isolator";
@@ -777,7 +838,7 @@ export interface DecisionResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage" | "keys";
+export type AccountPermission = "profile" | "usage" | "keys" | "machines";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -1047,6 +1108,37 @@ export interface CreateKeyOptions {
     earningsEnabled?: boolean;
 }
 
+/** A static site at `https://<name>.pollinations.app` */
+export interface Site {
+    name: string;
+    url: string;
+    createdAt: string;
+    publishedAt: string | null;
+    /** Taken down for breaking the terms; the name stays reserved */
+    blocked: boolean;
+}
+
+/** One file of an inline site deploy, in Vercel's deployment shape */
+export interface SiteFile {
+    /** Path, e.g. `index.html` (required) or `assets/app.js` */
+    file: string;
+    data: string;
+    /** Default `utf-8`; use `base64` for images and other binary files */
+    encoding?: "utf-8" | "base64";
+}
+
+/** Response from GET /account/sites */
+export interface SitesResponse {
+    data: Site[];
+    limits: {
+        sites: number;
+        bytesPerSite: number;
+        filesPerSite: number;
+        bytesPerFile: number;
+        bytesPerInlineDeploy: number;
+    };
+}
+
 /**
  * Response from POST /account/keys — includes the raw `key` value which
  * is ONLY shown at creation time. Store it immediately.
@@ -1078,6 +1170,7 @@ export const MODEL_CATEGORIES = [
     "image",
     "video",
     "text",
+    "decision",
     "audio",
     "3d",
     "embedding",
@@ -1119,7 +1212,47 @@ export type ModelCapability =
 
 /** Model information */
 /** Model catalog to list: `/<kind>/models` on the API. */
-export type ModelKind = "text" | "image" | "video" | "audio" | "embeddings";
+export type ModelKind =
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "3d"
+    | "embeddings";
+
+export interface ModelStatusOptions extends RequestOptions {
+    traffic?: "all" | "regular";
+    minutes?: number;
+}
+
+export interface ModelStatusRow {
+    model: string;
+    event_type: string;
+    model_used: string;
+    provider: string;
+    is_rollup: number;
+    fallback_used: boolean;
+    total_requests: number;
+    status_2xx: number;
+    errors_4xx: number;
+    errors_5xx: number;
+    served: number;
+    fallback_rescues: number;
+    retried_503s: number;
+    last_error_at: string;
+    latency_p50_ms: number | null;
+    latency_p95_ms: number | null;
+    avg_latency_ms: number | null;
+    last_request_at: string;
+    tokens_per_second: number | null;
+}
+
+export interface ModelStatusResponse {
+    meta: { name: string; type: string }[];
+    data: ModelStatusRow[];
+    rows: number;
+    statistics?: { elapsed: number; rows_read: number; bytes_read: number };
+}
 
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */

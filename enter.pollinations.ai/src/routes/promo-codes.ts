@@ -10,6 +10,7 @@ import { count, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -92,69 +93,75 @@ const redeemPromoCodeSchema = z.object({
  */
 export const promoCodeRedeemRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: false, allowApiKey: true }))
-    .post("/redeem", validator("json", redeemPromoCodeSchema), async (c) => {
-        await c.var.auth.requireAuthorization({
-            message: "Authentication required to redeem a code",
-        });
-        if (c.var.auth.apiKey) {
-            throw new HTTPException(403, {
-                message: "Codes can only be redeemed from the dashboard",
+    .post(
+        "/redeem",
+        describeRoute({ hide: true }),
+        validator("json", redeemPromoCodeSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to redeem a code",
             });
-        }
-        const user = c.var.auth.requireUser();
-        if (user.githubId == null) {
-            throw new HTTPException(403, {
-                message: "Redeeming a code requires a GitHub account",
-            });
-        }
+            if (c.var.auth.apiKey) {
+                throw new HTTPException(403, {
+                    message: "Codes can only be redeemed from the dashboard",
+                });
+            }
+            const user = c.var.auth.requireUser();
+            if (user.githubId == null) {
+                throw new HTTPException(403, {
+                    message:
+                        "Connect GitHub on your account page to redeem a code.",
+                });
+            }
 
-        const { code } = c.req.valid("json");
-        const promo = await c.env.KV.get<PromoCode>(
-            `${PROMO_CODE_PREFIX}${normalizeCode(code)}`,
-            "json",
-        );
-        // One message for unknown and expired codes, so codes can't be probed.
-        if (!promo || new Date(promo.expiresAt).getTime() <= Date.now()) {
-            throw new HTTPException(404, {
-                message: "This code is invalid or has expired",
-            });
-        }
+            const { code } = c.req.valid("json");
+            const promo = await c.env.KV.get<PromoCode>(
+                `${PROMO_CODE_PREFIX}${normalizeCode(code)}`,
+                "json",
+            );
+            // One message for unknown and expired codes, so codes can't be probed.
+            if (!promo || new Date(promo.expiresAt).getTime() <= Date.now()) {
+                throw new HTTPException(404, {
+                    message: "This code is invalid or has expired",
+                });
+            }
 
-        const db = drizzle(c.env.DB, { schema });
-        const questId = `promo:${promo.eventId}`;
-        // ponytail: count-then-insert isn't atomic, so simultaneous redemptions
-        // at the limit can overshoot it slightly; fine for event-sized limits.
-        const [redeemed] = await db
-            .select({ count: count() })
-            .from(schema.rewards)
-            .where(eq(schema.rewards.questId, questId));
-        if ((redeemed?.count ?? 0) >= promo.maxRedemptions) {
-            throw new HTTPException(410, {
-                message: "This code has been fully redeemed",
-            });
-        }
-        const { rewardIds } = await recordRewards(db, [
-            {
-                idempotencyKey: rewardKey(questId, user.githubId),
-                userId: user.id,
-                amount: promo.pollenAmount,
-                bucket: "tier",
-                questId,
-                title: promo.title,
-            },
-        ]);
-        const [rewardId] = rewardIds;
-        if (!rewardId) {
-            throw new HTTPException(409, {
-                message: "You have already redeemed a code for this event",
-            });
-        }
+            const db = drizzle(c.env.DB, { schema });
+            const questId = `promo:${promo.eventId}`;
+            // ponytail: count-then-insert isn't atomic, so simultaneous redemptions
+            // at the limit can overshoot it slightly; fine for event-sized limits.
+            const [redeemed] = await db
+                .select({ count: count() })
+                .from(schema.rewards)
+                .where(eq(schema.rewards.questId, questId));
+            if ((redeemed?.count ?? 0) >= promo.maxRedemptions) {
+                throw new HTTPException(410, {
+                    message: "This code has been fully redeemed",
+                });
+            }
+            const { rewardIds } = await recordRewards(db, [
+                {
+                    idempotencyKey: rewardKey(questId, user),
+                    userId: user.id,
+                    amount: promo.pollenAmount,
+                    bucket: "tier",
+                    questId,
+                    title: promo.title,
+                },
+            ]);
+            const [rewardId] = rewardIds;
+            if (!rewardId) {
+                throw new HTTPException(409, {
+                    message: "You have already redeemed a code for this event",
+                });
+            }
 
-        const result = await claimReward(db, { rewardId, userId: user.id });
-        return c.json({
-            eventId: promo.eventId,
-            pollenAmount: promo.pollenAmount,
-            claimed: result.claimed,
-            newBalance: result.newBalance,
-        });
-    });
+            const result = await claimReward(db, { rewardId, userId: user.id });
+            return c.json({
+                eventId: promo.eventId,
+                pollenAmount: promo.pollenAmount,
+                claimed: result.claimed,
+                newBalance: result.newBalance,
+            });
+        },
+    );

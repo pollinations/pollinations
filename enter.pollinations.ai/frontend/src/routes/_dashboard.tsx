@@ -1,4 +1,4 @@
-import { Button, GitHubIcon, InlineLink } from "@pollinations/ui";
+import { Button, GitHubIcon, GoogleIcon, InlineLink } from "@pollinations/ui";
 import {
     Await,
     createFileRoute,
@@ -8,6 +8,7 @@ import {
 import { Suspense, useDeferredValue, useState } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
+import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
@@ -16,10 +17,13 @@ import {
     PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
-import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
+import {
+    DASHBOARD_NAV_ITEMS,
+    SIGNED_OUT_NAV_ITEMS,
+} from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
 import { fetchAccountBalance } from "../hooks/use-account-balance.ts";
-import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
 let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
@@ -78,6 +82,12 @@ export const Route = createFileRoute("/_dashboard")({
                   .then((r) => (r.ok ? r.json() : null))
                   .catch(() => null)
             : Promise.resolve(null);
+        const apps = user
+            ? accountClient.apps
+                  .$get()
+                  .then(async (r) => (r.ok ? (await r.json()).apps : null))
+                  .catch(() => null)
+            : Promise.resolve([] as ListedApp[]);
         // Developer earnings over the last 7 days, split by which balance
         // the spending users paid from.
         const earnings = user
@@ -107,13 +117,14 @@ export const Route = createFileRoute("/_dashboard")({
             apiKeys,
             balance,
             profile,
+            apps,
             earnings,
         };
     },
     component: DashboardLayout,
 });
 
-export function useDashboardRetry(resource: "balance" | "profile") {
+export function useDashboardRetry(resource: "balance" | "profile" | "apps") {
     const router = useRouter();
     return async () => {
         await router.invalidate({
@@ -144,7 +155,7 @@ function DashboardLayout() {
 
     return (
         <DashboardShell
-            navItems={data.user ? undefined : SIGNED_OUT_NAV_ITEMS}
+            navItems={data.user ? DASHBOARD_NAV_ITEMS : SIGNED_OUT_NAV_ITEMS}
             accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}
@@ -197,7 +208,7 @@ export function SignedOutAccountArea({
 }: {
     callbackURL?: string;
 } = {}) {
-    const { isSigningIn, error, signIn } = useGitHubSignIn(callbackURL);
+    const { signingInWith, error, signIn } = useSocialSignIn(callbackURL);
 
     return (
         <div className="flex flex-col gap-2">
@@ -205,12 +216,27 @@ export function SignedOutAccountArea({
                 as="button"
                 intent="brand"
                 data-theme="accent"
-                onClick={() => void signIn()}
-                disabled={isSigningIn}
+                onClick={() => void signIn("github")}
+                disabled={signingInWith !== null}
                 className="w-full justify-center gap-2 text-center"
             >
                 <GitHubIcon className="h-4 w-4 shrink-0" />
-                {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
+                {signingInWith === "github"
+                    ? "Signing in..."
+                    : "Sign in with GitHub"}
+            </Button>
+            <Button
+                as="button"
+                intent="brand"
+                data-theme="accent"
+                onClick={() => void signIn("google")}
+                disabled={signingInWith !== null}
+                className="w-full justify-center gap-2 text-center"
+            >
+                <GoogleIcon className="h-4 w-4 shrink-0" />
+                {signingInWith === "google"
+                    ? "Signing in..."
+                    : "Sign in with Google"}
             </Button>
             <p className="px-1 text-center text-micro font-normal leading-[1.35] text-theme-text-muted">
                 By continuing, you agree to the{" "}

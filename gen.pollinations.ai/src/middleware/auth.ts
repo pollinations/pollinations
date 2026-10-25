@@ -24,6 +24,7 @@ type ModelVariables = {
         resolved: string;
         definition: Pick<ModelDefinition, "category" | "aliases">;
         communityEndpoint?: CommunityEndpointRuntime;
+        endpoint?: string;
     };
 };
 
@@ -51,7 +52,7 @@ export type AuthEnv = {
 };
 
 const AUTHENTICATION_REQUIRED_MESSAGE =
-    "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
+    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys";
 
 function installAuth(
     c: Context<AuthEnv>,
@@ -79,7 +80,14 @@ function installAuth(
         if (!apiKey) return;
 
         const models = apiKey.permissions?.models;
-        if (!keyAllowsModel(models, model.resolved, model.definition)) {
+        if (
+            !keyAllowsModel(
+                models,
+                model.resolved,
+                model.definition,
+                model.endpoint,
+            )
+        ) {
             // A key limited to specific models asks for this one model; a key
             // limited to categories asks for the model's category.
             const grant = models?.some((value) => !isModelCategory(value))

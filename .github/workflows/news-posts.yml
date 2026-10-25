@@ -1,11 +1,12 @@
 name: News / Posts
 
-# Writes, saves and delivers the news posts at today's times. 06:00 writes
-# yesterday's daily (on Sunday also the week, on the 1st also last month) and
-# schedules their Buffer posts; Sunday 18:00 sends the week's Discord post. Wednesday 14:00 writes the
-# model post, sends it to Discord and only then saves it, so a failed send never
-# moves next week's comparison. A run started by hand practises by default: it
-# shows what it would save, and saves and delivers nothing.
+# Writes, saves and delivers the news posts at today's times. 06:00 records /models
+# when it changed, writes yesterday's daily (on Sunday also the week, on the 1st also
+# last month) and schedules their Buffer posts; Sunday 18:00 sends the week's Discord
+# post. Wednesday 14:00 writes the model post and the community post, each from the
+# recorded catalog against a week earlier; each is sent to Discord and only then
+# saved. A run started by hand practises by default: it shows what it would save, and
+# saves and delivers nothing.
 on:
   schedule:
     - cron: '0 6 * * *'
@@ -14,18 +15,21 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: 'morning = what the 06:00 run does on that day; afternoon = the Sunday 18:00 run (the week''s Discord post)'
+        description: 'morning = what the 06:00 run does on that day; afternoon = the Sunday 18:00 run (the week''s Discord post); wednesday = the 14:00 model and community posts'
         required: true
         type: choice
         options:
           - morning
           - afternoon
+          - wednesday
           - daily
           - weekly
           - monthly
           - models
+          - community
+          - catalog
       date:
-        description: 'The day (morning, afternoon, daily), the Sunday (weekly), the month, YYYY-MM (monthly) or the Wednesday (models)'
+        description: 'The day (morning, afternoon, daily, catalog), the Sunday (weekly), the month, YYYY-MM (monthly) or the Wednesday (wednesday, models, community)'
         required: true
         type: string
       run:
@@ -51,12 +55,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  JOB: ${{ inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'models' || 'afternoon') }}
+  JOB: ${{ inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'wednesday' || 'afternoon') }}
   RUN: ${{ inputs.run || 'all' }}
 
 jobs:
   posts:
-    if: ${{ (inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'models' || 'afternoon')) != 'afternoon' && (inputs.run || 'all') != 'deliver' }}
+    if: ${{ (inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'wednesday' || 'afternoon')) != 'afternoon' && (inputs.run || 'all') != 'deliver' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -80,22 +84,27 @@ jobs:
           DATE: ${{ inputs.date }}
           GH_TOKEN: ${{ github.token }}
         # A scheduled run is for the day it was created, so a rerun keeps it.
-        # The 06:00 run on day T writes T−1's daily, on Sunday also the week
-        # ending T, and on the 1st also last month, in that order.
+        # The 06:00 run on day T records the catalog, then writes T−1's daily, on
+        # Sunday also the week ending T, and on the 1st also last month, in that order.
         run: |
           DATE=${DATE:-$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at[:10]')}
           python - "$JOB" "$DATE" >> "$GITHUB_OUTPUT" <<'EOF'
           import sys
-          from datetime import date, timedelta
+          from datetime import UTC, date, datetime, timedelta
           sys.path.insert(0, "operations/social/scripts")
           from posts import check_date
           job, day = sys.argv[1:]
           posts = [(job, day)]
+          if job == "wednesday":
+              posts = [("models", day), ("community", day)]
           if job == "morning":
               check_date("daily", day)
               today = date.fromisoformat(day)
               yesterday = today - timedelta(days=1)
               posts = [("daily", yesterday.isoformat())]
+              # /models is only recorded as it is now: a rerun on a later day skips it.
+              if day == datetime.now(UTC).strftime("%Y-%m-%d"):
+                  posts.insert(0, ("catalog", day))
               if today.isoweekday() == 7:
                   posts.append(("weekly", today.isoformat()))
               if today.day == 1:
@@ -103,11 +112,6 @@ jobs:
           for job, day in posts:
               check_date(job, day)
           print("posts=" + " ".join(f"{job} {day}" for job, day in posts))
-          print("folders<<FOLDERS")
-          for job, day in posts:
-              # The model post compares with the latest snapshot and adds to models.md.
-              print(f"/operations/social/news/{job}/" if job == "models" else f"/operations/social/news/{job}/{day}/")
-          print("FOLDERS")
           EOF
 
       - name: Checkout news
@@ -118,19 +122,28 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            operations/social/news/gists/**/*.json
-            operations/social/news/*/*/summary.json
-            ${{ steps.posts.outputs.folders }}
+            /operations/social/news/data/
+            /operations/social/news/posts/
+
+      - name: Pollinations bot token
+        # Reads each PR's Area, Work type and Source from the Dev project.
+        id: bot
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
 
       - name: Write and save
         env:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
-          GITHUB_TOKEN: ${{ github.token }}  # the monthly job counts the month's merged PRs
+          GITHUB_TOKEN: ${{ steps.bot.outputs.token }}  # the day's PRs and the month's merged PRs
           POSTS: ${{ steps.posts.outputs.posts }}
           OVERWRITE: ${{ inputs.overwrite || env.RUN == 'preview' }}
         # Each post is saved and pushed before the next is written. A preview
-        # saves without committing, for the next step to show. The model post is
-        # only written here: the deliver job saves it once Discord has it.
+        # saves without committing, for the next step to show. The model and
+        # community posts are only written here: the deliver job saves each once
+        # Discord has it.
         run: |
           git -C news config user.name "github-actions[bot]"
           git -C news config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -138,10 +151,11 @@ jobs:
           [ "$OVERWRITE" = true ] && flag=--overwrite
           set -- $POSTS
           while [ $# -gt 0 ]; do
-            saved="news/operations/social/news/$1/$2/summary.json"
+            saved="news/operations/social/news/data/summaries/$1/$2.json"
             commands="write save"
-            if [ "$1" = models ]; then
-              saved="news/operations/social/news/models/snapshots/$2.json"
+            [ "$1" = catalog ] && saved="news/operations/social/news/data/models/$2.json"
+            if [ "$1" = models ] || [ "$1" = community ]; then
+              saved="news/operations/social/news/posts/discord/$1/$2.json"
               [ "$RUN" != preview ] && commands=write
             fi
             if [ -z "$flag" ] && [ -e "$saved" ]; then
@@ -180,12 +194,12 @@ jobs:
           path: work/
           if-no-files-found: ignore
 
-      - name: Keep the model post for the deliver job
-        if: ${{ env.JOB == 'models' && env.RUN != 'preview' }}
+      - name: Keep the model and community posts for the deliver job
+        if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) && env.RUN != 'preview' }}
         uses: actions/upload-artifact@v7
         with:
-          name: models
-          path: work/models/
+          name: posts
+          path: work/
 
       - name: Report failure as an issue
         if: ${{ failure() && env.RUN != 'preview' }}
@@ -197,8 +211,8 @@ jobs:
   deliver:
     needs: posts
     # After the posts, even when one failed, so a failed month never stops the day's
-    # posts; the model post only after it was written.
-    if: ${{ !cancelled() && (inputs.run || 'all') != 'preview' && (inputs.run || 'all') != 'write + save' && (needs.posts.result == 'success' || (inputs.job || (github.event.schedule == '0 14 * * 3' && 'models')) != 'models') }}
+    # posts; the model and community posts only after they were written.
+    if: ${{ !cancelled() && (inputs.run || 'all') != 'preview' && (inputs.run || 'all') != 'write + save' && (needs.posts.result == 'success' || !contains(fromJSON('["models", "community", "wednesday"]'), inputs.job || (github.event.schedule == '0 14 * * 3' && 'wednesday' || ''))) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -216,12 +230,12 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Fetch the model post
-        if: ${{ env.JOB == 'models' }}
+      - name: Fetch the model and community posts
+        if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) }}
         uses: actions/download-artifact@v8
         with:
-          name: models
-          path: work/models
+          name: posts
+          path: work
 
       - name: Deliver
         env:
@@ -251,8 +265,10 @@ jobs:
               [ "$weekday" = 7 ] && commands=("send weekly $DATE") ;;
             daily|weekly)
               commands=("schedule $JOB $DATE") ;;
-            models)
-              commands=("send models $DATE --work work/models") ;;
+            models|community)
+              commands=("send $JOB $DATE --work work/$JOB") ;;
+            wednesday)
+              commands=("send models $DATE --work work/models" "send community $DATE --work work/community") ;;
           esac
           failed=0
           for command in "${commands[@]}"; do
@@ -260,35 +276,42 @@ jobs:
           done
           exit $failed
 
-      - name: Checkout news for the model post
-        if: ${{ env.JOB == 'models' }}
+      - name: Checkout news for the model and community posts
+        if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) }}
         uses: actions/checkout@v5
         with:
           ref: news
           path: news
           filter: blob:none
           sparse-checkout-cone-mode: false
-          sparse-checkout: /operations/social/news/models/
+          sparse-checkout: |
+            /operations/social/news/data/
+            /operations/social/news/posts/discord/
 
-      - name: Save the model post
-        if: ${{ env.JOB == 'models' }}
+      - name: Save the model and community posts
+        if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) }}
         env:
           DATE: ${{ inputs.date }}
           GH_TOKEN: ${{ github.token }}
           DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
-        # Only after Discord has it (or there was nothing to send): the snapshot is
-        # next week's comparison. A rerun after a save finds it saved.
+        # Only after Discord has it: the saved post is what went out. A week without
+        # changes saves nothing, and a rerun after a save finds it saved.
         run: |
           DATE=${DATE:-$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at[:10]')}
-          if [ -e "news/operations/social/news/models/snapshots/$DATE.json" ]; then
-            echo "models $DATE is already saved"
-            exit 0
-          fi
-          python operations/social/scripts/posts.py save models "$DATE" --news news --work work/models
+          jobs=$JOB
+          [ "$JOB" = wednesday ] && jobs="models community"
+          for job in $jobs; do
+            if [ -e "news/operations/social/news/posts/discord/$job/$DATE.json" ]; then
+              echo "$job $DATE is already saved"
+            else
+              python operations/social/scripts/posts.py save "$job" "$DATE" --news news --work "work/$job"
+            fi
+          done
           git -C news config user.name "github-actions[bot]"
           git -C news config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C news add --all
-          git -C news commit -qm "news: add models $DATE"
+          git -C news diff --cached --quiet && exit 0
+          git -C news commit -qm "news: add $jobs $DATE"
           for try in 1 2 3; do
             git -C news push -q origin HEAD:news && break
             [ "$try" = 3 ] && exit 1

@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "STRUCTURED_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "structured",
+        name: "Structured JSON",
+        description:
+            "Get JSON that matches a schema: ask a model, validate the reply, and repair it until it conforms.",
+        binding: "STRUCTURED_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "json_generate bills the selected text model's listed rate. Extraction, repair and validation are free.",
             rates: [],
         },
     },

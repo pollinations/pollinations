@@ -6,6 +6,11 @@ export type ModelHealthRow = {
     is_rollup?: number | boolean;
     status_2xx?: number;
     errors_5xx?: number;
+    /** Per-status split of errors_4xx; always sums to errors_4xx. */
+    errors_400?: number;
+    errors_422?: number;
+    errors_429?: number;
+    errors_other_4xx?: number;
 };
 
 export type ModelHealthStatus = "healthy" | "degraded" | "down" | "unknown";

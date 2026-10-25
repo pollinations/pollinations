@@ -3,7 +3,8 @@ TOKEN tinybird_read READ
 
 DESCRIPTION >
 Model health statistics, grouped by model and event type.
-Returns request counts, 4xx/5xx error counts, response times, and a
+Returns request counts, 4xx/5xx error counts (4xx split per status; semantics
+as documented in model_route_health), response times, and a
 completion-token throughput estimate (tokens/sec) for monitoring dashboards.
 Also separates primary queue rejection from successful fallback rescue so a
 healthy final response is not reported as a model outage.
@@ -22,6 +23,11 @@ SQL >
         countIf(is_final) as total_requests,
         countIf(is_final AND response_status >= 200 AND response_status < 300) as status_2xx,
         countIf(is_final AND response_status >= 400 AND response_status < 500) as errors_4xx,
+        -- Per-status split; see DESCRIPTION in model_route_health.
+        countIf(is_final AND response_status = 400) as errors_400,
+        countIf(is_final AND response_status = 422) as errors_422,
+        countIf(is_final AND response_status = 429) as errors_429,
+        countIf(is_final AND response_status >= 400 AND response_status < 500 AND response_status NOT IN (400, 422, 429)) as errors_other_4xx,
         countIf(is_final AND response_status >= 500) as errors_5xx,
         -- Whether this model's OWN upstream works, which the columns above
         -- cannot show: a model rescued on every request reads 100% healthy up

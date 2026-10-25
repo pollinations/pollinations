@@ -10,6 +10,7 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -44,7 +45,9 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables & Partial<ModelVariables>;
+    Variables: LoggerVariables &
+        RequestIdVariables &
+        Partial<ModelVariables & AuthVariables>;
 };
 
 function createTextCacheApp() {
@@ -156,6 +159,50 @@ function chatInit(body: unknown): RequestInit {
 }
 
 describe("text cache", () => {
+    it("caches caller lists per API key while repeats by the same key rejoin", async () => {
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "same-request");
+                c.set("model", {
+                    requested: "pruna,flux",
+                    resolved: "pruna",
+                    definition: {},
+                } as ModelVariables["model"]);
+                c.set("auth", {
+                    apiKey: { id: c.req.header("x-test-key") },
+                } as AuthVariables["auth"]);
+                await next();
+            })
+            .get(
+                "/text/:prompt",
+                textCache,
+                () =>
+                    new Response(`origin:${++originHits}`, {
+                        headers: { "Content-Type": "text/plain" },
+                    }),
+            );
+        const env = createTextCacheEnv();
+        for (const [key, status] of [
+            ["one", "MISS"],
+            ["two", "MISS"],
+            ["one", "HIT"],
+        ]) {
+            const result = await dispatch(
+                app,
+                "/text/list?model=pruna,flux",
+                {
+                    headers: { "x-test-key": key },
+                },
+                env,
+            );
+            await consumeAndWait(result);
+            expect(result.response.headers.get("X-Cache")).toBe(status);
+        }
+        expect(originHits).toBe(2);
+    });
+
     it("partitions managed-agent cache keys by caller API key", async () => {
         const request = new Request(
             "https://gen.pollinations.ai/v1/chat/completions",

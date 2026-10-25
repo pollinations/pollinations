@@ -310,10 +310,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             normalizedJsonBody(
                 JSON.stringify({
                     prompt: safePrompt,
-                    // The model string as the caller sent it, so a fallback
-                    // list gets its own entry instead of storing one model's
-                    // image under another's key. Same key as GET /image.
-                    model: c.var.model.requested,
+                    model: c.var.model.requested.includes(",")
+                        ? c.var.model.requested
+                        : c.var.model.resolved,
                     ...resolved,
                     ...collectPassthrough(body, ...CACHE_PARAMS),
                 }),

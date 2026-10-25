@@ -938,6 +938,36 @@ test("media caller-lists share their native cache without colliding with a singl
     expect(mocks.deepInfra.state.requests).toHaveLength(2);
 });
 
+test("media protocol envelopes report the serving caller alternative", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "gptImage", "deepInfra");
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+    for (const protocol of ["responses", "chat/completions"]) {
+        const prompt = `caller model envelope ${crypto.randomUUID()}`;
+        const result = await fetchWorker(`/v1/${protocol}`, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${key}`,
+            },
+            body: JSON.stringify({
+                model: "gpt-image-2,pruna",
+                ...(protocol === "responses"
+                    ? { input: prompt }
+                    : { messages: [{ role: "user", content: prompt }] }),
+            }),
+        });
+        expect(result.response.status).toBe(200);
+        const body = (await result.response.json()) as { model: string };
+        expect(result.response.headers.get("x-fallback-target")).toBe(
+            "config.targets[1]",
+        );
+        expect(body.model).toBe(result.response.headers.get("x-model-used"));
+        await result.wait();
+    }
+});
+
 test("media Responses and Chat share native generation, cache and one debit", async ({
     mocks,
 }) => {
@@ -3457,6 +3487,53 @@ test.for([
     },
 );
 
+test("a caller-list payment refusal is not replayed to a funded caller", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
+    const unfunded = await createTestApiKey({
+        user: { tierBalance: 100, packBalance: 0 },
+    });
+    const funded = await createTestApiKey({
+        user: { tierBalance: 100, packBalance: 100 },
+    });
+    const body = JSON.stringify({
+        model: "openai-fast,qwen3.7-plus",
+        messages: [
+            {
+                role: "user",
+                content: `caller-list fail gpt-5-nano ${crypto.randomUUID()}`,
+            },
+        ],
+    });
+    const bindings = withInlineGenerationCoordinator(env);
+    const results = await Promise.all(
+        [unfunded, funded].map((caller) =>
+            fetchWorker(
+                "/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${caller.key}`,
+                    },
+                    body,
+                },
+                bindings,
+            ),
+        ),
+    );
+    expect(results.map((result) => result.response.status)).toEqual([402, 200]);
+    for (const result of results) {
+        await result.response.text();
+        await result.wait();
+    }
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
+});
+
 test("caller-list checks the next choice against a finite key budget", async ({
     mocks,
 }) => {
@@ -3827,6 +3904,32 @@ test.for(["openai/gpt-image-2", "tongyi-mai/z-image-turbo"])(
             modelRequested: model,
             responseStatus: 400,
         });
+    },
+);
+
+test.for([
+    [
+        "image=https%3A%2F%2Fgpt-reference.test%2Fref.png",
+        "does not accept image input",
+    ],
+    ["transparent=true", "Transparent backgrounds are not supported"],
+])(
+    "caller-list alternatives preserve the requested image capabilities (%s)",
+    async ([query, message], { mocks }) => {
+        await mocks.enable("tinybird", "gptImage", "deepInfra");
+        const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+        const result = await fetchWorker(
+            `/image/caller-capability-${crypto.randomUUID()}?model=gpt-image-2,flux&${query}`,
+            { headers: { authorization: `Bearer ${key}` } },
+        );
+        expect(result.response.status).toBe(400);
+        expect(await result.response.text()).toContain(message);
+        await result.wait();
+        expect(mocks.deepInfra.state.requests).toHaveLength(0);
+        expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
+        expect(
+            mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+        ).toHaveLength(0);
     },
 );
 

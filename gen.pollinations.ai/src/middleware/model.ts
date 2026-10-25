@@ -297,7 +297,12 @@ export function resolveModel(
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    keyAllowsModel(allowedModels, entry.id, entry.definition),
+                    keyAllowsModel(
+                        allowedModels,
+                        entry.id,
+                        entry.definition,
+                        resolved.endpoint,
+                    ),
             );
         }
         c.set("model", resolved);

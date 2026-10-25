@@ -1,6 +1,7 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
@@ -133,7 +134,7 @@ export function mediaHeaders(
 }
 
 export function throw3dError(error: unknown): never {
-    if (error instanceof UpstreamError) throw error;
+    if (error instanceof HTTPException) throw error;
 
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {

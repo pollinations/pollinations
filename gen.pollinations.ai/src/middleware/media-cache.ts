@@ -3,6 +3,7 @@
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
+import type { AuthVariables } from "./auth.ts";
 import {
     createGenerationCache,
     createGenerationExecutionCache,
@@ -39,8 +40,15 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         storage: "media",
         label: config.label,
         async getKey(c) {
-            const variables = c.var as typeof c.var & Partial<ModelVariables>;
+            const variables = c.var as typeof c.var &
+                Partial<ModelVariables & AuthVariables>;
             const cacheUrl = new URL(c.var.generationRequestUrl ?? c.req.url);
+            if (variables.model?.requested.includes(",")) {
+                cacheUrl.searchParams.set(
+                    "__caller_list_key",
+                    variables.auth?.apiKey?.id ?? "anonymous",
+                );
+            }
             if (c.var.generationCacheBody) {
                 cacheUrl.searchParams.set(
                     "__request_body",

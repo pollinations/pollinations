@@ -169,7 +169,9 @@ export function mediaResponses(protocol: MediaProtocol) {
         // The file is already stored; this response only needs its URL.
         await media.body?.cancel();
         const response = createMediaResponse(
-            entry.id,
+            c.var.model.requested.includes(",")
+                ? (media.headers.get("x-model-used") ?? entry.id)
+                : entry.id,
             mediaUrl,
             media.headers.get("content-type") ?? "",
         );

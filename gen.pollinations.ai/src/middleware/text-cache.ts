@@ -41,13 +41,14 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        // Agents carry a scope; everything else stays shared. An agent run gets
-        // its own entry, so a repeat runs its tools again; the coordinator still
-        // hands a non-streaming result to its caller through that entry.
+        // Agent runs are unique; caller lists are stable per key because their
+        // choices depend on that key's permissions and available budget.
         const cacheScope = variables.model?.cacheScope;
         const partition = cacheScope
             ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
-            : undefined;
+            : variables.model?.requested.includes(",")
+              ? `caller-list:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
+              : undefined;
         return generateCacheKey(
             c.req.raw,
             bodyText,

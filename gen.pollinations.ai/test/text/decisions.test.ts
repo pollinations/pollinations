@@ -588,7 +588,7 @@ for (const packBalance of [0, 1]) {
             mocks.decisions.state.requests.map((request) => request.body),
         ).toEqual(
             (packBalance
-                ? ["respan/span-01-lite", "typesafe/jev-1.13"]
+                ? ["respan/span-01-lite", "typesafe-ai/jev-1.13.0"]
                 : ["respan/span-01-lite"]
             ).map((model) => expect.objectContaining({ model })),
         );
@@ -602,7 +602,7 @@ for (const packBalance of [0, 1]) {
             expect(billed[0]).toMatchObject({
                 modelRequested: model,
                 modelUsed: "typesafe/jev-1.13",
-                modelProviderUsed: "openrouter",
+                modelProviderUsed: "vercel",
             });
             expect(billed[0].totalPrice).toBeGreaterThan(0);
             expect(balance.packBalance).toBeCloseTo(
@@ -742,6 +742,31 @@ test("a text key needs decision on /alpha/decisions but still reaches Jev on cha
     expect(JSON.parse(body.choices[0].message.content)).toEqual(answers);
     await chat.wait();
     expect(mocks.decisions.state.requests).toHaveLength(1);
+});
+
+test("a text key keeps authorized decision alternatives on chat", async ({
+    mocks,
+}) => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["text"],
+        user: { tierBalance: 100, packBalance: 1 },
+    });
+    mocks.decisions.state.failModel = "respan/span-01-lite";
+    const { response, wait } = await post("/v1/chat/completions", key, {
+        model: "respan/span-01-lite,vllm-sr/d3",
+        messages: [
+            {
+                role: "user",
+                content: JSON.stringify({ state: "Disk at 91%.", questions }),
+            },
+        ],
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("vllm-sr/d3");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.json();
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
 test("the decision category holds exactly the models served at /alpha/decisions", async () => {

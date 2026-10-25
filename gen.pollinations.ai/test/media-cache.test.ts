@@ -8,9 +8,11 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
 import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 
@@ -24,7 +26,10 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables &
+        GenerationCacheVariables &
+        Partial<ModelVariables & AuthVariables>;
 };
 
 type MediaCache = typeof imageCache;
@@ -110,6 +115,50 @@ async function consumeAndWait(result: Awaited<ReturnType<typeof dispatch>>) {
 }
 
 describe("media cache", () => {
+    it("caches caller lists per API key while repeats by the same key rejoin", async () => {
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "same-request");
+                c.set("model", {
+                    requested: "pruna,flux",
+                    resolved: "pruna",
+                    definition: {},
+                } as ModelVariables["model"]);
+                c.set("auth", {
+                    apiKey: { id: c.req.header("x-test-key") },
+                } as AuthVariables["auth"]);
+                await next();
+            })
+            .get(
+                "/media/:prompt",
+                imageCache,
+                () =>
+                    new Response(`origin:${++originHits}`, {
+                        headers: { "Content-Type": "image/png" },
+                    }),
+            );
+        const env = createMediaCacheEnv();
+        for (const [key, status] of [
+            ["one", "MISS"],
+            ["two", "MISS"],
+            ["one", "HIT"],
+        ]) {
+            const result = await dispatch(
+                app,
+                "/media/list?model=pruna,flux",
+                {
+                    headers: { "x-test-key": key },
+                },
+                env,
+            );
+            await consumeAndWait(result);
+            expect(result.response.headers.get("X-Cache")).toBe(status);
+        }
+        expect(originHits).toBe(2);
+    });
+
     it("uses an opaque full-request hash, including long prompt suffixes", async () => {
         const prefix = "x".repeat(2000);
         const first = await generateCacheKey(

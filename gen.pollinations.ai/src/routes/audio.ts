@@ -4018,13 +4018,15 @@ export async function handleVoiceChanger(c: AudioContext): Promise<Response> {
         });
     }
 
-    return changeVoiceWithElevenLabs({
-        audio,
-        voice: typeof voice === "string" && voice !== "" ? voice : "alloy",
-        responseFormat: resolvedFormat,
-        apiKey: c.env.ELEVENLABS_API_KEY,
-        log,
-    });
+    return withAudioFallback(c, () =>
+        changeVoiceWithElevenLabs({
+            audio,
+            voice: typeof voice === "string" && voice !== "" ? voice : "alloy",
+            responseFormat: resolvedFormat,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            log,
+        }),
+    );
 }
 
 export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
@@ -4041,11 +4043,13 @@ export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
             message: "Missing required audio file.",
         });
     }
-    return isolateVoiceWithElevenLabs({
-        audio,
-        apiKey: c.env.ELEVENLABS_API_KEY,
-        log,
-    });
+    return withAudioFallback(c, () =>
+        isolateVoiceWithElevenLabs({
+            audio,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            log,
+        }),
+    );
 }
 
 export async function handleSpeech(c: AudioContext): Promise<Response> {

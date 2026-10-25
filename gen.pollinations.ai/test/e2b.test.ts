@@ -936,10 +936,19 @@ test("a shared port wakes its paused sandbox, paid in advance by the key that sh
     expect(wake.totalPrice).toBeCloseTo(LEASE_300S, 5);
     expect(await questPollen(owner.userId)).toBeCloseTo(10 - 2 * LEASE_300S, 5);
 
-    // A sandbox its owner paused inside the cached lease wakes again.
+    // A sandbox its owner paused inside the cached lease wakes again, and
+    // still gets the request.
     await post(owner.key, `/sandboxes/${sandboxID}/pause`);
-    expect(await (await visit(host)).text()).toBe("port 3000 says hi");
+    const again = await visit(host, "/update", {
+        method: "POST",
+        body: "again",
+    });
+    expect(await again.text()).toBe("port 3000 says hi");
     expect(e2b.sandboxes[0].state).toBe("running");
+    expect(e2b.portRequests.at(-1)).toMatchObject({
+        path: "/update",
+        body: "again",
+    });
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
 });
 
@@ -954,6 +963,15 @@ test("an unshared port, a gone sandbox or a payer who can't pay gets no wake", a
     const unshared = await visit(`4000-${sandboxID}.pollinations.app`);
     expect(unshared.status).toBe(404);
     expect(await unshared.text()).toBe("No sandbox port is shared here.\n");
+
+    // Unsharing ends it at once, also where an isolate served it before.
+    await sharePort(owner.key, sandboxID, 4000);
+    const served = await visit(`4000-${sandboxID}.pollinations.app`);
+    expect(await served.text()).toBe("port 4000 says hi");
+    await db.delete(sandboxPort);
+    expect((await visit(`4000-${sandboxID}.pollinations.app`)).status).toBe(
+        404,
+    );
 
     await sharePort(owner.key, sandboxID, 4000);
     const unshare = await call(
@@ -992,7 +1010,9 @@ test("an unshared port, a gone sandbox or a payer who can't pay gets no wake", a
         /^This sandbox is asleep and could not be woken: Insufficient balance\..*Top up at https:\/\//,
     );
     expect(e2b.sandboxes.at(-1)?.state).toBe("paused");
-    expect(e2b.portRequests).toEqual([]);
+    expect(e2b.portRequests.map((request) => request.host)).toEqual([
+        `4000-${sandboxID}.e2b.app`,
+    ]);
     expect(await questPollen(broke.userId)).toBe(0);
 });
 
@@ -1046,6 +1066,15 @@ test("an idle timeout is opt-in, needs a kept E2B sandbox, and stays until turne
     expect(await keeps()).toMatchObject([
         { sandboxId: sandboxID, idleTimeout: null },
     ]);
+    // It comes with a timeout that keeps the sandbox, so a short connect
+    // can't seem to change it.
+    const connect = await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+        idleTimeout: 900,
+    });
+    expect(connect.status).toBe(400);
+    expect(await keeps()).toMatchObject([
+        { sandboxId: sandboxID, idleTimeout: null },
+    ]);
 });
 
 // A kept sandbox of `userId`'s that started an hour ago.
@@ -1070,7 +1099,7 @@ const runCron = async () => {
     await waitOnExecutionContext(ctx);
 };
 
-test("the cron pauses a kept sandbox idle past its idle timeout, and leaves it paused", async () => {
+test("the cron pauses a kept sandbox idle past its idle timeout, leaves it paused, and resumes one paused while active", async () => {
     const e2b = stubE2b();
     const db = drizzle(env.DB);
     const owner = await sandboxKey();
@@ -1087,16 +1116,26 @@ test("the cron pauses a kept sandbox idle past its idle timeout, and leaves it p
         .update(apikey)
         .set({ lastRequest: new Date(Date.now() - 60_000) })
         .where(inArray(apikey.id, [ownKey.id, strangersKey.id]));
+    // An idle CPU, unless said otherwise.
+    const quiet = { cpuUsedPct: 2 };
     e2b.sandboxes.push(
-        keptSandbox("idle", owner.userId, { cpuUsedPct: 2 }),
-        keptSandbox("active", owner.userId),
-        keptSandbox("agent", owner.userId),
+        keptSandbox("idle", owner.userId, quiet),
+        keptSandbox("active", owner.userId, quiet),
+        keptSandbox("agent", owner.userId, quiet),
         keptSandbox("busy", owner.userId, { cpuUsedPct: 80 }),
         // Resumed a minute ago, by a wake.
-        keptSandbox("woken", owner.userId, { startedAt: inSeconds(-60) }),
+        keptSandbox("woken", owner.userId, {
+            ...quiet,
+            startedAt: inSeconds(-60),
+        }),
         // No metrics yet: a job may run.
         keptSandbox("unmeasured", owner.userId),
         keptSandbox("asleep", owner.userId, {
+            state: "paused",
+            endAt: inSeconds(-600),
+        }),
+        // Paused without being idle, as by a failed restart.
+        keptSandbox("stalled", owner.userId, {
             state: "paused",
             endAt: inSeconds(-600),
         }),
@@ -1109,10 +1148,9 @@ test("the cron pauses a kept sandbox idle past its idle timeout, and leaves it p
             apiKeyId: owner.id,
             until: month,
             idleTimeout: 900,
-            activeAt:
-                sandboxID === "active"
-                    ? new Date(Date.now() - 100_000)
-                    : longAgo,
+            activeAt: ["active", "stalled"].includes(sandboxID)
+                ? new Date(Date.now() - 100_000)
+                : longAgo,
         })),
     );
 
@@ -1129,9 +1167,16 @@ test("the cron pauses a kept sandbox idle past its idle timeout, and leaves it p
         woken: "running",
         unmeasured: "running",
         asleep: "paused",
+        stalled: "running",
     });
-    for (const sandbox of e2b.sandboxes.slice(1, 6)) {
-        expect(Date.parse(sandbox.endAt) - Date.now()).toBeGreaterThan(590_000);
+    const renewed = e2b.sandboxes.filter(
+        (s) => !["idle", "asleep"].includes(s.sandboxID),
+    );
+    for (const sandbox of renewed) {
+        expect(
+            Date.parse(sandbox.endAt) - Date.now(),
+            sandbox.sandboxID,
+        ).toBeGreaterThan(590_000);
     }
     // Pausing ends no keep; a busy CPU is activity from now on.
     const kept = Object.fromEntries(
@@ -1143,14 +1188,15 @@ test("the cron pauses a kept sandbox idle past its idle timeout, and leaves it p
         "asleep",
         "busy",
         "idle",
+        "stalled",
         "unmeasured",
         "woken",
     ]);
     expect(Date.now() - (kept.busy.activeAt?.getTime() ?? 0)).toBeLessThan(
         10_000,
     );
-    // Only the five renewals cost anything.
-    expect(e2b.leases()).toHaveLength(5);
+    // Only the renewals cost anything.
+    expect(e2b.leases()).toHaveLength(renewed.length);
 });
 
 test("a request to a shared port wakes a sandbox paused while idle, and a connect is activity", async () => {

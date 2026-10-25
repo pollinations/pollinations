@@ -406,14 +406,20 @@ function keepUntil(timeout: unknown): Date | null {
 // Opt-in, for a kept E2B sandbox: the cron pauses it after `idleTimeout`
 // seconds without activity and leaves the keep, so the next request to a
 // shared port or connect resumes it. Without it, a keep runs until its
-// timeout. Left out, a call keeps the keep's setting, as E2B's SDKs know
-// nothing of it (undefined); 0 turns it off (null).
+// timeout. It comes with the timeout that sets a keep; left out, a call keeps
+// the keep's setting, as E2B's SDKs know nothing of it (undefined), and 0
+// turns it off (null).
 function idleTimeoutOf(
     idleTimeout: unknown,
     until: Date | null,
     azure: boolean,
 ) {
     if (idleTimeout === undefined) return undefined;
+    if (!until) {
+        throw new HTTPException(400, {
+            message: `idleTimeout needs a timeout longer than ${KEEP_LEASE_SECONDS} seconds`,
+        });
+    }
     if (idleTimeout === 0) return null;
     if (
         typeof idleTimeout !== "number" ||
@@ -428,11 +434,6 @@ function idleTimeoutOf(
     if (azure) {
         throw new HTTPException(400, {
             message: "Azure sandboxes have no idleTimeout.",
-        });
-    }
-    if (!until) {
-        throw new HTTPException(400, {
-            message: `idleTimeout needs a timeout longer than ${KEEP_LEASE_SECONDS} seconds`,
         });
     }
     return idleTimeout;
@@ -929,18 +930,16 @@ const sha256 = async (text: string) =>
         await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)),
     );
 
-type PortSecret = { header: string; secretHash: string };
+type SharedPort = typeof sandboxPort.$inferSelect;
 
-const hasSecret = async (request: Request, share: PortSecret) =>
-    (await sha256(request.headers.get(share.header) ?? "")) ===
-    share.secretHash;
+type WokenPort = { origin: string; token?: string; until: number };
 
-type WokenPort = PortSecret & { origin: string; token?: string; until: number };
-
-// ponytail: a per-isolate cache, so requests inside a paid lease make no D1,
-// enter or E2B call. Each isolate wakes on its own, which costs nothing while
-// the lease runs, and an unshare reaches other isolates only when their cached
-// lease ends. Move it to a Durable Object per sandbox if that matters.
+// ponytail: a per-isolate cache of paid leases, so requests inside one make no
+// enter or E2B call; the share itself is read from D1 on every request. A
+// wake costs nothing more while the lease runs, but simultaneous first
+// requests to a paused sandbox each prepay a lease (a webhook sender with one
+// connection sends none). Move it to a Durable Object per sandbox if that
+// matters.
 const wokenPorts = new Map<string, WokenPort>();
 
 async function unsharePort(
@@ -965,11 +964,7 @@ const portRefusal = (status: number, message: string) =>
         headers: { "content-type": "text/plain; charset=utf-8" },
     });
 
-const wrongSecret = ({ header }: PortSecret) =>
-    portRefusal(
-        403,
-        `This port needs the secret it was shared with in ${header}.`,
-    );
+const notShared = () => portRefusal(404, "No sandbox port is shared here.");
 
 // The sandbox and port a host like 8080-<sandbox id>.pollinations.app names.
 // Site names start with a letter, so no site can take such a host.
@@ -990,31 +985,16 @@ export function sandboxPortHost(env: Env["Bindings"], hostname: string) {
 async function wakePort(
     env: CloudflareBindings,
     ctx: ExecutionContext,
-    request: Request,
-    port: number,
-    sandboxID: string,
+    { sandboxId: sandboxID, port, apiKeyId }: SharedPort,
 ): Promise<WokenPort | Response> {
-    const notShared = portRefusal(404, "No sandbox port is shared here.");
-    const shared = await drizzle(env.DB)
-        .select()
-        .from(sandboxPort)
-        .where(
-            and(
-                eq(sandboxPort.sandboxId, sandboxID),
-                eq(sandboxPort.port, port),
-            ),
-        )
-        .get();
-    if (!shared) return notShared;
-    if (!(await hasSecret(request, shared))) return wrongSecret(shared);
     // A port of a sandbox that is gone, or whose payer is, stops being shared.
     const sandbox = await getSandbox(env, sandboxID);
     const payer = sandbox
-        ? await loadPayer(env, shared.apiKeyId, sandbox.metadata?.[OWNER_KEY])
+        ? await loadPayer(env, apiKeyId, sandbox.metadata?.[OWNER_KEY])
         : null;
     if (!sandbox || !payer) {
         await unsharePort(env, sandboxID, port);
-        return notShared;
+        return notShared();
     }
     const response = await payerApi(env, ctx, payer)(sandboxID, "connect", {
         timeout: DEFAULT_TIMEOUT_SECONDS,
@@ -1031,8 +1011,6 @@ async function wakePort(
     const connected = await response.json<CreatedSandbox>();
     const now = Date.now();
     const woken = {
-        header: shared.header,
-        secretHash: shared.secretHash,
         origin: `https://${port}-${sandboxID}.${connected.domain || "e2b.app"}`,
         token: connected.trafficAccessToken ?? undefined,
         // Connect never shortens a running sandbox's lease.
@@ -1059,9 +1037,27 @@ export async function servePort(
     ctx: ExecutionContext,
     { port, sandboxID }: { port: number; sandboxID: string },
 ) {
+    const shared = await drizzle(env.DB)
+        .select()
+        .from(sandboxPort)
+        .where(
+            and(
+                eq(sandboxPort.sandboxId, sandboxID),
+                eq(sandboxPort.port, port),
+            ),
+        )
+        .get();
+    if (!shared) return notShared();
+    const secret = await sha256(request.headers.get(shared.header) ?? "");
+    if (secret !== shared.secretHash) {
+        return portRefusal(
+            403,
+            `This port needs the secret it was shared with in ${shared.header}.`,
+        );
+    }
     const key = `${port}-${sandboxID}`;
     const wake = () =>
-        wakePort(env, ctx, request, port, sandboxID).catch(async (error) => {
+        wakePort(env, ctx, shared).catch(async (error) => {
             await ensureConfigured({
                 level: env.LOG_LEVEL || "debug",
                 format: env.LOG_FORMAT || "text",
@@ -1073,31 +1069,39 @@ export async function servePort(
             return portRefusal(502, "This sandbox could not be woken.");
         });
     const cached = wokenPorts.get(key);
-    if (cached && !(await hasSecret(request, cached))) {
-        return wrongSecret(cached);
-    }
     let woken =
         cached && cached.until - Date.now() >= WAKE_MARGIN_MS
             ? cached
             : await wake();
     if (woken instanceof Response) return woken;
     await noteActivity(env, sandboxID);
+    // A small body (a webhook's) is kept for sending again, should the
+    // sandbox have stopped inside the cached lease.
+    const length = request.headers.get("content-length");
+    const small = length !== null && Number(length) <= 1_000_000;
+    const replay =
+        request.body === null
+            ? request
+            : woken === cached && small
+              ? request.clone()
+              : null;
     const url = new URL(request.url);
     const headers = new Headers(request.headers);
     headers.delete("host");
-    const send = ({ origin, token }: WokenPort) => {
+    const send = ({ origin, token }: WokenPort, body = request.body) => {
         if (token) headers.set("e2b-traffic-access-token", token);
         return fetch(`${origin}${url.pathname}${url.search}`, {
             method: request.method,
             headers,
-            body: request.body,
+            body,
             redirect: "manual",
         });
     };
     const response = await send(woken);
     // E2B answers 502 "The sandbox was not found" for a sandbox that stopped
-    // inside the cached lease, paused or killed by its owner. A request whose
-    // body is not spent yet wakes it and tries again; any other, the next one.
+    // inside the cached lease: paused idle or by its owner, or killed. A
+    // request that can be sent again wakes it and tries again; any other, the
+    // next one.
     if (
         woken !== cached ||
         response.status !== 502 ||
@@ -1106,53 +1110,59 @@ export async function servePort(
         return response;
     }
     wokenPorts.delete(key);
-    if (request.body !== null) return response;
+    if (!replay) return response;
     woken = await wake();
-    return woken instanceof Response ? woken : send(woken);
+    return woken instanceof Response ? woken : send(woken, replay.body);
 }
 
-// Whether a kept sandbox did nothing since `since`: no resume (a wake starts a
-// new run), no request to a shared port or connect by its owner, no gen
-// request with its own key (an agent at work in it), and no busy CPU.
-async function idleSince(
-    env: CloudflareBindings,
-    sandbox: SandboxDetail,
-    activeAt: Date | null,
-    since: number,
-) {
-    const ownKey = await drizzle(env.DB)
-        .select({ lastRequest: apikey.lastRequest })
-        .from(apikey)
-        .where(
-            and(
-                eq(apikey.referenceId, sandbox.metadata?.[OWNER_KEY] ?? ""),
-                eq(apikey.name, `polli-sandbox-${sandbox.sandboxID}`),
-            ),
-        )
-        .get();
-    const lastActive = Math.max(
-        Date.parse(sandbox.startedAt),
-        activeAt?.getTime() ?? 0,
-        ownKey?.lastRequest?.getTime() ?? 0,
-    );
-    if (lastActive > since) return false;
+// Notes a CPU busy over the cron's last interval as activity, so the idle
+// timeout counts from the end of a job. Returns whether E2B had metrics.
+async function noteBusyCpu(env: CloudflareBindings, sandboxID: string) {
     const start = Math.floor(Date.now() / 1000) - CRON_SECONDS;
-    const response = await e2b(
+    const samples = await e2b(
         env,
-        `/sandboxes/${sandbox.sandboxID}/metrics?start=${start}`,
-    );
-    const samples = response.ok
-        ? await response.json<{ cpuUsedPct: number }[]>()
-        : [];
-    // Without its metrics, a job may still run: try again next time.
+        `/sandboxes/${sandboxID}/metrics?start=${start}`,
+    )
+        .then((response) =>
+            response.ok ? response.json<{ cpuUsedPct: number }[]>() : [],
+        )
+        .catch(() => []);
     if (!samples.length) return false;
     const cpu =
         samples.reduce((sum, sample) => sum + sample.cpuUsedPct, 0) /
         samples.length;
-    if (cpu < BUSY_CPU_PCT) return true;
-    // The idle timeout counts from the end of the job.
-    await noteActivity(env, sandbox.sandboxID);
-    return false;
+    if (cpu >= BUSY_CPU_PCT) await noteActivity(env, sandboxID);
+    return true;
+}
+
+// When a kept sandbox was last active: its last resume (a wake starts a new
+// run), a request to a shared port, a connect by its owner, a busy CPU, or a
+// gen request with its own key (an agent at work in it). Read now, not with
+// the cron's other rows, as a request may have come in since.
+async function lastActive(env: CloudflareBindings, sandbox: SandboxDetail) {
+    const db = drizzle(env.DB);
+    const [keep, ownKey] = await Promise.all([
+        db
+            .select({ activeAt: sandboxKeep.activeAt })
+            .from(sandboxKeep)
+            .where(eq(sandboxKeep.sandboxId, sandbox.sandboxID))
+            .get(),
+        db
+            .select({ lastRequest: apikey.lastRequest })
+            .from(apikey)
+            .where(
+                and(
+                    eq(apikey.referenceId, sandbox.metadata?.[OWNER_KEY] ?? ""),
+                    eq(apikey.name, `polli-sandbox-${sandbox.sandboxID}`),
+                ),
+            )
+            .get(),
+    ]);
+    return Math.max(
+        Date.parse(sandbox.startedAt),
+        keep?.activeAt?.getTime() ?? 0,
+        ownKey?.lastRequest?.getTime() ?? 0,
+    );
 }
 
 /**
@@ -1162,9 +1172,9 @@ async function idleSince(
  * end its 24-hour run, a pause and resume starts a new run instead, giving up
  * the rest of the lease like any pause. A paused one (a missed renewal, a
  * failed resume, E2B's own pause) is resumed, as the owner's own pause has
- * ended its keep. With an idle timeout, an idle sandbox is paused instead, and
- * a paused one waits for a wake. The keep ends when the sandbox is gone, or
- * the key is or can no longer pay.
+ * ended its keep. With an idle timeout, a sandbox without activity for that
+ * long is paused instead, and stays paused until a wake. The keep ends when
+ * the sandbox is gone, or the key is or can no longer pay.
  */
 export async function keepSandboxes(
     env: CloudflareBindings,
@@ -1193,18 +1203,23 @@ export async function keepSandboxes(
         apiKeyId,
         until,
         idleTimeout,
-        activeAt,
     }: typeof sandboxKeep.$inferSelect) => {
         const sandbox = await getSandbox(env, sandboxID);
         if (!sandbox) return end(sandboxID, "it is gone");
         const paused = sandbox.state === "paused";
-        // Paused while idle, it waits for a request to a shared port or a
-        // connect to wake it.
-        if (paused && idleTimeout) return;
-        const idle =
+        const measured =
             !paused &&
             idleTimeout !== null &&
-            (await idleSince(env, sandbox, activeAt, now - idleTimeout * 1000));
+            (await noteBusyCpu(env, sandboxID));
+        const quiet =
+            idleTimeout !== null &&
+            (await lastActive(env, sandbox)) <= now - idleTimeout * 1000;
+        // Paused while quiet, it waits for a request to a shared port or a
+        // connect to wake it. Paused otherwise (a failed restart, a missed
+        // renewal), it is resumed.
+        if (paused && quiet) return;
+        // Without metrics, a job may still run: check again next time.
+        const idle = !paused && quiet && measured;
         const renewTo = Math.min(
             now + KEEP_LEASE_SECONDS * 1000,
             until.getTime(),

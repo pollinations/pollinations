@@ -79,6 +79,45 @@ describe("CreateChatCompletionRequestSchema", () => {
         });
     });
 
+    it("forwards a Gemini signature sent in Google's extra_content field", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            model: "google/gemini-3.8-flash",
+            messages: [
+                {
+                    role: "assistant",
+                    content: null,
+                    tool_calls: [
+                        {
+                            id: "call_1",
+                            type: "function",
+                            function: { name: "emit", arguments: "{}" },
+                            extra_content: {
+                                google: {
+                                    thought_signature: "opaque-signature",
+                                },
+                            },
+                        },
+                    ],
+                },
+                { role: "tool", tool_call_id: "call_1", content: "ok" },
+            ],
+        });
+
+        expect(result.messages[0]).toMatchObject({
+            tool_calls: [
+                {
+                    id: "call_1",
+                    type: "function",
+                    function: {
+                        name: "emit",
+                        arguments: "{}",
+                        thought_signature: "opaque-signature",
+                    },
+                },
+            ],
+        });
+    });
+
     it("preserves explicit prompt-cache breakpoints on content parts", () => {
         const result = CreateChatCompletionRequestSchema.parse({
             prompt_cache_key: "stable-prefix",

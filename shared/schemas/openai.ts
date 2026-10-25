@@ -209,15 +209,32 @@ const ChatCompletionRequestUserMessageSchema = z
     })
     .passthrough();
 
-const ChatCompletionMessageToolCallSchema = z.object({
-    id: z.string(),
-    type: z.literal("function"),
-    function: z.object({
-        name: z.string(),
-        arguments: z.string(),
-        thought_signature: z.string().optional(),
-    }),
-});
+const ChatCompletionMessageToolCallSchema = z
+    .object({
+        id: z.string(),
+        type: z.literal("function"),
+        function: z.object({
+            name: z.string(),
+            arguments: z.string(),
+            thought_signature: z.string().optional(),
+        }),
+        // Google's OpenAI-compatible field for the same Gemini signature.
+        extra_content: z
+            .object({
+                google: z
+                    .object({ thought_signature: z.string().optional() })
+                    .optional(),
+            })
+            .nullish(),
+    })
+    .transform(({ extra_content, ...call }) => {
+        const thought_signature =
+            call.function.thought_signature ??
+            extra_content?.google?.thought_signature;
+        return thought_signature
+            ? { ...call, function: { ...call.function, thought_signature } }
+            : call;
+    });
 
 const ChatCompletionMessageToolCallsSchema = z.array(
     ChatCompletionMessageToolCallSchema,

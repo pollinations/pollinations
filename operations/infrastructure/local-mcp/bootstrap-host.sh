@@ -64,7 +64,9 @@ compose_sha256=$(sed -n 's/^COMPOSE_SHA256=\([0-9a-f]\{64\}\)$/\1/p' "$DIR/local
 [[ -n $compose_sha256 && -f $COMPOSE && ! -L $COMPOSE && $(sha256sum <"$COMPOSE") == "$compose_sha256  -" ]] ||
   fail "$COMPOSE must be the pinned Docker Compose binary (sha256 $compose_sha256)"
 "$COMPOSE" version >/dev/null || fail "$COMPOSE does not run"
-visudo -c >/dev/null || fail "the existing sudo configuration does not validate"
+# Syntax only (-f): visudo's own mode check is stricter than sudo and would
+# refuse hosts where sudo works. This script installs its file root 0440.
+visudo -c -f /etc/sudoers >/dev/null || fail "the existing sudo configuration does not parse"
 
 root_file() { # path: a regular root-owned file, not a symlink
   [[ -f $1 && ! -L $1 && $(stat -c %u "$1") == 0 ]]
@@ -129,7 +131,7 @@ if [[ ! -e $SUDOERS ]]; then
   install -o root -g root -m 0440 "$staged" "$tmp"
   mv "$tmp" "$SUDOERS"
 fi
-visudo -c >/dev/null || fail "sudo configuration does not validate after installing $SUDOERS"
+visudo -c -f /etc/sudoers >/dev/null || fail "sudo configuration does not parse after installing $SUDOERS"
 if [[ ! -e $file ]]; then
   tmp=$(mktemp "$file.XXXXXX")
   printf '%s\n' "$authorization" >"$tmp"

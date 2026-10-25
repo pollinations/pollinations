@@ -33,6 +33,26 @@ function buildEndpoint(gatewayUrl: unknown): string {
     return `${base.replace(/\/+$/, "")}/v1/chat/completions`;
 }
 
+type ToolCall = { function?: { thought_signature?: unknown } };
+
+// Only Vertex reads Gemini's tool-call signatures. Strict providers such as
+// Mistral and Fireworks reject the extra field when a conversation that
+// started on Gemini continues on another model.
+function withoutThoughtSignatures(messages: ChatMessage[]): ChatMessage[] {
+    return messages.map((message) => {
+        if (!Array.isArray(message.tool_calls)) return message;
+        return {
+            ...message,
+            tool_calls: (message.tool_calls as ToolCall[]).map((call) => {
+                if (call?.function?.thought_signature === undefined)
+                    return call;
+                const { thought_signature: _signature, ...fn } = call.function;
+                return { ...call, function: fn };
+            }),
+        };
+    });
+}
+
 export async function generateTextPortkey(
     messages: ChatMessage[],
     options: TransformOptions = {},
@@ -61,6 +81,12 @@ export async function generateTextPortkey(
 
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
+        if (state.options.modelConfig?.provider !== "vertex-ai") {
+            state = {
+                ...state,
+                messages: withoutThoughtSignatures(state.messages),
+            };
+        }
         // TypeSafe has its own wire format and does not use Portkey transforms.
         if (modelDef?.useSystemOneApi) {
             return callSystemOne(state.messages, state.options);

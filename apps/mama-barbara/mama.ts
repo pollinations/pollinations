@@ -27,12 +27,12 @@ const DEFAULT_SIZE = "pollinations-large";
 // an image, a file reply, a connect link) on 2026-10-22/23. The first is the
 // default: Quest Pollen pays for it, so a new account's Barbara answers.
 const MODELS: Record<string, string> = {
-    "openai/gpt-6.1-sol": "GPT-6.1 Sol · balanced",
+    "openai/gpt-6.1-sol": "GPT-6.1 Sol · balanced · Quest Pollen",
     "anthropic/claude-sonnet-5.5": "Claude Sonnet 5.5 · balanced",
     "anthropic/claude-opus-5.5": "Claude Opus 5.5 · smartest",
     "anthropic/claude-haiku-5.5": "Claude Haiku 5.5 · quick",
     "deepseek/deepseek-v4.1-flash-1017": "DeepSeek V4.1 Flash · cheapest",
-    "z-ai/glm-5.3-flash": "GLM 5.3 Flash · Quest Pollen",
+    "z-ai/glm-5.3-flash": "GLM 5.3 Flash · cheap · Quest Pollen",
 };
 const DEFAULT_MODEL = Object.keys(MODELS)[0];
 // E2B's largest timeout: gen keeps the box running and bills the key.
@@ -326,8 +326,9 @@ const askForBot = async (from: TgUser) => {
 };
 
 // Her kit, apps/mama-barbara/barbara at KIT_REF: setup.sh, start.sh, the bridge and
-// AGENTS.md.
-const SETUP = `set -euo pipefail
+// AGENTS.md, copied over ~/agent (her .env, notes and state aren't in it).
+// ~/agent/.kit names the ref she has.
+const KIT = `rm -rf ~/kit
 git clone --quiet --depth 1 --filter=blob:none --no-checkout --sparse https://github.com/pollinations/pollinations ~/kit
 cd ~/kit
 git sparse-checkout set apps/mama-barbara/barbara
@@ -335,6 +336,10 @@ git fetch --quiet --depth 1 origin "$REF"
 git checkout --quiet FETCH_HEAD
 mkdir -p ~/agent && cp -r apps/mama-barbara/barbara/. ~/agent/
 cd ~/agent && rm -rf ~/kit
+echo "$REF" > .kit`;
+
+const SETUP = `set -euo pipefail
+${KIT}
 printf 'TELEGRAM_BOT_TOKEN=%s\\nOWNER_IDS=%s\\n' "$BOT_TOKEN" "$OWNER" > .env
 chmod 600 .env
 bash setup.sh "$MODEL"
@@ -345,7 +350,36 @@ const SWITCH = `set -e
 polli harness claude-code --model "$MODEL" --no-browser
 setsid nohup bash ~/agent/start.sh >/dev/null 2>&1 &`;
 
-const MODEL_OF = `python3 -c 'import json, os; print(json.load(open(os.path.expanduser("~/.pollinations/claude-code.json")))["env"]["ANTHROPIC_MODEL"])'`;
+// Her bridge reads groupRequireMention from access.json for each message. A
+// Barbara set up from an older kit gets the current one first, then restarts
+// like SWITCH.
+const GROUPS = `set -euo pipefail
+python3 - "$EVERY" <<'EOF'
+import json, os, sys
+path = os.path.expanduser("~/.claude/channels/telegram/access.json")
+access = json.load(open(path))
+access["groupRequireMention"] = sys.argv[1] != "1"
+json.dump(access, open(path, "w"), indent=1)
+EOF
+if [ "$(cat ~/agent/.kit 2>/dev/null)" != "$REF" ]; then
+${KIT}
+(cd telegram && "$HOME/.bun/bin/bun" install --no-summary)
+setsid nohup bash start.sh >/dev/null 2>&1 &
+fi`;
+
+const SETTINGS_OF = `python3 - <<'EOF'
+import json, os
+home = os.path.expanduser("~")
+env = json.load(open(f"{home}/.pollinations/claude-code.json"))["env"]
+access = json.load(open(f"{home}/.claude/channels/telegram/access.json"))
+print(json.dumps({"model": env["ANTHROPIC_MODEL"],
+                  "everyMessage": access.get("groupRequireMention") is False}))
+EOF`;
+
+const settingsOf = async (
+    box: Box,
+): Promise<{ model: string; everyMessage: boolean }> =>
+    JSON.parse(await runInBox(box, SETTINGS_OF, {}));
 
 const SETTING_UP =
     "I'm being set up, which takes about two minutes. Tap Start now and I'll answer as soon as I'm ready.";
@@ -596,11 +630,11 @@ async function cardView(owner: TgUser, b: Barbara): Promise<View> {
     ]);
     const people = access.added_users ?? [];
     const boxKey = keyOf(keys, b);
-    // Only a running box can say which model she uses.
-    const model =
+    // Only a running box can say how she's set up.
+    const settings =
         box.state === "running"
-            ? (await runInBox(box, MODEL_OF, {}).catch(() => "")).trim()
-            : "";
+            ? await settingsOf(box).catch(() => undefined)
+            : undefined;
     return {
         text: [
             `<b>${escapeHtml(name)}</b> · @${b.bot}`,
@@ -608,13 +642,17 @@ async function cardView(owner: TgUser, b: Barbara): Promise<View> {
             "",
             "<b>Budget</b>",
             `${budgetText(boxKey)}${boxKey?.lastRequest ? ` · last active ${when(boxKey.lastRequest)}` : ""}`,
-            ...(model ? ["", "<b>Model</b>", MODELS[model] ?? model] : []),
+            ...(settings
+                ? ["", "<b>Model</b>", MODELS[settings.model] ?? settings.model]
+                : []),
             "",
             "<b>Who can talk to her</b>",
             ["You", ...people.map((u) => escapeHtml(u.first_name))].join(", "),
             "",
             "<b>Groups</b>",
-            "Any group you're in. There she answers when someone mentions her or replies to her, and uses your apps only for the people above.",
+            settings?.everyMessage
+                ? "Any group you're in where she's an admin. There she reads every message and joins in when she can help, and uses your apps only for the people above."
+                : "Any group you're in. There she answers when someone mentions her or replies to her, and uses your apps only for the people above.",
         ].join("\n"),
         reply_markup: {
             inline_keyboard: [
@@ -644,12 +682,7 @@ async function cardView(owner: TgUser, b: Barbara): Promise<View> {
                         style: "danger",
                     },
                 ]),
-                [
-                    {
-                        text: "👥 Add her to a group",
-                        url: `https://t.me/${b.bot}?startgroup=true`,
-                    },
-                ],
+                [{ text: "👥 Groups", callback_data: `groups:${b.botId}` }],
                 [
                     box.state === "paused"
                         ? {
@@ -756,7 +789,7 @@ async function modelView(owner: TgUser, b: Barbara): Promise<View> {
             text: `@${b.bot} isn't running. Resume her to change her model.`,
             reply_markup: { inline_keyboard: [back] },
         };
-    const current = (await runInBox(box, MODEL_OF, {})).trim();
+    const current = (await settingsOf(box)).model;
     return {
         text: [
             `<b>Model for @${b.bot}</b>`,
@@ -773,6 +806,53 @@ async function modelView(owner: TgUser, b: Barbara): Promise<View> {
                         callback_data: `setmodel:${b.botId}:${id}`,
                     },
                 ]),
+                back,
+            ],
+        },
+    };
+}
+
+async function groupsView(owner: TgUser, b: Barbara): Promise<View> {
+    const key = userOf(owner.id).key;
+    const box = key ? await boxOf(key, b) : undefined;
+    const add = (asAdmin: boolean) => [
+        {
+            text: asAdmin
+                ? "👥 Add her to a group as admin"
+                : "👥 Add her to a group",
+            // Telegram sends a bot every group message only while it's an admin
+            // there; admin= asks for the smallest right, which every admin has.
+            url: `https://t.me/${b.bot}?startgroup=true${asAdmin ? "&admin=manage_chat" : ""}`,
+        },
+    ];
+    const back = [{ text: "‹ Back", callback_data: `open:${b.botId}` }];
+    if (box?.state !== "running")
+        return {
+            text: `@${b.bot} isn't running. Resume her to change how she works in groups.`,
+            reply_markup: { inline_keyboard: [add(false), back] },
+        };
+    const { everyMessage } = await settingsOf(box);
+    return {
+        text: [
+            `<b>Groups for @${b.bot}</b>`,
+            "She works in any group you're in, and uses your apps only for the people you let in.",
+            "",
+            "<b>When mentioned</b>: she answers when someone mentions her or replies to her.",
+            "<b>Every message</b>: she reads everything and joins in when she can help. Telegram shows bots every message only when they're group admins, so add her as one below. Each message she reads costs like a message to her, even when she stays quiet.",
+        ].join("\n"),
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: `${everyMessage ? "" : "✓ "}When mentioned`,
+                        callback_data: `setgroups:${b.botId}:0`,
+                    },
+                    {
+                        text: `${everyMessage ? "✓ " : ""}Every message`,
+                        callback_data: `setgroups:${b.botId}:1`,
+                    },
+                ],
+                add(everyMessage),
                 back,
             ],
         },
@@ -926,7 +1006,22 @@ async function onButton(q: Callback) {
         return show(owner.id, await budgetView(owner, b), messageId);
     if (action === "model")
         return show(owner.id, await modelView(owner, b), messageId);
+    if (action === "groups")
+        return show(owner.id, await groupsView(owner, b), messageId);
     const key = userOf(owner.id).key;
+    if (action === "setgroups" && key) {
+        await show(owner.id, { text: "Saving…" }, messageId);
+        // On failure the view comes back unchanged, and onUpdate says why.
+        try {
+            await runInBox(await boxOf(key, b), GROUPS, {
+                REF: KIT_REF,
+                EVERY: arg,
+            });
+        } finally {
+            await show(owner.id, await groupsView(owner, b), messageId);
+        }
+        return;
+    }
     if (action === "setmodel" && key && Object.hasOwn(MODELS, arg)) {
         await show(
             owner.id,

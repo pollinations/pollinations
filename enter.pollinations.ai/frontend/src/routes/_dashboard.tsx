@@ -5,7 +5,7 @@ import {
     Outlet,
     useRouter,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue, useState } from "react";
+import { Suspense, useDeferredValue } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
@@ -139,26 +139,11 @@ export function useDashboardRetry(resource: "balance" | "profile" | "apps") {
 function DashboardLayout() {
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
-    const [isSigningOut, setIsSigningOut] = useState(false);
-
-    async function handleSignOut(): Promise<void> {
-        if (isSigningOut) return;
-        setIsSigningOut(true);
-        try {
-            await authClient.signOut();
-            window.location.href = "/news";
-        } catch (error) {
-            console.error("Sign out failed:", error);
-            setIsSigningOut(false);
-        }
-    }
-
     return (
         <DashboardShell
             navItems={data.user ? DASHBOARD_NAV_ITEMS : SIGNED_OUT_NAV_ITEMS}
             accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
-            onSignOut={data.user ? handleSignOut : undefined}
             accountArea={data.user ? undefined : <SignedOutAccountArea />}
             showFooterLinks={Boolean(data.user)}
             showQuestStatus={Boolean(data.user)}

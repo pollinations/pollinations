@@ -557,7 +557,9 @@ export function Sandboxes() {
                     {actionError === NO_POLLEN && (
                         <>
                             {" "}
-                            <InlineLink href="/pollen">Go to Pollen</InlineLink>
+                            <InlineLink href="/credits">
+                                Go to Credits
+                            </InlineLink>
                         </>
                     )}
                 </Alert>

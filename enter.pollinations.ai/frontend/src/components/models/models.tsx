@@ -1,12 +1,10 @@
 import {
     Alert,
-    BeakerIcon,
     BotIcon,
     ClockIcon,
     EditableCombobox,
     ImageIcon,
     InlineLink,
-    McpIcon,
     Section,
     SparklesIcon,
     SpeakerIcon,
@@ -52,7 +50,7 @@ import {
     removeModelQueryFilterToken,
     replaceModelQueryFilterToken,
 } from "./model-query.ts";
-import type { ModelSort } from "./model-search.ts";
+import type { ModelSearch, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import { ModelSortMenu } from "./model-sort-menu.tsx";
 import { ModelHealthIcon } from "./model-status-chips.tsx";
@@ -76,24 +74,19 @@ const MODEL_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-type PrimaryTab = "models" | "agent" | "mcp";
-type SearchParam = "q" | "agentQ" | "mcpQ";
+/** Each catalog has its own dashboard page: /models, /agents and /mcp. */
+export type CatalogKind = "models" | "agent" | "mcp";
 
-const PRIMARY_TABS = [
-    { value: "models", label: "Models", Icon: BeakerIcon },
-    { value: "agent", label: "Agents", Icon: BotIcon },
-    { value: "mcp", label: "MCP", Icon: McpIcon },
-] as const;
+const CATALOG_TITLES: Record<CatalogKind, string> = {
+    models: "Models",
+    agent: "Agents",
+    mcp: "MCP",
+};
 
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
 const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
-const SEARCH_PARAM_BY_TAB: Record<PrimaryTab, SearchParam> = {
-    models: "q",
-    agent: "agentQ",
-    mcp: "mcpQ",
-};
-const QUERY_FILTER_KEYS_BY_TAB: Record<
-    PrimaryTab,
+const QUERY_FILTER_KEYS_BY_KIND: Record<
+    CatalogKind,
     readonly ModelQueryFilterKey[]
 > = {
     models: MODEL_QUERY_FILTER_KEYS,
@@ -149,24 +142,16 @@ const isSourceSuggestion = (option: string): boolean =>
         .toLowerCase()
         .startsWith("source:");
 
-export const Models: FC = () => {
-    const navigate = useNavigate({ from: "/models" });
-    const modelSearch = useSearch({ from: "/_dashboard/models" });
-    const activeTab = modelSearch.category ?? "all";
-    const activePrimaryTab: PrimaryTab =
-        activeTab === "agent"
-            ? "agent"
-            : activeTab === "mcp"
-              ? "mcp"
-              : "models";
+export const Models: FC<{ kind: CatalogKind }> = ({ kind }) => {
+    const navigate = useNavigate();
+    const modelSearch: ModelSearch = useSearch({ strict: false });
+    const activeTab: SectionType =
+        kind === "models" ? (modelSearch.category ?? "all") : kind;
     const activeSort = modelSearch.sort ?? "popular";
-    const searchParam = SEARCH_PARAM_BY_TAB[activePrimaryTab];
-    const supportedFilterKeys = QUERY_FILTER_KEYS_BY_TAB[activePrimaryTab];
-    const urlSearch = modelSearch[searchParam] ?? "";
+    const supportedFilterKeys = QUERY_FILTER_KEYS_BY_KIND[kind];
+    const urlSearch = modelSearch.q ?? "";
     const initialSearch =
-        activePrimaryTab === "models"
-            ? ensureModelQueryDefaults(urlSearch)
-            : urlSearch;
+        kind === "models" ? ensureModelQueryDefaults(urlSearch) : urlSearch;
     const [search, setSearch] = useState(initialSearch);
     const [draftFilter, setDraftFilter] = useState<
         ModelQueryDraftFilter | undefined
@@ -181,7 +166,6 @@ export const Models: FC = () => {
     >();
     const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
-    const previousPrimaryTabRef = useRef(activePrimaryTab);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogLoading, setCatalogLoading] = useState(true);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -341,14 +325,15 @@ export const Models: FC = () => {
 
             lastPushedSearchRef.current = normalizedSearch;
             void navigate({
+                to: ".",
                 search: (previous) => ({
                     ...previous,
-                    [searchParam]: normalizedSearch || undefined,
+                    q: normalizedSearch || undefined,
                 }),
                 replace: true,
             });
         },
-        [navigate, searchParam],
+        [navigate],
     );
 
     const setVisibleSearch = (nextSearch: string) => {
@@ -448,25 +433,18 @@ export const Models: FC = () => {
     };
 
     useEffect(() => {
-        const primaryTabChanged =
-            activePrimaryTab !== previousPrimaryTabRef.current;
-        previousPrimaryTabRef.current = activePrimaryTab;
-
-        if (!primaryTabChanged && urlSearch === lastPushedSearchRef.current)
-            return;
+        if (urlSearch === lastPushedSearchRef.current) return;
 
         lastPushedSearchRef.current = urlSearch;
         setPendingRemovalIndex(undefined);
         setEditingFilterToken(undefined);
         const nextSearch =
-            activePrimaryTab === "models"
-                ? ensureModelQueryDefaults(urlSearch)
-                : urlSearch;
+            kind === "models" ? ensureModelQueryDefaults(urlSearch) : urlSearch;
         setDraftFilter(
             getModelQueryDraftFilter(nextSearch, false, supportedFilterKeys),
         );
         setSearch(nextSearch);
-    }, [activePrimaryTab, supportedFilterKeys, urlSearch]);
+    }, [kind, supportedFilterKeys, urlSearch]);
 
     useEffect(() => {
         if (query === lastPushedSearchRef.current) return;
@@ -480,6 +458,7 @@ export const Models: FC = () => {
 
     const setActiveTab = (category: SectionType) => {
         void navigate({
+            to: ".",
             search: (previous) => ({
                 ...previous,
                 category: category === "all" ? undefined : category,
@@ -489,6 +468,7 @@ export const Models: FC = () => {
 
     const setActiveSort = (sort: ModelSort) => {
         void navigate({
+            to: ".",
             search: (previous) => ({
                 ...previous,
                 sort: sort === "popular" ? undefined : sort,
@@ -499,16 +479,10 @@ export const Models: FC = () => {
     return (
         <>
             <Section
-                title={
-                    activePrimaryTab === "agent"
-                        ? "Agents"
-                        : activePrimaryTab === "mcp"
-                          ? "MCP"
-                          : "Models"
-                }
+                title={CATALOG_TITLES[kind]}
                 actionClassName="ml-auto"
                 action={
-                    activePrimaryTab === "models" && (
+                    kind === "models" && (
                         <InlineLink
                             href="https://model-monitor.pollinations.ai"
                             size="sm"
@@ -521,32 +495,7 @@ export const Models: FC = () => {
                 }
             >
                 <div className="flex flex-col items-start gap-3">
-                    <fieldset
-                        className="flex min-w-0 flex-wrap gap-1.5"
-                        aria-label="Catalog type"
-                    >
-                        {PRIMARY_TABS.map(({ value, label, Icon }) => (
-                            <TabButton
-                                key={value}
-                                active={activePrimaryTab === value}
-                                onClick={() =>
-                                    setActiveTab(
-                                        value === "models" ? "all" : value,
-                                    )
-                                }
-                                ariaLabel={label}
-                            >
-                                <span className="inline-flex items-center gap-1.5">
-                                    <Icon
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
-                                    />
-                                    {label}
-                                </span>
-                            </TabButton>
-                        ))}
-                    </fieldset>
-                    {activePrimaryTab === "models" && (
+                    {kind === "models" && (
                         <div className="flex w-full flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap gap-1.5">
                                 {MODEL_SECTION_ORDER.filter(
@@ -637,8 +586,8 @@ export const Models: FC = () => {
                         )}
                     </div>
                 </div>
-                {(activePrimaryTab === "agent" ||
-                    (activePrimaryTab === "models" &&
+                {(kind === "agent" ||
+                    (kind === "models" &&
                         explicitModelSource !== "official")) && (
                     <Alert
                         intent="advisory"

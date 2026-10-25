@@ -6,20 +6,18 @@ import { DashboardShell } from "./dashboard-shell.tsx";
 const pageTitles: Record<string, readonly string[]> = {
     "/news": ["News", "FAQ"],
     "/models": ["Models"],
-    "/my-models": ["Agents", "Models"],
+    "/agents": ["Agents"],
+    "/mcp": ["MCP"],
+    "/my-models": ["My Models"],
+    "/my-agents": ["My Agents"],
     "/my-apps": ["My Apps"],
     "/sandboxes": ["Sandboxes"],
     "/keys": ["Secrets", "Apps"],
-    "/pollen": ["Wallet", "Top-up"],
+    "/credits": ["Pollen", "Top-up"],
+    "/connectors": ["Connectors"],
     "/activity": ["Usage", "Earnings", "Last events"],
     "/quests": ["Claimed"],
-    "/account": [
-        "Profile",
-        "Community",
-        "Connected apps",
-        "Need help?",
-        "Delete account",
-    ],
+    "/account": ["Profile", "Community", "Need help?", "Delete account"],
 };
 
 const authTitles: Record<string, string> = {

@@ -21,7 +21,6 @@ import {
 import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { ConnectedApps } from "../components/account/connected-apps.tsx";
 import {
     LoadError,
     PageStatus,
@@ -39,6 +38,10 @@ type DiscordConnection = {
 
 export const Route = createFileRoute("/_dashboard/account")({
     beforeLoad: ({ context, location }) => {
+        // Connectors were a section of this page; old links still land there.
+        if (location.hash === "connectors") {
+            throw redirect({ to: "/connectors", replace: true });
+        }
         if (!context.user) {
             throw redirect({
                 to: "/sign-in",
@@ -149,10 +152,6 @@ function AccountPage() {
                     )
                 }
             </Await>
-
-            <div id="connectors" className="scroll-mt-6">
-                <ConnectedApps />
-            </div>
 
             <Section title="Need help?">
                 <ul className="grid gap-5 text-sm sm:grid-cols-2">

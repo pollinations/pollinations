@@ -28,8 +28,13 @@ import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-models'
 import { Route as DashboardMyAppsRouteImport } from './routes/_dashboard.my-apps'
+import { Route as DashboardMyAgentsRouteImport } from './routes/_dashboard.my-agents'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
+import { Route as DashboardMcpRouteImport } from './routes/_dashboard.mcp'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
+import { Route as DashboardCreditsRouteImport } from './routes/_dashboard.credits'
+import { Route as DashboardConnectorsRouteImport } from './routes/_dashboard.connectors'
+import { Route as DashboardAgentsRouteImport } from './routes/_dashboard.agents'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
@@ -127,14 +132,39 @@ const DashboardMyAppsRoute = DashboardMyAppsRouteImport.update({
   path: '/my-apps',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMyAgentsRoute = DashboardMyAgentsRouteImport.update({
+  id: '/my-agents',
+  path: '/my-agents',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardModelsRoute = DashboardModelsRouteImport.update({
   id: '/models',
   path: '/models',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMcpRoute = DashboardMcpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardKeysRoute = DashboardKeysRouteImport.update({
   id: '/keys',
   path: '/keys',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardConnectorsRoute = DashboardConnectorsRouteImport.update({
+  id: '/connectors',
+  path: '/connectors',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardAgentsRoute = DashboardAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardActivityRoute = DashboardActivityRouteImport.update({
@@ -161,8 +191,13 @@ export interface FileRoutesByFullPath {
   '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
+  '/agents': typeof DashboardAgentsRoute
+  '/connectors': typeof DashboardConnectorsRoute
+  '/credits': typeof DashboardCreditsRoute
   '/keys': typeof DashboardKeysRoute
+  '/mcp': typeof DashboardMcpRoute
   '/models': typeof DashboardModelsRoute
+  '/my-agents': typeof DashboardMyAgentsRoute
   '/my-apps': typeof DashboardMyAppsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
@@ -185,8 +220,13 @@ export interface FileRoutesByTo {
   '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
+  '/agents': typeof DashboardAgentsRoute
+  '/connectors': typeof DashboardConnectorsRoute
+  '/credits': typeof DashboardCreditsRoute
   '/keys': typeof DashboardKeysRoute
+  '/mcp': typeof DashboardMcpRoute
   '/models': typeof DashboardModelsRoute
+  '/my-agents': typeof DashboardMyAgentsRoute
   '/my-apps': typeof DashboardMyAppsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
@@ -211,8 +251,13 @@ export interface FileRoutesById {
   '/top-up': typeof TopUpRoute
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
+  '/_dashboard/agents': typeof DashboardAgentsRoute
+  '/_dashboard/connectors': typeof DashboardConnectorsRoute
+  '/_dashboard/credits': typeof DashboardCreditsRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
+  '/_dashboard/mcp': typeof DashboardMcpRoute
   '/_dashboard/models': typeof DashboardModelsRoute
+  '/_dashboard/my-agents': typeof DashboardMyAgentsRoute
   '/_dashboard/my-apps': typeof DashboardMyAppsRoute
   '/_dashboard/my-models': typeof DashboardMyModelsRoute
   '/_dashboard/news': typeof DashboardNewsRoute
@@ -237,8 +282,13 @@ export interface FileRouteTypes {
     | '/top-up'
     | '/account'
     | '/activity'
+    | '/agents'
+    | '/connectors'
+    | '/credits'
     | '/keys'
+    | '/mcp'
     | '/models'
+    | '/my-agents'
     | '/my-apps'
     | '/my-models'
     | '/news'
@@ -261,8 +311,13 @@ export interface FileRouteTypes {
     | '/top-up'
     | '/account'
     | '/activity'
+    | '/agents'
+    | '/connectors'
+    | '/credits'
     | '/keys'
+    | '/mcp'
     | '/models'
+    | '/my-agents'
     | '/my-apps'
     | '/my-models'
     | '/news'
@@ -286,8 +341,13 @@ export interface FileRouteTypes {
     | '/top-up'
     | '/_dashboard/account'
     | '/_dashboard/activity'
+    | '/_dashboard/agents'
+    | '/_dashboard/connectors'
+    | '/_dashboard/credits'
     | '/_dashboard/keys'
+    | '/_dashboard/mcp'
     | '/_dashboard/models'
+    | '/_dashboard/my-agents'
     | '/_dashboard/my-apps'
     | '/_dashboard/my-models'
     | '/_dashboard/news'
@@ -448,6 +508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardMyAppsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/my-agents': {
+      id: '/_dashboard/my-agents'
+      path: '/my-agents'
+      fullPath: '/my-agents'
+      preLoaderRoute: typeof DashboardMyAgentsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/models': {
       id: '/_dashboard/models'
       path: '/models'
@@ -455,11 +522,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardModelsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/mcp': {
+      id: '/_dashboard/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof DashboardMcpRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/keys': {
       id: '/_dashboard/keys'
       path: '/keys'
       fullPath: '/keys'
       preLoaderRoute: typeof DashboardKeysRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/credits': {
+      id: '/_dashboard/credits'
+      path: '/credits'
+      fullPath: '/credits'
+      preLoaderRoute: typeof DashboardCreditsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/connectors': {
+      id: '/_dashboard/connectors'
+      path: '/connectors'
+      fullPath: '/connectors'
+      preLoaderRoute: typeof DashboardConnectorsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/agents': {
+      id: '/_dashboard/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof DashboardAgentsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/activity': {
@@ -482,8 +577,13 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardActivityRoute: typeof DashboardActivityRoute
+  DashboardAgentsRoute: typeof DashboardAgentsRoute
+  DashboardConnectorsRoute: typeof DashboardConnectorsRoute
+  DashboardCreditsRoute: typeof DashboardCreditsRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
+  DashboardMcpRoute: typeof DashboardMcpRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
+  DashboardMyAgentsRoute: typeof DashboardMyAgentsRoute
   DashboardMyAppsRoute: typeof DashboardMyAppsRoute
   DashboardMyModelsRoute: typeof DashboardMyModelsRoute
   DashboardNewsRoute: typeof DashboardNewsRoute
@@ -496,8 +596,13 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
   DashboardActivityRoute: DashboardActivityRoute,
+  DashboardAgentsRoute: DashboardAgentsRoute,
+  DashboardConnectorsRoute: DashboardConnectorsRoute,
+  DashboardCreditsRoute: DashboardCreditsRoute,
   DashboardKeysRoute: DashboardKeysRoute,
+  DashboardMcpRoute: DashboardMcpRoute,
   DashboardModelsRoute: DashboardModelsRoute,
+  DashboardMyAgentsRoute: DashboardMyAgentsRoute,
   DashboardMyAppsRoute: DashboardMyAppsRoute,
   DashboardMyModelsRoute: DashboardMyModelsRoute,
   DashboardNewsRoute: DashboardNewsRoute,

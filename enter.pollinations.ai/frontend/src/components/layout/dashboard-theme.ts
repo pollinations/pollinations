@@ -2,58 +2,129 @@
 // `danger`; Chip supports generic label intents (news/alpha/neutral).
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 import {
+    AccountIcon,
     AppIcon,
     BeakerIcon,
+    BotIcon,
     CloudUploadIcon,
     LockIcon,
+    McpIcon,
     NewspaperIcon,
+    RobotIcon,
     SparkleIcon,
     TerminalIcon,
+    ToolIcon,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
 import type { ComponentType } from "react";
 
+/**
+ * Groups of drawer rows: Pollinations' resources (with Docs) and your pages
+ * each get a card. "account" is your name and picture, shown with your
+ * balances under the cards.
+ */
+export type DashboardNavGroup = "account" | "yours" | "resources";
+
 export const DASHBOARD_NAV_ITEMS = [
     {
-        id: "news-faq",
-        to: "/news",
-        label: "News & FAQ",
-        icon: NewspaperIcon,
+        id: "account",
+        to: "/account",
+        label: "Account",
+        icon: AccountIcon,
+        group: "account",
     },
-    { id: "models", to: "/models", label: "Models", icon: BeakerIcon },
+    {
+        id: "credits",
+        to: "/credits",
+        label: "Credits",
+        icon: WalletIcon,
+        group: "yours",
+    },
+    {
+        id: "quests",
+        to: "/quests",
+        label: "Quests",
+        icon: SparkleIcon,
+        group: "yours",
+    },
+    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
+    {
+        id: "connectors",
+        to: "/connectors",
+        label: "Connectors",
+        icon: ToolIcon,
+        group: "yours",
+    },
     {
         id: "my-models",
         to: "/my-models",
         label: "My Models",
         icon: CloudUploadIcon,
+        group: "yours",
+    },
+    {
+        id: "my-agents",
+        to: "/my-agents",
+        label: "My Agents",
+        icon: RobotIcon,
+        group: "yours",
     },
     {
         id: "my-apps",
         to: "/my-apps",
         label: "My Apps",
         icon: AppIcon,
+        group: "yours",
     },
     {
         id: "sandboxes",
         to: "/sandboxes",
         label: "Sandboxes",
         icon: TerminalIcon,
+        group: "yours",
     },
-    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
-    { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },
     {
         id: "activity",
         to: "/activity",
         label: "Activity",
         icon: TrendUpIcon,
+        group: "yours",
     },
-    { id: "quests", to: "/quests", label: "Quests", icon: SparkleIcon },
+    {
+        id: "news-faq",
+        to: "/news",
+        label: "News & FAQ",
+        icon: NewspaperIcon,
+        group: "resources",
+    },
+    {
+        id: "models",
+        to: "/models",
+        label: "Models",
+        icon: BeakerIcon,
+        group: "resources",
+    },
+    {
+        id: "agents",
+        to: "/agents",
+        label: "Agents",
+        icon: BotIcon,
+        group: "resources",
+    },
+    {
+        id: "mcp",
+        to: "/mcp",
+        label: "MCP",
+        icon: McpIcon,
+        group: "resources",
+    },
 ] as const satisfies readonly {
     id: string;
     to: string;
     label: string;
     icon: ComponentType<{ className?: string }>;
+    group: DashboardNavGroup;
 }[];
 
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
@@ -63,12 +134,14 @@ export function isDashboardPath(path: string): path is DashboardPath {
     return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
 }
 
-const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
-    "news-faq",
-    "models",
-    "quests",
-]);
-
-export const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
-    SIGNED_OUT_PAGES.has(item.id),
+const RESOURCE_ITEMS = DASHBOARD_NAV_ITEMS.filter(
+    (item) => item.group === "resources",
 );
+const QUESTS_ITEM = DASHBOARD_NAV_ITEMS.filter((item) => item.id === "quests");
+
+// Signed out there is no card of your own; Quests, the way to earn free
+// pollen, joins the resources.
+export const SIGNED_OUT_NAV_ITEMS = [
+    ...RESOURCE_ITEMS,
+    ...QUESTS_ITEM.map((item) => ({ ...item, group: "resources" as const })),
+];

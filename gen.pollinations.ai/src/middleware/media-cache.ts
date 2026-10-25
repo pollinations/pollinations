@@ -87,10 +87,12 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
         },
         capture(c, cacheKey, response) {
+            const captured = new Response(response.body, response);
+            captured.headers.set("X-Cache", "MISS");
             if (c.var.generationCachePrivate) {
-                response.headers.set("Cache-Control", "private, no-store");
+                captured.headers.set("Cache-Control", "private, no-store");
             }
-            const stored = new Response(response.clone().body, response);
+            const stored = new Response(captured.clone().body, captured);
             for (const name of [...stored.headers.keys()]) {
                 if (
                     !CACHED_HEADERS.has(name) &&
@@ -101,7 +103,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 }
             }
             return {
-                response,
+                response: captured,
                 write: c.env.MEDIA.put(cacheKey, stored),
             };
         },

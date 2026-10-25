@@ -41,7 +41,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        if (variables.model?.requested.includes(",")) {
+        if (variables.model?.requested?.includes(",")) {
             c.set("generationCachePrivate", true);
         }
         // Agent runs are unique; caller lists are stable per key because their
@@ -49,7 +49,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
         const cacheScope = variables.model?.cacheScope;
         const partition = cacheScope
             ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
-            : variables.model?.requested.includes(",")
+            : variables.model?.requested?.includes(",")
               ? `caller-list:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
               : undefined;
         return generateCacheKey(

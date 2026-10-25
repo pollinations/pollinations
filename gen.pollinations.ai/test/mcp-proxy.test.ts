@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "time",
+                name: "Time",
+                description:
+                    "Current time, timezone conversion, and date arithmetic in any IANA timezone.",
+                url: "https://gen.pollinations.ai/mcp/time",
+                pricing: {
+                    description: "Time tools are free. No MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

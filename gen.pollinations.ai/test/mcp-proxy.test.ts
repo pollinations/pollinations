@@ -153,7 +153,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "toolbox",
                 name: "Toolbox",
                 description:
-                    "Time, cron schedules, Unicode, color contrast, and QR codes.",
+                    "Time, cron schedules, Unicode, color contrast, QR codes, and engineering unit conversion.",
                 url: "https://gen.pollinations.ai/mcp/toolbox",
                 pricing: {
                     description: "Local utilities. No Pollen charge.",

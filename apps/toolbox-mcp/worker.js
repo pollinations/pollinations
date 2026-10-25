@@ -4,6 +4,7 @@ import { contrastTools } from "./tools/contrast.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
+import { unitTools } from "./tools/units.js";
 
 const handler = createMcpHandler(
     () => {
@@ -16,6 +17,7 @@ const handler = createMcpHandler(
             ...contrastTools,
             ...unicodeTools,
             ...qrTools,
+            ...unitTools,
         ]) {
             server.registerTool(
                 name,

@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/client";
 import { Resvg } from "@resvg/resvg-js";
 import jsQR from "jsqr";
+import { convertUnits, UNITS } from "./tools/units.js";
 import worker from "./worker.js";
 
 async function clientFor(t, modern = false) {
@@ -35,6 +36,125 @@ async function call(client, name, args = {}) {
     assert.notEqual(result.isError, true, JSON.stringify(result));
     return JSON.parse(result.content[0].text);
 }
+test("engineering unit conversions match reference values and preserve range", () => {
+    for (const [quantity, from, to, expected] of [
+        ["pressure", "bar", "kPa", 100],
+        ["pressure", "psi", "Pa", 6894.757293168361],
+        ["pressure", "atm", "Pa", 101325],
+        ["pressure", "kgf/cm2", "Pa", 98066.5],
+        ["volume_flow", "L/min", "m3/h", 0.06],
+        ["volume_flow", "US_gal/min", "L/min", 3.785411784],
+        ["volume_flow", "imp_gal/min", "L/min", 4.54609],
+        ["power", "hp_mechanical", "W", 745.6998715822702],
+        ["power", "hp_metric", "W", 735.49875],
+        ["energy", "kWh", "MJ", 3.6],
+        ["energy", "Btu_IT", "J", 1055.05585262],
+    ]) {
+        const result = convertUnits({ quantity, value: 1, from, to });
+        assert.ok(Math.abs(result.converted / expected - 1) < 1e-12);
+        assert.equal(result.factor, result.converted);
+    }
+    for (const [quantity, units] of Object.entries(UNITS)) {
+        for (const from of Object.keys(units)) {
+            for (const to of Object.keys(units)) {
+                const converted = convertUnits({
+                    quantity,
+                    from,
+                    to,
+                    value: -12.5,
+                }).converted;
+                assert.ok(
+                    Math.abs(
+                        convertUnits({
+                            quantity,
+                            from: to,
+                            to: from,
+                            value: converted,
+                        }).converted + 12.5,
+                    ) < 1e-12,
+                );
+                assert.equal(
+                    convertUnits({ quantity, from, to, value: 0 }).converted,
+                    0,
+                );
+            }
+        }
+    }
+    for (const value of [NaN, Infinity, -Infinity, "1"]) {
+        assert.throws(() =>
+            convertUnits({ quantity: "energy", from: "J", to: "kWh", value }),
+        );
+    }
+    assert.equal(
+        convertUnits({
+            quantity: "energy",
+            from: "MWh",
+            to: "MWh",
+            value: Number.MAX_VALUE,
+        }).converted,
+        Number.MAX_VALUE,
+    );
+});
+for (const modern of [false, true])
+    test(`engineering units over ${modern ? "modern" : "legacy"} MCP`, async (t) => {
+        const client = await clientFor(t, modern);
+        assert.deepEqual(await call(client, "list_units"), UNITS);
+        assert.deepEqual(
+            await call(client, "list_units", { quantity: "power" }),
+            { power: UNITS.power },
+        );
+        const converted = await call(client, "convert_units", {
+            quantity: "energy",
+            from: "Wh",
+            to: "J",
+            value: -2,
+        });
+        assert.deepEqual(converted, {
+            quantity: "energy",
+            from: "Wh",
+            to: "J",
+            value: -2,
+            factor: 3600,
+            converted: -7200,
+        });
+        for (const [from, to] of [
+            ["kWh", "Pa"],
+            ["BAR", "Pa"],
+            ["gpm", "Pa"],
+            ["constructor", "Pa"],
+            ["__proto__", "Pa"],
+            ["Pa", "J"],
+        ]) {
+            const error = await client.callTool({
+                name: "convert_units",
+                arguments: { quantity: "pressure", from, to, value: 1 },
+            });
+            assert.equal(error.isError, true);
+            assert.match(error.content[0].text, /Unsupported pressure unit/);
+        }
+        for (const [from, to, value] of [
+            ["MWh", "J", Number.MAX_VALUE],
+            ["J", "MWh", Number.MIN_VALUE],
+        ]) {
+            const error = await client.callTool({
+                name: "convert_units",
+                arguments: { quantity: "energy", from, to, value },
+            });
+            assert.equal(error.isError, true);
+            assert.match(error.content[0].text, /numeric range/);
+        }
+        for (const [name, args] of [
+            ["list_units", { quantity: "length" }],
+            [
+                "convert_units",
+                { quantity: "energy", from: "J", to: "kWh", value: "1" },
+            ],
+        ])
+            assert.equal(
+                (await client.callTool({ name, arguments: args })).isError,
+                true,
+            );
+    });
 test("private deployment has no public routes or preview URLs", () => {
     const config = JSON.parse(
         readFileSync(
@@ -78,8 +198,10 @@ for (const modern of [false, true])
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
                 "check_contrast",
+                "convert_units",
                 "create_qr",
                 "inspect_unicode",
+                "list_units",
                 "next_cron_runs",
                 "rank_palette",
                 "time_convert",

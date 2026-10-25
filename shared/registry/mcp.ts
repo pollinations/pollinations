@@ -231,7 +231,7 @@ export const MCP_SERVERS = [
         id: "toolbox",
         name: "Toolbox",
         description:
-            "Time, cron schedules, Unicode, color contrast, and QR codes.",
+            "Time, cron schedules, Unicode, color contrast, QR codes, and engineering unit conversion.",
         binding: "TOOLBOX_MCP",
         billing: "downstream",
         pricing: {

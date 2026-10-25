@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "Delivery proof checklist",
+    "url": "https://agentes-que-entregam.pollinations.app/app",
+    "description": "Paste what your code agent claims it finished and get a six-item checklist of the evidence that would prove it (command output, HTTP status, database row, file hash, log line). Text generation runs th",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "Samuelfmedeiros",
+    "githubUserId": "111394087",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-25",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18403",
+    "approvedDate": "2026-10-25",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/f94de0e8-258d-4cf9-82e2-58813ef43dc8"
+  },
+  {
     "emoji": "🎮",
     "name": "Tiny Fighter Arena",
     "url": "https://kreggscode.github.io/tiny-fighter-arena",

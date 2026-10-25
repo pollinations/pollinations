@@ -16,8 +16,7 @@
               : "light";
           }
           if (mode === "dark") document.documentElement.classList.add("dark");
-          // theme-color fallback is declared below for crawlers/pre-paint;
-          // updated dynamically by ColorModeToggle once styles mount.
+          // theme-color set dynamically by ColorModeToggle from --polli-color-app-bg
         } catch {
           /* ignore storage / matchMedia failures */
         }
@@ -49,24 +48,23 @@
     <meta property="og:site_name" content="pollinations.ai" />
     <meta property="og:title" content="Model Monitor" />
     <meta property="og:description" content="Health, evals and latency for every Pollinations model, official and community." />
-    <meta property="og:image" content="https://model-monitor.pollinations.ai/icon-512.png" />
-    <meta property="og:image:width" content="512" />
-    <meta property="og:image:height" content="512" />
+    <meta property="og:image" content="https://model-monitor.pollinations.ai/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="pollinations.ai logo" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://model-monitor.pollinations.ai" />
-    <meta name="theme-color" content="#18181b" />
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Model Monitor" />
     <meta name="twitter:description" content="Health, evals and latency for every Pollinations model, official and community." />
-    <meta name="twitter:image" content="https://model-monitor.pollinations.ai/icon-512.png" />
+    <meta name="twitter:image" content="https://model-monitor.pollinations.ai/og-image.png" />
 
-    <!-- Discord Component Embed (Components V2) -->
+    <!-- Discord component embed (16766829 = #ffd76d brand accent) -->
     <script id="discord:component-embed" type="application/json">
     {
       "component": {
         "type": 17,
-        "accent_color": 1579035,
+        "accent_color": 16766829,
         "components": [
           {
             "type": 9,
@@ -79,7 +77,7 @@
             "accessory": {
               "type": 11,
               "media": {
-                "url": "https://model-monitor.pollinations.ai/icon-512.png"
+                "url": "https://model-monitor.pollinations.ai/icon-maskable-512.png"
               }
             }
           },
@@ -92,13 +90,13 @@
               {
                 "type": 2,
                 "style": 5,
-                "label": "Live Health",
+                "label": "Health",
                 "url": "https://model-monitor.pollinations.ai"
               },
               {
                 "type": 2,
                 "style": 5,
-                "label": "Evals & Leaderboard",
+                "label": "Evals",
                 "url": "https://model-monitor.pollinations.ai/#evals"
               }
             ]

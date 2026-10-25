@@ -59,7 +59,8 @@ type DashboardNavItem = {
 
 // One card per group: Pollinations' resources (News & FAQ, models, agents &
 // MCP), then your pages (Balance first), then Docs in a card of its own. Your
-// balances and name sit under the cards. Signed out only resources and Docs show.
+// balances sit under the cards, then your name in a card too. Signed out only
+// resources and Docs show.
 const NAV_CARD_ORDER: readonly DashboardNavGroup[] = ["resources", "yours"];
 const NAV_CARD_CLASS =
     "flex flex-col gap-0.5 rounded-card bg-surface-opaque p-1.5";
@@ -405,12 +406,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 pt-3">
             {walletArea}
             {accountName && (
-                <AccountLink
-                    name={accountName}
-                    avatarUrl={avatarUrl}
-                    active={activePage === "account"}
-                    onNavigate={onNavigate}
-                />
+                <div className={NAV_CARD_CLASS}>
+                    <AccountLink
+                        name={accountName}
+                        avatarUrl={avatarUrl}
+                        active={activePage === "account"}
+                        onNavigate={onNavigate}
+                    />
+                </div>
             )}
             {accountArea}
             <DashboardFooter links={showFooterLinks ? footerLinks : []} />

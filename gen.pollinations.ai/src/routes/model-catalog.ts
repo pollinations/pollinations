@@ -94,26 +94,6 @@ export async function filterCatalogEntries(
             return false;
         if (query.category !== undefined && info.category !== query.category)
             return false;
-        if (query.type !== undefined && info.category !== query.type)
-            return false;
-        const inputModalities: string[] = info.input_modalities ?? [];
-        const outputModalities: string[] = info.output_modalities ?? [];
-        if (
-            query.input_modality !== undefined &&
-            !inputModalities.includes(query.input_modality)
-        )
-            return false;
-        if (
-            query.output_modality !== undefined &&
-            !outputModalities.includes(query.output_modality)
-        )
-            return false;
-        if (
-            query.modality !== undefined &&
-            !inputModalities.includes(query.modality) &&
-            !outputModalities.includes(query.modality)
-        )
-            return false;
         const have: string[] = info.capabilities ?? [];
         if (!capabilities.every((item) => have.includes(item))) return false;
         const text = [

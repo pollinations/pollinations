@@ -5610,30 +5610,11 @@ fixtureTest(
             onlyModels.map((m) => m.name),
         );
 
-        const [
-            categoryVideo,
-            typeVideo,
-            modalityVideo,
-            outputModalityVideo,
-            inputModalityVideo,
-        ] = await Promise.all([
+        const [categoryVideo, categoryRichVideo] = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/v1/models?category=video"),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?type=video"),
-            SELF.fetch("https://gen.pollinations.ai/models?modality=video"),
-            SELF.fetch(
-                "https://gen.pollinations.ai/models?output_modality=video",
-            ),
-            SELF.fetch(
-                "https://gen.pollinations.ai/models?input_modality=video",
-            ),
+            SELF.fetch("https://gen.pollinations.ai/models?category=video"),
         ]);
-        for (const r of [
-            categoryVideo,
-            typeVideo,
-            modalityVideo,
-            outputModalityVideo,
-            inputModalityVideo,
-        ]) {
+        for (const r of [categoryVideo, categoryRichVideo]) {
             expect(r.status).toBe(200);
         }
 
@@ -5641,54 +5622,28 @@ fixtureTest(
         const categoryVideoData = (await categoryVideo.json()) as {
             data: OpenAIModel[];
         };
-        const typeVideoData = (await typeVideo.json()) as {
-            data: OpenAIModel[];
-        };
-        for (const data of [categoryVideoData.data, typeVideoData.data]) {
-            expect(data.every((m) => m.category === "video")).toBe(true);
-            expect(data.find((m) => m.id === videoModelId)).toBeDefined();
-            expect(data.find((m) => m.id === textModelId)).toBeUndefined();
-        }
-
-        type RichModel = {
-            name: string;
-            input_modalities?: string[];
-            output_modalities?: string[];
-        };
-        const modalityModels = (await modalityVideo.json()) as RichModel[];
-        const outputModalityModels =
-            (await outputModalityVideo.json()) as RichModel[];
-        const inputModalityModels =
-            (await inputModalityVideo.json()) as RichModel[];
         expect(
-            modalityModels.every(
-                (m) =>
-                    m.input_modalities?.includes("video") ||
-                    m.output_modalities?.includes("video"),
-            ),
+            categoryVideoData.data.every((m) => m.category === "video"),
         ).toBe(true);
         expect(
-            modalityModels.find((m) => m.name === videoModelId),
+            categoryVideoData.data.find((m) => m.id === videoModelId),
         ).toBeDefined();
         expect(
-            modalityModels.find((m) => m.name === textModelId),
+            categoryVideoData.data.find((m) => m.id === textModelId),
         ).toBeUndefined();
+
+        type RichModel = { name: string; category?: string };
+        const categoryRichModels =
+            (await categoryRichVideo.json()) as RichModel[];
+        expect(categoryRichModels.every((m) => m.category === "video")).toBe(
+            true,
+        );
         expect(
-            outputModalityModels.every((m) =>
-                m.output_modalities?.includes("video"),
-            ),
-        ).toBe(true);
-        expect(
-            outputModalityModels.find((m) => m.name === videoModelId),
+            categoryRichModels.find((m) => m.name === videoModelId),
         ).toBeDefined();
         expect(
-            inputModalityModels.every((m) =>
-                m.input_modalities?.includes("video"),
-            ),
-        ).toBe(true);
-        expect(
-            inputModalityModels.find((m) => m.name === videoModelId),
-        ).toBeDefined();
+            categoryRichModels.find((m) => m.name === textModelId),
+        ).toBeUndefined();
 
         const invalidResponses = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/models?community=tru"),
@@ -5698,14 +5653,7 @@ fixtureTest(
                 "https://gen.pollinations.ai/image/models?community=nope",
             ),
             SELF.fetch("https://gen.pollinations.ai/v1/models?category=bad"),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?type=bad"),
-            SELF.fetch("https://gen.pollinations.ai/models?modality=bad"),
-            SELF.fetch(
-                "https://gen.pollinations.ai/models?input_modality=embedding",
-            ),
-            SELF.fetch(
-                "https://gen.pollinations.ai/models?output_modality=bad",
-            ),
+            SELF.fetch("https://gen.pollinations.ai/models?category=bad"),
         ]);
         for (const r of invalidResponses) {
             expect(r.status).toBe(400);

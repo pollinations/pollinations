@@ -65,7 +65,7 @@ type DashboardNavItem = {
 };
 
 // Each card lists its groups, with a thin line between them: Pollinations'
-// resources on top (News & FAQ, models, MCP & agents, then Docs after a line),
+// resources on top (News & FAQ, models, agents & MCP, then Docs after a line),
 // then your pages (Balance first). Your balances and name sit under the cards.
 // Signed out only the resources card has items.
 const NAV_CARDS: readonly (readonly DashboardNavGroup[])[] = [

@@ -36,9 +36,9 @@ export type ModelSearch = CatalogSearch & {
     category?: ModelCategory;
 };
 
-/** The /agents page shows MCP servers, or agents with ?view=agents. */
+/** The /agents page shows agents, or MCP servers with ?view=mcp. */
 export type AgentsSearch = CatalogSearch & {
-    view?: "agents";
+    view?: "mcp";
 };
 
 function includes<T extends string>(
@@ -65,7 +65,7 @@ export function validateAgentsSearch(
 ): AgentsSearch {
     return {
         ...validateCatalogSearch(search),
-        view: search.view === "agents" ? "agents" : undefined,
+        view: search.view === "mcp" ? "mcp" : undefined,
     };
 }
 

@@ -107,7 +107,7 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "agents",
         to: "/agents",
-        label: "MCP & Agents",
+        label: "Agents & MCP",
         icon: BotIcon,
         group: "resources",
     },

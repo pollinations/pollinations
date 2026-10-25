@@ -6,10 +6,10 @@ export const Route = createFileRoute("/_dashboard/models")({
     validateSearch: validateModelSearch,
     beforeLoad: ({ search }) => {
         // Agents and MCP servers were tabs of this page; keep shared links working.
-        if (search.category === "agent") {
-            throw redirect({ to: "/agents", search: { view: "agents" } });
+        if (search.category === "agent") throw redirect({ to: "/agents" });
+        if (search.category === "mcp") {
+            throw redirect({ to: "/agents", search: { view: "mcp" } });
         }
-        if (search.category === "mcp") throw redirect({ to: "/agents" });
     },
     component: () => <Models kind="models" />,
 });

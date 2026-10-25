@@ -75,7 +75,7 @@ const MODEL_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-/** Catalog pages: /models, and /agents showing MCP servers or agents. */
+/** Catalog pages: /models, and /agents showing agents or MCP servers. */
 export type CatalogKind = "models" | "agent" | "mcp";
 
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
@@ -481,19 +481,19 @@ export const Models: FC<{ kind: CatalogKind }> = ({ kind }) => {
                         <TitleSwitch
                             views={[
                                 {
-                                    label: "MCP",
-                                    active: kind === "mcp",
+                                    label: "Agents",
+                                    active: kind === "agent",
                                     link: {
                                         to: "/agents",
                                         search: { view: undefined },
                                     },
                                 },
                                 {
-                                    label: "Agents",
-                                    active: kind === "agent",
+                                    label: "MCP",
+                                    active: kind === "mcp",
                                     link: {
                                         to: "/agents",
-                                        search: { view: "agents" },
+                                        search: { view: "mcp" },
                                     },
                                 },
                             ]}

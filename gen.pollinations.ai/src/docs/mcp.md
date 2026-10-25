@@ -13,6 +13,7 @@ then choose a server:
 | --- | --- | --- | --- |
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
+| News & Feeds | `https://gen.pollinations.ai/mcp/news` | Search Hacker News, read RSS/Atom feeds, and find archived snapshots | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
@@ -206,6 +207,20 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### News & Feeds MCP
+
+`hn_stories`, `hn_item`, and `hn_search` read [Hacker News](https://github.com/HackerNews/API)
+and [Algolia search](https://hn.algolia.com/api). `feed_read` reads RSS 2.0 or Atom
+in source order; summaries may contain untrusted HTML and are capped at 2,000 characters.
+`wayback_snapshots` lists successful captures of an exact URL using the
+[Wayback CDX API](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server).
+It returns archive links, not page bodies.
+
+Algolia allows 10,000 requests per hour per IP.
+Upstream throttling and failures are returned as tool errors, without retries.
+These tools have no MCP fee, require a Pollinations key through Gen, and never send
+that key or cookies to upstream sources.
 
 ### Billing and permissions
 

@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "NEWS_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -124,6 +125,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "news",
+        name: "News & Feeds",
+        description:
+            "Search Hacker News, read RSS/Atom feeds, and find archived snapshots.",
+        binding: "NEWS_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free public sources. Upstream limits apply.",
             rates: [],
         },
     },

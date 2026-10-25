@@ -7,31 +7,6 @@
         "deploy-applications.yml:Deploy operations/kpi"
       ]
     },
-    "18229": {
-      "merge_sha": "45ceed257ee4ca805ad6e61a89738d5bc50aeb12",
-      "merged_at": "2026-10-25T12:45:15Z",
-      "required": []
-    },
-    "18340": {
-      "merge_sha": "ae70e8255c7f70714ac84ac4a66fca093b2ab137",
-      "merged_at": "2026-10-25T12:38:18Z",
-      "required": []
-    },
-    "18394": {
-      "merge_sha": "547f8ad448e9927e68101bb29903cab3ca13e9ac",
-      "merged_at": "2026-10-25T12:38:18Z",
-      "required": []
-    },
-    "18406": {
-      "merge_sha": "9f1b90237ff65210e7cbb7b4d59d5b34c24c5b8d",
-      "merged_at": "2026-10-25T12:38:18Z",
-      "required": []
-    },
-    "18418": {
-      "merge_sha": "5274accbd1dea5b65ccf471ac8f5350b8fdf5766",
-      "merged_at": "2026-10-25T11:50:29Z",
-      "required": []
-    },
     "18028": {
       "merge_sha": "a2a962686bd7e26589a2b5e9c7259f75e67fc967",
       "merged_at": "2026-10-25T12:31:42Z",

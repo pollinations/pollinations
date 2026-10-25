@@ -7656,7 +7656,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
         const { key, userId } = await createTestApiKey({
-            type: "publishable",
+            type: "secret",
             accountPermissions: ["keys"],
             user: {
                 githubId: nextAllowedGithubId(),

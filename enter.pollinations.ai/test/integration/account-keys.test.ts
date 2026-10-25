@@ -298,7 +298,7 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(403);
         });
 
-        test("should create key via publishable API key with account:keys permission", async ({
+        test("should reject key creation via publishable API key: edits clear account permissions", async ({
             accountToken,
         }) => {
             const createPub = await SELF.fetch(
@@ -322,7 +322,8 @@ describe("Account Key Management API", () => {
             };
             expect(createdPub.key.startsWith("pk_")).toBe(true);
 
-            // Set account:keys permission
+            // Publishable keys never hold account scopes: the edit succeeds
+            // but leaves the key without the requested account:keys scope.
             const updateResponse = await SELF.fetch(
                 `http://localhost:3000/api/account/keys/${createdPub.id}`,
                 {
@@ -337,6 +338,10 @@ describe("Account Key Management API", () => {
                 },
             );
             expect(updateResponse.status).toBe(200);
+            const updatedPub = (await updateResponse.json()) as {
+                permissions?: { account?: string[] } | null;
+            };
+            expect(updatedPub.permissions?.account ?? []).not.toContain("keys");
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -350,11 +355,7 @@ describe("Account Key Management API", () => {
                 },
             );
 
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.key.startsWith("sk_")).toBe(true);
-            expect(data.name).toBe("child-from-publishable");
-            expect(data.permissions?.account ?? []).not.toContain("keys");
+            expect(response.status).toBe(403);
         });
     });
 

@@ -85,7 +85,7 @@ const CreateCodeAgentSchema = CodeAgentInputSchema.extend({
         .default("private"),
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default([]),
 }).strict();
-const CreateAgentSchema = z.union([
+const CreateAgentSchema = z.discriminatedUnion("type", [
     CreateCodeAgentSchema,
     CreatePromptAgentSchema,
 ]);

@@ -2,6 +2,7 @@ import {
     AccountIcon,
     BookIcon,
     BrandMark,
+    Button,
     CheckIcon,
     ChevronIcon,
     Chip,
@@ -59,8 +60,7 @@ type DashboardNavItem = {
 
 // One card per group: Pollinations' resources (News & FAQ, models, agents &
 // MCP), then your pages (Balance first), then Docs in a card of its own. Your
-// balances sit under the cards, then your name in a card too. Signed out only
-// resources and Docs show.
+// balances and name sit under the cards. Signed out only resources and Docs show.
 const NAV_CARD_ORDER: readonly DashboardNavGroup[] = ["resources", "yours"];
 const NAV_CARD_CLASS =
     "flex flex-col gap-0.5 rounded-card bg-surface-opaque p-1.5";
@@ -406,14 +406,12 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 pt-3">
             {walletArea}
             {accountName && (
-                <div className={NAV_CARD_CLASS}>
-                    <AccountLink
-                        name={accountName}
-                        avatarUrl={avatarUrl}
-                        active={activePage === "account"}
-                        onNavigate={onNavigate}
-                    />
-                </div>
+                <AccountLink
+                    name={accountName}
+                    avatarUrl={avatarUrl}
+                    active={activePage === "account"}
+                    onNavigate={onNavigate}
+                />
             )}
             {accountArea}
             <DashboardFooter links={showFooterLinks ? footerLinks : []} />
@@ -525,25 +523,28 @@ const DashboardFooter: FC<{
 );
 
 // Who is signed in, under the cards, and the way to Account (profile, sign
-// out).
+// out). A button rather than a row: the quiet surface pill when Account isn't
+// open, the accent fill when it is.
 const AccountLink: FC<{
     name: string;
     avatarUrl?: string;
     active: boolean;
     onNavigate: () => void;
 }> = ({ name, avatarUrl, active, onNavigate }) => (
-    <NavItem
+    <Button
         as={Link}
         to="/account"
         data-theme="accent"
-        active={active}
+        intent={active ? undefined : "surface"}
+        aria-current={active ? "page" : undefined}
         onClick={onNavigate}
+        className="w-full self-stretch justify-start gap-2 py-1.5 pr-3 pl-1.5"
     >
         {avatarUrl ? (
             <img
                 src={avatarUrl}
                 alt=""
-                className="-ml-1.5 h-8 w-8 shrink-0 rounded-full object-cover"
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
             />
         ) : (
             <AccountIcon className="h-4 w-4 shrink-0" />
@@ -555,5 +556,5 @@ const AccountLink: FC<{
             </span>
         </span>
         <ChevronIcon className="ml-auto -rotate-90 opacity-60" />
-    </NavItem>
+    </Button>
 );

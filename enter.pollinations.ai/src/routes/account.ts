@@ -22,6 +22,7 @@ import {
     rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { permissionRequired } from "@shared/http/refusals.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { toModelPermissions } from "@shared/registry/model-permissions.ts";
 import { and, desc, eq } from "drizzle-orm";
@@ -1331,10 +1332,11 @@ export const accountRoutes = new Hono<Env>()
 
             // Unbudgeted keys cannot see any balance without account:usage.
             if (keyBudget == null && !canViewAccount) {
-                throw new HTTPException(403, {
-                    message:
-                        "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
-                });
+                throw permissionRequired(
+                    c,
+                    { permission: "usage" },
+                    "API key does not have 'account:usage' permission and no budget of its own to show instead.",
+                );
             }
 
             let accountBalance:

@@ -13,7 +13,11 @@ import { PUBLIC_URLS } from "@shared/public-urls.ts";
  * chat reply.
  */
 export type RefusalContext = {
-    env: { ENVIRONMENT?: string; BETTER_AUTH_SECRET: string };
+    env: {
+        ENVIRONMENT?: string;
+        BETTER_AUTH_SECRET: string;
+        BETTER_AUTH_URL?: string;
+    };
     var: {
         auth?: {
             apiKey?: AuthenticatedApiKey;
@@ -33,11 +37,13 @@ export function fixLink(
     path: string,
     params: Record<string, string | undefined>,
 ): string {
+    // Enter links to its own origin; gen picks the enter of its environment.
     // app.request() tests run without env.
     const base =
-        c.env?.ENVIRONMENT === "staging"
+        c.env?.BETTER_AUTH_URL ??
+        (c.env?.ENVIRONMENT === "staging"
             ? PUBLIC_URLS.enter.staging
-            : PUBLIC_URLS.enter.production;
+            : PUBLIC_URLS.enter.production);
     const url = new URL(path, base);
     for (const [key, value] of Object.entries({
         ...params,

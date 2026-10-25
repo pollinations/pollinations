@@ -114,7 +114,8 @@ export const auth = (options: AuthOptions) =>
         }): Promise<void> => {
             if (!user) {
                 throw new HTTPException(401, {
-                    message: options?.message,
+                    message:
+                        options?.message ?? AUTHENTICATION_REQUIRED_MESSAGE,
                 });
             }
         };

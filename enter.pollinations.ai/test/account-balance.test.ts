@@ -138,6 +138,11 @@ describe("GET /api/account/balance", () => {
             Authorization: `Bearer ${created.key}`,
         });
         expect(res.status).toBe(403);
+        const { error } = await res.json<{ error: { fixUrl: string } }>();
+        const fix = new URL(error.fixUrl);
+        expect(fix.pathname).toBe("/grant");
+        expect(fix.searchParams.get("permission")).toBe("usage");
+        expect(fix.searchParams.get("id")).toBe(created.id);
     });
 
     test("publishable key with a zero budget does not leak accountBalance", async ({

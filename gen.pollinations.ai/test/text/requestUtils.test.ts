@@ -178,20 +178,20 @@ describe("getSimpleTextRequestData", () => {
 
     it("leaves numeric normalization to the provider pipeline", () => {
         const query = GenerateTextRequestQueryParamsSchema.parse({
-            temperature: "4",
-            top_p: "-1 trailing",
-            presence_penalty: "3",
-            frequency_penalty: "-3",
+            temperature: "1.5",
+            top_p: "0.5 trailing",
+            presence_penalty: "1.5",
+            frequency_penalty: "-1.5",
             max_tokens: "16 tokens",
             repetition_penalty: "invalid",
         });
         expect(
             getSimpleTextRequestData("hello", "resolved-model", query),
         ).toMatchObject({
-            temperature: 4,
-            top_p: -1,
-            presence_penalty: 3,
-            frequency_penalty: -3,
+            temperature: 1.5,
+            top_p: 0.5,
+            presence_penalty: 1.5,
+            frequency_penalty: -1.5,
             max_tokens: 16,
         });
         expect(query.repetition_penalty).toBeUndefined();

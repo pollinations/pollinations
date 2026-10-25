@@ -80,6 +80,47 @@ describe("GenerateImageRequestQueryParamsSchema booleans", () => {
     });
 });
 
+describe("GenerateTextRequestQueryParamsSchema numeric bounds", () => {
+    it("accepts boundary values like the POST chat schema", () => {
+        const parsed = GenerateTextRequestQueryParamsSchema.parse({
+            temperature: "2",
+            top_p: "1",
+            presence_penalty: "-2",
+            frequency_penalty: "2",
+            repetition_penalty: "0",
+            max_tokens: "0",
+            seed: "2147483647",
+            reasoning_effort: "high",
+        });
+        expect(parsed.temperature).toBe(2);
+        expect(parsed.seed).toBe(2147483647);
+        expect(parsed.reasoning_effort).toBe("high");
+    });
+
+    it.each([
+        ["temperature", "2.5"],
+        ["temperature", "-0.5"],
+        ["top_p", "1.5"],
+        ["presence_penalty", "3"],
+        ["frequency_penalty", "-3"],
+        ["repetition_penalty", "3"],
+        ["repetition_penalty", "-1"],
+        ["max_tokens", "-1"],
+        ["max_completion_tokens", "-1"],
+        ["seed", "2147483648"],
+        ["reasoning_effort", "banana"],
+    ])(
+        "rejects out-of-range %s=%s like the POST chat schema",
+        (field, value) => {
+            expect(() =>
+                GenerateTextRequestQueryParamsSchema.parse({
+                    [field]: value,
+                }),
+            ).toThrow();
+        },
+    );
+});
+
 describe("GenerateImageRequestQueryParamsSchema duration", () => {
     it("accepts the documented 1-120s bound on GET like on POST", () => {
         const parsed = GenerateImageRequestQueryParamsSchema.parse({

@@ -138,6 +138,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "research",
+                name: "Research",
+                description:
+                    "Search Wikipedia, read articles, and look up Wiktionary definitions.",
+                url: "https://gen.pollinations.ai/mcp/research",
+                pricing: {
+                    description:
+                        "Research lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "machines",
                 name: "Machines",
                 description:
@@ -262,7 +274,45 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test("routes Research without an extra debit and strips cookies", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+            name: "wikipedia_search",
+            arguments: { query: "Ada Lovelace" },
+        },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/research",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "secret=local",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "machines", "research"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

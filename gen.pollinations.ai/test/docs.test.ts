@@ -1105,5 +1105,8 @@ describe("docs routes", () => {
         );
         await waitOnExecutionContext(ctx);
         expect(badRes.status).toBe(404);
+        // A cached miss outlives the deploy that adds a section.
+        expect(badRes.headers.get("Cache-Control")).toBe("no-store");
+        expect(await badRes.text()).toContain("Available sections:");
     });
 });

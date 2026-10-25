@@ -1217,7 +1217,15 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const section = c.req.query("section");
             if (!section) return c.text(LLM_DOC_TEXT);
             const content = LLM_DOC_SECTIONS[section];
-            if (!content) return c.text("Section not found", 404);
+            if (!content) {
+                // Never cache a miss: an edge-cached 404 kept an advertised
+                // section broken after the deploy that added it (#17788).
+                c.header("Cache-Control", "no-store");
+                return c.text(
+                    `Section not found. Available sections: ${Object.keys(LLM_DOC_SECTIONS).join(", ")}`,
+                    404,
+                );
+            }
             return c.text(content);
         })
         .get("/polli-skill.md", (c) => c.text(CLI_SKILL))

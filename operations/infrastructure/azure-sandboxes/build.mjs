@@ -86,6 +86,27 @@ async function azure(url, init = {}) {
 const put = (url, body) =>
     azure(url, { method: "PUT", body: JSON.stringify(body) });
 
+// The boxes this run started. A cancelled or timed-out CI job gets SIGINT,
+// then SIGTERM, and Node skips `finally` on a signal, so these delete them.
+const boxes = new Map();
+async function newBox(group, body) {
+    const box = await put(`${group}/sandboxes`, body);
+    boxes.set(box.id, group);
+    return box;
+}
+function removeBox(group, id) {
+    boxes.delete(id);
+    return azure(`${group}/sandboxes/${id}`, { method: "DELETE" });
+}
+for (const signal of ["SIGINT", "SIGTERM"]) {
+    process.once(signal, async () => {
+        await Promise.allSettled(
+            [...boxes].map(([id, group]) => removeBox(group, id)),
+        );
+        process.exit(1);
+    });
+}
+
 async function running(group, id) {
     for (let tries = 0; tries < 60; tries++) {
         if ((await azure(`${group}/sandboxes/${id}`)).state === "Running") {
@@ -125,7 +146,7 @@ docker push localhost:5000/polli-azure | sed -n 's/.*digest: \\(sha256:[0-9a-f]*
 // envd must answer only with the token, at Azure's port URL.
 async function smokeTest(group, image) {
     const accessToken = randomBytes(32).toString("hex");
-    const box = await put(`${group}/sandboxes`, {
+    const box = await newBox(group, {
         sourcesRef: { diskImage: { id: image } },
         resources: { cpu: "2000m", memory: "2048Mi" },
         labels: { pollinations_role: "image-smoke-test" },
@@ -160,12 +181,12 @@ async function smokeTest(group, image) {
             );
         }
     } finally {
-        await azure(`${group}/sandboxes/${box.id}`, { method: "DELETE" });
+        await removeBox(group, box.id);
     }
 }
 
 const [home] = groups;
-const builder = await put(`${home}/sandboxes`, {
+const builder = await newBox(home, {
     sourcesRef: { diskImage: { name: "ubuntu", isPublic: true } },
     resources: { cpu: "4000m", memory: "8192Mi", disk: "61440Mi" },
     labels: { pollinations_role: "image-builder" },
@@ -214,5 +235,5 @@ try {
         console.log(`${group}\n  AZURE_SANDBOX_IMAGE = "${image.id}"`);
     }
 } finally {
-    await azure(`${home}/sandboxes/${builder.id}`, { method: "DELETE" });
+    await removeBox(home, builder.id);
 }

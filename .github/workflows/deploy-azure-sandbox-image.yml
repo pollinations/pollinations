@@ -17,7 +17,7 @@ permissions:
   contents: read
   id-token: write
 
-# A cancelled build would leave its builder box running.
+# One build at a time: a newer push waits instead of cancelling one halfway.
 concurrency:
   group: deploy-azure-sandbox-image
   cancel-in-progress: false
@@ -52,8 +52,9 @@ jobs:
           tenant-id: f542dd61-ecf3-4524-8905-30f2e2a2e967
           allow-no-subscriptions: true
 
+      # exec, so a cancel's signal reaches node, which deletes its boxes.
       - name: Build and import the image
-        run: node operations/infrastructure/azure-sandboxes/build.mjs
+        run: exec node operations/infrastructure/azure-sandboxes/build.mjs
 
       - name: Open a PR with the new image ids
         run: |
@@ -70,7 +71,8 @@ jobs:
           if [ -z "$PR" ]; then
             gh pr create --title "chore: new Azure sandbox image" --body-file "$RUNNER_TEMP/body.md" --base main --head "$BRANCH"
           else
-            gh pr edit "$PR" --body-file "$RUNNER_TEMP/body.md"
+            # gh pr edit fails here on GitHub's retired Projects (classic) API.
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/$PR" -F body=@"$RUNNER_TEMP/body.md" >/dev/null
           fi
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}

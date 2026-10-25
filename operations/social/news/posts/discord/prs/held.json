@@ -10,9 +10,7 @@
     "18409": {
       "merge_sha": "416a8c50ffa368e55b367b1e16032bc2fd07f4f1",
       "merged_at": "2026-10-25T10:18:11Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/economics"
-      ]
+      "required": []
     }
   },
   "production": "064cbe70cc6a719ad1f8e75971c9a6a5d0df2fcc",

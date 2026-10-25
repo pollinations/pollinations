@@ -1,7 +1,6 @@
 import {
     Button,
     Chip,
-    ExternalLinkIcon,
     GitHubIcon,
     InlineLink,
     Section,
@@ -20,7 +19,6 @@ import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
 /** The submission form every listed app started as (issue template). */
 const SUBMIT_APP_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml";
-const CATALOG_URL = "https://pollinations.ai/apps";
 
 function formatDate(value: string | null): string | null {
     if (!value) return null;
@@ -178,65 +176,32 @@ function AppRow({ app }: { app: ListedApp }) {
     );
 }
 
-function EmptyState() {
-    return (
-        <Surface variant="card" className="flex flex-col items-start gap-3">
-            <div className="flex flex-col gap-1">
-                <Text as="span" weight="semibold">
-                    You haven’t listed an app yet
-                </Text>
-                <Text as="p" className="text-sm text-theme-text-muted">
-                    Apps you submit to the community catalog show up here, with
-                    their approval date, links and Pollen Pay traffic, once a
-                    maintainer approves them.
-                </Text>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-                <Button
-                    as="a"
-                    href={SUBMIT_APP_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    intent="commit"
-                    icon={<ExternalLinkIcon />}
-                >
-                    Submit your app
-                </Button>
-                <InlineLink href={CATALOG_URL}>Browse the catalog</InlineLink>
-            </div>
-            <Text as="p" className="text-xs text-theme-text-muted">
-                A listing is matched to the GitHub account you signed in with,
-                so submit from the same account.
-            </Text>
-        </Surface>
-    );
-}
-
 export function MyApps({
     apps,
+    githubConnected,
     onRetry,
 }: {
     apps: ListedApp[] | null | undefined;
+    githubConnected: boolean;
     onRetry: () => Promise<void>;
 }) {
+    const submitAction = (
+        <Button
+            as="a"
+            href={SUBMIT_APP_URL}
+            target="_blank"
+            rel="noreferrer"
+            icon={<GitHubIcon />}
+        >
+            Submit
+        </Button>
+    );
+
     return (
         <Section
             title="My Apps"
             intro="Your published apps in the community catalog."
-            action={
-                apps && apps.length > 0 ? (
-                    <Button
-                        as="a"
-                        href={SUBMIT_APP_URL}
-                        target="_blank"
-                        rel="noreferrer"
-                        intent="brand"
-                        icon={<GitHubIcon />}
-                    >
-                        Submit
-                    </Button>
-                ) : undefined
-            }
+            action={apps && apps.length > 0 ? submitAction : undefined}
         >
             {apps === undefined ? (
                 <PageStatus />
@@ -244,14 +209,46 @@ export function MyApps({
                 <LoadError onRetry={onRetry}>
                     Couldn’t load your apps. Please try again.
                 </LoadError>
-            ) : apps.length === 0 ? (
-                <EmptyState />
             ) : (
-                <div className="@container flex flex-col gap-2">
-                    {apps.map((app) => (
-                        <AppRow key={`${app.name}|${app.webUrl}`} app={app} />
-                    ))}
-                </div>
+                <>
+                    <div className="@container flex flex-col gap-2">
+                        {apps.length === 0 ? (
+                            <Surface className="p-6 text-center">
+                                <div className="mb-2">{submitAction}</div>
+                                <p className="text-sm text-theme-text-muted">
+                                    Apps you submit to the community catalog
+                                    show up here once a maintainer approves
+                                    them.
+                                </p>
+                            </Surface>
+                        ) : (
+                            apps.map((app) => (
+                                <AppRow
+                                    key={`${app.name}|${app.webUrl}`}
+                                    app={app}
+                                />
+                            ))
+                        )}
+                    </div>
+                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                        <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        {githubConnected ? (
+                            <span>
+                                A listing is matched to your connected GitHub
+                                account, so submit from that account.
+                            </span>
+                        ) : (
+                            <span>
+                                Listings are matched to a GitHub account.{" "}
+                                <InlineLink href="/account">
+                                    Connect GitHub
+                                </InlineLink>{" "}
+                                on your account page, then submit from that
+                                account.
+                            </span>
+                        )}
+                    </p>
+                </>
             )}
         </Section>
     );

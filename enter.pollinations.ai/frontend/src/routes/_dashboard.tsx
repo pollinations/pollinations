@@ -5,7 +5,7 @@ import {
     Outlet,
     useRouter,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue, useEffect, useState } from "react";
+import { Suspense, useDeferredValue, useState } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
@@ -18,7 +18,7 @@ import {
 } from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
-    dashboardNavItems,
+    DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
@@ -136,31 +136,10 @@ export function useDashboardRetry(resource: "balance" | "profile" | "apps") {
     };
 }
 
-// Share the loader request between navigation and page without blocking the shell.
-export function useDashboardApps() {
-    const { apps: promise, user } = Route.useLoaderData();
-    const userId = user?.id;
-    const [resolved, setResolved] = useState<{
-        userId: typeof userId;
-        apps: ListedApp[] | null;
-    }>();
-    useEffect(() => {
-        let active = true;
-        void promise.then((apps) => {
-            if (active) setResolved({ userId, apps });
-        });
-        return () => {
-            active = false;
-        };
-    }, [promise, userId]);
-    return resolved?.userId === userId ? resolved?.apps : undefined;
-}
-
 function DashboardLayout() {
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const apps = useDashboardApps();
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -176,11 +155,7 @@ function DashboardLayout() {
 
     return (
         <DashboardShell
-            navItems={
-                data.user
-                    ? dashboardNavItems(Boolean(apps?.length))
-                    : SIGNED_OUT_NAV_ITEMS
-            }
+            navItems={data.user ? DASHBOARD_NAV_ITEMS : SIGNED_OUT_NAV_ITEMS}
             accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}

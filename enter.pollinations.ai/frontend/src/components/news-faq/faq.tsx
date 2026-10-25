@@ -62,6 +62,10 @@ const parseFAQFromMarkdown = (markdown: string): FAQItem[] => {
 
 const faqData = parseFAQFromMarkdown(faqMarkdown);
 
+/** Whether a URL hash names an FAQ answer, e.g. /news#how-do-quests-work. */
+export const isFaqAnchor = (hash: string): boolean =>
+    faqData.some((item) => generateSlug(item.question) === hash);
+
 type FAQProps = {
     showTitle?: boolean;
 };
@@ -86,6 +90,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
         if (!isOpen || hash === slug) {
             void navigate({
                 to: "/news",
+                search: { view: "faq" },
                 hash: isOpen ? "" : slug,
             });
         }

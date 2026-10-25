@@ -4,16 +4,15 @@ import { PageLoading } from "./dashboard-loading.tsx";
 import { DashboardShell } from "./dashboard-shell.tsx";
 
 const pageTitles: Record<string, readonly string[]> = {
-    "/news": ["News", "FAQ"],
+    "/news": ["News"],
     "/models": ["Models"],
-    "/agents": ["Agents"],
-    "/mcp": ["MCP"],
+    "/agents": ["MCP"],
     "/my-models": ["My Models"],
     "/my-agents": ["My Agents"],
     "/my-apps": ["My Apps"],
     "/sandboxes": ["Sandboxes"],
     "/keys": ["Secrets", "Apps"],
-    "/credits": ["Pollen", "Top-up"],
+    "/balance": ["Pollen", "Top-up"],
     "/connectors": ["Connectors"],
     "/activity": ["Usage", "Earnings", "Last events"],
     "/quests": ["Claimed"],

@@ -9,9 +9,7 @@ import {
     ColorModeToggle,
     CopyButton,
     cn,
-    DiscordIcon,
     ExternalLinkIcon,
-    GitHubIcon,
     LoadingStatus,
     MenuIcon,
     NavItem,
@@ -66,13 +64,13 @@ type DashboardNavItem = {
     group: DashboardNavGroup;
 };
 
-// Each card lists its groups, with a thin line between them: your pages
-// (Credits first) on top, then Pollinations' resources (News & FAQ, models,
-// agents, MCP, then Docs, GitHub and Discord after a line). Your balances and
-// name sit under the cards. Signed out only the resources card has items.
+// Each card lists its groups, with a thin line between them: Pollinations'
+// resources on top (News & FAQ, models, MCP & agents, then Docs after a line),
+// then your pages (Balance first). Your balances and name sit under the cards.
+// Signed out only the resources card has items.
 const NAV_CARDS: readonly (readonly DashboardNavGroup[])[] = [
-    ["yours"],
     ["resources"],
+    ["yours"],
 ];
 const NAV_CARD_CLASS =
     "flex flex-col gap-0.5 rounded-card bg-surface-opaque p-1.5";
@@ -88,33 +86,10 @@ type DashboardShellProps = PropsWithChildren<{
     showQuestStatus?: boolean;
 }>;
 
-type CommunityLink = {
-    href: string;
-    label: string;
-    icon: ComponentType<{ className?: string }>;
-    count: string;
-};
-
 type FooterLink = {
     label: string;
     href: string;
 };
-
-// Under Docs: like every row under the line, they open another site.
-const communityLinks: readonly CommunityLink[] = [
-    {
-        href: "https://github.com/pollinations/pollinations",
-        label: "GitHub",
-        icon: GitHubIcon,
-        count: "5k",
-    },
-    {
-        href: "https://discord.gg/k9F7SyTgqn",
-        label: "Discord",
-        icon: DiscordIcon,
-        count: "19k",
-    },
-];
 
 const footerLinks: readonly FooterLink[] = [
     { label: "Terms", href: "https://pollinations.ai/terms" },
@@ -197,7 +172,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         const scrollElement = mainScrollRef.current;
         if (!scrollElement) return;
 
-        if (activePage === "credits" && location.hash === "buy-pollen") {
+        if (activePage === "balance" && location.hash === "buy-pollen") {
             const target = scrollElement.querySelector("#buy-pollen");
             if (target instanceof HTMLElement) {
                 const scrollRect = scrollElement.getBoundingClientRect();
@@ -444,12 +419,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                         <>
                                             <NavDivider />
                                             <DocsRow />
-                                            {communityLinks.map((link) => (
-                                                <CommunityRow
-                                                    key={link.href}
-                                                    {...link}
-                                                />
-                                            ))}
                                         </>
                                     )}
                                 </Fragment>
@@ -513,25 +482,6 @@ const BrandHeader: FC<{ onClose: () => void }> = ({ onClose }) => (
             <XIcon className="h-5 w-5" />
         </button>
     </div>
-);
-
-// No noreferrer: GitHub's traffic report credits enter.pollinations.ai only
-// when the referrer travels, and it is our only count of clicks to the repo.
-const CommunityRow: FC<CommunityLink> = ({ href, label, icon, count }) => (
-    <NavItem
-        as="a"
-        href={href}
-        target="_blank"
-        rel="noopener"
-        data-theme="accent"
-        icon={icon}
-    >
-        {label}
-        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
-        <span className="ml-auto text-xs tabular-nums text-theme-text-muted">
-            {count}
-        </span>
-    </NavItem>
 );
 
 // Docs looks like the other rows; ↗ marks that it opens the API reference,

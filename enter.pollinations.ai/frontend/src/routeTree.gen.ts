@@ -30,10 +30,9 @@ import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-mo
 import { Route as DashboardMyAppsRouteImport } from './routes/_dashboard.my-apps'
 import { Route as DashboardMyAgentsRouteImport } from './routes/_dashboard.my-agents'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
-import { Route as DashboardMcpRouteImport } from './routes/_dashboard.mcp'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
-import { Route as DashboardCreditsRouteImport } from './routes/_dashboard.credits'
 import { Route as DashboardConnectorsRouteImport } from './routes/_dashboard.connectors'
+import { Route as DashboardBalanceRouteImport } from './routes/_dashboard.balance'
 import { Route as DashboardAgentsRouteImport } from './routes/_dashboard.agents'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
@@ -142,24 +141,19 @@ const DashboardModelsRoute = DashboardModelsRouteImport.update({
   path: '/models',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardMcpRoute = DashboardMcpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardKeysRoute = DashboardKeysRouteImport.update({
   id: '/keys',
   path: '/keys',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
-  id: '/credits',
-  path: '/credits',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardConnectorsRoute = DashboardConnectorsRouteImport.update({
   id: '/connectors',
   path: '/connectors',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardBalanceRoute = DashboardBalanceRouteImport.update({
+  id: '/balance',
+  path: '/balance',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardAgentsRoute = DashboardAgentsRouteImport.update({
@@ -192,10 +186,9 @@ export interface FileRoutesByFullPath {
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/agents': typeof DashboardAgentsRoute
+  '/balance': typeof DashboardBalanceRoute
   '/connectors': typeof DashboardConnectorsRoute
-  '/credits': typeof DashboardCreditsRoute
   '/keys': typeof DashboardKeysRoute
-  '/mcp': typeof DashboardMcpRoute
   '/models': typeof DashboardModelsRoute
   '/my-agents': typeof DashboardMyAgentsRoute
   '/my-apps': typeof DashboardMyAppsRoute
@@ -221,10 +214,9 @@ export interface FileRoutesByTo {
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/agents': typeof DashboardAgentsRoute
+  '/balance': typeof DashboardBalanceRoute
   '/connectors': typeof DashboardConnectorsRoute
-  '/credits': typeof DashboardCreditsRoute
   '/keys': typeof DashboardKeysRoute
-  '/mcp': typeof DashboardMcpRoute
   '/models': typeof DashboardModelsRoute
   '/my-agents': typeof DashboardMyAgentsRoute
   '/my-apps': typeof DashboardMyAppsRoute
@@ -252,10 +244,9 @@ export interface FileRoutesById {
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/agents': typeof DashboardAgentsRoute
+  '/_dashboard/balance': typeof DashboardBalanceRoute
   '/_dashboard/connectors': typeof DashboardConnectorsRoute
-  '/_dashboard/credits': typeof DashboardCreditsRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
-  '/_dashboard/mcp': typeof DashboardMcpRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/my-agents': typeof DashboardMyAgentsRoute
   '/_dashboard/my-apps': typeof DashboardMyAppsRoute
@@ -283,10 +274,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/activity'
     | '/agents'
+    | '/balance'
     | '/connectors'
-    | '/credits'
     | '/keys'
-    | '/mcp'
     | '/models'
     | '/my-agents'
     | '/my-apps'
@@ -312,10 +302,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/activity'
     | '/agents'
+    | '/balance'
     | '/connectors'
-    | '/credits'
     | '/keys'
-    | '/mcp'
     | '/models'
     | '/my-agents'
     | '/my-apps'
@@ -342,10 +331,9 @@ export interface FileRouteTypes {
     | '/_dashboard/account'
     | '/_dashboard/activity'
     | '/_dashboard/agents'
+    | '/_dashboard/balance'
     | '/_dashboard/connectors'
-    | '/_dashboard/credits'
     | '/_dashboard/keys'
-    | '/_dashboard/mcp'
     | '/_dashboard/models'
     | '/_dashboard/my-agents'
     | '/_dashboard/my-apps'
@@ -522,13 +510,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardModelsRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/mcp': {
-      id: '/_dashboard/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof DashboardMcpRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/_dashboard/keys': {
       id: '/_dashboard/keys'
       path: '/keys'
@@ -536,18 +517,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardKeysRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/credits': {
-      id: '/_dashboard/credits'
-      path: '/credits'
-      fullPath: '/credits'
-      preLoaderRoute: typeof DashboardCreditsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/_dashboard/connectors': {
       id: '/_dashboard/connectors'
       path: '/connectors'
       fullPath: '/connectors'
       preLoaderRoute: typeof DashboardConnectorsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/balance': {
+      id: '/_dashboard/balance'
+      path: '/balance'
+      fullPath: '/balance'
+      preLoaderRoute: typeof DashboardBalanceRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/agents': {
@@ -578,10 +559,9 @@ interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardActivityRoute: typeof DashboardActivityRoute
   DashboardAgentsRoute: typeof DashboardAgentsRoute
+  DashboardBalanceRoute: typeof DashboardBalanceRoute
   DashboardConnectorsRoute: typeof DashboardConnectorsRoute
-  DashboardCreditsRoute: typeof DashboardCreditsRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
-  DashboardMcpRoute: typeof DashboardMcpRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardMyAgentsRoute: typeof DashboardMyAgentsRoute
   DashboardMyAppsRoute: typeof DashboardMyAppsRoute
@@ -597,10 +577,9 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
   DashboardActivityRoute: DashboardActivityRoute,
   DashboardAgentsRoute: DashboardAgentsRoute,
+  DashboardBalanceRoute: DashboardBalanceRoute,
   DashboardConnectorsRoute: DashboardConnectorsRoute,
-  DashboardCreditsRoute: DashboardCreditsRoute,
   DashboardKeysRoute: DashboardKeysRoute,
-  DashboardMcpRoute: DashboardMcpRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardMyAgentsRoute: DashboardMyAgentsRoute,
   DashboardMyAppsRoute: DashboardMyAppsRoute,

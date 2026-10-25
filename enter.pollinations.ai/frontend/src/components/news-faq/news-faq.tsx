@@ -1,5 +1,7 @@
 import { InlineLink, Section, TabButton } from "@pollinations/ui";
+import { useSearch } from "@tanstack/react-router";
 import { type FC, type ReactNode, useState } from "react";
+import { TitleSwitch } from "../layout/title-switch.tsx";
 import { FAQ } from "./faq.tsx";
 import {
     Announcements,
@@ -23,6 +25,7 @@ const CHANGELOG_LINKS = (
 type Tab = { label: string; links?: ReactNode; panel: ReactNode };
 
 export const NewsFaq: FC = () => {
+    const { view } = useSearch({ from: "/_dashboard/news" });
     // Fetched on load, so the index tabs are ready when opened.
     const index = useNewsIndex();
     const today = new Date().toISOString().slice(0, 10);
@@ -49,34 +52,53 @@ export const NewsFaq: FC = () => {
     ];
     const [active, setActive] = useState(tabs[0].label);
     const tab = tabs.find(({ label }) => label === active) ?? tabs[0];
-    return (
-        <>
-            <Section
-                title="News"
-                framed
-                action={tab.links}
-                actionClassName="ml-auto"
-            >
-                <fieldset
-                    className="flex min-w-0 flex-wrap gap-1.5"
-                    aria-label="News type"
-                >
-                    {tabs.map(({ label }) => (
-                        <TabButton
-                            key={label}
-                            active={label === tab.label}
-                            onClick={() => setActive(label)}
-                            size="sm"
-                        >
-                            {label}
-                        </TabButton>
-                    ))}
-                </fieldset>
-                {tab.panel}
-            </Section>
-            <Section title="FAQ" id="faq">
+    // One view at a time; the heading switches between News and FAQ.
+    const title = (
+        <TitleSwitch
+            views={[
+                {
+                    label: "News",
+                    active: view !== "faq",
+                    link: { to: "/news", search: { view: undefined } },
+                },
+                {
+                    label: "FAQ",
+                    active: view === "faq",
+                    link: { to: "/news", search: { view: "faq" } },
+                },
+            ]}
+        />
+    );
+    if (view === "faq") {
+        return (
+            <Section title={title} id="faq">
                 <FAQ showTitle={false} />
             </Section>
-        </>
+        );
+    }
+    return (
+        <Section
+            title={title}
+            framed
+            action={tab.links}
+            actionClassName="ml-auto"
+        >
+            <fieldset
+                className="flex min-w-0 flex-wrap gap-1.5"
+                aria-label="News type"
+            >
+                {tabs.map(({ label }) => (
+                    <TabButton
+                        key={label}
+                        active={label === tab.label}
+                        onClick={() => setActive(label)}
+                        size="sm"
+                    >
+                        {label}
+                    </TabButton>
+                ))}
+            </fieldset>
+            {tab.panel}
+        </Section>
     );
 };

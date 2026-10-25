@@ -8,7 +8,6 @@ import {
     BotIcon,
     CloudUploadIcon,
     LockIcon,
-    McpIcon,
     NewspaperIcon,
     RobotIcon,
     SparkleIcon,
@@ -35,9 +34,9 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "account",
     },
     {
-        id: "credits",
-        to: "/credits",
-        label: "Credits",
+        id: "balance",
+        to: "/balance",
+        label: "Balance",
         icon: WalletIcon,
         group: "yours",
     },
@@ -108,15 +107,8 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "agents",
         to: "/agents",
-        label: "Agents",
+        label: "MCP & Agents",
         icon: BotIcon,
-        group: "resources",
-    },
-    {
-        id: "mcp",
-        to: "/mcp",
-        label: "MCP",
-        icon: McpIcon,
         group: "resources",
     },
 ] as const satisfies readonly {

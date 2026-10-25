@@ -36,6 +36,11 @@ export type ModelSearch = CatalogSearch & {
     category?: ModelCategory;
 };
 
+/** The /agents page shows MCP servers, or agents with ?view=agents. */
+export type AgentsSearch = CatalogSearch & {
+    view?: "agents";
+};
+
 function includes<T extends string>(
     values: readonly T[],
     value: unknown,
@@ -52,6 +57,15 @@ export function validateCatalogSearch(
     return {
         q: query || undefined,
         sort: sort === "popular" ? undefined : sort,
+    };
+}
+
+export function validateAgentsSearch(
+    search: Record<string, unknown>,
+): AgentsSearch {
+    return {
+        ...validateCatalogSearch(search),
+        view: search.view === "agents" ? "agents" : undefined,
     };
 }
 

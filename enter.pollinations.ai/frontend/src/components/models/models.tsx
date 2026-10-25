@@ -23,6 +23,7 @@ import {
     useState,
 } from "react";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import { TitleSwitch } from "../layout/title-switch.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
@@ -74,14 +75,8 @@ const MODEL_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-/** Each catalog has its own dashboard page: /models, /agents and /mcp. */
+/** Catalog pages: /models, and /agents showing MCP servers or agents. */
 export type CatalogKind = "models" | "agent" | "mcp";
-
-const CATALOG_TITLES: Record<CatalogKind, string> = {
-    models: "Models",
-    agent: "Agents",
-    mcp: "MCP",
-};
 
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
 const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
@@ -479,7 +474,32 @@ export const Models: FC<{ kind: CatalogKind }> = ({ kind }) => {
     return (
         <>
             <Section
-                title={CATALOG_TITLES[kind]}
+                title={
+                    kind === "models" ? (
+                        "Models"
+                    ) : (
+                        <TitleSwitch
+                            views={[
+                                {
+                                    label: "MCP",
+                                    active: kind === "mcp",
+                                    link: {
+                                        to: "/agents",
+                                        search: { view: undefined },
+                                    },
+                                },
+                                {
+                                    label: "Agents",
+                                    active: kind === "agent",
+                                    link: {
+                                        to: "/agents",
+                                        search: { view: "agents" },
+                                    },
+                                },
+                            ]}
+                        />
+                    )
+                }
                 actionClassName="ml-auto"
                 action={
                     kind === "models" && (

@@ -23,7 +23,7 @@ import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation
 import { checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
-export const Route = createFileRoute("/_dashboard/credits")({
+export const Route = createFileRoute("/_dashboard/balance")({
     validateSearch: (
         search: Record<string, unknown>,
     ): {
@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_dashboard/credits")({
 function PollenPage() {
     const retry = useDashboardRetry("balance");
     const { pack, session_id: checkoutSessionId } = Route.useSearch();
-    const navigate = useNavigate({ from: "/credits" });
+    const navigate = useNavigate({ from: "/balance" });
     const router = useRouter();
     // Balance and billing both come from loaders; rerun them once credited.
     const reloadWallet = () => void router.invalidate();

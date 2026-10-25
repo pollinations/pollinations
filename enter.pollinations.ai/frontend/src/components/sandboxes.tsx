@@ -557,8 +557,8 @@ export function Sandboxes() {
                     {actionError === NO_POLLEN && (
                         <>
                             {" "}
-                            <InlineLink href="/credits">
-                                Go to Credits
+                            <InlineLink href="/balance">
+                                Go to Balance
                             </InlineLink>
                         </>
                     )}

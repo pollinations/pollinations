@@ -4,7 +4,8 @@ import { Surface } from "../primitives/Surface.tsx";
 import { Heading, Text } from "../primitives/Typography.tsx";
 
 export type SectionProps = {
-    title: string;
+    /** Usually text; can hold inline controls, e.g. a heading that switches lists. */
+    title: ReactNode;
     id?: string;
     framed?: boolean;
     intro?: ReactNode;

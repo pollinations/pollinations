@@ -972,7 +972,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                         <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             Complete → claim → credited to your{" "}
-                            <InlineLink href="/credits">credits</InlineLink>.
+                            <InlineLink href="/balance">balance</InlineLink>.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">

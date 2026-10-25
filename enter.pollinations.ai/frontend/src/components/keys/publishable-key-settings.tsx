@@ -1,6 +1,5 @@
 import { Button, Field, InfoTip, Input } from "@pollinations/ui";
 import { AuthInfoCard } from "@pollinations/ui/auth";
-import { isAllowedRedirectUrl } from "@shared/auth/redirect-uri.ts";
 import type { FC } from "react";
 
 /**
@@ -9,38 +8,6 @@ import type { FC } from "react";
  * dev sees it in the editor and should remove it before production.
  */
 export const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
-
-/**
- * First non-empty redirect URL that is invalid, or null. Mirrors
- * validateRedirectUriFormat so mistakes surface before the request is sent,
- * and also catches two URLs pasted into one field.
- */
-export function findInvalidRedirectUri(uris: string[]): string | null {
-    for (const raw of uris) {
-        const uri = raw.trim();
-        if (!uri) continue;
-        let url: URL;
-        try {
-            url = new URL(uri);
-        } catch {
-            return uri;
-        }
-        if (
-            !/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(uri) ||
-            url.hash ||
-            !isAllowedRedirectUrl(url) ||
-            // Two URLs run together, e.g. typed after the pre-filled default.
-            url.pathname.includes("://")
-        ) {
-            return uri;
-        }
-    }
-    return null;
-}
-
-export function invalidRedirectUriMessage(uri: string): string {
-    return `"${uri}" is not a valid redirect URL. Use https://, or http:// for localhost, without a #fragment.`;
-}
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];

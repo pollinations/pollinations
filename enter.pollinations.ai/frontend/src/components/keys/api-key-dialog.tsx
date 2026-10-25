@@ -5,11 +5,7 @@ import { generateFunName } from "../../lib/fun-name.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
-import {
-    DEFAULT_LOCALHOST_REDIRECT,
-    findInvalidRedirectUri,
-    invalidRedirectUriMessage,
-} from "./publishable-key-settings.tsx";
+import { DEFAULT_LOCALHOST_REDIRECT } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 
 type ApiKeyDialogProps = {
@@ -63,14 +59,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const invalidUri =
-            keyType === "publishable"
-                ? findInvalidRedirectUri(redirectUris)
-                : null;
-        if (invalidUri) {
-            setError(invalidRedirectUriMessage(invalidUri));
-            return;
-        }
         setIsSubmitting(true);
         setError(null);
         try {

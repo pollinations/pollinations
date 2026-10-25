@@ -6,7 +6,6 @@ import {
     AppIcon,
     BeakerIcon,
     BotIcon,
-    CloudUploadIcon,
     LockIcon,
     NewspaperIcon,
     RobotIcon,
@@ -59,7 +58,7 @@ export const DASHBOARD_NAV_ITEMS = [
         id: "my-models",
         to: "/my-models",
         label: "My Models",
-        icon: CloudUploadIcon,
+        icon: BeakerIcon,
         group: "yours",
     },
     {

@@ -58,7 +58,10 @@ export const setKeyOverride = (key: string | undefined) => {
 };
 
 export const resolveApiKey = (flagKey?: string): string | undefined =>
-    flagKey ?? _keyOverride ?? loadCredentials().apiKey;
+    flagKey ??
+    _keyOverride ??
+    (process.env.POLLINATIONS_API_KEY?.trim() || undefined) ??
+    loadCredentials().apiKey;
 
 export const BASE_URL =
     process.env.POLLINATIONS_BASE_URL ??

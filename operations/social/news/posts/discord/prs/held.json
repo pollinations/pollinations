@@ -24,11 +24,6 @@
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
-    "18360": {
-      "merge_sha": "4bd3035b2e73faeb32cbaf886780a2eb2f635805",
-      "merged_at": "2026-10-25T12:34:39Z",
-      "required": []
-    },
     "18394": {
       "merge_sha": "547f8ad448e9927e68101bb29903cab3ca13e9ac",
       "merged_at": "2026-10-25T12:38:18Z",
@@ -46,11 +41,6 @@
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
       ]
-    },
-    "18413": {
-      "merge_sha": "77099e9b296f253ccf80c8906578219d04adf477",
-      "merged_at": "2026-10-25T12:34:39Z",
-      "required": []
     },
     "18418": {
       "merge_sha": "5274accbd1dea5b65ccf471ac8f5350b8fdf5766",

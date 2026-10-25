@@ -4,7 +4,17 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+
+/** Caller-specific attempts must not share another payer's refusal or result. */
+export function callerCacheScope(
+    auth: AuthVariables["auth"] | undefined,
+): string {
+    if (auth?.apiKey?.id) return `key:${auth.apiKey.id}`;
+    if (auth?.user?.id) return `user:${auth.user.id}`;
+    return "anonymous";
+}
 
 export type GenerationCacheStorage = "media" | "text";
 

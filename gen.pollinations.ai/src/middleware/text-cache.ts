@@ -12,6 +12,7 @@ import {
 } from "@/utils/text-cache.ts";
 import type { AuthVariables } from "./auth.ts";
 import {
+    callerCacheScope,
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
@@ -50,7 +51,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
         const partition = cacheScope
             ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
             : variables.model?.requested?.includes(",")
-              ? `caller-list:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
+              ? `caller-list:${callerCacheScope(variables.auth)}`
               : undefined;
         return generateCacheKey(
             c.req.raw,

@@ -5,6 +5,7 @@ import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
 import type { AuthVariables } from "./auth.ts";
 import {
+    callerCacheScope,
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
@@ -47,7 +48,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 c.set("generationCachePrivate", true);
                 cacheUrl.searchParams.set(
                     "__caller_list_key",
-                    variables.auth?.apiKey?.id ?? "anonymous",
+                    callerCacheScope(variables.auth),
                 );
             }
             if (c.var.generationCacheBody) {

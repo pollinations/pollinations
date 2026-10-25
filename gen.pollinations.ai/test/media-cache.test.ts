@@ -115,52 +115,66 @@ async function consumeAndWait(result: Awaited<ReturnType<typeof dispatch>>) {
 }
 
 describe("media cache", () => {
-    it("caches caller lists per API key while repeats by the same key rejoin", async () => {
-        let originHits = 0;
-        const app = new Hono<TestEnv>()
-            .use("*", async (c, next) => {
-                c.set("log", testLog);
-                c.set("requestId", "same-request");
-                c.set("model", {
-                    requested: "pruna,flux",
-                    resolved: "pruna",
-                    definition: {},
-                } as ModelVariables["model"]);
-                c.set("auth", {
-                    apiKey: { id: c.req.header("x-test-key") },
-                } as AuthVariables["auth"]);
-                await next();
-            })
-            .get(
-                "/media/:prompt",
-                imageCache,
-                () =>
-                    new Response(`origin:${++originHits}`, {
-                        headers: { "Content-Type": "image/png" },
-                    }),
-            );
-        const env = createMediaCacheEnv();
-        for (const [key, status] of [
-            ["one", "MISS"],
-            ["two", "MISS"],
-            ["one", "HIT"],
-        ]) {
-            const result = await dispatch(
-                app,
-                "/media/list?model=pruna,flux",
-                {
-                    headers: { "x-test-key": key },
-                },
-                env,
-            );
-            await consumeAndWait(result);
-            expect(result.response.headers.get("X-Cache")).toBe(status);
-            expect(result.response.headers.get("Cache-Control")).toBe(
-                "private, no-store",
-            );
-        }
-        expect(originHits).toBe(2);
-    });
+    it.each(["key", "session"])(
+        "caches caller lists per %s while repeats by the same caller rejoin",
+        async (mode) => {
+            let originHits = 0;
+            const app = new Hono<TestEnv>()
+                .use("*", async (c, next) => {
+                    c.set("log", testLog);
+                    c.set("requestId", "same-request");
+                    c.set("model", {
+                        requested: "pruna,flux",
+                        resolved: "pruna",
+                        definition: {},
+                    } as ModelVariables["model"]);
+                    c.set("auth", {
+                        apiKey:
+                            mode === "key"
+                                ? { id: c.req.header("x-test-caller") }
+                                : undefined,
+                        user:
+                            mode === "session"
+                                ? { id: c.req.header("x-test-caller") }
+                                : undefined,
+                    } as AuthVariables["auth"]);
+                    await next();
+                })
+                .get(
+                    "/media/:prompt",
+                    imageCache,
+                    () =>
+                        new Response(`origin:${++originHits}`, {
+                            headers: { "Content-Type": "image/png" },
+                        }),
+                );
+            const env = createMediaCacheEnv();
+            for (const [key, status] of [
+                ["one", "MISS"],
+                ["two", "MISS"],
+                ["one", "HIT"],
+            ]) {
+                const result = await dispatch(
+                    app,
+                    "/media/list?model=pruna,flux",
+                    {
+                        headers: { "x-test-caller": key },
+                    },
+                    env,
+                );
+                expect(
+                    result.response.status,
+                    await result.response.clone().text(),
+                ).toBe(200);
+                await consumeAndWait(result);
+                expect(result.response.headers.get("X-Cache")).toBe(status);
+                expect(result.response.headers.get("Cache-Control")).toBe(
+                    "private, no-store",
+                );
+            }
+            expect(originHits).toBe(2);
+        },
+    );
 
     it("uses an opaque full-request hash, including long prompt suffixes", async () => {
         const prefix = "x".repeat(2000);

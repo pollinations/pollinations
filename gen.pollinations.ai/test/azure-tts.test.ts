@@ -110,3 +110,37 @@ workerTest(
         }
     },
 );
+
+workerTest(
+    "rejects a speed outside the documented 0.25-4 range",
+    async ({ paidApiKey }) => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "openai/tts-1",
+                    input: "Do not call the provider.",
+                    speed: 10,
+                }),
+            }),
+            withInlineGenerationCoordinator(env),
+            ctx,
+        );
+
+        try {
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: expect.stringContaining("speed"),
+                },
+            });
+        } finally {
+            await waitOnExecutionContext(ctx);
+        }
+    },
+);

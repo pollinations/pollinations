@@ -46,14 +46,12 @@ const Dashboard = lazy(async () => {
             ) => <Economics {...props} planningDocument={planningDocument} />,
         };
     } catch (error) {
-        const { SourceRecovery } = await import("./components/SourceRecovery");
-        const reason =
-            error instanceof Error && error.name === "TimeoutError"
-                ? "Vendor journals took too long to load. Retry journals."
-                : error instanceof Error
-                  ? error.message
-                  : "Vendor journals are unavailable.";
-        return { default: () => <SourceRecovery reason={reason} /> };
+        console.error("Economics could not load", error);
+        return {
+            default: () => (
+                <Text role="alert">Economics is temporarily unavailable.</Text>
+            ),
+        };
     }
 });
 function App() {

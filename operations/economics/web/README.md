@@ -73,8 +73,8 @@ without fetching live ledger data.
 
 Completed vendor journal snapshots are cached in private Worker memory for up
 to 24 hours. Pending reads stay within their own request, so an interrupted
-load cannot block later requests. Loads have a one-minute deadline; the browser
-offers Retry journals after 75 seconds if the request does not complete.
+load cannot block later requests. Loads have a one-minute deadline and the browser
+stops waiting after 75 seconds if the request does not complete.
 An older load cannot replace a newer refresh. Admin authentication still runs
 before every API request, and HTTP responses remain `private, no-store`.
 Failed reads are not cached; a failed refresh preserves the previous snapshot

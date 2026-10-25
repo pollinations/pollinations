@@ -3,9 +3,7 @@
     "18164": {
       "merge_sha": "82c68f8aa00fe921aaf84bc1bc88659343308bdd",
       "merged_at": "2026-10-25T04:23:52Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter"
-      ]
+      "required": []
     }
   },
   "production": "064cbe70cc6a719ad1f8e75971c9a6a5d0df2fcc",

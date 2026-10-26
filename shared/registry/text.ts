@@ -1790,7 +1790,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.02),
             completionTextTokens: perMillion(0),
         },
-        title: "Liquid D1",
+        title: "d1",
         description:
             "Structured decision model that returns typed choices, scores " +
             "and probabilities; post state and questions to " +
@@ -3167,7 +3167,7 @@ const TEXT_BASE_SERVICES = {
             promptImageTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.5),
         },
-        title: "GLM-5.3 Flash",
+        title: "GLM-5.3-Flash",
         description:
             "Low-cost million-token multimodal reasoning for agents and visual analysis",
         inputModalities: ["text", "image"],
@@ -3195,7 +3195,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.09) * 1.055,
             completionTextTokens: perMillion(1.25) * 1.055,
         },
-        title: "GLM-5.3 FlashX",
+        title: "GLM-5.3-FlashX",
         description:
             "Faster million-token multimodal reasoning for agents and visual analysis",
         inputModalities: ["text", "image"],

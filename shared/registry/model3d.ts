@@ -115,7 +115,7 @@ const MODEL3D_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.1, // per generation
         },
-        title: "Rodin 2.5",
+        title: "Rodin Gen-2.5",
         description: "Textured 3D models from an image or a text prompt",
         inputModalities: ["text", "image"],
         outputModalities: ["3d"],

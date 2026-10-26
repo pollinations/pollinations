@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-25",
+  "period_start": "2026-10-25",
+  "period_end": "2026-10-25",
+  "title": "Barbara gets a quieter way into group conversations",
+  "summary": "Barbara can follow whole group chats, My Apps has a front door for everyone, and Model Monitor links are more useful in Discord.\n\nBarbara can now read every message in a Telegram group when that group is set to Every message. She is instructed to reply to unmentioned messages only when she has something useful to add. A startup fix also prevents Claude Code from briefly disappearing during model switches, while agent creation now returns field-specific validation errors.\n\nMy Apps now shows a submission path even when an account has no listed apps. Listings are matched through a connected GitHub account, and the app quest links to the page. The showcase shed 15 unavailable listings, while Activity and Account gained a card-based layout.\n\nAuto top-up now opens the billing-details form directly when details are needed, then returns to the selected pack. The buyer still turns auto top-up on afterward. GitHub contribution checks now skip invalid or over-cap bounties without blocking valid rewards in the same check.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 16852,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 17949,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18164,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18229,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18360,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18394,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18406,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18413,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18418,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18442,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18450,
+      "date": "2026-10-25"
+    }
+  ],
+  "generated_at": "2026-10-26T06:12:36.509046+00:00",
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Barbara can follow group chats",
+      "text": "Set a Barbara's Telegram group setting to Every message so she can read the conversation without being mentioned each time. She is instructed to answer unmentioned messages only when she has something useful to add.",
+      "prs": [
+        18360
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "📱",
+      "title": "My Apps for everyone",
+      "text": "Every signed-in account can now open My Apps, including accounts with no listed apps. The page offers a way to submit an app and explains how approved listings appear.",
+      "prs": [
+        18418
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Model Monitor links in Discord",
+      "text": "Model Monitor links now have a Discord embed with direct buttons for model health and evals. [Open Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        18442
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

@@ -12,7 +12,11 @@ import {
     publicChatChoices,
     publicChatStream,
 } from "../../src/text/chat/public.ts";
-import { requireChatStreamUsage } from "../../src/text/chat/usage.ts";
+import {
+    requireChatCompletionUsage,
+    requireChatStreamUsage,
+} from "../../src/text/chat/usage.ts";
+import type { ChatCompletion } from "../../src/text/types.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const metadata = {
@@ -31,6 +35,58 @@ const usage = {
 };
 const { cost: _cost, cost_details: _costDetails, ...clientUsage } = usage;
 const encoder = new TextEncoder();
+
+describe("community Chat usage", () => {
+    it("rejects inflated completion and cached prompt tokens, but allows long inputs", () => {
+        const completion = (reportedUsage: object) =>
+            ({ usage: reportedUsage }) as ChatCompletion;
+        const inflatedOutput = {
+            prompt_tokens: 10,
+            completion_tokens: 300_000_000,
+            total_tokens: 300_000_010,
+        };
+        expect(() =>
+            requireChatCompletionUsage(completion(inflatedOutput)),
+        ).not.toThrow();
+        expect(() =>
+            requireChatCompletionUsage(completion(inflatedOutput), 100),
+        ).toThrow(/implausible usage/);
+
+        const inflatedCache = {
+            prompt_tokens: 10,
+            completion_tokens: 1,
+            total_tokens: 300_000_011,
+            prompt_tokens_details: { cached_tokens: 300_000_000 },
+        };
+        expect(() =>
+            requireChatCompletionUsage(completion(inflatedCache), 100),
+        ).toThrow(/implausible usage/);
+
+        const longInput = {
+            prompt_tokens: 3_000_000,
+            completion_tokens: 20,
+            total_tokens: 3_000_020,
+        };
+        expect(() =>
+            requireChatCompletionUsage(completion(longInput), 3_000_000),
+        ).not.toThrow();
+    });
+
+    it("ends an inflated stream with an unbillable error instead of DONE", async () => {
+        const body = new Response(
+            'data: {"choices":[{"delta":{"content":"Answer"}}]}\n\n' +
+                'data: {"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":300000000,"total_tokens":300000010}}\n\n' +
+                "data: [DONE]\n\n",
+        ).body;
+        if (!body) throw new Error("Test response has no body");
+        const text = await new Response(
+            requireChatStreamUsage(body, 100),
+        ).text();
+        expect(text).toContain('"code":"usage_invalid"');
+        expect(text).not.toContain("[DONE]");
+    });
+});
+
 describe("client gateway metadata", () => {
     it("removes only gateway metadata without mutating the billing completion", () => {
         const choices = [

@@ -1,21 +1,72 @@
 import { UpstreamError } from "@shared/error.ts";
-import { CompletionUsageSchema } from "@shared/schemas/openai.ts";
+import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+} from "@shared/schemas/openai.ts";
 import { createParser } from "eventsource-parser";
 import type { ChatCompletion } from "../types.js";
 import { validatedSSEStream } from "../validatedSSEStream.js";
 
-export function requireChatCompletionUsage(completion: ChatCompletion): void {
-    if (CompletionUsageSchema.safeParse(completion.usage).success) return;
+const MAX_COMMUNITY_COMPLETION_TOKENS = 2_000_000;
+
+function plausibleCommunityUsage(
+    usage: CompletionUsage,
+    requestBytes: number,
+): boolean {
+    // The request itself is evidence for prompt/cache tokens, including long
+    // contexts. The fixed floor avoids rejecting compact prompts with large
+    // hidden provider overhead; the completion ceiling prevents huge claims.
+    const promptLimit = Math.max(2_000_000, requestBytes * 4);
+    const normalized = openaiUsageToUsage(usage);
+    const promptTokens =
+        (normalized.promptTextTokens ?? 0) +
+        (normalized.promptCachedTokens ?? 0) +
+        (normalized.promptCacheWriteTokens ?? 0) +
+        (normalized.promptAudioTokens ?? 0) +
+        (normalized.promptImageTokens ?? 0) +
+        (normalized.promptVideoTokens ?? 0);
+    const completionTokens =
+        (normalized.completionTextTokens ?? 0) +
+        (normalized.completionReasoningTokens ?? 0) +
+        (normalized.completionAudioTokens ?? 0);
+    return (
+        promptTokens <= promptLimit &&
+        completionTokens <= MAX_COMMUNITY_COMPLETION_TOKENS &&
+        usage.total_tokens <= promptLimit + MAX_COMMUNITY_COMPLETION_TOKENS
+    );
+}
+
+export function requireChatCompletionUsage(
+    completion: ChatCompletion,
+    communityRequestBytes?: number,
+): void {
+    const parsed = CompletionUsageSchema.safeParse(completion.usage);
+    if (
+        parsed.success &&
+        (communityRequestBytes === undefined ||
+            plausibleCommunityUsage(parsed.data, communityRequestBytes))
+    )
+        return;
 
     throw new UpstreamError(502, {
         message:
-            "Chat Completions provider returned an invalid response or omitted usage",
+            communityRequestBytes === undefined
+                ? "Chat Completions provider returned an invalid response or omitted usage"
+                : "Community Chat provider returned invalid or implausible usage",
         requestUrl: completion.upstreamRequestUrl,
     });
 }
 
 export class ChatUsageError extends Error {
     override readonly name = "ChatUsageError";
+
+    constructor(
+        message: string,
+        readonly code = "usage_missing",
+    ) {
+        super(message);
+    }
 }
 
 // Tracking reads this off the emitted error event: the validator drops the
@@ -24,7 +75,7 @@ export class ChatUsageError extends Error {
 export const CHAT_USAGE_MISSING_AT_DONE_MESSAGE =
     "Chat Completions provider returned invalid or omitted terminal usage";
 
-export function createChatStreamUsageValidator() {
+export function createChatStreamUsageValidator(communityRequestBytes?: number) {
     const decoder = new TextDecoder();
     let lastUsage: unknown;
     let doneSeen = false;
@@ -34,12 +85,21 @@ export function createChatStreamUsageValidator() {
         onEvent(message) {
             if (doneSeen) return;
             if (message.data.trim() === "[DONE]") {
-                if (
-                    !errorSeen &&
-                    !CompletionUsageSchema.safeParse(lastUsage).success
-                ) {
+                const parsed = CompletionUsageSchema.safeParse(lastUsage);
+                if (!errorSeen && !parsed.success) {
                     throw new ChatUsageError(
                         CHAT_USAGE_MISSING_AT_DONE_MESSAGE,
+                    );
+                }
+                if (
+                    !errorSeen &&
+                    communityRequestBytes !== undefined &&
+                    parsed.success &&
+                    !plausibleCommunityUsage(parsed.data, communityRequestBytes)
+                ) {
+                    throw new ChatUsageError(
+                        "Community Chat provider returned implausible usage",
+                        "usage_invalid",
                     );
                 }
                 doneSeen = true;
@@ -100,7 +160,7 @@ function chatUsageErrorEvent(error: ChatUsageError): Uint8Array<ArrayBuffer> {
             error: {
                 message: error.message,
                 type: "upstream_error",
-                code: "usage_missing",
+                code: error.code,
             },
         })}\n\n`,
     );
@@ -108,10 +168,11 @@ function chatUsageErrorEvent(error: ChatUsageError): Uint8Array<ArrayBuffer> {
 
 export function requireChatStreamUsage(
     body: ReadableStream<Uint8Array<ArrayBuffer>>,
+    communityRequestBytes?: number,
 ): ReadableStream<Uint8Array<ArrayBuffer>> {
     return validatedSSEStream(
         body,
-        createChatStreamUsageValidator(),
+        createChatStreamUsageValidator(communityRequestBytes),
         (error) => {
             if (!(error instanceof ChatUsageError)) throw error;
             return chatUsageErrorEvent(error);

@@ -7,7 +7,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
 import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
@@ -564,6 +564,74 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
     expect(byId.has("github:issue:802")).toBe(false);
     expect(byId.get("github:issue:803")?.state).toBe("completed");
     expect(byId.get("github:issue:804")?.state).toBe("available");
+});
+
+test("catalog keeps the last GitHub quest issues while GitHub is rate limited", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github");
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 805,
+        title: "Listed bounty",
+        goal: "Still available.",
+        reward: 6,
+    });
+    const catalogIds = async () => {
+        await env.KV.delete("quests:catalog:v30");
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/quests/catalog",
+        );
+        expect(response.status).toBe(200);
+        const payload = (await response.json()) as { quests: { id: string }[] };
+        return payload.quests.map((quest) => quest.id);
+    };
+    expect(await catalogIds()).toContain("github:issue:805");
+
+    mocks.github.state.failQuestSearch = true;
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 60 * 60 * 1000);
+    try {
+        expect(await catalogIds()).toContain("github:issue:805");
+    } finally {
+        vi.useRealTimers();
+    }
+});
+
+test("quest checks reuse the GitHub quest issues the catalog just fetched", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 806,
+        title: "Merged bounty",
+        goal: "Merge the quest PR.",
+        reward: 7,
+        completedByPrNumber: 1806,
+        completedByGithubId: user.githubId,
+        completedByLogin: user.githubUsername,
+    });
+    await env.KV.delete("quests:catalog:v30");
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+
+    // A check within the cache window must not search GitHub again.
+    mocks.github.state.questIssues = [];
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ idempotencyKey: schema.rewards.idempotencyKey })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github:issue:806"));
+    expect(rewards).toEqual([
+        { idempotencyKey: `quest:github:issue:806:github:${user.githubId}` },
+    ]);
 });
 
 test("account quests merge earned rewards into completed status", async ({

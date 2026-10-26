@@ -1,3 +1,4 @@
+import { getLogger } from "@logtape/logtape";
 import { MAX_REWARD_AMOUNT } from "@shared/billing/rewards.ts";
 import {
     getInstallationToken,
@@ -43,6 +44,15 @@ const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
 // A GitHub user also owns the login "pollinations-ai", so the type must be Bot.
 const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
+
+// The GitHub App's GraphQL budget is 5,000 points an hour, and listing the
+// POLLEN-QUEST issues costs about 40. The catalog and every user's quest check
+// share one copy, fetched at most once per window. When GitHub fails (e.g. rate
+// limited), the last copy keeps serving and the next fetch waits a window.
+const QUEST_ISSUES_CACHE_KEY = "quests:github-issues:v1";
+const QUEST_ISSUES_CACHE_MS = 5 * 60 * 1000;
+
+const log = getLogger(["enter", "quests"]);
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
 // Each survey issue form applies its label; responders can rename the title.
@@ -433,6 +443,36 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
         .filter((issue) => issue.rewardAmount !== null);
 }
 
+async function cachedQuestIssues(
+    env: CloudflareBindings,
+): Promise<DerivedQuestIssue[]> {
+    const cached = await env.KV.get<{
+        issues: DerivedQuestIssue[];
+        checkedAt: number;
+    }>(QUEST_ISSUES_CACHE_KEY, "json");
+    if (cached && Date.now() - cached.checkedAt < QUEST_ISSUES_CACHE_MS) {
+        return cached.issues;
+    }
+
+    let issues: DerivedQuestIssue[];
+    try {
+        issues = await loadQuestIssues(await githubToken(env));
+    } catch (error) {
+        if (!cached) throw error;
+        log.warn("Serving cached quest issues; GitHub failed: {error}", {
+            error,
+        });
+        issues = cached.issues;
+    }
+    await env.KV.put(
+        QUEST_ISSUES_CACHE_KEY,
+        JSON.stringify({ issues, checkedAt: Date.now() }),
+    ).catch((error) =>
+        log.warn("Quest issue cache write failed: {error}", { error }),
+    );
+    return issues;
+}
+
 function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
     return {
         // Keep the issue-derived id stable; per-user reward keys add the
@@ -452,7 +492,7 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
 export async function listQuestCards(
     ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
-    const issues = await loadQuestIssues(await githubToken(ctx.env));
+    const issues = await cachedQuestIssues(ctx.env);
     return [
         questToCard(firstMergedPrQuest),
         questToCard(reportedIssueQuest),
@@ -580,7 +620,7 @@ export async function evaluateUser(
     const token = await githubToken(ctx.env);
     const [issues, mergedPr, reportedIssues, beeCensus, honeyCensus] =
         await Promise.all([
-            loadQuestIssues(token),
+            cachedQuestIssues(ctx.env),
             hasMergedPr(token, user),
             reportedIssueProposals(token, user),
             answeredSurvey(token, user, BEE_CENSUS),

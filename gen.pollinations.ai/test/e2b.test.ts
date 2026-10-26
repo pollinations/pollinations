@@ -670,6 +670,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         sandbox("capped", capped.userId),
         sandbox("revoked", revoked.userId),
         sandbox("banned", banned.userId),
+        sandbox("banned-key", banned.userId),
     );
     const until = new Date(Date.now() + 450_000);
     const month = new Date(Date.now() + 30 * 86_400_000);
@@ -686,6 +687,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         { sandboxId: "revoked", apiKeyId: revoked.id, until: month },
         { sandboxId: "dashboard", apiKeyId: null, until: month },
         { sandboxId: "banned", apiKeyId: null, until: month },
+        { sandboxId: "banned-key", apiKeyId: banned.id, until: month },
     ]);
     const untouched = structuredClone(e2b.sandboxes.slice(6));
     untouched.unshift(structuredClone(e2b.sandboxes[2]));
@@ -709,7 +711,8 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     expect([e2b.sandboxes[2], ...e2b.sandboxes.slice(6)]).toEqual(untouched);
 
     // Kept on: the renewed, the waiting; ended: the expired, the gone, those
-    // whose key cannot pay or is revoked, and the banned owner's.
+    // whose key cannot pay or is revoked, and the banned owner's, with or
+    // without a key.
     expect((await keeps()).map((keep) => keep.sandboxId).sort()).toEqual([
         "dashboard",
         "due",

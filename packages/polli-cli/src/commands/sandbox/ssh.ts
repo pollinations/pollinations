@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import {
     chmodSync,
     existsSync,
@@ -20,8 +20,6 @@ import { type Connection, connectSandbox, sharePort } from "./e2b.js";
 
 const SSH_DIR = join(homedir(), ".pollinations", "ssh");
 const SSH_KEY = join(SSH_DIR, "id_ed25519");
-// One per computer, so all its connections to a sandbox share one secret.
-const PORT_SECRET = join(SSH_DIR, "port-secret");
 const SSH_CONFIG = join(SSH_DIR, "config");
 const USER_SSH_CONFIG = join(homedir(), ".ssh", "config");
 const INCLUDE = "Include ~/.pollinations/ssh/config";
@@ -64,18 +62,6 @@ const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
         ? `${scheme}://${s.sandboxID}--${port}.${s.domain}`
         : `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
 
-function portSecret() {
-    try {
-        writeFileSync(PORT_SECRET, randomBytes(32).toString("hex"), {
-            mode: 0o600,
-            flag: "wx",
-        });
-    } catch {
-        // Made by an earlier connection.
-    }
-    return readFileSync(PORT_SECRET, "utf8");
-}
-
 // Where ssh's WebSocket goes. Gen serves an E2B sandbox's ports at its own
 // hosts, so ssh reaches it like any request to them, which resumes it and
 // counts as activity. Azure's port proxy is reached directly, with the
@@ -88,7 +74,12 @@ async function sshSocket(s: Connection) {
             headers: token ? { "e2b-traffic-access-token": token } : {},
         };
     }
-    const secret = portSecret();
+    // Gen makes every E2B sandbox with an envd token, the same on each
+    // connect, so every computer shares the port with the same secret.
+    if (!s.envdAccessToken) throw new Error(`${s.sandboxID} has no envd token`);
+    const secret = createHash("sha256")
+        .update(`polli ssh ${s.envdAccessToken}`)
+        .digest("hex");
     const { url } = await sharePort(s.sandboxID, SSH_PORT, secret);
     return {
         url: url.replace(/^https:/, "wss:"),
@@ -156,11 +147,13 @@ export async function proxy(host: string) {
     if (typeof WebSocket === "undefined")
         fail("This needs Node.js 22 or newer");
     const sandbox = await connectSandbox(id);
-    await runAsRoot(sandbox, bootstrap, {
-        POLLI_SSH_KEY: readFileSync(`${SSH_KEY}.pub`, "utf8").trim(),
-        POLLI_SSH_PORT: String(SSH_PORT),
-    });
-    const { url, headers } = await sshSocket(sandbox);
+    const [, { url, headers }] = await Promise.all([
+        runAsRoot(sandbox, bootstrap, {
+            POLLI_SSH_KEY: readFileSync(`${SSH_KEY}.pub`, "utf8").trim(),
+            POLLI_SSH_PORT: String(SSH_PORT),
+        }),
+        sshSocket(sandbox),
+    ]);
     const renew = setInterval(
         () =>
             connectSandbox(id).catch((err) =>

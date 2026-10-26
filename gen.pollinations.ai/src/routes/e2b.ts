@@ -1,8 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import {
+    BannedAccountError,
     extractApiKey,
     loadActiveApiKeyAuthResult,
+    StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import { isUserBanned } from "@shared/auth/ban.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
@@ -885,7 +887,17 @@ async function loadPayer(
         apiKeyId,
         rawApiKey: "",
         env,
-    }).catch(() => null);
+    }).catch((error) => {
+        // Any other error, such as a database timeout, is tried again later
+        // rather than ending a keep or a port share.
+        if (
+            error instanceof BannedAccountError ||
+            error instanceof StagingAccessDeniedError
+        ) {
+            return null;
+        }
+        throw error;
+    });
     if (!result?.user) return null;
     const { rawKey: _rawKey, ...apiKey } = result.apiKey;
     return { user: { id: result.user.id, tier: result.user.tier }, apiKey };
@@ -1031,7 +1043,26 @@ async function wakePort(
  * WebSocket upgrades and streamed bodies included, passes through to E2B
  * unchanged.
  */
-export async function servePort(
+export const servePort = (
+    request: Request,
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+    target: { port: number; sandboxID: string },
+) =>
+    // It runs outside Hono, so nothing else turns an error into a response.
+    forwardPort(request, env, ctx, target).catch(async (error) => {
+        await ensureConfigured({
+            level: env.LOG_LEVEL || "debug",
+            format: env.LOG_FORMAT || "text",
+        });
+        getLogger(["gen", "sandbox-port"]).error(
+            "Serving port {port} of sandbox {sandboxID} failed: {error}",
+            { ...target, error: String(error) },
+        );
+        return portRefusal(502, "This sandbox could not be reached.");
+    });
+
+async function forwardPort(
     request: Request,
     env: CloudflareBindings,
     ctx: ExecutionContext,
@@ -1056,18 +1087,7 @@ export async function servePort(
         );
     }
     const key = `${port}-${sandboxID}`;
-    const wake = () =>
-        wakePort(env, ctx, shared).catch(async (error) => {
-            await ensureConfigured({
-                level: env.LOG_LEVEL || "debug",
-                format: env.LOG_FORMAT || "text",
-            });
-            getLogger(["gen", "sandbox-port"]).error(
-                "Waking sandbox {sandboxID} failed: {error}",
-                { sandboxID, error: String(error) },
-            );
-            return portRefusal(502, "This sandbox could not be woken.");
-        });
+    const wake = () => wakePort(env, ctx, shared);
     const cached = wokenPorts.get(key);
     let woken =
         cached && cached.until - Date.now() >= WAKE_MARGIN_MS

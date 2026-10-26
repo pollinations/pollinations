@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
     fstatSync,
     mkdirSync,
@@ -271,7 +272,7 @@ describe("ssh connections", () => {
         expect(config).not.toContain("ControlMaster");
     });
 
-    it("reaches an E2B sandbox's sshd through Gen's port proxy, with this computer's secret", async () => {
+    it("reaches an E2B sandbox's sshd through Gen's port proxy, with a secret from its envd token", async () => {
         const { setKeyOverride } = await import("../../lib/config.js");
         setKeyOverride("sk_test");
         writeFileSync(
@@ -320,11 +321,11 @@ describe("ssh connections", () => {
 
         await proxy("box1.polli");
 
-        const secret = readFileSync(
-            join(home, ".pollinations", "ssh", "port-secret"),
-            "utf8",
-        );
-        expect(secret).toMatch(/^[0-9a-f]{64}$/);
+        // Computers on any polli version must derive the same secret from the
+        // sandbox's token, or each would lock the others out.
+        const secret = createHash("sha256")
+            .update("polli ssh envd")
+            .digest("hex");
         expect(shares).toEqual([
             [
                 "https://gen.pollinations.ai/alpha/e2b/sandboxes/box1/ports/8022",

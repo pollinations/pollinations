@@ -859,7 +859,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.15) * 1.055,
             completionTextTokens: perMillion(1.5) * 1.055,
         },
-        title: "Cohere Command A+",
+        title: "Command A+",
         description:
             "Multilingual agentic reasoning with tools and long context",
         inputModalities: ["text", "image"],
@@ -1613,7 +1613,7 @@ const TEXT_BASE_SERVICES = {
             }),
             resolveTotalCost: reportedTextCost(1.055),
         },
-        title: "Google Gemini 2.5 Flash Lite Search",
+        title: "Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
         inputModalities: ["text", "image", "video"],
@@ -2410,7 +2410,7 @@ const TEXT_BASE_SERVICES = {
             promptCacheWriteTokens: perMillion(0.25),
             completionTextTokens: perMillion(2.5),
         },
-        title: "Perplexity Sonar Fast Search",
+        title: "Sonar Fast Search",
         description: "Quick web searches with cited answers; keeps it brief",
         // Sonar is text-only — verified empirically (image input is ignored,
         // no image tokens billed). Do not add "image".
@@ -2449,7 +2449,7 @@ const TEXT_BASE_SERVICES = {
             promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
-        title: "Moonshot Kimi K2.6",
+        title: "Kimi K2.6",
         description:
             "Agentic all-rounder that shows its chain-of-thought reasoning",
         inputModalities: ["text", "image"],
@@ -2479,7 +2479,7 @@ const TEXT_BASE_SERVICES = {
             promptImageTokens: perMillion(0.6712) * 1.055,
             completionTextTokens: perMillion(3.35) * 1.055,
         },
-        title: "Moonshot Kimi K2.7 Code",
+        title: "Kimi K2.7 Code",
         description:
             "Agentic coding: plans, reasons and edits code step by step",
         inputModalities: ["text", "image"],
@@ -2815,7 +2815,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.12),
             completionTextTokens: perMillion(2.4),
         },
-        title: "NVIDIA Nemotron 3 Ultra",
+        title: "Nemotron 3 Ultra",
         description:
             "Frontier reasoning for coding agents, deep research and complex workflows",
         inputModalities: ["text"],
@@ -2841,7 +2841,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.01),
             completionTextTokens: perMillion(0.2),
         },
-        title: "NVIDIA Nemotron 3.5 Lightning",
+        title: "Nemotron 3.5 Lightning",
         description:
             "Fast open-weight reasoning for high-volume agent tasks, tool use and structured output",
         inputModalities: ["text"],
@@ -2866,7 +2866,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.02),
             completionTextTokens: perMillion(0.5),
         },
-        title: "NVIDIA Nemotron 3.5 Super VL",
+        title: "Nemotron 3.5 Super VL",
         description:
             "Open-weight reasoning over text and image inputs, with tool calling and structured output",
         inputModalities: ["text", "image"],
@@ -3116,7 +3116,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.26) * 1.055,
             completionTextTokens: perMillion(4.4) * 1.055,
         },
-        title: "Z.ai GLM-5.2",
+        title: "GLM-5.2",
         description:
             "Massive open-weight model for long-context reasoning and agent workflows",
         inputModalities: ["text"],
@@ -3141,7 +3141,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.26),
             completionTextTokens: perMillion(4.4),
         },
-        title: "Z.ai GLM-5.3",
+        title: "GLM-5.3",
         description:
             "Mandatory-reasoning model for complex software engineering and long-horizon agent workflows",
         inputModalities: ["text"],
@@ -3167,7 +3167,7 @@ const TEXT_BASE_SERVICES = {
             promptImageTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.5),
         },
-        title: "Z.ai GLM-5.3 Flash",
+        title: "GLM-5.3 Flash",
         description:
             "Low-cost million-token multimodal reasoning for agents and visual analysis",
         inputModalities: ["text", "image"],
@@ -3195,7 +3195,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.09) * 1.055,
             completionTextTokens: perMillion(1.25) * 1.055,
         },
-        title: "Z.ai GLM-5.3 FlashX",
+        title: "GLM-5.3 FlashX",
         description:
             "Faster million-token multimodal reasoning for agents and visual analysis",
         inputModalities: ["text", "image"],
@@ -3224,7 +3224,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.71),
             completionTextTokens: perMillion(0.71),
         },
-        title: "Meta Llama 3.3 70B",
+        title: "Llama 3.3 70B",
         description:
             "Open-source workhorse for general chat and summarization; text only",
         inputModalities: ["text"],
@@ -3251,7 +3251,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.0),
         },
-        title: "Meta Llama 4 Maverick",
+        title: "Llama 4 Maverick",
         description:
             "Open-source chat that understands images, with a huge context window",
         inputModalities: ["text", "image"],
@@ -3282,7 +3282,7 @@ const TEXT_BASE_SERVICES = {
             promptImageTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
-        title: "Meta Llama 4 Scout",
+        title: "Llama 4 Scout",
         description:
             "Text and image understanding with a 128K context window; no tool calling or structured output",
         inputModalities: ["text", "image"],
@@ -4041,7 +4041,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(2.7) * 1.055,
         },
-        title: "StepFun Step 5 Preview",
+        title: "Step 5 Preview",
         description:
             "Agentic coding and long-document analysis with tool calling and image input",
         inputModalities: ["text", "image"],
@@ -4073,7 +4073,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.04),
             completionTextTokens: perMillion(1.15),
         },
-        title: "StepFun Step 3.7 Flash",
+        title: "Step 3.7 Flash",
         description:
             "Speedy reasoning over text and images for everyday questions",
         inputModalities: ["text", "image"],
@@ -4100,7 +4100,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(0.3) * 1.055,
         },
-        title: "StepFun Step 3.5 Flash",
+        title: "Step 3.5 Flash",
         description: "Fast, low-cost text reasoning for everyday tasks",
         inputModalities: ["text"],
         outputModalities: ["text"],

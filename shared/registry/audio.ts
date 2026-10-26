@@ -915,7 +915,7 @@ const AUDIO_BASE_SERVICES = {
                 },
             ],
         ),
-        title: "AssemblyAI Universal-2",
+        title: "Universal-2",
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
         outputModalities: ["text"],
@@ -1003,7 +1003,7 @@ const AUDIO_BASE_SERVICES = {
                 },
             ],
         ),
-        title: "AssemblyAI Universal-3.5 Pro",
+        title: "Universal-3.5 Pro",
         description:
             "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],

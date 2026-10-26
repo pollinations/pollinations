@@ -310,8 +310,28 @@ describe("/api/account/sites", () => {
         expect(await drizzle(env.DB).select().from(siteTable)).toEqual([]);
     });
 
-    test("API keys need account:machines", async ({ apiKey }) => {
-        expect((await sites(apiKey, "GET")).status).toBe(403);
+    test("API keys need account:machines, and the refusal links its grant", async ({
+        apiKey,
+    }) => {
+        const res = await sites(apiKey, "GET");
+        expect(res.status).toBe(403);
+        const { error } = await res.json<{
+            error: { message: string; fixUrl: string };
+        }>();
+        const fix = new URL(error.fixUrl);
+        expect(fix.pathname).toBe("/grant");
+        expect(fix.searchParams.get("permission")).toBe("machines");
+        expect(fix.searchParams.get("id")).toBeTruthy();
+        expect(error.message).toBe(
+            `API key does not have 'account:machines' permission. Allow it at ${error.fixUrl}`,
+        );
+    });
+
+    test("a request without a valid key says where to get one", async () => {
+        const res = await sites("not-a-key", "GET");
+        expect(res.status).toBe(401);
+        const { error } = await res.json<{ error: { message: string } }>();
+        expect(error.message).toContain("https://enter.pollinations.ai/keys");
     });
 
     test("deleting the account deletes its sites but keeps takedowns reserved", async ({

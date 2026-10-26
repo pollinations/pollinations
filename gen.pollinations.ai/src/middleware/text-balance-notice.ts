@@ -1,5 +1,6 @@
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { PermissionRequiredError } from "@shared/http/permission-required-error.ts";
+import { fixLink } from "@shared/http/refusals.ts";
 import type {
     CreateChatCompletionRequest,
     CreateResponseRequest,
@@ -17,7 +18,6 @@ import {
     responsesToChatCompletion,
     responsesToChatStream,
 } from "../text/responses/chatResponse.ts";
-import { fixLink } from "../utils/refusals.ts";
 
 // Text routes answer these errors as a chat reply with a link to fix them.
 // Set one false to return the plain HTTP error instead. JSON and audio

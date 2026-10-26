@@ -92,6 +92,8 @@ export async function filterCatalogEntries(
             return false;
         if (query.agent !== undefined && Boolean(info.agent) !== agent)
             return false;
+        if (query.category !== undefined && info.category !== query.category)
+            return false;
         const have: string[] = info.capabilities ?? [];
         if (!capabilities.every((item) => have.includes(item))) return false;
         const text = [

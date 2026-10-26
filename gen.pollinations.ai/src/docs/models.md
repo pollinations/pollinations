@@ -31,6 +31,7 @@ To search or narrow a list instead of fetching the whole catalog, add any of:
 | Parameter | Effect |
 |-----------|--------|
 | `query` | Case-insensitive search of the name, aliases, title, description and publisher; every word must match |
+| `category` | Model category (`text`, `image`, `audio`, `video`, `3d`, `embedding`, `realtime`, `decision`) |
 | `capabilities` | Comma-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model needs all of them |
 | `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents |
 | `limit` | At most this many models (1-500), in catalog order |

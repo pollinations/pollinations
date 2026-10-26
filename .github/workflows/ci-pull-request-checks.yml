@@ -3,13 +3,15 @@ name: CI / Pull request checks
 "on":
   pull_request:
     branches: [main, master]
+  merge_group:
 
 permissions:
   contents: read
 
-# HEAD is the pull request merge commit. With fetch-depth 2 its first parent
-# (HEAD^1) is the base branch tip, so `git diff HEAD^1 HEAD` is the pull
-# request diff without fetching the full repository history.
+# HEAD is the pull request merge commit, or in the merge queue this pull
+# request's squashed commit. With fetch-depth 2 its first parent (HEAD^1) is the
+# base branch tip or the queue entry ahead, so `git diff HEAD^1 HEAD` is the
+# pull request diff without fetching the full repository history.
 
 jobs:
   project-manager:
@@ -80,6 +82,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -212,6 +215,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -298,6 +302,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -335,6 +340,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install workspace dependencies
@@ -370,6 +376,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies

@@ -19,6 +19,7 @@ import {
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type AgentCatalogConfig,
@@ -49,15 +50,17 @@ const IMAGE_MODEL_ENDPOINTS = [
 ];
 const CATEGORY_ORDER: Record<Category, number> = {
     text: 0,
-    image: 1,
-    video: 2,
-    "3d": 3,
-    audio: 4,
-    realtime: 5,
-    embedding: 6,
+    decision: 1,
+    image: 2,
+    video: 3,
+    "3d": 4,
+    audio: 5,
+    realtime: 6,
+    embedding: 7,
 };
 const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
     text: DEFAULT_TEXT_MODEL,
+    decision: DEFAULT_DECISION_MODEL,
     image: DEFAULT_IMAGE_MODEL,
     "3d": DEFAULT_3D_MODEL,
     audio: DEFAULT_AUDIO_MODEL,
@@ -97,7 +100,9 @@ function eventTypeForCategory(category: Category): EventType {
     if (category === "audio") return "generate.audio";
     if (category === "embedding") return "generate.embedding";
     if (category === "realtime") return "generate.realtime";
-    if (category === "text") return "generate.text";
+    // Decision models are billed, cached and tracked as text, the way video
+    // shares image events.
+    if (category === "text" || category === "decision") return "generate.text";
     return "generate.image";
 }
 

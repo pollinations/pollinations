@@ -34,10 +34,13 @@ if not os.path.exists(access):
 
 # Pollinations model ids aren't in Claude Code's catalog, so it assumes a 200k
 # window. Tell it the real one (1M) and compact at 300k (it compacts 33k below
-# the window it is given).
+# the window it is given). Claude Code also updates itself at start by
+# reinstalling its npm package, and while it does there is no `claude`, so a
+# model switch in that minute failed. The sandbox image pins its version.
 env = json.load(open(os.path.join(home, ".pollinations", "claude-code.json")))["env"]
 env.update(CLAUDE_CODE_MAX_CONTEXT_TOKENS="1000000",
-           CLAUDE_CODE_AUTO_COMPACT_WINDOW="333000")
+           CLAUDE_CODE_AUTO_COMPACT_WINDOW="333000",
+           DISABLE_AUTOUPDATER="1")
 settings = os.path.join(root, "state", "claude-settings.json")
 json.dump({"env": env}, open(settings, "w"), indent=1)
 os.chmod(settings, 0o600)

@@ -84,6 +84,7 @@ import {
     MODEL_USED_HEADER,
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -4532,7 +4533,7 @@ fixtureTest.each(
                         reasoning_effort?: string;
                     };
                     expect(upstream.reasoning_effort).toBe("low");
-                    if (modelCalls === 2) {
+                    if (modelCalls >= 2) {
                         expect(
                             upstream.messages.some(
                                 (message) =>
@@ -4561,13 +4562,13 @@ fixtureTest.each(
                     const finishReason =
                         modelCalls === 1 ? "tool_calls" : "stop";
                     const usage =
-                        modelCalls === 2 && usageKind === "missing"
+                        modelCalls >= 2 && usageKind === "missing"
                             ? undefined
                             : {
                                   prompt_tokens: 10,
                                   completion_tokens: 5,
                                   total_tokens: 15,
-                                  ...(modelCalls === 2 &&
+                                  ...(modelCalls >= 2 &&
                                   usageKind === "malformed"
                                       ? {
                                             prompt_tokens_details: {
@@ -4668,7 +4669,8 @@ fixtureTest.each(
             }),
         );
         const body = await response.text();
-        expect(modelCalls).toBe(2);
+        // Invalid non-stream usage retries the declared OpenAI backup.
+        expect(modelCalls).toBe(!stream && usageKind !== "valid" ? 3 : 2);
         expect(mcpCalls).toBe(1);
         expect(runtimeClientIps.every((ip) => ip === testClientIp)).toBe(true);
         expect(runtimeToken).toMatch(/^ag_/);
@@ -5269,9 +5271,15 @@ fixtureTest(
         const allNames = allModels.map((model) => model.name);
 
         expect(allNames).toEqual(openaiModels.data.map((model) => model.id));
+        // Decision models also answer on chat endpoints, so the text list
+        // keeps them.
         expect(textModels.map((model) => model.name)).toEqual(
             allModels
-                .filter((model) => model.category === "text")
+                .filter(
+                    (model) =>
+                        model.category === "text" ||
+                        model.category === "decision",
+                )
                 .map((model) => model.name),
         );
         expect(allNames).toEqual([
@@ -5281,6 +5289,7 @@ fixtureTest(
 
         const categoryOrder = [
             "text",
+            "decision",
             "image",
             "video",
             "3d",
@@ -5298,6 +5307,7 @@ fixtureTest(
 
         const defaults: Record<string, string> = {
             text: DEFAULT_TEXT_MODEL,
+            decision: DEFAULT_DECISION_MODEL,
             image: DEFAULT_IMAGE_MODEL,
             "3d": DEFAULT_3D_MODEL,
             audio: DEFAULT_AUDIO_MODEL,

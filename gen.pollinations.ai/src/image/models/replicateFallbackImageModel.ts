@@ -13,13 +13,16 @@ import {
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 import { resolveKreaAspectRatio } from "./kreaModel.ts";
+import { buildPImageInput } from "./prunaModel.ts";
 
 type ReplicateFallbackModel =
     | "black-forest-labs/flux.1-kontext-pro:replicate"
+    | "black-forest-labs/flux.1.1-pro:replicate"
     | "black-forest-labs/flux.2-pro:replicate"
     // Replicate is FLUX.2 Max's primary route (Azure has no Max deployment),
     // so this id carries no ":replicate" suffix, unlike every other case here.
     | "black-forest-labs/flux.2-max"
+    | "prunaai/p-image:replicate"
     | "prunaai/p-image-edit:replicate"
     | "krea/krea-2-medium:replicate";
 
@@ -39,12 +42,17 @@ async function runReplicateImage(
     model: string,
     input: Record<string, unknown>,
     label: string,
-): Promise<Buffer> {
+): Promise<{
+    buffer: Buffer;
+    imageInputMegapixels?: number;
+    imageOutputMegapixels?: number;
+}> {
     try {
-        const { output } = await runReplicatePrediction<
-            Record<string, unknown>,
-            string | string[]
-        >({ model, input });
+        const { output, imageInputMegapixels, imageOutputMegapixels } =
+            await runReplicatePrediction<
+                Record<string, unknown>,
+                string | string[]
+            >({ model, input });
         const url = Array.isArray(output) ? output[0] : output;
         if (!url)
             throw UpstreamError.fromProvider(502, {
@@ -53,7 +61,11 @@ async function runReplicateImage(
         const response = await fetchUpstream(url, {
             errorLabel: `Failed to download ${label} output`,
         });
-        return Buffer.from(await response.arrayBuffer());
+        return {
+            buffer: Buffer.from(await response.arrayBuffer()),
+            imageInputMegapixels,
+            imageOutputMegapixels,
+        };
     } catch (error) {
         throw toReplicateUpstreamError(error, `${label} generation failed`);
     }
@@ -93,9 +105,7 @@ export async function callReplicateFallbackImage(
     switch (model) {
         case "black-forest-labs/flux.2-pro:replicate": {
             const images = await prepareFluxImages(params.image);
-            promptImageTokens = images.megapixels;
-            completionImageTokens = (params.width * params.height) / 1_000_000;
-            buffer = await runReplicateImage(
+            const result = await runReplicateImage(
                 "black-forest-labs/flux-2-pro",
                 {
                     prompt,
@@ -108,13 +118,18 @@ export async function callReplicateFallbackImage(
                 },
                 "FLUX.2 Pro",
             );
+            buffer = result.buffer;
+            // Replicate bills whole megapixels per image, at least one.
+            promptImageTokens =
+                result.imageInputMegapixels ?? images.megapixels;
+            completionImageTokens =
+                result.imageOutputMegapixels ??
+                (params.width * params.height) / 1_000_000;
             break;
         }
         case "black-forest-labs/flux.2-max": {
             const images = await prepareFluxImages(params.image);
-            promptImageTokens = images.megapixels;
-            completionImageTokens = (params.width * params.height) / 1_000_000;
-            buffer = await runReplicateImage(
+            const result = await runReplicateImage(
                 "black-forest-labs/flux-2-max",
                 {
                     prompt,
@@ -127,11 +142,35 @@ export async function callReplicateFallbackImage(
                 },
                 "FLUX.2 Max",
             );
+            buffer = result.buffer;
+            // Replicate bills whole megapixels per image, at least one.
+            promptImageTokens =
+                result.imageInputMegapixels ?? images.megapixels;
+            completionImageTokens =
+                result.imageOutputMegapixels ??
+                (params.width * params.height) / 1_000_000;
+            break;
+        }
+        case "black-forest-labs/flux.1.1-pro:replicate": {
+            // Same request as the Azure primary, which already rejected image
+            // input and sizes off the 32px grid with a 400 (no fallback).
+            ({ buffer } = await runReplicateImage(
+                "black-forest-labs/flux-1.1-pro",
+                {
+                    prompt,
+                    aspect_ratio: "custom",
+                    width: params.width,
+                    height: params.height,
+                    output_format: "png",
+                    seed: params.seed,
+                },
+                "FLUX 1.1 Pro",
+            ));
             break;
         }
         case "black-forest-labs/flux.1-kontext-pro:replicate": {
             const images = await prepareFluxImages(params.image);
-            buffer = await runReplicateImage(
+            ({ buffer } = await runReplicateImage(
                 "black-forest-labs/flux-kontext-pro",
                 {
                     prompt,
@@ -146,7 +185,15 @@ export async function callReplicateFallbackImage(
                     seed: params.seed,
                 },
                 "FLUX.1 Kontext Pro",
-            );
+            ));
+            break;
+        }
+        case "prunaai/p-image:replicate": {
+            ({ buffer } = await runReplicateImage(
+                "prunaai/p-image",
+                { ...buildPImageInput(prompt, params) },
+                "Pruna p-image",
+            ));
             break;
         }
         case "prunaai/p-image-edit:replicate": {
@@ -155,7 +202,7 @@ export async function callReplicateFallbackImage(
                     message: "p-image-edit requires at least one input image",
                 });
             }
-            buffer = await runReplicateImage(
+            ({ buffer } = await runReplicateImage(
                 "prunaai/p-image-edit",
                 {
                     prompt,
@@ -164,7 +211,7 @@ export async function callReplicateFallbackImage(
                     seed: params.seed,
                 },
                 "Pruna p-image-edit",
-            );
+            ));
             break;
         }
         case "krea/krea-2-medium:replicate": {
@@ -173,7 +220,7 @@ export async function callReplicateFallbackImage(
                     message: "Krea does not accept image input",
                 });
             }
-            buffer = await runReplicateImage(
+            ({ buffer } = await runReplicateImage(
                 "krea/krea-2-medium",
                 {
                     prompt,
@@ -182,7 +229,7 @@ export async function callReplicateFallbackImage(
                     seed: params.seed,
                 },
                 "Krea 2 Medium",
-            );
+            ));
             break;
         }
         default:

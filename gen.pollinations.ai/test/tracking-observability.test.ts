@@ -1994,7 +1994,7 @@ describe("tracking observability", () => {
         expect(owner?.tierBalance).toBeCloseTo(0.15, 10);
     });
 
-    it("charges the price the caller asked for and rewards the rescuer on their own", async () => {
+    it("charges the price of the model that served and rewards the rescuer on their own", async () => {
         const db = drizzle(env.DB);
         const payerId = `track-fallback-payer-${crypto.randomUUID()}`;
         const primaryOwnerId = `track-fallback-primary-${crypto.randomUUID()}`;
@@ -2088,15 +2088,15 @@ describe("tracking observability", () => {
             modelRequested: primaryEndpoint.modelId,
             resolvedModelRequested: primaryEndpoint.modelId,
             modelUsed: fallbackEndpoint.modelId,
-            // 1000 × 0.0001 + 500 × 0.0002 — the PRIMARY's rates. The caller
-            // bought that listing, so the invoice does not move because a
-            // cheaper endpoint happened to be the one that was up.
-            devPrice: 0.2,
-            totalPrice: 0.2,
+            // 1000 × 0.00005 + 500 × 0.0001 — the FALLBACK's own rates. A
+            // cheaper endpoint rescued the request, so the caller pays for the
+            // listing that served rather than the one that was down.
+            devPrice: 0.1,
+            totalPrice: 0.1,
             communityModelRewardUserId: fallbackOwnerId,
             communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
-            // 0.75 × 0.1 — the rescuer is paid on their OWN listing, not on
-            // what the caller paid, so the spread stays with Pollinations.
+            // 0.75 × 0.1 — the rescuer is paid on their OWN listing, which is
+            // now also what the caller paid.
             communityModelRewardAmount: 0.075,
         });
 
@@ -2203,7 +2203,9 @@ describe("tracking observability", () => {
         >;
         expect(event).toMatchObject({
             resolvedModelRequested: primaryEndpoint.modelId,
-            totalPrice: 0.2,
+            // The private backup's own (free-in-production) listing is what the
+            // caller pays, so a rescue by it costs less than the public quote.
+            totalPrice: 0.1,
             communityModelRewardUserId: ownerId,
             communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
             communityModelRewardAmount: 0.075,

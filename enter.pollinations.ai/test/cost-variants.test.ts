@@ -813,7 +813,7 @@ describe("selection safety and composition", () => {
         expect(billing.adjustments[0].price).toBeCloseTo(0.075, 12);
     });
 
-    it("keeps fallback cost on the served model and price on the quoted model", () => {
+    it("bills the served listing when a community model's fallback serves", () => {
         const billing = calculateUsageBilling({
             model: "quoted-model",
             usage: { promptTextTokens: 1_000 },
@@ -822,18 +822,40 @@ describe("selection safety and composition", () => {
                 priceMultiplier: 3,
             }),
             quotedBy: fakeModel({
+                provider: "community",
                 cost: { promptTextTokens: 5e-6 },
                 priceMultiplier: 2,
             }),
         });
 
+        // The cheaper rescuer's own listing is what the caller pays.
         expect(billing.cost.totalCost).toBeCloseTo(0.002, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.006, 12);
         expect(billing.servedPrice).toBeCloseTo(0.006, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.01, 12);
-        expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(1e-5, 15);
+        expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(6e-6, 15);
     });
 
-    it("applies the serving multiplier to provider cost while preserving the fallback quote", () => {
+    it("bills nothing when a free community endpoint rescues the request", () => {
+        const billing = calculateUsageBilling({
+            model: "quoted-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({
+                cost: { promptTextTokens: 0 },
+                priceMultiplier: 1,
+            }),
+            quotedBy: fakeModel({
+                provider: "community",
+                cost: { promptTextTokens: 5e-6 },
+                priceMultiplier: 2,
+            }),
+        });
+
+        expect(billing.cost.totalCost).toBe(0);
+        expect(billing.price.totalPrice).toBe(0);
+        expect(billing.servedPrice).toBe(0);
+    });
+
+    it("bills the served listing from provider units without borrowing the quote", () => {
         const billing = calculateUsageBilling({
             model: "quoted-model",
             usage: { completionVideoSeconds: 5 },
@@ -842,6 +864,7 @@ describe("selection safety and composition", () => {
                 priceMultiplier: 2,
             }),
             quotedBy: fakeModel({
+                provider: "community",
                 cost: { completionVideoSeconds: 0.08 },
                 priceMultiplier: 2,
             }),
@@ -849,16 +872,43 @@ describe("selection safety and composition", () => {
         });
         expect(billing.cost).toEqual({ totalCost: 0.1 });
         expect(billing.servedPrice).toBe(0.2);
-        expect(billing.price.totalPrice).toBe(0.8);
-        expect(billing.priceDefinition.completionVideoSeconds).toBe(0.16);
+        expect(billing.price.totalPrice).toBe(0.2);
+        expect(billing.priceDefinition.completionVideoSeconds).toBe(0.05);
     });
 
-    it("reports a served-side selector failure while preserving the quoted price variant", () => {
+    it("keeps the quoted price when an internal provider route serves", () => {
+        // A route is the same model reached another way, so the caller keeps
+        // the listing they bought even though the route's own rate differs.
+        const billing = calculateUsageBilling({
+            model: "quoted-model",
+            usage: { promptTextTokens: 1_000 },
+            servedBy: fakeModel({
+                fallbackOnly: true,
+                cost: { promptTextTokens: 2e-6 },
+                priceMultiplier: 1,
+            }),
+            quotedBy: fakeModel({
+                cost: { promptTextTokens: 1.5e-6 },
+                priceMultiplier: 0.75,
+            }),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.002, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.002, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.001125, 12);
+        expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(
+            1.125e-6,
+            15,
+        );
+    });
+
+    it("reports a served-side selector failure while preserving the route's quoted price variant", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         const billing = calculateUsageBilling({
             model: "quoted-model",
             usage: { promptTextTokens: 1_000 },
             servedBy: fakeModel({
+                fallbackOnly: true,
                 costVariants: { served_premium: { promptTextTokens: 9e-6 } },
                 selectCostVariant: () => {
                     throw new Error("boom");
@@ -878,12 +928,12 @@ describe("selection safety and composition", () => {
         expect(warn).toHaveBeenCalledOnce();
     });
 
-    it("continues reporting a quoted-side selector failure across a fallback", () => {
+    it("continues reporting a quoted-side selector failure across a route fallback", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         const billing = calculateUsageBilling({
             model: "quoted-model",
             usage: { promptTextTokens: 1_000 },
-            servedBy: fakeModel({}),
+            servedBy: fakeModel({ fallbackOnly: true }),
             quotedBy: fakeModel({
                 cost: { promptTextTokens: 5e-6 },
                 costVariants: { quoted_premium: { promptTextTokens: 9e-6 } },

@@ -763,10 +763,6 @@ export const OpenAIModelSchema = z
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
         agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
-        verified: z
-            .boolean()
-            .optional()
-            .describe(AGENT_FIELD_DESCRIPTIONS.verified),
         base_model: z
             .string()
             .optional()

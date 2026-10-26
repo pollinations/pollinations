@@ -866,7 +866,7 @@ describe("gen worker routing", () => {
         expect(
             models.find((model) => model.name === "perplexity/sonar"),
         ).toMatchObject({
-            title: "Perplexity Sonar Fast Search",
+            title: "Sonar Fast Search",
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });

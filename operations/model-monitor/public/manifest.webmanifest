@@ -1,7 +1,7 @@
 {
     "name": "Model Monitor",
     "short_name": "Model Monitor",
-    "description": "Real-time health monitoring for Pollinations AI models.",
+    "description": "Health, evals and latency for every Pollinations model, official and community.",
     "icons": [
         {
             "src": "/icon-192.png",

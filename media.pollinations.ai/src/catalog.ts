@@ -1,12 +1,13 @@
-// Media catalog: D1-backed metadata for published (tagged) media. Blobs stay
-// in R2 — this module only indexes them. Tags are the publish action: only
-// tagged uploads get catalog rows. Writes are awaited inline on the upload
-// path (no waitUntil): a D1 failure surfaces as a 500 rather than silently
-// dropping catalog data.
+// Media catalog: D1-backed metadata for uploads made with a user-owned key.
+// Blobs stay in R2 — this module only indexes them. Every such upload gets a
+// row so its owner can list and delete it; tags additionally publish it to
+// public galleries. Writes are awaited inline on the upload path (no
+// waitUntil): a D1 failure surfaces as a 500 rather than silently dropping
+// catalog data.
 
 import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import type { SQL } from "drizzle-orm";
-import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 export type CatalogDb = ReturnType<typeof drizzle>;
@@ -68,32 +69,39 @@ export interface InsertUploadParams {
     appKeyId: string | null;
     contentType: string;
     size: number;
-    // Non-empty: tags are what publish an upload, so an untagged upload
-    // never reaches the catalog at all.
+    // May be empty: tags only decide which public galleries list the upload.
     tags: string[];
 }
 
 /**
- * Insert a catalog row for a published upload together with its tags. Each
- * upload is its own row (re-uploading the same bytes is a new item, not an
- * upsert). Returns the item id.
+ * Insert a catalog row for an upload together with its tags. Each upload is
+ * its own row (re-uploading the same bytes is a new item). The only id that
+ * can already exist is an expired, unpublished custom ID being reused: its
+ * stale row is replaced.
  */
 export async function insertUploadCatalogItem(
     db: CatalogDb,
     params: InsertUploadParams,
 ): Promise<void> {
+    const item = {
+        ownerUserId: params.ownerUserId,
+        appKeyId: params.appKeyId,
+        contentType: params.contentType,
+        size: params.size,
+        createdAt: new Date(),
+    };
+    const insertItem = db
+        .insert(mediaItem)
+        .values({ id: params.id, ...item })
+        .onConflictDoUpdate({ target: mediaItem.id, set: item });
+    if (params.tags.length === 0) {
+        await insertItem;
+        return;
+    }
     // One atomic batch: the item row and its tags land together or not at
-    // all — a tagless catalog row would be invisible (galleries are
-    // tag-scoped) yet undeletable by its owner via unpublish.
+    // all, so a requested publish is never silently dropped.
     await db.batch([
-        db.insert(mediaItem).values({
-            id: params.id,
-            ownerUserId: params.ownerUserId,
-            appKeyId: params.appKeyId,
-            contentType: params.contentType,
-            size: params.size,
-            createdAt: new Date(),
-        }),
+        insertItem,
         db.insert(mediaTag).values(
             params.tags.map((tag) => ({
                 itemId: params.id,
@@ -104,19 +112,24 @@ export async function insertUploadCatalogItem(
 }
 
 /**
- * The owner user id of a catalog item: null for an ownerless row, or
- * undefined when the id has no catalog row at all (unknown or uncataloged).
+ * The owner user id and uploading app of a catalog item, or undefined when
+ * the id has no catalog row at all (unknown or uncataloged).
  */
 export async function catalogItemOwner(
     db: CatalogDb,
     itemId: string,
-): Promise<string | null | undefined> {
+): Promise<
+    { ownerUserId: string | null; appKeyId: string | null } | undefined
+> {
     const [row] = await db
-        .select({ ownerUserId: mediaItem.ownerUserId })
+        .select({
+            ownerUserId: mediaItem.ownerUserId,
+            appKeyId: mediaItem.appKeyId,
+        })
         .from(mediaItem)
         .where(eq(mediaItem.id, itemId))
         .limit(1);
-    return row ? row.ownerUserId : undefined;
+    return row;
 }
 
 /**
@@ -191,6 +204,13 @@ export function decodeCursor(cursor: string): {
 export const DEFAULT_LIMIT = 20;
 export const MAX_LIMIT = 100;
 
+const catalogItemColumns = {
+    id: mediaItem.id,
+    contentType: mediaItem.contentType,
+    size: mediaItem.size,
+    createdAt: mediaItem.createdAt,
+};
+
 /**
  * List the public gallery for a tag: any item carrying that tag, regardless
  * of owner, newest first by upload time. A tag is what publishes an item,
@@ -211,14 +231,41 @@ export async function listMedia(
     }
 
     const rows = await db
-        .select({
-            id: mediaItem.id,
-            contentType: mediaItem.contentType,
-            size: mediaItem.size,
-            createdAt: mediaItem.createdAt,
-        })
+        .select(catalogItemColumns)
         .from(mediaItem)
         .innerJoin(mediaTag, eq(mediaTag.itemId, mediaItem.id))
+        .where(and(...conditions))
+        .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
+        .limit(params.limit + 1);
+
+    return paginate(rows, params.limit);
+}
+
+/**
+ * List one owner's uploads, tagged or not, with the same ordering and cursor
+ * as listMedia. idx_media_item_owner_created serves the lookup. A non-null
+ * appKeyId narrows the list to what that app uploaded.
+ */
+export async function listOwnerMedia(
+    db: CatalogDb,
+    params: {
+        ownerUserId: string;
+        appKeyId: string | null;
+        limit: number;
+        cursor?: { createdAt: Date; id: string };
+    },
+): Promise<CatalogPage> {
+    const conditions: SQL[] = [eq(mediaItem.ownerUserId, params.ownerUserId)];
+    if (params.appKeyId !== null) {
+        conditions.push(eq(mediaItem.appKeyId, params.appKeyId));
+    }
+    if (params.cursor) {
+        conditions.push(beforeCursor(params.cursor));
+    }
+
+    const rows = await db
+        .select(catalogItemColumns)
+        .from(mediaItem)
         .where(and(...conditions))
         .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
         .limit(params.limit + 1);
@@ -265,15 +312,19 @@ export async function tagsForItems(
 
 function beforeCursor(cursor: { createdAt: Date; id: string }): SQL {
     // Keyset pagination on (createdAt, id) both descending: strictly older
-    // rows, or same-instant rows with a strictly smaller id. Both branches
-    // passed to `or`/`and` are always defined, so the result is never
-    // undefined — assert that to keep the caller's condition arrays typed
-    // as SQL (not SQL | undefined).
-    return sql`${or(
-        lt(mediaItem.createdAt, cursor.createdAt),
-        and(
-            eq(mediaItem.createdAt, cursor.createdAt),
-            lt(mediaItem.id, cursor.id),
+    // rows, or same-instant rows with a strictly smaller id. The redundant
+    // `<=` bound lets SQLite seek the createdAt index instead of scanning
+    // every newer row on later pages. All branches passed to `or`/`and` are
+    // always defined, so the result is never undefined — assert that to keep
+    // the caller's condition arrays typed as SQL (not SQL | undefined).
+    return sql`${and(
+        lte(mediaItem.createdAt, cursor.createdAt),
+        or(
+            lt(mediaItem.createdAt, cursor.createdAt),
+            and(
+                eq(mediaItem.createdAt, cursor.createdAt),
+                lt(mediaItem.id, cursor.id),
+            ),
         ),
     )}`;
 }

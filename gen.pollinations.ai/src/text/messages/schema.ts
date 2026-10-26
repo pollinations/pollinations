@@ -64,8 +64,6 @@ const ToolReferenceBlockSchema = z
     .object({ type: z.literal("tool_reference"), tool_name: z.string() })
     .passthrough();
 
-export type ToolReferenceBlock = z.infer<typeof ToolReferenceBlockSchema>;
-
 const ToolResultBlockSchema = z
     .object({
         type: z.literal("tool_result"),
@@ -74,7 +72,7 @@ const ToolResultBlockSchema = z
             .union([
                 z.string(),
                 z.array(
-                    z.union([
+                    z.discriminatedUnion("type", [
                         TextBlockSchema,
                         ImageBlockSchema,
                         DocumentBlockSchema,
@@ -143,6 +141,7 @@ export const MessagesContentBlockSchema = z.discriminatedUnion("type", [
     ToolResultBlockSchema,
     ThinkingBlockSchema,
     RedactedThinkingBlockSchema,
+    ToolReferenceBlockSchema,
     ToolAdditionBlockSchema,
     ToolRemovalBlockSchema,
 ]);

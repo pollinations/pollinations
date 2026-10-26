@@ -9,7 +9,6 @@ import type {
     CreateMessageResponse,
     MessagesContentBlock,
     MessagesUsage,
-    ToolReferenceBlock,
 } from "./schema.ts";
 
 type ChatMessage = CreateChatCompletionRequest["messages"][number];
@@ -58,9 +57,7 @@ function documentPart(
     );
 }
 
-function contentPart(
-    block: MessagesContentBlock | ToolReferenceBlock,
-): ChatPart {
+function contentPart(block: MessagesContentBlock): ChatPart {
     if (block.type === "text") {
         return { type: "text", text: block.text, ...cacheControl(block) };
     }
@@ -298,19 +295,17 @@ function omitOldestImages(
         .flatMap((message) =>
             typeof message.content === "string" ? [] : message.content,
         )
-        .flatMap<MessagesContentBlock | ToolReferenceBlock>((block) =>
+        .flatMap((block) =>
             block.type === "tool_result" && Array.isArray(block.content)
                 ? block.content
                 : [block],
         )
         .filter((block) => block.type === "image");
-    const omitted = new Set<MessagesContentBlock | ToolReferenceBlock>(
+    const omitted = new Set<MessagesContentBlock>(
         images.slice(0, images.length - maxImages),
     );
     const note = `[image omitted: over the ${maxImages}-image limit]`;
-    const replace = <T extends MessagesContentBlock | ToolReferenceBlock>(
-        block: T,
-    ): T =>
+    const replace = <T extends MessagesContentBlock>(block: T): T =>
         (block.type === "image" && omitted.has(block)
             ? { type: "text", text: note, ...cacheControl(block) }
             : block.type === "tool_result" && Array.isArray(block.content)

@@ -1197,6 +1197,46 @@ describe("POST /v1/messages", () => {
         },
     );
 
+    // Claude Code switches off the feature that sent a block when the
+    // rejection names the block's tag the way Anthropic does.
+    it.each([
+        {
+            name: "a message",
+            content: [{ type: "tool_future", tool: {} }],
+            prefix: "messages.0.content.0: Input tag 'tool_future' found using 'type' does not match any of the expected tags: 'text', ",
+        },
+        {
+            name: "a tool result",
+            content: [
+                {
+                    type: "tool_result",
+                    tool_use_id: "toolu_1",
+                    content: [{ type: "search_result" }],
+                },
+            ],
+            prefix: "messages.0.content.0.content.0: Input tag 'search_result' found using 'type' does not match any of the expected tags: 'text', ",
+        },
+    ])(
+        "names an unknown block type in $name the way Anthropic does",
+        async ({ content, prefix }) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const { response, text } = await call(
+                "/v1/messages",
+                {
+                    model,
+                    max_tokens: 256,
+                    messages: [{ role: "user", content }],
+                },
+                caller.key,
+            );
+            expect(response.status, text).toBe(400);
+            const { message } = JSON.parse(text).error;
+            expect(message.startsWith(prefix), message).toBe(true);
+        },
+    );
+
     it.each([
         { name: "malformed JSON", body: "{", status: 400 },
         {

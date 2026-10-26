@@ -1,7 +1,5 @@
 import { createParser } from "eventsource-parser";
-import type { ChatCompletion } from "../types.ts";
-
-type ToolCall = { function?: { thought_signature?: unknown } };
+import type { ChatCompletion, ToolCall } from "../types.ts";
 
 // Gemini signs its tool calls. Clients written for Google's OpenAI-compatible
 // API read and resend the signature from `extra_content.google`.

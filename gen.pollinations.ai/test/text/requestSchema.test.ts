@@ -118,6 +118,44 @@ describe("CreateChatCompletionRequestSchema", () => {
         });
     });
 
+    it("drops a malformed extra_content field instead of rejecting the request", () => {
+        for (const extra_content of [
+            { google: null },
+            { google: { thought_signature: null } },
+            "x",
+        ]) {
+            const result = CreateChatCompletionRequestSchema.parse({
+                messages: [
+                    {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                            {
+                                id: "call_1",
+                                type: "function",
+                                function: { name: "emit", arguments: "{}" },
+                                extra_content,
+                            },
+                        ],
+                    },
+                    { role: "tool", tool_call_id: "call_1", content: "ok" },
+                ],
+            });
+
+            expect(result.messages[0]).toEqual({
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                    {
+                        id: "call_1",
+                        type: "function",
+                        function: { name: "emit", arguments: "{}" },
+                    },
+                ],
+            });
+        }
+    });
+
     it("preserves explicit prompt-cache breakpoints on content parts", () => {
         const result = CreateChatCompletionRequestSchema.parse({
             prompt_cache_key: "stable-prefix",

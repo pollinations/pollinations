@@ -13,6 +13,7 @@ import type {
     ChatCompletion,
     ChatMessage,
     OpenAIClientConfig,
+    ToolCall,
     TransformOptions,
     TransformResult,
 } from "./types.js";
@@ -32,8 +33,6 @@ function buildEndpoint(gatewayUrl: unknown): string {
             : process.env.PORTKEY_GATEWAY_URL || "https://portkey.myceli.ai";
     return `${base.replace(/\/+$/, "")}/v1/chat/completions`;
 }
-
-type ToolCall = { function?: { thought_signature?: unknown } };
 
 // Only Vertex reads Gemini's tool-call signatures. Strict providers such as
 // Mistral and Fireworks reject the extra field when a conversation that

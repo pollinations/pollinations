@@ -9,10 +9,12 @@ import {
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+    parseCommunityModelId,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
@@ -32,6 +34,10 @@ import {
     PromptAgentInputSchema,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
+import {
+    findReferenceableCommunityModel,
+    registryModelId,
+} from "./community-endpoints/fallbacks.ts";
 import {
     CodeAgentUpdateSchema,
     RequiredSafetyFeaturesSchema,
@@ -175,6 +181,37 @@ async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
     });
     if (!row) throw new HTTPException(404, { message: "Agent not found" });
     return row;
+}
+
+// Gen resolves baseModel on every call; an unknown id would otherwise only
+// surface as a 400 to the agent's callers.
+async function requireValidBaseModel(
+    db: Db,
+    ownerUserId: string,
+    baseModel: string,
+): Promise<void> {
+    const invalid = () =>
+        new HTTPException(400, {
+            message: `baseModel "${baseModel}" is not a callable text model`,
+        });
+    const registryId = registryModelId(baseModel);
+    if (registryId) {
+        const definition = getRegistryModelDefinition(registryId);
+        if (definition.category !== "text" || definition.fallbackOnly)
+            throw invalid();
+        return;
+    }
+    const parsed = parseCommunityModelId(baseModel);
+    const target = parsed
+        ? await findReferenceableCommunityModel(db, ownerUserId, parsed)
+        : undefined;
+    if (
+        !target ||
+        (target.type === "proxy" &&
+            parseListingPayload("proxy", target.payload)?.modality !== "text")
+    ) {
+        throw invalid();
+    }
 }
 
 async function lookupOwnerGithubUsername(
@@ -454,6 +491,7 @@ export const agentsRoutes = new Hono<Env>()
                     listing.name,
                     input.visibility,
                 );
+                await requireValidBaseModel(db, user.id, input.baseModel);
                 payload = serializePromptAgentConfig(input);
             }
             let row: AgentRow;
@@ -531,11 +569,18 @@ export const agentsRoutes = new Hono<Env>()
                           ...input,
                       });
             if (!parsed.success) {
+                const issue = parsed.error.issues[0];
                 throw new HTTPException(400, {
-                    message: parsed.error.issues[0]?.message,
+                    message: issue?.path.length
+                        ? `${issue.path.join(".")}: ${issue.message}`
+                        : issue?.message,
                 });
             }
             const data = parsed.data;
+            // Only a changed baseModel is checked, so other edits still save.
+            if ("baseModel" in data && input.baseModel !== undefined) {
+                await requireValidBaseModel(db, user.id, data.baseModel);
+            }
             const update: Partial<
                 typeof schema.communityEndpoint.$inferInsert
             > = {

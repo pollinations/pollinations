@@ -421,6 +421,63 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    "openai/gpt-6.1-terra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-10-26").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        // Azure list rates (2026-10-26), as published in the Azure pricing view.
+        // Above 272K prompt tokens the higher rates apply to the full request.
+        cost: {
+            promptTextTokens: perMillion(1),
+            promptCachedTokens: perMillion(0.05),
+            promptCacheWriteTokens: perMillion(1.25),
+            completionTextTokens: perMillion(5),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(2),
+                    promptCachedTokens: perMillion(0.1),
+                    promptCacheWriteTokens: perMillion(2.5),
+                    completionTextTokens: perMillion(7.5),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    key: "context",
+                    label: "Context",
+                    unit: "tokens",
+                    values: {
+                        "": "≤272K",
+                        long_context: ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.1 Terra",
+        description:
+            "Fast, efficient model for professional work with strong visual reasoning and computer use",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
     "openai/gpt-5.6-terra": {
         supportedParameters: CHAT_PARAMETERS.azureResponses,
         aliases: ["chatgpt-terra", "chatgpt-5.6-terra", "gpt-5.6-terra"],

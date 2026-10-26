@@ -63,6 +63,11 @@ function contentPart(block: MessagesContentBlock): ChatPart {
     }
     if (block.type === "image") return imagePart(block);
     if (block.type === "document") return documentPart(block);
+    // Chat lists deferred tools from the start (see tools()), so the model
+    // only needs to know which ones tool search loaded.
+    if (block.type === "tool_reference") {
+        return { type: "text", text: `Tool loaded: ${block.tool_name}` };
+    }
     throw new MessagesRequestError(
         `A ${block.type} block is not allowed in this message`,
     );
@@ -175,12 +180,19 @@ function chatMessages(
     if (message.role === "assistant")
         return [assistantMessage(message.content)];
     if (message.role === "system") {
-        return [
-            {
-                role: "system",
-                content: message.content.map(contentPart),
-            } as ChatMessage,
-        ];
+        // Tool changes reach Chat through `tools` (see tools()).
+        const content = message.content.filter(
+            (block) =>
+                block.type !== "tool_addition" && block.type !== "tool_removal",
+        );
+        return content.length
+            ? [
+                  {
+                      role: "system",
+                      content: content.map(contentPart),
+                  } as ChatMessage,
+              ]
+            : [];
     }
     return userMessages(message.content);
 }
@@ -230,8 +242,7 @@ function toolChoice(choice: CreateMessageRequest["tool_choice"]) {
 }
 
 function tools(request: CreateMessageRequest) {
-    if (!request.tools?.length) return {};
-    for (const tool of request.tools) {
+    for (const tool of request.tools ?? []) {
         if (tool.type && tool.type !== "custom") {
             // Claude Code drops a server tool when the rejection names its tag.
             throw new MessagesRequestError(
@@ -239,8 +250,27 @@ function tools(request: CreateMessageRequest) {
             );
         }
     }
+    // Chat has one tool list per request. Deferred tools are on it from the
+    // start, a tool added mid-conversation by definition joins it (replacing
+    // one of that name), and a removed tool stays, so earlier calls to it
+    // stay valid; Claude Code answers a call to it with an error.
+    const listed = new Map(
+        (request.tools ?? []).map((tool) => [tool.name, tool]),
+    );
+    for (const message of request.messages) {
+        if (typeof message.content === "string") continue;
+        for (const block of message.content) {
+            if (
+                block.type === "tool_addition" &&
+                block.tool.type === "tool_definition"
+            ) {
+                listed.set(block.tool.definition.name, block.tool.definition);
+            }
+        }
+    }
+    if (!listed.size) return {};
     return {
-        tools: request.tools.map((tool) => ({
+        tools: [...listed.values()].map((tool) => ({
             type: "function" as const,
             function: {
                 name: tool.name,

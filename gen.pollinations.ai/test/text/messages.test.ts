@@ -243,6 +243,96 @@ describe("Messages request translation", () => {
         });
     });
 
+    it("accepts tool search results and mid-conversation tool changes", () => {
+        const tool = (name: string, extra = {}) => ({
+            name,
+            input_schema: { type: "object" },
+            ...extra,
+        });
+        const chat = messagesToChatRequest(
+            request({
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "tool_result",
+                                tool_use_id: "toolu_1",
+                                content: [
+                                    {
+                                        type: "tool_reference",
+                                        tool_name: "TaskStop",
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        // Claude Code 2.1.306 after /compact
+                        role: "system",
+                        content: [
+                            { type: "text", text: "Tools changed." },
+                            {
+                                type: "tool_addition",
+                                tool: {
+                                    type: "tool_definition",
+                                    definition: tool("Artifact"),
+                                },
+                            },
+                            {
+                                type: "tool_addition",
+                                tool: {
+                                    type: "tool_definition",
+                                    definition: tool("Read", {
+                                        description: "Read v2",
+                                    }),
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        role: "system",
+                        content: [
+                            {
+                                type: "tool_removal",
+                                tool: { type: "tool_reference", name: "Read" },
+                            },
+                        ],
+                    },
+                ],
+                tools: [
+                    tool("Read", { description: "Read v1" }),
+                    tool("TaskStop", { defer_loading: true }),
+                ],
+            }),
+        );
+        expect(chat.messages).toEqual([
+            {
+                role: "tool",
+                tool_call_id: "toolu_1",
+                content: [{ type: "text", text: "Tool loaded: TaskStop" }],
+            },
+            {
+                role: "system",
+                content: [{ type: "text", text: "Tools changed." }],
+            },
+        ]);
+        expect(chat.tools).toEqual(
+            [
+                ["Read", "Read v2"],
+                ["TaskStop", undefined],
+                ["Artifact", undefined],
+            ].map(([name, description]) => ({
+                type: "function",
+                function: {
+                    name,
+                    ...(description && { description }),
+                    parameters: { type: "object" },
+                },
+            })),
+        );
+    });
+
     it("sends documents as Chat file and text parts, also from tool results", () => {
         const pdf = {
             type: "document",
@@ -1104,6 +1194,46 @@ describe("POST /v1/messages", () => {
                 type: "error",
                 error: { type },
             });
+        },
+    );
+
+    // Claude Code switches off the feature that sent a block when the
+    // rejection names the block's tag the way Anthropic does.
+    it.each([
+        {
+            name: "a message",
+            content: [{ type: "tool_future", tool: {} }],
+            prefix: "messages.0.content.0: Input tag 'tool_future' found using 'type' does not match any of the expected tags: 'text', ",
+        },
+        {
+            name: "a tool result",
+            content: [
+                {
+                    type: "tool_result",
+                    tool_use_id: "toolu_1",
+                    content: [{ type: "search_result" }],
+                },
+            ],
+            prefix: "messages.0.content.0.content.0: Input tag 'search_result' found using 'type' does not match any of the expected tags: 'text', ",
+        },
+    ])(
+        "names an unknown block type in $name the way Anthropic does",
+        async ({ content, prefix }) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const { response, text } = await call(
+                "/v1/messages",
+                {
+                    model,
+                    max_tokens: 256,
+                    messages: [{ role: "user", content }],
+                },
+                caller.key,
+            );
+            expect(response.status, text).toBe(400);
+            const { message } = JSON.parse(text).error;
+            expect(message.startsWith(prefix), message).toBe(true);
         },
     );
 

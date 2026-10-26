@@ -304,6 +304,81 @@ describe("community endpoint configuration policy", () => {
         expect(publicAgent.status).toBe(403);
     });
 
+    test("identifies invalid agent creation fields", async ({
+        accountToken,
+    }) => {
+        const prompt = {
+            name: "validation-agent",
+            title: "Validation agent",
+            systemPrompt: "Answer briefly.",
+            baseModel: "openai",
+        };
+        for (const [body, field] of [
+            [{ ...prompt, mcpServers: ["not-a-server"] }, "mcpServers"],
+            [
+                {
+                    ...prompt,
+                    type: "prompt_agent",
+                    mcpServers: ["not-a-server"],
+                },
+                "mcpServers",
+            ],
+            [{ ...prompt, name: "invalid name" }, "name"],
+            [{ ...prompt, title: "" }, "title"],
+            [{ ...prompt, baseModel: 42 }, "baseModel"],
+            [{ type: "code_agent" }, "repository"],
+            [{ ...prompt, type: "unknown" }, "type"],
+            [{ ...prompt, type: null }, "type"],
+        ] as const) {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/agents",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accountToken}`,
+                    },
+                    body: JSON.stringify(body),
+                },
+            );
+            expect(response.status).toBe(400);
+            const result = await response.json<{
+                error: {
+                    details: {
+                        formErrors: string[];
+                        fieldErrors: Record<string, string[]>;
+                    };
+                };
+            }>();
+            expect(result.error.details.formErrors).toEqual([]);
+            expect(
+                result.error.details.fieldErrors[field]?.length,
+            ).toBeGreaterThan(0);
+        }
+    });
+
+    test("accepts an explicit prompt agent type", async ({ accountToken }) => {
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/agents",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify({
+                    type: "prompt_agent",
+                    name: "explicit-prompt-agent",
+                    title: "Explicit prompt agent",
+                    systemPrompt: "Answer briefly.",
+                    baseModel: "openai",
+                }),
+            },
+        );
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(await response.json()).toMatchObject({ type: "prompt_agent" });
+    });
+
     test("accepts descriptions up to the limit and names it when rejecting", async ({
         accountToken,
     }) => {
@@ -337,6 +412,79 @@ describe("community endpoint configuration policy", () => {
         expect(await rejected.text()).toContain(
             `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
         );
+    });
+
+    test("rejects an agent baseModel Gen cannot call", async ({
+        accountToken,
+    }) => {
+        const request = (method: string, path: string, body: object) =>
+            SELF.fetch(`http://localhost:3000/api/account/agents${path}`, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify(body),
+            });
+        const agent = {
+            name: "base-model-agent",
+            title: "Base model",
+            systemPrompt: "Answer briefly.",
+        };
+
+        for (const baseModel of ["no-such/model-xyz", "flux"]) {
+            const rejected = await request("POST", "", {
+                ...agent,
+                baseModel,
+            });
+            expect(rejected.status).toBe(400);
+            expect(await rejected.text()).toContain(
+                `baseModel \\"${baseModel}\\" is not a callable text model`,
+            );
+        }
+
+        const created = await request("POST", "", {
+            ...agent,
+            baseModel: "openai",
+        });
+        expect(created.status, await created.clone().text()).toBe(200);
+        const { id } = await created.json<{ id: string }>();
+
+        const renamed = await request("PATCH", `/${id}`, { title: "Renamed" });
+        expect(renamed.status, await renamed.clone().text()).toBe(200);
+        const retargeted = await request("PATCH", `/${id}`, {
+            baseModel: "no-such/model-xyz",
+        });
+        expect(retargeted.status).toBe(400);
+    });
+
+    test("names the field when an agent update is invalid", async ({
+        accountToken,
+    }) => {
+        const request = (method: string, path: string, body: object) =>
+            SELF.fetch(`http://localhost:3000/api/account/agents${path}`, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify(body),
+            });
+        const created = await request("POST", "", {
+            name: "field-error-agent",
+            title: "Field error",
+            systemPrompt: "Answer briefly.",
+            baseModel: "openai",
+        });
+        expect(created.status, await created.clone().text()).toBe(200);
+        const { id } = await created.json<{ id: string }>();
+
+        const rejected = await request("PATCH", `/${id}`, {
+            mcpServers: ["pollinations", "not-a-server"],
+        });
+        expect(rejected.status).toBe(400);
+        const body = await rejected.json<{ error: { message: string } }>();
+        expect(body.error.message).toMatch(/^mcpServers(\.\d+)?: /);
     });
 
     test("preserves validation error precedence", () => {

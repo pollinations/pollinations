@@ -4,6 +4,7 @@ import {
     CardIcon,
     Chip,
     SproutIcon,
+    Surface,
     Table,
     TableBody,
     TableCell,
@@ -233,9 +234,11 @@ export const LastEventsPanel: FC = () => {
 
     if (state.rows.length === 0) {
         return (
-            <p className="text-sm text-ink-600">
-                No events yet. API usage and earnings will appear here.
-            </p>
+            <Surface>
+                <p className="text-sm text-ink-600">
+                    No events yet. API usage and earnings will appear here.
+                </p>
+            </Surface>
         );
     }
 
@@ -270,7 +273,7 @@ export const LastEventsPanel: FC = () => {
                     ))}
                 </ul>
 
-                <div className="hidden overflow-x-auto sm:block">
+                <Surface className="hidden overflow-x-auto sm:block">
                     <Table
                         aria-label="Last events"
                         className="text-left text-xs"
@@ -299,7 +302,7 @@ export const LastEventsPanel: FC = () => {
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody divider="neutral">
+                        <TableBody>
                             {state.rows.map((event) => (
                                 <TableRow key={`${event.kind}-${event.id}`}>
                                     <TableCell
@@ -333,7 +336,7 @@ export const LastEventsPanel: FC = () => {
                             ))}
                         </TableBody>
                     </Table>
-                </div>
+                </Surface>
 
                 <div className="mt-4 flex justify-end text-[13px] leading-snug text-theme-text-muted">
                     {state.hasMore && (

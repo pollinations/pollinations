@@ -7,6 +7,7 @@ import {
     firstCommunityVideoBytes,
 } from "@shared/community-media.ts";
 import {
+    createErrorResponseSchema,
     ensureUpstreamOk,
     getErrorCodesForStatus,
     handleError,
@@ -1208,5 +1209,45 @@ describe("error observability", () => {
         expect(fetchRequests[0].url).toBe(
             "https://openrouter.ai/api/v1/chat/completions",
         );
+    });
+});
+
+describe("published 400 error schema", () => {
+    it("accepts upstream details", () => {
+        const result = createErrorResponseSchema(400).safeParse({
+            status: 400,
+            success: false,
+            error: {
+                code: "BAD_REQUEST",
+                message:
+                    "The image URL must be a valid and downloadable URL or look like data:<MIMEType>;base64,<YOUR-BASE64-CONTENT>",
+                timestamp: new Date().toISOString(),
+                details: {
+                    name: "UpstreamError",
+                    upstreamStatus: 400,
+                    upstreamHost: "openrouter.ai",
+                    upstreamBody: "{}",
+                },
+            },
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it("accepts validation details", () => {
+        const result = createErrorResponseSchema(400).safeParse({
+            status: 400,
+            success: false,
+            error: {
+                code: "BAD_REQUEST",
+                message: "Validation failed",
+                timestamp: new Date().toISOString(),
+                details: {
+                    name: "ZodError",
+                    formErrors: [],
+                    fieldErrors: { model: ["Required"] },
+                },
+            },
+        });
+        expect(result.success).toBe(true);
     });
 });

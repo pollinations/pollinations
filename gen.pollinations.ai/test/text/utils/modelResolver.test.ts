@@ -521,6 +521,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes GPT-6.1 Terra to the myceli Azure deployment without fallback", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-6.1-terra",
+        });
+        expect(resolved.options.model).toBe("gpt-6.1-terra");
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "gpt-6.1-terra",
+        });
+    });
+
     it("pins gpt-5.6-terra recovery to exact OpenAI Standard", () => {
         const resolved = resolveModelConfig(messages, {
             model: "openai/gpt-5.6-terra:openai",

@@ -96,7 +96,7 @@ const MODEL3D_BASE_SERVICES = {
             // Account config and completed-job charge verified 2026-10-24.
             completionImageTokens: 0.07,
         },
-        title: "NVIDIA Asset Harvester",
+        title: "Asset Harvester",
         description: "Image-to-3D Gaussian Splat (PLY)",
         inputModalities: ["image"],
         outputModalities: ["3d"],
@@ -115,7 +115,7 @@ const MODEL3D_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.1, // per generation
         },
-        title: "Hyper3D Rodin 2.5",
+        title: "Rodin Gen-2.5",
         description: "Textured 3D models from an image or a text prompt",
         inputModalities: ["text", "image"],
         outputModalities: ["3d"],

@@ -26,7 +26,7 @@ export const MODEL_SORTS = [
 ] as const;
 export type ModelSort = (typeof MODEL_SORTS)[number];
 
-/** Search params shared by the /models, /agents and /mcp pages. */
+/** Search params shared by the /models and /agents pages. */
 export type CatalogSearch = {
     q?: string;
     sort?: ModelSort;

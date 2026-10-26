@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import {
     chmodSync,
     existsSync,
@@ -15,10 +16,12 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { fail, printInfo } from "../../lib/output.js";
 import bootstrap from "./bootstrap.sh?raw";
-import { type Connection, connectSandbox } from "./e2b.js";
+import { type Connection, connectSandbox, sharePort } from "./e2b.js";
 
 const SSH_DIR = join(homedir(), ".pollinations", "ssh");
 const SSH_KEY = join(SSH_DIR, "id_ed25519");
+// One per computer, so all its connections to a sandbox share one secret.
+const PORT_SECRET = join(SSH_DIR, "port-secret");
 const SSH_CONFIG = join(SSH_DIR, "config");
 const USER_SSH_CONFIG = join(homedir(), ".ssh", "config");
 const INCLUDE = "Include ~/.pollinations/ssh/config";
@@ -53,11 +56,45 @@ export function stderrToTerminal() {
     }) as typeof process.stderr.write;
 }
 
+const onAzure = (s: Connection) => Boolean(s.domain?.endsWith(".adcproxy.io"));
+
 // Azure's port URLs name the sandbox first.
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
-    s.domain?.endsWith(".adcproxy.io")
+    onAzure(s)
         ? `${scheme}://${s.sandboxID}--${port}.${s.domain}`
         : `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
+
+function portSecret() {
+    try {
+        writeFileSync(PORT_SECRET, randomBytes(32).toString("hex"), {
+            mode: 0o600,
+            flag: "wx",
+        });
+    } catch {
+        // Made by an earlier connection.
+    }
+    return readFileSync(PORT_SECRET, "utf8");
+}
+
+// Where ssh's WebSocket goes. Gen serves an E2B sandbox's ports at its own
+// hosts, so ssh reaches it like any request to them, which resumes it and
+// counts as activity. Azure's port proxy is reached directly, with the
+// traffic token a private sandbox needs.
+async function sshSocket(s: Connection) {
+    if (onAzure(s)) {
+        const token = s.trafficAccessToken;
+        return {
+            url: sandboxUrl(s, SSH_PORT, "wss"),
+            headers: token ? { "e2b-traffic-access-token": token } : {},
+        };
+    }
+    const secret = portSecret();
+    const { url } = await sharePort(s.sandboxID, SSH_PORT, secret);
+    return {
+        url: url.replace(/^https:/, "wss:"),
+        headers: { "x-pollinations-secret": secret },
+    };
+}
 
 // Runs a script as root through envd, the agent in every sandbox. Its
 // Connect RPC takes and returns length-prefixed JSON messages.
@@ -123,6 +160,7 @@ export async function proxy(host: string) {
         POLLI_SSH_KEY: readFileSync(`${SSH_KEY}.pub`, "utf8").trim(),
         POLLI_SSH_PORT: String(SSH_PORT),
     });
+    const { url, headers } = await sshSocket(sandbox);
     const renew = setInterval(
         () =>
             connectSandbox(id).catch((err) =>
@@ -130,12 +168,8 @@ export async function proxy(host: string) {
             ),
         RENEW_MS,
     );
-    // Node's WebSocket accepts headers; a private sandbox needs its traffic token.
-    const ws = new WebSocket(sandboxUrl(sandbox, SSH_PORT, "wss"), {
-        headers: sandbox.trafficAccessToken
-            ? { "e2b-traffic-access-token": sandbox.trafficAccessToken }
-            : {},
-    } as unknown as string[]);
+    // Node's WebSocket accepts headers.
+    const ws = new WebSocket(url, { headers } as unknown as string[]);
     ws.binaryType = "arraybuffer";
     await new Promise<void>((resolve, reject) => {
         ws.onopen = () => {

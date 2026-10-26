@@ -69,6 +69,15 @@ export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
         throw new Error(`${refusal}\nSee your sandboxes: polli sandbox list`);
     });
 
+// Gen serves the port at `url` to requests that carry `secret` in
+// X-Pollinations-Secret, resuming the sandbox first if it is paused. E2B
+// sandboxes only.
+export const sharePort = (id: string, port: number, secret: string) =>
+    gen<{ url: string }>(`${E2B_PATH}/sandboxes/${id}/ports/${port}`, {
+        method: "PUT",
+        body: { secret },
+    });
+
 // Paused sandboxes keep their files and memory and cost nothing. A pause ends
 // a timeout over 10 minutes.
 export const pauseSandbox = (id: string) =>

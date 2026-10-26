@@ -109,6 +109,15 @@ function stubE2b() {
                 trafficToken: request.headers.get("e2b-traffic-access-token"),
                 body: await request.text(),
             });
+            // Like polli's websocat in front of sshd, but an echo.
+            if (request.headers.get("upgrade") === "websocket") {
+                const [client, server] = Object.values(new WebSocketPair());
+                server.accept();
+                server.addEventListener("message", (event) =>
+                    server.send(`echo ${event.data}`),
+                );
+                return new Response(null, { status: 101, webSocket: client });
+            }
             return new Response(`port ${port[1]} says hi`, {
                 headers: { "x-app": "echo" },
             });
@@ -950,6 +959,31 @@ test("a shared port wakes its paused sandbox, paid in advance by the key that sh
         body: "again",
     });
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
+});
+
+test("polli ssh's WebSocket to a shared port wakes the sandbox and passes through", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const created = await createSandbox(owner.key);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    await sharePort(owner.key, sandboxID, 8022);
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+
+    const response = await visit(`8022-${sandboxID}.pollinations.app`, "/", {
+        headers: { upgrade: "websocket" },
+    });
+    expect(response.status).toBe(101);
+    expect(e2b.sandboxes[0].state).toBe("running");
+    expect(e2b.portRequests).toMatchObject([{ trafficToken: "traffic" }]);
+    const socket = response.webSocket;
+    if (!socket) throw new Error("no WebSocket");
+    socket.accept();
+    const reply = new Promise((resolve) =>
+        socket.addEventListener("message", (event) => resolve(event.data)),
+    );
+    socket.send("SSH-2.0-OpenSSH_9.6");
+    expect(await reply).toBe("echo SSH-2.0-OpenSSH_9.6");
+    socket.close();
 });
 
 test("an unshared port, a gone sandbox or a payer who can't pay gets no wake", async () => {

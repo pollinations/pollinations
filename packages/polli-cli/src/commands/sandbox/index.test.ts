@@ -271,6 +271,75 @@ describe("ssh connections", () => {
         expect(config).not.toContain("ControlMaster");
     });
 
+    it("reaches an E2B sandbox's sshd through Gen's port proxy, with this computer's secret", async () => {
+        const { setKeyOverride } = await import("../../lib/config.js");
+        setKeyOverride("sk_test");
+        writeFileSync(
+            join(home, ".pollinations", "ssh", "id_ed25519.pub"),
+            "ssh-ed25519 AAAA polli-sandbox\n",
+        );
+        // envd's reply to the setup script: one message, its exit.
+        const exit = Buffer.from(JSON.stringify({ event: { end: {} } }));
+        const frame = Buffer.concat([Buffer.alloc(5), exit]);
+        frame.writeUInt32BE(exit.length, 1);
+        const shares: unknown[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string, init: RequestInit) => {
+                if (url.endsWith("/connect")) {
+                    return Response.json({
+                        sandboxID: "box1",
+                        envdAccessToken: "envd",
+                        trafficAccessToken: "traffic",
+                    });
+                }
+                if (
+                    url === "https://49983-box1.e2b.app/process.Process/Start"
+                ) {
+                    return new Response(frame);
+                }
+                shares.push([url, init.method, JSON.parse(String(init.body))]);
+                return Response.json({
+                    url: "https://8022-box1.pollinations.app",
+                });
+            }),
+        );
+        const sockets: unknown[] = [];
+        vi.stubGlobal(
+            "WebSocket",
+            class {
+                onclose?: () => void;
+                constructor(url: string, { headers }: { headers: object }) {
+                    sockets.push([url, headers]);
+                    setTimeout(() => this.onclose?.());
+                }
+            },
+        );
+        vi.spyOn(process.stdin, "destroy").mockReturnValue(process.stdin);
+        const { proxy } = await import("./ssh.js");
+
+        await proxy("box1.polli");
+
+        const secret = readFileSync(
+            join(home, ".pollinations", "ssh", "port-secret"),
+            "utf8",
+        );
+        expect(secret).toMatch(/^[0-9a-f]{64}$/);
+        expect(shares).toEqual([
+            [
+                "https://gen.pollinations.ai/alpha/e2b/sandboxes/box1/ports/8022",
+                "PUT",
+                { secret },
+            ],
+        ]);
+        expect(sockets).toEqual([
+            [
+                "wss://8022-box1.pollinations.app",
+                { "x-pollinations-secret": secret },
+            ],
+        ]);
+    });
+
     it("prints Gen's refusal as a sentence on the terminal, where ssh doesn't hide it", async () => {
         const tty = join(home, "tty");
         const fs = await vi.importActual<typeof import("node:fs")>("node:fs");

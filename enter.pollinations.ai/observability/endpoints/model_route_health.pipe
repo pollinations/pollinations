@@ -23,6 +23,11 @@ describe the same traffic, and p50/p95 are computed correctly at each level
 rather than derived from the other (percentiles cannot be combined after the
 fact).
 
+`errors_402` is the part of `errors_4xx` refused for balance or key budget
+before the model was called, so it says nothing about the model itself. Upstream
+402s are stored as 502 (`remapUpstreamStatus`), so every 402 here is our own
+billing check.
+
 Column names match `model_health` so consumers reuse one health rule for both.
 Traffic defaults to all for existing API and catalog consumers. Model Monitor
 requests regular traffic explicitly.
@@ -69,6 +74,11 @@ SQL >
             countIf(is_final AND response_status >= 400 AND response_status < 500),
             countIf(response_status >= 400 AND response_status < 500)
         ) as errors_4xx,
+        if(
+            GROUPING(model_used) = 1,
+            countIf(is_final AND response_status = 402),
+            countIf(response_status = 402)
+        ) as errors_402,
         if(
             GROUPING(model_used) = 1,
             countIf(is_final AND response_status >= 500),

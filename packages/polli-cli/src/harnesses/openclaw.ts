@@ -1,5 +1,5 @@
-import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import spawn from "cross-spawn";
 import JSON5 from "json5";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
@@ -211,7 +211,7 @@ const openclawInstalled = (ctx: HarnessContext) =>
 
 export const initializeOpenClaw = (ctx: HarnessContext) => {
     if (readTextIfExists(configPath(ctx)) !== null) return;
-    const setup = spawnSync("openclaw", ["setup", "--baseline"], {
+    const setup = spawn.sync("openclaw", ["setup", "--baseline"], {
         env: ctx.env,
         stdio: "ignore",
     });

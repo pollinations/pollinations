@@ -1,7 +1,10 @@
 import debug from "debug";
 import { findModelByName } from "./availableModels.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
-import { genericOpenAIClient } from "./genericOpenAIClient.js";
+import {
+    genericOpenAIClient,
+    withMistralThinking,
+} from "./genericOpenAIClient.js";
 import { callChatViaResponses } from "./responses/chatClient.js";
 import { callSystemOne } from "./systemOneClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
@@ -93,18 +96,15 @@ export async function generateTextPortkey(
 
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
-        if (state.options.modelConfig?.provider !== "vertex-ai") {
-            state = {
-                ...state,
-                messages: withoutThoughtSignatures(state.messages),
-            };
-        }
-        if (state.options.modelConfig?.supportsReasoningHistory === false) {
-            state = {
-                ...state,
-                messages: withoutReasoningHistory(state.messages),
-            };
-        }
+        const config = state.options.modelConfig;
+        let history = state.messages;
+        if (config?.provider !== "vertex-ai")
+            history = withoutThoughtSignatures(history);
+        if (config?.useMistralChatFormat === true)
+            history = withMistralThinking(history);
+        if (config?.supportsReasoningHistory === false)
+            history = withoutReasoningHistory(history);
+        state = { ...state, messages: history };
         // TypeSafe has its own wire format and does not use Portkey transforms.
         if (modelDef?.useSystemOneApi) {
             return callSystemOne(state.messages, state.options);

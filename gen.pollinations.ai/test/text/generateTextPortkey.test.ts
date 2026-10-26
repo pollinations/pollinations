@@ -443,25 +443,29 @@ describe("generateTextPortkey", () => {
 
     it("drops echoed reasoning only for providers that reject it", async () => {
         const bodies: Record<string, unknown>[] = [];
-        const portkeyFetcher = vi.fn(
-            async (_input: RequestInfo | URL, init?: RequestInit) => {
-                bodies.push(JSON.parse(String(init?.body)));
-                return Response.json({
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                    usage: {
-                        prompt_tokens: 5,
-                        completion_tokens: 1,
-                        total_tokens: 6,
+        const respond = async (
+            _input: RequestInfo | URL,
+            init?: RequestInit,
+        ) => {
+            bodies.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
                     },
-                });
-            },
-        );
+                ],
+                usage: {
+                    prompt_tokens: 5,
+                    completion_tokens: 1,
+                    total_tokens: 6,
+                },
+            });
+        };
+        const portkeyFetcher = vi.fn(respond);
+        // Mistral Large 4 calls Mistral directly, without the Portkey fetcher.
+        vi.spyOn(globalThis, "fetch").mockImplementation(respond);
         const toolCall = {
             id: "call_1",
             type: "function",
@@ -488,6 +492,7 @@ describe("generateTextPortkey", () => {
             "mistralai/mistral-large-3",
             "inferenceport-ai/lightning-text-v2",
             "minimax/minimax-m3",
+            "mistralai/mistral-large-4",
         ]) {
             await generateTextPortkey(
                 messages,
@@ -496,9 +501,8 @@ describe("generateTextPortkey", () => {
             );
         }
 
-        const [mistral, azureMistral, inferencePort, fireworks] = bodies.map(
-            (body) => (body.messages as ChatMessage[])[1],
-        );
+        const [mistral, azureMistral, inferencePort, fireworks, mistralLarge4] =
+            bodies.map((body) => (body.messages as ChatMessage[])[1]);
         const withoutReasoning = {
             role: "assistant",
             content: null,
@@ -508,6 +512,16 @@ describe("generateTextPortkey", () => {
         expect(azureMistral).toEqual(withoutReasoning);
         expect(inferencePort).toEqual(withoutReasoning);
         expect(fireworks).toEqual({ ...withoutReasoning, ...reasoning });
+        // Mistral's own reasoning model gets its thinking back as a chunk.
+        expect(mistralLarge4).toEqual({
+            ...withoutReasoning,
+            content: [
+                {
+                    type: "thinking",
+                    thinking: [{ type: "text", text: "thinking" }],
+                },
+            ],
+        });
     });
 
     it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {

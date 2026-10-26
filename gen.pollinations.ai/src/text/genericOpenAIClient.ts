@@ -108,6 +108,34 @@ function normalizeMistralContent(
     }
 }
 
+/** Replay reasoning as Mistral's thinking chunk, the reverse of normalizeMistralContent. */
+export function withMistralThinking(messages: ChatMessage[]): ChatMessage[] {
+    return messages.map((message) => {
+        const { reasoning_content: reasoning, ...rest } = message;
+        if (
+            message.role !== "assistant" ||
+            typeof reasoning !== "string" ||
+            !reasoning
+        )
+            return message;
+        const content = Array.isArray(rest.content)
+            ? rest.content
+            : rest.content
+              ? [{ type: "text", text: rest.content }]
+              : [];
+        return {
+            ...rest,
+            content: [
+                {
+                    type: "thinking",
+                    thinking: [{ type: "text", text: reasoning }],
+                },
+                ...content,
+            ],
+        };
+    });
+}
+
 function removeReasoning(completion: Pick<ChatCompletion, "choices">): void {
     for (const choice of completion.choices ?? []) {
         for (const message of [choice.message, choice.delta]) {

@@ -304,7 +304,7 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
-                <TableBody divider="neutral">
+                <TableBody>
                     {stats.breakdowns.map((row) => (
                         <TableRow key={row.id}>
                             <TableCell className="max-w-64 break-words text-xs">

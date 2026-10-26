@@ -220,7 +220,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody divider="neutral">
+                        <TableBody>
                             {stats.entityBreakdowns.map((entity) => (
                                 <TableRow key={entity.id}>
                                     <TableCell className="max-w-64 break-words text-xs">

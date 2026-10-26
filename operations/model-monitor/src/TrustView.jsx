@@ -200,17 +200,20 @@ function TwinPairs({ pairs, titles }) {
                                     <TableCell
                                         align="center"
                                         numeric
-                                        className="w-28 whitespace-nowrap font-semibold"
+                                        className="w-28 whitespace-nowrap"
                                     >
-                                        {intent === "default" ? (
-                                            <span className="text-theme-text-muted">
+                                        <Chip
+                                            intent={
+                                                intent === "default"
+                                                    ? "neutral"
+                                                    : intent
+                                            }
+                                            size="sm"
+                                        >
+                                            <span className="font-semibold">
                                                 {difference}
                                             </span>
-                                        ) : (
-                                            <Chip intent={intent} size="sm">
-                                                {difference}
-                                            </Chip>
-                                        )}
+                                        </Chip>
                                     </TableCell>
                                     <ScoreCell model={official} align="left" />
                                     <ModelCell

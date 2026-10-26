@@ -423,12 +423,12 @@ const TEXT_BASE_SERVICES = {
     },
     "openai/gpt-6.1-terra": {
         supportedParameters: CHAT_PARAMETERS.azureResponses,
-        aliases: ["gpt-6.1-terra"],
+        aliases: [],
         provider: "azure",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-10-26").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         paidOnly: false,
         // Azure list rates (2026-10-26), as published in the Azure pricing view.
         // Above 272K prompt tokens the higher rates apply to the full request.

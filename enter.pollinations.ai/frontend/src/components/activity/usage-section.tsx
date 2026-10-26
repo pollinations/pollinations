@@ -1,5 +1,6 @@
 import {
     InlineLink,
+    Surface,
     TabButton,
     Table,
     TableBody,
@@ -196,24 +197,31 @@ const UsageChartView: FC<UsageChartViewProps> = ({
     return (
         <>
             <SectionContent loading={loading}>
-                {error && (
-                    <LoadError onRetry={() => fetchUsage()}>{error}</LoadError>
-                )}
-                {hasData && (
-                    <Chart
-                        key={`${period.granularity}:${period.period}`}
-                        period={period}
-                        label="Usage"
-                        onSelect={(point) =>
-                            onPeriodChange(
-                                toggleActivityBucket(period, point.timestamp),
-                            )
-                        }
-                        data={chartData}
-                        metric={metric}
-                    />
-                )}
-                {!error && !hasData && <UsageEmptyState />}
+                <Surface>
+                    {error && (
+                        <LoadError onRetry={() => fetchUsage()}>
+                            {error}
+                        </LoadError>
+                    )}
+                    {hasData && (
+                        <Chart
+                            key={`${period.granularity}:${period.period}`}
+                            period={period}
+                            label="Usage"
+                            onSelect={(point) =>
+                                onPeriodChange(
+                                    toggleActivityBucket(
+                                        period,
+                                        point.timestamp,
+                                    ),
+                                )
+                            }
+                            data={chartData}
+                            metric={metric}
+                        />
+                    )}
+                    {!error && !hasData && <UsageEmptyState />}
+                </Surface>
             </SectionContent>
 
             {!loading && hasData && (
@@ -251,7 +259,7 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
 }) => {
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
     return (
-        <div className="min-w-0 max-w-full overflow-x-auto">
+        <Surface className="max-w-full overflow-x-auto">
             <Table
                 aria-label={`Usage by ${groupBy}`}
                 className="min-w-[340px] [&_tr:hover]:bg-transparent"
@@ -296,7 +304,7 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
-                <TableBody divider="neutral">
+                <TableBody>
                     {stats.breakdowns.map((row) => (
                         <TableRow key={row.id}>
                             <TableCell className="max-w-64 break-words text-xs">
@@ -333,6 +341,6 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
                     </TableRow>
                 </tfoot>
             </Table>
-        </div>
+        </Surface>
     );
 };

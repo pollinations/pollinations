@@ -258,6 +258,8 @@ const logout = new Command("logout")
     .action(() => {
         clearCredentials();
         printSuccess("Logged out. Credentials cleared.");
+        if (process.env.POLLINATIONS_API_KEY)
+            printInfo("POLLINATIONS_API_KEY is still set and stays in use.");
         printInfo(flavor.logout);
     });
 
@@ -286,7 +288,7 @@ export async function showAuthStatus(): Promise<void> {
         printResult({
             authenticated: true,
             key: masked,
-            status: "Key stored but could not reach API",
+            status: "Could not reach API",
         });
         return;
     }

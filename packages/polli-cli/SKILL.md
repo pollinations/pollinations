@@ -65,7 +65,7 @@ One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status` (or `polli whoami`).
 Override the stored key for a single command with `--key <key>`, or set `POLLINATIONS_API_KEY` in the environment.
-Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its own login, so run `POLLINATIONS_ENV=staging polli auth login` once.
+Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its own login, so run `POLLINATIONS_ENV=staging polli auth login` once. An exported `POLLINATIONS_API_KEY` wins over both logins.
 
 ## Recipes
 

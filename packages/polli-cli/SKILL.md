@@ -44,8 +44,9 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 | Speech + character timings | `polli gen audio "<text>" --timestamps` (also writes `speech.mp3.json`) |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
-| List all models | `polli models` (filters: `--source official|community`, `--all`, `--search <q>`) |
-| Discover voices | `polli models --voices` (lists TTS voices by model) |
+| List all models | `polli models` |
+| Search models | `polli models <query>` (`--source official\|community`, `--reliability all`) |
+| Discover voices | `polli models --type audio --voices` (one line per model) |
 | Filter models by type | `polli models --type image` (text, decision, image, audio, video, 3d, embedding, realtime) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
@@ -113,7 +114,7 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Without `--voice`, the API uses the model's default voice. To discover the full live voice list, run `polli models --voices` (or `polli models --type audio --json`). Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
+Without `--voice`, the API uses the model's default voice. Voices differ per model: `polli models --type audio --voices` lists each model's voices, so pass the matching `--model` with `--voice`. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
 
 ### Generate music (elevenlabs/music-v2)
 ```bash
@@ -185,11 +186,10 @@ Models: `openai/whisper-large-v3` (default), `elevenlabs/scribe-v2`, `assemblyai
 ### Discover models
 ```bash
 polli models --type text              # text models only
-polli models --source official        # official first-party models only
-polli models --community              # community models only
-polli models --all                    # include uncurated/degraded community models (reliability=all)
-polli models flux                     # search models by keyword (name, publisher, or description)
-polli models --voices                 # list available voices across audio models
+polli models flux                     # search name, aliases, title, description, publisher
+polli models --source community       # official or community only
+polli models --reliability all        # also community models failing health checks
+polli models --type audio --voices    # voices per model
 polli models --type image --verbose   # with publisher, context length, pricing
 polli models --stats                  # health + avg latency + err% (60m default)
 polli models --stats --window 5       # last 5 minutes only

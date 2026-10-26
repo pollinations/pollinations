@@ -243,7 +243,7 @@ describe("ssh connections", () => {
         };
     }
 
-    it("writes a config that shares one connection between ssh, scp and rsync", async () => {
+    it("writes a config that shares one connection between ssh, scp and rsync and keeps idle ones open", async () => {
         const { setupSsh } = await import("./ssh.js");
 
         setupSsh();
@@ -254,6 +254,7 @@ describe("ssh connections", () => {
         );
         expect(config).toContain("ControlMaster auto");
         expect(config).toContain("ControlPersist 10m");
+        expect(config).toContain("ServerAliveInterval 30");
     });
 
     it("doesn't share connections when the socket path would be too long", async () => {

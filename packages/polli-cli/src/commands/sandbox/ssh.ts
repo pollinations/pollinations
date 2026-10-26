@@ -217,6 +217,9 @@ export function setupSsh() {
             "    IdentitiesOnly yes",
             `    UserKnownHostsFile "${join(SSH_DIR, "known_hosts")}"`,
             "    StrictHostKeyChecking accept-new",
+            // Gen's port proxy runs on Cloudflare, which closes a WebSocket
+            // after 100 seconds without data.
+            "    ServerAliveInterval 30",
             `    ProxyCommand ${polli} sandbox proxy %h`,
             // Later ssh, scp and rsync reuse the first connection, up to 10
             // minutes after it ends.

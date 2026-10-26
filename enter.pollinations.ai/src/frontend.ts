@@ -36,17 +36,13 @@ export async function serveFrontend(request: Request, assets: Fetcher) {
 
     const meta = pageMeta(url.pathname);
     // Cloudflare serves existing assets directly; misses reach this handler.
-    let response = await assets.fetch(request);
-    if (!meta && response.status !== 404) return response;
-    if (response.status === 404) {
-        // Unknown pages must not inherit the homepage's conditional 304 response.
-        response = await assets.fetch(
-            new Request(
-                new URL("/", url),
-                meta ? request : { method: request.method },
-            ),
-        );
-    }
+    // Unknown pages must not inherit the homepage's conditional 304 response.
+    let response = await assets.fetch(
+        new Request(
+            new URL("/", url),
+            meta ? request : { method: request.method },
+        ),
+    );
     if (!response.headers.get("Content-Type")?.includes("text/html"))
         return response;
     if (!meta)

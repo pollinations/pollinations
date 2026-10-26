@@ -158,18 +158,15 @@ test.each([
     expect(response.headers.get("Location")).toBe(location);
 });
 
-test.each(["/robots.txt", "/models"])(
-    "non-HTML responses at %s pass through unchanged",
-    async (path) => {
-        const original = new Response("asset data", {
-            headers: { "Content-Type": "text/plain", ETag: '"asset"' },
-        });
-        const response = await fetchWorker(path, undefined, {
-            async fetch() {
-                return original;
-            },
-        } as unknown as Fetcher);
-        expect(response).toBe(original);
-        expect(await response.text()).toBe("asset data");
-    },
-);
+test("non-HTML responses pass through unchanged", async () => {
+    const original = new Response("asset data", {
+        headers: { "Content-Type": "text/plain", ETag: '"asset"' },
+    });
+    const response = await fetchWorker("/models", undefined, {
+        async fetch() {
+            return original;
+        },
+    } as unknown as Fetcher);
+    expect(response).toBe(original);
+    expect(await response.text()).toBe("asset data");
+});

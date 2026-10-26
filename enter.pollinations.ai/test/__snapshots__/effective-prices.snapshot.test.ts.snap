@@ -3245,6 +3245,28 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
+  "openai/gpt-6.1-terra": {
+    "cost": {
+      "completionTextTokens": 0.000005,
+      "promptCacheWriteTokens": 0.00000125,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.000001,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000075,
+        "promptCacheWriteTokens": 0.0000025,
+        "promptCachedTokens": 0.0000001,
+        "promptTextTokens": 0.000002,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.00000375,
+      "promptCacheWriteTokens": 0.0000009375,
+      "promptCachedTokens": 0.0000000375,
+      "promptTextTokens": 0.00000075,
+    },
+  },
   "openai/gpt-audio-1.5": {
     "cost": {
       "completionAudioTokens": 0.000064,

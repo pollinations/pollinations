@@ -625,7 +625,7 @@ curl -X POST "https://gen.pollinations.ai/v1/messages" \
 
 #### `POST` `/v1/chat/completions` — Chat Completions
 
-Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API. Use an OpenAI SDK by pointing it to `https://gen.pollinations.ai`.
+Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API. Use an OpenAI SDK by pointing it to `https://gen.pollinations.ai/v1`.
 
 Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
 JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. Larger requests also accept PDF file_data on OpenRouter models (a PDF data URI or raw base64 with mime_type application/pdf) and base64 input_audio.data on thinkingmachines/inkling. For requests over 32 MiB, each inline media item may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days.
@@ -1787,7 +1787,8 @@ Lists default to `reliability=reliable`: public community proxy models need more
 Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.
 Models without observations remain listed. Successful fallbacks count as successes
 for the requested model; final 4xx are excluded, while owner requests and
-monitor probes count. Each entry includes `health` with `status`,
+monitor probes count. A text answer that reports prompt tokens but no output
+tokens counts as a failure. Each entry includes `health` with `status`,
 `success_rate` (null without observations), and `requests` (at most 50 for
 community proxies). Other models keep their 24-hour health window. Health
 refreshes roughly every 60 seconds; unavailable analytics fails open.

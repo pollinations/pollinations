@@ -138,7 +138,14 @@ export async function generateChatAttempt(
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
     );
-    if (!attemptData.stream) requireChatCompletionUsage(result);
+    if (!attemptData.stream)
+        requireChatCompletionUsage(
+            result,
+            candidate.communityEndpoint
+                ? new TextEncoder().encode(JSON.stringify(attemptData.messages))
+                      .byteLength
+                : undefined,
+        );
     return buffered ? completionToChatStream(result) : result;
 }
 
@@ -376,6 +383,11 @@ async function generateTextResponse(
             // Client and billing must see the same validation errors.
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
+                candidate.communityEndpoint
+                    ? new TextEncoder().encode(
+                          JSON.stringify(requestData.messages),
+                      ).byteLength
+                    : undefined,
             ).tee();
             completion.responseStream = publicChatStream(clientBody);
             const response = sendTextStreamResponse(completion, servedModelId);

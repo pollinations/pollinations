@@ -1,8 +1,8 @@
-import { pageMeta } from "../frontend/src/page-meta.ts";
+import { NOT_FOUND_META, pageMeta } from "../frontend/src/page-meta.ts";
 
 export function rewriteFrontendHtml(
     response: Response,
-    meta: NonNullable<ReturnType<typeof pageMeta>>,
+    meta: NonNullable<ReturnType<typeof pageMeta>> | typeof NOT_FOUND_META,
 ): Response {
     const rewriter = new HTMLRewriter().on("title", {
         element: (el) => {
@@ -17,10 +17,11 @@ export function rewriteFrontendHtml(
         ['meta[name="twitter:title"]', "content", meta.title],
         ['meta[property="og:url"]', "content", meta.canonical],
         ['link[rel="canonical"]', "href", meta.canonical],
-    ]) {
+    ] as const) {
         rewriter.on(selector, {
             element: (el) => {
-                el.setAttribute(attribute, value);
+                if (value === null) el.remove();
+                else el.setAttribute(attribute, value);
             },
         });
     }
@@ -29,14 +30,29 @@ export function rewriteFrontendHtml(
 
 export async function serveFrontend(request: Request, assets: Fetcher) {
     const url = new URL(request.url);
+    const legalPath = url.pathname.replace(/\/$/, "").toLowerCase();
+    if (["/privacy", "/terms", "/refunds"].includes(legalPath))
+        return Response.redirect(`https://pollinations.ai${legalPath}`, 301);
+
     const meta = pageMeta(url.pathname);
     // Cloudflare serves existing assets directly; misses reach this handler.
-    // Only actual frontend routes receive the SPA shell. Unknown paths stay 404.
-    if (!meta) return assets.fetch(request);
-    const response = await assets.fetch(
-        new Request(new URL("/", url), request),
-    );
+    let response = await assets.fetch(request);
+    if (!meta && response.status !== 404) return response;
+    if (response.status === 404) {
+        // Unknown pages must not inherit the homepage's conditional 304 response.
+        response = await assets.fetch(
+            new Request(
+                new URL("/", url),
+                meta ? request : { method: request.method },
+            ),
+        );
+    }
     if (!response.headers.get("Content-Type")?.includes("text/html"))
         return response;
-    return rewriteFrontendHtml(response, meta);
+    if (!meta)
+        response = new Response(response.body, {
+            status: 404,
+            headers: response.headers,
+        });
+    return rewriteFrontendHtml(response, meta ?? NOT_FOUND_META);
 }

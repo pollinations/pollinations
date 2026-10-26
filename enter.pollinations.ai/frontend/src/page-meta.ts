@@ -2,7 +2,7 @@ import type { FileRoutesByFullPath } from "./routeTree.gen";
 
 // Keep the Worker and dashboard navigation on the same page identity. The
 // generated route type makes adding a page require an entry here.
-const PAGE_TITLES: Record<keyof FileRoutesByFullPath, string> = {
+export const PAGE_TITLES: Record<keyof FileRoutesByFullPath, string> = {
     "/": "Dashboard",
     "/news": "News & FAQ",
     "/models": "Models",
@@ -18,14 +18,24 @@ const PAGE_TITLES: Record<keyof FileRoutesByFullPath, string> = {
     "/app/sign-in": "Sign in",
     "/authorize": "Allow this app",
     "/device": "Allow your device",
-    "/edit-key": "Edit key",
+    "/edit-key": "Edit access",
     "/error": "Sign in",
-    "/grant": "Grant Pollen",
-    "/top-up": "Top up",
+    "/grant": "Allow access",
+    "/top-up": "Top-up",
     "/privacy": "Privacy",
     "/terms": "Terms",
     "/refunds": "Refunds",
 };
+
+export const NOT_FOUND_META = {
+    title: "Page not found | pollinations.ai",
+    description: "The requested page could not be found.",
+    canonical: null,
+};
+
+export function pageTitle(path: keyof FileRoutesByFullPath) {
+    return `${PAGE_TITLES[path]} | pollinations.ai`;
+}
 
 const DESCRIPTIONS: Partial<Record<keyof FileRoutesByFullPath, string>> = {
     "/news":
@@ -41,7 +51,7 @@ export function pageMeta(pathname: string) {
     if (!Object.hasOwn(PAGE_TITLES, path)) return undefined;
     const page = path as keyof FileRoutesByFullPath;
     return {
-        title: `${PAGE_TITLES[page]} | pollinations.ai`,
+        title: pageTitle(page),
         description:
             DESCRIPTIONS[page] ??
             "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor Pollen, and connect apps across image, text, video, and audio.",

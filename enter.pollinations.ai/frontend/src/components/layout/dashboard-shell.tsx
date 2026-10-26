@@ -180,27 +180,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         const meta = pageMeta(location.pathname);
         if (!meta) return;
         document.title = meta.title;
-        document
-            .querySelector('link[rel="canonical"]')
-            ?.setAttribute("href", meta.canonical);
-        document
-            .querySelector('meta[property="og:url"]')
-            ?.setAttribute("content", meta.canonical);
-        document
-            .querySelector('meta[property="og:title"]')
-            ?.setAttribute("content", meta.title);
-        document
-            .querySelector('meta[name="twitter:title"]')
-            ?.setAttribute("content", meta.title);
-        for (const selector of [
-            'meta[name="description"]',
-            'meta[property="og:description"]',
-            'meta[name="twitter:description"]',
-        ]) {
-            document
-                .querySelector(selector)
-                ?.setAttribute("content", meta.description);
-        }
     }, [location.pathname]);
 
     const closeDrawer = useCallback(() => {

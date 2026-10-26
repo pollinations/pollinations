@@ -36,6 +36,7 @@ import {
     ReturnToApp,
 } from "../lib/return-to-app.tsx";
 import { updateApiKey } from "../lib/update-api-key.ts";
+import { pageTitle } from "../page-meta.ts";
 
 type GrantSearch = {
     id: string;
@@ -54,7 +55,7 @@ type GrantSearch = {
  * the 403s and chat replies gen returns when a key lacks it.
  */
 export const Route = createFileRoute("/grant")({
-    head: () => ({ meta: [{ title: "Allow access | pollinations.ai" }] }),
+    head: () => ({ meta: [{ title: pageTitle("/grant") }] }),
     validateSearch: (search: Record<string, unknown>): GrantSearch => ({
         id: typeof search.id === "string" ? search.id : "",
         category: MODEL_CATEGORY_ORDER.find((c) => c === search.category),

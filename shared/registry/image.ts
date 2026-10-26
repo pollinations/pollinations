@@ -2275,7 +2275,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.005, // per image
         },
-        title: "Pruna p-image",
+        title: "P-Image",
         description: "Cheap, speedy text-to-image for rapid iteration",
         inputModalities: ["text"],
         outputModalities: ["image"],
@@ -2291,7 +2291,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.01, // per image
         },
-        title: "Pruna p-image-edit",
+        title: "P-Image-Edit",
         description: "Fast instruction-based photo editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -2362,7 +2362,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "1080p"],
-        title: "Pruna p-video",
+        title: "P-Video",
         description: "Affordable video from text or an image at 720p or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],

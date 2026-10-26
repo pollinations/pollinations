@@ -59,8 +59,9 @@ https://enter.pollinations.ai/authorize
 ```
 
 Optional restrictions: `models=image,text` (or individual IDs),
-`budget=10` (Pollen cap, default 5), `expiry=7` (days, default 7). The user
-can narrow these on the consent screen.
+`budget=10` (Pollen cap, default 5, at most 10 from a link), `expiry=7` (days,
+default 7). The user can change these on the consent screen. Requested `keys`
+and `machines` scopes start unticked there.
 
 Handle the callback — validate `state`, then exchange the single-use code
 (10-minute TTL):

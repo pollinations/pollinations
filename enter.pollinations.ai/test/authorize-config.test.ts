@@ -8,6 +8,8 @@ import {
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
     getGrantedOAuthScope,
+    getPreselectedConsentPermissions,
+    MAX_LINK_CONSENT_BUDGET,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { parseAuthorizeRedirectUrl } from "@shared/auth/redirect-uri.ts";
@@ -78,6 +80,30 @@ describe("getAuthorizeInitialPermissions", () => {
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
             accountPermissions: null,
         });
+    });
+
+    // A link can ask for key management or sandboxes, but the user must tick
+    // them: people tend to click "Allow" without reading.
+    it("leaves keys and machines unticked when a link requests them", () => {
+        expect(
+            getAuthorizeInitialPermissions({
+                permissions: ["usage", "keys", "machines"],
+            }).accountPermissions,
+        ).toEqual(["usage"]);
+        expect(
+            getAuthorizeInitialPermissions({ permissions: ["keys"] })
+                .accountPermissions,
+        ).toBeNull();
+        expect(getPreselectedConsentPermissions(["machines"])).toBeNull();
+    });
+
+    it("caps the budget a link can pre-fill", () => {
+        expect(
+            getAuthorizeInitialPermissions({ budget: 100_000 }).pollenBudget,
+        ).toBe(MAX_LINK_CONSENT_BUDGET);
+        expect(getAuthorizeInitialPermissions({ budget: 2 }).pollenBudget).toBe(
+            2,
+        );
     });
 
     it("preserves a zero budget instead of falling back to the default", () => {

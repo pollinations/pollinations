@@ -890,9 +890,11 @@ export default function App() {
                                 ))}
                             </div>
                             {trustMode && evals.run && (
-                                <div className="ml-auto flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
-                                    <span>Last run</span>
-                                    <span className="text-sm font-medium normal-case tracking-normal">
+                                <div className="ml-auto flex items-center gap-1.5 text-sm">
+                                    <span className="text-theme-text-muted">
+                                        Last run
+                                    </span>
+                                    <span className="font-medium text-theme-text-strong">
                                         {new Date(
                                             evals.run.date,
                                         ).toLocaleDateString("en-GB", {

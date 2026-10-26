@@ -4,6 +4,7 @@ import type { LoggerVariables } from "./middleware/logger.ts";
 
 export type Env = {
     Bindings: CloudflareBindings & {
+        ASSETS: Fetcher;
         WEFT_SELLER_API_KEY?: string;
         WEFT_FACILITATOR_URL?: string;
         WEFT_PAY_TO?: string;

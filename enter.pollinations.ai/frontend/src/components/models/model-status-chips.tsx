@@ -11,6 +11,7 @@ type ModelStatusChipsProps = {
     alphaTooltip?: boolean;
     health?: ModelHealth;
     communityProxy?: boolean;
+    verified?: boolean;
 };
 
 type BalanceAccessChipProps = {
@@ -106,8 +107,9 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     alphaTooltip = true,
     health,
     communityProxy = false,
+    verified = false,
 }) => {
-    if (!showNew && !showAlpha && !health) return null;
+    if (!showNew && !showAlpha && !health && !verified) return null;
 
     const alphaTooltipLabel = "Alpha model. Experimental and may be unstable.";
 
@@ -118,6 +120,19 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                     health={health}
                     communityProxy={communityProxy}
                 />
+            )}
+            {verified && (
+                <Tooltip
+                    triggerAs="span"
+                    content="Official Pollinations agent"
+                    ariaLabel="Official Pollinations agent"
+                    tapEnabled
+                    displayContents
+                >
+                    <Chip intent="new" size="sm">
+                        Verified
+                    </Chip>
+                </Tooltip>
             )}
             {showNew && (
                 <Chip intent="new" size="sm">

@@ -52,6 +52,19 @@ function withoutThoughtSignatures(messages: ChatMessage[]): ChatMessage[] {
     });
 }
 
+// Clients send back the reasoning of earlier turns. Mistral's and
+// InferencePort's strict message schemas reject those fields.
+function withoutReasoningHistory(messages: ChatMessage[]): ChatMessage[] {
+    return messages.map(
+        ({
+            reasoning: _reasoning,
+            reasoning_content: _reasoningContent,
+            reasoning_details: _reasoningDetails,
+            ...message
+        }) => message,
+    );
+}
+
 export async function generateTextPortkey(
     messages: ChatMessage[],
     options: TransformOptions = {},
@@ -84,6 +97,12 @@ export async function generateTextPortkey(
             state = {
                 ...state,
                 messages: withoutThoughtSignatures(state.messages),
+            };
+        }
+        if (state.options.modelConfig?.supportsReasoningHistory === false) {
+            state = {
+                ...state,
+                messages: withoutReasoningHistory(state.messages),
             };
         }
         // TypeSafe has its own wire format and does not use Portkey transforms.

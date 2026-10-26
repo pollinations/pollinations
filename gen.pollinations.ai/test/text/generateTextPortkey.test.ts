@@ -441,6 +441,75 @@ describe("generateTextPortkey", () => {
         ]);
     });
 
+    it("drops echoed reasoning only for providers that reject it", async () => {
+        const bodies: Record<string, unknown>[] = [];
+        const portkeyFetcher = vi.fn(
+            async (_input: RequestInfo | URL, init?: RequestInit) => {
+                bodies.push(JSON.parse(String(init?.body)));
+                return Response.json({
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 5,
+                        completion_tokens: 1,
+                        total_tokens: 6,
+                    },
+                });
+            },
+        );
+        const toolCall = {
+            id: "call_1",
+            type: "function",
+            function: { name: "read_file", arguments: "{}" },
+        };
+        const reasoning = {
+            reasoning: "thinking",
+            reasoning_content: "thinking",
+            reasoning_details: [{ type: "reasoning.text", text: "thinking" }],
+        };
+        const messages = [
+            { role: "user", content: "hello" },
+            {
+                role: "assistant",
+                content: null,
+                tool_calls: [toolCall],
+                ...reasoning,
+            },
+            { role: "tool", tool_call_id: "call_1", content: "ok" },
+        ];
+
+        for (const model of [
+            "mistralai/mistral-small-4",
+            "mistralai/mistral-large-3",
+            "inferenceport-ai/lightning-text-v2",
+            "minimax/minimax-m3",
+        ]) {
+            await generateTextPortkey(
+                messages,
+                { model, portkeyGatewayUrl: "https://portkey.test" },
+                portkeyFetcher,
+            );
+        }
+
+        const [mistral, azureMistral, inferencePort, fireworks] = bodies.map(
+            (body) => (body.messages as ChatMessage[])[1],
+        );
+        const withoutReasoning = {
+            role: "assistant",
+            content: null,
+            tool_calls: [toolCall],
+        };
+        expect(mistral).toEqual(withoutReasoning);
+        expect(azureMistral).toEqual(withoutReasoning);
+        expect(inferencePort).toEqual(withoutReasoning);
+        expect(fireworks).toEqual({ ...withoutReasoning, ...reasoning });
+    });
+
     it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {
         vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
             "test-google-token",

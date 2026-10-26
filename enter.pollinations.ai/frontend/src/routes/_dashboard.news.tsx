@@ -9,8 +9,12 @@ export const Route = createFileRoute("/_dashboard/news")({
         view: search.view === "faq" ? "faq" : undefined,
     }),
     beforeLoad: ({ search, location }) => {
-        // Links to an FAQ answer (e.g. /news#how-do-quests-work) open the FAQ.
-        if (search.view !== "faq" && isFaqAnchor(location.hash)) {
+        // Links to the FAQ (/news#faq) or one answer (/news#how-do-quests-work)
+        // open the FAQ.
+        if (
+            search.view !== "faq" &&
+            (location.hash === "faq" || isFaqAnchor(location.hash))
+        ) {
             throw redirect({
                 to: "/news",
                 search: { view: "faq" },

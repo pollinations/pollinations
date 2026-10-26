@@ -3,6 +3,7 @@ import {
     AppHeader,
     AppIcon,
     Button,
+    ButtonGroup,
     Chip,
     ColorModeToggle,
     DiscordIcon,
@@ -10,6 +11,7 @@ import {
     GitHubIcon,
     IconButton,
     PulseIcon,
+    SegmentedControl,
     ShieldCheckIcon,
     StarIcon,
     Surface,
@@ -237,12 +239,12 @@ function CountBadge({ intent, count, label }) {
 }
 
 // A tab's contents: category name + success rate, plus up to two count badges
-// (off, then degraded). Healthy categories show name + % only.
-function CategoryTab({ title, stats, showBadges = true }) {
+// (off, then degraded). `showRate` hides the rate where it only adds noise.
+function CategoryTab({ title, stats, showBadges = true, showRate = true }) {
     return (
         <span className="inline-flex items-center gap-1.5">
             <span>{title}</span>
-            {stats.successRate !== null && (
+            {showRate && stats.successRate !== null && (
                 <span className="text-xs tabular-nums opacity-70">
                     {stats.successRate.toFixed(1)}%
                 </span>
@@ -265,39 +267,51 @@ function CategoryTab({ title, stats, showBadges = true }) {
     );
 }
 
-// Category filter — the shared soft TabButton, same selector as the Window
-// picker. "All" clears the filter and shows the aggregate rate; only
-// categories with models are shown, each carrying its own rate + badges.
-function CategoryTabs({ models, value, onChange }) {
+// Category filter — small TabButtons under the scope tabs.
+// "All" clears the filter and repeats nothing from the scope tab; a category
+// shows its rate only when it has off or degraded models. `children` (the
+// Window picker) is pinned to the right; the categories wrap beside it.
+function CategoryTabs({ models, value, onChange, children }) {
     const available = MODEL_TYPES.filter(({ key }) =>
         models.some((model) => model.type === key),
     );
-    if (available.length === 0) return null;
 
     return (
-        <div className="flex flex-wrap gap-1.5">
-            <TabButton
-                active={value === null}
-                onClick={() => onChange(null)}
-                size="sm"
-            >
-                <CategoryTab title="All" stats={calcGroupStats(models)} />
-            </TabButton>
-            {available.map(({ key, title }) => (
-                <TabButton
-                    key={key}
-                    active={value === key}
-                    onClick={() => onChange(key)}
-                    size="sm"
-                >
-                    <CategoryTab
-                        title={title}
-                        stats={calcGroupStats(
-                            models.filter((model) => model.type === key),
-                        )}
-                    />
-                </TabButton>
-            ))}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+            <ButtonGroup aria-label="Model type" className="flex-1">
+                {available.length > 0 && (
+                    <TabButton
+                        active={value === null}
+                        onClick={() => onChange(null)}
+                        size="sm"
+                    >
+                        All
+                    </TabButton>
+                )}
+                {available.map(({ key, title }) => {
+                    const stats = calcGroupStats(
+                        models.filter((model) => model.type === key),
+                    );
+                    return (
+                        <TabButton
+                            key={key}
+                            active={value === key}
+                            onClick={() => onChange(key)}
+                            size="sm"
+                        >
+                            <CategoryTab
+                                title={title}
+                                stats={stats}
+                                showRate={
+                                    stats.countOff > 0 ||
+                                    stats.countDegraded > 0
+                                }
+                            />
+                        </TabButton>
+                    );
+                })}
+            </ButtonGroup>
+            <div className="shrink-0">{children}</div>
         </div>
     );
 }
@@ -567,23 +581,18 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
     );
 }
 
+// The time window needs no visible label: 7d · 24h · 4h · 1h · 5m reads as one.
 function WindowTabs({ value, onChange }) {
     return (
-        <div className="flex w-fit max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
-            <span>Window</span>
-            <span className="inline-flex flex-wrap gap-1">
-                {WINDOW_OPTIONS.map(({ key, label }) => (
-                    <TabButton
-                        key={key}
-                        active={value === key}
-                        onClick={() => onChange(key)}
-                        size="sm"
-                    >
-                        {label}
-                    </TabButton>
-                ))}
-            </span>
-        </div>
+        <SegmentedControl
+            options={WINDOW_OPTIONS.map(({ key, label }) => ({
+                value: key,
+                label,
+            }))}
+            value={value}
+            onChange={onChange}
+            ariaLabel="Window"
+        />
     );
 }
 
@@ -865,8 +874,8 @@ export default function App() {
                         value={scopeFilter}
                         onChange={handleScopeChange}
                     />
-                    <div className="flex min-h-11 flex-wrap items-center gap-2">
-                        {scopeFilter === "community" && (
+                    {scopeFilter === "community" && (
+                        <div className="flex flex-wrap items-center gap-2">
                             <div className="flex gap-1.5">
                                 {COMMUNITY_MODES.map(({ key, title, Icon }) => (
                                     <TabButton
@@ -880,22 +889,8 @@ export default function App() {
                                     </TabButton>
                                 ))}
                             </div>
-                        )}
-                        {/* Window and Trust's run date share one slot, sized
-                            by the wider, so switching moves nothing. */}
-                        <div className="grid sm:ml-auto sm:justify-items-end">
-                            <div
-                                className={`col-start-1 row-start-1 ${trustMode ? "invisible" : ""}`}
-                            >
-                                <WindowTabs
-                                    value={aggregationWindow}
-                                    onChange={setAggregationWindow}
-                                />
-                            </div>
-                            {evals.run && (
-                                <div
-                                    className={`col-start-1 row-start-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong ${trustMode ? "" : "invisible"}`}
-                                >
+                            {trustMode && evals.run && (
+                                <div className="ml-auto flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
                                     <span>Last run</span>
                                     <span className="text-sm font-medium normal-case tracking-normal">
                                         {new Date(
@@ -910,13 +905,18 @@ export default function App() {
                                 </div>
                             )}
                         </div>
-                    </div>
+                    )}
                     {!trustMode && (
                         <CategoryTabs
                             models={scopedModels}
                             value={typeFilter}
                             onChange={setTypeFilter}
-                        />
+                        >
+                            <WindowTabs
+                                value={aggregationWindow}
+                                onChange={setAggregationWindow}
+                            />
+                        </CategoryTabs>
                     )}
                 </div>
 

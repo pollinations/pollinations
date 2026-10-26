@@ -2237,6 +2237,68 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
     ]);
 });
 
+test("one GitHub request looks up the commit authors of every app-publish PR", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    if (user.githubId === null) throw new Error("Expected fixture GitHub id");
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+
+    mocks.github.state.commitAuthors = {
+        5011: [247793354, user.githubId],
+        5012: [247793354, 717171],
+    };
+    for (const [issueNumber, prNumber] of [
+        [941, 5011],
+        [942, 5012],
+    ]) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber,
+            title: `Plug-in quest #${issueNumber}`,
+            goal: "Publish the plug-in.",
+            reward: 9,
+            closed: true,
+        });
+        const issue = mocks.github.state.questIssues.at(-1);
+        if (issue) {
+            issue.closedByPullRequestsReferences = [
+                {
+                    number: prNumber,
+                    mergedAt: new Date("2026-06-03T00:00:00Z").toISOString(),
+                    headRefName: `auto/app-${prNumber}-123-1`,
+                    author: { __typename: "Bot", login: "pollinations-ai" },
+                },
+            ];
+        }
+    }
+
+    await env.KV.delete("quests:catalog:v30");
+    mocks.github.state.requests = [];
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    // One issue search page plus one commit-author lookup for both PRs.
+    expect(
+        mocks.github.state.requests.filter(({ path }) => path === "/graphql"),
+    ).toHaveLength(2);
+
+    await checkQuestsForUser(env, user.id);
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(
+            inArray(schema.rewards.questId, [
+                "github:issue:941",
+                "github:issue:942",
+            ]),
+        );
+    expect(rewards).toEqual([{ questId: "github:issue:941" }]);
+});
+
 test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including converted quests", async ({
     mocks,
     sessionToken: _sessionToken,

@@ -46,9 +46,12 @@ const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 // The GitHub App's GraphQL budget is 5,000 points an hour, and listing the
-// POLLEN-QUEST issues costs about 40. The catalog and every user's quest check
+// POLLEN-QUEST issues costs about 10. The catalog and every user's quest check
 // share one copy, fetched at most once per window. When GitHub fails (e.g. rate
 // limited), the last copy keeps serving and the next fetch waits a window.
+// ponytail: refreshes are not coordinated, so a burst or another location can
+// fetch again before the new copy is visible. Move the list to a Durable Object
+// if those refreshes exhaust the budget.
 const QUEST_ISSUES_CACHE_KEY = "quests:github-issues:v1";
 const QUEST_ISSUES_CACHE_MS = 5 * 60 * 1000;
 
@@ -172,8 +175,9 @@ type ClosingPullRequest = {
 };
 
 type CommitAuthorsData = {
-    repository: {
-        pullRequest: {
+    repository: Record<
+        string,
+        {
             commits: {
                 nodes: {
                     commit: {
@@ -181,8 +185,8 @@ type CommitAuthorsData = {
                     };
                 }[];
             };
-        };
-    };
+        }
+    >;
 };
 
 type GitHubIssueNode = {
@@ -246,15 +250,15 @@ query($query:String!,$after:String){
 }`;
 
 // Asked only for app-publish PRs: adding commit authors to the issue search
-// multiplies its rate-limit cost about 200 times.
-const COMMIT_AUTHORS_QUERY = `
-query($number:Int!){
-  repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){
-    pullRequest(number:$number){
-      commits(first:1){ nodes{ commit{ authors(first:5){ nodes{ user{ databaseId } } } } } }
-    }
-  }
-}`;
+// multiplies its rate-limit cost about 200 times. One aliased query covers
+// every app-publish PR for one point; a query per PR cost a point each.
+function commitAuthorsQuery(numbers: number[]): string {
+    const pullRequests = numbers.map(
+        (number) =>
+            `pr${number}:pullRequest(number:${number}){ commits(first:1){ nodes{ commit{ authors(first:5){ nodes{ user{ databaseId } } } } } } }`,
+    );
+    return `query{ repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){ ${pullRequests.join(" ")} } }`;
+}
 
 const FIRST_MERGED_PR_QUERY = `
 query($query:String!){
@@ -367,15 +371,23 @@ function githubIds(users: (GitHubUser | null)[]): number[] {
 // bot has no Pollinations account, so only the submitter can be paid.
 async function commitAuthorIds(
     token: string,
-    number: number,
-): Promise<number[]> {
-    const data = await graphql<CommitAuthorsData>(token, COMMIT_AUTHORS_QUERY, {
-        number,
-    });
-    return githubIds(
-        data.repository.pullRequest.commits.nodes.flatMap((node) =>
-            node.commit.authors.nodes.map((author) => author.user),
-        ),
+    numbers: number[],
+): Promise<Map<number, number[]>> {
+    if (numbers.length === 0) return new Map();
+    const data = await graphql<CommitAuthorsData>(
+        token,
+        commitAuthorsQuery(numbers),
+        {},
+    );
+    return new Map(
+        numbers.map((number) => [
+            number,
+            githubIds(
+                data.repository[`pr${number}`].commits.nodes.flatMap((node) =>
+                    node.commit.authors.nodes.map((author) => author.user),
+                ),
+            ),
+        ]),
     );
 }
 
@@ -426,18 +438,13 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
             (issue) =>
                 issue.state === "OPEN" || mergedClosers(issue).length > 0,
         );
-    const appPublishPrs = filteredIssues
-        .flatMap(mergedClosers)
-        .filter(isAppPublishPr)
-        .map((pr) => pr.number);
-    const appPublishPayees = new Map(
-        await Promise.all(
-            appPublishPrs.map(
-                async (number) =>
-                    [number, await commitAuthorIds(token, number)] as const,
-            ),
-        ),
+    const appPublishPrs = new Set(
+        filteredIssues
+            .flatMap(mergedClosers)
+            .filter(isAppPublishPr)
+            .map((pr) => pr.number),
     );
+    const appPublishPayees = await commitAuthorIds(token, [...appPublishPrs]);
     return filteredIssues
         .map((issue) => toDerivedQuestIssue(issue, appPublishPayees))
         .filter((issue) => issue.rewardAmount !== null);

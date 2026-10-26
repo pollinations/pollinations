@@ -243,6 +243,96 @@ describe("Messages request translation", () => {
         });
     });
 
+    it("accepts tool search results and mid-conversation tool changes", () => {
+        const tool = (name: string, extra = {}) => ({
+            name,
+            input_schema: { type: "object" },
+            ...extra,
+        });
+        const chat = messagesToChatRequest(
+            request({
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "tool_result",
+                                tool_use_id: "toolu_1",
+                                content: [
+                                    {
+                                        type: "tool_reference",
+                                        tool_name: "TaskStop",
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        // Claude Code 2.1.306 after /compact
+                        role: "system",
+                        content: [
+                            { type: "text", text: "Tools changed." },
+                            {
+                                type: "tool_addition",
+                                tool: {
+                                    type: "tool_definition",
+                                    definition: tool("Artifact"),
+                                },
+                            },
+                            {
+                                type: "tool_addition",
+                                tool: {
+                                    type: "tool_definition",
+                                    definition: tool("Read", {
+                                        description: "Read v2",
+                                    }),
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        role: "system",
+                        content: [
+                            {
+                                type: "tool_removal",
+                                tool: { type: "tool_reference", name: "Read" },
+                            },
+                        ],
+                    },
+                ],
+                tools: [
+                    tool("Read", { description: "Read v1" }),
+                    tool("TaskStop", { defer_loading: true }),
+                ],
+            }),
+        );
+        expect(chat.messages).toEqual([
+            {
+                role: "tool",
+                tool_call_id: "toolu_1",
+                content: [{ type: "text", text: "Tool loaded: TaskStop" }],
+            },
+            {
+                role: "system",
+                content: [{ type: "text", text: "Tools changed." }],
+            },
+        ]);
+        expect(chat.tools).toEqual(
+            [
+                ["Read", "Read v2"],
+                ["TaskStop", undefined],
+                ["Artifact", undefined],
+            ].map(([name, description]) => ({
+                type: "function",
+                function: {
+                    name,
+                    ...(description && { description }),
+                    parameters: { type: "object" },
+                },
+            })),
+        );
+    });
+
     it("sends documents as Chat file and text parts, also from tool results", () => {
         const pdf = {
             type: "document",

@@ -1428,6 +1428,70 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
+    it("notes why a text answer reported zero tokens, without its content", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        await createHeaderApp(
+            {
+                "x-usage-prompt-text-tokens": "0",
+                "x-usage-completion-text-tokens": "0",
+            },
+            trackingUser,
+            200,
+            undefined,
+            undefined,
+            undefined,
+            {
+                choices: [
+                    { message: { content: "secret" }, finish_reason: "stop" },
+                ],
+                usage: { prompt_tokens: 0, completion_tokens: 0 },
+            },
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 200,
+            errorResponseCode: "usage_zero",
+            totalPrice: 0,
+        });
+        expect(JSON.parse(event.errorMessage as string)).toEqual({
+            finishReason: "stop",
+            contentChars: 6,
+            usage: { prompt_tokens: 0, completion_tokens: 0 },
+        });
+    });
+
     it("records a served flat cost without marking a zero-price fallback as billed", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

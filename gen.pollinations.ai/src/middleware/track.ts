@@ -914,6 +914,60 @@ export async function trackResponse(
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
+        errorTracking:
+            eventType === "generate.text"
+                ? zeroUsageNote(
+                      modelProviderUsed,
+                      modelUsage.usage,
+                      modelUsage.output,
+                  )
+                : undefined,
+    };
+}
+
+// A text answer reporting no tokens is billed at zero. Say why on its row,
+// without the content, so the cause can be traced. Community agents report
+// no usage by design.
+function zeroUsageNote(
+    provider: string | undefined,
+    usage: Usage,
+    output: unknown,
+): ErrorData | undefined {
+    if (provider === "community") return undefined;
+    if (Object.values(usage).some((value) => Number(value) > 0)) {
+        return undefined;
+    }
+    const stream = output as
+        | { streamEvents?: unknown[]; doneSeen?: boolean }
+        | undefined;
+    const events = (stream?.streamEvents ?? [output]) as {
+        usage?: unknown;
+        choices?: {
+            finish_reason?: unknown;
+            message?: { content?: unknown };
+            delta?: { content?: unknown };
+        }[];
+    }[];
+    let contentChars = 0;
+    let finishReason: unknown;
+    let reportedUsage: unknown;
+    for (const event of events) {
+        for (const choice of event?.choices ?? []) {
+            const content = choice.message?.content ?? choice.delta?.content;
+            if (typeof content === "string") contentChars += content.length;
+            finishReason = choice.finish_reason ?? finishReason;
+        }
+        reportedUsage = event?.usage ?? reportedUsage;
+    }
+    return {
+        errorResponseCode: "usage_zero",
+        errorMessage: JSON.stringify({
+            streamEvents: stream?.streamEvents?.length,
+            doneSeen: stream?.doneSeen,
+            finishReason,
+            contentChars,
+            usage: reportedUsage,
+        }).slice(0, 1000),
     };
 }
 

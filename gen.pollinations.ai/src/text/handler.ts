@@ -187,24 +187,13 @@ function usageHeaders(
     return headers;
 }
 
-function publicChatCompletion(
-    completion: ChatCompletion,
-    isVercel: boolean,
-): ChatCompletion {
-    const usage = publicUsage(completion.usage);
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
     // InferencePort also attaches its `payg_*` ledger to the top level of
     // non-streaming responses; the stream path strips it in public.ts.
-    const hasPaygTopLevel = Object.keys(completion).some((key) =>
-        key.startsWith("payg_"),
-    );
-    if (!isVercel && !hasPaygTopLevel && usage === completion.usage)
-        return completion;
     const publicCompletion = withoutPayg({
         ...completion,
-        usage,
-        choices: isVercel
-            ? publicChatChoices(completion.choices)
-            : completion.choices,
+        usage: publicUsage(completion.usage),
+        choices: publicChatChoices(completion.choices),
     });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
@@ -380,7 +369,6 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        const isVercel = candidate.definition?.provider === "vercel";
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -399,7 +387,7 @@ async function generateTextResponse(
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);
-        const publicCompletion = publicChatCompletion(completion, isVercel);
+        const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(

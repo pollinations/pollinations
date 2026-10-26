@@ -39,7 +39,7 @@ Every command is agent-friendly:
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
-Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 Set `POLLINATIONS_ENV=staging` to use the staging API, with a separate login stored in `~/.pollinations/credentials.staging.json`. `polli upload` has no staging.
 
@@ -82,7 +82,9 @@ polli gen chat --model openai/gpt-5.4-nano            # interactive multi-turn
 
 ```bash
 polli models                 # all models
-polli models --type image    # filter (text, decision, image, audio, video, 3d, embedding)
+polli models --type image    # filter (text, decision, image, audio, video, 3d, embedding, realtime)
+polli models flux --source community   # search; --reliability all adds unhealthy community models
+polli models --type audio --voices     # voices per model
 polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint

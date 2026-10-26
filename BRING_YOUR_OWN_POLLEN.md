@@ -266,27 +266,6 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
   -d 'device_code=...'
 ```
 
-## 👤 Who's Using This Key?
-
-Once you have the user-authorized `sk_...` key, you can check who it belongs to:
-
-```bash
-curl https://enter.pollinations.ai/api/device/userinfo \
-  -H 'Authorization: Bearer sk_...'
-# → { "sub": "user-id", "preferred_username": "voodoohop", "picture": "..." }
-# with the `profile` scope, also: "name": "Thomas", "email": "..."
-```
-
-`/api/oauth/userinfo` returns the same standard OIDC userinfo shape. `name` and `email` are included only when the key carries the `profile` scope.
-
----
-
-🕐 User-authorized keys default to 7 days. Users can revoke anytime from the dashboard.
-
-[edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for the idea*
-
-
-
 ## 🐍 Python Quickstart (BYOP Device Flow)
 
 For Python scripts, CLI tools, and backend services, use the device flow:
@@ -346,13 +325,13 @@ def use_pollinations(api_key: str):
 
 if __name__ == '__main__':
     # Replace with your App Key (pk_...) from enter.pollinations.ai/keys
-    APP_KEY = os.environ.get('POLINATIONS_APP_KEY', 'pk_your_app_key_here')
+    APP_KEY = os.environ.get('POLLINATIONS_APP_KEY', 'pk_your_app_key_here')
     
     # Get user-authorized key (device flow)
     user_key = device_flow_login(APP_KEY)
     
     # Or use a key directly from environment
-    # user_key = os.environ.get('POLINATIONS_API_KEY')
+    # user_key = os.environ.get('POLLINATIONS_API_KEY')
     
     if user_key:
         result = use_pollinations(user_key)
@@ -361,5 +340,21 @@ if __name__ == '__main__':
 
 > **Security**: Never hardcode API keys. Use environment variables (`os.environ.get()`) or a secure credential manager.
 
+## 👤 Who's Using This Key?
 
-## License
+Once you have the user-authorized `sk_...` key, you can check who it belongs to:
+
+```bash
+curl https://enter.pollinations.ai/api/device/userinfo \
+  -H 'Authorization: Bearer sk_...'
+# → { "sub": "user-id", "preferred_username": "voodoohop", "picture": "..." }
+# with the `profile` scope, also: "name": "Thomas", "email": "..."
+```
+
+`/api/oauth/userinfo` returns the same standard OIDC userinfo shape. `name` and `email` are included only when the key carries the `profile` scope.
+
+---
+
+🕐 User-authorized keys default to 7 days. Users can revoke anytime from the dashboard.
+
+[edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for the idea*

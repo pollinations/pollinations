@@ -18,17 +18,15 @@ receive more calls than the model receives requests, by exactly the number of
 attempts that were retried. `fallback_rescues` names how many of those retries
 succeeded.
 
-`errors_4xx` is split into `errors_400`, `errors_422`, `errors_429` and
-`errors_other_4xx`. Note the stored 4xx never contains upstream 401/402/403/
-404/408/429 — `remapUpstreamStatus()` converts those to 502/504 before the row
-is written, so they count under `errors_5xx`. The split therefore reads
-gateway-own rejections (rate limits, balance, validation) without a second
-query.
-
 Both grains come from one GROUPING SETS pass, so a rollup and its routes always
 describe the same traffic, and p50/p95 are computed correctly at each level
 rather than derived from the other (percentiles cannot be combined after the
 fact).
+
+`errors_402` is the part of `errors_4xx` refused for balance or key budget
+before the model was called, so it says nothing about the model itself. Upstream
+402s are stored as 502 (`remapUpstreamStatus`), so every 402 here is our own
+billing check.
 
 Column names match `model_health` so consumers reuse one health rule for both.
 Traffic defaults to all for existing API and catalog consumers. Model Monitor
@@ -76,28 +74,11 @@ SQL >
             countIf(is_final AND response_status >= 400 AND response_status < 500),
             countIf(response_status >= 400 AND response_status < 500)
         ) as errors_4xx,
-        -- Per-status split; see DESCRIPTION for what the stored 4xx contains.
-        -- Same grain rules as errors_4xx, so the four always add up to it.
         if(
             GROUPING(model_used) = 1,
-            countIf(is_final AND response_status = 400),
-            countIf(response_status = 400)
-        ) as errors_400,
-        if(
-            GROUPING(model_used) = 1,
-            countIf(is_final AND response_status = 422),
-            countIf(response_status = 422)
-        ) as errors_422,
-        if(
-            GROUPING(model_used) = 1,
-            countIf(is_final AND response_status = 429),
-            countIf(response_status = 429)
-        ) as errors_429,
-        if(
-            GROUPING(model_used) = 1,
-            countIf(is_final AND response_status >= 400 AND response_status < 500 AND response_status NOT IN (400, 422, 429)),
-            countIf(response_status >= 400 AND response_status < 500 AND response_status NOT IN (400, 422, 429))
-        ) as errors_other_4xx,
+            countIf(is_final AND response_status = 402),
+            countIf(response_status = 402)
+        ) as errors_402,
         if(
             GROUPING(model_used) = 1,
             countIf(is_final AND response_status >= 500),

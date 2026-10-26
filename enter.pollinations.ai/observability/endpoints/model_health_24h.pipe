@@ -5,8 +5,7 @@ DESCRIPTION >
 Catalog health for official models and agents: final 2xx and 5xx requests per
 model over the last 24 hours, counted at hour grain, so the window spans 24 to
 25 hours. Fallback rescues are successes for the requested model; caller 4xx
-are excluded by design (for the per-status 4xx split see the
-model_route_health rollup, which this shape otherwise matches).
+are excluded. Rows match the `model_route_health` rollup shape.
 
 NODE endpoint
 SQL >

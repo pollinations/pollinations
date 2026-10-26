@@ -1,10 +1,5 @@
 {
   "held": {
-    "18029": {
-      "merge_sha": "f8685e68fb623e882906e0e414b07184230817f8",
-      "merged_at": "2026-10-25T12:36:58Z",
-      "required": []
-    },
     "18028": {
       "merge_sha": "a2a962686bd7e26589a2b5e9c7259f75e67fc967",
       "merged_at": "2026-10-25T12:31:42Z",
@@ -21,11 +16,6 @@
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
       ]
-    },
-    "18442": {
-      "merge_sha": "a85a500d23e0364492222caebf28fc26579a1e86",
-      "merged_at": "2026-10-25T22:59:28Z",
-      "required": []
     },
     "18450": {
       "merge_sha": "2b424ff366d024f8649ae0f870de65fc122e843e",

@@ -166,6 +166,31 @@ test("preserves multiline textarea content", () => {
     assert.deepEqual(validateSubmission(submission), []);
 });
 
+test("rejects a description longer than the catalog shows", () => {
+    const long = "x".repeat(253);
+    const submission = parseSubmission(
+        BODY.replace(
+            /### App Description\n.*\n/,
+            `### App Description\n${long}\n`,
+        ),
+    );
+    assert.equal(submission.description.length, 253);
+    assert.deepEqual(validateSubmission(submission), [
+        "App Description is 253 characters; the catalog shows 200. Shorten it and submit again.",
+    ]);
+});
+
+test("accepts a description that fits the catalog", () => {
+    const exact = "y".repeat(200);
+    const submission = parseSubmission(
+        BODY.replace(
+            /### App Description\n.*\n/,
+            `### App Description\n${exact}\n`,
+        ),
+    );
+    assert.deepEqual(validateSubmission(submission), []);
+});
+
 test("parses the optional quest reference", () => {
     const withQuest = (value) =>
         parseSubmission(`${BODY}\n\n### Quest\n${value}`);

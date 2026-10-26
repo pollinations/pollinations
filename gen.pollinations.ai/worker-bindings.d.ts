@@ -101,6 +101,7 @@ interface CloudflareBindings {
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
+    EDGE_IP_RATE_LIMITER?: RateLimit;
 }
 
 declare namespace Cloudflare {

@@ -1772,6 +1772,55 @@ describe("media.pollinations.ai", () => {
         expect(publicGallery.status).toBe(200);
     });
 
+    // #18082: an unbounded filename overflowed R2's ~2 KB customMetadata and the
+    // upload 500'd. The service-binding path already sliced; the HTTP paths did not.
+    describe("upload filename cap", () => {
+        const longName = `${"n".repeat(3000)}.png`;
+
+        it("multipart upload with a 3 KB filename succeeds with a truncated name", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: longName,
+                bytes: variant(60),
+            });
+            expect(status).toBe(200);
+            const uploaded = body as UploadResponse;
+            expect(uploaded.id).not.toBe("");
+
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${uploaded.id}`,
+            );
+            expect(getRes.status).toBe(200);
+            const disposition = getRes.headers.get("content-disposition") || "";
+            expect(disposition.length).toBeLessThan(600);
+            expect(disposition).toContain("n".repeat(200));
+        });
+
+        it("JSON upload with a 3 KB name succeeds with a truncated name", async () => {
+            const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: JSON.stringify({
+                    data: Buffer.from(variant(61)).toString("base64"),
+                    contentType: "image/png",
+                    name: longName,
+                }),
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "application/json",
+                },
+            });
+            expect(res.status).toBe(200);
+            const uploaded = (await res.json()) as UploadResponse;
+
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${uploaded.id}`,
+            );
+            expect(getRes.status).toBe(200);
+            const disposition = getRes.headers.get("content-disposition") || "";
+            expect(disposition.length).toBeLessThan(600);
+            expect(disposition).toContain("n".repeat(200));
+        });
+    });
+
     describe("DELETE /media/:id", () => {
         it("owner deletes with a secret key: unpublished and gone", async () => {
             const { status, body } = await uploadViaForm("pk_alice", {

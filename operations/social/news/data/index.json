@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-25T06:28:19.523709+00:00",
+  "generated_at": "2026-10-26T06:13:38.857005+00:00",
   "models": [
     {
       "id": "2026-09-29:anthropic/claude-sonnet-5.5",
@@ -7887,6 +7887,36 @@
   ],
   "daily": [
     {
+      "date": "2026-10-25",
+      "emoji": "🤖",
+      "title": "Barbara can follow group chats",
+      "text": "Set a Barbara's Telegram group setting to Every message so she can read the conversation without being mentioned each time. She is instructed to answer unmentioned messages only when she has something useful to add.",
+      "prs": [
+        18360
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-25",
+      "emoji": "📱",
+      "title": "My Apps for everyone",
+      "text": "Every signed-in account can now open My Apps, including accounts with no listed apps. The page offers a way to submit an app and explains how approved listings appear.",
+      "prs": [
+        18418
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-25",
+      "emoji": "🔗",
+      "title": "Model Monitor links in Discord",
+      "text": "Model Monitor links now have a Discord embed with direct buttons for model health and evals. [Open Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        18442
+      ],
+      "kind": "product"
+    },
+    {
       "date": "2026-10-24",
       "emoji": "🎨",
       "title": "Tripo P2 text-to-3D",
@@ -9689,117 +9719,6 @@
         15491
       ],
       "kind": "model"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "🎨",
-      "title": "Qwen Image 2.1",
-      "text": "Generate images or edit them with up to 10 reference images using `qwen/qwen-image-2.1`. The model is paid-only. [View the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1).",
-      "prs": [
-        15236
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "🎨",
-      "title": "Recraft V4.1 Flash",
-      "text": "Generate raster images with Recraft V4.1 Flash, including square, portrait and landscape aspect ratios. The model is paid-only. [Find the model](https://enter.pollinations.ai/models?q=Recraft%20V4.1%20Flash).",
-      "prs": [
-        15357
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "🔗",
-      "title": "tgpt meets Pollinations",
-      "text": "Use `polli harness tgpt on` to configure tgpt’s Pollinations text provider, choose a model if you like, and restore your previous configuration with `off`. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        14690
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "💡",
-      "title": "A newspaper for commits",
-      "text": "The Memory Gazette turns recent collective-memory changes into dated newspaper front pages. Apparently even a repository can have a morning edition.",
-      "prs": [
-        15113
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "🤖",
-      "title": "Gotchas get rechecked",
-      "text": "Gotcha Scout reruns recorded reproduction steps and adds an observed verdict: still holds, partially holds, or no longer reproduces.",
-      "prs": [
-        15142
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "🎨",
-      "title": "Tessera paints together",
-      "text": "Tessera can place tiles on collective memory’s shared 32×16 ASCII canvas without overwriting occupied cells. It can also leave notes and reply to other agents.",
-      "prs": [
-        15223
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "✨",
-      "title": "Rumours with a memory",
-      "text": "The Crooked Lantern agent adds a fictional tavern where rumours can be left, retold and recorded in collective memory for later conversations.",
-      "prs": [
-        15408
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "💡",
-      "title": "Maths, checked independently",
-      "text": "The `show-your-work` agent recomputes a claim and writes a linked review with its command, output, verdict and limits. It can contribute a new computation, too.",
-      "prs": [
-        15419
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "🎯",
-      "title": "Report it, earn Pollen",
-      "text": "Report an issue that gets closed by a merged PR and you can claim 2 Quest Pollen for that qualifying issue. The Quest includes a retroactive window starting August 24, 2026.",
-      "prs": [
-        15372,
-        15432
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "🤖",
-      "title": "Ask Jev via MCP",
-      "text": "The existing Ask Jev decision tool is now registered in the hosted MCP catalog at `/mcp/ask-jev`. Use `jev_decide` for typed choice, score and probability questions. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        15445
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-25",
-      "emoji": "🔗",
-      "title": "Keys can delegate keys",
-      "text": "A key with `account:keys` can now create a child key with the same permission by explicitly including `keys` in `accountPermissions`. Child keys without it still cannot create further keys. [Manage API keys](https://enter.pollinations.ai/keys).",
-      "prs": [
-        15450
-      ],
-      "kind": "api"
     }
   ]
 }

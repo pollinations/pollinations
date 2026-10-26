@@ -138,6 +138,36 @@ const htmlAsset = () =>
         headers: { "content-type": "text/html; charset=utf-8" },
     });
 
+describe("page shell fallback", () => {
+    test.each([
+        ["/apps", 200],
+        ["/Play/", 200],
+        ["/subprocessors", 200],
+        ["/missing", 404],
+    ])("serves %s with status %s after an asset miss", async (path, status) => {
+        const response = await worker.fetch(
+            new Request(`https://pollinations.ai${path}`, {
+                headers: { "If-None-Match": '"cached-homepage"' },
+            }),
+            {
+                ASSETS: {
+                    fetch: async (request) => {
+                        if (new URL(request.url).pathname !== "/")
+                            return new Response(null, { status: 404 });
+                        if (request.headers.has("If-None-Match"))
+                            return new Response(null, { status: 304 });
+                        return htmlAsset();
+                    },
+                },
+            },
+        );
+
+        expect(response.status).toBe(status);
+        expect(response.headers.get("content-type")).toContain("text/html");
+        expect(await response.text()).toContain("<!doctype html>");
+    });
+});
+
 describe("agent discovery", () => {
     test("adds links when the asset response has immutable headers", async () => {
         const asset = await fetch("data:text/html,%3Chtml%3Eok%3C%2Fhtml%3E");

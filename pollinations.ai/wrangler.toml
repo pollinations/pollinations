@@ -6,9 +6,9 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 [assets]
 directory = "dist"
 binding = "ASSETS"
-not_found_handling = "single-page-application"
 # Run HTML routes through the SEO worker while serving asset directories
-# directly from Cloudflare's static asset layer.
+# directly from Cloudflare's static asset layer with native 404s for misses.
+# The Worker supplies the shell and HTTP status for page URLs.
 run_worker_first = ["/*", "!/assets/*", "!/art/*", "!/supporters/*", "!/data/*", "!/legal/*"]
 
 [env.website-v2]

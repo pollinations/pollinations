@@ -118,8 +118,12 @@ async function scoreModel({
                 prompt: question.prompt,
                 seed: (seed + index) % 2147483647,
             });
-            if (reply.fatal)
-                throw new Error(`${reply.error}: evaluation cannot continue`);
+            // A refusal is about our key or account, except that a community
+            // endpoint may relay its owner's refusal, which only fails that model.
+            if (reply.fatal || (reply.error === "refused" && !model.community))
+                throw new Error(
+                    `${model.name}: ${reply.error}: evaluation cannot continue`,
+                );
             if (reply.error === "http_429") {
                 rateLimited = true;
                 return;
@@ -158,7 +162,8 @@ async function scoreModel({
  * still unfinished are reported as skipped, so a run never overshoots the
  * budget by more than the requests already in flight.
  * An error or timeout counts as a wrong answer, except an exhausted per-user
- * rate limit, which leaves that model unscored.
+ * rate limit, which leaves that model unscored. gen refusing our key or
+ * account aborts the run, so no wrong scores are published.
  */
 export async function runEvals({
     models,

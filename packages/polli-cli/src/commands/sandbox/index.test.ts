@@ -295,8 +295,13 @@ describe("ssh connections", () => {
                         trafficAccessToken: "traffic",
                     });
                 }
+                // envd goes through gen too.
                 if (
-                    url === "https://49983-box1.e2b.app/process.Process/Start"
+                    url ===
+                        "https://gen.pollinations.ai/alpha/e2b/sandbox/process.Process/Start" &&
+                    (init.headers as Record<string, string>)[
+                        "e2b-sandbox-id"
+                    ] === "box1"
                 ) {
                     return new Response(frame);
                 }

@@ -14,9 +14,10 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { BASE_URL } from "../../lib/config.js";
 import { fail, printInfo } from "../../lib/output.js";
 import bootstrap from "./bootstrap.sh?raw";
-import { type Connection, connectSandbox, sharePort } from "./e2b.js";
+import { type Connection, connectSandbox, E2B_PATH, sharePort } from "./e2b.js";
 
 const SSH_DIR = join(homedir(), ".pollinations", "ssh");
 const SSH_KEY = join(SSH_DIR, "id_ed25519");
@@ -87,8 +88,9 @@ async function sshSocket(s: Connection) {
     };
 }
 
-// Runs a script as root through envd, the agent in every sandbox. Its
-// Connect RPC takes and returns length-prefixed JSON messages.
+// Runs a script as root through envd, the agent in every sandbox, which gen
+// serves to E2B's SDKs for both providers. Its Connect RPC takes and returns
+// length-prefixed JSON messages.
 async function runAsRoot(
     s: Connection,
     script: string,
@@ -102,15 +104,22 @@ async function runAsRoot(
     const frame = Buffer.alloc(5 + request.length);
     frame.writeUInt32BE(request.length, 1);
     request.copy(frame, 5);
-    const res = await fetch(`${sandboxUrl(s, 49983)}/process.Process/Start`, {
-        method: "POST",
-        headers: {
-            "content-type": "application/connect+json",
-            authorization: `Basic ${Buffer.from("root:").toString("base64")}`,
-            ...(s.envdAccessToken && { "x-access-token": s.envdAccessToken }),
+    const res = await fetch(
+        `${BASE_URL}${E2B_PATH}/sandbox/process.Process/Start`,
+        {
+            method: "POST",
+            headers: {
+                "e2b-sandbox-id": s.sandboxID,
+                "e2b-sandbox-port": "49983",
+                "content-type": "application/connect+json",
+                authorization: `Basic ${Buffer.from("root:").toString("base64")}`,
+                ...(s.envdAccessToken && {
+                    "x-access-token": s.envdAccessToken,
+                }),
+            },
+            body: frame,
         },
-        body: frame,
-    });
+    );
     if (!res.ok) throw new Error(`envd ${res.status}: ${await res.text()}`);
     const body = Buffer.from(await res.arrayBuffer());
     let output = "";

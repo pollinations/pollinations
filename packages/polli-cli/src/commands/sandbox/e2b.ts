@@ -1,7 +1,7 @@
 import { gen, genText } from "../../lib/api.js";
 
 // Gen serves E2B's API here, so E2B's own CLI and SDKs work against it.
-const E2B_PATH = "/alpha/e2b";
+export const E2B_PATH = "/alpha/e2b";
 // Each create or connect keeps the sandbox paid for this long.
 export const LEASE_SECONDS = 600;
 

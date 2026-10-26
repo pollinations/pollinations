@@ -11,9 +11,7 @@
     "18521": {
       "merge_sha": "abda9536864d53a98a1911a15a030e536e1d01bb",
       "merged_at": "2026-10-26T18:47:26Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter"
-      ]
+      "required": []
     }
   },
   "production": "75a4128701aa79708b722ef75d2a1927c2e09d18",

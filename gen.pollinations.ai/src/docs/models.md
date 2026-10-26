@@ -60,7 +60,8 @@ Lists default to `reliability=reliable`: public community proxy models need more
 Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.
 Models without observations remain listed. Successful fallbacks count as successes
 for the requested model; final 4xx are excluded, while owner requests and
-monitor probes count. Each entry includes `health` with `status`,
+monitor probes count. A text answer that reports prompt tokens but no output
+tokens counts as a failure. Each entry includes `health` with `status`,
 `success_rate` (null without observations), and `requests` (at most 50 for
 community proxies). Other models keep their 24-hour health window. Health
 refreshes roughly every 60 seconds; unavailable analytics fails open.

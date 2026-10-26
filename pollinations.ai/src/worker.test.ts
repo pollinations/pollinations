@@ -140,32 +140,45 @@ const htmlAsset = () =>
 
 describe("page shell fallback", () => {
     test.each([
-        ["/apps", 200],
-        ["/Play/", 200],
-        ["/subprocessors", 200],
-        ["/missing", 404],
-    ])("serves %s with status %s after an asset miss", async (path, status) => {
-        const response = await worker.fetch(
-            new Request(`https://pollinations.ai${path}`, {
-                headers: { "If-None-Match": '"cached-homepage"' },
-            }),
-            {
-                ASSETS: {
-                    fetch: async (request) => {
-                        if (new URL(request.url).pathname !== "/")
-                            return new Response(null, { status: 404 });
-                        if (request.headers.has("If-None-Match"))
-                            return new Response(null, { status: 304 });
-                        return htmlAsset();
+        ["/apps", 200, false],
+        ["/Play/", 200, false],
+        ["/subprocessors", 200, false],
+        ["/missing", 404, false],
+        ["/apps", 304, true],
+        ["/Play/", 304, true],
+        ["/subprocessors", 304, true],
+        ["/missing", 404, true],
+    ] as const)(
+        "serves %s with status %s after an asset miss",
+        async (path, status, conditional) => {
+            const response = await worker.fetch(
+                new Request(`https://pollinations.ai${path}`, {
+                    headers: conditional
+                        ? { "If-None-Match": '"cached-homepage"' }
+                        : {},
+                }),
+                {
+                    ASSETS: {
+                        fetch: async (request) => {
+                            if (new URL(request.url).pathname !== "/")
+                                return new Response(null, { status: 404 });
+                            if (request.headers.has("If-None-Match"))
+                                return new Response(null, { status: 304 });
+                            return htmlAsset();
+                        },
                     },
                 },
-            },
-        );
+            );
 
-        expect(response.status).toBe(status);
-        expect(response.headers.get("content-type")).toContain("text/html");
-        expect(await response.text()).toContain("<!doctype html>");
-    });
+            expect(response.status).toBe(status);
+            if (status === 304) {
+                expect(await response.text()).toBe("");
+                return;
+            }
+            expect(response.headers.get("content-type")).toContain("text/html");
+            expect(await response.text()).toContain("<!doctype html>");
+        },
+    );
 });
 
 describe("agent discovery", () => {

@@ -120,10 +120,13 @@ export default {
             (request.method === "GET" || request.method === "HEAD")
         ) {
             // Keep the branded page shell without turning unknown URLs into
-            // successful responses. Don't forward conditional asset headers:
+            // successful responses. Only unknown pages drop conditional headers:
             // a cached homepage must not make a missing page return 304.
             response = await env.ASSETS.fetch(
-                new Request(new URL("/", url), { method: request.method }),
+                new Request(
+                    new URL("/", url),
+                    page ? request : { method: request.method },
+                ),
             );
         }
 

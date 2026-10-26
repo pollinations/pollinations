@@ -9,6 +9,8 @@ import {
     ExternalLinkButton,
     GitHubIcon,
     IconButton,
+    PulseIcon,
+    ShieldCheckIcon,
     StarIcon,
     Surface,
     TabButton,
@@ -23,7 +25,6 @@ import {
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { Fragment, useCallback, useEffect, useState } from "react";
-import EvalsView from "./EvalsView.jsx";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 import {
     computeHealthStatus,
@@ -34,6 +35,8 @@ import {
     primaryRouteStatus,
     rescuedCount,
 } from "./model-data.js";
+import SortableTh from "./SortableTh.jsx";
+import TrustView, { useEvals } from "./TrustView.jsx";
 
 const FAVORITES_KEY = "model-monitor-favorites";
 
@@ -530,27 +533,15 @@ function CatalogStatusBadge({ status }) {
     );
 }
 
-function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
-    const isActive = currentSort.key === sortKey;
-
-    return (
-        <TableHeaderCell
-            align={align}
-            active={isActive}
-            sortDirection={
-                isActive ? (currentSort.asc ? "asc" : "desc") : undefined
-            }
-            onSort={() => onSort(sortKey)}
-        >
-            {label}
-        </TableHeaderCell>
-    );
-}
-
 function HeaderLink({ href, label, icon, showLabel = false }) {
     if (showLabel) {
         return (
-            <ExternalLinkButton href={href} size="sm" className="h-9 px-3 py-0">
+            <ExternalLinkButton
+                href={href}
+                intent="surface"
+                size="sm"
+                className="h-9 px-3 py-0"
+            >
                 <span className="inline-flex items-center gap-1.5">
                     {icon}
                     {label}
@@ -566,6 +557,7 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
             target="_blank"
             rel="noopener noreferrer"
             title={label}
+            intent="surface"
             size="sm"
             className="h-9 w-9 gap-2 px-0 py-0"
             aria-label={label}
@@ -595,27 +587,10 @@ function WindowTabs({ value, onChange }) {
     );
 }
 
-const VIEWS = [
-    { key: "health", label: "Health" },
-    { key: "evals", label: "Evals" },
+const COMMUNITY_MODES = [
+    { key: "health", title: "Health", Icon: PulseIcon },
+    { key: "trust", title: "Trust", Icon: ShieldCheckIcon },
 ];
-
-function ViewTabs({ value, onChange }) {
-    return (
-        <div className="flex gap-1.5">
-            {VIEWS.map(({ key, label }) => (
-                <TabButton
-                    key={key}
-                    active={value === key}
-                    onClick={() => onChange(key)}
-                    size="lg"
-                >
-                    {label}
-                </TabButton>
-            ))}
-        </div>
-    );
-}
 
 function Header() {
     return (
@@ -633,23 +608,7 @@ function Header() {
     );
 }
 
-function EvalsPage({ view, onView }) {
-    return (
-        <div className="min-h-dvh bg-app-bg text-theme-text-base">
-            <Header />
-            <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
-                <Text className="m-0 max-w-3xl">
-                    Weekly evals: every text model, community models included,
-                    answers the same fresh questions.
-                </Text>
-                <ViewTabs value={view} onChange={onView} />
-                <EvalsView />
-            </main>
-        </div>
-    );
-}
-
-function App({ view, onView }) {
+export default function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
     const [adminMode] = useState(isAdminPath);
     const { models, lastUpdated, error, endpointStatus } =
@@ -657,8 +616,13 @@ function App({ view, onView }) {
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [initialFilter] = useState(loadFilterState);
+    const [communityMode, setCommunityMode] = useState(() =>
+        window.location.hash === "#trust" ? "trust" : "health",
+    );
     const [scopeFilter, setScopeFilter] = useState(
-        initialFilter?.scope ?? "official",
+        communityMode === "trust"
+            ? "community"
+            : (initialFilter?.scope ?? "official"),
     );
     const [typeFilter, setTypeFilter] = useState(initialFilter?.type ?? null);
     const [favorites, setFavorites] = useState(loadFavorites);
@@ -695,6 +659,19 @@ function App({ view, onView }) {
     useEffect(() => {
         saveFilterState({ scope: scopeFilter, type: typeFilter });
     }, [scopeFilter, typeFilter]);
+
+    // Trust lives under Community; `#trust` links straight to it.
+    const trustMode = scopeFilter === "community" && communityMode === "trust";
+    const evals = useEvals(trustMode);
+    useEffect(() => {
+        window.history.replaceState(
+            null,
+            "",
+            trustMode
+                ? "#trust"
+                : `${window.location.pathname}${window.location.search}`,
+        );
+    }, [trustMode]);
 
     const toggleFavorite = useCallback((key) => {
         setFavorites((prev) => {
@@ -854,30 +831,10 @@ function App({ view, onView }) {
         <div className="min-h-dvh bg-app-bg text-theme-text-base">
             <Header />
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
-                <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 flex-col gap-1">
-                        <Text className="m-0 max-w-3xl">
-                            Real-time health monitoring for Pollinations AI
-                            models, based on real user requests. Our own tests
-                            and monitoring probes are not counted.
-                        </Text>
-                        <Text size="xs" tone="soft" className="m-0">
-                            Data as of:{" "}
-                            {lastUpdated?.toLocaleTimeString("en-GB", {
-                                timeZone: "UTC",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                            }) || "-"}{" "}
-                            UTC
-                        </Text>
-                        <ViewTabs value={view} onChange={onView} />
-                    </div>
-                    <WindowTabs
-                        value={aggregationWindow}
-                        onChange={setAggregationWindow}
-                    />
-                </section>
+                <Text className="m-0 max-w-3xl">
+                    Real-time health monitoring for Pollinations AI models,
+                    based on real user requests.
+                </Text>
 
                 {error && (
                     <Alert intent="danger" title="Monitor error">
@@ -908,14 +865,64 @@ function App({ view, onView }) {
                         value={scopeFilter}
                         onChange={handleScopeChange}
                     />
-                    <CategoryTabs
-                        models={scopedModels}
-                        value={typeFilter}
-                        onChange={setTypeFilter}
-                    />
+                    <div className="flex min-h-11 flex-wrap items-center gap-2">
+                        {scopeFilter === "community" && (
+                            <div className="flex gap-1.5">
+                                {COMMUNITY_MODES.map(({ key, title, Icon }) => (
+                                    <TabButton
+                                        key={key}
+                                        active={communityMode === key}
+                                        onClick={() => setCommunityMode(key)}
+                                        icon={<Icon />}
+                                        size="lg"
+                                    >
+                                        {title}
+                                    </TabButton>
+                                ))}
+                            </div>
+                        )}
+                        {/* Window and Trust's run date share one slot, sized
+                            by the wider, so switching moves nothing. */}
+                        <div className="grid sm:ml-auto sm:justify-items-end">
+                            <div
+                                className={`col-start-1 row-start-1 ${trustMode ? "invisible" : ""}`}
+                            >
+                                <WindowTabs
+                                    value={aggregationWindow}
+                                    onChange={setAggregationWindow}
+                                />
+                            </div>
+                            {evals.run && (
+                                <div
+                                    className={`col-start-1 row-start-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong ${trustMode ? "" : "invisible"}`}
+                                >
+                                    <span>Last run</span>
+                                    <span className="text-sm font-medium normal-case tracking-normal">
+                                        {new Date(
+                                            evals.run.date,
+                                        ).toLocaleDateString("en-GB", {
+                                            day: "numeric",
+                                            month: "short",
+                                            year: "numeric",
+                                            timeZone: "UTC",
+                                        })}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    {!trustMode && (
+                        <CategoryTabs
+                            models={scopedModels}
+                            value={typeFilter}
+                            onChange={setTypeFilter}
+                        />
+                    )}
                 </div>
 
-                {favorites.length > 0 && (
+                {trustMode && <TrustView {...evals} catalog={models} />}
+
+                {!trustMode && favorites.length > 0 && (
                     <div className="flex items-center gap-2">
                         <TabButton
                             active={favoritesOnly}
@@ -937,6 +944,7 @@ function App({ view, onView }) {
 
                 <Surface
                     variant="card"
+                    hidden={trustMode}
                     className="max-w-full overflow-x-auto p-0"
                 >
                     <Table className="min-w-[64rem]">
@@ -1316,26 +1324,5 @@ function App({ view, onView }) {
                 </Surface>
             </main>
         </div>
-    );
-}
-
-export default function Root() {
-    const [view, setView] = useState(() =>
-        window.location.hash === "#evals" ? "evals" : "health",
-    );
-    const changeView = useCallback((next) => {
-        setView(next);
-        window.history.replaceState(
-            null,
-            "",
-            next === "evals"
-                ? "#evals"
-                : `${window.location.pathname}${window.location.search}`,
-        );
-    }, []);
-    return view === "evals" ? (
-        <EvalsPage view={view} onView={changeView} />
-    ) : (
-        <App view={view} onView={changeView} />
     );
 }

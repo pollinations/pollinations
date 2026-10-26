@@ -2,7 +2,7 @@ name: Evals / Run weekly model evals
 
 # Scores every text model in /text/models (community models included) with
 # operations/model-evals and publishes the results to the `evals` data branch,
-# which the Evals tab of model-monitor.pollinations.ai reads. Needs the repo
+# which Community → Trust on model-monitor.pollinations.ai reads. Needs the repo
 # key PLN_EVALS_KEY in the encrypted evals secrets file: a Pollinations key
 # with room for ~20 Pollen.
 

@@ -59,6 +59,11 @@ const ToolUseBlockSchema = z
     })
     .passthrough();
 
+// Tool search's result names the deferred tools it loads.
+const ToolReferenceBlockSchema = z
+    .object({ type: z.literal("tool_reference"), tool_name: z.string() })
+    .passthrough();
+
 const ToolResultBlockSchema = z
     .object({
         type: z.literal("tool_result"),
@@ -67,10 +72,11 @@ const ToolResultBlockSchema = z
             .union([
                 z.string(),
                 z.array(
-                    z.union([
+                    z.discriminatedUnion("type", [
                         TextBlockSchema,
                         ImageBlockSchema,
                         DocumentBlockSchema,
+                        ToolReferenceBlockSchema,
                     ]),
                 ),
             ])
@@ -92,6 +98,41 @@ const RedactedThinkingBlockSchema = z
     .object({ type: z.literal("redacted_thinking"), data: z.string() })
     .passthrough();
 
+const ToolSchema = z
+    .object({
+        // Absent or "custom" for client tools; anything else is a server tool.
+        type: z.string().optional(),
+        name: z.string(),
+        description: z.string().optional(),
+        input_schema: z.record(z.string(), z.unknown()).optional(),
+    })
+    .passthrough();
+
+// Mid-conversation tool changes: a `system` entry adds a deferred tool by
+// name or a new tool by definition, or removes a tool.
+const ToolNameSchema = z
+    .object({ type: z.literal("tool_reference"), name: z.string() })
+    .passthrough();
+
+const ToolAdditionBlockSchema = z
+    .object({
+        type: z.literal("tool_addition"),
+        tool: z.discriminatedUnion("type", [
+            ToolNameSchema,
+            z
+                .object({
+                    type: z.literal("tool_definition"),
+                    definition: ToolSchema,
+                })
+                .passthrough(),
+        ]),
+    })
+    .passthrough();
+
+const ToolRemovalBlockSchema = z
+    .object({ type: z.literal("tool_removal"), tool: ToolNameSchema })
+    .passthrough();
+
 export const MessagesContentBlockSchema = z.discriminatedUnion("type", [
     TextBlockSchema,
     ImageBlockSchema,
@@ -100,6 +141,9 @@ export const MessagesContentBlockSchema = z.discriminatedUnion("type", [
     ToolResultBlockSchema,
     ThinkingBlockSchema,
     RedactedThinkingBlockSchema,
+    ToolReferenceBlockSchema,
+    ToolAdditionBlockSchema,
+    ToolRemovalBlockSchema,
 ]);
 
 export type MessagesContentBlock = z.infer<typeof MessagesContentBlockSchema>;
@@ -109,16 +153,6 @@ const MessageSchema = z
         // Claude Code appends `system` entries mid-conversation.
         role: z.enum(["user", "assistant", "system"]),
         content: z.union([z.string(), z.array(MessagesContentBlockSchema)]),
-    })
-    .passthrough();
-
-const ToolSchema = z
-    .object({
-        // Absent or "custom" for client tools; anything else is a server tool.
-        type: z.string().optional(),
-        name: z.string(),
-        description: z.string().optional(),
-        input_schema: z.record(z.string(), z.unknown()).optional(),
     })
     .passthrough();
 

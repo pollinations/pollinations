@@ -84,6 +84,7 @@ import {
     MODEL_USED_HEADER,
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -4532,7 +4533,7 @@ fixtureTest.each(
                         reasoning_effort?: string;
                     };
                     expect(upstream.reasoning_effort).toBe("low");
-                    if (modelCalls === 2) {
+                    if (modelCalls >= 2) {
                         expect(
                             upstream.messages.some(
                                 (message) =>
@@ -4561,13 +4562,13 @@ fixtureTest.each(
                     const finishReason =
                         modelCalls === 1 ? "tool_calls" : "stop";
                     const usage =
-                        modelCalls === 2 && usageKind === "missing"
+                        modelCalls >= 2 && usageKind === "missing"
                             ? undefined
                             : {
                                   prompt_tokens: 10,
                                   completion_tokens: 5,
                                   total_tokens: 15,
-                                  ...(modelCalls === 2 &&
+                                  ...(modelCalls >= 2 &&
                                   usageKind === "malformed"
                                       ? {
                                             prompt_tokens_details: {
@@ -4668,7 +4669,8 @@ fixtureTest.each(
             }),
         );
         const body = await response.text();
-        expect(modelCalls).toBe(2);
+        // Invalid non-stream usage retries the declared OpenAI backup.
+        expect(modelCalls).toBe(!stream && usageKind !== "valid" ? 3 : 2);
         expect(mcpCalls).toBe(1);
         expect(runtimeClientIps.every((ip) => ip === testClientIp)).toBe(true);
         expect(runtimeToken).toMatch(/^ag_/);
@@ -5269,9 +5271,15 @@ fixtureTest(
         const allNames = allModels.map((model) => model.name);
 
         expect(allNames).toEqual(openaiModels.data.map((model) => model.id));
+        // Decision models also answer on chat endpoints, so the text list
+        // keeps them.
         expect(textModels.map((model) => model.name)).toEqual(
             allModels
-                .filter((model) => model.category === "text")
+                .filter(
+                    (model) =>
+                        model.category === "text" ||
+                        model.category === "decision",
+                )
                 .map((model) => model.name),
         );
         expect(allNames).toEqual([
@@ -5281,6 +5289,7 @@ fixtureTest(
 
         const categoryOrder = [
             "text",
+            "decision",
             "image",
             "video",
             "3d",
@@ -5298,6 +5307,7 @@ fixtureTest(
 
         const defaults: Record<string, string> = {
             text: DEFAULT_TEXT_MODEL,
+            decision: DEFAULT_DECISION_MODEL,
             image: DEFAULT_IMAGE_MODEL,
             "3d": DEFAULT_3D_MODEL,
             audio: DEFAULT_AUDIO_MODEL,
@@ -5415,10 +5425,13 @@ fixtureTest(
         const suffix = crypto.randomUUID().slice(0, 8);
         const textOwner = `filter-text-${suffix}`;
         const imageOwner = `filter-img-${suffix}`;
+        const videoOwner = `filter-vid-${suffix}`;
         const textName = `qp-text-${suffix}`;
         const imageName = `qp-img-${suffix}`;
+        const videoName = `qp-vid-${suffix}`;
         const textModelId = communityModelId(textOwner, textName);
         const imageModelId = communityModelId(imageOwner, imageName);
+        const videoModelId = communityModelId(videoOwner, videoName);
 
         const textUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
@@ -5427,6 +5440,10 @@ fixtureTest(
         const imageUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: imageOwner,
+        });
+        const videoUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: videoOwner,
         });
 
         await insertCommunityEndpoints([
@@ -5463,6 +5480,26 @@ fixtureTest(
                 promptTextPrice: 0,
                 completionTextPrice: 0,
                 completionImagePrice: 0.01,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: videoUserId,
+                visibility: "public",
+                name: videoName,
+                description: "Community video filter test model",
+                modality: "video",
+                inputModalities: ["text", "image", "audio", "video"],
+                baseUrl: "https://vid.example.com/v1",
+                upstreamModel: "wan-1",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionVideoPrice: 0.01,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -5583,6 +5620,41 @@ fixtureTest(
             onlyModels.map((m) => m.name),
         );
 
+        const [categoryVideo, categoryRichVideo] = await Promise.all([
+            SELF.fetch("https://gen.pollinations.ai/v1/models?category=video"),
+            SELF.fetch("https://gen.pollinations.ai/models?category=video"),
+        ]);
+        for (const r of [categoryVideo, categoryRichVideo]) {
+            expect(r.status).toBe(200);
+        }
+
+        type OpenAIModel = { id: string; category: string };
+        const categoryVideoData = (await categoryVideo.json()) as {
+            data: OpenAIModel[];
+        };
+        expect(
+            categoryVideoData.data.every((m) => m.category === "video"),
+        ).toBe(true);
+        expect(
+            categoryVideoData.data.find((m) => m.id === videoModelId),
+        ).toBeDefined();
+        expect(
+            categoryVideoData.data.find((m) => m.id === textModelId),
+        ).toBeUndefined();
+
+        type RichModel = { name: string; category?: string };
+        const categoryRichModels =
+            (await categoryRichVideo.json()) as RichModel[];
+        expect(categoryRichModels.every((m) => m.category === "video")).toBe(
+            true,
+        );
+        expect(
+            categoryRichModels.find((m) => m.name === videoModelId),
+        ).toBeDefined();
+        expect(
+            categoryRichModels.find((m) => m.name === textModelId),
+        ).toBeUndefined();
+
         const invalidResponses = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/models?community=tru"),
             SELF.fetch("https://gen.pollinations.ai/models?community=yes"),
@@ -5590,6 +5662,8 @@ fixtureTest(
             SELF.fetch(
                 "https://gen.pollinations.ai/image/models?community=nope",
             ),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?category=bad"),
+            SELF.fetch("https://gen.pollinations.ai/models?category=bad"),
         ]);
         for (const r of invalidResponses) {
             expect(r.status).toBe(400);

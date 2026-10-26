@@ -212,9 +212,11 @@ const FixUrlSchema = z
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,
 ): z.ZodObject {
+    // An upstream input error keeps its 400 status but carries upstream details,
+    // so a 400 has two possible shapes.
     const errorDetailsSchema =
         status === 400
-            ? ValidationErrorDetailsSchema
+            ? z.union([ValidationErrorDetailsSchema, GenericErrorDetailsSchema])
             : GenericErrorDetailsSchema;
     return z.object({
         status: z.literal(status),

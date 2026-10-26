@@ -4,7 +4,8 @@ TOKEN tinybird_read READ
 DESCRIPTION >
 Discovery reliability: the latest 50 eligible final requests per model within
 seven days. Fallback rescues are successes for the requested model. Caller 4xx
-are excluded; owner requests and monitor probes are included.
+are excluded; owner requests and monitor probes are included. A text answer
+with prompt tokens but no output tokens counts as a 5xx.
 Merges the hourly samples kept by model_health_hourly instead of scanning events.
 
 NODE recent_requests

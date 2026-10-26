@@ -91,6 +91,7 @@ function createGenerationMocks() {
     env.OPENROUTER_API_KEY = "openrouter-test-key";
     env.AZURE_MYCELI_PROD_API_KEY = "azure-test-key";
     env.DEEPINFRA_API_KEY = "deepinfra-test-key";
+    env.NOVITA_API_KEY = "novita-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
     const portkeyState: {
@@ -99,6 +100,18 @@ function createGenerationMocks() {
     } = {
         requests: [],
         failStatus: null,
+    };
+    const fakeChatProvider = async (request: Request) => {
+        portkeyState.requests.push(
+            (await request.clone().json()) as Record<string, unknown>,
+        );
+        if (portkeyState.failStatus) {
+            return Response.json(
+                { error: { message: "chat provider unavailable" } },
+                { status: portkeyState.failStatus },
+            );
+        }
+        return fakePortkeyResponse(request);
     };
     const replicateState: {
         requests: Array<{
@@ -342,21 +355,10 @@ function createGenerationMocks() {
         portkeyDirect: {
             state: portkeyState,
             handlerMap: {
-                [portkeyHost]: async (request) => {
-                    portkeyState.requests.push(
-                        (await request.clone().json()) as Record<
-                            string,
-                            unknown
-                        >,
-                    );
-                    if (portkeyState.failStatus) {
-                        return Response.json(
-                            { error: { message: "chat provider unavailable" } },
-                            { status: portkeyState.failStatus },
-                        );
-                    }
-                    return fakePortkeyResponse(request);
-                },
+                [portkeyHost]: fakeChatProvider,
+                // Direct chat providers answer like the Portkey gateway.
+                "api.novita.ai": fakeChatProvider,
+                "api.openai.com": fakeChatProvider,
             },
             reset: () => {
                 portkeyState.requests = [];
@@ -369,6 +371,8 @@ function createGenerationMocks() {
                 "openrouter.ai": responsesHandler,
                 "myceli-prod-eastus.openai.azure.com": responsesHandler,
                 "api.perplexity.ai": responsesHandler,
+                // Qwen3.7 Plus falls back to Alibaba direct.
+                "dashscope-intl.aliyuncs.com": responsesHandler,
             },
             reset: () => {
                 responsesState.requests = [];
@@ -832,6 +836,13 @@ function usageHeaders(headers: Record<string, string>) {
         "content-type": "application/json; charset=utf-8",
         ...headers,
     };
+}
+
+function withAlibabaFallbackKey() {
+    return withInlineGenerationCoordinator({
+        ...env,
+        DASHSCOPE_API_KEY: "test-dashscope-key",
+    } as unknown as CloudflareBindings);
 }
 
 async function fetchWorker(
@@ -1450,12 +1461,14 @@ test("chat completions reject a successful envelope without usage", async ({
     });
     await wait();
 
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 502,
-        isBilledUsage: false,
-    });
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+        });
+    }
 });
 
 test("chat completions forward a 28 MiB inline-image request", async ({
@@ -2038,17 +2051,21 @@ test("direct Responses JSON rejects a successful envelope without usage", async 
     await mocks.enable("tinybird", "responsesDirect");
     mocks.responsesDirect.state.omitUsage = true;
 
-    const { response, wait } = await fetchWorker("/v1/responses", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
+    const { response, wait } = await fetchWorker(
+        "/v1/responses",
+        {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model: "qwen/qwen3.7-plus",
+                input: "missing usage must fail",
+            }),
         },
-        body: JSON.stringify({
-            model: "qwen/qwen3.7-plus",
-            input: "missing usage must fail",
-        }),
-    });
+        withAlibabaFallbackKey(),
+    );
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toMatchObject({
@@ -2059,12 +2076,15 @@ test("direct Responses JSON rejects a successful envelope without usage", async 
     });
     await wait();
 
-    expect(mocks.responsesDirect.state.requests).toHaveLength(1);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 502,
-        isBilledUsage: false,
-    });
+    // OpenRouter and the Alibaba fallback both omit usage; neither bills.
+    expect(mocks.responsesDirect.state.requests).toHaveLength(2);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+        });
+    }
 });
 
 test("direct Responses SSE is unchanged and terminal usage bills once", async ({
@@ -2227,29 +2247,36 @@ test("direct Responses rejects a non-SSE upstream before rewriting content-type"
     await mocks.enable("tinybird", "responsesDirect");
     mocks.responsesDirect.state.wrongStreamContentType = true;
 
-    const { response, wait } = await fetchWorker("/v1/responses", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
+    const { response, wait } = await fetchWorker(
+        "/v1/responses",
+        {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model: "qwen/qwen3.7-plus",
+                input: "wrong content type",
+                stream: true,
+            }),
         },
-        body: JSON.stringify({
-            model: "qwen/qwen3.7-plus",
-            input: "wrong content type",
-            stream: true,
-        }),
-    });
+        withAlibabaFallbackKey(),
+    );
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toMatchObject({
         error: { message: expect.stringContaining("content-type") },
     });
     await wait();
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 502,
-        isBilledUsage: false,
-    });
+    // OpenRouter and the Alibaba fallback fail the same way; neither bills.
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+        });
+    }
 });
 
 test("direct Responses returns 400 for reusable input state", async ({
@@ -2466,7 +2493,8 @@ test("Responses on a Chat-only model fails without provider usage", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "stepfun/step-3.7-flash",
+            // A model without fallbacks, so the missing usage is final.
+            model: "amazon/nova-micro-v1",
             input: "vcr missing chat usage",
         }),
     });
@@ -3169,6 +3197,36 @@ test("simple text supports audio output models", async ({
         tokenCountCompletionAudio: 4,
         isBilledUsage: true,
     });
+});
+
+test("chat completions leave explicit text-only modalities untouched on audio models", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-audio-mini",
+            messages: [{ role: "user", content: "vcr text-only modalities" }],
+            modalities: ["text"],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.json();
+    await wait();
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        modalities: ["text"],
+    });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("audio");
 });
 
 test("simple text prompts can include slashes", async ({

@@ -85,6 +85,8 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
   working for keys that stored the old ID only while the old ID stays an
   alias. A model that changes category changes which restricted keys reach
   it; state that in the PR.
+- Models served at `/alpha/decisions` use `category: "decision"`. Keys need
+  `decision` on that route; on chat endpoints, `text` also allows them.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
 - If a model or provider is missing from the registry, check `git log --all -- <path>`
@@ -222,6 +224,14 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   [Service Providers](../../../pollinations.ai/public/legal/SUBPROCESSORS.md)
   page. Update its model-provider line in the same PR;
   `gen.pollinations.ai/test/service-providers.test.ts` fails until it matches.
+- Every new canonical provider, including free and fallback providers, must be
+  onboarded to Economics in the same change: add its identity/model mappings
+  to `operations/economics/provider-registry.json` and create or update its
+  single `<vendor-id>.json` in the private Drive Vendor journals folder, using
+  the [Economics collection workflow](../economics-provider-collection/SKILL.md).
+  Verify category, collection method, review/balance tracking and known accounts;
+  record unknowns rather than inventing balances, contracts or forecast rules.
+  Reuse existing vendor files; keep private account and contract details out of Git.
 
 ### 5. Verify end to end
 
@@ -231,6 +241,12 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - When a fallback is configured, probe it directly and run the same applicable E2E matrix through a forced fallback, including capabilities, parameters, permissions, cache behavior, billing, provider attribution, errors, and expected burst. When no fallback is approved, record the researched candidate and rejection reason.
 - Verify all media is fully returned within the supported request-lifetime budget, including the durable-media checks when applicable.
 - Record exact evidence and uncertainty in the PR.
+- Before releasing a new provider, read back the actual Drive journals with
+  existing authorized access, confirm the provider IDs match the Economics
+  registry, and verify the dashboard loads with that snapshot. Public GitHub CI
+  uses synthetic data and does not need Drive credentials. Missing onboarding
+  or unavailable private validation blocks release; never rely on the dashboard
+  failing at runtime to enforce this check.
 
 ### 6. Open the PR
 

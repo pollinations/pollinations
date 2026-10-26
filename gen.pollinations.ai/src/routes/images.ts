@@ -179,11 +179,23 @@ async function parseEditInput(c: Context): Promise<{
                 message: 'response_format must be "url" or "b64_json"',
             });
 
+        const seedField = formData.get("seed");
+        const seed = CreateImageEditRequestSchema.shape.seed.safeParse(
+            seedField == null || seedField === ""
+                ? undefined
+                : Number(seedField),
+        );
+        if (!seed.success)
+            throw new UpstreamError(400, {
+                message: "seed must be an integer between -1 and 2147483647",
+            });
+
         return {
             prompt,
             imageUrls,
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
+            seed: seed.data ?? undefined,
             safe: formData.get("safe") as string | null,
             response_format: format.data,
             extra: collectPassthrough(

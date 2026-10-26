@@ -126,7 +126,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
-| `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
+| `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
@@ -265,6 +265,80 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
   -d 'grant_type=urn:ietf:params:oauth:grant-type:device_code' \
   -d 'device_code=...'
 ```
+
+## 🐍 Python Quickstart (BYOP Device Flow)
+
+For Python scripts, CLI tools, and backend services, use the device flow:
+
+```python
+import requests
+import time
+import os
+
+def device_flow_login(client_id: str) -> str:
+    """Get user-authorized Pollinations key via device flow."""
+    # 1. Request device code
+    resp = requests.post(
+        'https://enter.pollinations.ai/api/device/code',
+        json={'client_id': client_id},
+        headers={'Content-Type': 'application/json'}
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    
+    print(f"🔐 Go to: {data['verification_uri_complete']}")
+    print(f"   User code: {data['user_code']}")
+    print(f"   Waiting for authorization...")
+    
+    # 2. Poll for token
+    while True:
+        time.sleep(data['interval'])
+        resp = requests.post(
+            'https://enter.pollinations.ai/api/device/token',
+            json={'device_code': data['device_code']},
+            headers={'Content-Type': 'application/json'}
+        )
+        if resp.status_code == 200:
+            token_data = resp.json()
+            print("✅ Authorized!")
+            return token_data['access_token']
+        elif resp.json().get('error') == 'authorization_pending':
+            continue
+        else:
+            raise Exception(f"Auth failed: {resp.json()}")
+
+def use_pollinations(api_key: str):
+    """Make authenticated requests to Pollinations API."""
+    headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+    
+    # Generate text
+    resp = requests.post(
+        'https://gen.pollinations.ai/v1/chat/completions',
+        headers=headers,
+        json={
+            'model': 'openai/gpt-5.4-nano',
+            'messages': [{'role': 'user', 'content': 'Hello from BYOP Python!'}]
+        }
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+if __name__ == '__main__':
+    # Replace with your App Key (pk_...) from enter.pollinations.ai/keys
+    APP_KEY = os.environ.get('POLLINATIONS_APP_KEY', 'pk_your_app_key_here')
+    
+    # Get user-authorized key (device flow)
+    user_key = device_flow_login(APP_KEY)
+    
+    # Or use a key directly from environment
+    # user_key = os.environ.get('POLLINATIONS_API_KEY')
+    
+    if user_key:
+        result = use_pollinations(user_key)
+        print(result['choices'][0]['message']['content'])
+```
+
+> **Security**: Never hardcode API keys. Use environment variables (`os.environ.get()`) or a secure credential manager.
 
 ## 👤 Who's Using This Key?
 

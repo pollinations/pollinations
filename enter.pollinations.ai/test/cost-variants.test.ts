@@ -88,20 +88,28 @@ describe("long-context cost variants", () => {
         },
     );
 
-    it("Gemini uses OpenRouter's inclusive 200K boundary", () => {
-        expect(
-            bill("google/gemini-3.1-pro-preview", {
-                promptTextTokens: 199_999,
-            }).costVariant,
-        ).toBeUndefined();
+    it("Gemini 3.1 Pro uses Vertex's strict 200K boundary", () => {
         expect(
             bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_000,
             }).costVariant,
-        ).toBe("long_context");
+        ).toBeUndefined();
         expect(
             bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_001,
+            }).costVariant,
+        ).toBe("long_context");
+    });
+
+    it("Gemini 3.1 Pro's OpenRouter fallback keeps the inclusive 200K boundary", () => {
+        expect(
+            bill("google/gemini-3.1-pro-preview:openrouter:vertex-global", {
+                promptTextTokens: 199_999,
+            }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill("google/gemini-3.1-pro-preview:openrouter:vertex-global", {
+                promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
     });
@@ -245,10 +253,10 @@ describe("long-context cost variants", () => {
         expect(billing.servedPrice).toBeCloseTo(0.00006 * 1.055, 12);
     });
 
-    it("keeps the Llama Scout quote and records the fee-inclusive Novita cost", () => {
+    it("keeps the Llama Scout quote and records direct DeepInfra priority cost", () => {
         const billing = fallbackBill(
             "meta/llama-4-scout",
-            "meta/llama-4-scout:openrouter:novita-bf16",
+            "meta/llama-4-scout:deepinfra:priority",
             {
                 promptTextTokens: 1_000_000,
                 promptImageTokens: 1_000_000,
@@ -256,11 +264,11 @@ describe("long-context cost variants", () => {
             },
         );
 
-        expect(billing.cost.totalCost).toBeCloseTo(0.95 * 1.055, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.75, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
-        expect(billing.servedPrice).toBeCloseTo(0.95 * 1.055, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.75, 12);
         expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
-            0.95 * 1.055 - 0.5,
+            0.75 - 0.5,
             12,
         );
     });
@@ -629,9 +637,9 @@ describe("resolution cost variants", () => {
 
     it("seedance-pro bills 480p and 1080p around its 720p base", () => {
         const tiers = [
-            [undefined, 0.025],
-            ["480p", 0.015],
-            ["1080p", 0.06],
+            [undefined, 0.021021],
+            ["480p", 0.0099225],
+            ["1080p", 0.0486],
         ] as const;
 
         for (const [resolution, rate] of tiers) {

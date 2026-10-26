@@ -17,6 +17,9 @@ export interface ChatMessage {
     [key: string]: unknown;
 }
 
+/** The part of a tool call that carries Gemini's thought signature. */
+export type ToolCall = { function?: { thought_signature?: unknown } };
+
 /** Options bag threaded through transforms and generation functions. */
 export interface TransformOptions {
     model?: string;

@@ -14,6 +14,12 @@ import type {
 type ChatMessage = CreateChatCompletionRequest["messages"][number];
 type ChatPart = Record<string, unknown>;
 
+// Gemini signs its tool calls and rejects a replayed call without the
+// signature, but Anthropic clients replay only thinking signatures. So the
+// signature travels in an empty thinking block, prefixed to tell it apart
+// from Claude's.
+export const GEMINI_SIGNATURE_PREFIX = "gemini:";
+
 export class MessagesRequestError extends Error {
     override readonly name = "MessagesRequestError";
 }
@@ -57,6 +63,11 @@ function contentPart(block: MessagesContentBlock): ChatPart {
     }
     if (block.type === "image") return imagePart(block);
     if (block.type === "document") return documentPart(block);
+    // Chat lists deferred tools from the start (see tools()), so the model
+    // only needs to know which ones tool search loaded.
+    if (block.type === "tool_reference") {
+        return { type: "text", text: `Tool loaded: ${block.tool_name}` };
+    }
     throw new MessagesRequestError(
         `A ${block.type} block is not allowed in this message`,
     );
@@ -101,21 +112,34 @@ function userMessages(content: MessagesContentBlock[]): ChatMessage[] {
 
 function assistantMessage(content: MessagesContentBlock[]): ChatMessage {
     const parts: ChatPart[] = [];
-    const toolCalls = [];
+    const toolCalls: {
+        id: string;
+        type: "function";
+        function: {
+            name: string;
+            arguments: string;
+            thought_signature?: string;
+        };
+    }[] = [];
+    let thoughtSignature: string | undefined;
     for (const block of content) {
         if (block.type === "tool_use") {
             toolCalls.push({
                 id: block.id,
-                type: "function" as const,
+                type: "function",
                 function: {
                     name: block.name,
                     arguments: JSON.stringify(block.input ?? {}),
                 },
             });
         } else if (block.type === "thinking") {
-            // Only Claude signs its thinking, and Claude needs signed blocks
-            // replayed; other providers reject a thinking part.
-            if (block.signature) {
+            if (block.signature?.startsWith(GEMINI_SIGNATURE_PREFIX)) {
+                thoughtSignature = block.signature.slice(
+                    GEMINI_SIGNATURE_PREFIX.length,
+                );
+            } else if (block.signature) {
+                // Claude needs its signed thinking replayed; other providers
+                // reject a thinking part.
                 parts.push({
                     type: "thinking",
                     thinking: block.thinking,
@@ -127,6 +151,10 @@ function assistantMessage(content: MessagesContentBlock[]): ChatMessage {
         } else {
             parts.push(contentPart(block));
         }
+    }
+    // Gemini signs only the first call of a step.
+    if (thoughtSignature && toolCalls[0]) {
+        toolCalls[0].function.thought_signature = thoughtSignature;
     }
     // Plain text stays a string, which every provider accepts.
     const plain = parts.every(
@@ -152,12 +180,19 @@ function chatMessages(
     if (message.role === "assistant")
         return [assistantMessage(message.content)];
     if (message.role === "system") {
-        return [
-            {
-                role: "system",
-                content: message.content.map(contentPart),
-            } as ChatMessage,
-        ];
+        // Tool changes reach Chat through `tools` (see tools()).
+        const content = message.content.filter(
+            (block) =>
+                block.type !== "tool_addition" && block.type !== "tool_removal",
+        );
+        return content.length
+            ? [
+                  {
+                      role: "system",
+                      content: content.map(contentPart),
+                  } as ChatMessage,
+              ]
+            : [];
     }
     return userMessages(message.content);
 }
@@ -207,8 +242,7 @@ function toolChoice(choice: CreateMessageRequest["tool_choice"]) {
 }
 
 function tools(request: CreateMessageRequest) {
-    if (!request.tools?.length) return {};
-    for (const tool of request.tools) {
+    for (const tool of request.tools ?? []) {
         if (tool.type && tool.type !== "custom") {
             // Claude Code drops a server tool when the rejection names its tag.
             throw new MessagesRequestError(
@@ -216,8 +250,27 @@ function tools(request: CreateMessageRequest) {
             );
         }
     }
+    // Chat has one tool list per request. Deferred tools are on it from the
+    // start, a tool added mid-conversation by definition joins it (replacing
+    // one of that name), and a removed tool stays, so earlier calls to it
+    // stay valid; Claude Code answers a call to it with an error.
+    const listed = new Map(
+        (request.tools ?? []).map((tool) => [tool.name, tool]),
+    );
+    for (const message of request.messages) {
+        if (typeof message.content === "string") continue;
+        for (const block of message.content) {
+            if (
+                block.type === "tool_addition" &&
+                block.tool.type === "tool_definition"
+            ) {
+                listed.set(block.tool.definition.name, block.tool.definition);
+            }
+        }
+    }
+    if (!listed.size) return {};
     return {
-        tools: request.tools.map((tool) => ({
+        tools: [...listed.values()].map((tool) => ({
             type: "function" as const,
             function: {
                 name: tool.name,
@@ -366,6 +419,16 @@ export function chatToMessagesResponse(
         });
     }
     if (message?.content) content.push({ type: "text", text: message.content });
+    const thoughtSignature = message?.tool_calls?.find(
+        (call) => call.function.thought_signature,
+    )?.function.thought_signature;
+    if (thoughtSignature) {
+        content.push({
+            type: "thinking",
+            thinking: "",
+            signature: GEMINI_SIGNATURE_PREFIX + thoughtSignature,
+        });
+    }
     for (const call of message?.tool_calls ?? []) {
         content.push({
             type: "tool_use",

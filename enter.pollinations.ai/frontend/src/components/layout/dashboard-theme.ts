@@ -59,12 +59,6 @@ export const DASHBOARD_NAV_ITEMS = [
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
 export type DashboardPath = (typeof DASHBOARD_NAV_ITEMS)[number]["to"];
 
-export function dashboardNavItems(hasApps = false) {
-    return DASHBOARD_NAV_ITEMS.filter(
-        (item) => item.id !== "my-apps" || hasApps,
-    );
-}
-
 export function isDashboardPath(path: string): path is DashboardPath {
     return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
 }

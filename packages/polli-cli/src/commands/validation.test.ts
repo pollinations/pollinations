@@ -115,6 +115,33 @@ describe("CLI argument validation", () => {
         expect(urls).toEqual([expect.stringContaining("/3d/models")]);
     });
 
+    it("lists decision models under their own type", async () => {
+        prepare();
+        const fetch = vi.fn(async (url: string) =>
+            url.includes("/text/models")
+                ? Response.json([
+                      { name: "openai/gpt-5-nano", category: "text" },
+                      { name: "typesafe/jev-1.13", category: "decision" },
+                  ])
+                : Response.json([]),
+        );
+        vi.stubGlobal("fetch", fetch);
+        await modelsCommand.parseAsync(["--type", "decision"], {
+            from: "user",
+        });
+        const printed = vi
+            .mocked(process.stdout.write)
+            .mock.calls.map(([chunk]) => String(chunk))
+            .join("");
+        expect(JSON.parse(printed)).toEqual([
+            {
+                name: "typesafe/jev-1.13",
+                category: "decision",
+                type: "decision",
+            },
+        ]);
+    });
+
     it("rejects an unknown model type in stats mode too", async () => {
         const fetch = prepare();
         await expect(

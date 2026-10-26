@@ -28,6 +28,10 @@ export const TEXT_PERMISSION_NOTICE_ENABLED = true; // 403 model not allowed
 const NOT_YOUR_ACCOUNT =
     "If this isn’t your Pollinations account, contact whoever runs the app or service you’re using.";
 
+// Angle brackets end the URL for chat apps that show the Markdown as plain
+// text; without them they link the closing ")" too.
+const mdLink = (text: string, url: string) => `[${text}](<${url}>)`;
+
 // The links come from the error, so the chat reply and the JSON error agree.
 function balanceNoticeMessage(
     c: Context<Env>,
@@ -36,24 +40,27 @@ function balanceNoticeMessage(
     if (error.errorCode === "KEY_BUDGET_EXHAUSTED") {
         return (
             "The API key used for this request has reached its budget. " +
-            `Please [raise the key budget](${error.fixUrl}), then try again.\n\n` +
+            `Please ${mdLink("raise the key budget", error.fixUrl)}, then try again.\n\n` +
             `Topping up the wallet does not raise this limit. ${NOT_YOUR_ACCOUNT}`
         );
     }
     if (error.errorCode === "QUEST_POLLEN_ONLY") {
-        const allowPaid = `[allow paid Pollen for this key](${error.fixUrl})`;
+        const allowPaid = mdLink(
+            "allow paid Pollen for this key",
+            error.fixUrl,
+        );
         const remedy = error.paidOnly
             ? `This model needs paid Pollen. Please ${allowPaid}, then try again.`
-            : `Please [complete a quest](${fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" })}) or ${allowPaid}, then try again.`;
+            : `Please ${mdLink("complete a quest", fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" }))} or ${allowPaid}, then try again.`;
         return (
             `The API key used for this request only spends Quest Pollen${error.paidOnly ? "" : ", and there isn't enough left"}. ` +
             `${remedy}\n\n${NOT_YOUR_ACCOUNT}`
         );
     }
-    const topUp = `[top up](${error.fixUrl})`;
+    const topUp = mdLink("top up", error.fixUrl);
     const remedy = error.paidOnly
         ? `This model needs paid Pollen. Please ${topUp}, then try again.`
-        : `Please ${topUp} or [complete a quest](${fixLink(c, "/quests", { ref: "agent_low_balance_quests" })}), then try again.`;
+        : `Please ${topUp} or ${mdLink("complete a quest", fixLink(c, "/quests", { ref: "agent_low_balance_quests" }))}, then try again.`;
     return (
         "The account behind this API key doesn't have enough credits. " +
         `${remedy}\n\n${NOT_YOUR_ACCOUNT}`
@@ -75,7 +82,7 @@ function noticeMessage(c: Context<Env>): string | undefined {
     )
         return (
             `The API key used for this request isn't allowed to use ${c.var.model.requested}. ` +
-            `Please [allow it for this key](${error.fixUrl}), then try again.\n\n${NOT_YOUR_ACCOUNT}`
+            `Please ${mdLink("allow it for this key", error.fixUrl)}, then try again.\n\n${NOT_YOUR_ACCOUNT}`
         );
 }
 

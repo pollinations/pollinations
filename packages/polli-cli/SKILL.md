@@ -45,7 +45,9 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
-| Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
+| Search models | `polli models <query>` (`--source official\|community`, `--reliability all`) |
+| Discover voices | `polli models --type audio --voices` (one line per model) |
+| Filter models by type | `polli models --type image` (text, decision, image, audio, video, 3d, embedding, realtime) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
 | Developer earnings | `polli earnings` (`--days <n>`) |
@@ -64,8 +66,8 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`, and `keys`). To store an existing key, run
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status` (or `polli whoami`).
-Override the stored key for a single command with `--key <key>`.
-Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its own login, so run `POLLINATIONS_ENV=staging polli auth login` once.
+Override the stored key for a single command with `--key <key>`, or set `POLLINATIONS_API_KEY` in the environment.
+Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its own login, so run `POLLINATIONS_ENV=staging polli auth login` once. An exported `POLLINATIONS_API_KEY` wins over both logins.
 
 ## Recipes
 
@@ -112,7 +114,7 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Without `--voice`, the API uses the model's default voice. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
+Without `--voice`, the API uses the model's default voice. Voices differ per model: `polli models --type audio --voices` lists each model's voices, so pass the matching `--model` with `--voice`. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
 
 ### Generate music (elevenlabs/music-v2)
 ```bash
@@ -184,7 +186,11 @@ Models: `openai/whisper-large-v3` (default), `elevenlabs/scribe-v2`, `assemblyai
 ### Discover models
 ```bash
 polli models --type text              # text models only
-polli models --type image --verbose   # with context length / pricing
+polli models flux                     # search name, aliases, title, description, publisher
+polli models --source community       # official or community only
+polli models --reliability all        # also community models failing health checks
+polli models --type audio --voices    # voices per model
+polli models --type image --verbose   # with publisher, context length, pricing
 polli models --stats                  # health + avg latency + err% (60m default)
 polli models --stats --window 5       # last 5 minutes only
 ```
@@ -265,7 +271,7 @@ polli keys create --name "server" --models black-forest-labs/flux.1-schnell tong
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # every text model plus FLUX.1 Schnell
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
+`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness

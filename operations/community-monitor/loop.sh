@@ -13,10 +13,14 @@ LOG=/home/ubuntu/monitor/loop.log
 # don't store. Keep only the cycle times and exit status.
 echo "=== cycle start $(date -u +%FT%TZ) ===" | tee -a "$LOG"
 status=0
+# The cycle reads untrusted text (Discord messages, model output), so its shell
+# commands run in the sandbox from .claude/settings.json: no secret files, no
+# writes to this runtime's code, and network only to the hosts it needs.
+# dontAsk refuses anything outside that instead of prompting.
 claude -p "$(cat CYCLE.md)" \
     --model claude-opus-5-5 --effort medium \
     --no-session-persistence \
-    --dangerously-skip-permissions \
+    --permission-mode dontAsk \
     --allowedTools "Bash,Read,Write,mcp__discord__discord_read_messages,mcp__discord__discord_send" \
     >/dev/null 2>&1 || status=$?
 rm -rf /home/ubuntu/.cache/claude-cli-nodejs/-home-ubuntu-monitor/mcp-logs-discord

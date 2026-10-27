@@ -2,5 +2,58 @@
     "$schema": "https://json.schemastore.org/claude-code-settings.json",
     "env": {
         "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000"
+    },
+    "permissions": {
+        "deny": [
+            "Read(/.env)",
+            "Read(~/.claude/.credentials.json)",
+            "Read(~/.claude.json)",
+            "Read(~/discord-bots/**)",
+            "Read(~/.ssh/**)",
+            "Read(~/.config/gh/**)",
+            "Edit(/CYCLE.md)",
+            "Edit(/loop.sh)",
+            "Edit(/update-from-repo.sh)",
+            "Edit(/healthcheck.sh)",
+            "Edit(/*.mjs)",
+            "Edit(/leaderboard/**)"
+        ]
+    },
+    "sandbox": {
+        "enabled": true,
+        "failIfUnavailable": true,
+        "autoAllowBashIfSandboxed": true,
+        "allowUnsandboxedCommands": false,
+        "network": {
+            "allowedDomains": [
+                "api.europe-west2.gcp.tinybird.co",
+                "gen.pollinations.ai",
+                "media.pollinations.ai"
+            ]
+        },
+        "filesystem": {
+            "denyRead": [
+                "./.env",
+                "~/.claude/.credentials.json",
+                "~/.claude.json",
+                "~/discord-bots",
+                "~/.ssh",
+                "~/.config/gh"
+            ],
+            "denyWrite": [
+                "./CYCLE.md",
+                "./loop.sh",
+                "./update-from-repo.sh",
+                "./healthcheck.sh",
+                "./chat-stream.mjs",
+                "./image-probe.mjs",
+                "./probe-schedule.mjs",
+                "./probe.mjs",
+                "./leaderboard"
+            ]
+        },
+        "credentials": {
+            "envVars": [{ "name": "DISCORD_TOKEN", "mode": "deny" }]
+        }
     }
 }

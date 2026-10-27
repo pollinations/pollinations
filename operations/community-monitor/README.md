@@ -20,7 +20,8 @@ Committed (source of truth — edit here, then deploy):
   as a phone-accessible console.
 - `.claude/settings.json` — project-scoped Claude Code settings. It fixes the
   auto-compaction calculation window at 300,000 tokens for both headless cycles
-  and the remote-control session launched from the monitor directory.
+  and the remote-control session launched from the monitor directory, and
+  sandboxes their shell commands (see "Sandbox" below).
 - `update-from-repo.sh` — before each cycle, fetches `origin/main` and atomically
   refreshes only the committed prompt/runtime files. It does not activate until
   the updater itself exists on `main`, so deploying an open PR cannot downgrade
@@ -66,6 +67,40 @@ and crontab, stop the old service and screen session, then on the new host
 `systemctl enable --now community-monitor` and relaunch the console with
 `screen -dmS rc-console bash -lc 'cd /home/ubuntu/monitor && set -a && source .env && set +a && exec claude --resume <session-id> --remote-control community-monitor --dangerously-skip-permissions'`.
 Pick "Resume full session" at the prompt to keep the session state intact.
+
+## Sandbox
+
+Each cycle reads text anyone can influence (Discord messages, community model
+output and descriptions), so it runs with `--permission-mode dontAsk` and the
+Bash sandbox from `.claude/settings.json`. Shell commands then:
+
+- can't read `.env`, other bots' files under `~/discord-bots`, Claude's
+  credentials, `~/.ssh` or the `gh` login;
+- can't change the runtime files the updater installs;
+- reach only Tinybird, `gen.pollinations.ai` and `media.pollinations.ai`;
+- run without `DISCORD_TOKEN` (the Discord MCP server runs outside the sandbox
+  and still gets it).
+
+`TB_TOKEN` and `POLLI_TOKEN` stay visible to shell commands because the cycle
+uses them, so keep `POLLI_TOKEN` on a key with a pollen budget.
+
+One-time box setup, before the change reaches `main` (the updater applies it on
+the next cycle, and `failIfUnavailable` stops a cycle whose sandbox can't
+start):
+
+1. `sudo apt-get install -y bubblewrap socat`
+2. On Ubuntu 24.04 or later, if `sysctl kernel.apparmor_restrict_unprivileged_userns`
+   prints `1`, add the `bwrap` AppArmor profile from
+   https://code.claude.com/docs/en/sandboxing#set-up-linux-and-wsl2 and reload AppArmor.
+3. Update Claude Code (`sudo npm i -g @anthropic-ai/claude-code`).
+4. In `/home/ubuntu/monitor`, start `claude`, run `/sandbox` and check that no
+   dependency is missing and the Config tab lists the denied paths.
+5. Run one cycle (`sudo systemctl restart community-monitor`), then check
+   `loop.log` for exit status 0, a fresh `probe-results.json`, and (at the
+   daily slot) that the leaderboards still render and upload.
+
+The remote-control console keeps `--dangerously-skip-permissions`; its shell
+commands are sandboxed too, but in that mode other hosts are still allowed.
 
 ## Automatic prompt/runtime updates
 

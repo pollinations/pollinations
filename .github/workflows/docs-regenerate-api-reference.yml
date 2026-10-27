@@ -171,11 +171,8 @@ jobs:
           EXISTING=$(jq -r '.number // empty' <<< "$PR")
           BODY="Auto-generated from OpenAPI spec changes after a successful production deploy."
           if [ -n "$REMOVED" ]; then
-            # Cancel pending auto-merge and queue membership before pushing
-            # removals that require manual review.
-            if [ "$(jq -r '.autoMergeRequest != null' <<< "$PR")" = "true" ]; then
-              gh pr merge --disable-auto "$EXISTING"
-            fi
+            # Dequeue first: gh skips --disable-auto while a PR is queued.
+            # Both must be cancelled before pushing removals for manual review.
             if [ -n "$EXISTING" ]; then
               PR_ID=$(jq -r '.id' <<< "$PR")
               QUEUED=$(gh api graphql -f id="$PR_ID" \
@@ -184,6 +181,9 @@ jobs:
               if [ "$QUEUED" = "true" ]; then
                 gh api graphql -f id="$PR_ID" \
                   -f query='mutation($id: ID!) { dequeuePullRequest(input: {id: $id}) { clientMutationId } }'
+              fi
+              if [ "$(jq -r '.autoMergeRequest != null' <<< "$PR")" = "true" ]; then
+                gh pr merge --disable-auto "$EXISTING"
               fi
             fi
             BODY+=$'\n\nManual review required: these operations disappeared from the generated reference.\n\n'
@@ -215,6 +215,6 @@ jobs:
 
           # Fail loud if the merge request fails — otherwise the docs PR
           # could sit open indefinitely while the workflow reports success.
-          gh pr merge --auto "$EXISTING"
+          gh pr merge --auto --squash "$EXISTING"
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}

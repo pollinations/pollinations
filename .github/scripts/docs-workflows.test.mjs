@@ -247,21 +247,26 @@ test("a removal stops automatic merging before pushing and stops if cancellation
         dequeueStatus = 0,
         expected,
     } of [
-        { expected: "disable\nqueue\npush\nedit\n" },
-        { disableStatus: 1, expected: "disable\n" },
+        { queued: true, expected: "queue\ndequeue\ndisable\npush\nedit\n" },
+        { expected: "queue\ndisable\npush\nedit\n" },
+        { disableStatus: 1, expected: "queue\ndisable\n" },
+        {
+            queued: true,
+            disableStatus: 1,
+            expected: "queue\ndequeue\ndisable\n",
+        },
         {
             autoMerge: false,
             queued: true,
             expected: "queue\ndequeue\npush\nedit\n",
         },
-        { queued: true, expected: "disable\nqueue\ndequeue\npush\nedit\n" },
         {
             autoMerge: false,
             queued: true,
             dequeueStatus: 1,
             expected: "queue\ndequeue\n",
         },
-        { queryStatus: 1, expected: "disable\nqueue\n" },
+        { queryStatus: 1, expected: "queue\n" },
         { autoMerge: false, expected: "queue\npush\nedit\n" },
     ]) {
         const directory = await mkdtemp(join(tmpdir(), "docs-publication-"));
@@ -287,7 +292,13 @@ test("a removal stops automatic merging before pushing and stops if cancellation
             git("push", "--quiet", "origin", "main");
             await writeFile(
                 join(remote, "hooks/pre-receive"),
-                '#!/bin/sh\necho push >> "$EVENTS"\n',
+                `#!/bin/sh
+if [ "$AUTO_MERGE" = "true" ] || [ "$QUEUED" = "true" ]; then
+  echo "Automatic merging is still enabled at push time" >&2
+  exit 1
+fi
+echo push >> "$EVENTS"
+`,
                 { mode: 0o755 },
             );
             await writeFile(join(work, "APIDOCS.md"), candidate);
@@ -302,6 +313,7 @@ test("a removal stops automatic merging before pushing and stops if cancellation
                     QUERY_STATUS: String(queryStatus),
                     DEQUEUE_STATUS: String(dequeueStatus),
                     QUEUED: String(queued),
+                    AUTO_MERGE: String(autoMerge),
                     PR_JSON: JSON.stringify({
                         number: 42,
                         id: "PR_test",
@@ -314,9 +326,19 @@ test("a removal stops automatic merging before pushing and stops if cancellation
 gh() {
   case "$*" in
     "pr list "*) echo "$PR_JSON" ;;
-    "pr merge --disable-auto 42") echo disable >> "$EVENTS"; return "$DISABLE_STATUS" ;;
+    "pr merge --disable-auto 42")
+      if [ "$QUEUED" = "true" ]; then
+        echo "Pull request is already queued to merge" >&2
+        return 0
+      fi
+      echo disable >> "$EVENTS"
+      if [ "$DISABLE_STATUS" = "0" ]; then AUTO_MERGE=false; fi
+      return "$DISABLE_STATUS" ;;
     "api graphql "*"isInMergeQueue"*) echo queue >> "$EVENTS"; echo "$QUEUED"; return "$QUERY_STATUS" ;;
-    "api graphql "*"dequeuePullRequest"*) echo dequeue >> "$EVENTS"; return "$DEQUEUE_STATUS" ;;
+    "api graphql "*"dequeuePullRequest"*)
+      echo dequeue >> "$EVENTS"
+      if [ "$DEQUEUE_STATUS" = "0" ]; then QUEUED=false; fi
+      return "$DEQUEUE_STATUS" ;;
     "pr edit 42 "*) echo edit >> "$EVENTS" ;;
     *) echo "Unexpected GitHub command: $*" >&2; return 1 ;;
   esac

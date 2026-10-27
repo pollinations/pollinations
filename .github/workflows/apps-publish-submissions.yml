@@ -137,7 +137,7 @@ jobs:
           - ${APP_DESCRIPTION}
 
           ${FIXES}")
-          gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto
+          gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto --squash
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
 
       - name: Wait for merge before publishing the next app
@@ -156,14 +156,7 @@ jobs:
             fi
             sleep 10
           done
-          echo "Catalog PR did not merge within 10 minutes; retrying once"
-          gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto
-          sleep 10
-          STATE=$(gh pr view "$PR_URL" --repo "$GITHUB_REPOSITORY" --json state --jq .state)
-          if [ "$STATE" = "MERGED" ]; then
-            exit 0
-          fi
-          echo "Catalog PR is still open; check its required checks and merge queue status"
+          echo "Catalog PR did not merge within 10 minutes; check its required checks and merge queue status"
           exit 1
 
       - name: Remove review label

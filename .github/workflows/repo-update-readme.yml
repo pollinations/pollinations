@@ -79,7 +79,7 @@ jobs:
             --base main)
           echo "Created PR: $PR_URL"
 
-          gh pr merge "$PR_URL" --auto
+          gh pr merge "$PR_URL" --auto --squash
 
       - name: Report failure as an issue
         if: failure()

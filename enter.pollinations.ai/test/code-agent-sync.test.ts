@@ -93,10 +93,11 @@ describe("code agent sync", () => {
                 ).toBe(source);
             }
 
+            // The throttle answers before D1, so it needs no database.
             const throttled = await publicAgentSyncRoutes.request(
                 `/${id}/sync`,
                 { method: "POST" },
-                bindings,
+                { ...bindings, DB: undefined },
             );
             expect(throttled.status).toBe(429);
             expect(calls).toHaveLength(4);

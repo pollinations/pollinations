@@ -88,6 +88,22 @@ export function createGateway(getAgent, fetchImpl = globalThis.fetch) {
         if (path.startsWith("/_internal/") || path === "/run") {
             return new Response("Not found", { status: 404 });
         }
+        // Every bearer check is a D1 lookup in Enter, which sees all of this
+        // Worker's checks from one Cloudflare IP, so cap each client IP here.
+        const ip = request.headers.get("cf-connecting-ip");
+        if (ip && !(await env.IP_RATE_LIMITER.limit({ key: ip })).success) {
+            return Response.json(
+                { detail: "Too many requests. Please slow down." },
+                {
+                    status: 429,
+                    headers: {
+                        "Access-Control-Allow-Origin": "*",
+                        "Cache-Control": "no-store",
+                        "Retry-After": "10",
+                    },
+                },
+            );
+        }
         const isChat =
             path === "/v1/chat/completions" && request.method === "POST";
         if (isChat && !(await authenticateBearer(request, fetchImpl))) {

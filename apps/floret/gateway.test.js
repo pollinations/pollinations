@@ -130,6 +130,38 @@ test("a rejected bearer never reaches the agent", async () => {
     assert.equal(allocations, 0);
 });
 
+test("one client IP is capped before its bearer checks reach Enter", async () => {
+    const { calls, env, gateway } = setup();
+    // Counts per key like the Cloudflare binding, with a limit of 2.
+    const counts = new Map();
+    env.IP_RATE_LIMITER = {
+        async limit({ key }) {
+            counts.set(key, (counts.get(key) ?? 0) + 1);
+            return { success: counts.get(key) <= 2 };
+        },
+    };
+    const send = (key, ip) =>
+        gateway(
+            new Request("https://floret.test/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "CF-Connecting-IP": ip,
+                },
+            }),
+            env,
+        );
+    const statuses = [];
+    for (const key of ["sk_a", "sk_b", "sk_c"]) {
+        statuses.push((await send(key, "203.0.113.7")).status);
+    }
+    assert.deepEqual(statuses, [200, 200, 429]);
+    assert.equal(calls.auth, 2);
+    const blocked = await send("sk_d", "203.0.113.7");
+    assert.equal(blocked.headers.get("Retry-After"), "10");
+    assert.equal((await send("sk_e", "198.51.100.1")).status, 200);
+});
+
 test("read requests preserve current service and do not review catalog", async () => {
     const { calls, env, ctx, gateway, pending } = setup();
     assert.equal(

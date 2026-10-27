@@ -242,6 +242,17 @@ function codeAgentListingFields(repository: {
 }
 
 async function syncCodeAgent(c: Context<Env>, id: string) {
+    // Check the throttle before D1 so repeated triggers stay off it. Set it
+    // only for a real agent, so made-up ids cost no KV writes.
+    const throttleKey = `code-agent-sync:throttle:${id}`;
+    const now = Date.now();
+    const throttleUntil = Number(await c.env.KV.get(throttleKey));
+    if (Number.isFinite(throttleUntil) && throttleUntil > now) {
+        throw new HTTPException(429, {
+            message: "Agent sync is limited to once every 30 seconds",
+        });
+    }
+
     const db = drizzle(c.env.DB, { schema });
     const row = await db.query.communityEndpoint.findFirst({
         where: and(
@@ -255,14 +266,6 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
         throw new Error(`Agent ${id} has invalid configuration`);
     }
 
-    const throttleKey = `code-agent-sync:throttle:${id}`;
-    const now = Date.now();
-    const throttleUntil = Number(await c.env.KV.get(throttleKey));
-    if (Number.isFinite(throttleUntil) && throttleUntil > now) {
-        throw new HTTPException(429, {
-            message: "Agent sync is limited to once every 30 seconds",
-        });
-    }
     await c.env.KV.put(
         throttleKey,
         String(now + CODE_AGENT_SYNC_THROTTLE_SECONDS * 1000),

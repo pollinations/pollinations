@@ -24,6 +24,16 @@
     { "tag": "v2", "new_sqlite_classes": ["FloretShellContainer", "FloretCatalog"] },
     { "tag": "v3", "deleted_classes": ["FloretShellContainer"] }
   ],
+  // Per client IP, before bearer checks reach Enter's D1; see gateway.js.
+  // Oct 20-27: busiest client 242 requests in a minute, Gen's calls (from
+  // Cloudflare's shared Workers IP) at most 16. Namespace 1006 is Floret's own.
+  "ratelimits": [
+    {
+      "name": "IP_RATE_LIMITER",
+      "namespace_id": "1006",
+      "simple": { "limit": 100, "period": 10 }
+    }
+  ],
   // Existing custom domains are Dashboard-managed. Omit routes so deployments
   // preserve their bindings without requiring zone-edit permissions.
   "observability": { "enabled": true }

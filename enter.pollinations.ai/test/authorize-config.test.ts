@@ -7,6 +7,7 @@ import {
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getConsentPermissionChoices,
     getGrantedOAuthScope,
     getPreselectedConsentPermissions,
     MAX_LINK_CONSENT_BUDGET,
@@ -15,6 +16,23 @@ import {
 import { parseAuthorizeRedirectUrl } from "@shared/auth/redirect-uri.ts";
 import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
+
+describe("getConsentPermissionChoices", () => {
+    // Apps that redirect back never get account admin; polli's device login
+    // still can.
+    it("offers keys only in the device flow", () => {
+        const requested = new Set(["usage", "keys", "machines"]);
+        expect(getConsentPermissionChoices(requested, false)).toEqual([
+            "usage",
+            "machines",
+        ]);
+        expect(getConsentPermissionChoices(requested, true)).toEqual([
+            "usage",
+            "keys",
+            "machines",
+        ]);
+    });
+});
 
 describe("getGrantedOAuthScope", () => {
     it.each([

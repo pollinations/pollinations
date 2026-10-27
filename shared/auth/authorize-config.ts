@@ -126,6 +126,21 @@ export function getPreselectedConsentPermissions(
     return preselected?.length ? preselected : null;
 }
 
+/**
+ * The requested permissions the consent screen offers. Only the device flow
+ * (polli) offers `keys`: an app that redirects back never gets account admin.
+ */
+export function getConsentPermissionChoices(
+    requested: ReadonlySet<string>,
+    isDeviceFlow: boolean,
+): string[] {
+    return CONSENT_PERMISSIONS.filter(
+        (permission) =>
+            requested.has(permission) &&
+            (isDeviceFlow || permission !== "keys"),
+    );
+}
+
 export function getAuthorizeInitialPermissions({
     models,
     budget,

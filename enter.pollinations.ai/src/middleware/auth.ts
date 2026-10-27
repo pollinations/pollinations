@@ -80,7 +80,6 @@ export const auth = (options: AuthOptions) =>
                 const result = await authenticateApiKeyRequest({
                     request: c.req.raw,
                     env: c.env,
-                    client,
                     ctx: c.executionCtx,
                 });
                 if (!result) return null;

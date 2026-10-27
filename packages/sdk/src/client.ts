@@ -191,13 +191,6 @@ async function fetchWithTimeout(
     }
 }
 
-// Strip API key from URL for safe sharing
-function stripKeyFromUrl(url: string): string {
-    const urlObj = new URL(url);
-    urlObj.searchParams.delete("key");
-    return urlObj.toString();
-}
-
 // SSE parsing result
 interface SSEParseResult<T> {
     chunks: T[];
@@ -329,10 +322,7 @@ export class Pollinations {
         );
     }
 
-    private buildQueryParams(
-        params: Record<string, unknown>,
-        includeKey: boolean = true,
-    ): string {
+    private buildQueryParams(params: Record<string, unknown>): string {
         const searchParams = new URLSearchParams();
 
         for (const [key, value] of Object.entries(params)) {
@@ -345,11 +335,6 @@ export class Pollinations {
             } else {
                 searchParams.set(key, String(value));
             }
-        }
-
-        // Add API key to query params if set and requested
-        if (includeKey && this.apiKey) {
-            searchParams.set("key", this.apiKey);
         }
 
         return searchParams.toString();
@@ -450,7 +435,7 @@ export class Pollinations {
         options: ImageGenerateOptions = {},
     ): Promise<string> {
         const response = await this.image(prompt, options);
-        return response.url; // Already has key stripped
+        return response.url;
     }
 
     /**
@@ -496,7 +481,7 @@ export class Pollinations {
             const contentType =
                 response.headers.get("content-type") || "image/jpeg";
 
-            return { buffer, contentType, url: stripKeyFromUrl(url) };
+            return { buffer, contentType, url };
         }, "Unknown error during image generation");
     }
 
@@ -761,7 +746,7 @@ export class Pollinations {
         options: VideoGenerateOptions = {},
     ): Promise<string> {
         const response = await this.video(prompt, options);
-        return response.url; // Already has key stripped
+        return response.url;
     }
 
     /**
@@ -806,7 +791,7 @@ export class Pollinations {
             const contentType =
                 response.headers.get("content-type") || "video/mp4";
 
-            return { buffer, contentType, url: stripKeyFromUrl(url) };
+            return { buffer, contentType, url };
         }, "Unknown error during video generation");
     }
 

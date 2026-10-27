@@ -1,0 +1,52 @@
+name: Release / npm packages
+
+# Maintenance branch for @pollinations/sdk 5.0.x, which stays on npm's
+# `latest` tag while main publishes the 5.1 prereleases. Publishes when the
+# SDK version changes. The filename must match npm's trusted publisher.
+on:
+  push:
+    branches: [release/sdk-5.0]
+    paths:
+      - "packages/sdk/**"
+
+jobs:
+  publish-sdk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          check-latest: true
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies & build
+        working-directory: packages/sdk
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check if version already published
+        id: check
+        working-directory: packages/sdk
+        run: |
+          name=$(node -p "require('./package.json').name")
+          v=$(node -p "require('./package.json').version")
+          if npm view "$name@$v" version >/dev/null 2>&1; then
+            echo "Version $v already on npm — skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to NPM
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/sdk
+        run: |
+          v=$(node -p "require('./package.json').version")
+          echo "Publishing $v under dist-tag: latest"
+          npm publish --access public --tag latest

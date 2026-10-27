@@ -76,10 +76,13 @@ Bash sandbox from `.claude/settings.json`. Shell commands then:
 
 - can't read `.env`, other bots' files under `~/discord-bots`, Claude's
   credentials, `~/.ssh` or the `gh` login;
-- can't change the runtime files the updater installs;
+- can't change `.env` or the runtime files the updater installs;
 - reach only Tinybird, `gen.pollinations.ai` and `media.pollinations.ai`;
 - run without `DISCORD_TOKEN` (the Discord MCP server runs outside the sandbox
   and still gets it).
+
+The cycle gets no Read or Write tool, because those run outside the sandbox;
+it reads and writes its state files with shell commands instead.
 
 `TB_TOKEN` and `POLLI_TOKEN` stay visible to shell commands because the cycle
 uses them, so keep `POLLI_TOKEN` on a key with a pollen budget.

@@ -6,11 +6,15 @@
     "permissions": {
         "deny": [
             "Read(/.env)",
+            "Read(//proc/**)",
+            "Read(//sys/**)",
             "Read(~/.claude/.credentials.json)",
             "Read(~/.claude.json)",
             "Read(~/discord-bots/**)",
             "Read(~/.ssh/**)",
             "Read(~/.config/gh/**)",
+            "Edit(/.env)",
+            "Edit(~/pollinations/**)",
             "Edit(/CYCLE.md)",
             "Edit(/loop.sh)",
             "Edit(/update-from-repo.sh)",
@@ -41,6 +45,7 @@
                 "~/.config/gh"
             ],
             "denyWrite": [
+                "./.env",
                 "./CYCLE.md",
                 "./loop.sh",
                 "./update-from-repo.sh",

@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Device } from "../components/auth/device.tsx";
+import { pageTitle } from "../page-meta.ts";
 
 export const Route = createFileRoute("/device")({
-    head: () => ({ meta: [{ title: "Allow your device | pollinations.ai" }] }),
+    head: () => ({ meta: [{ title: pageTitle("/device") }] }),
     component: RouteComponent,
     validateSearch: (search: Record<string, unknown>) => ({
         user_code: (search.user_code as string) || "",

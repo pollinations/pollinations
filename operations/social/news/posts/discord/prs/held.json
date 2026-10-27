@@ -47,9 +47,7 @@
     "18537": {
       "merge_sha": "10865fd52f48a0af16ebdce09de6b8f60764890d",
       "merged_at": "2026-10-26T23:39:14Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/chat"
-      ]
+      "required": []
     },
     "18539": {
       "merge_sha": "7b86c60c9e9e79a436e131b49e7e524eedbf8a28",

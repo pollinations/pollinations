@@ -82,6 +82,7 @@ interface Env {
  * `byopApp`, which is null for keys not minted through the BYOP flow.
  */
 interface KeyVerifyResponse {
+    id: string;
     valid: boolean;
     type: string;
     name: string | null;
@@ -93,6 +94,7 @@ interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
+    keyId: string | null;
     userId: string | null;
     byopClientKeyId: string | null;
 }
@@ -118,6 +120,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
         valid: true,
         type: data.type,
         name: data.name ?? null,
+        keyId: data.id ?? null,
         userId: data.userId ?? null,
         byopClientKeyId: data.byopApp?.clientKeyId ?? null,
     };
@@ -444,6 +447,24 @@ api.post(
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
+        // Stored on the file and logged, so finding who uploaded it needs
+        // neither the key name nor Enter's D1.
+        const uploader = {
+            uploadedBy: authResult.name || "unknown",
+            keyType: authResult.type,
+            keyId: authResult.keyId ?? "",
+            userId: authResult.userId ?? "",
+        };
+        const logUpload = (id: string, size: number, contentType: string) =>
+            console.log(
+                JSON.stringify({
+                    event: "upload",
+                    id,
+                    size,
+                    contentType,
+                    ...uploader,
+                }),
+            );
 
         const uploadMaxSize =
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -545,9 +566,9 @@ api.post(
                     contentType: requestContentType,
                     fileName: rawUploadFileName(c.req.raw.headers),
                     size: bodySize,
-                    uploadedBy: authResult.name || "unknown",
-                    keyType: authResult.type,
+                    ...uploader,
                 });
+                logUpload(upload.id, upload.size, upload.contentType);
                 if (privacyApplied) c.header("X-Safety-Applied", "privacy");
                 return c.json(upload);
             } catch (error) {
@@ -751,8 +772,7 @@ api.post(
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
                     originalName: fileName || "",
-                    uploadedBy: authResult.name || "",
-                    keyType: authResult.type,
+                    ...uploader,
                 },
             };
             let stored: R2Object | null;
@@ -794,16 +814,7 @@ api.post(
                 });
             }
 
-            console.log(
-                JSON.stringify({
-                    event: "upload",
-                    id,
-                    size: fileSize,
-                    contentType,
-                    keyType: authResult.type,
-                    uploadedBy: authResult.name || "unknown",
-                }),
-            );
+            logUpload(id, fileSize, contentType);
 
             if (privacyApplied) c.header("X-Safety-Applied", "privacy");
             return c.json({

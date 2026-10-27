@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.22] - 2026-10-27
+
+### Security
+- `image()`, `video()` and `audio()` no longer add the API key to the request
+  URL as `?key=`. The key is sent only in the `Authorization` header, so it
+  stays out of proxy and HTTP debug logs.
+
 ## [5.1.0-alpha.21] - 2026-10-23
 
 ### Added

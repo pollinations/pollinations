@@ -53,7 +53,8 @@ export function stderrToTerminal() {
     }) as typeof process.stderr.write;
 }
 
-// Azure's port URLs name the sandbox first.
+// The domain connect returns, gen's for both providers. Azure's own port URLs
+// name the sandbox first.
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
     s.domain?.endsWith(".adcproxy.io")
         ? `${scheme}://${s.sandboxID}--${port}.${s.domain}`
@@ -190,6 +191,9 @@ export function setupSsh() {
             "    IdentitiesOnly yes",
             `    UserKnownHostsFile "${join(SSH_DIR, "known_hosts")}"`,
             "    StrictHostKeyChecking accept-new",
+            // Gen serves sandbox ports on Cloudflare, which closes a
+            // WebSocket after 100 seconds without data.
+            "    ServerAliveInterval 30",
             `    ProxyCommand ${polli} sandbox proxy %h`,
             // Later ssh, scp and rsync reuse the first connection, up to 10
             // minutes after it ends.

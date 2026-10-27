@@ -15,6 +15,7 @@ export type Env = {
         CODE_AGENTS?: DispatchNamespace;
         SITES?: DispatchNamespace;
         SITES_HOST_SUFFIX?: string;
+        SANDBOX_DOMAIN?: string;
         DOCS_APP_KEY?: string;
     };
     Variables: RequestIdVariables &

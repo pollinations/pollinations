@@ -37,7 +37,13 @@ import {
     createDocsRoutes,
     LLMS_FULL_TEXT,
 } from "./routes/docs.ts";
-import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import {
+    E2B_PATH,
+    e2bRoutes,
+    keepSandboxes,
+    sandboxPortHost,
+    servePort,
+} from "./routes/e2b.ts";
 import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
@@ -315,8 +321,12 @@ app.notFound(async (c: Context<Env>) => {
 app.onError(handleError);
 
 export default {
-    fetch: (request: Request, env, ctx) =>
-        serveSite(request, env) ?? app.fetch(request, env, ctx),
+    fetch: (request: Request, env, ctx) => {
+        // A port host belongs to a sandbox, a site's host to the site.
+        const port = sandboxPortHost(env, new URL(request.url).hostname);
+        if (port) return servePort(request, env, ctx, port);
+        return serveSite(request, env) ?? app.fetch(request, env, ctx);
+    },
     // The only cron, every 5 minutes (wrangler.toml). Leases end only after
     // the keeper has renewed the kept sandboxes.
     scheduled: async (_controller, env, ctx) => {

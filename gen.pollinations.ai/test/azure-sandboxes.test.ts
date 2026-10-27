@@ -181,7 +181,8 @@ test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's r
         envdAccessToken: string;
         domain: string;
     }>();
-    expect(sandbox.domain).toBe("eastus.adcproxy.io");
+    // E2B's SDKs reach it through gen, like E2B's sandboxes.
+    expect(sandbox.domain).toBe("pollinations.app");
     const [box] = azure.boxes;
     expect(box).toMatchObject({
         id: sandbox.sandboxID,
@@ -380,7 +381,7 @@ test("Azure templates refuse to start until Azure is configured", async () => {
     expect(envdCall.status).toBe(404);
 });
 
-test("E2B's SDKs reach envd in either provider's sandboxes through gen", async () => {
+test("E2B's SDKs reach envd and ports in either provider's sandboxes through gen", async () => {
     const azure = stubAzure();
     const id = crypto.randomUUID();
     const envdCall = (sandbox: string, port: string) =>
@@ -410,4 +411,31 @@ test("E2B's SDKs reach envd in either provider's sandboxes through gen", async (
     // Only envd's port.
     expect((await envdCall(id, "8022")).status).toBe(400);
     expect((await envdCall("../x", "49983")).status).toBe(404);
+
+    // At the hosts the returned domain names, envd and ports alike, for
+    // gen's sandboxes only.
+    const owner = await sandboxKey();
+    const created = await post(owner.key, "/v2/sandboxes", {
+        templateID: "pollinations-azure",
+        timeout: 300,
+        metadata: {},
+    });
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const visit = async (host: string) => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(`https://${host}/files?path=/x`),
+            azureEnv,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response;
+    };
+    for (const port of [49983, 8022]) {
+        await visit(`${port}-${sandboxID}.pollinations.app`);
+        expect(azure.envd.at(-1)?.url).toBe(
+            `https://${sandboxID}--${port}.eastus.adcproxy.io/files?path=/x`,
+        );
+    }
+    expect((await visit(`8022-${id}.pollinations.app`)).status).toBe(404);
 });

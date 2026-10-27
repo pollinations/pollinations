@@ -33,7 +33,6 @@ The template sets where a sandbox runs: `pollinations` and `pollinations-large` 
 - Each provider has its own rates; see [current rates](https://gen.pollinations.ai/alpha/e2b/pricing).
 - On Azure, a sandbox stops at the first 5-minute mark after its timeout, and that time is billed.
 - ssh into sandboxes on Azure needs polli 0.1.59 or newer: update with `npm i -g @pollinations/cli && polli sandbox ssh-config`.
-- E2B's SDKs reach sandboxes on Azure only with `E2B_SANDBOX_URL` set; see [Sandboxes API](#tag/sandboxes-api).
 
 ### Use E2B SDKs or the API
 
@@ -46,4 +45,7 @@ E2B's SDKs, CLI and REST API work with a Pollinations key: see [Sandboxes API](#
 - API timeouts above 600 seconds renew in 10-minute windows until the deadline, subject to credits, key budget and validity. E2B limits runs to 24 hours, so Pollinations pauses and resumes them once a day, preserving files, memory and processes but dropping connections.
 - SSH and VS Code connections keep it running. Without a background timeout, it pauses 15–20 minutes after the last connection closes (5–10 without SSH connection sharing, including Windows). For background work, `polli sandbox timeout <id> 0` keeps it running until stopped, subject to credits and key validity. The API requires seconds; it has no unlimited setting.
 - `polli sandbox pause <id>` preserves state; `polli sandbox kill <id>` deletes the sandbox and its files.
+- On E2B sandboxes, an API timeout above 600 seconds can come with `idleTimeout` (seconds, at least 300): the sandbox then pauses after that long without activity and resumes on the next connect or request to a shared port. Activity is a request to a shared port, a connect (SSH and VS Code renew one), an API request with the sandbox's own key, or CPU use of 5% or more.
+- A running sandbox's ports are at `https://<port>-<id>.pollinations.app`. `PUT /alpha/e2b/sandboxes/<id>/ports/<port>` with a `secret` makes a port of an E2B sandbox take only requests that carry it, and a request there resumes the sandbox if it is paused, prepaid by the key that shared the port, so a webhook such as Telegram's (its `secret_token` in `X-Telegram-Bot-Api-Secret-Token`) can wake it.
+- `ssh <id>.polli` connects through `https://8022-<id>.pollinations.app`. With polli older than 0.1.66, update it and run `polli sandbox ssh-config` once so idle sessions stay open.
 - Sandboxes from Pollinations templates, created with a key that has the `keys` permission, get their own API key. Deleting the sandbox leaves it; revoke it on the [Keys page](https://enter.pollinations.ai/keys) when no longer needed.

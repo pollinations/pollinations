@@ -189,13 +189,6 @@ async function fetchWithTimeout<T>(
     }
 }
 
-// Strip API key from URL for safe sharing
-function stripKeyFromUrl(url: string): string {
-    const urlObj = new URL(url);
-    urlObj.searchParams.delete("key");
-    return urlObj.toString();
-}
-
 function chatStreamError(chunk: unknown): PollinationsError | null {
     if (!chunk || typeof chunk !== "object") return null;
     const { error, choices } = chunk as {
@@ -354,10 +347,7 @@ export class Pollinations {
         );
     }
 
-    private buildQueryParams(
-        params: Record<string, unknown>,
-        includeKey: boolean = true,
-    ): string {
+    private buildQueryParams(params: Record<string, unknown>): string {
         const searchParams = new URLSearchParams();
 
         for (const [key, value] of Object.entries(params)) {
@@ -378,11 +368,6 @@ export class Pollinations {
             } else {
                 searchParams.set(key, String(value));
             }
-        }
-
-        // Add API key to query params if set and requested
-        if (includeKey && this.apiKey) {
-            searchParams.set("key", this.apiKey);
         }
 
         return searchParams.toString();
@@ -442,7 +427,7 @@ export class Pollinations {
         options: ImageGenerateOptions = {},
     ): Promise<string> {
         const response = await this.image(prompt, options);
-        return response.url; // Already has key stripped
+        return response.url;
     }
 
     /**
@@ -481,7 +466,7 @@ export class Pollinations {
                 const contentType =
                     response.headers.get("content-type") || "image/jpeg";
 
-                return { buffer, contentType, url: stripKeyFromUrl(url) };
+                return { buffer, contentType, url };
             },
         );
     }
@@ -790,16 +775,13 @@ export class Pollinations {
                 400,
             );
         }
-        const query = this.buildQueryParams(
-            {
-                model: options.model,
-                image: options.referenceImage,
-                resolution: options.resolution,
-                seed: options.seed,
-                safe: options.safe,
-            },
-            false,
-        );
+        const query = this.buildQueryParams({
+            model: options.model,
+            image: options.referenceImage,
+            resolution: options.resolution,
+            seed: options.seed,
+            safe: options.safe,
+        });
         const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`;
         return fetchWithTimeout(
             url,
@@ -880,7 +862,7 @@ export class Pollinations {
                 400,
             );
         return this.submitMedia(
-            stripKeyFromUrl(this.buildImageUrl(prompt, options)),
+            this.buildImageUrl(prompt, options),
             options.signal,
         );
     }
@@ -896,7 +878,7 @@ export class Pollinations {
                 400,
             );
         return this.submitMedia(
-            stripKeyFromUrl(this.buildVideoUrl(prompt, options)),
+            this.buildVideoUrl(prompt, options),
             options.signal,
         );
     }
@@ -911,15 +893,12 @@ export class Pollinations {
                 "INVALID_INPUT",
                 400,
             );
-        const query = this.buildQueryParams(
-            {
-                voice: options.voice,
-                model: options.model,
-                duration: options.duration,
-                seed: options.seed,
-            },
-            false,
-        );
+        const query = this.buildQueryParams({
+            voice: options.voice,
+            model: options.model,
+            duration: options.duration,
+            seed: options.seed,
+        });
         return this.submitMedia(
             `${this.baseUrl}/audio/${encodeURIComponent(text)}${query ? `?${query}` : ""}`,
             options.signal,
@@ -936,16 +915,13 @@ export class Pollinations {
                 "INVALID_INPUT",
                 400,
             );
-        const query = this.buildQueryParams(
-            {
-                model: options.model,
-                image: options.referenceImage,
-                resolution: options.resolution,
-                seed: options.seed,
-                safe: options.safe,
-            },
-            false,
-        );
+        const query = this.buildQueryParams({
+            model: options.model,
+            image: options.referenceImage,
+            resolution: options.resolution,
+            seed: options.seed,
+            safe: options.safe,
+        });
         return this.submitMedia(
             `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`,
             options.signal,
@@ -1476,10 +1452,10 @@ export class Pollinations {
     async modelStatus(
         options: ModelStatusOptions = {},
     ): Promise<ModelStatusResponse> {
-        const query = this.buildQueryParams(
-            { traffic: options.traffic, minutes: options.minutes },
-            false,
-        );
+        const query = this.buildQueryParams({
+            traffic: options.traffic,
+            minutes: options.minutes,
+        });
         return this.getJson<ModelStatusResponse>(
             `${this.baseUrl}/models/status${query ? `?${query}` : ""}`,
             options.signal,

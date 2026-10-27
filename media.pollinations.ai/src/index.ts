@@ -1,5 +1,7 @@
+import { extractApiKey } from "@shared/auth/api-key.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { rateLimit } from "@shared/rate-limit.ts";
 import {
     invalidSafeTokens,
     parseSafeFeatures,
@@ -8,6 +10,7 @@ import {
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 import {
     describeRoute,
     openAPIRouteHandler,
@@ -79,6 +82,7 @@ interface Env {
  * `byopApp`, which is null for keys not minted through the BYOP flow.
  */
 interface KeyVerifyResponse {
+    id: string;
     valid: boolean;
     type: string;
     name: string | null;
@@ -90,39 +94,36 @@ interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
+    keyId: string | null;
     userId: string | null;
     byopClientKeyId: string | null;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    try {
-        const res = await fetch(KEY_VERIFY_URL, {
-            headers: { Authorization: `Bearer ${apiKey}` },
+    const res = await fetch(KEY_VERIFY_URL, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    }).catch(() => undefined);
+    // Only a 4xx means a bad key. A throttled or failing check must not tell
+    // the owner of a valid key that it is invalid.
+    if (!res || res.status === 429 || res.status >= 500) {
+        throw new HTTPException(503, {
+            message: "API key check unavailable. Please retry.",
         });
-        if (!res.ok) return null;
-        const data = await res.json<KeyVerifyResponse>();
-        if (!data.valid) return null;
-        // Normalize: an enter deployment that predates the identity fields
-        // omits them, and `undefined` would slip past the `=== null` guards
-        // downstream — never treat an unattested key as user-attached.
-        return {
-            valid: true,
-            type: data.type,
-            name: data.name ?? null,
-            userId: data.userId ?? null,
-            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
-        };
-    } catch {
-        return null;
     }
-}
-
-function extractApiKey(req: Request): string | null {
-    const bearer = req.headers
-        .get("authorization")
-        ?.match(/^Bearer (.+)$/)?.[1];
-    if (bearer) return bearer;
-    return new URL(req.url).searchParams.get("key");
+    if (!res.ok) return null;
+    const data = await res.json<KeyVerifyResponse>();
+    if (!data.valid) return null;
+    // Normalize: an enter deployment that predates the identity fields
+    // omits them, and `undefined` would slip past the `=== null` guards
+    // downstream — never treat an unattested key as user-attached.
+    return {
+        valid: true,
+        type: data.type,
+        name: data.name ?? null,
+        keyId: data.id ?? null,
+        userId: data.userId ?? null,
+        byopClientKeyId: data.byopApp?.clientKeyId ?? null,
+    };
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -305,6 +306,17 @@ const MediaListQuerySchema = z.object({
 
 const api = new Hono<{ Bindings: Env }>();
 
+// Every key check is a D1 lookup in Enter, so cap each key and client IP
+// before it; wrangler.toml sets the limits.
+const keyCheckRateLimit = rateLimit({ byIp: true });
+const RateLimitedResponse = {
+    description:
+        "Too many requests from this API key or IP address; retry after `Retry-After` seconds",
+};
+const KeyCheckUnavailableResponse = {
+    description: "The API key check is temporarily unavailable; retry",
+};
+
 api.post(
     "/upload",
     describeRoute({
@@ -395,6 +407,12 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            403: {
+                description: "Publishable (pk_) keys can't upload",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             409: {
                 description:
                     "The custom ID already has a file or gallery entry; nothing was replaced",
@@ -409,6 +427,7 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
             500: {
                 description:
                     "Upload failed. The file may already have been stored, so retrying a custom ID can return 409.",
@@ -416,8 +435,10 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            503: KeyCheckUnavailableResponse,
         },
     }),
+    keyCheckRateLimit,
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {
@@ -432,6 +453,32 @@ api.post(
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
+        // Publishable keys ship inside public clients, so anyone holding one
+        // could host files on the owner's account; uploads are secret-key only.
+        if (authResult.type !== "secret") {
+            return c.json(
+                { error: "Uploading media requires a secret (sk_) API key" },
+                403,
+            );
+        }
+        // Stored on the file and logged, so finding who uploaded it needs
+        // neither the key name nor Enter's D1.
+        const uploader = {
+            uploadedBy: authResult.name || "unknown",
+            keyType: authResult.type,
+            keyId: authResult.keyId ?? "",
+            userId: authResult.userId ?? "",
+        };
+        const logUpload = (id: string, size: number, contentType: string) =>
+            console.log(
+                JSON.stringify({
+                    event: "upload",
+                    id,
+                    size,
+                    contentType,
+                    ...uploader,
+                }),
+            );
 
         const uploadMaxSize =
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -533,9 +580,9 @@ api.post(
                     contentType: requestContentType,
                     fileName: rawUploadFileName(c.req.raw.headers),
                     size: bodySize,
-                    uploadedBy: authResult.name || "unknown",
-                    keyType: authResult.type,
+                    ...uploader,
                 });
+                logUpload(upload.id, upload.size, upload.contentType);
                 if (privacyApplied) c.header("X-Safety-Applied", "privacy");
                 return c.json(upload);
             } catch (error) {
@@ -739,8 +786,7 @@ api.post(
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
                     originalName: fileName || "",
-                    uploadedBy: authResult.name || "",
-                    keyType: authResult.type,
+                    ...uploader,
                 },
             };
             let stored: R2Object | null;
@@ -782,16 +828,7 @@ api.post(
                 });
             }
 
-            console.log(
-                JSON.stringify({
-                    event: "upload",
-                    id,
-                    size: fileSize,
-                    contentType,
-                    keyType: authResult.type,
-                    uploadedBy: authResult.name || "unknown",
-                }),
-            );
+            logUpload(id, fileSize, contentType);
 
             if (privacyApplied) c.header("X-Safety-Applied", "privacy");
             return c.json({
@@ -939,8 +976,11 @@ api.delete(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
+            503: KeyCheckUnavailableResponse,
         },
     }),
+    keyCheckRateLimit,
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {
@@ -1153,7 +1193,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
+                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a secret pollinations.ai API key (`sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {
@@ -1162,7 +1202,7 @@ app.get("/openapi.json", async (c, next) => {
                         type: "http",
                         scheme: "bearer",
                         bearerFormat: "API Key",
-                        description: "pollinations.ai API key (pk_ or sk_)",
+                        description: "Secret pollinations.ai API key (sk_)",
                     },
                 },
             },

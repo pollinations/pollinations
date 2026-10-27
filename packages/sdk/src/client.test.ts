@@ -663,6 +663,33 @@ describe("Pollinations server-owned defaults", () => {
     });
 });
 
+describe("Pollinations media credentials", () => {
+    it("sends the key only in the Authorization header", async () => {
+        const storedUrl = "https://media.pollinations.ai/stored-media";
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                headers: { link: `<${storedUrl}>; rel="enclosure"` },
+            }),
+        );
+        const client = newClient();
+
+        const image = await client.image("an owl", { seed: 1 });
+        const video = await client.video("an owl flies", { duration: 4 });
+        await client.audio("hello", { voice: "nova" });
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        for (const [url, init] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("key")).toBe(false);
+            expect((init as RequestInit).headers).toMatchObject({
+                Authorization: "Bearer sk_test",
+            });
+        }
+        expect(image.url).toBe(fetchMock.mock.calls[0][0]);
+        expect(video.url).toBe(storedUrl);
+    });
+});
+
 describe("Pollinations video reference media", () => {
     it("videoUrl returns the stored media enclosure URL for sharing", async () => {
         const storedUrl = "https://media.pollinations.ai/0123456789abcdef.mp4";
@@ -739,7 +766,6 @@ describe("Pollinations video reference media", () => {
             );
             expect([...url.searchParams.keys()].sort()).toEqual([
                 "image",
-                "key",
                 "reference_audios",
                 "reference_images",
                 "reference_videos",

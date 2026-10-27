@@ -2,13 +2,20 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [5.1.0-alpha.22] - 2026-10-27
+## [5.1.0-alpha.23] - 2026-10-28
 
 ### Fixed
 - Video responses expose the stored media URL from the `rel="enclosure"` Link
   header, or `undefined` if absent, instead of the generation URL. `videoUrl()`
   returns that shareable file URL or throws `NO_VIDEO_URL` when it is absent;
   `video()` still returns the video buffer.
+
+## [5.1.0-alpha.22] - 2026-10-27
+
+### Security
+- `image()`, `video()` and `audio()` no longer add the API key to the request
+  URL as `?key=`. The key is sent only in the `Authorization` header, so it
+  stays out of proxy and HTTP debug logs.
 
 ## [5.1.0-alpha.21] - 2026-10-23
 

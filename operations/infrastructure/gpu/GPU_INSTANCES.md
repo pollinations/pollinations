@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-09-26
+Last updated: 2026-10-27
 
 ## Capacity Summary
 
@@ -15,6 +15,16 @@ Last updated: 2026-09-26
 At capture time, the five running Vast instances cost **$1.060148/hr** in total
 (**$763.31 per 30-day month**, 720 hours, excluding metered inference fallbacks).
 All five are production workers; there is no isolated canary left running.
+
+### 2026-10-27 — cloudflared security upgrade
+
+All five workers moved to `cloudflared` 2026.10.3, which stops trusting the
+weak-key eMudhra intermediates. Each host first ran a temporary replica of its
+own tunnel, so new requests kept flowing while the main connector restarted.
+Flux and Z-Image had been running the older `cloudflared` bundled with the
+Vast base image, which comes first on `PATH`; `/opt/instance-tools/bin/cloudflared`
+now points at the packaged `/usr/bin/cloudflared`. Every `setup-vast.sh` now runs
+`install-cloudflared.sh`, which enforces 2026.10.2 or newer.
 
 ### 2026-09-26 — DreamShaper expiry replacement
 
@@ -606,7 +616,7 @@ human promotion approval. See Cloudflare's
 
 Workers VPC requires QUIC over UDP/7844; HTTP/2 is not a valid transport for
 this binding. `setup-vast.sh` therefore pins `--protocol quic`, requires
-`cloudflared` 2026.5.2 or newer for startup connectivity prechecks, and fails
+`cloudflared` 2026.10.2 or newer (startup connectivity prechecks need 2026.5.2), and fails
 qualification if the UDP precheck fails or the tunnel does not establish four
 healthy connections with zero request errors. A host that briefly registers
 four connections after a failed UDP precheck is still disqualified.

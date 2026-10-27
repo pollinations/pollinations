@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildWhisperForm } from "../src/routes/audio.ts";
 import {
     assertTranscriptionResponseFormat,
     buildTranscriptionResponse,
@@ -100,5 +101,30 @@ describe("whisper through the shared transcription formatter", () => {
         ).toThrow(
             "Unsupported response_format for whisper model: diarized_json",
         );
+    });
+});
+
+describe("whisper request", () => {
+    it("forwards prompt and temperature, keeping temperature 0", () => {
+        for (const isDeepInfra of [true, false]) {
+            const form = buildWhisperForm({
+                file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
+                language: "en",
+                prompt: "Pollinations uses Pollen.",
+                temperature: 0,
+                isDeepInfra,
+            });
+            expect(form.get("prompt")).toBe("Pollinations uses Pollen.");
+            expect(form.get("temperature")).toBe("0");
+        }
+    });
+
+    it("omits prompt and temperature when not supplied", () => {
+        const form = buildWhisperForm({
+            file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
+            isDeepInfra: false,
+        });
+        expect(form.has("prompt")).toBe(false);
+        expect(form.has("temperature")).toBe(false);
     });
 });

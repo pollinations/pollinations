@@ -235,11 +235,40 @@ test("operation removals use method and path, not titles, groups or order", () =
     assert.throws(() => removedOperations("Unrecognized format", candidate));
 });
 
-test("a removal disables existing auto-merge before pushing and stops if disabling fails", async () => {
+test("a removal stops automatic merging before pushing and stops if cancellation fails", async () => {
     const publication = regeneration.jobs["regenerate-docs"].steps.find(
         (step) => step.name === "Create or update docs PR",
     ).run;
-    for (const disableStatus of [0, 1]) {
+    for (const {
+        autoMerge = true,
+        queued = false,
+        disableStatus = 0,
+        queryStatus = 0,
+        dequeueStatus = 0,
+        expected,
+    } of [
+        { queued: true, expected: "queue\ndequeue\ndisable\npush\nedit\n" },
+        { expected: "queue\ndisable\npush\nedit\n" },
+        { disableStatus: 1, expected: "queue\ndisable\n" },
+        {
+            queued: true,
+            disableStatus: 1,
+            expected: "queue\ndequeue\ndisable\n",
+        },
+        {
+            autoMerge: false,
+            queued: true,
+            expected: "queue\ndequeue\npush\nedit\n",
+        },
+        {
+            autoMerge: false,
+            queued: true,
+            dequeueStatus: 1,
+            expected: "queue\ndequeue\n",
+        },
+        { queryStatus: 1, expected: "queue\n" },
+        { autoMerge: false, expected: "queue\npush\nedit\n" },
+    ]) {
         const directory = await mkdtemp(join(tmpdir(), "docs-publication-"));
         try {
             const remote = join(directory, "remote.git");
@@ -263,7 +292,13 @@ test("a removal disables existing auto-merge before pushing and stops if disabli
             git("push", "--quiet", "origin", "main");
             await writeFile(
                 join(remote, "hooks/pre-receive"),
-                '#!/bin/sh\necho push >> "$EVENTS"\n',
+                `#!/bin/sh
+if [ "$AUTO_MERGE" = "true" ] || [ "$QUEUED" = "true" ]; then
+  echo "Automatic merging is still enabled at push time" >&2
+  exit 1
+fi
+echo push >> "$EVENTS"
+`,
                 { mode: 0o755 },
             );
             await writeFile(join(work, "APIDOCS.md"), candidate);
@@ -275,14 +310,35 @@ test("a removal disables existing auto-merge before pushing and stops if disabli
                     RUNNER_TEMP: directory,
                     EVENTS: events,
                     DISABLE_STATUS: String(disableStatus),
+                    QUERY_STATUS: String(queryStatus),
+                    DEQUEUE_STATUS: String(dequeueStatus),
+                    QUEUED: String(queued),
+                    AUTO_MERGE: String(autoMerge),
+                    PR_JSON: JSON.stringify({
+                        number: 42,
+                        id: "PR_test",
+                        autoMergeRequest: autoMerge ? {} : null,
+                    }),
                     GITHUB_SERVER_URL: "https://github.com",
                     GITHUB_REPOSITORY: "pollinations/pollinations",
                 },
                 input: `
 gh() {
   case "$*" in
-    "pr list "*) echo '{"number":42,"autoMergeRequest":{}}' ;;
-    "pr merge --disable-auto 42") echo disable >> "$EVENTS"; return "$DISABLE_STATUS" ;;
+    "pr list "*) echo "$PR_JSON" ;;
+    "pr merge --disable-auto 42")
+      if [ "$QUEUED" = "true" ]; then
+        echo "Pull request is already queued to merge" >&2
+        return 0
+      fi
+      echo disable >> "$EVENTS"
+      if [ "$DISABLE_STATUS" = "0" ]; then AUTO_MERGE=false; fi
+      return "$DISABLE_STATUS" ;;
+    "api graphql "*"isInMergeQueue"*) echo queue >> "$EVENTS"; echo "$QUEUED"; return "$QUERY_STATUS" ;;
+    "api graphql "*"dequeuePullRequest"*)
+      echo dequeue >> "$EVENTS"
+      if [ "$DEQUEUE_STATUS" = "0" ]; then QUEUED=false; fi
+      return "$DEQUEUE_STATUS" ;;
     "pr edit 42 "*) echo edit >> "$EVENTS" ;;
     *) echo "Unexpected GitHub command: $*" >&2; return 1 ;;
   esac
@@ -290,11 +346,8 @@ gh() {
 ${publication}`,
             });
             assert.equal(result.status, 1, result.stderr);
-            assert.equal(
-                await readFile(events, "utf8"),
-                disableStatus ? "disable\n" : "disable\npush\nedit\n",
-            );
-            if (!disableStatus) {
+            assert.equal(await readFile(events, "utf8"), expected);
+            if (expected.includes("push\n")) {
                 assert.match(
                     result.stdout,
                     /::error::[^\n]*https:\/\/github\.com\/pollinations\/pollinations\/pull\/42/,

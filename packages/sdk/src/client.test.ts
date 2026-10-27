@@ -332,3 +332,26 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
         });
     });
 });
+
+describe("Pollinations media credentials", () => {
+    it("sends the key only in the Authorization header", async () => {
+        fetchMock.mockImplementation(async () =>
+            makeResponse(null, { kind: "binary" }),
+        );
+        const client = newClient();
+
+        const image = await client.image("an owl", { seed: 1 });
+        const video = await client.video("an owl flies", { duration: 4 });
+        await client.audio("hello", { voice: "nova" });
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        for (const [url, init] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("key")).toBe(false);
+            expect((init as RequestInit).headers).toMatchObject({
+                Authorization: "Bearer sk_test",
+            });
+        }
+        expect(image.url).toBe(fetchMock.mock.calls[0][0]);
+        expect(video.url).toBe(fetchMock.mock.calls[1][0]);
+    });
+});

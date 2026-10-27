@@ -64,12 +64,12 @@ export const FFMPEG_MCP_PRICE_PER_SECOND =
 
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
-// TODO(pricing): launch proposals pegged just under Exa; lixSearch reports no
-// per-call cost, so the worker bills these flat rates. Maintainers may adjust.
-export const LIXSEARCH_SEARCH_PRICE_PER_REQUEST = 0.005;
+// lixSearch reports no per-call cost, so the worker bills flat rates: search/map
+// under Exa, pages at Exa contents parity, research covering its multi-step LLM calls.
+export const LIXSEARCH_SEARCH_PRICE_PER_REQUEST = 0.003;
 export const LIXSEARCH_SCRAPE_PRICE_PER_PAGE = 0.001;
 export const LIXSEARCH_CRAWL_PRICE_PER_PAGE = 0.001;
-export const LIXSEARCH_RESEARCH_PRICE_PER_REQUEST = 0.02;
+export const LIXSEARCH_RESEARCH_PRICE_PER_REQUEST = 0.025;
 export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
 export const COMPUTER_TOOL_CALL_PRICE = 0.0002;
 const COMPUTER_MCP_PRICING = {

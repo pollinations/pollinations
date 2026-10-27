@@ -148,7 +148,7 @@ test("searches and reports a search request", async () => {
     assert.equal(calls[0].url, `${API_URL}/v1/search`);
     assert.deepEqual(calls[0].body, { query: "Pollinations", limit: 3 });
     assert.deepEqual(usage(responses.at(-1)), {
-        cost: "0.005",
+        cost: "0.003",
         tool: "lixsearch_search",
         status: "200",
         adjustmentId: "lixsearch.search.v1",
@@ -214,7 +214,7 @@ test("runs deep research through chat completions", async () => {
         stream: false,
         messages: [{ role: "user", content: "What is Pollinations?" }],
     });
-    assert.equal(usage(responses.at(-1)).cost, "0.02");
+    assert.equal(usage(responses.at(-1)).cost, "0.025");
     await client.close();
 });
 

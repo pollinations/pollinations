@@ -13,6 +13,7 @@ import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
     getGrantedOAuthScope,
+    getPreselectedConsentPermissions,
     isClientMetadataUrl,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
@@ -155,7 +156,7 @@ export function Authorize() {
                                 .filter(Boolean);
                             setRequestedScopes(new Set(scopes));
                             setAccountPermissions(
-                                sanitizeAuthorizeAccountPermissions(scopes),
+                                getPreselectedConsentPermissions(scopes),
                             );
                         }
                     })

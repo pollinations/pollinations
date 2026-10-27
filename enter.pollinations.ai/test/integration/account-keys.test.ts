@@ -783,6 +783,54 @@ describe("Account Key Management API", () => {
             ).toBe(200);
         });
 
+        test("concurrent updates of a key pay for its budget once", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "two-hundred",
+                accountPermissions: ["keys"],
+                pollenBudget: 200,
+            });
+            const patchConcurrently = (id: string, body: unknown) =>
+                Promise.all(
+                    Array.from({ length: 16 }, () =>
+                        call(caller.key, `/keys/${id}`, "PATCH", body),
+                    ),
+                );
+
+            // A key without budget and an unlimited key.
+            for (const pollenBudget of [0, null]) {
+                const target = await (
+                    await call(accountToken, "/keys", "POST", {
+                        name: "target",
+                        pollenBudget,
+                    })
+                ).json();
+                const responses = await patchConcurrently(target.id, {
+                    pollenBudget: 10,
+                });
+                for (const response of responses) {
+                    expect(response.status).toBe(200);
+                }
+                expect(await budgetOf(target.key)).toBe(10);
+            }
+            expect(await budgetOf(caller.key)).toBe(180);
+
+            // Renewing to the same expiry pays for the remaining budget once.
+            const renewed = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "five-for-a-minute",
+                    pollenBudget: 5,
+                    expiresIn: 60,
+                })
+            ).json();
+            const expiresAt = new Date(
+                Math.floor(Date.now() / 1000) * 1000 + 1800_000,
+            ).toISOString();
+            await patchConcurrently(renewed.id, { expiresAt });
+            expect(await budgetOf(caller.key)).toBe(175);
+        });
+
         test("a key limited to a category can grant community models in it", async ({
             accountToken,
         }) => {

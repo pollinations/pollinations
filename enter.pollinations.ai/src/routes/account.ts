@@ -32,7 +32,7 @@ import {
     keyAllowsModelPermissions,
     toModelPermissions,
 } from "@shared/registry/model-permissions.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -1967,6 +1967,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: { description: "Permission denied" },
                 404: { description: "Key not found" },
+                409: { description: "Key changed during the update" },
             },
         }),
         validator("json", UpdateKeySchema),
@@ -1997,16 +1998,18 @@ export const accountRoutes = new Hono<Env>()
             } = c.req.valid("json");
 
             const db = drizzle(c.env.DB);
-            const key = await db
-                .select()
-                .from(apikeyTable)
-                .where(
-                    and(
-                        eq(apikeyTable.id, id),
-                        eq(apikeyTable.referenceId, user.id),
-                    ),
-                )
-                .get();
+            const readKey = () =>
+                db
+                    .select()
+                    .from(apikeyTable)
+                    .where(
+                        and(
+                            eq(apikeyTable.id, id),
+                            eq(apikeyTable.referenceId, user.id),
+                        ),
+                    )
+                    .get();
+            let key = await readKey();
             if (!key) {
                 throw new HTTPException(404, { message: "API key not found" });
             }
@@ -2056,70 +2059,102 @@ export const accountRoutes = new Hono<Env>()
                     earningsEnabled,
                 }).filter(([, value]) => value !== undefined),
             );
-            // Raising a budget takes the difference; an unlimited key counts
-            // as having none.
-            const budgetChange =
-                pollenBudget != null
-                    ? pollenBudget - (key.pollenBalance ?? 0)
-                    : 0;
-            const updatedBudget =
-                pollenBudget === undefined ? key.pollenBalance : pollenBudget;
-            // Renewing a grant authorizes all its remaining spending again,
-            // even when its budget is unchanged or reduced.
-            const extendsExpiry =
-                key.expiresAt !== null &&
-                expiresAt !== undefined &&
-                (expiresAt === null || expiresAt > key.expiresAt);
-            // A key can only edit keys that end up within its own limits.
-            await grantFromCallerKey(
-                c.env.DB,
-                callerKey,
-                {
-                    accountPermissions: permissions.account ?? null,
-                    allowedModels: permissions.models ?? null,
-                    expiresAt:
-                        expiresAt === undefined ? key.expiresAt : expiresAt,
-                    pollenBudget: updatedBudget,
-                },
-                extendsExpiry ? (updatedBudget ?? 0) : budgetChange,
-            );
-            // A budgeted key moves budget onto what the key has left now
-            // rather than overwriting it, so spending during the update isn't
-            // refilled for free.
-            const movesBudget =
-                typeof callerKey?.pollenBalance === "number" &&
-                pollenBudget != null &&
-                key.pollenBalance != null;
-            if (movesBudget) {
-                await atomicAdjustApiKeyBalance(db, id, -budgetChange);
-            }
+            // A budgeted key pays for the budget it grants from the key as
+            // read, so the update only lands while the key's balance and
+            // expiry are still what it paid for. If a concurrent update or the
+            // key's own spending changed them, the payment goes back and the
+            // update starts over from the key as it is now.
+            for (let attempt = 1; ; attempt++) {
+                // Raising a budget takes the difference; an unlimited key
+                // counts as having none.
+                const budgetChange =
+                    pollenBudget != null
+                        ? pollenBudget - (key.pollenBalance ?? 0)
+                        : 0;
+                const updatedBudget =
+                    pollenBudget === undefined
+                        ? key.pollenBalance
+                        : pollenBudget;
+                // Renewing a grant authorizes all its remaining spending
+                // again, even when its budget is unchanged or reduced.
+                const extendsExpiry =
+                    key.expiresAt !== null &&
+                    expiresAt !== undefined &&
+                    (expiresAt === null || expiresAt > key.expiresAt);
+                // A key can only edit keys that end up within its own limits.
+                const budgetTaken = await grantFromCallerKey(
+                    c.env.DB,
+                    callerKey,
+                    {
+                        accountPermissions: permissions.account ?? null,
+                        allowedModels: permissions.models ?? null,
+                        expiresAt:
+                            expiresAt === undefined ? key.expiresAt : expiresAt,
+                        pollenBudget: updatedBudget,
+                    },
+                    extendsExpiry ? (updatedBudget ?? 0) : budgetChange,
+                );
+                const unchangedSinceRead = and(
+                    key.pollenBalance === null
+                        ? isNull(apikeyTable.pollenBalance)
+                        : eq(apikeyTable.pollenBalance, key.pollenBalance),
+                    key.expiresAt === null
+                        ? isNull(apikeyTable.expiresAt)
+                        : eq(apikeyTable.expiresAt, key.expiresAt),
+                );
 
-            const [updated] = await db
-                .update(apikeyTable)
-                .set({
-                    ...(name !== undefined && { name }),
-                    ...(pollenBudget !== undefined &&
-                        !movesBudget && { pollenBalance: pollenBudget }),
-                    ...(questPollenOnly !== undefined && { questPollenOnly }),
-                    ...(expiresAt !== undefined && { expiresAt }),
-                    ...((allowedModels !== undefined ||
-                        accountPermissions !== undefined) && {
-                        permissions: Object.keys(permissions).length
-                            ? JSON.stringify(permissions)
-                            : null,
-                    }),
-                    ...(Object.keys(metadataPatch).length > 0 && {
-                        metadata: JSON.stringify({
-                            ...parseMetadata(key.metadata),
-                            ...metadataPatch,
+                const [updated] = await db
+                    .update(apikeyTable)
+                    .set({
+                        ...(name !== undefined && { name }),
+                        ...(pollenBudget !== undefined && {
+                            pollenBalance: pollenBudget,
                         }),
-                    }),
-                    updatedAt: new Date(),
-                })
-                .where(eq(apikeyTable.id, id))
-                .returning();
+                        ...(questPollenOnly !== undefined && {
+                            questPollenOnly,
+                        }),
+                        ...(expiresAt !== undefined && { expiresAt }),
+                        ...((allowedModels !== undefined ||
+                            accountPermissions !== undefined) && {
+                            permissions: Object.keys(permissions).length
+                                ? JSON.stringify(permissions)
+                                : null,
+                        }),
+                        ...(Object.keys(metadataPatch).length > 0 && {
+                            metadata: JSON.stringify({
+                                ...parseMetadata(key.metadata),
+                                ...metadataPatch,
+                            }),
+                        }),
+                        updatedAt: new Date(),
+                    })
+                    .where(
+                        budgetTaken
+                            ? and(eq(apikeyTable.id, id), unchangedSinceRead)
+                            : eq(apikeyTable.id, id),
+                    )
+                    .returning();
+                if (updated) return c.json(formatKey(updated));
 
-            return c.json(formatKey(updated));
+                if (callerKey && budgetTaken) {
+                    await atomicAdjustApiKeyBalance(
+                        db,
+                        callerKey.id,
+                        -budgetTaken,
+                    );
+                }
+                if (attempt === 3) {
+                    throw new HTTPException(409, {
+                        message: "The key changed during the update; try again",
+                    });
+                }
+                key = await readKey();
+                if (!key) {
+                    throw new HTTPException(404, {
+                        message: "API key not found",
+                    });
+                }
+            }
         },
     )
     .get(

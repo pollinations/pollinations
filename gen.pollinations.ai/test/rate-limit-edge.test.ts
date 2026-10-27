@@ -14,7 +14,7 @@ function limiter(limit: number): RateLimit {
     };
 }
 
-// Small stand-ins for wrangler's 600 per key and 10,000 per IP.
+// Small stand-ins for wrangler's 600 per key and 1,000 per IP.
 function bindings() {
     return {
         EDGE_RATE_LIMITER: limiter(3),

@@ -14,7 +14,8 @@ import {
     fetchAccountBalance,
 } from "../hooks/use-account-balance.ts";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
-import { validateTopUpSearch } from "../lib/top-up-search.ts";
+import { checkoutNotice, validateTopUpSearch } from "../lib/top-up-search.ts";
+import { pageTitle } from "../page-meta.ts";
 
 /**
  * Standalone top-up: the wallet and top-up sections of the pollen page on
@@ -23,7 +24,7 @@ import { validateTopUpSearch } from "../lib/top-up-search.ts";
  * go back to the app.
  */
 export const Route = createFileRoute("/top-up")({
-    head: () => ({ meta: [{ title: "Top-up | pollinations.ai" }] }),
+    head: () => ({ meta: [{ title: pageTitle("/top-up") }] }),
     validateSearch: validateTopUpSearch,
     component: TopUpPage,
 });
@@ -177,11 +178,7 @@ function TopUpPage() {
         <AuthFlowScreen
             footnote="payment"
             title="Top-up"
-            error={
-                search.stripe_canceled
-                    ? "Checkout was cancelled. Choose an amount to try again."
-                    : undefined
-            }
+            error={checkoutNotice(search)}
             size="lg"
             balance={wallet}
             topUpHref={null}

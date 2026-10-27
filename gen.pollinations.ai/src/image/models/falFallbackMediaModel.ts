@@ -12,6 +12,10 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { falBillableUnits, falUnitPrice } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
+    downloadUserImage,
+    readImageDimensions,
+} from "../utils/imageDownload.ts";
+import {
     resolveGrokAspectRatio,
     resolveGrokDuration,
 } from "./openRouterVideoModel.ts";
@@ -154,6 +158,9 @@ type FalVideoConfig = {
         duration: number,
         hasImage: boolean,
     ) => Record<string, unknown>;
+    // Endpoints whose "auto" ratio rejects some input images: send the
+    // closest of these to the image's own shape instead.
+    imageRatios?: readonly string[];
     // fal bills a video that xAI's moderation rejects after generating it.
     billsRejectedVideos?: boolean;
     // Charge fal's reported units at the endpoint's live price.
@@ -202,6 +209,9 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
         textEndpoint: "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
         imageEndpoint: "fal-ai/wan/v2.2-a14b/image-to-video/turbo",
         duration: () => 5,
+        // "auto" fails on e.g. 4:3 photos ("resolved output size 720x544 is
+        // not supported").
+        imageRatios: WAN_TURBO_RATIOS,
         input: (params, _duration, hasImage) => ({
             resolution: "480p",
             ...(!hasImage
@@ -276,6 +286,17 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
     },
 };
 
+async function inputImageRatio(
+    url: string,
+    ratios: readonly string[],
+): Promise<string | undefined> {
+    const { buffer, mimeType } = await downloadUserImage(url);
+    const size = readImageDimensions(buffer, mimeType);
+    return size
+        ? closestRatioLogSpace(size.width, size.height, ratios)
+        : undefined;
+}
+
 export async function callFalFallbackVideo(
     prompt: string,
     params: ImageParams,
@@ -298,6 +319,10 @@ export async function callFalFallbackVideo(
         const unitCost = config.providerPriced
             ? await falUnitPrice(endpoint, apiKey)
             : undefined;
+        const imageRatio =
+            image && config.imageRatios
+                ? await inputImageRatio(image, config.imageRatios)
+                : undefined;
         const response = await runFalJobResponse(
             {
                 endpoint,
@@ -306,6 +331,7 @@ export async function callFalFallbackVideo(
                         prompt,
                         ...config.input(params, duration, Boolean(image)),
                         ...(image ? { image_url: image } : {}),
+                        ...(imageRatio ? { aspect_ratio: imageRatio } : {}),
                     },
                     params,
                 ),

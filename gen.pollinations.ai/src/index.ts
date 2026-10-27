@@ -118,9 +118,6 @@ function sitemapXml(c: Context<Env>): Response {
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
             "  <url>",
-            `    <loc>${origin}/</loc>`,
-            "  </url>",
-            "  <url>",
             `    <loc>${origin}/docs</loc>`,
             "  </url>",
             "</urlset>",
@@ -220,6 +217,9 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", logger)
     .use("*", async (c, next) => {
         await next();
+        if (c.env.ENVIRONMENT === "staging") {
+            c.header("X-Robots-Tag", "noindex, nofollow");
+        }
         if (c.res.status === 401) {
             c.header(
                 "WWW-Authenticate",

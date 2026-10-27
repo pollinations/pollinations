@@ -239,8 +239,9 @@ describe("media.pollinations.ai", () => {
                         "Content-Type": contentType,
                         "X-Model-Used": "test-model",
                         "X-Usage-Completion-Audio-Tokens": "10",
-                        "Content-Security-Policy":
-                            "default-src 'none'; sandbox",
+                        // A stored header must not weaken the served policy.
+                        "Content-Security-Policy": "default-src *",
+                        "Content-Disposition": 'inline; filename="generated"',
                         "X-Custom-File-Metadata": "caller-selected",
                     },
                 }),
@@ -262,7 +263,10 @@ describe("media.pollinations.ai", () => {
                 "public, max-age=31536000, immutable",
             );
             expect(response.headers.get("content-security-policy")).toBe(
-                "default-src 'none'; sandbox",
+                "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            );
+            expect(response.headers.get("content-disposition")).toBe(
+                'inline; filename="generated"',
             );
             expect(response.headers.get("x-custom-file-metadata")).toBe(
                 "caller-selected",
@@ -503,7 +507,13 @@ describe("media.pollinations.ai", () => {
         expect(getRes.headers.get("cache-control")).toBe(
             "public, max-age=31536000, immutable",
         );
-        expect(getRes.headers.get("content-disposition")).toContain("test.png");
+        expect(getRes.headers.get("content-disposition")).toBe(
+            "inline; filename*=UTF-8''test.png",
+        );
+        expect(getRes.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(getRes.headers.get("content-security-policy")).toBe(
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        );
         const body = new Uint8Array(await getRes.arrayBuffer());
         expect(body.length).toBe(TINY_PNG.length);
 
@@ -557,6 +567,60 @@ describe("media.pollinations.ai", () => {
             "large-image.png",
         );
         expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("serves uploaded HTML and SVG as sandboxed downloads", async () => {
+        const html = new TextEncoder().encode(
+            "<script>alert(document.domain)</script>",
+        );
+        const rawUpload = (contentType: string) =>
+            SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: html,
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": contentType,
+                    "Content-Length": String(html.length),
+                },
+            });
+        const form = new FormData();
+        form.append(
+            "file",
+            new File(
+                [
+                    '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+                ],
+                "poc.svg",
+                { type: "image/svg+xml" },
+            ),
+        );
+        const formRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+
+        for (const [uploadRes, disposition] of [
+            [await rawUpload("text/html; charset=utf-8"), "attachment"],
+            // Browsers take the last type in a list.
+            [await rawUpload("image/png,text/html"), "attachment"],
+            [formRes, "attachment; filename*=UTF-8''poc.svg"],
+        ] as const) {
+            expect(uploadRes.status).toBe(200);
+            const upload = (await uploadRes.json()) as UploadResponse;
+            const getRes = await SELF.fetch(upload.url);
+            expect(getRes.headers.get("content-disposition")).toBe(disposition);
+            expect(getRes.headers.get("x-content-type-options")).toBe(
+                "nosniff",
+            );
+            expect(getRes.headers.get("content-security-policy")).toBe(
+                "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            );
+            await getRes.arrayBuffer();
+        }
     });
 
     it("strips GPS metadata for privacy on multipart, JSON, and raw uploads", async () => {

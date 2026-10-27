@@ -185,6 +185,23 @@ describe("gen worker routing", () => {
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
     });
 
+    it.each(["/", "/docs", "/docs/llm.txt", "/llms.txt", "/sitemap.xml"])(
+        "excludes staging %s from indexing while keeping production indexable",
+        async (path) => {
+            for (const environment of ["staging", "production"] as const) {
+                const response = await fetchWorker(path, {
+                    ...envWithEnter(),
+                    ENVIRONMENT: environment,
+                });
+
+                expect(response.status).toBe(200);
+                expect(response.headers.get("X-Robots-Tag")).toBe(
+                    environment === "staging" ? "noindex, nofollow" : null,
+                );
+            }
+        },
+    );
+
     it("serves gen's icons after the routes", async () => {
         // Like Cloudflare's asset server: 405 for methods other than GET/HEAD.
         const ASSETS = {
@@ -315,10 +332,7 @@ describe("gen worker routing", () => {
         const locs = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
             (match) => match[1],
         );
-        expect(locs).toEqual([
-            "https://staging.gen.pollinations.ai/",
-            "https://staging.gen.pollinations.ai/docs",
-        ]);
+        expect(locs).toEqual(["https://staging.gen.pollinations.ai/docs"]);
     });
 
     it("serves llms-full.txt with the full guide and CLI skill in one file", async () => {

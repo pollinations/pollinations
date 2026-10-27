@@ -5425,10 +5425,13 @@ fixtureTest(
         const suffix = crypto.randomUUID().slice(0, 8);
         const textOwner = `filter-text-${suffix}`;
         const imageOwner = `filter-img-${suffix}`;
+        const videoOwner = `filter-vid-${suffix}`;
         const textName = `qp-text-${suffix}`;
         const imageName = `qp-img-${suffix}`;
+        const videoName = `qp-vid-${suffix}`;
         const textModelId = communityModelId(textOwner, textName);
         const imageModelId = communityModelId(imageOwner, imageName);
+        const videoModelId = communityModelId(videoOwner, videoName);
 
         const textUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
@@ -5437,6 +5440,10 @@ fixtureTest(
         const imageUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: imageOwner,
+        });
+        const videoUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: videoOwner,
         });
 
         await insertCommunityEndpoints([
@@ -5473,6 +5480,26 @@ fixtureTest(
                 promptTextPrice: 0,
                 completionTextPrice: 0,
                 completionImagePrice: 0.01,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: videoUserId,
+                visibility: "public",
+                name: videoName,
+                description: "Community video filter test model",
+                modality: "video",
+                inputModalities: ["text", "image", "audio", "video"],
+                baseUrl: "https://vid.example.com/v1",
+                upstreamModel: "wan-1",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionVideoPrice: 0.01,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -5593,6 +5620,41 @@ fixtureTest(
             onlyModels.map((m) => m.name),
         );
 
+        const [categoryVideo, categoryRichVideo] = await Promise.all([
+            SELF.fetch("https://gen.pollinations.ai/v1/models?category=video"),
+            SELF.fetch("https://gen.pollinations.ai/models?category=video"),
+        ]);
+        for (const r of [categoryVideo, categoryRichVideo]) {
+            expect(r.status).toBe(200);
+        }
+
+        type OpenAIModel = { id: string; category: string };
+        const categoryVideoData = (await categoryVideo.json()) as {
+            data: OpenAIModel[];
+        };
+        expect(
+            categoryVideoData.data.every((m) => m.category === "video"),
+        ).toBe(true);
+        expect(
+            categoryVideoData.data.find((m) => m.id === videoModelId),
+        ).toBeDefined();
+        expect(
+            categoryVideoData.data.find((m) => m.id === textModelId),
+        ).toBeUndefined();
+
+        type RichModel = { name: string; category?: string };
+        const categoryRichModels =
+            (await categoryRichVideo.json()) as RichModel[];
+        expect(categoryRichModels.every((m) => m.category === "video")).toBe(
+            true,
+        );
+        expect(
+            categoryRichModels.find((m) => m.name === videoModelId),
+        ).toBeDefined();
+        expect(
+            categoryRichModels.find((m) => m.name === textModelId),
+        ).toBeUndefined();
+
         const invalidResponses = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/models?community=tru"),
             SELF.fetch("https://gen.pollinations.ai/models?community=yes"),
@@ -5600,6 +5662,8 @@ fixtureTest(
             SELF.fetch(
                 "https://gen.pollinations.ai/image/models?community=nope",
             ),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?category=bad"),
+            SELF.fetch("https://gen.pollinations.ai/models?category=bad"),
         ]);
         for (const r of invalidResponses) {
             expect(r.status).toBe(400);

@@ -274,7 +274,7 @@ function buildServer(env, fetchImpl, reportUsage) {
         () => 1,
         async ({ question }) => {
             const body = await call("POST", "/v1/chat/completions", {
-                model: "lixsearch",
+                model: "oreolook",
                 stream: false,
                 messages: [{ role: "user", content: question }],
             });

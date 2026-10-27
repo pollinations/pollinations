@@ -210,7 +210,7 @@ test("runs deep research through chat completions", async () => {
     });
     assert.match(result.content[0].text, /Answer \[1\]/);
     assert.deepEqual(calls[0].body, {
-        model: "lixsearch",
+        model: "oreolook",
         stream: false,
         messages: [{ role: "user", content: "What is Pollinations?" }],
     });

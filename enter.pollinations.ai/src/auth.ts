@@ -30,7 +30,7 @@ import {
     getSessionFromCtx,
 } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { and, eq } from "drizzle-orm";
+import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
 import { removeUserSites } from "./services/sites.ts";
@@ -39,6 +39,17 @@ import {
     referringSource,
     visitorCountry,
 } from "./utils/product-analytics.ts";
+
+// Drizzle query errors carry their bound params, e.g. the session token of a
+// failed session lookup. Log the SQL and the D1 cause instead.
+function withoutQueryParams(value: unknown): unknown {
+    if (value instanceof DrizzleQueryError)
+        return `Failed query: ${value.query} (cause: ${value.cause})`;
+    if (value instanceof Error && value.cause)
+        return `${value} (cause: ${withoutQueryParams(value.cause)})`;
+    if (typeof value === "string") return value.split("\nparams: ")[0];
+    return value;
+}
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 export const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
@@ -143,6 +154,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         basePath: "/api/auth",
         onAPIError: {
             errorURL: "/error",
+        },
+        logger: {
+            log: (level, message, ...args) =>
+                console[level](
+                    `[Better Auth]: ${withoutQueryParams(message)}`,
+                    ...args.map(withoutQueryParams),
+                ),
         },
         hooks: {
             // better-auth has its own freshness check on /delete-user, but it

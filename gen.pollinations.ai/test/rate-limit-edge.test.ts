@@ -1,3 +1,4 @@
+import { rateLimit } from "@shared/rate-limit.ts";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -68,5 +69,52 @@ describe("edge rate limit", () => {
         }
         expect(statuses).toEqual([200, 200, 200, 429]);
         expect((await send(env, { ip: "198.51.100.1" })).status).toBe(200);
+    });
+});
+
+// Enter's limiter: keys only, plus unkeyed requests that carry a client IP.
+const enterApp = new Hono()
+    .use(rateLimit({ byIp: false }))
+    .get("/", (c) => c.text("ok"));
+
+describe("enter rate limit", () => {
+    it("caps requests without a key per client IP", async () => {
+        const env = bindings();
+        const statuses = [];
+        for (let i = 0; i < 4; i++) {
+            const headers = { "CF-Connecting-IP": "203.0.113.7" };
+            statuses.push(
+                (await enterApp.request("/", { headers }, env)).status,
+            );
+        }
+        expect(statuses).toEqual([200, 200, 200, 429]);
+    });
+
+    it("caps rotating made-up keys from one client IP", async () => {
+        const env = bindings();
+        const statuses = [];
+        for (let i = 0; i < 4; i++) {
+            const headers = {
+                "CF-Connecting-IP": "203.0.113.7",
+                Authorization: `Bearer sk_fake${i}`,
+            };
+            statuses.push(
+                (await enterApp.request("/", { headers }, env)).status,
+            );
+        }
+        expect(statuses).toEqual([200, 200, 200, 429]);
+    });
+
+    it("leaves internal calls without a client IP alone", async () => {
+        const env = bindings();
+        const statuses = [];
+        for (let i = 0; i < 5; i++) {
+            const headers = { Authorization: `Bearer sk_internal${i}` };
+            statuses.push((await enterApp.request("/", {}, env)).status);
+            statuses.push(
+                (await enterApp.request("/", { headers }, env)).status,
+            );
+        }
+        expect(statuses).toEqual(Array(10).fill(200));
     });
 });

@@ -53,9 +53,12 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .string()
         .transform((value: string) => {
             if (!value) return undefined;
-            // Support both pipe (|) and comma (,) separators
-            // Prefer pipe separator if present, otherwise use comma
-            return value.includes("|") ? value.split("|") : value.split(",");
+            // Support both pipe (|) and comma (,) separators. Prefer pipe if
+            // present; otherwise split only on commas that start a new URL, so
+            // commas inside a URL (e.g. Cloudinary transforms) are kept.
+            return value.includes("|")
+                ? value.split("|")
+                : value.split(/,(?=https?:\/\/)/);
         })
         .optional()
         .refine(

@@ -7,6 +7,7 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { permissionRequired } from "@shared/http/permission-required-error.ts";
 import {
     isModelCategory,
     keyAllowsModel,
@@ -15,7 +16,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { appOrigin, permissionRequired } from "../utils/refusals.ts";
+import { appOrigin } from "../utils/refusals.ts";
 import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {

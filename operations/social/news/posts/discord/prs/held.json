@@ -11,10 +11,7 @@
     "18564": {
       "merge_sha": "5a522e6b87fb209fd637755ca98f34b116b94cf1",
       "merged_at": "2026-10-27T13:05:37Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     }
   },
   "production": "d94542fb5148c87bb28026f152eaba1ee8b221a4",

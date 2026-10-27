@@ -189,7 +189,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                             disabled={disabled || !hasModels}
                         />
                     </div>
-                    <p className="text-xs text-theme-text-muted">
+                    <p className="pl-8 text-xs text-theme-text-muted">
                         To limit this {accessContext ?? "key"} to specific
                         models, use the{" "}
                         <InlineLink href={POLLI_CLI_KEYS_URL} tone="quiet">

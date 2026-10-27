@@ -1,3 +1,5 @@
+import { isLoopbackHostname } from "./redirect-uri.ts";
+
 /**
  * Parse a scope/permissions URL parameter. Accepts both OAuth-canonical
  * space-separated format (`scope=usage%20keys`) and our legacy
@@ -29,6 +31,8 @@ export function isClientMetadataUrl(clientId: string | undefined): boolean {
 
 export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
+/** The most budget a link can pre-fill; the user can raise it by hand. */
+export const MAX_LINK_CONSENT_BUDGET = 10;
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -106,6 +110,45 @@ export function sanitizeAuthorizeAccountPermissions(
     return filtered.length ? filtered : null;
 }
 
+/**
+ * Most people click "Allow" without reading, so a link can request `keys` and
+ * `machines` but never tick them: the user has to grant those on purpose.
+ */
+const DELIBERATE_CONSENT_PERMISSIONS: readonly string[] = ["keys", "machines"];
+
+/** The requested account permissions the consent screen starts with ticked. */
+export function getPreselectedConsentPermissions(
+    permissions: string[] | null | undefined,
+): string[] | null {
+    const preselected = sanitizeAuthorizeAccountPermissions(
+        permissions,
+    )?.filter(
+        (permission) => !DELIBERATE_CONSENT_PERMISSIONS.includes(permission),
+    );
+    return preselected?.length ? preselected : null;
+}
+
+/**
+ * The requested permissions the consent screen offers. `keys` (account admin)
+ * is only offered in the device flow (polli) and on redirects to this computer
+ * (local MCP clients such as Claude Code): a phished link that redirects to a
+ * website must never get it.
+ */
+export function getConsentPermissionChoices(
+    requested: ReadonlySet<string>,
+    isDeviceFlow: boolean,
+    redirectUrl: URL | null,
+): string[] {
+    const offersKeys =
+        isDeviceFlow ||
+        (redirectUrl?.protocol === "http:" &&
+            isLoopbackHostname(redirectUrl.hostname));
+    return CONSENT_PERMISSIONS.filter(
+        (permission) =>
+            requested.has(permission) && (offersKeys || permission !== "keys"),
+    );
+}
+
 export function getAuthorizeInitialPermissions({
     models,
     budget,
@@ -114,8 +157,11 @@ export function getAuthorizeInitialPermissions({
 }: AuthorizeDefaultsInput) {
     return {
         allowedModels: models,
-        pollenBudget: budget ?? DEFAULT_CONSENT_BUDGET,
+        pollenBudget: Math.min(
+            budget ?? DEFAULT_CONSENT_BUDGET,
+            MAX_LINK_CONSENT_BUDGET,
+        ),
         expiryDays: expiry ?? DEFAULT_CONSENT_EXPIRY_DAYS,
-        accountPermissions: sanitizeAuthorizeAccountPermissions(permissions),
+        accountPermissions: getPreselectedConsentPermissions(permissions),
     };
 }

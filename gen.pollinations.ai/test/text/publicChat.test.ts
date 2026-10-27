@@ -154,9 +154,10 @@ afterEach(() => {
 
 async function chatThroughHandler(
     model: string,
-    host: string,
-    wire: string,
+    host: string | string[],
+    wire: string | ((request: Request) => Promise<Response>),
     stream = true,
+    prompt = `Hello ${crypto.randomUUID()}`,
 ) {
     const { key, userId } = await createTestApiKey({
         expiresIn: 600,
@@ -168,8 +169,9 @@ async function chatThroughHandler(
         // Custom-host providers go out through the Portkey gateway.
         const target =
             request.headers.get("x-portkey-custom-host") ?? request.url;
-        if (new URL(target).host === host) {
+        if ([host].flat().includes(new URL(target).host)) {
             calls++;
+            if (typeof wire === "function") return wire(request);
             return new Response(wire, {
                 headers: {
                     "content-type": stream
@@ -191,9 +193,7 @@ async function chatThroughHandler(
             body: JSON.stringify({
                 model,
                 stream,
-                messages: [
-                    { role: "user", content: `Hello ${crypto.randomUUID()}` },
-                ],
+                messages: [{ role: "user", content: prompt }],
             }),
         }),
         withInlineGenerationCoordinator(env),
@@ -290,6 +290,146 @@ it("returns tool-call signatures in Google's extra_content field from non-stream
         function: { thought_signature: "sig" },
         extra_content: { google: { thought_signature: "sig" } },
     });
+});
+
+it.each([null, "", " \n\t"])(
+    "rejects empty content %j before caching while retaining provider usage",
+    async (content) => {
+        const model = "inception/mercury-3";
+        const wire = JSON.stringify({
+            id: "empty-completion",
+            object: "chat.completion",
+            model,
+            choices: [
+                {
+                    index: 0,
+                    message: {
+                        role: "assistant",
+                        content,
+                        reasoning_content: "Reasoning alone is not an answer",
+                    },
+                    finish_reason: "stop",
+                },
+            ],
+            usage,
+        });
+        const prompt = `Empty completion ${crypto.randomUUID()}`;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const { response, text, calls, balance } = await chatThroughHandler(
+                model,
+                "openrouter.ai",
+                wire,
+                false,
+                prompt,
+            );
+            expect(response.status, text).toBe(502);
+            expect(JSON.parse(text).error.code).toBe("empty_response");
+            expect(response.headers.get("x-cache")).not.toBe("HIT");
+            expect(calls).toBe(1);
+            expect(balance.packBalance).toBeLessThan(100);
+        }
+    },
+);
+
+it.each([
+    { content: null, refusal: "I cannot help with that request." },
+    {
+        content: null,
+        audio: {
+            id: "audio_1",
+            data: "YXVkaW8=",
+            transcript: "Hello",
+            expires_at: 1900000000,
+        },
+    },
+])("preserves non-text-only completion output %j", async (output) => {
+    const model = "inception/mercury-3";
+    const wire = JSON.stringify({
+        id: "non-text-completion",
+        object: "chat.completion",
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", ...output },
+                finish_reason: "stop",
+            },
+        ],
+        usage,
+    });
+    const { response, text } = await chatThroughHandler(
+        model,
+        "openrouter.ai",
+        wire,
+        false,
+    );
+    expect(response.status, text).toBe(200);
+    expect(JSON.parse(text).choices[0].message).toMatchObject(output);
+});
+
+it("rejects the news failure's empty Responses completion through the Chat adapter", async () => {
+    const completion = {
+        id: "resp_empty_news",
+        model: "gpt-6-sol",
+        status: "completed",
+        output: [
+            {
+                type: "message",
+                role: "assistant",
+                content: [{ type: "output_text", text: "" }],
+            },
+        ],
+        usage: {
+            input_tokens: 3531,
+            output_tokens: 131,
+            total_tokens: 3662,
+            output_tokens_details: { reasoning_tokens: 125 },
+        },
+    };
+    const { response, text, calls } = await chatThroughHandler(
+        "openai/gpt-6-sol",
+        ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        async (request) => {
+            const body = (await request.json()) as { stream?: boolean };
+            return body.stream
+                ? new Response(
+                      `data: ${JSON.stringify({ type: "response.completed", response: completion })}\n\n`,
+                      {
+                          headers: { "content-type": "text/event-stream" },
+                      },
+                  )
+                : Response.json(completion);
+        },
+        false,
+    );
+    expect(response.status, text).toBe(502);
+    expect(JSON.parse(text).error.code).toBe("empty_response");
+    expect(calls).toBe(2);
+});
+
+it("preserves content-filter refusals without treating them as retryable empty output", async () => {
+    const model = "inception/mercury-3";
+    const { response, text, calls } = await chatThroughHandler(
+        model,
+        "openrouter.ai",
+        JSON.stringify({
+            id: "filtered-completion",
+            object: "chat.completion",
+            model,
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "" },
+                    finish_reason: "content_filter",
+                },
+            ],
+            usage,
+        }),
+        false,
+    );
+    expect(response.status, text).toBe(200);
+    expect(JSON.parse(text).choices[0].finish_reason).toBe("content_filter");
+    expect(calls).toBe(1);
 });
 
 it("drops InferencePort's PAYG ledger chunk from client streams", async () => {

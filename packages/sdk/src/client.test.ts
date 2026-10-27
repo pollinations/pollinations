@@ -663,6 +663,27 @@ describe("Pollinations server-owned defaults", () => {
     });
 });
 
+describe("Pollinations media credentials", () => {
+    it("sends the key only in the Authorization header", async () => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        const client = newClient();
+
+        const image = await client.image("an owl", { seed: 1 });
+        const video = await client.video("an owl flies", { duration: 4 });
+        await client.audio("hello", { voice: "nova" });
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        for (const [url, init] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("key")).toBe(false);
+            expect((init as RequestInit).headers).toMatchObject({
+                Authorization: "Bearer sk_test",
+            });
+        }
+        expect(image.url).toBe(fetchMock.mock.calls[0][0]);
+        expect(video.url).toBe(fetchMock.mock.calls[1][0]);
+    });
+});
+
 describe("Pollinations video reference media", () => {
     it.each([false, true])(
         "sends guidance URLs (arrays: %s)",
@@ -701,7 +722,6 @@ describe("Pollinations video reference media", () => {
             );
             expect([...url.searchParams.keys()].sort()).toEqual([
                 "image",
-                "key",
                 "reference_audios",
                 "reference_images",
                 "reference_videos",

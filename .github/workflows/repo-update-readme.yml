@@ -72,15 +72,14 @@ jobs:
           git commit -m "docs: update README — ${DATE}"
           git push -u origin "$BRANCH"
 
-          # Create PR with auto-merge
+          # Create the PR, then request merging through the queue.
           PR_URL=$(gh pr create \
             --title "docs: update README — ${DATE}" \
             --body "Daily README update: the star history chart and the latest news." \
             --base main)
           echo "Created PR: $PR_URL"
 
-          # Enable auto-merge
-          gh pr merge "$PR_URL" --auto --squash || echo "Auto-merge not available"
+          gh pr merge "$PR_URL" --auto --squash
 
       - name: Report failure as an issue
         if: failure()

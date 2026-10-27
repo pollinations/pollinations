@@ -209,7 +209,7 @@ export default defineConfig(async ({ mode }) => {
                                 cookie: request.headers.get("cookie"),
                                 payload: await request.json(),
                             }),
-                        LIXSEARCH_MCP: async (request: Request) =>
+                        OREOLOOK_MCP: async (request: Request) =>
                             Response.json({
                                 pathname: new URL(request.url).pathname,
                                 payload: await request.json(),

@@ -96,15 +96,15 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
-                id: "lixsearch",
-                name: "lixSearch",
+                id: "oreolook",
+                name: "OreoLook",
                 description:
                     "Search, scrape, map, crawl, and extract from the web, or run cited deep research.",
-                url: "https://gen.pollinations.ai/mcp/lixsearch",
+                url: "https://gen.pollinations.ai/mcp/oreolook",
                 pricing: {
                     rates: [
                         {
-                            name: "lixsearch.search.v1",
+                            name: "oreolook.search.v1",
                             label: "Search",
                             kind: "search_request",
                             price: "0.003",
@@ -114,7 +114,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                             suffix: "up to 20 results",
                         },
                         {
-                            name: "lixsearch.scrape.v1",
+                            name: "oreolook.scrape.v1",
                             label: "Scrape",
                             kind: "page",
                             price: "0.001",
@@ -123,7 +123,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                             unit: "page",
                         },
                         {
-                            name: "lixsearch.crawl.page.v1",
+                            name: "oreolook.crawl.page.v1",
                             label: "Crawl",
                             kind: "page",
                             price: "0.001",
@@ -133,7 +133,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                             suffix: "billed on the requested limit",
                         },
                         {
-                            name: "lixsearch.research.v1",
+                            name: "oreolook.research.v1",
                             label: "Research",
                             kind: "research_request",
                             price: "0.025",

@@ -2,28 +2,28 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
 import {
-    LIXSEARCH_CRAWL_PRICE_PER_PAGE,
-    LIXSEARCH_RESEARCH_PRICE_PER_REQUEST,
-    LIXSEARCH_SCRAPE_PRICE_PER_PAGE,
-    LIXSEARCH_SEARCH_PRICE_PER_REQUEST,
+    OREOLOOK_CRAWL_PRICE_PER_PAGE,
+    OREOLOOK_RESEARCH_PRICE_PER_REQUEST,
+    OREOLOOK_SCRAPE_PRICE_PER_PAGE,
+    OREOLOOK_SEARCH_PRICE_PER_REQUEST,
 } from "../../shared/registry/mcp.ts";
 
 const RATES = {
     search: {
-        id: "lixsearch.search.v1",
-        price: LIXSEARCH_SEARCH_PRICE_PER_REQUEST,
+        id: "oreolook.search.v1",
+        price: OREOLOOK_SEARCH_PRICE_PER_REQUEST,
     },
     scrape: {
-        id: "lixsearch.scrape.v1",
-        price: LIXSEARCH_SCRAPE_PRICE_PER_PAGE,
+        id: "oreolook.scrape.v1",
+        price: OREOLOOK_SCRAPE_PRICE_PER_PAGE,
     },
     crawl: {
-        id: "lixsearch.crawl.page.v1",
-        price: LIXSEARCH_CRAWL_PRICE_PER_PAGE,
+        id: "oreolook.crawl.page.v1",
+        price: OREOLOOK_CRAWL_PRICE_PER_PAGE,
     },
     research: {
-        id: "lixsearch.research.v1",
-        price: LIXSEARCH_RESEARCH_PRICE_PER_REQUEST,
+        id: "oreolook.research.v1",
+        price: OREOLOOK_RESEARCH_PRICE_PER_REQUEST,
     },
 };
 
@@ -32,35 +32,35 @@ const FORMATS = z
     .min(1)
     .optional();
 
-class LixSearchFailure extends Error {
+class OreoLookFailure extends Error {
     constructor(status, message) {
         super(message);
         this.status = status;
     }
 }
 
-async function callLixSearch(method, path, payload, env, fetchImpl) {
-    if (!env.LIXSEARCH_API_URL || !env.LIXSEARCH_API_KEY) {
-        throw new LixSearchFailure(500, "lixSearch API is not configured");
+async function callOreoLook(method, path, payload, env, fetchImpl) {
+    if (!env.OREOLOOK_API_URL || !env.OREOLOOK_API_KEY) {
+        throw new OreoLookFailure(500, "OreoLook API is not configured");
     }
     const response = await fetchImpl(
-        `${env.LIXSEARCH_API_URL.replace(/\/+$/, "")}${path}`,
+        `${env.OREOLOOK_API_URL.replace(/\/+$/, "")}${path}`,
         {
             method,
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${env.LIXSEARCH_API_KEY}`,
+                Authorization: `Bearer ${env.OREOLOOK_API_KEY}`,
             },
             body: payload === undefined ? undefined : JSON.stringify(payload),
         },
     );
     const body = await response.json().catch(() => null);
     if (!response.ok || body?.success === false) {
-        throw new LixSearchFailure(
+        throw new OreoLookFailure(
             !response.ok && response.status < 500 ? response.status : 502,
             body?.error?.message ||
                 body?.error ||
-                `lixSearch returned HTTP ${response.status}`,
+                `OreoLook returned HTTP ${response.status}`,
         );
     }
     return body;
@@ -109,9 +109,9 @@ async function runWithUsage(reportUsage, tool, rate, units, run) {
         return result;
     } catch (error) {
         const failure =
-            error instanceof LixSearchFailure
+            error instanceof OreoLookFailure
                 ? error
-                : new LixSearchFailure(502, "lixSearch request failed");
+                : new OreoLookFailure(502, "OreoLook request failed");
         if (rate) {
             reportUsage({
                 cost: 0,
@@ -128,15 +128,15 @@ async function runWithUsage(reportUsage, tool, rate, units, run) {
 
 function buildServer(env, fetchImpl, reportUsage) {
     const server = new McpServer(
-        { name: "pollinations-lixsearch-mcp", version: "0.1.0" },
+        { name: "pollinations-oreolook-mcp", version: "0.1.0" },
         {
             instructions:
-                "Use lixsearch_search for quick web results, lixsearch_scrape to read known pages, lixsearch_map and lixsearch_crawl to cover a whole site, lixsearch_extract for structured data, and lixsearch_research for a cited, multi-source answer to an open question.",
+                "Use oreolook_search for quick web results, oreolook_scrape to read known pages, oreolook_map and oreolook_crawl to cover a whole site, oreolook_extract for structured data, and oreolook_research for a cited, multi-source answer to an open question.",
             capabilities: { tools: {} },
         },
     );
     const call = (method, path, payload) =>
-        callLixSearch(method, path, payload, env, fetchImpl);
+        callOreoLook(method, path, payload, env, fetchImpl);
     const tool = (name, description, inputSchema, rate, units, run) =>
         server.registerTool(name, { description, inputSchema }, (params) =>
             runWithUsage(reportUsage, name, rate, units(params), async () =>
@@ -145,7 +145,7 @@ function buildServer(env, fetchImpl, reportUsage) {
         );
 
     tool(
-        "lixsearch_search",
+        "oreolook_search",
         "Search the live web. Returns titles, URLs and snippets; set formats to also scrape each result's content.",
         z.object({
             query: z.string().min(1),
@@ -165,7 +165,7 @@ function buildServer(env, fetchImpl, reportUsage) {
     );
 
     tool(
-        "lixsearch_scrape",
+        "oreolook_scrape",
         "Read one known URL as clean markdown (main content only by default). Optionally return html, links or a screenshot.",
         z.object({
             url: z.url(),
@@ -187,7 +187,7 @@ function buildServer(env, fetchImpl, reportUsage) {
     );
 
     tool(
-        "lixsearch_map",
+        "oreolook_map",
         "List the URLs of a website without reading them. Use search to filter by topic, then scrape or crawl the pages you need.",
         z.object({
             url: z.url(),
@@ -215,8 +215,8 @@ function buildServer(env, fetchImpl, reportUsage) {
     );
 
     tool(
-        "lixsearch_crawl",
-        "Start an asynchronous crawl of a website and return a job id. Poll lixsearch_crawl_status with the id for results. Billed per page of the requested limit (default 20).",
+        "oreolook_crawl",
+        "Start an asynchronous crawl of a website and return a job id. Poll oreolook_crawl_status with the id for results. Billed per page of the requested limit (default 20).",
         z.object({
             url: z.url(),
             limit: z.number().int().min(1).max(500).optional(),
@@ -231,13 +231,13 @@ function buildServer(env, fetchImpl, reportUsage) {
                 ...params,
                 limit: params.limit ?? 20,
             });
-            return `Crawl started. Job id: ${body.id}\nCall lixsearch_crawl_status with this id to get the pages.`;
+            return `Crawl started. Job id: ${body.id}\nCall oreolook_crawl_status with this id to get the pages.`;
         },
     );
 
     tool(
-        "lixsearch_crawl_status",
-        "Get the status and scraped pages of a crawl started with lixsearch_crawl. Free to call.",
+        "oreolook_crawl_status",
+        "Get the status and scraped pages of a crawl started with oreolook_crawl. Free to call.",
         z.object({ id: z.string().min(1) }),
         null,
         () => 0,
@@ -251,7 +251,7 @@ function buildServer(env, fetchImpl, reportUsage) {
     );
 
     tool(
-        "lixsearch_extract",
+        "oreolook_extract",
         "Extract structured data from up to 10 URLs. Describe what to extract in prompt and/or give a JSON schema.",
         z.object({
             urls: z.array(z.url()).min(1).max(10),
@@ -267,8 +267,8 @@ function buildServer(env, fetchImpl, reportUsage) {
     );
 
     tool(
-        "lixsearch_research",
-        "Deep research: lixSearch plans queries, searches and reads many sources, and returns a synthesized answer with cited sources. Slower than search; use it for open questions that need several sources.",
+        "oreolook_research",
+        "Deep research: OreoLook plans queries, searches and reads many sources, and returns a synthesized answer with cited sources. Slower than search; use it for open questions that need several sources.",
         z.object({ question: z.string().min(1) }),
         RATES.research,
         () => 1,
@@ -280,9 +280,9 @@ function buildServer(env, fetchImpl, reportUsage) {
             });
             const content = body?.choices?.[0]?.message?.content;
             if (typeof content !== "string" || !content) {
-                throw new LixSearchFailure(
+                throw new OreoLookFailure(
                     502,
-                    "lixSearch research returned no answer",
+                    "OreoLook research returned no answer",
                 );
             }
             return content;

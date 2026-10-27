@@ -20,7 +20,7 @@ services = [
     { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
-    { binding = "LIXSEARCH_MCP", service = "pollinations-lixsearch-mcp" },
+    { binding = "OREOLOOK_MCP", service = "pollinations-oreolook-mcp" },
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
@@ -139,8 +139,8 @@ binding = "EXA_MCP"
 service = "pollinations-exa-mcp"
 
 [[env.production.services]]
-binding = "LIXSEARCH_MCP"
-service = "pollinations-lixsearch-mcp"
+binding = "OREOLOOK_MCP"
+service = "pollinations-oreolook-mcp"
 
 [[env.production.services]]
 binding = "COMPOSIO_MCP"
@@ -297,8 +297,8 @@ binding = "EXA_MCP"
 service = "pollinations-exa-mcp-staging"
 
 [[env.staging.services]]
-binding = "LIXSEARCH_MCP"
-service = "pollinations-lixsearch-mcp-staging"
+binding = "OREOLOOK_MCP"
+service = "pollinations-oreolook-mcp-staging"
 
 [[env.staging.services]]
 binding = "COMPOSIO_MCP"
@@ -425,8 +425,8 @@ binding = "EXA_MCP"
 service = "pollinations-exa-mcp"
 
 [[env.test.services]]
-binding = "LIXSEARCH_MCP"
-service = "pollinations-lixsearch-mcp"
+binding = "OREOLOOK_MCP"
+service = "pollinations-oreolook-mcp"
 
 [[env.test.services]]
 binding = "COMPOSIO_MCP"

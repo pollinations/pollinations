@@ -7,7 +7,7 @@ import {
 import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
 import { createWorker } from "./worker.js";
 
-const API_URL = "https://lixsearch.test";
+const API_URL = "https://oreolook.test";
 
 function createHarness() {
     const calls = [];
@@ -74,18 +74,18 @@ function createHarness() {
     });
     return {
         calls,
-        env: { LIXSEARCH_API_URL: API_URL, LIXSEARCH_API_KEY: "test-lix-key" },
+        env: { OREOLOOK_API_URL: API_URL, OREOLOOK_API_KEY: "test-lix-key" },
         worker,
     };
 }
 
 async function connect(worker, env, responses) {
     const client = new Client(
-        { name: "lixsearch-mcp-test", version: "0.0.1" },
+        { name: "oreolook-mcp-test", version: "0.0.1" },
         { capabilities: {} },
     );
     const transport = new StreamableHTTPClientTransport(
-        new URL("https://lixsearch.internal"),
+        new URL("https://oreolook.internal"),
         {
             fetch: async (input, init) => {
                 const request =
@@ -109,7 +109,7 @@ function usage(response) {
     );
 }
 
-test("lists lixSearch tools without usage", async () => {
+test("lists OreoLook tools without usage", async () => {
     const { calls, env, worker } = createHarness();
     const responses = [];
     const client = await connect(worker, env, responses);
@@ -117,13 +117,13 @@ test("lists lixSearch tools without usage", async () => {
     assert.deepEqual(
         tools.map(({ name }) => name),
         [
-            "lixsearch_search",
-            "lixsearch_scrape",
-            "lixsearch_map",
-            "lixsearch_crawl",
-            "lixsearch_crawl_status",
-            "lixsearch_extract",
-            "lixsearch_research",
+            "oreolook_search",
+            "oreolook_scrape",
+            "oreolook_map",
+            "oreolook_crawl",
+            "oreolook_crawl_status",
+            "oreolook_extract",
+            "oreolook_research",
         ],
     );
     assert.equal(calls.length, 0);
@@ -141,7 +141,7 @@ test("searches and reports a search request", async () => {
     const responses = [];
     const client = await connect(worker, env, responses);
     const result = await client.callTool({
-        name: "lixsearch_search",
+        name: "oreolook_search",
         arguments: { query: "Pollinations", limit: 3 },
     });
     assert.match(result.content[0].text, /https:\/\/pollinations\.ai/);
@@ -149,9 +149,9 @@ test("searches and reports a search request", async () => {
     assert.deepEqual(calls[0].body, { query: "Pollinations", limit: 3 });
     assert.deepEqual(usage(responses.at(-1)), {
         cost: "0.003",
-        tool: "lixsearch_search",
+        tool: "oreolook_search",
         status: "200",
-        adjustmentId: "lixsearch.search.v1",
+        adjustmentId: "oreolook.search.v1",
         adjustmentUnits: "1",
         error: null,
     });
@@ -163,7 +163,7 @@ test("scrapes a page as markdown", async () => {
     const responses = [];
     const client = await connect(worker, env, responses);
     const result = await client.callTool({
-        name: "lixsearch_scrape",
+        name: "oreolook_scrape",
         arguments: { url: "https://example.com" },
     });
     assert.match(result.content[0].text, /Hello page/);
@@ -172,7 +172,7 @@ test("scrapes a page as markdown", async () => {
         formats: ["markdown"],
         onlyMainContent: true,
     });
-    assert.equal(usage(responses.at(-1)).adjustmentId, "lixsearch.scrape.v1");
+    assert.equal(usage(responses.at(-1)).adjustmentId, "oreolook.scrape.v1");
     await client.close();
 });
 
@@ -181,17 +181,17 @@ test("bills a crawl by its page limit and polls status for free", async () => {
     const responses = [];
     const client = await connect(worker, env, responses);
     const started = await client.callTool({
-        name: "lixsearch_crawl",
+        name: "oreolook_crawl",
         arguments: { url: "https://example.com", limit: 5 },
     });
     assert.match(started.content[0].text, /job-1/);
     const crawlUsage = usage(responses.at(-1));
-    assert.equal(crawlUsage.adjustmentId, "lixsearch.crawl.page.v1");
+    assert.equal(crawlUsage.adjustmentId, "oreolook.crawl.page.v1");
     assert.equal(crawlUsage.adjustmentUnits, "5");
     assert.equal(crawlUsage.cost, "0.005");
 
     const status = await client.callTool({
-        name: "lixsearch_crawl_status",
+        name: "oreolook_crawl_status",
         arguments: { id: "job-1" },
     });
     assert.match(status.content[0].text, /completed[\s\S]*Crawled/);
@@ -205,7 +205,7 @@ test("runs deep research through chat completions", async () => {
     const responses = [];
     const client = await connect(worker, env, responses);
     const result = await client.callTool({
-        name: "lixsearch_research",
+        name: "oreolook_research",
         arguments: { question: "What is Pollinations?" },
     });
     assert.match(result.content[0].text, /Answer \[1\]/);
@@ -223,15 +223,15 @@ test("reports upstream failures at no cost", async () => {
     const responses = [];
     const client = await connect(worker, env, responses);
     const result = await client.callTool({
-        name: "lixsearch_extract",
+        name: "oreolook_extract",
         arguments: { urls: ["https://example.com"], prompt: "Get the title" },
     });
     assert.equal(result.isError, true);
     assert.deepEqual(usage(responses.at(-1)), {
         cost: "0",
-        tool: "lixsearch_extract",
+        tool: "oreolook_extract",
         status: "502",
-        adjustmentId: "lixsearch.scrape.v1",
+        adjustmentId: "oreolook.scrape.v1",
         adjustmentUnits: "1",
         error: "Upstream timeout",
     });
@@ -241,7 +241,7 @@ test("reports upstream failures at no cost", async () => {
 test("rejects JSON-RPC batches", async () => {
     const { calls, env, worker } = createHarness();
     const response = await worker.fetch(
-        new Request("https://lixsearch.internal", {
+        new Request("https://oreolook.internal", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify([

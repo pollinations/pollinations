@@ -137,7 +137,7 @@ jobs:
           - ${APP_DESCRIPTION}
 
           ${FIXES}")
-          gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch
+          gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto --squash
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
 
       - name: Wait for merge before publishing the next app
@@ -157,7 +157,7 @@ jobs:
             sleep 10
           done
           echo "Catalog PR did not merge within 10 minutes; retrying once"
-          gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --squash --delete-branch || true
+          gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --squash || true
           sleep 10
           STATE=$(gh pr view "$PR_URL" --repo "$GITHUB_REPOSITORY" --json state --jq .state)
           if [ "$STATE" = "MERGED" ]; then

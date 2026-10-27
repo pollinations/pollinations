@@ -7,7 +7,6 @@ import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { oauthSignInCallback } from "../lib/oauth-sign-in.ts";
 import { parseAppUrl, ReturnToApp } from "../lib/return-to-app.tsx";
-import { pageTitle } from "../page-meta.ts";
 
 export const Route = createFileRoute("/app/sign-in")({
     validateSearch: (search: Record<string, unknown>) => ({
@@ -15,7 +14,7 @@ export const Route = createFileRoute("/app/sign-in")({
         redirect_uri:
             typeof search.redirect_uri === "string" ? search.redirect_uri : "",
     }),
-    head: () => ({ meta: [{ title: pageTitle("/app/sign-in") }] }),
+    head: () => ({ meta: [{ title: "Sign in | pollinations.ai" }] }),
     component: AppSignIn,
 });
 

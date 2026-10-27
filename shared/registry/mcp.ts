@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "IMAGE_EDIT_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "image-edit",
+        name: "Image Edit",
+        description: "Edit images with a prompt and up to 8 reference images.",
+        binding: "IMAGE_EDIT_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Edits use the selected image model's listed rate. No additional MCP fee.",
             rates: [],
         },
     },

@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "image-edit",
+                name: "Image Edit",
+                description:
+                    "Edit images with a prompt and up to 8 reference images.",
+                url: "https://gen.pollinations.ai/mcp/image-edit",
+                pricing: {
+                    description:
+                        "Edits use the selected image model's listed rate. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

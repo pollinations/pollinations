@@ -26,7 +26,6 @@ CACHE_DIR="${CACHE_DIR:-/workspace/hf-cache}"
 TUNNEL_ENABLED="${TUNNEL_ENABLED:-false}"
 TUNNEL_TOKEN_FILE="/root/.cloudflared_token"
 TUNNEL_ENABLED_FILE="/root/.cloudflared_tunnel_enabled"
-CLOUDFLARED_MIN_VERSION="2026.5.2"
 CLOUDFLARED_METRICS="127.0.0.1:20241"
 
 if [ -z "${PLN_GPU_TOKEN:-}" ]; then
@@ -44,17 +43,6 @@ fi
 apt-get update -qq
 apt-get install -y -qq curl git screen python3-venv
 
-cloudflared_version=""
-if command -v cloudflared >/dev/null; then
-    cloudflared_version=$(cloudflared --version 2>/dev/null | awk '{print $3}')
-fi
-if [ -z "$cloudflared_version" ] || \
-    ! dpkg --compare-versions "$cloudflared_version" ge "$CLOUDFLARED_MIN_VERSION"; then
-    curl -fsSL --retry 5 -o /tmp/cloudflared.deb \
-        https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-    dpkg -i /tmp/cloudflared.deb >/dev/null
-fi
-
 if [ -n "$SKIP_CLONE" ]; then
     :
 elif [ -d "$WORK_DIR/.git" ]; then
@@ -64,6 +52,8 @@ else
     git clone --depth 1 --branch "$GIT_BRANCH" \
         https://github.com/pollinations/pollinations.git "$WORK_DIR"
 fi
+
+bash "$WORK_DIR/operations/infrastructure/gpu/install-cloudflared.sh"
 
 KLEIN_DIR="$WORK_DIR/operations/infrastructure/gpu/klein"
 mkdir -p "$CACHE_DIR"

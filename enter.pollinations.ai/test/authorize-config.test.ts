@@ -7,6 +7,7 @@ import {
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getConsentPermissionChoices,
     getGrantedOAuthScope,
     getPreselectedConsentPermissions,
     MAX_LINK_CONSENT_BUDGET,
@@ -15,6 +16,55 @@ import {
 import { parseAuthorizeRedirectUrl } from "@shared/auth/redirect-uri.ts";
 import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
+
+describe("getConsentPermissionChoices", () => {
+    // A website never gets account admin; polli's device login and local MCP
+    // clients such as Claude Code still can.
+    const requested = new Set(["usage", "keys", "machines"]);
+    const withKeys = ["usage", "keys", "machines"];
+    const withoutKeys = ["usage", "machines"];
+
+    it.each([
+        {
+            flow: "device flow",
+            device: true,
+            redirect: null,
+            expected: withKeys,
+        },
+        {
+            flow: "localhost redirect",
+            device: false,
+            redirect: "http://localhost:3456/callback",
+            expected: withKeys,
+        },
+        {
+            flow: "127.0.0.1 redirect",
+            device: false,
+            redirect: "http://127.0.0.1:53682/callback",
+            expected: withKeys,
+        },
+        {
+            flow: "website redirect",
+            device: false,
+            redirect: "https://example.com/callback",
+            expected: withoutKeys,
+        },
+        {
+            flow: "app scheme redirect",
+            device: false,
+            redirect: "myapp://localhost/callback",
+            expected: withoutKeys,
+        },
+    ])("$flow", ({ device, redirect, expected }) => {
+        expect(
+            getConsentPermissionChoices(
+                requested,
+                device,
+                redirect ? new URL(redirect) : null,
+            ),
+        ).toEqual(expected);
+    });
+});
 
 describe("getGrantedOAuthScope", () => {
     it.each([

@@ -476,6 +476,27 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(401);
     });
 
+    it.each([429, 500])(
+        "answers 503, not 401, when the key check returns %i",
+        async (status) => {
+            vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+                new Response(null, { status }),
+            );
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    body: TINY_PNG,
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "image/png",
+                    },
+                },
+            );
+            expect(res.status).toBe(503);
+        },
+    );
+
     it("upload and retrieve", async () => {
         const form = new FormData();
         form.append(

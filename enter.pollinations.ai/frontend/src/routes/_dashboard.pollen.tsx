@@ -1,4 +1,4 @@
-import { Section, Surface } from "@pollinations/ui";
+import { Alert, Section, Surface } from "@pollinations/ui";
 import { isPollenPackKey, type PollenPackKey } from "@shared/pollen-packs.ts";
 import {
     Await,
@@ -20,15 +20,14 @@ import {
     PollenBalance,
 } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
-import { checkoutReturnSearch } from "../lib/top-up-search.ts";
+import { checkoutNotice, checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
     validateSearch: (
         search: Record<string, unknown>,
-    ): {
+    ): ReturnType<typeof checkoutReturnSearch> & {
         pack?: PollenPackKey;
-        session_id?: string;
     } => ({
         pack:
             typeof search.pack === "string" && isPollenPackKey(search.pack)
@@ -55,7 +54,10 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 
 function PollenPage() {
     const retry = useDashboardRetry("balance");
-    const { pack, session_id: checkoutSessionId } = Route.useSearch();
+    const search = Route.useSearch();
+    const { pack, session_id: checkoutSessionId } = search;
+    // Back from Stripe's page without paying, or it never opened.
+    const notice = checkoutNotice(search);
     const navigate = useNavigate({ from: "/pollen" });
     const router = useRouter();
     // Balance and billing both come from loaders; rerun them once credited.
@@ -96,6 +98,11 @@ function PollenPage() {
                 </Await>
             </Section>
             <Section title="Top-up" id="buy-pollen">
+                {notice && (
+                    <Alert intent={search.checkout_error ? "danger" : "info"}>
+                        {notice}
+                    </Alert>
+                )}
                 {checkoutSessionId && (
                     <Surface>
                         <CheckoutConfirmation

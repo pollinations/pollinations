@@ -190,6 +190,13 @@ bucket_name = "pollinations-text-enter"
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
+simple = { limit = 600, period = 10 }
+
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.production.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
 simple = { limit = 10000, period = 10 }
 
 [[env.production.durable_objects.bindings]]
@@ -330,6 +337,13 @@ bucket_name = "pollinations-text-enter"
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
+simple = { limit = 600, period = 10 }
+
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.staging.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
 simple = { limit = 10000, period = 10 }
 
 [[env.staging.durable_objects.bindings]]
@@ -434,6 +448,13 @@ bucket_name = "pollinations-text-enter"
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
+simple = { limit = 10000, period = 10 }
+
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.test.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
 simple = { limit = 10000, period = 10 }
 
 [[env.test.durable_objects.bindings]]

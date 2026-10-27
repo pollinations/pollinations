@@ -7,6 +7,7 @@ import { withModelFallback } from "../../src/fallback.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
+import type { ChatMessage } from "../../src/text/types.js";
 
 const azureModelConfig = {
     provider: "azure-openai",
@@ -375,6 +376,69 @@ describe("generateTextPortkey", () => {
                 total_tokens: 6,
             },
         });
+    });
+
+    it("sends Gemini tool-call signatures only to Vertex", async () => {
+        vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+            "test-google-token",
+        );
+        const bodies: Record<string, unknown>[] = [];
+        const portkeyFetcher = vi.fn(
+            async (_input: RequestInfo | URL, init?: RequestInit) => {
+                bodies.push(JSON.parse(String(init?.body)));
+                return Response.json({
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 5,
+                        completion_tokens: 1,
+                        total_tokens: 6,
+                    },
+                });
+            },
+        );
+        const signedCall = {
+            id: "call_1",
+            type: "function",
+            function: {
+                name: "read_file",
+                arguments: "{}",
+                thought_signature: "sig",
+            },
+        };
+        const messages = [
+            { role: "user", content: "hello" },
+            { role: "assistant", content: null, tool_calls: [signedCall] },
+            { role: "tool", tool_call_id: "call_1", content: "ok" },
+        ];
+
+        for (const model of [
+            "google/gemini-3.5-flash-lite",
+            "minimax/minimax-m3",
+        ]) {
+            await generateTextPortkey(
+                messages,
+                { model, portkeyGatewayUrl: "https://portkey.test" },
+                portkeyFetcher,
+            );
+        }
+
+        const [vertex, fireworks] = bodies.map(
+            (body) => (body.messages as ChatMessage[])[1].tool_calls,
+        );
+        expect(vertex).toEqual([signedCall]);
+        expect(fireworks).toEqual([
+            {
+                id: "call_1",
+                type: "function",
+                function: { name: "read_file", arguments: "{}" },
+            },
+        ]);
     });
 
     it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {

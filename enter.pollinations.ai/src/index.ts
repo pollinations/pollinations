@@ -1,12 +1,14 @@
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
+import { rateLimit } from "@shared/rate-limit.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { api } from "./api.ts";
 import type { Env } from "./env.ts";
+import { serveFrontend } from "./frontend.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { getCurrentGenOrigin, wellKnownRoutes } from "./routes/well-known.ts";
@@ -51,6 +53,7 @@ const app = new Hono<Env>()
             c.header("X-Robots-Tag", "noindex, nofollow");
         }
     })
+    .use("/api/*", rateLimit({ byIp: false }))
     .route("/api/docs", createDocsRoutes(api))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
@@ -82,6 +85,16 @@ export default {
     fetch(request, env, ctx) {
         if (env.CODE_AGENT_CONTEXT) {
             return handleCodeAgentOutbound(request, env.CODE_AGENT_CONTEXT);
+        }
+        const path = new URL(request.url).pathname;
+        if (
+            (request.method === "GET" || request.method === "HEAD") &&
+            path !== "/api" &&
+            !path.startsWith("/api/") &&
+            path !== "/.well-known" &&
+            !path.startsWith("/.well-known/")
+        ) {
+            return serveFrontend(request, env.ASSETS);
         }
         return app.fetch(request, env, ctx);
     },

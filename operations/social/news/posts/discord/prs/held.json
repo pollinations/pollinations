@@ -11,9 +11,7 @@
     "18543": {
       "merge_sha": "27634c5c33d49364ee3e0c1cabb831a1e8d18753",
       "merged_at": "2026-10-27T12:15:23Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/chat"
-      ]
+      "required": []
     },
     "18559": {
       "merge_sha": "9955745833bb227fa70fae341f1e250d8607ad85",
@@ -35,8 +33,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18575": {

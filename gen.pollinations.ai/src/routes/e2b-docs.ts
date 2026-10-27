@@ -192,7 +192,7 @@ export const sandboxDocs = {
         tags: ["Sandboxes API"],
         summary: "Share sandbox port",
         description:
-            "Not part of E2B's API. Serves the port at `https://{port}-{id}.pollinations.app`, returned as `url`, to requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. E2B sandboxes only.",
+            "Not part of E2B's API. Makes the port at `https://{port}-{id}.pollinations.app`, returned as `url`, take only requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. E2B sandboxes only; envd's port 49983 can't be shared.",
         security: [{ bearerAuth: [] }],
         parameters: [id, port],
         requestBody: {
@@ -211,7 +211,7 @@ export const sandboxDocs = {
             200: { description: "`url`: where the port is served." },
             400: {
                 description:
-                    "Invalid port, secret or header, or an Azure sandbox.",
+                    "Invalid port, secret or header, port 49983, or an Azure sandbox.",
             },
             401: { description: "Missing or invalid Pollinations API key." },
             403: {

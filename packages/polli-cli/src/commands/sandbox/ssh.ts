@@ -1,5 +1,4 @@
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import {
     chmodSync,
     existsSync,
@@ -14,10 +13,9 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BASE_URL } from "../../lib/config.js";
 import { fail, printInfo } from "../../lib/output.js";
 import bootstrap from "./bootstrap.sh?raw";
-import { type Connection, connectSandbox, E2B_PATH, sharePort } from "./e2b.js";
+import { type Connection, connectSandbox } from "./e2b.js";
 
 const SSH_DIR = join(homedir(), ".pollinations", "ssh");
 const SSH_KEY = join(SSH_DIR, "id_ed25519");
@@ -55,42 +53,15 @@ export function stderrToTerminal() {
     }) as typeof process.stderr.write;
 }
 
-const onAzure = (s: Connection) => Boolean(s.domain?.endsWith(".adcproxy.io"));
-
-// Azure's port URLs name the sandbox first.
+// The domain connect returns, gen's for both providers. Azure's own port URLs
+// name the sandbox first.
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
-    onAzure(s)
+    s.domain?.endsWith(".adcproxy.io")
         ? `${scheme}://${s.sandboxID}--${port}.${s.domain}`
         : `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
 
-// Where ssh's WebSocket goes. Gen serves an E2B sandbox's ports at its own
-// hosts, so ssh reaches it like any request to them, which resumes it and
-// counts as activity. Azure's port proxy is reached directly, with the
-// traffic token a private sandbox needs.
-async function sshSocket(s: Connection) {
-    if (onAzure(s)) {
-        const token = s.trafficAccessToken;
-        return {
-            url: sandboxUrl(s, SSH_PORT, "wss"),
-            headers: token ? { "e2b-traffic-access-token": token } : {},
-        };
-    }
-    // Gen makes every E2B sandbox with an envd token, the same on each
-    // connect, so every computer shares the port with the same secret.
-    if (!s.envdAccessToken) throw new Error(`${s.sandboxID} has no envd token`);
-    const secret = createHash("sha256")
-        .update(`polli ssh ${s.envdAccessToken}`)
-        .digest("hex");
-    const { url } = await sharePort(s.sandboxID, SSH_PORT, secret);
-    return {
-        url: url.replace(/^https:/, "wss:"),
-        headers: { "x-pollinations-secret": secret },
-    };
-}
-
-// Runs a script as root through envd, the agent in every sandbox, which gen
-// serves to E2B's SDKs for both providers. Its Connect RPC takes and returns
-// length-prefixed JSON messages.
+// Runs a script as root through envd, the agent in every sandbox. Its
+// Connect RPC takes and returns length-prefixed JSON messages.
 async function runAsRoot(
     s: Connection,
     script: string,
@@ -104,22 +75,15 @@ async function runAsRoot(
     const frame = Buffer.alloc(5 + request.length);
     frame.writeUInt32BE(request.length, 1);
     request.copy(frame, 5);
-    const res = await fetch(
-        `${BASE_URL}${E2B_PATH}/sandbox/process.Process/Start`,
-        {
-            method: "POST",
-            headers: {
-                "e2b-sandbox-id": s.sandboxID,
-                "e2b-sandbox-port": "49983",
-                "content-type": "application/connect+json",
-                authorization: `Basic ${Buffer.from("root:").toString("base64")}`,
-                ...(s.envdAccessToken && {
-                    "x-access-token": s.envdAccessToken,
-                }),
-            },
-            body: frame,
+    const res = await fetch(`${sandboxUrl(s, 49983)}/process.Process/Start`, {
+        method: "POST",
+        headers: {
+            "content-type": "application/connect+json",
+            authorization: `Basic ${Buffer.from("root:").toString("base64")}`,
+            ...(s.envdAccessToken && { "x-access-token": s.envdAccessToken }),
         },
-    );
+        body: frame,
+    });
     if (!res.ok) throw new Error(`envd ${res.status}: ${await res.text()}`);
     const body = Buffer.from(await res.arrayBuffer());
     let output = "";
@@ -156,13 +120,10 @@ export async function proxy(host: string) {
     if (typeof WebSocket === "undefined")
         fail("This needs Node.js 22 or newer");
     const sandbox = await connectSandbox(id);
-    const [, { url, headers }] = await Promise.all([
-        runAsRoot(sandbox, bootstrap, {
-            POLLI_SSH_KEY: readFileSync(`${SSH_KEY}.pub`, "utf8").trim(),
-            POLLI_SSH_PORT: String(SSH_PORT),
-        }),
-        sshSocket(sandbox),
-    ]);
+    await runAsRoot(sandbox, bootstrap, {
+        POLLI_SSH_KEY: readFileSync(`${SSH_KEY}.pub`, "utf8").trim(),
+        POLLI_SSH_PORT: String(SSH_PORT),
+    });
     const renew = setInterval(
         () =>
             connectSandbox(id).catch((err) =>
@@ -170,8 +131,12 @@ export async function proxy(host: string) {
             ),
         RENEW_MS,
     );
-    // Node's WebSocket accepts headers.
-    const ws = new WebSocket(url, { headers } as unknown as string[]);
+    // Node's WebSocket accepts headers; a private sandbox needs its traffic token.
+    const ws = new WebSocket(sandboxUrl(sandbox, SSH_PORT, "wss"), {
+        headers: sandbox.trafficAccessToken
+            ? { "e2b-traffic-access-token": sandbox.trafficAccessToken }
+            : {},
+    } as unknown as string[]);
     ws.binaryType = "arraybuffer";
     await new Promise<void>((resolve, reject) => {
         ws.onopen = () => {
@@ -226,8 +191,8 @@ export function setupSsh() {
             "    IdentitiesOnly yes",
             `    UserKnownHostsFile "${join(SSH_DIR, "known_hosts")}"`,
             "    StrictHostKeyChecking accept-new",
-            // Gen's port proxy runs on Cloudflare, which closes a WebSocket
-            // after 100 seconds without data.
+            // Gen serves sandbox ports on Cloudflare, which closes a
+            // WebSocket after 100 seconds without data.
             "    ServerAliveInterval 30",
             `    ProxyCommand ${polli} sandbox proxy %h`,
             // Later ssh, scp and rsync reuse the first connection, up to 10

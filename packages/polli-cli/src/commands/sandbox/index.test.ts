@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import {
     fstatSync,
     mkdirSync,
@@ -273,7 +272,7 @@ describe("ssh connections", () => {
         expect(config).not.toContain("ControlMaster");
     });
 
-    it("reaches an E2B sandbox's sshd through Gen's port proxy, with a secret from its envd token", async () => {
+    it("reaches envd and sshd at the domain connect returns", async () => {
         const { setKeyOverride } = await import("../../lib/config.js");
         setKeyOverride("sk_test");
         writeFileSync(
@@ -284,31 +283,19 @@ describe("ssh connections", () => {
         const exit = Buffer.from(JSON.stringify({ event: { end: {} } }));
         const frame = Buffer.concat([Buffer.alloc(5), exit]);
         frame.writeUInt32BE(exit.length, 1);
-        const shares: unknown[] = [];
+        const calls: string[] = [];
         vi.stubGlobal(
             "fetch",
-            vi.fn(async (url: string, init: RequestInit) => {
-                if (url.endsWith("/connect")) {
-                    return Response.json({
-                        sandboxID: "box1",
-                        envdAccessToken: "envd",
-                        trafficAccessToken: "traffic",
-                    });
-                }
-                // envd goes through gen too.
-                if (
-                    url ===
-                        "https://gen.pollinations.ai/alpha/e2b/sandbox/process.Process/Start" &&
-                    (init.headers as Record<string, string>)[
-                        "e2b-sandbox-id"
-                    ] === "box1"
-                ) {
-                    return new Response(frame);
-                }
-                shares.push([url, init.method, JSON.parse(String(init.body))]);
-                return Response.json({
-                    url: "https://8022-box1.pollinations.app",
-                });
+            vi.fn(async (url: string) => {
+                calls.push(url);
+                return url.endsWith("/connect")
+                    ? Response.json({
+                          sandboxID: "box1",
+                          envdAccessToken: "envd",
+                          trafficAccessToken: "traffic",
+                          domain: "pollinations.app",
+                      })
+                    : new Response(frame);
             }),
         );
         const sockets: unknown[] = [];
@@ -327,22 +314,14 @@ describe("ssh connections", () => {
 
         await proxy("box1.polli");
 
-        // Computers on any polli version must derive the same secret from the
-        // sandbox's token, or each would lock the others out.
-        const secret = createHash("sha256")
-            .update("polli ssh envd")
-            .digest("hex");
-        expect(shares).toEqual([
-            [
-                "https://gen.pollinations.ai/alpha/e2b/sandboxes/box1/ports/8022",
-                "PUT",
-                { secret },
-            ],
+        expect(calls).toEqual([
+            "https://gen.pollinations.ai/alpha/e2b/sandboxes/box1/connect",
+            "https://49983-box1.pollinations.app/process.Process/Start",
         ]);
         expect(sockets).toEqual([
             [
                 "wss://8022-box1.pollinations.app",
-                { "x-pollinations-secret": secret },
+                { "e2b-traffic-access-token": "traffic" },
             ],
         ]);
     });

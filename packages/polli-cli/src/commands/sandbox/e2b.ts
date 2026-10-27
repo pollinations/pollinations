@@ -1,7 +1,7 @@
 import { gen, genText } from "../../lib/api.js";
 
 // Gen serves E2B's API here, so E2B's own CLI and SDKs work against it.
-export const E2B_PATH = "/alpha/e2b";
+const E2B_PATH = "/alpha/e2b";
 // Each create or connect keeps the sandbox paid for this long.
 export const LEASE_SECONDS = 600;
 
@@ -67,15 +67,6 @@ export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
         }
         if (!refusal) throw err;
         throw new Error(`${refusal}\nSee your sandboxes: polli sandbox list`);
-    });
-
-// Gen serves the port at `url` to requests that carry `secret` in
-// X-Pollinations-Secret, resuming the sandbox first if it is paused. E2B
-// sandboxes only.
-export const sharePort = (id: string, port: number, secret: string) =>
-    gen<{ url: string }>(`${E2B_PATH}/sandboxes/${id}/ports/${port}`, {
-        method: "PUT",
-        body: { secret },
     });
 
 // Paused sandboxes keep their files and memory and cost nothing. A pause ends

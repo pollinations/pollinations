@@ -219,6 +219,7 @@ new_classes = ["CommunityModelRateLimiter"]
 [env.production.vars]
 ENVIRONMENT = "production"
 SITES_HOST_SUFFIX = ".pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 # Public OAuth app identifier; user credentials stay in their browser tab.
 DOCS_APP_KEY = "pk_zM4Wvtd1rgWXRmLP"
 # Durable Object fetches get a 125 s proxy read timeout; requests through
@@ -261,6 +262,11 @@ custom_domain = true
 # User sites (src/sites.ts). Hosts starting with a digit stay with sandbox ports.
 [[env.staging.routes]]
 pattern = "*--staging.pollinations.app/*"
+zone_name = "pollinations.app"
+
+# Sandbox ports (src/routes/e2b.ts): E2B's SDKs put a dot before the domain.
+[[env.staging.routes]]
+pattern = "*.staging.pollinations.app/*"
 zone_name = "pollinations.app"
 
 [[env.staging.services]]
@@ -359,6 +365,7 @@ new_classes = ["CommunityModelRateLimiter"]
 [env.staging.vars]
 ENVIRONMENT = "staging"
 SITES_HOST_SUFFIX = "--staging.pollinations.app"
+SANDBOX_DOMAIN = "staging.pollinations.app"
 GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
@@ -471,6 +478,7 @@ PORTKEY_GATEWAY_URL = "https://portkey.test"
 AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
 E2B_API_KEY = "not-a-secret-workers-test-only"
 SITES_HOST_SUFFIX = ".pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"

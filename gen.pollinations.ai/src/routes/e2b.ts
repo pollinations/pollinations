@@ -43,8 +43,10 @@ import {
     AZURE_TEMPLATES,
     AZURE_VCPU_SECOND,
     azureConfigured,
+    azureDomain,
     azureE2b,
     azureLeaseEnd,
+    ENVD_PORT,
     isAzurePath,
     isAzureSandbox,
     OWNER_KEY,
@@ -159,6 +161,20 @@ type CreatedSandbox = {
 };
 
 type E2bContext = Context<Env>;
+
+// Gen serves every sandbox's envd and ports at <port>-<id>.<SANDBOX_DOMAIN>
+// (servePort), for both providers. E2B's SDKs build those URLs from the
+// `domain` they are given, so callers reach sandboxes through gen.
+const servedByGen = <T extends object>(env: Env["Bindings"], sandbox: T) =>
+    env.SANDBOX_DOMAIN ? { ...sandbox, domain: env.SANDBOX_DOMAIN } : sandbox;
+
+// Where the sandbox's provider serves `port`.
+const providerOrigin = (
+    env: CloudflareBindings,
+    sandboxID: string,
+    port: number,
+) =>
+    `https://${sandboxHost(sandboxID, port, isAzureSandbox(sandboxID) ? azureDomain(env) : null)}`;
 
 function e2b(env: CloudflareBindings, path: string, init: RequestInit = {}) {
     if (isAzurePath(path)) return azureE2b(env, path, init);
@@ -664,7 +680,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     });
                 }
             }
-            return c.json(created, 201);
+            return c.json(servedByGen(c.env, created), 201);
         })
         .get("/v2/sandboxes", sandboxDocs.list, async (c) => {
             // Listing is scoped to the caller's sandboxes, whatever they filter.
@@ -689,14 +705,15 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             ];
             const headers = new Headers(response.headers);
             headers.delete("content-length");
+            const shown = await showKeeps(c.env, sandboxes);
             return new Response(
-                JSON.stringify(await showKeeps(c.env, sandboxes)),
+                JSON.stringify(shown.map((found) => servedByGen(c.env, found))),
                 { status: response.status, headers },
             );
         })
         .get("/sandboxes/:id", sandboxDocs.get, async (c) => {
             const [sandbox] = await showKeeps(c.env, [await ownedSandbox(c)]);
-            return c.json(sandbox);
+            return c.json(servedByGen(c.env, sandbox));
         })
         .delete("/sandboxes/:id", sandboxDocs.delete, ownerOnly)
         .get("/sandboxes/:id/metrics", sandboxDocs.metrics, ownerOnly)
@@ -763,21 +780,26 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 // Connect never shortens a lease, so it never ends a keep. Any
                 // other connect by the owner (polli ssh renews this way) is
                 // activity; the cron's and a wake's are not.
-                if (response.ok && until) {
+                if (!response.ok) return response;
+                if (until) {
                     await setKeep(c, sandbox.sandboxID, until, idle);
-                } else if (response.ok && !keeper) {
+                } else if (!keeper) {
                     await noteActivity(c.env, sandbox.sandboxID);
                 }
-                return response;
+                const connected = await response.json<CreatedSandbox>();
+                return c.json(
+                    servedByGen(c.env, connected),
+                    response.status as ContentfulStatusCode,
+                );
             },
         )
-        // Not E2B's: serves a port at https://<port>-<id>.pollinations.app,
-        // where a request that carries the share's secret wakes the sandbox.
-        // Like a keep, the key that shares it pays the wakes, or the owner
-        // when the dashboard shared it.
+        // Not E2B's: a port at https://<port>-<id>.pollinations.app then takes
+        // only requests that carry the share's secret, and one wakes the
+        // sandbox. Like a keep, the key that shares it pays the wakes, or the
+        // owner when the dashboard shared it.
         .put("/sandboxes/:id/ports/:port", sandboxDocs.sharePort, async (c) => {
-            const suffix = c.env.SITES_HOST_SUFFIX;
-            if (!suffix) {
+            const domain = c.env.SANDBOX_DOMAIN;
+            if (!domain) {
                 throw new HTTPException(503, {
                     message: "Sandbox ports are not configured",
                 });
@@ -789,6 +811,11 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 });
             }
             const port = sharedPort(c.req.param("port"));
+            if (port === ENVD_PORT) {
+                throw new HTTPException(400, {
+                    message: `envd's port ${ENVD_PORT} checks its own token and can't be shared.`,
+                });
+            }
             const { secret, header = PORT_SECRET_HEADER } = await readJson<{
                 secret: string;
                 header: string;
@@ -816,7 +843,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     target: [sandboxPort.sandboxId, sandboxPort.port],
                     set: share,
                 });
-            return c.json({ url: `https://${port}-${sandboxID}${suffix}` });
+            return c.json({ url: `https://${port}-${sandboxID}.${domain}` });
         })
         .delete(
             "/sandboxes/:id/ports/:port",
@@ -978,17 +1005,38 @@ const portRefusal = (status: number, message: string) =>
 
 const notShared = () => portRefusal(404, "No sandbox port is shared here.");
 
+// ponytail: per isolate, whether gen made a sandbox, so its hosts serve only
+// gen's sandboxes and only an isolate's first request reads the provider. An
+// ID never changes hands, so a yes holds; a no is read again after a minute,
+// for a sandbox still being made. Cleared whole when it grows large.
+const gensSandboxes = new Map<string, { ours: boolean; until: number }>();
+
+async function madeByGen(env: CloudflareBindings, sandboxID: string) {
+    const known = gensSandboxes.get(sandboxID);
+    if (known && known.until > Date.now()) return known.ours;
+    const ours = Boolean(await getSandbox(env, sandboxID));
+    if (gensSandboxes.size > 10_000) gensSandboxes.clear();
+    gensSandboxes.set(sandboxID, {
+        ours,
+        until: ours ? Number.POSITIVE_INFINITY : Date.now() + 60_000,
+    });
+    return ours;
+}
+
+const notGens = () => portRefusal(404, "No Pollinations sandbox has this ID.");
+
 // The sandbox and port a host like 8080-<sandbox id>.pollinations.app names.
 // Site names start with a letter, so no site can take such a host.
 export function sandboxPortHost(env: Env["Bindings"], hostname: string) {
-    const suffix = env.SITES_HOST_SUFFIX;
-    if (!suffix || !hostname.endsWith(suffix)) return null;
-    const match = hostname
-        .slice(0, -suffix.length)
-        .match(/^(\d{1,5})-([a-z0-9]+)$/);
+    const suffix = `.${env.SANDBOX_DOMAIN}`;
+    if (!env.SANDBOX_DOMAIN || !hostname.endsWith(suffix)) return null;
+    const match = hostname.slice(0, -suffix.length).match(/^(\d{1,5})-(.+)$/);
     const port = Number(match?.[1]);
-    return match && port >= 1 && port <= 65535
-        ? { port, sandboxID: match[2] }
+    const sandboxID = match?.[2] ?? "";
+    return port >= 1 &&
+        port <= 65535 &&
+        (/^[a-z0-9]+$/.test(sandboxID) || isAzureSandbox(sandboxID))
+        ? { port, sandboxID }
         : null;
 }
 
@@ -1023,7 +1071,7 @@ async function wakePort(
     const connected = await response.json<CreatedSandbox>();
     const now = Date.now();
     const woken = {
-        origin: `https://${port}-${sandboxID}.${connected.domain || "e2b.app"}`,
+        origin: providerOrigin(env, sandboxID, port),
         token: connected.trafficAccessToken ?? undefined,
         // Connect never shortens a running sandbox's lease.
         until: Math.max(
@@ -1036,12 +1084,13 @@ async function wakePort(
 }
 
 /**
- * Serves a shared sandbox port at its own host, to requests that carry the
- * share's secret: a request to a paused sandbox resumes it first, and one to a
- * sandbox whose lease ends within a minute extends it, both paid by the port's
- * payer. Each request is activity for an idle timeout. Everything else,
- * WebSocket upgrades and streamed bodies included, passes through to E2B
- * unchanged.
+ * Serves a sandbox port at its own host. A shared port takes only requests
+ * that carry the share's secret: one to a paused sandbox resumes it first, and
+ * one to a sandbox whose lease ends within a minute extends it, both paid by
+ * the port's payer, and each is activity for an idle timeout. Any other port
+ * is served as its provider's own host serves it: while the sandbox runs,
+ * waking nothing. Everything, WebSocket upgrades and streamed bodies included,
+ * passes through unchanged.
  */
 export const servePort = (
     request: Request,
@@ -1062,12 +1111,44 @@ export const servePort = (
         return portRefusal(502, "This sandbox could not be reached.");
     });
 
+// Sends the request on to `origin` as it came.
+function send(
+    request: Request,
+    origin: string,
+    token?: string,
+    body = request.body,
+) {
+    const url = new URL(request.url);
+    const headers = new Headers(request.headers);
+    headers.delete("host");
+    if (token) headers.set("e2b-traffic-access-token", token);
+    return fetch(`${origin}${url.pathname}${url.search}`, {
+        method: request.method,
+        headers,
+        body,
+        redirect: "manual",
+    });
+}
+
 async function forwardPort(
     request: Request,
     env: CloudflareBindings,
     ctx: ExecutionContext,
     { port, sandboxID }: { port: number; sandboxID: string },
 ) {
+    // envd checks its own token, so its port is never shared. A call it
+    // accepts is the owner's work in the sandbox: activity.
+    if (port === ENVD_PORT) {
+        if (!(await madeByGen(env, sandboxID))) return notGens();
+        const response = await send(
+            request,
+            providerOrigin(env, sandboxID, port),
+        );
+        if (response.status !== 401 && response.status !== 403) {
+            ctx.waitUntil(noteActivity(env, sandboxID));
+        }
+        return response;
+    }
     const shared = await drizzle(env.DB)
         .select()
         .from(sandboxPort)
@@ -1078,7 +1159,11 @@ async function forwardPort(
             ),
         )
         .get();
-    if (!shared) return notShared();
+    if (!shared) {
+        return (await madeByGen(env, sandboxID))
+            ? send(request, providerOrigin(env, sandboxID, port))
+            : notGens();
+    }
     const secret = await sha256(request.headers.get(shared.header) ?? "");
     if (secret !== shared.secretHash) {
         return portRefusal(
@@ -1105,19 +1190,7 @@ async function forwardPort(
             : woken === cached && small
               ? request.clone()
               : null;
-    const url = new URL(request.url);
-    const headers = new Headers(request.headers);
-    headers.delete("host");
-    const send = ({ origin, token }: WokenPort, body = request.body) => {
-        if (token) headers.set("e2b-traffic-access-token", token);
-        return fetch(`${origin}${url.pathname}${url.search}`, {
-            method: request.method,
-            headers,
-            body,
-            redirect: "manual",
-        });
-    };
-    const response = await send(woken);
+    const response = await send(request, woken.origin, woken.token);
     // E2B answers 502 "The sandbox was not found" for a sandbox that stopped
     // inside the cached lease: paused idle or by its owner, or killed. A
     // request that can be sent again wakes it and tries again; any other, the
@@ -1132,7 +1205,9 @@ async function forwardPort(
     wokenPorts.delete(key);
     if (!replay) return response;
     woken = await wake();
-    return woken instanceof Response ? woken : send(woken, replay.body);
+    return woken instanceof Response
+        ? woken
+        : send(request, woken.origin, woken.token, replay.body);
 }
 
 // Notes a CPU busy over the cron's last interval as activity, so the idle

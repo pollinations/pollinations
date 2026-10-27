@@ -2312,3 +2312,115 @@ describe("async media jobs", () => {
         expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 });
+
+describe("stored image URL", () => {
+    it("returns the enclosure URL from imageUrl", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse("", {
+                contentType: "image/jpeg",
+                headers: {
+                    link: '<https://media.pollinations.ai/example.jpg>; rel="enclosure"',
+                },
+            }),
+        );
+        await expect(newClient().imageUrl("A sunflower")).resolves.toBe(
+            "https://media.pollinations.ai/example.jpg",
+        );
+    });
+
+    it("throws NO_IMAGE_URL when the response has no enclosure URL", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse("", { contentType: "image/jpeg" }),
+        );
+        await expect(newClient().imageUrl("A sunflower")).rejects.toMatchObject(
+            { code: "NO_IMAGE_URL" },
+        );
+    });
+});
+
+describe("usage pagination", () => {
+    it("forwards before_event_id with before", async () => {
+        fetchMock.mockResolvedValue(makeResponse({ usage: [], count: 0 }));
+        const cursor = {
+            before: "2026-10-27 10:00:00",
+            before_event_id: "evt_42",
+        };
+        await newClient().accountUsage(cursor);
+        await newClient().accountKeyUsage(cursor);
+        for (const [path, call] of [
+            ["/account/usage", fetchMock.mock.calls[0]],
+            ["/account/key/usage", fetchMock.mock.calls[1]],
+        ] as const) {
+            const url = new URL(call?.[0] as string);
+            expect(url.pathname).toBe(path);
+            expect(url.searchParams.get("before")).toBe(cursor.before);
+            expect(url.searchParams.get("before_event_id")).toBe("evt_42");
+        }
+    });
+});
+
+describe("device login cancellation", () => {
+    it("aborts the pending token request and rejects instead of returning a token", async () => {
+        vi.useFakeTimers();
+        const controller = new AbortController();
+        let finishToken: (res: Response) => void = () => {};
+        fetchMock
+            .mockResolvedValueOnce(
+                Response.json({
+                    device_code: "dev",
+                    user_code: "ABCD",
+                    verification_uri_complete: "https://example.test/device",
+                    expires_in: 60,
+                    interval: 5,
+                }),
+            )
+            .mockImplementationOnce(
+                () =>
+                    new Promise<Response>((resolve) => (finishToken = resolve)),
+            );
+        const auth = await Pollinations.authorizeDevice({
+            signal: controller.signal,
+        });
+        const result = auth.poll();
+        result.catch(() => {});
+        await vi.advanceTimersByTimeAsync(5000);
+        expect((fetchMock.mock.calls[1][1] as RequestInit).signal).toBe(
+            controller.signal,
+        );
+        controller.abort();
+        finishToken(Response.json({ access_token: "sk_device" }));
+        await expect(result).rejects.toMatchObject({ code: "CANCELLED" });
+    });
+});
+
+describe("refusal-only completions", () => {
+    const refusal = "I cannot help with that request.";
+
+    it("returns the refusal from text()", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: null, refusal },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+        );
+        await expect(newClient().text("hello")).resolves.toBe(refusal);
+    });
+
+    it("yields refusal deltas from textStream()", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                `data: ${JSON.stringify({ choices: [{ delta: { refusal } }] })}\n\ndata: [DONE]\n\n`,
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+        const chunks: string[] = [];
+        for await (const chunk of newClient().textStream("hello"))
+            chunks.push(chunk);
+        expect(chunks).toEqual([refusal]);
+    });
+});

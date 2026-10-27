@@ -96,6 +96,55 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "lixsearch",
+                name: "lixSearch",
+                description:
+                    "Search, scrape, map, crawl, and extract from the web, or run cited deep research.",
+                url: "https://gen.pollinations.ai/mcp/lixsearch",
+                pricing: {
+                    rates: [
+                        {
+                            name: "lixsearch.search.v1",
+                            label: "Search",
+                            kind: "search_request",
+                            price: "0.005",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "request",
+                            suffix: "up to 20 results",
+                        },
+                        {
+                            name: "lixsearch.scrape.v1",
+                            label: "Scrape",
+                            kind: "page",
+                            price: "0.001",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "page",
+                        },
+                        {
+                            name: "lixsearch.crawl.page.v1",
+                            label: "Crawl",
+                            kind: "page",
+                            price: "0.001",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "page",
+                            suffix: "billed on the requested limit",
+                        },
+                        {
+                            name: "lixsearch.research.v1",
+                            label: "Research",
+                            kind: "research_request",
+                            price: "0.02",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "request",
+                        },
+                    ],
+                },
+            },
+            {
                 id: "composio",
                 name: "Connectors",
                 description:

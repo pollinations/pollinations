@@ -404,6 +404,12 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            403: {
+                description: "Publishable (pk_) keys can't upload",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             409: {
                 description:
                     "The custom ID already has a file or gallery entry; nothing was replaced",
@@ -443,6 +449,14 @@ api.post(
         const authResult = await verifyApiKey(apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        // Publishable keys ship inside public clients, so anyone holding one
+        // could host files on the owner's account; uploads are secret-key only.
+        if (authResult.type !== "secret") {
+            return c.json(
+                { error: "Uploading media requires a secret (sk_) API key" },
+                403,
+            );
         }
 
         const uploadMaxSize =
@@ -1168,7 +1182,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
+                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a secret pollinations.ai API key (`sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {
@@ -1177,7 +1191,7 @@ app.get("/openapi.json", async (c, next) => {
                         type: "http",
                         scheme: "bearer",
                         bearerFormat: "API Key",
-                        description: "pollinations.ai API key (pk_ or sk_)",
+                        description: "Secret pollinations.ai API key (sk_)",
                     },
                 },
             },

@@ -18,19 +18,51 @@ import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 
 describe("getConsentPermissionChoices", () => {
-    // Apps that redirect back never get account admin; polli's device login
-    // still can.
-    it("offers keys only in the device flow", () => {
-        const requested = new Set(["usage", "keys", "machines"]);
-        expect(getConsentPermissionChoices(requested, false)).toEqual([
-            "usage",
-            "machines",
-        ]);
-        expect(getConsentPermissionChoices(requested, true)).toEqual([
-            "usage",
-            "keys",
-            "machines",
-        ]);
+    // A website never gets account admin; polli's device login and local MCP
+    // clients such as Claude Code still can.
+    const requested = new Set(["usage", "keys", "machines"]);
+    const withKeys = ["usage", "keys", "machines"];
+    const withoutKeys = ["usage", "machines"];
+
+    it.each([
+        {
+            flow: "device flow",
+            device: true,
+            redirect: null,
+            expected: withKeys,
+        },
+        {
+            flow: "localhost redirect",
+            device: false,
+            redirect: "http://localhost:3456/callback",
+            expected: withKeys,
+        },
+        {
+            flow: "127.0.0.1 redirect",
+            device: false,
+            redirect: "http://127.0.0.1:53682/callback",
+            expected: withKeys,
+        },
+        {
+            flow: "website redirect",
+            device: false,
+            redirect: "https://example.com/callback",
+            expected: withoutKeys,
+        },
+        {
+            flow: "app scheme redirect",
+            device: false,
+            redirect: "myapp://localhost/callback",
+            expected: withoutKeys,
+        },
+    ])("$flow", ({ device, redirect, expected }) => {
+        expect(
+            getConsentPermissionChoices(
+                requested,
+                device,
+                redirect ? new URL(redirect) : null,
+            ),
+        ).toEqual(expected);
     });
 });
 

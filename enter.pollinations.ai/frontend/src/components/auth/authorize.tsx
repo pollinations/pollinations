@@ -115,6 +115,7 @@ export function Authorize() {
     const visibleOptionalPermissions = getConsentPermissionChoices(
         requestedScopes,
         isDeviceMode,
+        parsedRedirectUrl,
     );
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =

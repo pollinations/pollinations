@@ -1,3 +1,5 @@
+import { isLoopbackHostname } from "./redirect-uri.ts";
+
 /**
  * Parse a scope/permissions URL parameter. Accepts both OAuth-canonical
  * space-separated format (`scope=usage%20keys`) and our legacy
@@ -127,17 +129,23 @@ export function getPreselectedConsentPermissions(
 }
 
 /**
- * The requested permissions the consent screen offers. Only the device flow
- * (polli) offers `keys`: an app that redirects back never gets account admin.
+ * The requested permissions the consent screen offers. `keys` (account admin)
+ * is only offered in the device flow (polli) and on redirects to this computer
+ * (local MCP clients such as Claude Code): a phished link that redirects to a
+ * website must never get it.
  */
 export function getConsentPermissionChoices(
     requested: ReadonlySet<string>,
     isDeviceFlow: boolean,
+    redirectUrl: URL | null,
 ): string[] {
+    const offersKeys =
+        isDeviceFlow ||
+        (redirectUrl?.protocol === "http:" &&
+            isLoopbackHostname(redirectUrl.hostname));
     return CONSENT_PERMISSIONS.filter(
         (permission) =>
-            requested.has(permission) &&
-            (isDeviceFlow || permission !== "keys"),
+            requested.has(permission) && (offersKeys || permission !== "keys"),
     );
 }
 

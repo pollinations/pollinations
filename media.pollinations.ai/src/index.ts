@@ -1,4 +1,10 @@
-import { extractApiKey } from "@shared/auth/api-key.ts";
+import { AGENT_RUN_TOKEN_PREFIX } from "@shared/auth/agent-run-token.ts";
+import {
+    authenticateApiKeyRequest,
+    BannedAccountError,
+    extractApiKey,
+    StagingAccessDeniedError,
+} from "@shared/auth/api-key.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { rateLimit } from "@shared/rate-limit.ts";
@@ -8,7 +14,7 @@ import {
     SAFETY_HEADER_NAME,
 } from "@shared/schemas/safety.ts";
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import {
@@ -47,9 +53,10 @@ import {
 export { MediaUpload } from "./media-upload.ts";
 
 const DOMAIN = "media.pollinations.ai";
-// gen.pollinations.ai proxies /account/* to enter — using the public path
-// keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+// Agent run tokens are signed with BETTER_AUTH_SECRET, which media does not
+// have, so Gen (which proxies /account/* to Enter) still checks those.
+const AGENT_RUN_TOKEN_CHECK_URL = "https://gen.pollinations.ai/account/key";
+const KEY_CHECK_UNAVAILABLE = "API key check unavailable. Please retry.";
 // Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
 // IDs can be reused after expiry; neither should remain in downstream caches.
 const UNCACHED_CACHE_CONTROL = "no-store";
@@ -99,16 +106,54 @@ interface AuthResult {
     byopClientKeyId: string | null;
 }
 
-async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    const res = await fetch(KEY_VERIFY_URL, {
-        headers: { Authorization: `Bearer ${apiKey}` },
+/** Checks the key in Enter's D1, the same way Gen's auth middleware does. */
+async function verifyApiKey(
+    c: Context<{ Bindings: Env }>,
+    apiKey: string,
+): Promise<AuthResult | null> {
+    if (apiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
+        return verifyAgentRunToken(apiKey);
+    }
+    const result = await authenticateApiKeyRequest({
+        request: c.req.raw,
+        env: c.env,
+        ctx: c.executionCtx,
+    }).catch((error) => {
+        if (
+            error instanceof BannedAccountError ||
+            error instanceof StagingAccessDeniedError
+        ) {
+            throw new HTTPException(403, {
+                res: Response.json({ error: error.message }),
+            });
+        }
+        // A failing check must not tell the owner of a valid key that it is
+        // invalid.
+        throw new HTTPException(503, {
+            message: KEY_CHECK_UNAVAILABLE,
+            cause: error,
+        });
+    });
+    // A session token has no key, and media can't check one anyway.
+    if (!result?.apiKey || !result.user) return null;
+    return {
+        valid: true,
+        type: apiKey.startsWith("pk_") ? "publishable" : "secret",
+        name: result.apiKey.name ?? null,
+        keyId: result.apiKey.id,
+        userId: result.user.id,
+        byopClientKeyId: result.apiKey.byopClientKeyId ?? null,
+    };
+}
+
+async function verifyAgentRunToken(token: string): Promise<AuthResult | null> {
+    const res = await fetch(AGENT_RUN_TOKEN_CHECK_URL, {
+        headers: { Authorization: `Bearer ${token}` },
     }).catch(() => undefined);
     // Only a 4xx means a bad key. A throttled or failing check must not tell
     // the owner of a valid key that it is invalid.
     if (!res || res.status === 429 || res.status >= 500) {
-        throw new HTTPException(503, {
-            message: "API key check unavailable. Please retry.",
-        });
+        throw new HTTPException(503, { message: KEY_CHECK_UNAVAILABLE });
     }
     if (!res.ok) return null;
     const data = await res.json<KeyVerifyResponse>();
@@ -306,8 +351,8 @@ const MediaListQuerySchema = z.object({
 
 const api = new Hono<{ Bindings: Env }>();
 
-// Every key check is a D1 lookup in Enter, so cap each key and client IP
-// before it; wrangler.toml sets the limits.
+// Every key check reads Enter's D1, so cap each key and client IP before it;
+// wrangler.toml sets the limits.
 const keyCheckRateLimit = rateLimit({ byIp: true });
 const RateLimitedResponse = {
     description:
@@ -408,7 +453,8 @@ api.post(
                 },
             },
             403: {
-                description: "Publishable (pk_) keys can't upload",
+                description:
+                    "Publishable (pk_) keys can't upload, or the key's account is banned",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -449,7 +495,7 @@ api.post(
                 401,
             );
         }
-        const authResult = await verifyApiKey(apiKey);
+        const authResult = await verifyApiKey(c, apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
@@ -965,7 +1011,7 @@ api.delete(
             },
             403: {
                 description:
-                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
+                    "Key is not a secret (`sk_`) key, is not attached to a user account, its account is banned, or the item belongs to someone else",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -991,7 +1037,7 @@ api.delete(
                 401,
             );
         }
-        const auth = await verifyApiKey(apiKey);
+        const auth = await verifyApiKey(c, apiKey);
         if (!auth) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }

@@ -3,6 +3,7 @@ import {
     writeModelSelection,
 } from "@frontend/components/keys/model-selection.ts";
 import {
+    canGrantKeysByLink,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
@@ -63,6 +64,29 @@ describe("getConsentPermissionChoices", () => {
                 redirect ? new URL(redirect) : null,
             ),
         ).toEqual(expected);
+    });
+});
+
+describe("canGrantKeysByLink", () => {
+    // A grant link follows the consent screen's rule, judged by where the
+    // key's consent redirected.
+    it.each([
+        { key: "device login, dashboard or API", origin: undefined, ok: true },
+        {
+            key: "localhost redirect",
+            origin: "http://localhost:3456",
+            ok: true,
+        },
+        {
+            key: "127.0.0.1 redirect",
+            origin: "http://127.0.0.1:53682",
+            ok: true,
+        },
+        { key: "website redirect", origin: "https://example.com", ok: false },
+        // An app scheme such as myapp://callback has the origin "null".
+        { key: "app scheme redirect", origin: "null", ok: false },
+    ])("$key", ({ origin, ok }) => {
+        expect(canGrantKeysByLink(origin)).toBe(ok);
     });
 });
 

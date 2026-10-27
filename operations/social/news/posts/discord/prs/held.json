@@ -12,11 +12,6 @@
       "merge_sha": "28c4a157c7015515e9cd817e2914a8393ed1463d",
       "merged_at": "2026-10-27T13:19:25Z",
       "required": []
-    },
-    "18590": {
-      "merge_sha": "853283c7d030a90af5edee7eaad472b1ad25514e",
-      "merged_at": "2026-10-27T17:09:49Z",
-      "required": []
     }
   },
   "production": "c9f6790f9350cf3d183044bc421176b64cfacc12",

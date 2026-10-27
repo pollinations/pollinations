@@ -16,11 +16,7 @@
     "18590": {
       "merge_sha": "853283c7d030a90af5edee7eaad472b1ad25514e",
       "merged_at": "2026-10-27T17:09:49Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/model-monitor"
-      ]
+      "required": []
     }
   },
   "production": "c9f6790f9350cf3d183044bc421176b64cfacc12",

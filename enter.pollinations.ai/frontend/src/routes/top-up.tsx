@@ -15,7 +15,6 @@ import {
 } from "../hooks/use-account-balance.ts";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
 import { checkoutNotice, validateTopUpSearch } from "../lib/top-up-search.ts";
-import { pageTitle } from "../page-meta.ts";
 
 /**
  * Standalone top-up: the wallet and top-up sections of the pollen page on
@@ -24,7 +23,7 @@ import { pageTitle } from "../page-meta.ts";
  * go back to the app.
  */
 export const Route = createFileRoute("/top-up")({
-    head: () => ({ meta: [{ title: pageTitle("/top-up") }] }),
+    head: () => ({ meta: [{ title: "Top-up | pollinations.ai" }] }),
     validateSearch: validateTopUpSearch,
     component: TopUpPage,
 });

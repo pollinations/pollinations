@@ -167,14 +167,24 @@ jobs:
           # Compare operation identities against the latest published reference,
           # so title/section changes do not require manual review.
           REMOVED=$(node .github/scripts/docs-removed-operations.mjs <(git show HEAD:APIDOCS.md) APIDOCS.md)
-          PR=$(gh pr list --head "$BRANCH" --base main --state open --json number,autoMergeRequest --jq '.[0] // {}')
+          PR=$(gh pr list --head "$BRANCH" --base main --state open --json id,number,autoMergeRequest --jq '.[0] // {}')
           EXISTING=$(jq -r '.number // empty' <<< "$PR")
           BODY="Auto-generated from OpenAPI spec changes after a successful production deploy."
           if [ -n "$REMOVED" ]; then
-            # Disable first: an already-approved PR must not merge the removal
-            # as soon as the updated branch is pushed.
-            if [ "$(jq -r '.autoMergeRequest != null' <<< "$PR")" = "true" ]; then
-              gh pr merge --disable-auto "$EXISTING"
+            # Dequeue first: gh skips --disable-auto while a PR is queued.
+            # Both must be cancelled before pushing removals for manual review.
+            if [ -n "$EXISTING" ]; then
+              PR_ID=$(jq -r '.id' <<< "$PR")
+              QUEUED=$(gh api graphql -f id="$PR_ID" \
+                -f query='query($id: ID!) { node(id: $id) { ... on PullRequest { isInMergeQueue } } }' \
+                --jq '.data.node.isInMergeQueue')
+              if [ "$QUEUED" = "true" ]; then
+                gh api graphql -f id="$PR_ID" \
+                  -f query='mutation($id: ID!) { dequeuePullRequest(input: {id: $id}) { clientMutationId } }'
+              fi
+              if [ "$(jq -r '.autoMergeRequest != null' <<< "$PR")" = "true" ]; then
+                gh pr merge --disable-auto "$EXISTING"
+              fi
             fi
             BODY+=$'\n\nManual review required: these operations disappeared from the generated reference.\n\n'
             BODY+="$REMOVED"
@@ -203,7 +213,7 @@ jobs:
             exit 1
           fi
 
-          # Fail loud if auto-merge can't be enabled — otherwise the docs PR
+          # Fail loud if the merge request fails — otherwise the docs PR
           # could sit open indefinitely while the workflow reports success.
           gh pr merge --auto --squash "$EXISTING"
         env:

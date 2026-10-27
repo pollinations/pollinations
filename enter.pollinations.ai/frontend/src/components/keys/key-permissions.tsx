@@ -103,6 +103,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
             setAccountPermissions(next.length ? next : null),
         disabled,
         visiblePermissions,
+        accessContext,
     };
     const limitInputs = (
         <>

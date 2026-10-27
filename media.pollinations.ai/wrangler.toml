@@ -48,6 +48,16 @@ name = "pollinations-media-prod"
 [env.production.vars]
 MAX_FILE_SIZE = "419430400"  # 400 MiB in bytes
 
+# Keeps media's own log lines, such as upload attribution, for 7 days.
+# Invocation logs stay off: they record request URLs, which can carry ?key=,
+# and a bad-key flood would bill one log event per request.
+[env.production.observability]
+enabled = true
+head_sampling_rate = 1
+
+[env.production.observability.logs]
+invocation_logs = false
+
 [[env.production.routes]]
 pattern = "media.myceli.ai"
 zone_name = "myceli.ai"

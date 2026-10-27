@@ -1,5 +1,6 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { rateLimit } from "@shared/rate-limit.ts";
 import {
     invalidSafeTokens,
     parseSafeFeatures,
@@ -305,6 +306,14 @@ const MediaListQuerySchema = z.object({
 
 const api = new Hono<{ Bindings: Env }>();
 
+// Every key check is a D1 lookup in Enter, so cap each key and client IP
+// before it; wrangler.toml sets the limits.
+const keyCheckRateLimit = rateLimit({ byIp: true });
+const RateLimitedResponse = {
+    description:
+        "Too many requests from this API key or IP address; retry after `Retry-After` seconds",
+};
+
 api.post(
     "/upload",
     describeRoute({
@@ -409,6 +418,7 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
             500: {
                 description:
                     "Upload failed. The file may already have been stored, so retrying a custom ID can return 409.",
@@ -418,6 +428,7 @@ api.post(
             },
         },
     }),
+    keyCheckRateLimit,
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {
@@ -939,8 +950,10 @@ api.delete(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
         },
     }),
+    keyCheckRateLimit,
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {

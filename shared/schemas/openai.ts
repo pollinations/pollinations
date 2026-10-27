@@ -605,6 +605,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
 
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullish(),
+    refusal: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z

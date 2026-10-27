@@ -5,7 +5,7 @@ import {
     AGENT_FIELD_DESCRIPTIONS,
     ModelHealthSchema,
 } from "../registry/model-info.ts";
-import { MODEL_CATEGORIES } from "../registry/registry.ts";
+import { MODEL_CATEGORIES, PRICE_UNITS } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
 
@@ -776,6 +776,18 @@ export const OpenAIModelSchema = z
             .record(z.string(), z.string())
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
+        pricing_units: z
+            .record(
+                z.string(),
+                z.object({
+                    unit: z.enum(PRICE_UNITS),
+                    quantity: z.number().positive().optional(),
+                }),
+            )
+            .optional()
+            .describe(
+                "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1.",
+            ),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())

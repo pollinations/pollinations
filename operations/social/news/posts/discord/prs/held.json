@@ -22,16 +22,6 @@
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
-    "18200": {
-      "merge_sha": "339d373a09252fd715aa079ab008c2a0c332d37f",
-      "merged_at": "2026-10-26T23:23:08Z",
-      "required": []
-    },
-    "18534": {
-      "merge_sha": "076f1d47da24c18b5f9659a26b6faf5ff694e527",
-      "merged_at": "2026-10-26T23:39:13Z",
-      "required": []
-    },
     "18536": {
       "merge_sha": "ef09fe161ff014847bc5700cbbdef5ed2796f65b",
       "merged_at": "2026-10-26T23:53:04Z",

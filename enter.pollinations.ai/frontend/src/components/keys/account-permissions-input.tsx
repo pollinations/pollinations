@@ -1,4 +1,4 @@
-import { BeakerIcon, Tooltip } from "@pollinations/ui";
+import { BeakerIcon, Tooltip, WarningIcon } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 
 export const accountPermissions = [
@@ -49,6 +49,19 @@ export function AccountPermissionsInput({
                 key={id}
                 checked={value?.includes(id) ?? false}
                 disabled={disabled}
+                details={
+                    // Keys created with this permission don't inherit the
+                    // budget, so it can spend the whole balance.
+                    id === "keys" ? (
+                        <span className="inline-flex items-center gap-1">
+                            <WarningIcon
+                                className="h-3.5 w-3.5 shrink-0 text-intent-warning-text"
+                                aria-hidden="true"
+                            />
+                            Be careful: only allow this for apps you trust.
+                        </span>
+                    ) : undefined
+                }
                 info={
                     id === "machines" ? (
                         <Tooltip

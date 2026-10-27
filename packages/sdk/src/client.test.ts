@@ -663,7 +663,72 @@ describe("Pollinations server-owned defaults", () => {
     });
 });
 
+describe("Pollinations media credentials", () => {
+    it("sends the key only in the Authorization header", async () => {
+        const storedUrl = "https://media.pollinations.ai/stored-media";
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                headers: { link: `<${storedUrl}>; rel="enclosure"` },
+            }),
+        );
+        const client = newClient();
+
+        const image = await client.image("an owl", { seed: 1 });
+        const video = await client.video("an owl flies", { duration: 4 });
+        await client.audio("hello", { voice: "nova" });
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        for (const [url, init] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("key")).toBe(false);
+            expect((init as RequestInit).headers).toMatchObject({
+                Authorization: "Bearer sk_test",
+            });
+        }
+        expect(image.url).toBe(storedUrl);
+        expect(video.url).toBe(storedUrl);
+    });
+});
+
 describe("Pollinations video reference media", () => {
+    it("videoUrl returns the stored media enclosure URL for sharing", async () => {
+        const storedUrl = "https://media.pollinations.ai/0123456789abcdef.mp4";
+        fetchMock
+            .mockResolvedValueOnce(
+                new Response(new Uint8Array([0, 1]), {
+                    headers: {
+                        "Content-Type": "video/mp4",
+                        Link: `<${storedUrl}>; rel="enclosure"`,
+                    },
+                }),
+            )
+            .mockImplementation(() =>
+                Promise.resolve(
+                    new Response(new Uint8Array([0, 1]), {
+                        headers: { "Content-Type": "video/mp4" },
+                    }),
+                ),
+            );
+        const client = newClient();
+        // The gateway's enclosure identifies the stored file, not a generation request.
+        expect(
+            await client.videoUrl("A cat playing piano", {
+                model: "veo",
+                duration: 4,
+            }),
+        ).toBe(storedUrl);
+        expect(await client.video("A cat playing piano")).toEqual({
+            buffer: new Uint8Array([0, 1]).buffer,
+            contentType: "video/mp4",
+            url: undefined,
+        });
+        await expect(
+            client.videoUrl("A cat playing piano"),
+        ).rejects.toMatchObject({
+            code: "NO_VIDEO_URL",
+        });
+    });
+
     it.each([false, true])(
         "sends guidance URLs (arrays: %s)",
         async (arrays) => {
@@ -701,7 +766,6 @@ describe("Pollinations video reference media", () => {
             );
             expect([...url.searchParams.keys()].sort()).toEqual([
                 "image",
-                "key",
                 "reference_audios",
                 "reference_images",
                 "reference_videos",

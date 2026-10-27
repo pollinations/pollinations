@@ -1,5 +1,7 @@
+import { extractApiKey } from "@shared/auth/api-key.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { rateLimit } from "@shared/rate-limit.ts";
 import {
     invalidSafeTokens,
     parseSafeFeatures,
@@ -8,6 +10,7 @@ import {
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 import {
     describeRoute,
     openAPIRouteHandler,
@@ -95,34 +98,29 @@ interface AuthResult {
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    try {
-        const res = await fetch(KEY_VERIFY_URL, {
-            headers: { Authorization: `Bearer ${apiKey}` },
+    const res = await fetch(KEY_VERIFY_URL, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    }).catch(() => undefined);
+    // Only a 4xx means a bad key. A throttled or failing check must not tell
+    // the owner of a valid key that it is invalid.
+    if (!res || res.status === 429 || res.status >= 500) {
+        throw new HTTPException(503, {
+            message: "API key check unavailable. Please retry.",
         });
-        if (!res.ok) return null;
-        const data = await res.json<KeyVerifyResponse>();
-        if (!data.valid) return null;
-        // Normalize: an enter deployment that predates the identity fields
-        // omits them, and `undefined` would slip past the `=== null` guards
-        // downstream — never treat an unattested key as user-attached.
-        return {
-            valid: true,
-            type: data.type,
-            name: data.name ?? null,
-            userId: data.userId ?? null,
-            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
-        };
-    } catch {
-        return null;
     }
-}
-
-function extractApiKey(req: Request): string | null {
-    const bearer = req.headers
-        .get("authorization")
-        ?.match(/^Bearer (.+)$/)?.[1];
-    if (bearer) return bearer;
-    return new URL(req.url).searchParams.get("key");
+    if (!res.ok) return null;
+    const data = await res.json<KeyVerifyResponse>();
+    if (!data.valid) return null;
+    // Normalize: an enter deployment that predates the identity fields
+    // omits them, and `undefined` would slip past the `=== null` guards
+    // downstream — never treat an unattested key as user-attached.
+    return {
+        valid: true,
+        type: data.type,
+        name: data.name ?? null,
+        userId: data.userId ?? null,
+        byopClientKeyId: data.byopApp?.clientKeyId ?? null,
+    };
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -305,6 +303,17 @@ const MediaListQuerySchema = z.object({
 
 const api = new Hono<{ Bindings: Env }>();
 
+// Every key check is a D1 lookup in Enter, so cap each key and client IP
+// before it; wrangler.toml sets the limits.
+const keyCheckRateLimit = rateLimit({ byIp: true });
+const RateLimitedResponse = {
+    description:
+        "Too many requests from this API key or IP address; retry after `Retry-After` seconds",
+};
+const KeyCheckUnavailableResponse = {
+    description: "The API key check is temporarily unavailable; retry",
+};
+
 api.post(
     "/upload",
     describeRoute({
@@ -409,6 +418,7 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
             500: {
                 description:
                     "Upload failed. The file may already have been stored, so retrying a custom ID can return 409.",
@@ -416,8 +426,10 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            503: KeyCheckUnavailableResponse,
         },
     }),
+    keyCheckRateLimit,
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {
@@ -939,8 +951,11 @@ api.delete(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
+            503: KeyCheckUnavailableResponse,
         },
     }),
+    keyCheckRateLimit,
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {

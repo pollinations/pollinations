@@ -476,6 +476,27 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(401);
     });
 
+    it.each([429, 500])(
+        "answers 503, not 401, when the key check returns %i",
+        async (status) => {
+            vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+                new Response(null, { status }),
+            );
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    body: TINY_PNG,
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "image/png",
+                    },
+                },
+            );
+            expect(res.status).toBe(503);
+        },
+    );
+
     it("upload and retrieve", async () => {
         const form = new FormData();
         form.append(
@@ -2020,5 +2041,83 @@ describe("media.pollinations.ai", () => {
         const page = (await res.json()) as MediaPageResponse;
         expect(page.items).toHaveLength(100);
         expect(page.hasMore).toBe(true);
+    });
+
+    describe("edge rate limit", () => {
+        /** Counts calls per key within one window, like the Cloudflare binding. */
+        function limiter(limit: number): RateLimit {
+            const counts = new Map<string, number>();
+            return {
+                async limit({ key }) {
+                    const count = (counts.get(key) ?? 0) + 1;
+                    counts.set(key, count);
+                    return { success: count <= limit };
+                },
+            };
+        }
+
+        // Small stand-ins for wrangler's 50 per key and 100 per IP.
+        function limitedEnv() {
+            return {
+                ...createMediaEnv(),
+                EDGE_RATE_LIMITER: limiter(2),
+                EDGE_IP_RATE_LIMITER: limiter(3),
+            };
+        }
+
+        function send(
+            mediaEnv: ReturnType<typeof limitedEnv>,
+            method: string,
+            path: string,
+            { key, ip }: { key: string; ip: string },
+        ) {
+            return app.request(
+                path,
+                {
+                    method,
+                    body: method === "POST" ? TINY_PNG : undefined,
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "CF-Connecting-IP": ip,
+                        "Content-Type": "image/png",
+                    },
+                },
+                mediaEnv,
+            );
+        }
+
+        it("stops rotating bad keys from one IP before the key check", async () => {
+            const mediaEnv = limitedEnv();
+            const statuses = [];
+            for (let i = 0; i < 5; i++) {
+                const res = await send(mediaEnv, "POST", "/upload", {
+                    key: `sk_fake${i}`,
+                    ip: "203.0.113.7",
+                });
+                statuses.push(res.status);
+            }
+            expect(statuses).toEqual([401, 401, 401, 429, 429]);
+            expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+
+            const otherIp = await send(mediaEnv, "POST", "/upload", {
+                key: "sk_fake5",
+                ip: "198.51.100.1",
+            });
+            expect(otherIp.status).toBe(401);
+        });
+
+        it("stops one key across IPs before the delete key check", async () => {
+            const mediaEnv = limitedEnv();
+            const statuses = [];
+            for (let i = 0; i < 3; i++) {
+                const res = await send(mediaEnv, "DELETE", "/media/any-id", {
+                    key: "sk_fake",
+                    ip: `198.51.100.${i}`,
+                });
+                statuses.push(res.status);
+            }
+            expect(statuses).toEqual([401, 401, 429]);
+            expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+        });
     });
 });

@@ -12,8 +12,73 @@
       "merge_sha": "249a9400ac35054b372d5fb3f66c76a235399a77",
       "merged_at": "2026-10-26T20:51:14Z",
       "required": []
+    },
+    "17864": {
+      "merge_sha": "40a485aff1d7fb9a64da4f8951ca14558b4dc349",
+      "merged_at": "2026-10-26T23:23:08Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "17914": {
+      "merge_sha": "bc51c62a392084769a7e1e4438cb3fb95a01a189",
+      "merged_at": "2026-10-26T23:23:08Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "18200": {
+      "merge_sha": "339d373a09252fd715aa079ab008c2a0c332d37f",
+      "merged_at": "2026-10-26T23:23:08Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-media"
+      ]
+    },
+    "18533": {
+      "merge_sha": "4ba87156060afe374df2099e99a712242fb1a73c",
+      "merged_at": "2026-10-26T23:04:32Z",
+      "required": []
+    },
+    "18534": {
+      "merge_sha": "076f1d47da24c18b5f9659a26b6faf5ff694e527",
+      "merged_at": "2026-10-26T23:39:13Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "18535": {
+      "merge_sha": "4472615d562a5137fbd546e49e5c9c79b1bee7ea",
+      "merged_at": "2026-10-26T23:39:14Z",
+      "required": [
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18536": {
+      "merge_sha": "ef09fe161ff014847bc5700cbbdef5ed2796f65b",
+      "merged_at": "2026-10-26T23:53:04Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "18537": {
+      "merge_sha": "10865fd52f48a0af16ebdce09de6b8f60764890d",
+      "merged_at": "2026-10-26T23:39:14Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/chat"
+      ]
+    },
+    "18539": {
+      "merge_sha": "7b86c60c9e9e79a436e131b49e7e524eedbf8a28",
+      "merged_at": "2026-10-27T00:00:08Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
     }
   },
-  "production": "b946ff791a7d05a704801b7bf66c196afca0373c",
+  "production": "db31bddd57d621dcea068e156fb18ca979ca6d5e",
   "master": "a2a962686bd7e26589a2b5e9c7259f75e67fc967"
 }

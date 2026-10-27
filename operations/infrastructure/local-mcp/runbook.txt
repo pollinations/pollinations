@@ -17,9 +17,13 @@ FILES
       Regenerate the lock with the command at the top of the .txt.
   compose.yaml, cloudflared.yaml   controller (uid 10001, read-only, 512 MiB,
       0.50 CPU, loopback port 18765) and tunnel sidecar (128 MiB, 0.25 CPU,
-      outbound only). No inbound EC2 port, no Docker socket mount.
+      outbound only). No inbound EC2 port, no Docker socket mount. Only
+      the project network's fixed subnet (10.254.75.0/28; verify.sh uses
+      10.254.76.0/28) may set X-Forwarded-For, so PIN retry limits and the
+      audit log key on the client address Cloudflare appended.
   preflight.py, verify.sh   local shell/files/stdio registration denied,
-      OAuth metadata, 401 for missing/invalid bearer. Public fixtures only.
+      only the compose subnet may set the client address, OAuth metadata,
+      401 for missing/invalid bearer. Public fixtures only.
   local-mcp-pilot   root-owned SSH forced command on the host. It runs
       the host's standalone Docker Compose v5.6.1 at
       /home/ubuntu/pollinations-local-mcp-pilot/bin/docker-compose (the host
@@ -76,6 +80,16 @@ fresh message, before that step; plan approval is not secret approval)
      local-mcp-pilot) and that "docker build" works there without the
      plugin. Compare the pinned host key with the EC2 console output:
        ssh-keygen -lf operations/infrastructure/local-mcp/known_hosts
+     Check that neither 10.254.75.0/28 (pilot) nor 10.254.76.0/28 (verify)
+     overlaps a host route, the VPC CIDR or an existing Docker network:
+       ip -4 route
+       docker network inspect --format \
+         '{{.Name}} {{range .IPAM.Config}}{{.Subnet}} {{end}}' \
+         $(docker network ls -q)
+     On a collision change the value in compose.yaml or verify.sh by PR,
+     never on the host. Confirm the instance's security group admits SSH
+     on port 22 from GitHub-hosted runners (the "actions" ranges in
+     https://api.github.com/meta); widening it needs its own approval.
      Abort on any collision or mismatch rather than overwrite.
 
   1. GitHub environment (Thomas, repo settings): local-mcp-pilot-production,
@@ -164,6 +178,8 @@ OPERATIONS
   project's containers and checks the public URL no longer answers; state
   volume, secrets and releases stay, and the last live release becomes the
   rollback target. With no previous release, rollback refuses; use stop.
+  status succeeds for a stopped or never-deployed pilot and fails when the
+  recorded release has no running controller or fails a check.
   Stopping the Mac's foreground worker (Ctrl-C) is the immediate cutoff
   for the Mac and needs neither Actions nor the host.
 

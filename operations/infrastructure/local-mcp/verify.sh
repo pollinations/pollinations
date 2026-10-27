@@ -19,9 +19,12 @@ identity=$(docker image inspect --format '{{.Config.User}} {{.Architecture}}' "$
   exit 1
 }
 
+# A subnet distinct from the pilot's (compose.yaml), which may already exist
+# on the host while this throwaway project runs.
 compose() {
   env -i PATH="$PATH" HOME="${HOME:-/root}" \
     LOCAL_MCP_CONTROLLER_IMAGE="$IMAGE" \
+    LOCAL_MCP_SUBNET=10.254.76.0/28 \
     LOCAL_MCP_TUNNEL_ID=00000000-0000-0000-0000-000000000000 \
     LOCAL_SHELL_MCP_OAUTH_JWT_SECRET=public-synthetic-test-fixture-only-not-an-operational-key \
     LOCAL_SHELL_MCP_OAUTH_ADMIN_PIN=public-synthetic-test-pin-only \

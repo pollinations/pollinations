@@ -1,17 +1,24 @@
-"""Local MCP pilot checks. Uses public synthetic fixtures only; stdlib only.
+"""Local MCP pilot checks. Uses public synthetic fixtures only. http mode
+needs only the stdlib (the host runs it); container mode also uses the
+image's uvicorn and local_shell_mcp.
 
   container    Inside the controller image under the production service
-               configuration (verify.sh): local shell, files and stdio MCP
-               registration are denied, then the HTTP checks run against a
-               loopback server started with the fixture secrets.
+               configuration (verify.sh): only the compose subnet may set
+               the client address through X-Forwarded-For; local shell,
+               files and stdio MCP registration are denied; then the HTTP
+               checks run against a loopback server started with the
+               fixture secrets.
   http URL     A running controller is healthy, names the public OAuth
                issuer and resource, and /mcp rejects missing and invalid
                bearers with 401.
 """
 
+import asyncio
+import ipaddress
 import json
 import os
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -145,8 +152,50 @@ def check_local_access_denied():
         server.wait(timeout=10)
 
 
+def check_forwarded_client():
+    # The server's own uvicorn wrapping, with the configured trusted proxies.
+    import uvicorn
+    from local_shell_mcp.settings import get_settings
+
+    allowed = get_settings().forwarded_allow_ips
+    try:
+        network = ipaddress.ip_network(allowed)
+    except ValueError:
+        sys.exit(f"preflight: forwarded_allow_ips must be one network, not {allowed!r}")
+    # This container joined the compose network, so the trusted CIDR is the
+    # network the tunnel sidecar reaches the controller from.
+    own = ipaddress.ip_address(socket.gethostbyname(socket.gethostname()))
+    expect(own in network, f"container address {own} is outside the trusted {allowed}")
+    proxy = str(network[-2])
+    seen = []
+
+    async def app(scope, receive, send):
+        seen.append(scope["client"][0])
+
+    config = uvicorn.Config(app, forwarded_allow_ips=allowed)
+    config.load()
+
+    def client(peer, forwarded_for):
+        headers = [(b"x-forwarded-for", forwarded_for.encode())]
+        scope = {"type": "http", "client": (peer, 40000), "headers": headers}
+        asyncio.run(config.loaded_app(scope, None, None))
+        return seen[-1]
+
+    expect(
+        client(proxy, "203.0.113.7, 198.51.100.9") == "198.51.100.9",
+        "a client-supplied X-Forwarded-For entry replaced the address "
+        "Cloudflare appended",
+    )
+    expect(
+        client("198.51.100.20", "203.0.113.7") == "198.51.100.20",
+        "a peer outside the compose subnet set its own client address",
+    )
+    print(f"preflight: only {allowed} may set the client address")
+
+
 def check_container():
     signal.alarm(120)
+    check_forwarded_client()
     check_local_access_denied()
     server = subprocess.Popen([*SERVER, "--mode", "mcp"])
     base = f"http://127.0.0.1:{os.environ.get('LOCAL_SHELL_MCP_PORT', '8765')}"

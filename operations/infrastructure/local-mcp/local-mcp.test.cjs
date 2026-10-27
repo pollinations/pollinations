@@ -8,6 +8,7 @@ const {
     rmSync,
     writeFileSync,
 } = require("node:fs");
+const { BlockList } = require("node:net");
 const { tmpdir } = require("node:os");
 const { join } = require("node:path");
 const test = require("node:test");
@@ -82,10 +83,17 @@ const [W, X, Y] = ["a", "b", "c"].map((c) => c.repeat(40));
 // effects replaced: compose "starts" a release, preflight.py fails where
 // the scenario says, docker lists and removes what was started (its Nth
 // and later listings fail with psFailsFrom), and curl reports the public URL
-// as up or down.
+// as up or down. controllerGone records a current release with nothing running.
 function pilot(
     t,
-    { current, previous, failing = [], publicUp = false, psFailsFrom = "" },
+    {
+        current,
+        previous,
+        failing = [],
+        publicUp = false,
+        psFailsFrom = "",
+        controllerGone = false,
+    },
     call,
 ) {
     const root = mkdtempSync(join(tmpdir(), "local-mcp-pilot-"));
@@ -94,7 +102,7 @@ function pilot(
         mkdirSync(join(root, "releases", sha), { recursive: true });
     if (current) {
         writeFileSync(join(root, "current"), `${current}\n`);
-        writeFileSync(join(root, "running"), current);
+        if (!controllerGone) writeFileSync(join(root, "running"), current);
     }
     if (previous) writeFileSync(join(root, "previous"), `${previous}\n`);
     const script = `
@@ -265,6 +273,38 @@ test("stop fails without claiming containment if docker cannot list containers",
         assert.doesNotMatch(blind.stdout, /stopped|no longer answers/);
         assert.deepEqual([blind.current, blind.previous], [Y, X]);
     }
+});
+
+test("status fails only when the recorded release has no controller", (t) => {
+    const stopped = pilot(t, { previous: Y }, "status");
+    assert.equal(stopped.status, 0, stopped.stderr);
+    assert.match(stopped.stdout, /current=none/);
+    const gone = pilot(t, { current: Y, controllerGone: true }, "status");
+    assert.notEqual(gone.status, 0);
+    assert.match(
+        gone.stderr,
+        new RegExp(`current release ${Y} has no running controller`),
+    );
+    assert.deepEqual(gone.checks, []);
+    const live = pilot(t, { current: Y }, "status");
+    assert.equal(live.status, 0, live.stderr);
+    assert.deepEqual(live.checks, [`${Y} loopback`, `${Y} public`]);
+});
+
+test("the verify fixture network cannot overlap the pilot network", () => {
+    const source = (file) => readFileSync(join(__dirname, file), "utf8");
+    const blocks = [
+        source("compose.yaml").match(/LOCAL_MCP_SUBNET:-([\d.]+)\/(\d+)/),
+        source("verify.sh").match(/LOCAL_MCP_SUBNET=([\d.]+)\/(\d+)/),
+    ].map(([, address, prefix]) => {
+        const list = new BlockList();
+        list.addSubnet(address, Number(prefix));
+        return { address, list };
+    });
+    // CIDR blocks either nest or are disjoint.
+    const [pilotNet, fixtureNet] = blocks;
+    assert.equal(pilotNet.list.check(fixtureNet.address), false);
+    assert.equal(fixtureNet.list.check(pilotNet.address), false);
 });
 
 test("CI client fails closed before connecting", () => {

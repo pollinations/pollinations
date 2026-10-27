@@ -2,6 +2,13 @@
 # a production commit. Secrets come from the host-only secrets/ directory; the
 # wrapper derives LOCAL_MCP_TUNNEL_ID from the tunnel credential file.
 name: pollinations-local-mcp-pilot
+# The project network's fixed subnet, also the only source trusted to set
+# X-Forwarded-For: the tunnel sidecar and the bridge gateway (host loopback
+# clients). Cloudflare appends the real client address, which uvicorn takes
+# as the rightmost untrusted entry; PIN retry limits and the audit log key on
+# it. verify.sh passes a distinct subnet because it runs as a second project
+# while this network exists.
+x-subnet: &subnet "${LOCAL_MCP_SUBNET:-10.254.75.0/28}"
 services:
   controller:
     image: ${LOCAL_MCP_CONTROLLER_IMAGE:?release image required}
@@ -35,7 +42,7 @@ services:
       LOCAL_SHELL_MCP_PERSISTENT_CREDENTIALS: "false"
       LOCAL_SHELL_MCP_LOGICAL_SESSIONS_ENABLED: "false"
       LOCAL_SHELL_MCP_MCP_MAX_SESSIONS: "8"
-      LOCAL_SHELL_MCP_FORWARDED_ALLOW_IPS: "*"
+      LOCAL_SHELL_MCP_FORWARDED_ALLOW_IPS: *subnet
       LOCAL_SHELL_MCP_MAX_HTTP_REQUEST_BYTES: "4194304"
       LOCAL_SHELL_MCP_MAX_AUDIT_LOG_BYTES: "10000000"
     volumes:
@@ -67,5 +74,10 @@ services:
     mem_limit: 128m
     cpus: "0.25"
     pids_limit: 32
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: *subnet
 volumes:
   state:

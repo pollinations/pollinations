@@ -216,8 +216,14 @@ status() {
     # Selected fields only: the container environment holds the secrets.
     docker inspect --format "$service: {{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} image={{.Config.Image}} user={{.Config.User}} read-only={{.HostConfig.ReadonlyRootfs}} memory={{.HostConfig.Memory}} nano-cpus={{.HostConfig.NanoCpus}}" "$id"
   done
+  # Stopped or never deployed is a healthy state; a recorded release whose
+  # controller is gone is not.
+  [[ -n $current ]] || return 0
   id=$(container controller)
-  [[ -n $id && -n $current ]] || return 0
+  [[ -n $id ]] || {
+    echo "local-mcp-pilot: current release $current has no running controller" >&2
+    return 1
+  }
   docker exec "$id" python -c 'import json, pathlib
 path = pathlib.Path("/state/registry/remote-workers.json")
 data = json.loads(path.read_text()) if path.exists() else {}

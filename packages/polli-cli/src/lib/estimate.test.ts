@@ -116,6 +116,41 @@ describe("estimateMediaCost", () => {
         expect(estimateMediaCost(model, video(8, true)).total).toBeCloseTo(0.8);
     });
 
+    it("adds per-generation fees and leaves other fees unpriced", () => {
+        const model: MediaModel = {
+            name: "black-forest-labs/flux.2-max",
+            pricing: {
+                currency: "pollen",
+                promptImageTokens: "0.03",
+                completionImageTokens: "0.03",
+            },
+            pricing_units: {
+                promptImageTokens: { unit: "megapixel" },
+                completionImageTokens: { unit: "megapixel" },
+            },
+            pricing_adjustments: [
+                {
+                    name: "replicate.flux_2_max.run.v1",
+                    price: "0.04",
+                    quantity: 1,
+                    unit: "generation",
+                },
+            ],
+        };
+        expect(estimateMediaCost(model, image()).total).toBeCloseTo(0.07145728);
+        const providerUnits = estimateMediaCost(
+            {
+                ...model,
+                pricing_adjustments: [
+                    { name: "fal.units", price: "1", quantity: 1, unit: "USD" },
+                ],
+            },
+            image(),
+        );
+        expect(providerUnits.total).toBeNull();
+        expect(providerUnits.unpriced).toEqual(["fal.units"]);
+    });
+
     it("has no total when the model lists no price", () => {
         const out = estimateMediaCost(
             { name: "minimax-h3-max", pricing: { currency: "pollen" } },

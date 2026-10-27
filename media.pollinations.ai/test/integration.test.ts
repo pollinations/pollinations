@@ -81,6 +81,7 @@ const VALID_KEY = "pk_alice";
 const KEY_IDENTITIES: Record<
     string,
     {
+        id?: string;
         valid: boolean;
         type?: string;
         name?: string | null;
@@ -89,6 +90,7 @@ const KEY_IDENTITIES: Record<
     }
 > = {
     pk_alice: {
+        id: "key_alice",
         valid: true,
         type: "publishable",
         name: "alice-key",
@@ -504,6 +506,7 @@ describe("media.pollinations.ai", () => {
             new File([TINY_PNG], "test.png", { type: "image/png" }),
         );
 
+        const log = vi.spyOn(console, "log");
         const uploadRes = await SELF.fetch(
             "https://media.pollinations.ai/upload",
             {
@@ -518,6 +521,25 @@ describe("media.pollinations.ai", () => {
         expect(upload.url).toContain(upload.id);
         expect(upload.contentType).toBe("image/png");
         expect(upload.size).toBe(TINY_PNG.length);
+
+        // The file and the log line name the uploader without Enter's D1.
+        const uploader = {
+            uploadedBy: "alice-key",
+            keyType: "publishable",
+            keyId: "key_alice",
+            userId: "user_alice",
+        };
+        const stored = await env.MEDIA_BUCKET.head(upload.id);
+        expect(stored?.customMetadata).toMatchObject(uploader);
+        expect(log).toHaveBeenCalledWith(
+            JSON.stringify({
+                event: "upload",
+                id: upload.id,
+                size: TINY_PNG.length,
+                contentType: "image/png",
+                ...uploader,
+            }),
+        );
 
         // Retrieve — check Content-Disposition
         const getRes = await SELF.fetch(
@@ -565,6 +587,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("streams a raw upload and preserves its file metadata", async () => {
+        const log = vi.spyOn(console, "log");
         const uploadRes = await SELF.fetch(
             "https://media.pollinations.ai/upload",
             {
@@ -582,6 +605,23 @@ describe("media.pollinations.ai", () => {
         const upload = (await uploadRes.json()) as UploadResponse;
         expect(upload.size).toBe(TINY_PNG.length);
         expect(upload.contentType).toBe("image/png");
+        const uploader = {
+            uploadedBy: "alice-key",
+            keyType: "publishable",
+            keyId: "key_alice",
+            userId: "user_alice",
+        };
+        const stored = await env.MEDIA_BUCKET.head(upload.id);
+        expect(stored?.customMetadata).toMatchObject(uploader);
+        expect(log).toHaveBeenCalledWith(
+            JSON.stringify({
+                event: "upload",
+                id: upload.id,
+                size: TINY_PNG.length,
+                contentType: "image/png",
+                ...uploader,
+            }),
+        );
 
         const getRes = await SELF.fetch(upload.url);
         expect(getRes.headers.get("content-disposition")).toContain(

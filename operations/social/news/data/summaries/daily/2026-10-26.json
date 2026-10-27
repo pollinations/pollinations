@@ -1,0 +1,317 @@
+{
+  "date": "2026-10-26",
+  "period_start": "2026-10-26",
+  "period_end": "2026-10-26",
+  "title": "A clearer view of community models",
+  "summary": "Model discovery got sharper, the CLI learned to find voices, and several generation and account flows became less surprising.\n\nModel Monitor now puts community-model Trust scores beside Health, with a sortable comparison to the official models they are named after. The catalog marks official Pollinations agents, model-list category filters return matching results, and health data separates Pollen-related 402 responses from other 4xx errors. Empty text answers now count against community-model discovery health. Model display titles were also cleaned up without changing their IDs or routing. A GPT-6.1 Terra registry entry was merged with its release date still TBD.\n\n`polli models` gained search, source and reliability filters, plus `--voices` for finding voices by audio model. The CLI now honors `POLLINATIONS_API_KEY` ahead of stored credentials, and its npm-backed client commands work on Windows. The BYOP guide gained a Python device-flow example, while API docs corrected the OpenAI SDK base URL and refreshed model-health and model-list information.\n\nGemini tool calls now accept and return Google's thought-signature format across streamed and non-streamed chat. Claude Code tool-search results and mid-conversation tool changes are accepted on `/v1/messages`. Multipart image edits pass through their seed, Wan 2.2 fast selects a supported ratio from the start image, and prompt-agent updates identify invalid fields and base models earlier. Successful empty chat streams can also receive cache hits on repeat requests.",
+  "pr_count": 31,
+  "prs": [
+    {
+      "number": 15233,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 17398,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 17864,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 17914,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18039,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18109,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18200,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18212,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18402,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18421,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18423,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18424,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18429,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18433,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18438,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18451,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18452,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18468,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18469,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18471,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18517,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18521,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18523,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18526,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18527,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18529,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18533,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18534,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18535,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18536,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18537,
+      "date": "2026-10-26"
+    }
+  ],
+  "generated_at": "2026-10-27T18:05:49.136771+00:00",
+  "daily": [
+    {
+      "emoji": "🎯",
+      "title": "Compare community model trust",
+      "text": "Model Monitor’s Community → Trust view compares each community model with the official model it is named after. Sort the latest weekly scores and see which differences clear the confidence threshold. [Open Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        18451
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Find models and voices",
+      "text": "Use `polli models` to search models or filter by source and reliability. Add `--voices` to list voices by audio model. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        18433
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Spot Pollen-related refusals",
+      "text": "The `/models/status` response now includes `errors_402` in model and route health data. It separates balance or key-budget refusals from other 4xx responses.",
+      "prs": [
+        18402
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": [
+    {
+      "pr_number": 18533,
+      "url": "https://github.com/pollinations/pollinations/pull/18533",
+      "merged_at": "2026-10-26T23:04:32Z",
+      "api_changes": [
+        {
+          "id": "pr-18533:GET /3d/models",
+          "endpoint": "GET /3d/models",
+          "summary": "List 3D Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:category",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18533:GET /audio/models",
+          "endpoint": "GET /audio/models",
+          "summary": "List Audio Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:category",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18533:GET /embeddings/models",
+          "endpoint": "GET /embeddings/models",
+          "summary": "List Embedding Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:category",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18533:GET /image/models",
+          "endpoint": "GET /image/models",
+          "summary": "List Image & Video Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:category",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18533:GET /models",
+          "endpoint": "GET /models",
+          "summary": "List Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:category",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18533:GET /text/models",
+          "endpoint": "GET /text/models",
+          "summary": "List Text Models (Detailed)",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:category",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18533:GET /v1/models",
+          "endpoint": "GET /v1/models",
+          "summary": "List Models (OpenAI-compatible)",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:category",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18533:GET /video/models",
+          "endpoint": "GET /video/models",
+          "summary": "List Video Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:category",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-10-26",
+  "period_start": "2026-10-26",
+  "period_end": "2026-10-26",
+  "generated_at": "2026-10-27T18:05:49.136771+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/2ab88b170db3821227d9c4c1d36e7520a06f249ec88704e23b5eaf9ae8af18ee"
+    }
+  ],
+  "text": "Model Monitor now shows community-model Trust beside Health, with sortable comparisons to the official models they're named after. Model health also separates Pollen-related 402s from other 4xx responses. A billing error is not a model review."
+}

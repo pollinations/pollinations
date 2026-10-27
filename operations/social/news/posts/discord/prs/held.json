@@ -19,8 +19,7 @@
       "required": [
         "deploy-applications.yml:Deploy apps/websim",
         "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-cloudflare-production.yml:deploy-enter"
+        "deploy-applications.yml:Deploy operations/model-monitor"
       ]
     }
   },

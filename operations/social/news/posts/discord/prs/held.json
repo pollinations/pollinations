@@ -7,8 +7,46 @@
         "deploy-legacy-caches.yml:deploy (image)",
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18543": {
+      "merge_sha": "27634c5c33d49364ee3e0c1cabb831a1e8d18753",
+      "merged_at": "2026-10-27T12:15:23Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/chat"
+      ]
+    },
+    "18559": {
+      "merge_sha": "9955745833bb227fa70fae341f1e250d8607ad85",
+      "merged_at": "2026-10-27T12:55:08Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "18562": {
+      "merge_sha": "8c51ee5c345ff5ab128fcb6c59cfcc3344170157",
+      "merged_at": "2026-10-27T12:55:08Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-media"
+      ]
+    },
+    "18563": {
+      "merge_sha": "26095bce478047579df86105b726f07cb9fd11d0",
+      "merged_at": "2026-10-27T12:55:08Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18575": {
+      "merge_sha": "f66a5c0c65a9946f7a504411d6b972fbf0d67177",
+      "merged_at": "2026-10-27T12:55:08Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
     }
   },
-  "production": "ccdc58f81a7bcd98849221f3d333d851da572e95",
+  "production": "3ea67545aeb6027ee38f048a15ff50ae0ec2aaa4",
   "master": "a2a962686bd7e26589a2b5e9c7259f75e67fc967"
 }

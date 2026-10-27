@@ -831,6 +831,40 @@ describe("Account Key Management API", () => {
             expect(await budgetOf(caller.key)).toBe(175);
         });
 
+        test("a budget update doesn't refill what the key loses meanwhile", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "two-hundred",
+                accountPermissions: ["keys"],
+                pollenBudget: 200,
+            });
+            const target = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "hundred",
+                    pollenBudget: 100,
+                })
+            ).json();
+            // Lowering the budget while it is being kept at 100 stands in for
+            // the key spending during those updates.
+            await Promise.all(
+                [100, 100, 100, 100, 100, 100, 100, 50, 100, 100, 100, 100].map(
+                    (pollenBudget) =>
+                        call(caller.key, `/keys/${target.id}`, "PATCH", {
+                            pollenBudget,
+                        }),
+                ),
+            );
+            // Either the lowering came last, or a later update paid to undo it.
+            expect([
+                [50, 200],
+                [100, 150],
+            ]).toContainEqual([
+                await budgetOf(target.key),
+                await budgetOf(caller.key),
+            ]);
+        });
+
         test("a key limited to a category can grant community models in it", async ({
             accountToken,
         }) => {

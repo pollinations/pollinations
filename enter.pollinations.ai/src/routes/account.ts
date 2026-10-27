@@ -2059,11 +2059,12 @@ export const accountRoutes = new Hono<Env>()
                     earningsEnabled,
                 }).filter(([, value]) => value !== undefined),
             );
-            // A budgeted key pays for the budget it grants from the key as
-            // read, so the update only lands while the key's balance and
-            // expiry are still what it paid for. If a concurrent update or the
-            // key's own spending changed them, the payment goes back and the
-            // update starts over from the key as it is now.
+            // A budgeted key works out its payment from the key as read, so
+            // its update only lands while the key's balance and expiry are
+            // unchanged; otherwise it could pay twice, or refill for free what
+            // the key spent meanwhile. If a concurrent update or the key's
+            // spending changed them, the payment goes back and the update
+            // starts over from the key as it is now.
             for (let attempt = 1; ; attempt++) {
                 // Raising a budget takes the difference; an unlimited key
                 // counts as having none.
@@ -2129,7 +2130,7 @@ export const accountRoutes = new Hono<Env>()
                         updatedAt: new Date(),
                     })
                     .where(
-                        budgetTaken
+                        typeof callerKey?.pollenBalance === "number"
                             ? and(eq(apikeyTable.id, id), unchangedSinceRead)
                             : eq(apikeyTable.id, id),
                     )

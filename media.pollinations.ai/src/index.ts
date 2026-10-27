@@ -455,6 +455,16 @@ api.post(
             keyId: authResult.keyId ?? "",
             userId: authResult.userId ?? "",
         };
+        const logUpload = (id: string, size: number, contentType: string) =>
+            console.log(
+                JSON.stringify({
+                    event: "upload",
+                    id,
+                    size,
+                    contentType,
+                    ...uploader,
+                }),
+            );
 
         const uploadMaxSize =
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -558,6 +568,7 @@ api.post(
                     size: bodySize,
                     ...uploader,
                 });
+                logUpload(upload.id, upload.size, upload.contentType);
                 if (privacyApplied) c.header("X-Safety-Applied", "privacy");
                 return c.json(upload);
             } catch (error) {
@@ -803,15 +814,7 @@ api.post(
                 });
             }
 
-            console.log(
-                JSON.stringify({
-                    event: "upload",
-                    id,
-                    size: fileSize,
-                    contentType,
-                    ...uploader,
-                }),
-            );
+            logUpload(id, fileSize, contentType);
 
             if (privacyApplied) c.header("X-Safety-Applied", "privacy");
             return c.json({

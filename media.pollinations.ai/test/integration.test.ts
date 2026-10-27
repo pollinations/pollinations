@@ -587,6 +587,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("streams a raw upload and preserves its file metadata", async () => {
+        const log = vi.spyOn(console, "log");
         const uploadRes = await SELF.fetch(
             "https://media.pollinations.ai/upload",
             {
@@ -604,11 +605,23 @@ describe("media.pollinations.ai", () => {
         const upload = (await uploadRes.json()) as UploadResponse;
         expect(upload.size).toBe(TINY_PNG.length);
         expect(upload.contentType).toBe("image/png");
-        const stored = await env.MEDIA_BUCKET.head(upload.id);
-        expect(stored?.customMetadata).toMatchObject({
+        const uploader = {
+            uploadedBy: "alice-key",
+            keyType: "publishable",
             keyId: "key_alice",
             userId: "user_alice",
-        });
+        };
+        const stored = await env.MEDIA_BUCKET.head(upload.id);
+        expect(stored?.customMetadata).toMatchObject(uploader);
+        expect(log).toHaveBeenCalledWith(
+            JSON.stringify({
+                event: "upload",
+                id: upload.id,
+                size: TINY_PNG.length,
+                contentType: "image/png",
+                ...uploader,
+            }),
+        );
 
         const getRes = await SELF.fetch(upload.url);
         expect(getRes.headers.get("content-disposition")).toContain(

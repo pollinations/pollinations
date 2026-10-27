@@ -607,9 +607,9 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
             return {"error": "author must be a valid GitHub login"}
 
         if graphql_query:
-            lines = [line for line in graphql_query.strip().splitlines() if not line.strip().startswith("#")]
-            operation = "\n".join(lines).strip().lower()
-            if not operation or operation.startswith("mutation"):
+            # GraphQL ignores commas and allows fragments before the operation, so a
+            # prefix test let writes through: refuse the keyword anywhere.
+            if not graphql_query.strip() or re.search(r"\b(mutation|subscription)\b", graphql_query, re.IGNORECASE):
                 return {"error": "Mutations not allowed. github_custom is read-only."}
             result = await self._execute(
                 graphql_query,

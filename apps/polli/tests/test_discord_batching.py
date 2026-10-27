@@ -62,6 +62,35 @@ class DiscordBatchingTests(unittest.IsolatedAsyncioTestCase):
         await client._execute_tools_parallel([call("github_issue", "create")], "user", separate)
         self.assertIs(handler.await_args.kwargs["_context"], separate)
 
+    async def test_tools_and_actions_not_offered_are_refused_before_dispatch(self):
+        client = PollinationsClient()
+        handler = AsyncMock(return_value={"success": True})
+        client.register_tool_handler("github_issue", handler)
+        client.register_tool_handler("github_custom", handler)
+        offered = {"github_issue": {"get", "search"}}
+        results = await client._execute_tools_parallel(
+            [call("github_issue", "comment"), call("github_custom", "graphql")],
+            "user",
+            {"is_admin": False},
+            offered_tools=offered,
+        )
+        self.assertTrue(all(result.get("error") for result in results))
+        handler.assert_not_awaited()
+        read = await client._execute_tools_parallel(
+            [call("github_issue", "GET")], "user", {"is_admin": False}, offered_tools=offered
+        )
+        self.assertTrue(read[0]["success"])
+
+    async def test_api_mode_refuses_write_actions_the_schema_hid(self):
+        client = PollinationsClient()
+        handler = AsyncMock(return_value={"success": True})
+        client.register_tool_handler("github_issue", handler)
+        responses = [{"content": "", "tool_calls": [call("github_issue", "comment")]}, {"content": "answer"}]
+        with patch.object(client, "_call_api_with_tools", side_effect=responses):
+            result = await client._call_with_tools([], "api-user", mode="api", tool_context={"is_http_api": True})
+        handler.assert_not_awaited()
+        self.assertEqual(result["response"], "answer")
+
     async def test_message_arriving_during_tools_joins_existing_next_call(self):
         client = PollinationsClient()
         pending = []

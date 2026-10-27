@@ -403,6 +403,21 @@ class HandlerForwardingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(custom_request.await_args.kwargs["page"], 3)
 
 
+class CustomRequestReadOnlyTests(unittest.IsolatedAsyncioTestCase):
+    async def test_graphql_writes_are_refused_wherever_the_keyword_appears(self):
+        client = GitHubGraphQL()
+        client._execute = AsyncMock(return_value={"data": {}})
+        for query in (
+            "mutation { addComment { clientMutationId } }",
+            ",mutation { addComment { clientMutationId } }",
+            "fragment F on Issue { id }\nmutation { addComment { clientMutationId } }",
+            "subscription { x }",
+        ):
+            result = await client.execute_custom_request(request="custom", graphql_query=query)
+            self.assertIn("error", result)
+        client._execute.assert_not_awaited()
+
+
 class ProjectTruncationTests(unittest.IsolatedAsyncioTestCase):
     async def test_exact_limit_across_complete_scopes_is_not_truncated(self):
         client = GitHubGraphQL()

@@ -130,13 +130,13 @@ test("GET /api/account/key - returns key status for secret key", {
     expect(data).toHaveProperty("rateLimitEnabled");
 });
 
-test("GET /api/account/key - accepts an agent run token", {
+test("GET /api/account/key - agent run token has no account permissions", {
     timeout: 30000,
 }, async ({ accountToken, mocks }) => {
     await mocks.enable("tinybird");
     const { key } = await createApiKeyViaApi(accountToken, {
         name: "agent-parent",
-        accountPermissions: ["usage"],
+        accountPermissions: ["usage", "keys"],
     });
     const parent = await authenticateApiKeyRequest({
         request: new Request("http://localhost", {
@@ -163,8 +163,20 @@ test("GET /api/account/key - accepts an agent run token", {
         userId: parent?.user?.id,
         byopApp: null,
     });
-    // A run token carries the parent key's account permissions.
-    expect(data.permissions.account).toEqual(["usage"]);
+    expect(data.permissions.account).toBeNull();
+
+    const createResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${runToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name: "agent-created-key" }),
+        },
+    );
+    expect(createResponse.status).toBe(403);
 });
 
 test("GET /api/account/key - returns key status for publishable key", {

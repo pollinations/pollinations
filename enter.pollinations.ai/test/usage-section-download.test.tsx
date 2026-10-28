@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { UsageSection } from "../frontend/src/components/activity/usage-section";
 import { accountClient } from "../frontend/src/api";
 import { downloadFile } from "../frontend/src/components/activity/activity-helpers";
 import { ActivityToolbar } from "../frontend/src/components/activity/activity-toolbar";
+import { UsageSection } from "../frontend/src/components/activity/usage-section";
 import { useUsageData } from "../frontend/src/components/activity/use-usage-data";
 
 vi.mock("../frontend/src/api", () => ({

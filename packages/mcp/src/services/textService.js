@@ -187,7 +187,9 @@ const messageSchema = z.object({
     function_call: z
         .object({ name: z.string(), arguments: z.string() })
         .optional()
-        .describe("Legacy function call from assistant (for continuing function use)"),
+        .describe(
+            "Legacy function call from assistant (for continuing function use)",
+        ),
     tool_call_id: z
         .string()
         .optional()

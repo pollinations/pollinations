@@ -81,6 +81,26 @@ class DiscordBatchingTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertTrue(read[0]["success"])
 
+    async def test_omitted_action_is_checked_as_the_handlers_default(self):
+        client = PollinationsClient()
+        ran = []
+
+        async def code_search(action="search", **kwargs):
+            ran.append(action)
+            return {"success": True}
+
+        client.register_tool_handler("code_search", code_search)
+        no_action = {"id": "one", "type": "function", "function": {"name": "code_search", "arguments": "{}"}}
+        offered = await client._execute_tools_parallel(
+            [no_action], "user", {"is_admin": False}, offered_tools={"code_search": {"search", "grep"}}
+        )
+        hidden = await client._execute_tools_parallel(
+            [no_action], "user", {"is_admin": False}, offered_tools={"code_search": {"grep"}}
+        )
+        self.assertTrue(offered[0]["success"])
+        self.assertIn("error", hidden[0])
+        self.assertEqual(ran, ["search"])
+
     async def test_api_mode_refuses_write_actions_the_schema_hid(self):
         client = PollinationsClient()
         handler = AsyncMock(return_value={"success": True})

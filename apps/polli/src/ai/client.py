@@ -1,5 +1,6 @@
 import asyncio
 import codecs
+import inspect
 import json
 import logging
 import time
@@ -100,6 +101,15 @@ def _offered_actions(tools: list[dict]) -> dict[str, set[str] | None]:
         enum = function.get("parameters", {}).get("properties", {}).get("action", {}).get("enum")
         offered[function.get("name")] = {str(action).lower() for action in enum} if enum else None
     return offered
+
+
+def _default_action(handler) -> str:
+    """The action a handler runs when a call names none ("" if it has no default)."""
+    try:
+        default = inspect.signature(handler).parameters["action"].default
+    except (KeyError, TypeError, ValueError):
+        return ""
+    return "" if default is inspect.Parameter.empty else str(default)
 
 
 class PollinationsClient:
@@ -712,7 +722,8 @@ class PollinationsClient:
                 if func_name not in offered_tools:
                     return {"error": f"Tool not available here: {func_name}"}
                 actions = offered_tools[func_name]
-                action = str(args.get("action", "")).lower()
+                # An omitted action runs the handler's default, so check that one.
+                action = str(args.get("action", _default_action(self._tool_handlers.get(func_name)))).lower()
                 if actions is not None and action not in actions:
                     return {"error": f"Action not available here: {func_name} {action}"}
 

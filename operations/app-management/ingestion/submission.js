@@ -112,8 +112,16 @@ function parseSubmission(body) {
     const description = clean(section(body, "App Description"), 200);
     const appUrl = normalizeUrl(section(body, "App URL"));
     const repoUrl = normalizeUrl(section(body, "GitHub Repository URL"));
-    const category = clean(section(body, "App Category"), 30).toLowerCase();
-    const platform = clean(section(body, "Platform"), 30).toLowerCase();
+    // Dropdown fields are single-line, so anything after the first line is parser
+    // noise captured by section() when the field is followed by a note or rule.
+    const category = clean(
+        section(body, "App Category").split(/\r?\n/, 1)[0],
+        30,
+    ).toLowerCase();
+    const platform = clean(
+        section(body, "Platform").split(/\r?\n/, 1)[0],
+        30,
+    ).toLowerCase();
     const language = normalizeLanguage(section(body, "App Language"));
     const discord = clean(section(body, "Discord Username"), 80);
     const quest = clean(

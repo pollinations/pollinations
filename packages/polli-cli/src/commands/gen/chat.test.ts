@@ -139,6 +139,15 @@ describe("polli gen chat session lifecycle", () => {
         expect(process.exitCode).toBe(1);
     });
 
+    it.each(["human", "json"] as const)("reports failed turns on EOF in %s mode", async (mode) => {
+        prepare(async () => Response.json({ error: { message: "Invalid API key" } }, { status: 401 }));
+        setOutputMode(mode);
+        const line = await startSession();
+        await line("hello");
+        h.fakeRl.close();
+        expect(process.exitCode).toBe(1);
+    });
+
     it("prompts again after a normal turn and still exits cleanly", async () => {
         const fetch = prepare(
             async () =>

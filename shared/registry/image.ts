@@ -638,7 +638,8 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2025-12-23").getTime(),
         // Provider retires this route on 2026-12-16.
         priceMultiplier: 0.75,
-        paidOnly: false,
+        // Combined Azure 180 RPM is below twice the observed 102 RPM peak.
+        paidOnly: true,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens

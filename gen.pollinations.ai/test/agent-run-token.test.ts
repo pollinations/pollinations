@@ -98,7 +98,7 @@ test("keeps the parent key's generation limits but not account permissions", asy
         permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
         agentRun: { parentApiKeyId: parent.id },
     });
-    expect(result.permissions.account).toBeUndefined();
+    expect(result).not.toHaveProperty("permissions.account");
 });
 
 test("preserves the managed agent scope", async () => {

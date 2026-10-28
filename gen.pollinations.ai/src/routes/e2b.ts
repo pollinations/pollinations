@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
+import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import {
     extractApiKey,
     loadActiveApiKeyAuthResult,
@@ -34,7 +34,6 @@ import { logger } from "@/middleware/logger.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
-import { permissionRequired } from "@/utils/refusals.ts";
 import {
     AZURE_GIB_SECOND,
     AZURE_TEMPLATES,
@@ -480,14 +479,7 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
         });
     }
     c.var.auth.requireUser();
-    const apiKey = c.var.auth.apiKey;
-    if (!hasAccountPermission(apiKey, "machines")) {
-        throw permissionRequired(
-            c,
-            { permission: "machines" },
-            "API key does not have 'account:machines' permission.",
-        );
-    }
+    requireAccountPermission(c, "machines");
     await next();
 }
 

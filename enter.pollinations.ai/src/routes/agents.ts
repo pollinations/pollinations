@@ -379,7 +379,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const rows = await db.query.communityEndpoint.findMany({
                 where: and(
@@ -423,7 +423,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const row = await requireOwnedAgent(db, c.req.param("id"), user.id);
             const ownerGithubUsername = await lookupOwnerGithubUsername(
@@ -458,7 +458,7 @@ export const agentsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = crypto.randomUUID();
             let payload: string;
@@ -563,7 +563,7 @@ export const agentsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);
@@ -660,7 +660,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);

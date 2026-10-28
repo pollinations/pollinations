@@ -443,6 +443,38 @@ describe("Account Key Management API", () => {
         });
     });
 
+    test("rejects negative budgets on create and update", async ({
+        accountToken,
+    }) => {
+        const headers = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accountToken}`,
+        };
+        const created = await SELF.fetch(
+            "http://localhost:3000/api/account/keys",
+            {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ name: "negative", pollenBudget: -5 }),
+            },
+        );
+        expect(created.status).toBe(400);
+
+        const key = await createApiKeyViaApi(accountToken, {
+            name: "positive",
+            pollenBudget: 5,
+        });
+        const updated = await SELF.fetch(
+            `http://localhost:3000/api/account/keys/${key.id}`,
+            {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({ pollenBudget: -3 }),
+            },
+        );
+        expect(updated.status).toBe(400);
+    });
+
     describe("GET /api/account/keys (list)", () => {
         test("should list keys via session auth", async ({
             accountToken,

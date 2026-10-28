@@ -27,7 +27,7 @@ const BYOP_DOCS_URL =
     "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md";
 
 export interface PolliProviderProps {
-    /** Publishable key (`pk_...`): the app identifier, not a user's API key. */
+    /** Publishable app key (`pk_...`). Changing it resets auth and remounts children. */
     appKey: string;
     children: ReactNode;
     /**
@@ -194,7 +194,11 @@ function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
 /**
  * Wrap your app to share login state. Account hooks fetch data separately.
  */
-export function PolliProvider({
+export function PolliProvider(props: PolliProviderProps) {
+    return <AppPolliProvider key={props.appKey} {...props} />;
+}
+
+function AppPolliProvider({
     appKey,
     children,
     storage: storageOption,

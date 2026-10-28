@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "CRYPTO_TOOLS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "crypto-tools",
+        name: "Crypto Tools",
+        description:
+            "Hash text, generate UUIDs, transform base64, mint secure tokens, and compute HMAC signatures.",
+        binding: "CRYPTO_TOOLS_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free. Pure local computation, no model calls and no MCP fee.",
             rates: [],
         },
     },

@@ -234,7 +234,9 @@ export type MessageContent = string | MessageContentPart[];
 /** A chat message */
 export interface Message {
     role: MessageRole;
-    content: MessageContent;
+    content: MessageContent | null;
+    /** Assistant tool calls, replayed before the matching tool results. */
+    tool_calls?: ToolCall[];
     name?: string;
     /** For tool messages */
     tool_call_id?: string;

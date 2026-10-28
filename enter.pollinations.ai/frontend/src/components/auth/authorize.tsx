@@ -10,8 +10,8 @@ import {
 } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
-    CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    getConsentPermissionChoices,
     getGrantedOAuthScope,
     getPreselectedConsentPermissions,
     isClientMetadataUrl,
@@ -112,8 +112,10 @@ export function Authorize() {
     const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
         () => new Set(urlScope ?? []),
     );
-    const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
-        requestedScopes.has(p),
+    const visibleOptionalPermissions = getConsentPermissionChoices(
+        requestedScopes,
+        isDeviceMode,
+        parsedRedirectUrl,
     );
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =

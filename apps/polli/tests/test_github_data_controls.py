@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 from urllib.parse import parse_qs, urlsplit
 
+from src.integrations.github.auth import GitHubAppAuth, get_github_read_token
 from src.integrations.github.graphql import GitHubGraphQL
 from src.integrations.github.pr_review import PRReviewMixin
 
@@ -401,6 +402,71 @@ class HandlerForwardingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(custom_request.await_args.kwargs["author"], "octocat")
         self.assertEqual(custom_request.await_args.kwargs["page"], 3)
+
+
+class CustomRequestReadOnlyTests(unittest.IsolatedAsyncioTestCase):
+    async def test_model_written_graphql_and_rest_requests_carry_the_read_only_token(self):
+        client = GitHubGraphQL()
+        sent = []
+
+        class Response:
+            async def __aenter__(self):
+                return SimpleNamespace(status=200, json=AsyncMock(return_value={"data": {}}))
+
+            async def __aexit__(self, *_args):
+                return None
+
+        def send(url, headers, **_kwargs):
+            sent.append(headers["Authorization"])
+            return Response()
+
+        client.get_session = AsyncMock(return_value=SimpleNamespace(post=send, get=send))
+        with (
+            patch("src.integrations.github.graphql.get_github_read_token", AsyncMock(return_value="read")),
+            patch("src.integrations.github.graphql.get_github_token", AsyncMock(return_value="full")),
+        ):
+            read = await client.execute_custom_request(
+                request="custom",
+                graphql_query='query { search(query: "subscription refund", type: ISSUE, first: 5) { issueCount } }',
+            )
+            await client.execute_custom_request(request="custom", rest_url="https://api.github.com/orgs/pollinations")
+            await client.execute_custom_request(request="custom", rest_endpoint="issues")
+        self.assertNotIn("error", read)
+        self.assertEqual(sent, ["Bearer read"] * 3)
+
+
+class ReadOnlyTokenTests(unittest.IsolatedAsyncioTestCase):
+    async def test_read_only_token_covers_one_repo_with_read_rights_and_is_cached_apart(self):
+        auth = GitHubAppAuth("1", "key", "2")
+        auth._generate_jwt = lambda: "jwt"
+        bodies = []
+        tokens = iter(["full", "read"])
+
+        class Response:
+            async def __aenter__(self):
+                return SimpleNamespace(status=201, json=AsyncMock(return_value={"token": next(tokens)}))
+
+            async def __aexit__(self, *_args):
+                return None
+
+        auth._get_session = AsyncMock(
+            return_value=SimpleNamespace(post=lambda url, headers, json: bodies.append(json) or Response())
+        )
+        self.assertEqual(await auth.get_token(), "full")
+        self.assertEqual(await auth.get_token(read_only_repo="pollinations"), "read")
+        self.assertEqual(await auth.get_token(read_only_repo="pollinations"), "read")
+        self.assertEqual(await auth.get_token(), "full")
+        self.assertIsNone(bodies[0])
+        self.assertEqual(bodies[1]["repositories"], ["pollinations"])
+        self.assertEqual(set(bodies[1]["permissions"].values()), {"read"})
+        self.assertEqual(len(bodies), 2)
+
+    async def test_read_only_token_never_falls_back_to_the_pat(self):
+        with (
+            patch("src.integrations.github.auth.github_app_auth", None),
+            patch("src.integrations.github.auth.config", SimpleNamespace(github=SimpleNamespace(token="pat"))),
+        ):
+            self.assertIsNone(await get_github_read_token())
 
 
 class ProjectTruncationTests(unittest.IsolatedAsyncioTestCase):

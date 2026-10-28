@@ -1,3 +1,8 @@
+import {
+    isLoopbackHostname,
+    parseAuthorizeRedirectUrl,
+} from "./redirect-uri.ts";
+
 /**
  * Parse a scope/permissions URL parameter. Accepts both OAuth-canonical
  * space-separated format (`scope=usage%20keys`) and our legacy
@@ -124,6 +129,42 @@ export function getPreselectedConsentPermissions(
         (permission) => !DELIBERATE_CONSENT_PERMISSIONS.includes(permission),
     );
     return preselected?.length ? preselected : null;
+}
+
+/** A redirect to this computer, e.g. a local MCP client such as Claude Code. */
+function isLoopbackRedirect(url: URL | null): boolean {
+    return url?.protocol === "http:" && isLoopbackHostname(url.hostname);
+}
+
+/**
+ * The requested permissions the consent screen offers. `keys` (account admin)
+ * is only offered in the device flow (polli) and on redirects to this computer
+ * (local MCP clients such as Claude Code): a phished link that redirects to a
+ * website must never get it.
+ */
+export function getConsentPermissionChoices(
+    requested: ReadonlySet<string>,
+    isDeviceFlow: boolean,
+    redirectUrl: URL | null,
+): string[] {
+    const offersKeys = isDeviceFlow || isLoopbackRedirect(redirectUrl);
+    return CONSENT_PERMISSIONS.filter(
+        (permission) =>
+            requested.has(permission) && (offersKeys || permission !== "keys"),
+    );
+}
+
+/**
+ * Whether a grant link may add `keys` to an existing key. Same rule as the
+ * consent screen: never to a key an app got by redirecting to a website. Keys
+ * from polli's device login, the dashboard or the API have no redirect origin.
+ */
+export function canGrantKeysByLink(redirectOrigin: unknown): boolean {
+    if (redirectOrigin === undefined) return true;
+    return (
+        typeof redirectOrigin === "string" &&
+        isLoopbackRedirect(parseAuthorizeRedirectUrl(redirectOrigin))
+    );
 }
 
 export function getAuthorizeInitialPermissions({

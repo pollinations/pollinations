@@ -1161,7 +1161,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const db = drizzle(c.env.DB, { schema });
             const [cards, rewardRows] = await Promise.all([
@@ -1230,7 +1230,7 @@ export const accountRoutes = new Hono<Env>()
                 message: "Authentication required to view quest rewards",
             });
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const rows = await drizzle(c.env.DB)
                 .select()
@@ -1400,7 +1400,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireAccountPermission(apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const {
                 format,
@@ -1487,7 +1487,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireAccountPermission(apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const {
                 format,
@@ -1595,7 +1595,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireAccountPermission(apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const { limit, days, granularity, period, timezone } =
                 c.req.valid("query");
@@ -1673,7 +1673,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireAccountPermission(apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const { format, days, granularity, period, timezone } =
                 c.req.valid("query");
@@ -1749,7 +1749,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
 
             const keys = await drizzle(c.env.DB)
                 .select()
@@ -1776,7 +1776,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
 
             const {
                 name,
@@ -1863,7 +1863,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
 
             const { id } = c.req.param();
             const {
@@ -2033,7 +2033,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const callerKey = c.var.auth.apiKey;
-            requireAccountPermission(callerKey, "keys");
+            requireAccountPermission(c, "keys");
 
             const { id } = c.req.param();
 

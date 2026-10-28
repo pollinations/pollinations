@@ -390,6 +390,49 @@ describe("Device Authorization Flow", () => {
         ]);
     }, 30000);
 
+    test("an approved key waits as long as its device code", async ({
+        sessionToken,
+    }) => {
+        const expiresAt = new Date(Date.now() + 25 * 60_000);
+        const device = await insertDeviceCode({ expiresAt });
+        const sessionRes = await SELF.fetch(`${BASE}/api/auth/get-session`, {
+            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+        });
+        const { user } = (await sessionRes.json()) as { user: { id: string } };
+        const { key, id } = await insertApiKey(user.id);
+        const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                userCode: device.userCode,
+                apiKey: key,
+                apiKeyId: id,
+            }),
+        });
+        expect(approveRes.status).toBe(200);
+
+        const kvKey = `device-key:${device.deviceCode}`;
+        const { keys } = await env.KV.list({ prefix: kvKey });
+        expect(keys[0]?.expiration).toBeGreaterThanOrEqual(
+            Math.floor(expiresAt.getTime() / 1000) - 5,
+        );
+
+        // If the key is gone anyway, the CLI must stop polling.
+        await env.KV.delete(kvKey);
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        expect(tokenRes.status).toBe(400);
+        expect(((await tokenRes.json()) as { error: string }).error).toBe(
+            "expired_token",
+        );
+    });
+
     test("approve with narrowed scope echoes the granted scope (RFC 6749 §5.1)", async ({
         sessionToken,
         mocks,

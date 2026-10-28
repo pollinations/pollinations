@@ -615,7 +615,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
         // Provider retires this route on 2027-04-07.
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         // Quest overflow spills onto the cash OpenAI fallback.
         paidOnly: true,
         cost: {
@@ -638,7 +638,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
         // Provider retires this route on 2026-12-16.
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         // Quest overflow spills onto the cash OpenAI fallback.
         paidOnly: true,
         cost: {
@@ -666,7 +666,7 @@ const IMAGE_BASE_SERVICES = {
         // Provider retires this route on 2027-10-21.
         // Quest overflow spills onto the cash OpenAI fallback.
         paidOnly: true,
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens

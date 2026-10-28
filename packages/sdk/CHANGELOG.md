@@ -2,6 +2,21 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.24] - 2026-10-28
+
+### Fixed
+- `imageUrl()` returns the stored media URL from the `rel="enclosure"` Link
+  header instead of an unauthenticated generation URL, and throws
+  `NO_IMAGE_URL` when it is absent. `ImageResponse.url` from `image()` is that
+  URL, or `""` without the header.
+- `accountUsage()` and `accountKeyUsage()` accept and forward
+  `before_event_id`; `UsageRecord` exposes `cursor_event_id`, so pages no
+  longer skip records that share a timestamp.
+- Aborting `authorizeDevice()` also aborts an in-flight token poll, and
+  `poll()` rejects with `CANCELLED` instead of returning a token.
+- `text()` and `textStream()` return refusal text instead of an empty answer.
+- The React Responses chat transport shows refusal deltas as answer text.
+
 ## [5.1.0-alpha.23] - 2026-10-28
 
 ### Fixed

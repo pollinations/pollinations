@@ -414,7 +414,8 @@ export class Pollinations {
 
     /**
      * Generate an image URL from a text prompt.
-     * Hits the API first to authenticate, then returns a keyless URL that can be shared.
+     * Returns the stored media enclosure URL for sharing.
+     * Throws NO_IMAGE_URL if the response has no enclosure URL.
      *
      * @example
      * ```ts
@@ -427,6 +428,13 @@ export class Pollinations {
         options: ImageGenerateOptions = {},
     ): Promise<string> {
         const response = await this.image(prompt, options);
+        if (!response.url) {
+            throw new PollinationsError(
+                'Image response did not include a stored media URL (rel="enclosure" Link header)',
+                "NO_IMAGE_URL",
+                502,
+            );
+        }
         return response.url;
     }
 
@@ -465,8 +473,11 @@ export class Pollinations {
                 const buffer = await response.arrayBuffer();
                 const contentType =
                     response.headers.get("content-type") || "image/jpeg";
+                const storedUrl = response.headers
+                    .get("link")
+                    ?.match(/<([^>]+)>;\s*rel="enclosure"/)?.[1];
 
-                return { buffer, contentType, url };
+                return { buffer, contentType, url: storedUrl ?? "" };
             },
         );
     }
@@ -988,7 +999,8 @@ export class Pollinations {
     ): Promise<string> {
         const request = buildTextRequest(prompt, options);
         const response = await this.chat(request.messages, request.options);
-        return response.choices[0]?.message?.content || "";
+        const message = response.choices[0]?.message;
+        return message?.content || message?.refusal || "";
     }
 
     /**
@@ -1008,8 +1020,9 @@ export class Pollinations {
         const request = buildTextRequest(prompt, options);
         const chunks = this.chatStream(request.messages, request.options);
         for await (const chunk of chunks) {
-            const content = chunk.choices[0]?.delta?.content;
-            if (content) yield content;
+            const delta = chunk.choices[0]?.delta;
+            if (delta?.content) yield delta.content;
+            if (delta?.refusal) yield delta.refusal;
         }
     }
 
@@ -1813,16 +1826,16 @@ export class Pollinations {
         const expiresAt = new Date(Date.now() + code.expires_in * 1000);
         let pollMs = Math.max(code.interval, 5) * 1000;
 
+        const cancelled = () =>
+            new PollinationsError(
+                "Device authorization cancelled",
+                "CANCELLED",
+                499,
+            );
         const poll = async (): Promise<string> => {
             while (Date.now() < expiresAt.getTime()) {
                 await sleep(pollMs);
-                if (options.signal?.aborted) {
-                    throw new PollinationsError(
-                        "Device authorization cancelled",
-                        "CANCELLED",
-                        499,
-                    );
-                }
+                if (options.signal?.aborted) throw cancelled();
 
                 const tokenRes = await fetch(
                     `${AUTH_BASE_URL}/api/oauth/token`,
@@ -1837,12 +1850,16 @@ export class Pollinations {
                             device_code: code.device_code,
                             client_id: clientId,
                         }).toString(),
+                        signal: options.signal,
                     },
-                );
+                ).catch((error) => {
+                    throw options.signal?.aborted ? cancelled() : error;
+                });
 
                 const body = (await tokenRes
                     .json()
                     .catch(() => ({}))) as DeviceTokenResponse;
+                if (options.signal?.aborted) throw cancelled();
 
                 if (tokenRes.ok && body.access_token) {
                     return body.access_token;
@@ -1964,6 +1981,8 @@ export class Pollinations {
         if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);
+        if (options.before_event_id)
+            params.set("before_event_id", options.before_event_id);
         if (options.granularity) params.set("granularity", options.granularity);
         if (options.period) params.set("period", options.period);
 
@@ -2038,6 +2057,8 @@ export class Pollinations {
         if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);
+        if (options.before_event_id)
+            params.set("before_event_id", options.before_event_id);
         if (options.granularity) params.set("granularity", options.granularity);
         if (options.period) params.set("period", options.period);
 

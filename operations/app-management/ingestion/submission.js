@@ -74,7 +74,14 @@ function normalizeUrl(value) {
 }
 
 function normalizeLanguage(value) {
-    const language = clean(value, 15) || "en";
+    // The language field is a single-line form input, so anything after the first
+    // line is parser noise: a trailing note, a horizontal rule or a footer that
+    // the section() capture picks up when "App Language" is the last section.
+    // Split before clean(), because clean() collapses all whitespace into spaces.
+    const firstLine = String(value || "")
+        .split(/\r?\n/)[0]
+        .trim();
+    const language = clean(firstLine, 15) || "en";
     return /^[a-z]{2,3}(?:-[A-Za-z]{2,4})?$/.test(language) ? language : "";
 }
 

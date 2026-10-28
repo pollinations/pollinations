@@ -12,11 +12,7 @@
       "merge_sha": "32492c7fb9bdc9bb24d9858bd6130e09c05a6409",
       "merged_at": "2026-10-28T00:10:58Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
     "17600": {
@@ -25,8 +21,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18578": {
@@ -53,27 +48,19 @@
     "18582": {
       "merge_sha": "41e54c29da7d74eff311751f312daff5c7694304",
       "merged_at": "2026-10-27T23:15:54Z",
-      "required": [
-        "deploy-website-cloudflare.yml:deploy"
-      ]
+      "required": []
     },
     "18583": {
       "merge_sha": "eb43e5c0ec43a8e287e3f45d92f190f8c7ba567b",
       "merged_at": "2026-10-28T00:21:15Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
     "18589": {
       "merge_sha": "797713ec0d5eef23b0bdee29c4b4c0730eaadfec",
       "merged_at": "2026-10-27T22:34:59Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/quest-dashboard"
-      ]
+      "required": []
     },
     "18594": {
       "merge_sha": "007dfd74da4623468fd83bb9fe37f6fe65c411ce",
@@ -96,8 +83,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18603": {
@@ -113,8 +99,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18615": {
@@ -123,8 +108,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18617": {
@@ -133,8 +117,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     }
   },

@@ -662,7 +662,8 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
         // Provider retires this route on 2027-10-21.
-        paidOnly: false,
+        // 48 RPM is below twice the observed 82 RPM peak.
+        paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens

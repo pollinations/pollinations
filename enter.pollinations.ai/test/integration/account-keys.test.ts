@@ -958,6 +958,17 @@ describe("Account Key Management API", () => {
             );
 
             expect(response.status).toBe(403);
+            // The refusal links the page where the owner allows it for this key.
+            const { id } = await (
+                await SELF.fetch("http://localhost:3000/api/account/key", {
+                    headers: { Authorization: `Bearer ${apiKey}` },
+                })
+            ).json();
+            const grant = `https://enter.pollinations.ai/grant?id=${id}&permission=keys&ref=agent_grant`;
+            expect((await response.json()).error).toMatchObject({
+                message: `API key does not have 'account:keys' permission. Allow it at ${grant}`,
+                fixUrl: grant,
+            });
         });
     });
 

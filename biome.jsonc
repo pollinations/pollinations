@@ -66,31 +66,6 @@
                     }
                 }
             }
-        },
-        {
-            "includes": ["apps/chat/**"],
-            "linter": {
-                "rules": {
-                    "a11y": {
-                        "noSvgWithoutTitle": "off",
-                        "useButtonType": "off",
-                        "noStaticElementInteractions": "off",
-                        "useKeyWithClickEvents": "off",
-                        "useKeyWithMouseEvents": "off",
-                        "noLabelWithoutControl": "off",
-                        "useMediaCaption": "off",
-                        "useSemanticElements": "off"
-                    },
-                    "suspicious": {
-                        "noArrayIndexKey": "off",
-                        "noAssignInExpressions": "off"
-                    },
-                    "correctness": {
-                        "useExhaustiveDependencies": "off",
-                        "noInvalidUseBeforeDeclaration": "off"
-                    }
-                }
-            }
         }
     ],
     "css": {

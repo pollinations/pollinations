@@ -192,6 +192,14 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 600, period = 10 }
 
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts. Oct 20-27 peaks: busiest legitimate IP
+# 472 per 10 s, the shared Workers egress IP 209 per 10 s in one colo.
+[[env.production.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 1000, period = 10 }
+
 [[env.production.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
@@ -332,6 +340,13 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 600, period = 10 }
 
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.staging.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 1000, period = 10 }
+
 [[env.staging.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
@@ -434,6 +449,13 @@ bucket_name = "pollinations-text-enter"
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
+simple = { limit = 10000, period = 10 }
+
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.test.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
 simple = { limit = 10000, period = 10 }
 
 [[env.test.durable_objects.bindings]]

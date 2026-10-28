@@ -48,7 +48,7 @@ Add the page URL, without query or fragment, as a Redirect URI on your App Key. 
 | `budget` | Pollen cap, as `budget` below |
 | `expiry` | Key lifetime in days |
 | `models` | Comma-separated, as `models` below |
-| `permissions` | Comma-separated scopes: `profile`, `usage`, `keys` |
+| `permissions` | Comma-separated scopes: `profile`, `usage` |
 | `hide-buy-pollen` | Hides the top-up menu item; the balance and Disconnect remain available (UI 0.1.0-alpha.20+) |
 | `menu-links` | JSON array of `{ "label": "Dashboard", "href": "https://example.com" }` links shown in the signed-in menu; optional `icon`: `app`, `discord`, or `bug`; only HTTP(S) links are accepted (UI 0.1.0-alpha.20+) |
 
@@ -125,9 +125,9 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
-| `scope` | Account access (space or comma separated) | `usage keys` |
+| `scope` | Account access (space or comma separated). `keys` is only offered in the device flow (below) and on redirects to `http://localhost` or `http://127.0.0.1`. `machines` starts unticked on the consent screen; the user ticks it on purpose | `profile usage` |
 | `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
-| `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
+| `budget` | Numeric Pollen cap. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
 Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.
@@ -157,7 +157,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
 
-Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin: create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope. The approved budget and expiry limit spending. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time. Revocation is immediate.
+Scopes: `profile` (name + email), `usage` (account balance + usage). `keys` (account admin: create/list/revoke keys) is only offered in the device flow and on redirects to `http://localhost` or `http://127.0.0.1`. The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope. The approved budget and expiry limit spending. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time. Revocation is immediate.
 
 **Browser-only apps.** The same request works from `fetch`:
 

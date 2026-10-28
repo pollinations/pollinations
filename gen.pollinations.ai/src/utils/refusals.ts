@@ -1,21 +1,8 @@
-import { type Grant, signGrantAgent } from "@shared/auth/agent-run-token.ts";
 import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import type { UserBalance } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { fixLink, type RefusalContext } from "@shared/http/fix-link.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
-import { PermissionRequiredError } from "@shared/http/permission-required-error.ts";
-import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-
-/**
- * Refusals the key's owner can fix. Each one links the enter page that fixes
- * it, and the same link goes into the error message, the JSON `fixUrl` and the
- * chat reply.
- */
-export type RefusalContext = {
-    env: { ENVIRONMENT?: string; BETTER_AUTH_SECRET: string };
-    var: { auth?: AuthVariables["auth"] };
-};
 
 /** The app to return to after a fix: the key's app, else the page that sent the request. */
 export function appOrigin(
@@ -30,57 +17,6 @@ export function appOrigin(
     } catch {
         return undefined;
     }
-}
-
-/** A link to an enter page on the environment that matches this gen. */
-export function fixLink(
-    c: RefusalContext,
-    path: string,
-    params: Record<string, string | undefined>,
-): string {
-    // app.request() tests run without env.
-    const base =
-        c.env?.ENVIRONMENT === "staging"
-            ? PUBLIC_URLS.enter.staging
-            : PUBLIC_URLS.enter.production;
-    const url = new URL(path, base);
-    for (const [key, value] of Object.entries({
-        ...params,
-        redirect: c.var.auth?.appOrigin,
-    })) {
-        if (value) url.searchParams.set(key, value);
-    }
-    return url.toString();
-}
-
-export function permissionRequired(
-    c: RefusalContext,
-    grant: Grant,
-    reason: string,
-): PermissionRequiredError {
-    const id = c.var.auth?.apiKey?.id ?? "";
-    // During an agent run, sign the agent's name into the link so the grant
-    // page can show who asked without trusting the agent to name itself.
-    const agent = c.var.auth?.agentRun?.agentModelId;
-    const sig =
-        agent &&
-        signGrantAgent({
-            secret: c.env.BETTER_AUTH_SECRET,
-            apiKeyId: id,
-            grant,
-            agent,
-        });
-    const fixUrl = fixLink(c, "/grant", {
-        id,
-        ...grant,
-        agent,
-        sig,
-        ref: "agent_grant",
-    });
-    return new PermissionRequiredError(
-        `${reason} Allow it at ${fixUrl}`,
-        fixUrl,
-    );
 }
 
 /**

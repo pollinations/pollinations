@@ -16,6 +16,8 @@ export type UnlistedMediaUpload = {
     size: number;
     uploadedBy?: string;
     keyType?: string;
+    keyId?: string;
+    userId?: string;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -86,6 +88,8 @@ export async function uploadUnlistedMedia(
                     originalName: input.fileName?.slice(0, 253) || "",
                     uploadedBy: input.uploadedBy || "pollinations-service",
                     keyType: input.keyType || "service",
+                    keyId: input.keyId ?? "",
+                    userId: input.userId ?? "",
                 },
             }),
             pipe,

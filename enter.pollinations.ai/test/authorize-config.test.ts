@@ -3,16 +3,92 @@ import {
     writeModelSelection,
 } from "@frontend/components/keys/model-selection.ts";
 import {
+    canGrantKeysByLink,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getConsentPermissionChoices,
     getGrantedOAuthScope,
+    getPreselectedConsentPermissions,
+    MAX_LINK_CONSENT_BUDGET,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { parseAuthorizeRedirectUrl } from "@shared/auth/redirect-uri.ts";
 import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
+
+describe("getConsentPermissionChoices", () => {
+    // A website never gets account admin; polli's device login and local MCP
+    // clients such as Claude Code still can.
+    const requested = new Set(["usage", "keys", "machines"]);
+    const withKeys = ["usage", "keys", "machines"];
+    const withoutKeys = ["usage", "machines"];
+
+    it.each([
+        {
+            flow: "device flow",
+            device: true,
+            redirect: null,
+            expected: withKeys,
+        },
+        {
+            flow: "localhost redirect",
+            device: false,
+            redirect: "http://localhost:3456/callback",
+            expected: withKeys,
+        },
+        {
+            flow: "127.0.0.1 redirect",
+            device: false,
+            redirect: "http://127.0.0.1:53682/callback",
+            expected: withKeys,
+        },
+        {
+            flow: "website redirect",
+            device: false,
+            redirect: "https://example.com/callback",
+            expected: withoutKeys,
+        },
+        {
+            flow: "app scheme redirect",
+            device: false,
+            redirect: "myapp://localhost/callback",
+            expected: withoutKeys,
+        },
+    ])("$flow", ({ device, redirect, expected }) => {
+        expect(
+            getConsentPermissionChoices(
+                requested,
+                device,
+                redirect ? new URL(redirect) : null,
+            ),
+        ).toEqual(expected);
+    });
+});
+
+describe("canGrantKeysByLink", () => {
+    // A grant link follows the consent screen's rule, judged by where the
+    // key's consent redirected.
+    it.each([
+        { key: "device login, dashboard or API", origin: undefined, ok: true },
+        {
+            key: "localhost redirect",
+            origin: "http://localhost:3456",
+            ok: true,
+        },
+        {
+            key: "127.0.0.1 redirect",
+            origin: "http://127.0.0.1:53682",
+            ok: true,
+        },
+        { key: "website redirect", origin: "https://example.com", ok: false },
+        // An app scheme such as myapp://callback has the origin "null".
+        { key: "app scheme redirect", origin: "null", ok: false },
+    ])("$key", ({ origin, ok }) => {
+        expect(canGrantKeysByLink(origin)).toBe(ok);
+    });
+});
 
 describe("getGrantedOAuthScope", () => {
     it.each([
@@ -78,6 +154,30 @@ describe("getAuthorizeInitialPermissions", () => {
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
             accountPermissions: null,
         });
+    });
+
+    // A link can ask for key management or sandboxes, but the user must tick
+    // them: people tend to click "Allow" without reading.
+    it("leaves keys and machines unticked when a link requests them", () => {
+        expect(
+            getAuthorizeInitialPermissions({
+                permissions: ["usage", "keys", "machines"],
+            }).accountPermissions,
+        ).toEqual(["usage"]);
+        expect(
+            getAuthorizeInitialPermissions({ permissions: ["keys"] })
+                .accountPermissions,
+        ).toBeNull();
+        expect(getPreselectedConsentPermissions(["machines"])).toBeNull();
+    });
+
+    it("caps the budget a link can pre-fill", () => {
+        expect(
+            getAuthorizeInitialPermissions({ budget: 100_000 }).pollenBudget,
+        ).toBe(MAX_LINK_CONSENT_BUDGET);
+        expect(getAuthorizeInitialPermissions({ budget: 2 }).pollenBudget).toBe(
+            2,
+        );
     });
 
     it("preserves a zero budget instead of falling back to the default", () => {

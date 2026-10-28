@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-27T18:06:52.797176+00:00",
+  "generated_at": "2026-10-28T06:12:09.415302+00:00",
   "models": [
     {
       "id": "2026-09-29:anthropic/claude-sonnet-5.5",
@@ -6535,6 +6535,113 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-10-27:openai/gpt-image-1-mini",
+      "model_id": "openai/gpt-image-1-mini",
+      "title": "GPT Image 1 Mini",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-10-27",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.00000015",
+            "promptImageTokens": "0.000001875",
+            "completionImageTokens": "0.000006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptImageTokens": "0.0000025",
+            "completionImageTokens": "0.000008"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-27:openai/gpt-image-1.5",
+      "model_id": "openai/gpt-image-1.5",
+      "title": "GPT Image 1.5",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-10-27",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000375",
+            "promptCachedTokens": "0.0000009375",
+            "promptImageTokens": "0.000006",
+            "completionTextTokens": "0.0000075",
+            "completionImageTokens": "0.000024"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionTextTokens": "0.00001",
+            "completionImageTokens": "0.000032"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-27:openai/gpt-image-2",
+      "model_id": "openai/gpt-image-2",
+      "title": "GPT Image 2",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-10-27",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000375",
+            "promptCachedTokens": "0.0000009375",
+            "promptImageTokens": "0.000006",
+            "completionImageTokens": "0.0000225"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          }
+        }
+      }
     }
   ],
   "api": [
@@ -9907,27 +10014,6 @@
       "text": "Try `cesus-agent/prism-code-review-router` for code-review requests. It chooses a compatible model based on the task, model health, pricing, and available balance, then adds a review rubric for more involved work. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15226
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-27",
-      "emoji": "🎯",
-      "title": "Apps can complete Quests",
-      "text": "Add an open Quest issue number when submitting an app. If the app is approved, you can claim the Quest’s Pollen reward. [Read the contributor guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
-      "prs": [
-        15566
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-27",
-      "emoji": "✨",
-      "title": "A roomier Enter dashboard",
-      "text": "Enter’s flatter layout gives dashboard sections and phone screens more usable space. Pollen purchases now put the fee-inclusive total directly on the Buy button.",
-      "prs": [
-        15558,
-        15602
       ],
       "kind": "product"
     }

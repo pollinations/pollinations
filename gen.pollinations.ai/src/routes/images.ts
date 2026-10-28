@@ -179,6 +179,15 @@ async function parseEditInput(c: Context): Promise<{
                 message: 'response_format must be "url" or "b64_json"',
             });
 
+        const count = CreateImageEditRequestSchema.shape.n.safeParse(
+            formData.has("n") ? Number(formData.get("n")) : undefined,
+        );
+        if (!count.success)
+            throw new UpstreamError(400, {
+                message:
+                    "n must be 1; generating multiple images is not supported",
+            });
+
         const seedField = formData.get("seed");
         const seed = CreateImageEditRequestSchema.shape.seed.safeParse(
             seedField == null || seedField === ""

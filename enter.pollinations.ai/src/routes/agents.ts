@@ -15,7 +15,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -255,19 +255,30 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
         throw new Error(`Agent ${id} has invalid configuration`);
     }
 
-    const throttleKey = `code-agent-sync:throttle:${id}`;
-    const now = Date.now();
-    const throttleUntil = Number(await c.env.KV.get(throttleKey));
-    if (Number.isFinite(throttleUntil) && throttleUntil > now) {
+    // Claim the sync with one conditional write so parallel requests, even
+    // from other colos, start at most one deploy. Rows written in the last
+    // 30 seconds (created, edited or synced) are refused without a write.
+    const cutoff = new Date(
+        Date.now() - CODE_AGENT_SYNC_THROTTLE_SECONDS * 1000,
+    );
+    const claimed =
+        row.updatedAt <= cutoff &&
+        (
+            await db
+                .update(schema.communityEndpoint)
+                .set({ updatedAt: new Date() })
+                .where(
+                    and(
+                        eq(schema.communityEndpoint.id, id),
+                        lte(schema.communityEndpoint.updatedAt, cutoff),
+                    ),
+                )
+        ).meta.changes === 1;
+    if (!claimed) {
         throw new HTTPException(429, {
             message: "Agent sync is limited to once every 30 seconds",
         });
     }
-    await c.env.KV.put(
-        throttleKey,
-        String(now + CODE_AGENT_SYNC_THROTTLE_SECONDS * 1000),
-        { expirationTtl: 60 },
-    );
 
     const repository = await resolveCodeAgentRepository(
         c.env,

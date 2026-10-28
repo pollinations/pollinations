@@ -398,40 +398,74 @@ function useGeneration<A extends unknown[], T>(
     );
 }
 
+async function withCallerSignal<T>(
+    signal: AbortSignal,
+    callerSignal: AbortSignal | undefined,
+    request: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+    if (!callerSignal) return request(signal);
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort);
+    callerSignal.addEventListener("abort", abort);
+    if (signal.aborted || callerSignal.aborted) controller.abort();
+    try {
+        return await request(controller.signal);
+    } finally {
+        signal.removeEventListener("abort", abort);
+        callerSignal.removeEventListener("abort", abort);
+    }
+}
+
 const imageRequest = (
     client: Pollinations,
     signal: AbortSignal,
     prompt: string,
     options?: ImageGenerateOptions,
-) => client.image(prompt, { ...options, signal });
+) =>
+    withCallerSignal(signal, options?.signal, (signal) =>
+        client.image(prompt, { ...options, signal }),
+    );
 
 const textRequest = (
     client: Pollinations,
     signal: AbortSignal,
     prompt: string,
     options?: TextGenerateOptions,
-) => client.text(prompt, { ...options, signal });
+) =>
+    withCallerSignal(signal, options?.signal, (signal) =>
+        client.text(prompt, { ...options, signal }),
+    );
 
 const audioRequest = (
     client: Pollinations,
     signal: AbortSignal,
     text: string,
     options?: AudioGenerateOptions,
-) => client.audio(text, { ...options, signal });
+) =>
+    withCallerSignal(signal, options?.signal, (signal) =>
+        client.audio(text, { ...options, signal }),
+    );
 
 const videoRequest = (
     client: Pollinations,
     signal: AbortSignal,
     prompt: string,
     options?: VideoGenerateOptions,
-) => client.video(prompt, { ...options, signal });
+) =>
+    withCallerSignal(signal, options?.signal, (signal) =>
+        client.video(prompt, { ...options, signal }),
+    );
 
 const transcriptionRequest = (
     client: Pollinations,
     signal: AbortSignal,
     audio: ArrayBuffer | Blob,
     options?: TranscribeOptions,
-) => client.transcribe(audio, { ...options, signal });
+) =>
+    withCallerSignal(signal, options?.signal, (signal) =>
+        client.transcribe(audio, { ...options, signal }),
+    );
 
 /** Image bytes, content type and keyless URL. `run(prompt, options?)`. */
 export function useImageGeneration() {

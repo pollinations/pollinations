@@ -1,4 +1,5 @@
-import { HTTPException } from "hono/http-exception";
+import type { RefusalContext } from "../http/fix-link.ts";
+import { permissionRequired } from "../http/permission-required-error.ts";
 import type { CONSENT_PERMISSIONS } from "./authorize-config.ts";
 
 type AccountPermission = (typeof CONSENT_PERMISSIONS)[number];
@@ -17,13 +18,16 @@ export function hasAccountPermission(
     return !!apiKey.permissions?.account?.includes(permission);
 }
 
+/** Refuses a key without the permission, with a link to grant it to that key. */
 export function requireAccountPermission(
-    apiKey: AccountPermissionApiKey | undefined,
+    c: RefusalContext,
     permission: AccountPermission,
 ): void {
-    if (!hasAccountPermission(apiKey, permission)) {
-        throw new HTTPException(403, {
-            message: `API key does not have 'account:${permission}' permission`,
-        });
+    if (!hasAccountPermission(c.var.auth?.apiKey, permission)) {
+        throw permissionRequired(
+            c,
+            { permission },
+            `API key does not have 'account:${permission}' permission.`,
+        );
     }
 }

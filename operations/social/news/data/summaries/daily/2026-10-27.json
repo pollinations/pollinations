@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-27",
+  "period_start": "2026-10-27",
+  "period_end": "2026-10-27",
+  "title": "Chat links move to Open WebUI, and Kling gets sound",
+  "summary": "Chat links moved to Open WebUI while fixes addressed missing responses, media authentication, dashboard pages, and request floods.\n\nOld chat.pollinations.ai links now redirect to Open WebUI, preserving their paths and query strings. Play now sends the audio option when Sound is on for `kwaivgi/kling-v3.0-std`; turning Sound off still produces silent video.\n\nMessages responses and the CLI now show refusal-only answers instead of dropping them. Non-streaming Chat Completions reject blank answers before caching, so the existing fallback or error path can handle them. Whisper forwards supplied prompt and temperature options, the CLI includes fixed per-generation fees in estimates, and the GPT Image fallback authentication failure was fixed.\n\nMedia uploads now require an `sk_` key; retrieval stays public. Media key checks have rate limits and return 503 when verification is unavailable rather than reporting a valid key as invalid. The SDK sends media keys in the Authorization header without putting them in request URLs. Consent links no longer preselect `keys` or `machines`, and apps redirecting to a website or custom scheme can no longer request `keys`.",
+  "pr_count": 20,
+  "prs": [
+    {
+      "number": 17600,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18539,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18543,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18552,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18555,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18560,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18563,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18564,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18575,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18578,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18580,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18581,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18582,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18586,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18589,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18590,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18594,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18601,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18603,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18610,
+      "date": "2026-10-27"
+    }
+  ],
+  "generated_at": "2026-10-28T06:10:56.788320+00:00",
+  "daily": [],
+  "changelog": []
+}

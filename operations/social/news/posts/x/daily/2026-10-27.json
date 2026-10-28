@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-10-27",
+  "period_start": "2026-10-27",
+  "period_end": "2026-10-27",
+  "generated_at": "2026-10-28T06:10:56.788320+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/a395ede2f47b086e6b6f5c50b4eae07553314c52e1a2536fa32ad3db6386345e"
+    }
+  ],
+  "text": "merged: Messages and the CLI now show refusal-only replies. Blank non-streaming chat completions get rejected before caching, so the existing fallback or error path handles them. A refusal and an empty answer are different bugs."
+}

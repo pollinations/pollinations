@@ -696,7 +696,8 @@ export class Pollinations {
 
     /**
      * Generate a video URL from a text prompt.
-     * Hits the API first to authenticate, then returns a keyless URL that can be shared.
+     * Returns the stored media enclosure URL for sharing.
+     * Throws NO_VIDEO_URL if the response has no enclosure URL.
      *
      * @example
      * ```ts
@@ -708,6 +709,13 @@ export class Pollinations {
         options: VideoGenerateOptions = {},
     ): Promise<string> {
         const response = await this.video(prompt, options);
+        if (response.url === undefined) {
+            throw new PollinationsError(
+                'Video response did not include a stored media URL (rel="enclosure" Link header)',
+                "NO_VIDEO_URL",
+                502,
+            );
+        }
         return response.url;
     }
 
@@ -747,7 +755,11 @@ export class Pollinations {
                 const contentType =
                     response.headers.get("content-type") || "video/mp4";
 
-                return { buffer, contentType, url };
+                const storedUrl = response.headers
+                    .get("link")
+                    ?.match(/<([^>]+)>;\s*rel="enclosure"/)?.[1];
+
+                return { buffer, contentType, url: storedUrl };
             },
         );
     }

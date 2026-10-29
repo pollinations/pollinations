@@ -266,7 +266,9 @@ describe("static provider fallbacks", () => {
                 model: `global.anthropic.${upstream}`,
                 defaultOptions: { max_tokens: 128000 },
             });
-            expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+            expect(
+                findModelByName(`${model}:anthropic`)?.config(),
+            ).toMatchObject({
                 provider: "anthropic",
                 model: upstream,
                 defaultOptions: { max_tokens: 128000 },

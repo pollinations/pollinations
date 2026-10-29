@@ -12,7 +12,7 @@ import { CopyValue } from "./copy-value.tsx";
 // An always-on sandbox runs about 720 hours a month.
 const HOURS_PER_MONTH = 720;
 
-const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
+const pollen = (amount: number) => `${Number(amount.toPrecision(2))} pollen`;
 const gb = (mb: number) => Math.round(mb / 1024);
 
 export const SandboxTemplateList: FC<{ query: string }> = ({ query }) => {

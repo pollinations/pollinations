@@ -282,8 +282,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
-    },
-  },
   "anthropic/claude-opus-4.6": {
     "cost": {
       "completionTextTokens": 0.000025,

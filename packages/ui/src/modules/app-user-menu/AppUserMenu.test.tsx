@@ -153,11 +153,11 @@ describe("AppUserMenu", () => {
         expect(renderMenu()).not.toContain("Unlimited");
     });
 
-    test("shows Pollen unavailable when the key or wallet hits an outage", () => {
+    test("shows pollen unavailable when the key or wallet hits an outage", () => {
         const outage = new PollinationsError("Down", "UNKNOWN_ERROR", 503);
         sdk.key.data = undefined as never;
         sdk.key.error = outage;
-        expect(renderMenu()).toContain("Pollen unavailable");
+        expect(renderMenu()).toContain("pollen unavailable");
 
         sdk.key.data = {
             id: "key-1",
@@ -170,10 +170,10 @@ describe("AppUserMenu", () => {
             "NETWORK_ERROR",
             0,
         );
-        expect(renderMenu()).toContain("Pollen unavailable");
+        expect(renderMenu()).toContain("pollen unavailable");
 
         sdk.balance.error = new PollinationsError("No", "FORBIDDEN", 403);
-        expect(renderMenu()).not.toContain("Pollen unavailable");
+        expect(renderMenu()).not.toContain("pollen unavailable");
     });
 
     test("keeps the app query and hash in outbound return links", () => {

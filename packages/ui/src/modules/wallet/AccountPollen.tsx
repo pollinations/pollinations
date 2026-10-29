@@ -34,7 +34,7 @@ const labels: Record<PollenStatus, string> = {
     "limit-reached": "Limit reached",
     "no-pollen": "No pollen",
     unlimited: "Unlimited",
-    unavailable: "Pollen unavailable",
+    unavailable: "pollen unavailable",
 };
 
 const intents = {

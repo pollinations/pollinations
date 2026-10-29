@@ -167,7 +167,7 @@ export const CreateMessageRequestSchema = z
             .int()
             .min(1)
             .describe(
-                "Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens.",
+                "Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; reported usage, including reasoning tokens, is billed. Increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens.",
             ),
         messages: z.array(MessageSchema).min(1),
         system: z.union([z.string(), z.array(TextBlockSchema)]).optional(),

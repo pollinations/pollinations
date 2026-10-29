@@ -367,25 +367,31 @@ const chatProtocolCases = [
         model: "openai/gpt-5-nano" as const,
         host: ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
         limit: 60,
+        limitField: "max_tokens",
     },
     {
         path: "/v1/messages",
         model: "openai/gpt-5-nano" as const,
         host: ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
         limit: 1,
+        limitField: "max_tokens",
     },
     {
         path: "/v1/responses",
         model: "xiaomi/mimo-v2.6-pro" as const,
         host: ["api.novita.ai", "api.deepinfra.com"],
         limit: 60,
+        limitField: "max_output_tokens",
     },
 ];
 
-it.each([...chatProtocolCases, { ...chatProtocolCases[0], limit: undefined }])(
-    "reports exhausted reasoning budgets on $path (limit=$limit) without fallback or caching, retaining usage and error metrics",
-    async ({ path, model, host, limit }) => {
-        const completionTokens = Math.max(limit ?? 60, 16);
+it.each([
+    ...chatProtocolCases,
+    { ...chatProtocolCases[0], limitField: "max_completion_tokens" },
+])(
+    "reports exhausted reasoning budgets on $path ($limitField=$limit) without fallback or caching, retaining usage and error metrics",
+    async ({ path, model, host, limit, limitField }) => {
+        const completionTokens = Math.max(limit, 16);
         const wire = JSON.stringify({
             id: "reasoning-budget-exhausted",
             object: "chat.completion",
@@ -419,9 +425,7 @@ it.each([...chatProtocolCases, { ...chatProtocolCases[0], limit: undefined }])(
                         >;
                         expect(
                             body.max_completion_tokens ?? body.max_tokens,
-                        ).toBe(
-                            limit === undefined ? undefined : completionTokens,
-                        );
+                        ).toBe(completionTokens);
                         expect(body).not.toHaveProperty("reasoning_effort");
                         return new Response(wire, {
                             headers: { "content-type": "application/json" },
@@ -434,13 +438,13 @@ it.each([...chatProtocolCases, { ...chatProtocolCases[0], limit: undefined }])(
                         body: {
                             model,
                             stream: false,
+                            [limitField]: limit,
                             ...(path === "/v1/responses"
-                                ? { input: prompt, max_output_tokens: limit }
+                                ? { input: prompt }
                                 : {
                                       messages: [
                                           { role: "user", content: prompt },
                                       ],
-                                      max_tokens: limit,
                                   }),
                         },
                     },
@@ -475,6 +479,121 @@ it.each([...chatProtocolCases, { ...chatProtocolCases[0], limit: undefined }])(
                 modelUsed: model,
             });
         }
+    },
+);
+
+it.each([
+    { limit: undefined, fallbackAnswer: "" },
+    { limit: null, fallbackAnswer: "" },
+    { limit: undefined, fallbackAnswer: "Recovered answer" },
+])(
+    "keeps default token exhaustion retryable ($limit, fallback=$fallbackAnswer)",
+    async ({ limit, fallbackAnswer }) => {
+        const model = "openai/gpt-5-nano";
+        const prompt = `Default budget ${crypto.randomUUID()}`;
+        const { response, text, calls, events } = await chatThroughHandler(
+            model,
+            ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+            async (request) => {
+                const body = (await request.json()) as Record<string, unknown>;
+                expect(
+                    body.max_tokens ?? body.max_completion_tokens,
+                ).toBeUndefined();
+                const content =
+                    new URL(request.url).hostname === "api.openai.com"
+                        ? fallbackAnswer
+                        : "";
+                return Response.json({
+                    id: "default-budget",
+                    object: "chat.completion",
+                    model,
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content },
+                            finish_reason: content ? "stop" : "length",
+                        },
+                    ],
+                    usage,
+                });
+            },
+            false,
+            prompt,
+            {
+                path: "/v1/chat/completions",
+                body: {
+                    model,
+                    max_tokens: limit,
+                    max_completion_tokens: limit,
+                    messages: [{ role: "user", content: prompt }],
+                },
+            },
+        );
+        expect(response.status, text).toBe(fallbackAnswer ? 200 : 502);
+        if (fallbackAnswer)
+            expect(JSON.parse(text).choices[0].message.content).toBe(
+                fallbackAnswer,
+            );
+        else expect(JSON.parse(text).error.code).toBe("empty_response");
+        expect(calls).toBe(2);
+        const attempts = events.filter(
+            (event) => event.eventType === "generate.text",
+        );
+        expect(attempts).toHaveLength(2);
+        expect(attempts[0]).toMatchObject({
+            isFinal: false,
+            responseStatus: 502,
+            errorResponseCode: "empty_response",
+            modelUsed: model,
+        });
+        expect(attempts[1]).toMatchObject({
+            isFinal: true,
+            responseStatus: fallbackAnswer ? 200 : 502,
+            fallbackUsed: true,
+        });
+    },
+);
+
+it.each([0, 1])(
+    "preserves an answered choice at index %s alongside an empty length choice",
+    async (answeredIndex) => {
+        const model = "openai/gpt-4o-mini";
+        const choices = [0, 1].map((index) => ({
+            index,
+            message: {
+                role: "assistant",
+                content: index === answeredIndex ? "An answer" : "",
+            },
+            finish_reason: "length",
+        }));
+        const { response, text, calls } = await chatThroughHandler(
+            model,
+            "api.openai.com",
+            async (request) => {
+                expect(((await request.json()) as { n: number }).n).toBe(2);
+                return Response.json({
+                    id: "multiple-choices",
+                    object: "chat.completion",
+                    model,
+                    choices,
+                    usage,
+                });
+            },
+            false,
+            "Two choices",
+            {
+                path: "/v1/chat/completions",
+                body: {
+                    model,
+                    n: 2,
+                    max_tokens: 20,
+                    messages: [{ role: "user", content: "Two choices" }],
+                },
+            },
+        );
+        expect(response.status, text).toBe(200);
+        expect(JSON.parse(text).choices).toEqual(choices);
+        expect(calls).toBe(1);
     },
 );
 

@@ -157,19 +157,32 @@ export async function generateChatAttempt(
                             message.refusal.trim())
                     )),
         );
-        if (!result.choices?.length || emptyChoices.length) {
+        if (
+            !result.choices?.length ||
+            emptyChoices.length === result.choices.length
+        ) {
             const tokenLimitReached =
+                (requestData.max_tokens != null ||
+                    requestData.max_completion_tokens != null) &&
                 emptyChoices.length > 0 &&
                 emptyChoices.every(
                     ({ finish_reason }) => finish_reason === "length",
                 );
-            throw new UpstreamError(tokenLimitReached ? 400 : 502, {
-                message: tokenLimitReached
-                    ? "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort."
-                    : "Chat Completions provider returned an empty response",
-                errorCode: tokenLimitReached
-                    ? "output_token_limit_exceeded"
-                    : "empty_response",
+            const { status, ...details } = tokenLimitReached
+                ? {
+                      status: 400 as const,
+                      message:
+                          "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
+                      errorCode: "output_token_limit_exceeded",
+                  }
+                : {
+                      status: 502 as const,
+                      message:
+                          "Chat Completions provider returned an empty response",
+                      errorCode: "empty_response",
+                  };
+            throw new UpstreamError(status, {
+                ...details,
                 requestUrl: result.upstreamRequestUrl,
                 billedUsage: openaiUsageToUsage(
                     result.usage as Parameters<typeof openaiUsageToUsage>[0],

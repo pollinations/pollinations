@@ -1428,6 +1428,70 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
+    it("notes why a text answer reported zero tokens, without its content", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        await createHeaderApp(
+            {
+                "x-usage-prompt-text-tokens": "0",
+                "x-usage-completion-text-tokens": "0",
+            },
+            trackingUser,
+            200,
+            undefined,
+            undefined,
+            undefined,
+            {
+                choices: [
+                    { message: { content: "secret" }, finish_reason: "stop" },
+                ],
+                usage: { prompt_tokens: 0, completion_tokens: 0 },
+            },
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 200,
+            errorResponseCode: "usage_zero",
+            totalPrice: 0,
+        });
+        expect(JSON.parse(event.errorMessage as string)).toEqual({
+            finishReason: "stop",
+            contentChars: 6,
+            usage: { prompt_tokens: 0, completion_tokens: 0 },
+        });
+    });
+
     it("records a served flat cost without marking a zero-price fallback as billed", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -1758,6 +1822,76 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(enterFetch).not.toHaveBeenCalled();
+    });
+
+    it("calls Enter only on the charge that crosses the low-balance threshold", async () => {
+        const db = drizzle(env.DB);
+        const userId = `track-low-balance-${crypto.randomUUID()}`;
+        await db.insert(userTable).values({
+            id: userId,
+            email: `${userId}@test.local`,
+            name: "Track Low Balance Test",
+            tierBalance: 0,
+            packBalance: 2,
+            lastPackPollen: 10,
+            autoTopUpEnabled: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const [user] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+        if (!user) throw new Error("Expected inserted user");
+
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+        const enterFetch = vi.fn<typeof env.ENTER.fetch>(async () =>
+            Response.json({ status: "skipped" }),
+        );
+
+        // The first charge takes the balance from 2 to just below it; the
+        // second starts below, so only the first one calls Enter.
+        for (let i = 0; i < 2; i++) {
+            const ctx = createExecutionContext();
+            const response = await createTestApp(async () => {}, user).fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "cf-connecting-ip": "203.0.113.42",
+                    },
+                    body: JSON.stringify({
+                        model: "openai/gpt-5.4-nano",
+                        stream: false,
+                        messages: [{ role: "user", content: `test ${i}` }],
+                    }),
+                }),
+                {
+                    ...env,
+                    ENTER: { fetch: enterFetch },
+                    ENVIRONMENT: "test",
+                    PLN_ENTER_TOKEN:
+                        "test_internal_token_with_enough_length_for_checks",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    BETTER_AUTH_SECRET: "test_secret",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(200);
+        }
+
+        const [after] = await db
+            .select({ packBalance: userTable.packBalance })
+            .from(userTable)
+            .where(eq(userTable.id, userId));
+        expect(after?.packBalance).toBeLessThan(2);
+        expect(enterFetch).toHaveBeenCalledTimes(1);
     });
 
     it("emits the credited community model reward amount", async () => {
@@ -2197,7 +2331,7 @@ describe("tracking observability", () => {
             tokenCountCompletionAudio: 2,
         });
         expect(JSON.stringify(event)).not.toContain("large-audio-payload");
-        expect(consumePollen).toHaveBeenCalledWith(0.0002);
+        expect(consumePollen).toHaveBeenCalledWith(0.00016);
     });
 
     it("bills plain-text speech-to-text responses from usage headers", async () => {
@@ -3876,10 +4010,10 @@ describe("trackResponse model identity", () => {
     });
 
     it.each([200, 502])(
-        "distinguishes same-provider routes on HTTP %i",
+        "distinguishes Azure and direct OpenAI routes on HTTP %i",
         async (status) => {
             const primary = "openai/gpt-6-astra" as const;
-            const fallback = "openai/gpt-6-astra:azure:datazone" as const;
+            const fallback = "openai/gpt-6-astra:openai" as const;
             for (const attempted of [primary, fallback]) {
                 const tracking = await trackResponse(
                     "generate.text",
@@ -3892,7 +4026,8 @@ describe("trackResponse model identity", () => {
                 expect(tracking).toMatchObject({
                     responseStatus: status,
                     modelUsed: attempted,
-                    modelProviderUsed: "azure",
+                    modelProviderUsed:
+                        attempted === primary ? "azure" : "openai",
                     fallbackUsed: attempted !== primary,
                 });
             }

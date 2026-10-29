@@ -281,7 +281,9 @@ export function initializeProviderRegistry(value: unknown): void {
         seen.add(provider.id);
         return { ...provider, ...mappings.get(provider.id) };
     });
-    if (seen.size !== mappings.size)
+    // A new model mapping may precede its private journal. Keep the valid
+    // catalog usable; observed vendors without definitions need reconciliation.
+    if (seen.size === 0)
         throw new Error("Vendor details: incomplete vendor catalog");
     if (providerResolver)
         throw new Error(

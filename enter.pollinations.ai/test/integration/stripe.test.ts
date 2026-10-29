@@ -326,10 +326,17 @@ test.for(checkoutAmounts)(
     "%s should only be accessible when authenticated via session cookie",
     async (route, { sessionToken, mocks }) => {
         await mocks.enable("stripe", "tinybird");
+        // Signed out, the link goes back to the wallet, which asks to sign in.
         const anonymousResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
+            redirect: "manual",
         });
-        expect(anonymousResponse.status).toBe(401);
+        expect(anonymousResponse.status).toBe(302);
+        const back = new URL(anonymousResponse.headers.get("location") ?? "");
+        expect(back.pathname).toBe("/pollen");
+        expect(back.searchParams.get("pack")).toBe(route.split("/").pop());
+        expect(back.searchParams.has("checkout_error")).toBe(false);
+        expect(checkoutSessionRequests(mocks.stripe.state)).toHaveLength(0);
 
         const sessionCookieResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
@@ -362,7 +369,7 @@ test("GET /api/stripe/products returns pack list", async () => {
     );
 });
 
-test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", async ({
+test("GET /api/stripe/checkout/:packKey sends invalid pack keys back to the wallet", async ({
     sessionToken,
     mocks,
 }) => {
@@ -373,12 +380,72 @@ test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", asyn
             headers: {
                 cookie: `better-auth.session_token=${sessionToken}`,
             },
+            redirect: "manual",
         });
-        expect(response.status).toBe(400);
-        const data = (await response.json()) as { error: string };
-        expect(data.error).toBe("Invalid pack");
+        expect(response.status).toBe(302);
+        const back = new URL(response.headers.get("location") ?? "");
+        expect(back.pathname).toBe("/pollen");
+        expect(back.searchParams.get("checkout_error")).toBe("failed");
+        expect(back.searchParams.has("pack")).toBe(false);
     }
 });
+
+// The browser follows this link, so a checkout that can't open goes back to
+// the page it came from with the reason, never to a JSON error.
+test.for([
+    {
+        name: "signed out",
+        query: `?return=top-up&redirect=${encodeURIComponent("https://app.example/chat")}`,
+        signedIn: false,
+        stripeDown: false,
+        expected: {
+            pathname: "/top-up",
+            pack: "p5",
+            checkoutError: null,
+            redirect: "https://app.example/chat",
+        },
+    },
+    {
+        name: "Stripe fails",
+        query: "?return=top-up",
+        signedIn: true,
+        stripeDown: true,
+        expected: {
+            pathname: "/top-up",
+            pack: "p5",
+            checkoutError: "failed",
+            redirect: null,
+        },
+    },
+])(
+    "GET /api/stripe/checkout/p5 sends the buyer back when $name",
+    async (testCase, { sessionToken, mocks }) => {
+        await mocks.enable("stripe", "tinybird");
+        if (testCase.stripeDown)
+            mocks.stripe.state.onCheckoutSessionCreated = async () => {
+                throw new Error("Stripe unavailable");
+            };
+
+        const response = await SELF.fetch(
+            `${base}/checkout/p5${testCase.query}`,
+            {
+                headers: testCase.signedIn
+                    ? { cookie: `better-auth.session_token=${sessionToken}` }
+                    : {},
+                redirect: "manual",
+            },
+        );
+        expect(response.status).toBe(302);
+        const back = new URL(response.headers.get("location") ?? "");
+        expect(back.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+        expect({
+            pathname: back.pathname,
+            pack: back.searchParams.get("pack"),
+            checkoutError: back.searchParams.get("checkout_error"),
+            redirect: back.searchParams.get("redirect"),
+        }).toEqual(testCase.expected);
+    },
+);
 
 test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", async ({
     sessionToken,
@@ -797,11 +864,24 @@ test("POST /api/stripe/billing/portal opens adding a card and comes back to the 
         (await open({ return: "top-up", flow: "card", pack: "p50" })).status,
     ).toBe(200);
     // Anything else opens the portal's home page; an unknown pack is dropped.
-    expect((await open({ flow: "details", pack: "p7" })).status).toBe(200);
+    expect((await open({ flow: "default", pack: "p7" })).status).toBe(200);
+    expect(
+        (await open({ return: "top-up", flow: "details", pack: "p20" })).status,
+    ).toBe(200);
 
-    const [card, other] = mocks.stripe.state.requests.filter(
+    const [card, other, details] = mocks.stripe.state.requests.filter(
         (request) => request.path === "/v1/billing_portal/sessions",
     );
+    // Auto top-up with missing details opens them directly, then comes back.
+    expect(details?.body["flow_data[type]"]).toBe("customer_update");
+    expect(details?.body["flow_data[after_completion][type]"]).toBe("redirect");
+    const detailsBack = new URL(
+        String(
+            details?.body["flow_data[after_completion][redirect][return_url]"],
+        ),
+    );
+    expect(detailsBack.pathname).toBe("/top-up");
+    expect(detailsBack.searchParams.get("pack")).toBe("p20");
     expect(card?.body["flow_data[type]"]).toBe("payment_method_update");
     expect(card?.body["flow_data[after_completion][type]"]).toBe("redirect");
     const back = new URL(
@@ -1089,7 +1169,7 @@ test.for([
     },
 );
 
-test("GET /api/stripe/billing returns the pack of the last checkout purchase", async ({
+test("GET /api/stripe/billing returns the last pack bought", async ({
     sessionToken,
     mocks,
 }) => {
@@ -1108,22 +1188,16 @@ test("GET /api/stripe/billing returns the pack of the last checkout purchase", a
         });
         expect(response.status).toBe(200);
         const data = (await response.json()) as {
-            lastPackAmountUsd: number | null;
+            lastPackPollen: number | null;
         };
-        return data.lastPackAmountUsd;
+        return data.lastPackPollen;
     };
 
     expect(await lastPack()).toBeNull();
 
-    const credit = env.DB.prepare(
-        `INSERT INTO stripe_checkout_credits
-            (session_id, event_id, event_type, user_id, pollen_credited, created_at)
-            VALUES (?, ?, 'checkout.session.completed', ?, ?, ?)`,
-    );
-    await env.DB.batch([
-        credit.bind("cs_last_pack_new", "evt_new", user.id, 10, 2_000),
-        credit.bind("cs_last_pack_old", "evt_old", user.id, 5, 1_000),
-    ]);
+    await env.DB.prepare("UPDATE user SET last_pack_pollen = 10 WHERE id = ?")
+        .bind(user.id)
+        .run();
 
     expect(await lastPack()).toBe(10);
 });
@@ -1855,11 +1929,16 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
     expect(webhookResponse.status).toBe(200);
 
     const afterWebhook = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance FROM user WHERE id = ?`,
+        `SELECT pack_balance AS packBalance,
+            last_pack_pollen AS lastPackPollen
+        FROM user WHERE id = ?`,
     )
         .bind(user.id)
-        .first<{ packBalance: number | null }>();
-    expect(afterWebhook?.packBalance).toBe(11);
+        .first<{
+            packBalance: number | null;
+            lastPackPollen: number | null;
+        }>();
+    expect(afterWebhook).toEqual({ packBalance: 11, lastPackPollen: 10 });
 
     const duplicateResponse = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", "in_mock_1", user.id),
@@ -3638,6 +3717,12 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
     expect(pack).toBeDefined();
     if (!pack) throw new Error("Expected $10 pollen pack");
 
+    await env.DB.prepare(
+        "UPDATE user SET low_balance_notified_at = 1 WHERE id = ?",
+    )
+        .bind(user.id)
+        .run();
+
     const response = await postSignedStripeWebhook({
         id: "evt_test_checkout_paid_emit",
         type: "checkout.session.completed",
@@ -3657,6 +3742,15 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
         },
     });
     expect(response.status).toBe(200);
+    // Buying a pack records it and re-arms the running-low email.
+    const credited = await env.DB.prepare(
+        `SELECT last_pack_pollen AS lastPackPollen,
+            low_balance_notified_at AS notifiedAt
+        FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ lastPackPollen: number | null; notifiedAt: number | null }>();
+    expect(credited).toEqual({ lastPackPollen: 10, notifiedAt: null });
 
     expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
@@ -4265,7 +4359,7 @@ test("wallet and hosted checkout create the same session apart from how Stripe r
     expect(
         hostedShared["saved_payment_method_options[payment_method_save]"],
     ).toBe("enabled");
-    expect(ui_mode).toBe("custom");
+    expect(ui_mode).toBe("elements");
     // Redirect-based methods come back to the same page as hosted success.
     expect(return_url).toBe(success_url);
     expect(return_url).toContain("session_id={CHECKOUT_SESSION_ID}");

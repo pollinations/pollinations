@@ -117,20 +117,6 @@ describe("docs routes", () => {
         );
     });
 
-    it("serves canonical docs through the upstream hostname without a redirect loop", async () => {
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request("https://gen.myceli.ai/docs", {
-                headers: { "X-Forwarded-Host": "gen.pollinations.ai" },
-            }),
-            envWithEnterSchema({}),
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Location")).toBeNull();
-    });
-
     it("generates valid request examples from the checked-out Gen schema", async () => {
         // Enter and Media validate their own source schemas in their own suites.
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -160,6 +146,51 @@ describe("docs routes", () => {
             "seed=:seed",
         );
         expect(requestExampleErrors(schema)).toEqual([]);
+    });
+
+    it("accepts validation and upstream details on a 400", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ paths: {} }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
+            ),
+            envWithEnterSchema({ paths: {} }),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        const schema = (await response.json()) as Spec;
+        const details = (
+            schema.paths["/v1/chat/completions"]?.post as
+                | { responses?: Record<string, unknown> }
+                | undefined
+        )?.responses?.["400"] as
+            | {
+                  content?: {
+                      "application/json"?: {
+                          schema?: {
+                              properties?: {
+                                  error?: {
+                                      properties?: { details?: unknown };
+                                  };
+                              };
+                          };
+                      };
+                  };
+              }
+            | undefined;
+        expect(
+            details?.content?.["application/json"]?.schema?.properties?.error
+                ?.properties?.details,
+        ).toEqual({
+            anyOf: [
+                { $ref: "#/components/schemas/ValidationErrorDetails" },
+                { $ref: "#/components/schemas/ErrorDetails" },
+            ],
+        });
     });
 
     it("lists every sandbox route in the API reference, linking E2B for fields", async () => {

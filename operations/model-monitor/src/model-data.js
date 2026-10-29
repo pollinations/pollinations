@@ -14,7 +14,13 @@ export function normalizeCatalogModel(model) {
         aliases: model.aliases || [],
         community: model.community === true,
         type,
-        endpointType: ["video", "3d"].includes(type) ? "image" : type,
+        // Endpoints are coarser than categories: video and 3D record image
+        // events, and decision models record text events.
+        endpointType: ["video", "3d"].includes(type)
+            ? "image"
+            : type === "decision"
+              ? "text"
+              : type,
         catalogStatus: "visible",
     };
 }

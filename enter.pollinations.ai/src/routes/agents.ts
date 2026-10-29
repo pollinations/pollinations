@@ -9,11 +9,13 @@ import {
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+    parseCommunityModelId,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { and, eq, inArray } from "drizzle-orm";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -32,6 +34,10 @@ import {
     PromptAgentInputSchema,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
+import {
+    findReferenceableCommunityModel,
+    registryModelId,
+} from "./community-endpoints/fallbacks.ts";
 import {
     CodeAgentUpdateSchema,
     RequiredSafetyFeaturesSchema,
@@ -85,7 +91,7 @@ const CreateCodeAgentSchema = CodeAgentInputSchema.extend({
         .default("private"),
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default([]),
 }).strict();
-const CreateAgentSchema = z.union([
+const CreateAgentSchema = z.discriminatedUnion("type", [
     CreateCodeAgentSchema,
     CreatePromptAgentSchema,
 ]);
@@ -177,6 +183,37 @@ async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
     return row;
 }
 
+// Gen resolves baseModel on every call; an unknown id would otherwise only
+// surface as a 400 to the agent's callers.
+async function requireValidBaseModel(
+    db: Db,
+    ownerUserId: string,
+    baseModel: string,
+): Promise<void> {
+    const invalid = () =>
+        new HTTPException(400, {
+            message: `baseModel "${baseModel}" is not a callable text model`,
+        });
+    const registryId = registryModelId(baseModel);
+    if (registryId) {
+        const definition = getRegistryModelDefinition(registryId);
+        if (definition.category !== "text" || definition.fallbackOnly)
+            throw invalid();
+        return;
+    }
+    const parsed = parseCommunityModelId(baseModel);
+    const target = parsed
+        ? await findReferenceableCommunityModel(db, ownerUserId, parsed)
+        : undefined;
+    if (
+        !target ||
+        (target.type === "proxy" &&
+            parseListingPayload("proxy", target.payload)?.modality !== "text")
+    ) {
+        throw invalid();
+    }
+}
+
 async function lookupOwnerGithubUsername(
     db: Db,
     ownerUserId: string,
@@ -218,19 +255,30 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
         throw new Error(`Agent ${id} has invalid configuration`);
     }
 
-    const throttleKey = `code-agent-sync:throttle:${id}`;
-    const now = Date.now();
-    const throttleUntil = Number(await c.env.KV.get(throttleKey));
-    if (Number.isFinite(throttleUntil) && throttleUntil > now) {
+    // Claim the sync with one conditional write so parallel requests, even
+    // from other colos, start at most one deploy. Rows written in the last
+    // 30 seconds (created, edited or synced) are refused without a write.
+    const cutoff = new Date(
+        Date.now() - CODE_AGENT_SYNC_THROTTLE_SECONDS * 1000,
+    );
+    const claimed =
+        row.updatedAt <= cutoff &&
+        (
+            await db
+                .update(schema.communityEndpoint)
+                .set({ updatedAt: new Date() })
+                .where(
+                    and(
+                        eq(schema.communityEndpoint.id, id),
+                        lte(schema.communityEndpoint.updatedAt, cutoff),
+                    ),
+                )
+        ).meta.changes === 1;
+    if (!claimed) {
         throw new HTTPException(429, {
             message: "Agent sync is limited to once every 30 seconds",
         });
     }
-    await c.env.KV.put(
-        throttleKey,
-        String(now + CODE_AGENT_SYNC_THROTTLE_SECONDS * 1000),
-        { expirationTtl: 60 },
-    );
 
     const repository = await resolveCodeAgentRepository(
         c.env,
@@ -331,7 +379,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const rows = await db.query.communityEndpoint.findMany({
                 where: and(
@@ -375,7 +423,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const row = await requireOwnedAgent(db, c.req.param("id"), user.id);
             const ownerGithubUsername = await lookupOwnerGithubUsername(
@@ -410,7 +458,7 @@ export const agentsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = crypto.randomUUID();
             let payload: string;
@@ -454,6 +502,7 @@ export const agentsRoutes = new Hono<Env>()
                     listing.name,
                     input.visibility,
                 );
+                await requireValidBaseModel(db, user.id, input.baseModel);
                 payload = serializePromptAgentConfig(input);
             }
             let row: AgentRow;
@@ -514,7 +563,7 @@ export const agentsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);
@@ -531,11 +580,18 @@ export const agentsRoutes = new Hono<Env>()
                           ...input,
                       });
             if (!parsed.success) {
+                const issue = parsed.error.issues[0];
                 throw new HTTPException(400, {
-                    message: parsed.error.issues[0]?.message,
+                    message: issue?.path.length
+                        ? `${issue.path.join(".")}: ${issue.message}`
+                        : issue?.message,
                 });
             }
             const data = parsed.data;
+            // Only a changed baseModel is checked, so other edits still save.
+            if ("baseModel" in data && input.baseModel !== undefined) {
+                await requireValidBaseModel(db, user.id, data.baseModel);
+            }
             const update: Partial<
                 typeof schema.communityEndpoint.$inferInsert
             > = {
@@ -604,7 +660,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);

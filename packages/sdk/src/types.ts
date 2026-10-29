@@ -79,7 +79,7 @@ export interface ImageResponse {
     buffer: ArrayBuffer;
     /** Content type (image/jpeg or image/png) */
     contentType: string;
-    /** The URL that was used to generate the image */
+    /** Stored media URL of the image, or "" if the response has none */
     url: string;
 }
 
@@ -139,8 +139,8 @@ export interface VideoResponse {
     buffer: ArrayBuffer;
     /** Content type (video/mp4) */
     contentType: string;
-    /** The URL that was used to generate the video */
-    url: string;
+    /** Stored media URL from the rel="enclosure" Link header, or undefined if absent */
+    url?: string;
 }
 
 export interface Model3dGenerateOptions extends RequestOptions {
@@ -418,6 +418,7 @@ export interface ChatChoice {
     message: {
         role: "assistant";
         content: string | null;
+        refusal?: string | null;
         tool_calls?: ToolCall[];
         audio?: {
             transcript: string;
@@ -838,7 +839,7 @@ export interface DecisionResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage" | "keys";
+export type AccountPermission = "profile" | "usage" | "keys" | "machines";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -925,6 +926,8 @@ export interface AccountQuestsResponse {
 /** Usage record */
 export interface UsageRecord {
     timestamp: string;
+    /** Next page: pass as `before_event_id`, with `timestamp` as `before` */
+    cursor_event_id: string;
     type: string;
     model: string;
     api_key: string;
@@ -962,6 +965,8 @@ export interface UsageOptions {
     limit?: number;
     /** ISO timestamp cursor for pagination */
     before?: string;
+    /** Last record's `cursor_event_id`, used with `before` so same-second records are not skipped */
+    before_event_id?: string;
     /** Exact period granularity */
     granularity?: "day" | "week" | "month";
     /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
@@ -1108,6 +1113,37 @@ export interface CreateKeyOptions {
     earningsEnabled?: boolean;
 }
 
+/** A static site at `https://<name>.pollinations.app` */
+export interface Site {
+    name: string;
+    url: string;
+    createdAt: string;
+    publishedAt: string | null;
+    /** Taken down for breaking the terms; the name stays reserved */
+    blocked: boolean;
+}
+
+/** One file of an inline site deploy, in Vercel's deployment shape */
+export interface SiteFile {
+    /** Path, e.g. `index.html` (required) or `assets/app.js` */
+    file: string;
+    data: string;
+    /** Default `utf-8`; use `base64` for images and other binary files */
+    encoding?: "utf-8" | "base64";
+}
+
+/** Response from GET /account/sites */
+export interface SitesResponse {
+    data: Site[];
+    limits: {
+        sites: number;
+        bytesPerSite: number;
+        filesPerSite: number;
+        bytesPerFile: number;
+        bytesPerInlineDeploy: number;
+    };
+}
+
 /**
  * Response from POST /account/keys — includes the raw `key` value which
  * is ONLY shown at creation time. Store it immediately.
@@ -1139,6 +1175,7 @@ export const MODEL_CATEGORIES = [
     "image",
     "video",
     "text",
+    "decision",
     "audio",
     "3d",
     "embedding",

@@ -114,34 +114,43 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ errors: [{ message: "rate limited" }] }, 200);
             }
             const body = (await c.req.json()) as {
+                query?: string;
                 variables?: {
                     query?: string;
                     after?: string | null;
-                    number?: number;
                 };
             };
-            const prNumber = body.variables?.number;
-            if (prNumber !== undefined) {
-                const authors = (state.commitAuthors[prNumber] ?? []).map(
-                    (databaseId) => ({ user: { databaseId } }),
-                );
-                return c.json({
-                    data: {
-                        repository: {
-                            pullRequest: {
-                                commits: {
-                                    nodes: [
-                                        {
-                                            commit: {
-                                                authors: { nodes: authors },
+            // Commit authors arrive as one query with a `pr<number>:` alias
+            // per pull request.
+            const prNumbers = [
+                ...(body.query ?? "").matchAll(/pr(\d+):pullRequest/g),
+            ].map((match) => Number(match[1]));
+            if (prNumbers.length > 0) {
+                const repository = Object.fromEntries(
+                    prNumbers.map((prNumber) => [
+                        `pr${prNumber}`,
+                        {
+                            commits: {
+                                nodes: [
+                                    {
+                                        commit: {
+                                            authors: {
+                                                nodes: (
+                                                    state.commitAuthors[
+                                                        prNumber
+                                                    ] ?? []
+                                                ).map((databaseId) => ({
+                                                    user: { databaseId },
+                                                })),
                                             },
                                         },
-                                    ],
-                                },
+                                    },
+                                ],
                             },
                         },
-                    },
-                });
+                    ]),
+                );
+                return c.json({ data: { repository } });
             }
             const search = body.variables?.query ?? "";
             if (search.includes("is:pr")) {

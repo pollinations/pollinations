@@ -16,6 +16,8 @@ export type UnlistedMediaUpload = {
     size: number;
     uploadedBy?: string;
     keyType?: string;
+    keyId?: string;
+    userId?: string;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -86,6 +88,8 @@ export async function uploadUnlistedMedia(
                     originalName: input.fileName?.slice(0, 253) || "",
                     uploadedBy: input.uploadedBy || "pollinations-service",
                     keyType: input.keyType || "service",
+                    keyId: input.keyId ?? "",
+                    userId: input.userId ?? "",
                 },
             }),
             pipe,
@@ -104,6 +108,19 @@ export async function uploadUnlistedMedia(
     };
 }
 
+// media.pollinations.ai is same-site with the rest of pollinations.ai, so a
+// file must never run script there. Only images, audio and video open in the
+// browser; SVG and other XML, HTML and everything else download. Browsers
+// read "image/png,text/html" as its last type, so lists never open inline.
+function opensInline(contentType: string): boolean {
+    const essence = contentType.split(";")[0].trim().toLowerCase();
+    return (
+        !contentType.includes(",") &&
+        /^(image|audio|video)\//.test(essence) &&
+        !essence.endsWith("xml")
+    );
+}
+
 /** The same file response is served to browsers and to the generation cache. */
 export async function readMedia(
     env: MediaStorageEnv,
@@ -116,25 +133,32 @@ export async function readMedia(
         : env.MEDIA_BUCKET.get(id));
     if (!object) return null;
 
+    const contentType =
+        object.httpMetadata?.contentType || "application/octet-stream";
+    const disposition = opensInline(contentType) ? "inline" : "attachment";
+    const originalName = object.customMetadata?.originalName;
     const headers = new Headers({
-        "Content-Type":
-            object.httpMetadata?.contentType || "application/octet-stream",
+        "Content-Type": contentType,
         "Cache-Control":
             object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
         "X-Content-Id": id,
         "X-Content-Size": object.size.toString(),
         Link: `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        "Content-Disposition": originalName
+            ? `${disposition}; filename*=UTF-8''${encodeURIComponent(originalName)}`
+            : disposition,
     });
+    // Generated files replay the headers gen chose for them. Only the trusted
+    // put() below writes header_* metadata; uploads never do.
     for (const [key, value] of Object.entries(object.customMetadata ?? {})) {
         if (key.startsWith("header_")) headers.set(key.slice(7), value);
     }
-    const originalName = object.customMetadata?.originalName;
-    if (originalName) {
-        headers.set(
-            "Content-Disposition",
-            `inline; filename*=UTF-8''${encodeURIComponent(originalName)}`,
-        );
-    }
+    // Set last: no stored header may let a file run script.
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set(
+        "Content-Security-Policy",
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    );
     if (!("body" in object)) {
         headers.set("Content-Length", object.size.toString());
         return new Response(null, { headers });

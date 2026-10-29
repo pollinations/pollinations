@@ -286,7 +286,7 @@ def call_pollinations_api(
     temperature: float = 0.7,
     response_format: Optional[Dict] = None,
 ) -> Optional[str]:
-    """One model call. None when it fails or the answer is empty: the caller stops the run."""
+    """Retry an empty answer once with a fresh cache key; other failures stop the caller."""
     payload = {
         "model": MODEL,
         "messages": [
@@ -297,32 +297,48 @@ def call_pollinations_api(
     }
     if response_format is not None:
         payload["response_format"] = response_format
-    try:
-        response = requests.post(
-            POLLINATIONS_API_BASE,
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            json=payload,
-            timeout=120
-        )
-    except requests.exceptions.RequestException as e:
-        print(f"  Request failed: {e}")
-        return None
-    if response.status_code != 200:
-        print(f"  API error: {response.status_code}")
-        print(f"  Error preview: {response.text[:500]}")
-        return None
-    try:
-        result = response.json()
-        content = result['choices'][0]['message']['content']
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        print(f"  Error parsing API response: {e}")
-        print(f"  Response preview: {response.text[:500]}")
-        return None
-    print(
-        f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
-        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content or '')}"
-    )
-    return content if content and content.strip() else None
+    for attempt in range(2):
+        try:
+            response = requests.post(
+                POLLINATIONS_API_BASE,
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json=payload,
+                timeout=120
+            )
+        except requests.exceptions.RequestException as e:
+            print(f"  Request failed: {e}")
+            return None
+        try:
+            result = response.json()
+        except json.JSONDecodeError as e:
+            print(f"  Error parsing API response: {e}")
+            return None
+        empty_error = response.status_code == 502 and result.get("error", {}).get("code") == "empty_response"
+        if response.status_code != 200 and not empty_error:
+            print(f"  API error: {response.status_code}")
+            print(f"  Error preview: {response.text[:500]}")
+            return None
+        if not empty_error:
+            try:
+                choice = result['choices'][0]
+                content = choice['message']['content']
+            except (KeyError, IndexError, TypeError) as e:
+                print(f"  Error parsing API response: {e}")
+                return None
+            print(
+                f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
+                f"finish_reason={choice.get('finish_reason')}, chars={len(content or '')}"
+            )
+            if choice['message'].get('refusal') or choice.get('finish_reason') == 'content_filter':
+                print("  The model refused the request")
+                return None
+            if content and content.strip():
+                return content
+        if attempt == 0:
+            # A legacy empty 200 may already be cached. A new seed asks upstream again.
+            payload = {**payload, "seed": random.randint(0, MAX_SEED)}
+            print("  Empty answer; retrying once with a fresh cache key")
+    return None
 
 
 def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None) -> tuple[Optional[bytes], Optional[str]]:
@@ -873,7 +889,7 @@ def commit_files_to_branch(
 # ── Model post ───────────────────────────────────────────────────────
 
 CATEGORIES: tuple[str, ...] = (
-    "text", "image", "video", "audio", "embeddings", "3d", "realtime"
+    "text", "image", "video", "audio", "embeddings", "3d", "realtime", "decision"
 )
 
 
@@ -995,20 +1011,29 @@ def diff_models(
         # First run: treat the snapshot as baseline with no announced changes.
         return Diff(added=added, removed=removed, changed=changed)
 
+    # Models are matched across categories: one that moved category changed.
+    prev_all = {
+        _model_key(m): m for ms in previous.values() for m in ms if _model_key(m)
+    }
+    curr_all = {
+        _model_key(m): m for ms in current.values() for m in ms if _model_key(m)
+    }
+
     for cat in CATEGORIES:
         curr_raw = current.get(cat, [])
         curr_by_name = {_model_key(m): m for m in curr_raw if _model_key(m)}
 
-        # Category absent from previous snapshot = newly tracked (e.g. 'video'
+        # Category absent from previous snapshot = newly tracked (e.g. '3d'
         # added after this code change). Treat as no baseline — don't flood the
-        # diff by announcing every existing model as "added".
-        if cat not in previous:
+        # diff by announcing every existing model as "added" — unless it was
+        # split off a recorded category (e.g. 'decision' out of 'text').
+        if cat not in previous and not curr_by_name.keys() & prev_all.keys():
             print(
                 f"  Info: '{cat}' not in previous snapshot — skipping (new category)."
             )
             continue
 
-        prev_raw = previous[cat]
+        prev_raw = previous.get(cat, [])
         prev_by_name = {_model_key(m): m for m in prev_raw if _model_key(m)}
 
         # Old snapshot has raw models but none resolved to a key — structural
@@ -1022,13 +1047,13 @@ def diff_models(
             continue
 
         for name, model in curr_by_name.items():
-            if name not in prev_by_name:
+            if name not in prev_all:
                 added[cat].append(model)
-            elif _normalize_for_diff(prev_by_name[name]) != _normalize_for_diff(model):
-                changed[cat].append({"before": prev_by_name[name], "after": model})
+            elif _normalize_for_diff(prev_all[name]) != _normalize_for_diff(model):
+                changed[cat].append({"before": prev_all[name], "after": model})
 
         for name, model in prev_by_name.items():
-            if name not in curr_by_name:
+            if name not in curr_all:
                 removed[cat].append(model)
 
     return Diff(added=added, removed=removed, changed=changed)

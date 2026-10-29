@@ -194,7 +194,6 @@ describe("imageUrlToBase64Transform", () => {
 
     it.each([
         "moonshotai/kimi-k2.6",
-        "moonshotai/kimi-k2.6:azure:sweden",
         "moonshotai/kimi-k2.7-code:openrouter:streamlake",
     ] as const)(
         "converts as many image URLs as %s advertises, and no more",

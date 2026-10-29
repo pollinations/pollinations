@@ -100,6 +100,7 @@ interface DeepInfraImageOutput {
 async function generateDeepInfraImage(
     actualModel: keyof typeof DEEPINFRA_IMAGE_MODELS,
     input: PImageInput | PImageEditInput | FluxSchnellInput,
+    billReportedCost = false,
 ): Promise<ImageGenerationResult> {
     const displayName =
         actualModel === "black-forest-labs/flux.1-schnell:deepinfra"
@@ -140,9 +141,10 @@ async function generateDeepInfraImage(
         });
 
     const buffer = base64ToBuffer(image);
+    const providerCost = result.inference_status?.cost;
     logOps(`Generated ${actualModel}:`, {
         bytes: buffer.length,
-        providerCost: result.inference_status?.cost,
+        providerCost,
         runtimeMs: result.inference_status?.runtime_ms,
     });
     return {
@@ -153,6 +155,12 @@ async function generateDeepInfraImage(
                 completionImageTokens: 1,
                 totalTokenCount: 1,
             },
+            ...(billReportedCost &&
+                typeof providerCost === "number" &&
+                Number.isFinite(providerCost) &&
+                providerCost >= 0 && {
+                    providerBilling: { units: providerCost, unitCost: 1 },
+                }),
         },
     };
 }
@@ -169,9 +177,11 @@ export async function callFluxSchnellDeepInfraAPI(
         num_images: 1,
     };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+    // DeepInfra prices FLUX.1 Schnell by image area; record its charge.
     return generateDeepInfraImage(
         "black-forest-labs/flux.1-schnell:deepinfra",
         input,
+        true,
     );
 }
 
@@ -224,10 +234,11 @@ async function downloadOutput(
 // p-image: Text-to-Image
 // =============================================================================
 
-export async function callPrunaImageAPI(
+/** p-image input shared by the DeepInfra primary and the Replicate fallback. */
+export function buildPImageInput(
     prompt: string,
     safeParams: ImageParams,
-): Promise<ImageGenerationResult> {
+): PImageInput {
     const dims = closestByRatio(
         safeParams.width || 1024,
         safeParams.height || 1024,
@@ -241,6 +252,14 @@ export async function callPrunaImageAPI(
         height: dims.height,
     };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+    return input;
+}
+
+export async function callPrunaImageAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const input = buildPImageInput(prompt, safeParams);
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 

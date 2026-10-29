@@ -209,15 +209,35 @@ const ChatCompletionRequestUserMessageSchema = z
     })
     .passthrough();
 
-const ChatCompletionMessageToolCallSchema = z.object({
-    id: z.string(),
-    type: z.literal("function"),
-    function: z.object({
-        name: z.string(),
-        arguments: z.string(),
-        thought_signature: z.string().optional(),
-    }),
-});
+const ChatCompletionMessageToolCallSchema = z
+    .object({
+        id: z.string(),
+        type: z.literal("function"),
+        function: z.object({
+            name: z.string(),
+            arguments: z.string(),
+            thought_signature: z.string().optional(),
+        }),
+        // Google's OpenAI-compatible field for the same Gemini signature.
+        // Malformed values are dropped so they never fail a request or a
+        // provider response parsed with this schema.
+        extra_content: z
+            .object({
+                google: z
+                    .object({ thought_signature: z.string().optional() })
+                    .optional(),
+            })
+            .nullish()
+            .catch(undefined),
+    })
+    .transform(({ extra_content, ...call }) => {
+        const thought_signature =
+            call.function.thought_signature ??
+            extra_content?.google?.thought_signature;
+        return thought_signature
+            ? { ...call, function: { ...call.function, thought_signature } }
+            : call;
+    });
 
 const ChatCompletionMessageToolCallsSchema = z.array(
     ChatCompletionMessageToolCallSchema,
@@ -585,6 +605,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
 
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullish(),
+    refusal: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z
@@ -820,6 +841,15 @@ const imageModelField = z
     .meta({
         description: "The model to use for image generation",
     });
+// Edits need a model that reads the source image; schnell is text-only.
+const imageEditModelField = z
+    .string()
+    .optional()
+    .default("openai/gpt-image-1-mini")
+    .meta({
+        description:
+            "The model to use for image editing. It must list image in input_modalities.",
+    });
 const imageNField = z
     .number()
     .int()
@@ -961,7 +991,7 @@ export const CreateImageEditRequestSchema = z
                 description:
                     "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
             }),
-        model: imageModelField,
+        model: imageEditModelField,
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,

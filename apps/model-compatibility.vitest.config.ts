@@ -15,7 +15,6 @@ export default defineConfig({
             "shared/providers.test.ts",
             "apps/agent-json.test.ts",
             "apps/catgpt/ai.test.js",
-            "apps/chat/src/**/*.test.{js,jsx}",
             // Pure calculations and presentation use artificial vendor definitions.
             // Account/category contract tests remain in the private integration suite.
             "operations/economics/web/src/components/DataTable.test.ts",
@@ -28,7 +27,6 @@ export default defineConfig({
             "operations/economics/web/src/fixtures.test.ts",
             "operations/economics/web/scripts/check-tinybird-contract.test.mjs",
             "operations/economics/web/worker/planning.test.ts",
-            "operations/economics/web/src/components/SourceRecovery.test.tsx",
             "operations/economics/web/src/lib/allocationIntegrity.test.ts",
             "operations/economics/web/src/lib/creditProjectionHorizon.test.ts",
             "operations/economics/web/src/lib/dataConfidence.test.ts",

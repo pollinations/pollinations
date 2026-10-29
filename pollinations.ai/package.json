@@ -9,10 +9,10 @@
         "predev": "npm run build:ui",
         "prebuild": "npm run build:ui",
         "build": "tsc && vite build",
-        "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
-        "build:website-v2": "CLOUDFLARE_ENV=website-v2 vite build --mode=website-v2",
+        "build:staging": "cross-env CLOUDFLARE_ENV=staging vite build --mode=staging",
+        "build:website-v2": "cross-env CLOUDFLARE_ENV=website-v2 vite build --mode=website-v2",
         "prebuild:production": "npm run build:ui",
-        "build:production": "tsc && CLOUDFLARE_ENV=production vite build --mode=production",
+        "build:production": "tsc && cross-env CLOUDFLARE_ENV=production vite build --mode=production",
         "data:pr-history": "node scripts/update-community-pr-history.mjs",
         "art": "node art/generate.mjs",
         "preview": "vite preview",
@@ -36,9 +36,10 @@
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.1",
+        "cross-env": "^7.0.3",
         "typescript": "^5.9.3",
         "vite": "^7.2.4",
-        "vitest": "^3.2.4",
+        "vitest": "^4.1.12",
         "wrangler": "^4.49.0"
     }
 }

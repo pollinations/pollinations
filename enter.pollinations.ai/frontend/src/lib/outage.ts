@@ -14,8 +14,11 @@ let pruneTimer: ReturnType<typeof setInterval> | undefined;
 
 function update(): void {
     const now = Date.now();
+    // Offline, nothing retries: failures stay until the reconnect retry.
+    const offline = globalThis.navigator?.onLine === false;
     for (const [path, failedAt] of failures) {
-        if (now - failedAt > FAILURE_TTL_MS) failures.delete(path);
+        if (offline) failures.set(path, now);
+        else if (now - failedAt > FAILURE_TTL_MS) failures.delete(path);
     }
     if (failures.size > 0 && !pruneTimer) {
         pruneTimer = setInterval(update, OUTAGE_RETRY_MS);
@@ -91,6 +94,9 @@ const retries = new Map<string, Set<RetryRef>>();
 let retryTimer: ReturnType<typeof setInterval> | undefined;
 
 function retryAll(): void {
+    // Offline, a retry can only fail, and a page reload would leave the app
+    // for the browser's error page. The online event retries instead.
+    if (globalThis.navigator?.onLine === false) return;
     for (const refs of retries.values()) {
         const [ref] = refs;
         // A failed retry leaves the panel as it is until the next one.

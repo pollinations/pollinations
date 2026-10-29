@@ -112,6 +112,8 @@ jobs:
               # move together.
               - 'shared/**'
               - 'enter.pollinations.ai/drizzle/**'
+              - 'package.json'
+              - 'package-lock.json'
               - '.github/workflows/deploy-cloudflare-production.yml'
 
       - name: Detect changed MCP applications
@@ -147,6 +149,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install dependencies
         run: npm ci
@@ -187,6 +190,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -215,6 +219,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -276,6 +281,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -331,13 +337,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install workspace dependencies
         run: npm ci
-
-      - name: Install media dependencies
-        run: npm install
-        working-directory: ./media.pollinations.ai
 
       - name: Test
         run: npm test
@@ -381,6 +384,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Setup SOPS
         if: matrix.app.sops != 'none'

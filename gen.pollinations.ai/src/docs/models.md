@@ -31,6 +31,7 @@ To search or narrow a list instead of fetching the whole catalog, add any of:
 | Parameter | Effect |
 |-----------|--------|
 | `query` | Case-insensitive search of the name, aliases, title, description and publisher; every word must match |
+| `category` | Model category (`text`, `image`, `audio`, `video`, `3d`, `embedding`, `realtime`, `decision`) |
 | `capabilities` | Comma-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model needs all of them |
 | `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents |
 | `limit` | At most this many models (1-500), in catalog order |
@@ -60,7 +61,8 @@ Lists default to `reliability=reliable`: public community proxy models need more
 Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.
 Models without observations remain listed. Successful fallbacks count as successes
 for the requested model; final 4xx are excluded, while owner requests and
-monitor probes count. Each entry includes `health` with `status`,
+monitor probes count. A text answer that reports prompt tokens but no output
+tokens counts as a failure. Each entry includes `health` with `status`,
 `success_rate` (null without observations), and `requests` (at most 50 for
 community proxies). Other models keep their 24-hour health window. Health
 refreshes roughly every 60 seconds; unavailable analytics fails open.
@@ -113,7 +115,7 @@ Community models and agents use a canonical `community/owner/model` id and appea
 
 The old `owner/model` IDs remain generation aliases in each model's `aliases` array.
 
-API key model permissions list model categories and model IDs. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding` or `realtime`) allows every model in it, including models added later. A model ID or alias allows only that model and is stored as its canonical ID.
+API key model permissions list model categories and model IDs. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime` or `decision`) allows every model in it, including models added later. Decision models need `decision` on `/alpha/decisions`; on chat endpoints `text` also allows them. A model ID or alias allows only that model and is stored as its canonical ID.
 
 The `source=community` and `source=official` filters are equivalent source filters
 for discovery. Source, access, and status filters combine with AND semantics.

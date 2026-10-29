@@ -57,6 +57,7 @@ import {
 } from "../audio/communityEndpoint.ts";
 import { generateLyria35 } from "../audio/lyria.ts";
 import { transcribeMai } from "../audio/mai-transcription.ts";
+import { generateSoniloSfx, SONILO_MODEL } from "../audio/sonilo.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -94,7 +95,7 @@ const CreateSpeechRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, and sonilo/sonilo-1.1-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(380).optional().meta({
@@ -140,6 +141,17 @@ const CreateSpeechRequestSchema = z
                 "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
             example:
                 "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
+        }),
+        reference_video: z.url().optional().meta({
+            description:
+                "Public HTTP(S) URL of the video to create sound effects for (`sonilo/sonilo-1.1-sfx` only).",
+            example:
+                "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
+        }),
+        strength: z.number().min(0).max(1).optional().meta({
+            description:
+                "How much the output may depart from reference_audio, 0-1: 0 keeps the input, 1 ignores it (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 audio-to-audio only). Omit for the provider default.",
+            example: 0.5,
         }),
         conditioning_ref: z.unknown().optional().meta({
             description:
@@ -1849,8 +1861,8 @@ export async function generateMusic(
 
 /**
  * Calls ElevenLabs Sound Effects (text -> sound effect) via /v1/sound-generation.
- * Billed per second of output audio (see registry
- * `elevenlabs/eleven-text-to-sound-v2` cost block).
+ * Billed per metered second (see registry `elevenlabs/eleven-text-to-sound-v2`
+ * cost block).
  */
 export async function generateSoundEffect(opts: {
     prompt: string;
@@ -1877,9 +1889,8 @@ export async function generateSoundEffect(opts: {
                 "Sound effects service is not configured (missing API key)",
         });
     }
-    // SFX always returns 128 kbps MP3. The per-second price is derived from the
-    // MP3 byte rate, so honoring other formats would need per-format billing
-    // math — reject instead of silently downgrading (default "mp3" passes).
+    // SFX always returns 128 kbps MP3; reject other formats instead of silently
+    // downgrading (default "mp3" passes).
     if (responseFormat && responseFormat !== "mp3") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: `elevenlabs/eleven-text-to-sound-v2 only supports mp3 output; response_format=${responseFormat} is not available.`,
@@ -1910,19 +1921,19 @@ export async function generateSoundEffect(opts: {
     const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
+    // Bill ElevenLabs' character-cost meter: 12 credits per second, and a flat
+    // 60 credits when the caller sets no duration, whatever length it returns.
+    const meteredSeconds = getElevenLabsMeteredInputSeconds(response, log);
     const audioBuffer = await response.arrayBuffer();
-    // ElevenLabs Sound Effects returns 128 kbps CBR MP3 (= 16 kB/s, ffprobe-verified).
-    const SFX_MP3_BYTES_PER_SECOND = 16000;
-    const estimatedDuration = audioBuffer.byteLength / SFX_MP3_BYTES_PER_SECOND;
 
     const usageHeaders = buildUsageHeaders(
         "elevenlabs/eleven-text-to-sound-v2",
-        createCompletionAudioSecondsUsage(estimatedDuration),
+        createCompletionAudioSecondsUsage(meteredSeconds),
     );
 
-    log.info("Sound effect success: {bytes} bytes, ~{duration}s", {
+    log.info("Sound effect success: {bytes} bytes, {duration}s metered", {
         bytes: audioBuffer.byteLength,
-        duration: Math.round(estimatedDuration),
+        duration: meteredSeconds,
     });
 
     return new Response(audioBuffer, {
@@ -2135,6 +2146,31 @@ function requireElevenMusicOptions(
     });
 }
 
+function requireStableAudioStrength(
+    model: string,
+    opts: { strength?: number; referenceAudio?: string },
+): void {
+    if (opts.strength === undefined) return;
+
+    // strength sets how far Stable Audio 3 audio-to-audio may depart from
+    // reference_audio, so it needs both a Stable Audio 3 model and a clip.
+    if (
+        model !== "stability-ai/stable-audio-3-medium" &&
+        model !== "stability-ai/stable-audio-3"
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "strength is only supported with model=stability-ai/stable-audio-3-medium or stability-ai/stable-audio-3.",
+        });
+    }
+    if (!opts.referenceAudio) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "strength requires reference_audio: it sets how far audio-to-audio may depart from the input.",
+        });
+    }
+}
+
 function parseOptionalNumber(
     value: FormDataEntryValue | null,
     fieldName: string,
@@ -2245,6 +2281,7 @@ async function parseSpeechRequest(
                 formData.get("prompt_influence"),
                 "prompt_influence",
             ),
+            strength: parseOptionalNumber(formData.get("strength"), "strength"),
             conditioning_ref:
                 typeof rawConditioningRef === "string"
                     ? parseJsonObject(rawConditioningRef, "conditioning_ref")
@@ -2254,6 +2291,8 @@ async function parseSpeechRequest(
                     ? parseJsonObject(rawCompositionPlan, "composition_plan")
                     : undefined,
             reference_audio: referenceAudio || undefined,
+            reference_video:
+                (formData.get("reference_video") as string | null) || undefined,
         };
 
         return parseCreateSpeechRequest(parsed);
@@ -3159,10 +3198,20 @@ export async function generateStableAudio3Medium(opts: {
     steps?: number;
     seed?: number;
     referenceAudio?: File;
+    strength?: number;
     falKey?: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, seconds, steps, seed, referenceAudio, falKey, log } = opts;
+    const {
+        prompt,
+        seconds,
+        steps,
+        seed,
+        referenceAudio,
+        strength,
+        falKey,
+        log,
+    } = opts;
 
     if (!falKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -3187,6 +3236,8 @@ export async function generateStableAudio3Medium(opts: {
         input.audio_url = `data:${mime};base64,${arrayBufferToBase64(
             await referenceAudio.arrayBuffer(),
         )}`;
+        // fal's init_noise_level (0-1, default 0.9) is the a2a strength.
+        if (strength !== undefined) input.init_noise_level = strength;
     }
 
     const endpoint = isAudioToAudio
@@ -3194,12 +3245,13 @@ export async function generateStableAudio3Medium(opts: {
         : STABLE_AUDIO_3_MEDIUM_ENDPOINT;
 
     log.info(
-        "Stable Audio 3 Medium {mode} request: chars={chars}, duration={duration}, steps={steps}",
+        "Stable Audio 3 Medium {mode} request: chars={chars}, duration={duration}, steps={steps}, strength={strength}",
         {
             mode: isAudioToAudio ? "audio-to-audio" : "text-to-audio",
             chars: prompt.length,
             duration,
             steps: steps ?? "(default)",
+            strength: input.init_noise_level ?? "(default)",
         },
     );
 
@@ -3264,6 +3316,7 @@ export async function generateStableAudio3Large(opts: {
     seed?: number;
     negativePrompt?: string;
     referenceAudio?: File;
+    strength?: number;
     responseFormat: string;
     apiKey?: string;
     log: Logger;
@@ -3275,6 +3328,7 @@ export async function generateStableAudio3Large(opts: {
         seed,
         negativePrompt,
         referenceAudio,
+        strength,
         responseFormat,
         apiKey,
         log,
@@ -3288,8 +3342,9 @@ export async function generateStableAudio3Large(opts: {
     }
 
     // A reference clip switches Large to audio-to-audio (style transfer): a
-    // different endpoint that takes the clip in `audio` (which defines the
-    // output length) instead of `duration`. Both modes bill the same flat fee.
+    // different endpoint that takes the clip in `audio`. Both modes need
+    // `duration` (the clip does not set the output length; Stability defaults
+    // to 190 s) and bill the same flat fee.
     const isAudioToAudio = referenceAudio !== undefined;
     const endpoint = isAudioToAudio
         ? STABLE_AUDIO_3_LARGE_A2A_ENDPOINT
@@ -3301,22 +3356,26 @@ export async function generateStableAudio3Large(opts: {
     // The direct API's only accepted `model` value is "stable-audio-3".
     formData.append("model", "stable-audio-3");
     formData.append("output_format", responseFormat);
+    formData.append("duration", String(duration));
     if (isAudioToAudio) {
         formData.append("audio", referenceAudio);
-    } else {
-        formData.append("duration", String(duration));
+        // 0 keeps the clip unchanged; 1 (Stability's default) ignores it.
+        if (strength !== undefined) {
+            formData.append("strength", String(strength));
+        }
     }
     if (steps !== undefined) formData.append("steps", String(steps));
     if (seed !== undefined) formData.append("seed", String(seed));
     if (negativePrompt) formData.append("negative_prompt", negativePrompt);
 
     log.info(
-        "Stable Audio 3 Large {mode} request: chars={chars}, duration={duration}, steps={steps}, hasNegativePrompt={hasNegativePrompt}",
+        "Stable Audio 3 Large {mode} request: chars={chars}, duration={duration}, steps={steps}, strength={strength}, hasNegativePrompt={hasNegativePrompt}",
         {
             mode: isAudioToAudio ? "audio-to-audio" : "text-to-audio",
             chars: prompt.length,
-            duration: isAudioToAudio ? "(from reference)" : duration,
+            duration,
             steps: steps ?? "(default)",
+            strength: strength ?? "(default)",
             hasNegativePrompt: Boolean(negativePrompt),
         },
     );
@@ -3426,6 +3485,8 @@ async function dispatchAudioGeneration(
         conditioningRef?: unknown;
         compositionPlan?: unknown;
         referenceAudio?: File;
+        referenceVideo?: string;
+        strength?: number;
         instructions?: string;
         speed?: number;
         loop?: boolean;
@@ -3453,6 +3514,8 @@ async function dispatchAudioGeneration(
         conditioningRef,
         compositionPlan,
         referenceAudio,
+        referenceVideo,
+        strength,
         instructions,
         speed,
         loop,
@@ -3494,6 +3557,18 @@ async function dispatchAudioGeneration(
                 referenceAudio,
                 apiKey,
                 log,
+            }),
+        );
+    }
+
+    if (model === SONILO_MODEL) {
+        return withSafetyHeaders(
+            c,
+            await generateSoniloSfx({
+                prompt: text,
+                referenceVideo,
+                responseFormat,
+                falKey,
             }),
         );
     }
@@ -3546,6 +3621,7 @@ async function dispatchAudioGeneration(
                 steps,
                 seed,
                 referenceAudio,
+                strength,
                 falKey,
                 log,
             }),
@@ -3562,6 +3638,7 @@ async function dispatchAudioGeneration(
                 seed,
                 negativePrompt,
                 referenceAudio,
+                strength,
                 responseFormat,
                 apiKey: stabilityApiKey,
                 log,
@@ -3773,6 +3850,8 @@ async function generateAudioFromSpeechRequest(
         conditioning_ref,
         composition_plan,
         reference_audio,
+        reference_video,
+        strength,
         seed,
         instructions,
         speed,
@@ -3798,6 +3877,15 @@ async function generateAudioFromSpeechRequest(
         compositionPlan: composition_plan,
         conditioningRef: conditioning_ref,
         storeForInpainting: store_for_inpainting,
+    });
+    if (reference_video && c.var.model.resolved !== SONILO_MODEL) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `reference_video is only supported with model=${SONILO_MODEL}.`,
+        });
+    }
+    requireStableAudioStrength(c.var.model.resolved, {
+        strength,
+        referenceAudio: reference_audio,
     });
 
     if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
@@ -3841,6 +3929,8 @@ async function generateAudioFromSpeechRequest(
             conditioningRef: conditioning_ref,
             compositionPlan: composition_plan,
             referenceAudio,
+            referenceVideo: reference_video,
+            strength,
             instructions,
             speed,
             loop,
@@ -3879,6 +3969,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
             instructions: query.instructions,
             loop: query.loop,
             prompt_influence: query.prompt_influence,
+            reference_video: query.reference_video,
         },
         log,
     );
@@ -3986,6 +4077,40 @@ export async function handleSpeechWithTimestamps(
             log,
         }),
     );
+}
+
+/** Multipart body for the OVH and DeepInfra whisper-large-v3 endpoints. */
+export function buildWhisperForm(opts: {
+    file: File;
+    language?: string | null;
+    prompt?: string | null;
+    temperature?: number;
+    isDeepInfra: boolean;
+}): FormData {
+    const { file, language, prompt, temperature, isDeepInfra } = opts;
+    const form = new FormData();
+    const filename =
+        file.name && file.name !== "blob" ? file.name : "audio.mp3";
+    form.append("file", file, filename);
+    if (language) form.append("language", language);
+    if (prompt) form.append("prompt", prompt);
+    if (temperature !== undefined)
+        form.append("temperature", String(temperature));
+    form.append("response_format", "verbose_json");
+    form.append(
+        "model",
+        isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+    );
+    if (isDeepInfra) {
+        // DeepInfra returns segments either way, and drops words when
+        // both granularities are requested.
+        form.append("timestamp_granularities", "word");
+    } else {
+        // OVH leaves segments empty unless asked; srt/vtt cues are those.
+        form.append("timestamp_granularities[]", "word");
+        form.append("timestamp_granularities[]", "segment");
+    }
+    return form;
 }
 
 export async function handleTranscription(c: AudioContext): Promise<Response> {
@@ -4153,25 +4278,13 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "vtt",
         ]);
 
-        const whisperFormData = new FormData();
-        const filename =
-            file.name && file.name !== "blob" ? file.name : "audio.mp3";
-        whisperFormData.append("file", file, filename);
-        if (language) whisperFormData.append("language", language);
-        whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append(
-            "model",
-            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
-        );
-        if (isDeepInfra) {
-            // DeepInfra returns segments either way, and drops words when
-            // both granularities are requested.
-            whisperFormData.append("timestamp_granularities", "word");
-        } else {
-            // OVH leaves segments empty unless asked; srt/vtt cues are those.
-            whisperFormData.append("timestamp_granularities[]", "word");
-            whisperFormData.append("timestamp_granularities[]", "segment");
-        }
+        const whisperFormData = buildWhisperForm({
+            file,
+            language,
+            prompt,
+            temperature,
+            isDeepInfra,
+        });
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"
@@ -4375,7 +4488,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3` (`strength` 0-1 sets how far the output may depart from it), or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",
@@ -4444,6 +4557,13 @@ export const audioRoutes = new Hono<Env>()
                                     format: "uri",
                                     description:
                                         "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
+                                },
+                                strength: {
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 1,
+                                    description:
+                                        "How much the output may depart from reference_audio: 0 keeps the input, 1 ignores it (Stable Audio 3 audio-to-audio only). Omit for the provider default.",
                                 },
                                 conditioning_ref: { type: "object" },
                                 composition_plan: { type: "object" },

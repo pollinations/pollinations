@@ -1,6 +1,9 @@
 import { getLogger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
-import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import {
+    AUTO_TOP_UP_THRESHOLD_POLLEN,
+    LOW_BALANCE_SHARE,
+} from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     type CommunityModelRewardResolution,
@@ -439,13 +442,23 @@ export const track = (eventType: EventType) =>
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
+                    const packBalance = deduction.postDeductionPackBalance;
+                    const lowBalanceThreshold =
+                        deduction.lastPackPollen == null
+                            ? null
+                            : LOW_BALANCE_SHARE * deduction.lastPackPollen;
+                    // Enter refills the balance when auto top-up is on. Without
+                    // it, Enter emails the user, so also call it on the charge
+                    // that takes the balance below a share of their last pack.
                     if (
                         totalPrice > 0 &&
                         payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
-                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
-                        (await isAutoTopUpConfigured(db, userId))
+                        packBalance != null &&
+                        ((lowBalanceThreshold != null &&
+                            packBalance < lowBalanceThreshold &&
+                            packBalance + billedPrice >= lowBalanceThreshold) ||
+                            (packBalance <= AUTO_TOP_UP_THRESHOLD_POLLEN &&
+                                (await isAutoTopUpConfigured(db, userId))))
                     ) {
                         shouldRunAutoTopUp = true;
                     }
@@ -901,6 +914,60 @@ export async function trackResponse(
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
+        errorTracking:
+            eventType === "generate.text"
+                ? zeroUsageNote(
+                      modelProviderUsed,
+                      modelUsage.usage,
+                      modelUsage.output,
+                  )
+                : undefined,
+    };
+}
+
+// A text answer reporting no tokens is billed at zero. Say why on its row,
+// without the content, so the cause can be traced. Community agents report
+// no usage by design.
+function zeroUsageNote(
+    provider: string | undefined,
+    usage: Usage,
+    output: unknown,
+): ErrorData | undefined {
+    if (provider === "community") return undefined;
+    if (Object.values(usage).some((value) => Number(value) > 0)) {
+        return undefined;
+    }
+    const stream = output as
+        | { streamEvents?: unknown[]; doneSeen?: boolean }
+        | undefined;
+    const events = (stream?.streamEvents ?? [output]) as {
+        usage?: unknown;
+        choices?: {
+            finish_reason?: unknown;
+            message?: { content?: unknown };
+            delta?: { content?: unknown };
+        }[];
+    }[];
+    let contentChars = 0;
+    let finishReason: unknown;
+    let reportedUsage: unknown;
+    for (const event of events) {
+        for (const choice of event?.choices ?? []) {
+            const content = choice.message?.content ?? choice.delta?.content;
+            if (typeof content === "string") contentChars += content.length;
+            finishReason = choice.finish_reason ?? finishReason;
+        }
+        reportedUsage = event?.usage ?? reportedUsage;
+    }
+    return {
+        errorResponseCode: "usage_zero",
+        errorMessage: JSON.stringify({
+            streamEvents: stream?.streamEvents?.length,
+            doneSeen: stream?.doneSeen,
+            finishReason,
+            contentChars,
+            usage: reportedUsage,
+        }).slice(0, 1000),
     };
 }
 

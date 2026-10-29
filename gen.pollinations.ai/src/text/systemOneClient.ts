@@ -1,4 +1,9 @@
 import { ensureUpstreamOk } from "@shared/error.ts";
+import { CreateDecisionRequestSchema } from "@shared/schemas/decisions.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+} from "@shared/schemas/openai.ts";
 import { completionToChatStream } from "./chat/stream.js";
 import { withUpstreamRequestUrl } from "./genericOpenAIClient.js";
 import type {
@@ -16,8 +21,28 @@ const REQUEST_EXAMPLE =
 type SystemOneResponse = {
     model: string;
     answers: Record<string, unknown>;
-    usage: { input_tokens: number; output_tokens: number };
+    usage: {
+        input_tokens: number;
+        output_tokens: number;
+        input_tokens_details?: {
+            cached_tokens?: number;
+            cache_write_tokens?: number;
+        };
+    };
 };
+
+export function decisionCompletionUsage(
+    usage: SystemOneResponse["usage"],
+): CompletionUsage {
+    return {
+        prompt_tokens: usage.input_tokens,
+        completion_tokens: usage.output_tokens,
+        total_tokens: usage.input_tokens + usage.output_tokens,
+        ...(usage.input_tokens_details && {
+            prompt_tokens_details: usage.input_tokens_details,
+        }),
+    };
+}
 
 type SystemOneRequest = {
     state: unknown;
@@ -26,6 +51,64 @@ type SystemOneRequest = {
 
 function decisionText(value: unknown): string {
     return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function toD3Request(request: SystemOneRequest): SystemOneRequest {
+    const parsed = CreateDecisionRequestSchema.safeParse(request);
+    if (!parsed.success) {
+        throw serviceError(
+            `Invalid decision request: ${parsed.error.message}`,
+            400,
+        );
+    }
+    const state = decisionText(parsed.data.state);
+    if (
+        [...state].length > 32000 ||
+        Object.keys(parsed.data.questions).length > 64
+    ) {
+        throw serviceError(
+            "d3 accepts up to 32,000 state characters and 64 questions.",
+            400,
+        );
+    }
+    return {
+        state,
+        questions: Object.fromEntries(
+            Object.entries(parsed.data.questions).map(([name, question]) => {
+                const criteria = question.criteria;
+                if (criteria && question.type !== "noul") {
+                    const count = Object.keys(criteria).length;
+                    if (count < 2 || count > 255) {
+                        throw serviceError(
+                            "d3 questions require between 2 and 255 criteria.",
+                            400,
+                        );
+                    }
+                }
+                return [
+                    name,
+                    {
+                        ...question,
+                        instructions: decisionText(question.instructions),
+                        ...(criteria && {
+                            criteria: Array.isArray(criteria)
+                                ? criteria.map(decisionText)
+                                : Object.fromEntries(
+                                      Object.entries(criteria).map(
+                                          ([key, value]) => [
+                                              key,
+                                              value === null
+                                                  ? null
+                                                  : decisionText(value),
+                                          ],
+                                      ),
+                                  ),
+                        }),
+                    },
+                ];
+            }),
+        ),
+    };
 }
 
 function toOpenAIQuestions(questions: Record<string, unknown>) {
@@ -203,12 +286,15 @@ export async function requestDecision(
         );
     }
     const openai = options.modelConfig?.decisionsProtocol === "openai";
+    const d3 = options.modelConfig?.decisionsProtocol === "vllm-sr";
     const requestUrl = new URL(endpoint);
     try {
         const response = await fetch(requestUrl, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${apiKey}`,
+                ...(options.modelConfig?.directAuthHeader === "api-key"
+                    ? { "api-key": apiKey }
+                    : { Authorization: `Bearer ${apiKey}` }),
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(
@@ -218,7 +304,13 @@ export async function requestDecision(
                           input: decisionText(state),
                           questions: toOpenAIQuestions(questions),
                       }
-                    : { state, model, questions },
+                    : {
+                          ...(options.modelConfig?.defaultOptions as
+                              | Record<string, unknown>
+                              | undefined),
+                          ...(d3 ? toD3Request(request) : request),
+                          model,
+                      },
             ),
         });
         await ensureUpstreamOk(response, requestUrl);
@@ -234,12 +326,37 @@ export async function requestDecision(
                     typeof count === "number" &&
                     Number.isSafeInteger(count) &&
                     count >= 0,
-            )
+            ) ||
+            !CompletionUsageSchema.safeParse(
+                decisionCompletionUsage(result.usage),
+            ).success
         ) {
             throw serviceError(
                 `${model} returned a response without valid answers or usage.`,
                 502,
             );
+        }
+        if (d3) {
+            for (const [name, question] of Object.entries(questions)) {
+                const answer = result.answers[name];
+                if (
+                    isPlainObject(question) &&
+                    question.type === "score" &&
+                    isPlainObject(answer) &&
+                    answer.type === "score" &&
+                    Array.isArray(question.criteria)
+                ) {
+                    result.answers[name] = {
+                        ...answer,
+                        legend: Object.fromEntries(
+                            question.criteria.map((criterion, index) => [
+                                String(index),
+                                criterion,
+                            ]),
+                        ),
+                    };
+                }
+            }
         }
         return { result, requestUrl };
     } catch (thrown) {
@@ -281,12 +398,7 @@ export async function callSystemOne(
                 finish_reason: "stop",
             },
         ],
-        usage: {
-            prompt_tokens: result.usage.input_tokens,
-            completion_tokens: result.usage.output_tokens,
-            total_tokens:
-                result.usage.input_tokens + result.usage.output_tokens,
-        },
+        usage: decisionCompletionUsage(result.usage),
     };
     return withUpstreamRequestUrl(
         // TypeSafe answers arrive in one piece.

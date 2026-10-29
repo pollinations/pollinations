@@ -3,6 +3,7 @@ import {
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
+    type CommunityModelParts,
     communityModelId,
     effectiveCommunityEndpointVisibility,
     isCommunityFallbackBalanceAllowed,
@@ -46,11 +47,11 @@ function missingTargetMessage(modelId: string): string {
 // Private rows owned by someone else must look identical to a
 // missing row. Distinct validation errors would expose whether a model exists.
 function shouldConcealTarget(
-    primary: FallbackPrimary,
+    ownerUserId: string,
     target: CommunityEndpointRow,
 ): boolean {
     return (
-        target.ownerUserId !== primary.ownerUserId &&
+        target.ownerUserId !== ownerUserId &&
         effectiveCommunityEndpointVisibility(
             target.visibility,
             target.pendingVisibility,
@@ -66,7 +67,7 @@ export function fallbackTargetRejection(
     target: CommunityEndpointRow,
 ): string | null {
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
-    if (shouldConcealTarget(primary, target))
+    if (shouldConcealTarget(primary.ownerUserId, target))
         return missingTargetMessage(modelId);
     if (target.type !== "proxy") {
         return `Fallback target ${modelId} cannot delegate generation`;
@@ -122,12 +123,35 @@ export function fallbackTargetRejection(
 }
 
 /** The canonical id of a bundled Pollinations model or alias, if it is one. */
-function registryModelId(requested: string): ModelName | null {
+export function registryModelId(requested: string): ModelName | null {
     try {
         return resolveModelName(requested);
     } catch {
         return null;
     }
+}
+
+/** The community model ownerUserId may reference; hidden ones look missing. */
+export async function findReferenceableCommunityModel(
+    db: Db,
+    ownerUserId: string,
+    parsed: CommunityModelParts,
+): Promise<CommunityEndpointRow | undefined> {
+    const owner = await db.query.user.findFirst({
+        columns: { id: true },
+        where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
+    });
+    const target = owner
+        ? await db.query.communityEndpoint.findFirst({
+              where: and(
+                  eq(schema.communityEndpoint.ownerUserId, owner.id),
+                  eq(schema.communityEndpoint.name, parsed.modelName),
+              ),
+          })
+        : undefined;
+    return target && !shouldConcealTarget(ownerUserId, target)
+        ? target
+        : undefined;
 }
 
 async function resolveFallback(
@@ -163,19 +187,12 @@ async function resolveFallback(
         throw new HTTPException(400, { message: SELF_FALLBACK_MESSAGE });
     }
 
-    const owner = await db.query.user.findFirst({
-        columns: { id: true },
-        where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
-    });
-    const target = owner
-        ? await db.query.communityEndpoint.findFirst({
-              where: and(
-                  eq(schema.communityEndpoint.ownerUserId, owner.id),
-                  eq(schema.communityEndpoint.name, parsed.modelName),
-              ),
-          })
-        : undefined;
-    if (!target || shouldConcealTarget(primary, target)) {
+    const target = await findReferenceableCommunityModel(
+        db,
+        primary.ownerUserId,
+        parsed,
+    );
+    if (!target) {
         throw new HTTPException(400, {
             message: missingTargetMessage(modelId),
         });

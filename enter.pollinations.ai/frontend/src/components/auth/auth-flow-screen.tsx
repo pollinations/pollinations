@@ -90,6 +90,8 @@ type AuthFlowScreenProps = Omit<
     balance?: AccountBalance | null;
     /** Identity top-up link. Defaults to returning here; `null` on the top-up page. */
     topUpHref?: string | null;
+    /** The requests behind `error`: their 5xx or no response shows the outage notice instead. */
+    errorPaths?: readonly string[];
 };
 
 function returnToTopUpHref(): string {
@@ -104,12 +106,12 @@ export function AuthFlowScreen({
     topUpHref,
     footnote,
     error,
+    errorPaths = [],
     children,
     ...props
 }: AuthFlowScreenProps) {
     const { data: session } = authClient.useSession();
-    // A step that failed while Pollinations is down failed because of it.
-    const outage = useOutage() && Boolean(error);
+    const outage = useOutage(errorPaths) && Boolean(error);
     // Only a reload repeats the step that failed.
     useOutageRetry(outage, () => window.location.reload());
     const user = session?.user;

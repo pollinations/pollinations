@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AuthFlowScreen } from "../frontend/src/components/auth/auth-flow-screen.tsx";
 import { LoadError } from "../frontend/src/components/layout/dashboard-loading.tsx";
+import { fetchModelCatalog } from "../frontend/src/components/models/model-catalog.ts";
 import { isOutageStatus, trackedFetch } from "../frontend/src/lib/outage.ts";
 
 vi.mock("../frontend/src/config.ts", () => ({
@@ -37,6 +39,8 @@ describe("dashboard outage state", () => {
         for (const url of [
             "https://gen.example/account/keys",
             "https://gen.example/account/profile",
+            "https://gen.example/account/balance",
+            "https://gen.example/models",
             "https://enter.example/api/session-token",
         ]) {
             respond(200);
@@ -92,6 +96,39 @@ describe("dashboard outage state", () => {
         respond(401);
         await trackedFetch("https://gen.example/account/keys");
         expect(render()).toContain(OUTAGE_TEXT);
+    });
+
+    it("tracks the model catalog", async () => {
+        respond(503);
+        await expect(fetchModelCatalog({ refresh: true })).rejects.toThrow();
+        expect(
+            renderToStaticMarkup(
+                <LoadError paths={["/models"]}>
+                    Could not load models.
+                </LoadError>,
+            ),
+        ).toContain(OUTAGE_TEXT);
+    });
+
+    it("turns a standalone page's error into the outage only for its own request", async () => {
+        const topUp = () =>
+            renderToStaticMarkup(
+                <AuthFlowScreen
+                    title="Top-up"
+                    error="Couldn’t load your wallet."
+                    errorPaths={["/account/balance"]}
+                    balance={null}
+                />,
+            );
+        respond(503);
+        await trackedFetch("https://gen.example/account/profile");
+        expect(topUp()).toContain("Couldn’t load your wallet.");
+        expect(topUp()).not.toContain(OUTAGE_TEXT);
+
+        respond(503);
+        await trackedFetch("https://gen.example/account/balance");
+        expect(topUp()).toContain(OUTAGE_TEXT);
+        expect(topUp()).not.toContain("Couldn’t load your wallet.");
     });
 
     it("ignores a request the page aborted", async () => {

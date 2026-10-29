@@ -522,6 +522,7 @@ export function Authorize() {
                 subject={subject}
                 description={access}
                 error={`Couldn’t connect: ${error}`}
+                errorPaths={["/api/app-lookup", "/api/device/info"]}
                 actions={
                     <Button
                         intent="neutral"

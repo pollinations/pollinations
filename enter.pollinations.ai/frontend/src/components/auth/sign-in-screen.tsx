@@ -42,6 +42,7 @@ export function SignInScreen({
             subject={subject}
             description={description}
             error={error}
+            errorPaths={["/api/auth/sign-in/social"]}
             onClose={onCancel}
             actions={
                 <>

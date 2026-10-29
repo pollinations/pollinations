@@ -3,7 +3,6 @@ import type {
     UserBalance,
 } from "@shared/billing/balance.ts";
 import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
-import { DrizzleQueryError } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -51,15 +50,12 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
             balanceCache.set(userId, userBalance);
             return userBalance;
         } catch (error) {
-            const cause =
-                error instanceof DrizzleQueryError ? error.cause : error;
             log.error("Failed to get balance for user {userId}", {
                 userId,
-                error: cause instanceof Error ? cause.message : String(cause),
+                error: error instanceof Error ? error.message : String(error),
             });
             throw new HTTPException(503, {
                 message: "Unable to verify balance. Please try again shortly.",
-                cause,
             });
         }
     };

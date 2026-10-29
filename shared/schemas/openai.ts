@@ -463,7 +463,14 @@ export const CreateResponseRequestSchema = z
         input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
-        max_output_tokens: z.number().int().positive().nullish(),
+        max_output_tokens: z
+            .number()
+            .int()
+            .positive()
+            .nullish()
+            .describe(
+                "Maximum generated tokens, including reasoning. For models served through Chat Completions, non-streaming requests that exhaust the limit without an answer return 400 output_token_limit_exceeded; increase the limit or reduce reasoning effort. Native Responses models can instead return status incomplete with reason max_output_tokens.",
+            ),
         max_tool_calls: z.number().int().positive().nullish(),
         stream: z.boolean().optional().default(false),
         stream_options: z

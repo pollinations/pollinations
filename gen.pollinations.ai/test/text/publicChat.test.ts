@@ -5,6 +5,7 @@ import {
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { calculatePrice } from "@shared/registry/registry.ts";
+import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -159,18 +160,35 @@ async function chatThroughHandler(
     wire: string | ((request: Request) => Promise<Response>),
     stream = true,
     prompt = `Hello ${crypto.randomUUID()}`,
+    request?: { path: string; body: Record<string, unknown> },
 ) {
     const { key, userId } = await createTestApiKey({
         expiresIn: 600,
         user: { packBalance: 100 },
     });
     let calls = 0;
+    const events: TinybirdEvent[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
-        // Custom-host providers go out through the Portkey gateway.
+        if (new URL(request.url).hostname === "tinybird.test") {
+            events.push(
+                ...(await request.text())
+                    .trim()
+                    .split("\n")
+                    .map((line) => JSON.parse(line)),
+            );
+            return Response.json({});
+        }
+        // Portkey identifies Azure by resource; other custom providers by host.
+        const azureResource = request.headers.get(
+            "x-portkey-azure-resource-name",
+        );
         const target =
             request.headers.get("x-portkey-custom-host") ?? request.url;
-        if ([host].flat().includes(new URL(target).host)) {
+        const targetHost = azureResource
+            ? `${azureResource}.openai.azure.com`
+            : new URL(target).host;
+        if ([host].flat().includes(targetHost)) {
             calls++;
             if (typeof wire === "function") return wire(request);
             return new Response(wire, {
@@ -185,25 +203,36 @@ async function chatThroughHandler(
     });
     const context = createExecutionContext();
     const response = await worker.fetch(
-        new Request("https://gen.pollinations.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                authorization: `Bearer ${key}`,
-                "content-type": "application/json",
+        new Request(
+            `https://gen.pollinations.ai${request?.path ?? "/v1/chat/completions"}`,
+            {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(
+                    request?.body ?? {
+                        model,
+                        stream,
+                        messages: [{ role: "user", content: prompt }],
+                    },
+                ),
             },
-            body: JSON.stringify({
-                model,
-                stream,
-                messages: [{ role: "user", content: prompt }],
-            }),
+        ),
+        withInlineGenerationCoordinator({
+            ...env,
+            AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
         }),
-        withInlineGenerationCoordinator(env),
         context,
     );
     const text = await response.text();
     await waitOnExecutionContext(context);
     const balance = await getUserBalance(drizzle(env.DB), userId);
-    return { response, text, calls, balance };
+    return { response, text, calls, balance, events };
 }
 
 it("drops OpenRouter's provider cost from client streams", async () => {
@@ -332,80 +361,189 @@ it.each([null, "", " \n\t"])(
     },
 );
 
-it("reports exhausted reasoning budgets without fallback or caching, retaining usage", async () => {
-    const model = "openai/gpt-5-nano";
-    const wire = JSON.stringify({
-        id: "reasoning-budget-exhausted",
-        object: "chat.completion",
-        model,
-        choices: [
-            {
-                index: 0,
-                message: { role: "assistant", content: "" },
-                finish_reason: "length",
-            },
-        ],
-        usage: {
-            prompt_tokens: 50,
-            completion_tokens: 60,
-            total_tokens: 110,
-            completion_tokens_details: { reasoning_tokens: 60 },
-        },
-    });
-    const prompt = `Exhausted reasoning budget ${crypto.randomUUID()}`;
-    for (let attempt = 0; attempt < 2; attempt++) {
-        const { response, text, calls, balance } = await chatThroughHandler(
-            model,
-            [
-                "myceli-prod-eastus.cognitiveservices.azure.com",
-                "api.openai.com",
-            ],
-            wire,
-            false,
-            prompt,
-        );
-        expect(response.status, text).toBe(400);
-        expect(JSON.parse(text).error).toMatchObject({
-            code: "output_token_limit_exceeded",
-            message: expect.stringContaining("Increase the token limit"),
-        });
-        expect(calls).toBe(1);
-        expect(response.headers.get("x-cache")).not.toBe("HIT");
-        expect(balance.packBalance).toBeCloseTo(
-            100 -
-                calculatePrice(model, {
-                    promptTextTokens: 50,
-                    completionReasoningTokens: 60,
-                }).totalPrice,
-            8,
-        );
-    }
-});
+const chatProtocolCases = [
+    {
+        path: "/v1/chat/completions",
+        model: "openai/gpt-5-nano" as const,
+        host: ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        limit: 60,
+    },
+    {
+        path: "/v1/messages",
+        model: "openai/gpt-5-nano" as const,
+        host: ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        limit: 1,
+    },
+    {
+        path: "/v1/responses",
+        model: "xiaomi/mimo-v2.6-pro" as const,
+        host: ["api.novita.ai", "api.deepinfra.com"],
+        limit: 60,
+    },
+];
 
-it("preserves a partial answer when the output token limit is reached", async () => {
-    const { response, text } = await chatThroughHandler(
-        "inception/mercury-3",
-        "openrouter.ai",
-        JSON.stringify({
-            id: "partial-completion",
+it.each([...chatProtocolCases, { ...chatProtocolCases[0], limit: undefined }])(
+    "reports exhausted reasoning budgets on $path (limit=$limit) without fallback or caching, retaining usage and error metrics",
+    async ({ path, model, host, limit }) => {
+        const completionTokens = Math.max(limit ?? 60, 16);
+        const wire = JSON.stringify({
+            id: "reasoning-budget-exhausted",
             object: "chat.completion",
+            model,
             choices: [
                 {
                     index: 0,
-                    message: { role: "assistant", content: "A partial answer" },
+                    message: { role: "assistant", content: "" },
                     finish_reason: "length",
                 },
             ],
-            usage,
-        }),
-        false,
-    );
-    expect(response.status, text).toBe(200);
-    expect(JSON.parse(text).choices[0]).toMatchObject({
-        message: { content: "A partial answer" },
-        finish_reason: "length",
-    });
-});
+            usage: {
+                prompt_tokens: 50,
+                completion_tokens: completionTokens,
+                total_tokens: 50 + completionTokens,
+                completion_tokens_details: {
+                    reasoning_tokens: completionTokens,
+                },
+            },
+        });
+        const prompt = `Exhausted reasoning budget ${crypto.randomUUID()}`;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const { response, text, calls, balance, events } =
+                await chatThroughHandler(
+                    model,
+                    host,
+                    async (request) => {
+                        const body = (await request.json()) as Record<
+                            string,
+                            unknown
+                        >;
+                        expect(
+                            body.max_completion_tokens ?? body.max_tokens,
+                        ).toBe(
+                            limit === undefined ? undefined : completionTokens,
+                        );
+                        expect(body).not.toHaveProperty("reasoning_effort");
+                        return new Response(wire, {
+                            headers: { "content-type": "application/json" },
+                        });
+                    },
+                    false,
+                    prompt,
+                    {
+                        path,
+                        body: {
+                            model,
+                            stream: false,
+                            ...(path === "/v1/responses"
+                                ? { input: prompt, max_output_tokens: limit }
+                                : {
+                                      messages: [
+                                          { role: "user", content: prompt },
+                                      ],
+                                      max_tokens: limit,
+                                  }),
+                        },
+                    },
+                );
+            expect(response.status, text).toBe(400);
+            expect(JSON.parse(text).error).toMatchObject({
+                ...(path === "/v1/messages"
+                    ? { type: "invalid_request_error" }
+                    : { code: "output_token_limit_exceeded" }),
+                message: expect.stringContaining("Increase the token limit"),
+            });
+            expect(calls).toBe(1);
+            expect(response.headers.get("x-cache")).not.toBe("HIT");
+            expect(balance.packBalance).toBeCloseTo(
+                100 -
+                    calculatePrice(model, {
+                        promptTextTokens: 50,
+                        completionReasoningTokens: completionTokens,
+                    }).totalPrice,
+                8,
+            );
+            const generations = events.filter(
+                (event) => event.eventType === "generate.text",
+            );
+            expect(generations).toHaveLength(1);
+            expect(generations[0]).toMatchObject({
+                isFinal: true,
+                isBilledUsage: true,
+                responseStatus: 400,
+                errorResponseCode: "output_token_limit_exceeded",
+                resolvedModelRequested: model,
+                modelUsed: model,
+            });
+        }
+    },
+);
+
+it.each(chatProtocolCases)(
+    "preserves a partial answer at the output token limit on $path",
+    async ({ path, model, host }) => {
+        const prompt = `Partial answer ${crypto.randomUUID()}`;
+        const { response, text } = await chatThroughHandler(
+            model,
+            host,
+            JSON.stringify({
+                id: "partial-completion",
+                object: "chat.completion",
+                choices: [
+                    {
+                        index: 0,
+                        message: {
+                            role: "assistant",
+                            content: "A partial answer",
+                        },
+                        finish_reason: "length",
+                    },
+                ],
+                usage,
+            }),
+            false,
+            prompt,
+            {
+                path,
+                body: {
+                    model,
+                    stream: false,
+                    ...(path === "/v1/responses"
+                        ? { input: prompt, max_output_tokens: 20 }
+                        : {
+                              messages: [{ role: "user", content: prompt }],
+                              max_tokens: 20,
+                          }),
+                },
+            },
+        );
+        expect(response.status, text).toBe(200);
+        const body = JSON.parse(text);
+        if (path === "/v1/messages") {
+            expect(body).toMatchObject({
+                content: [{ type: "text", text: "A partial answer" }],
+                stop_reason: "max_tokens",
+            });
+        } else if (path === "/v1/responses") {
+            expect(body).toMatchObject({
+                status: "incomplete",
+                incomplete_details: { reason: "max_output_tokens" },
+                output: [
+                    {
+                        type: "message",
+                        content: [
+                            { type: "output_text", text: "A partial answer" },
+                        ],
+                    },
+                ],
+            });
+        } else {
+            expect(body.choices[0]).toMatchObject({
+                message: { content: "A partial answer" },
+                finish_reason: "length",
+            });
+        }
+    },
+);
 
 it.each([
     { content: null, refusal: "I cannot help with that request." },

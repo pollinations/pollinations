@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getLogger } from "@logtape/logtape";
 import {
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
@@ -72,6 +73,7 @@ function createTextTestApp() {
 
 describe("error observability", () => {
     it("preserves a failed balance read's D1 cause only in internal telemetry", async () => {
+        const logError = vi.spyOn(getLogger(["hono", "balance"]), "error");
         const requests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -110,6 +112,13 @@ describe("error observability", () => {
             expect(body).not.toContain("D1_ERROR");
             expect(body).not.toContain("tier_balance");
             expect(body).not.toContain("balance-error-test");
+            expect(logError).toHaveBeenCalledWith(
+                "Failed to get balance for user {userId}",
+                {
+                    userId: "balance-error-test",
+                    error: expect.stringContaining("D1_ERROR"),
+                },
+            );
             expect(requests).toHaveLength(1);
             const event = (await requests[0].json()) as { stack: string };
             expect(event.stack).toContain("D1_ERROR");

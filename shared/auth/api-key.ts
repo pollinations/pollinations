@@ -335,9 +335,17 @@ async function authenticateAgentRunToken(
     });
     if (!parent) return null;
 
-    // The token carries the parent key's permissions unchanged; the owner
-    // limits what an agent can do by limiting the key it is called with.
-    return { ...parent, agentRun: claims };
+    // Agent-run tokens leave our control. Keep the parent's generation limits,
+    // but never let an agent manage the owner's account or keys.
+    const models = parent.apiKey.permissions?.models;
+    return {
+        ...parent,
+        apiKey: {
+            ...parent.apiKey,
+            permissions: models ? { models } : undefined,
+        },
+        agentRun: claims,
+    };
 }
 
 async function authenticateSessionToken(

@@ -152,8 +152,10 @@ describe("dashboard outage state", () => {
         expect(render()).toContain(OUTAGE_TEXT);
     });
 
-    it("retries right away when the connection comes back", async () => {
+    it("waits for the connection instead of retrying while offline", async () => {
         vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        vi.stubGlobal("navigator", { onLine: false });
+        vi.useFakeTimers();
         const retry = vi.fn();
         function Panel() {
             useOutageRetry(true, "/account/keys", retry);
@@ -164,10 +166,17 @@ describe("dashboard outage state", () => {
             renderer = create(<Panel />);
         });
         await act(async () => {
+            await vi.advanceTimersByTimeAsync(30_000);
+        });
+        expect(retry).not.toHaveBeenCalled();
+
+        vi.stubGlobal("navigator", { onLine: true });
+        await act(async () => {
             window.dispatchEvent(new Event("online"));
         });
         expect(retry).toHaveBeenCalledTimes(1);
         await act(async () => renderer?.unmount());
+        vi.useRealTimers();
     });
 
     it("retries each resource once per tick, however many panels show it", async () => {

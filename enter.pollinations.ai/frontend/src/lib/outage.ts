@@ -91,6 +91,9 @@ const retries = new Map<string, Set<RetryRef>>();
 let retryTimer: ReturnType<typeof setInterval> | undefined;
 
 function retryAll(): void {
+    // Offline, a retry can only fail, and a page reload would leave the app
+    // for the browser's error page. The online event retries instead.
+    if (globalThis.navigator?.onLine === false) return;
     for (const refs of retries.values()) {
         const [ref] = refs;
         // A failed retry leaves the panel as it is until the next one.

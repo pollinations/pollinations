@@ -275,6 +275,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.00000001,
       "promptTextTokens": 0.0000001,
     },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000025,
+        "promptCacheWriteTokens": 0.000000625,
+        "promptCachedTokens": 0.00000005,
+        "promptTextTokens": 0.0000005,
+      },
+    },
     "price": {
       "completionTextTokens": 0.0000005,
       "promptCacheWriteTokens": 0.000000125,

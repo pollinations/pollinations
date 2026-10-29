@@ -17,6 +17,16 @@ export const AGENT_DISCOVERY_LINKS = [
     '</.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");
 
+export function acceptsMarkdown(accept: string): boolean {
+    return accept.split(",").some((range) => {
+        const [type, ...params] = range.trim().toLowerCase().split(";");
+        if (type.trim() !== "text/markdown") return false;
+        const q = params.find((param) => param.trim().startsWith("q="));
+        const quality = q === undefined ? 1 : Number(q.split("=")[1]);
+        return quality > 0 && quality <= 1;
+    });
+}
+
 /**
  * Advertise the machine entry points on the landing and API reference pages.
  * Appends to an existing Link header, and only touches successful GET/HEAD

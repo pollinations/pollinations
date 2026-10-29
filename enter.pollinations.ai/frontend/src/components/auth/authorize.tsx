@@ -522,7 +522,14 @@ export function Authorize() {
                 subject={subject}
                 description={access}
                 error={`Couldn’t connect: ${error}`}
-                errorPaths={["/api/app-lookup", "/api/device/info"]}
+                errorPaths={[
+                    "/api/app-lookup",
+                    "/api/device/info",
+                    // Allow access: create the key, then hand it over.
+                    "/account/keys",
+                    "/api/oauth/code",
+                    "/api/device/approve",
+                ]}
                 actions={
                     <Button
                         intent="neutral"

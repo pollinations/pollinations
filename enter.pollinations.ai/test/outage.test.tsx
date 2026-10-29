@@ -152,23 +152,31 @@ describe("dashboard outage state", () => {
         expect(render()).toContain(OUTAGE_TEXT);
     });
 
-    it("waits for the connection instead of retrying while offline", async () => {
+    it("waits out a long offline spell, then retries on reconnect", async () => {
         vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
         vi.stubGlobal("navigator", { onLine: false });
         vi.useFakeTimers();
+        vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+            new TypeError("Failed to fetch"),
+        );
+        await expect(
+            trackedFetch("https://gen.example/account/keys"),
+        ).rejects.toThrow();
         const retry = vi.fn();
-        function Panel() {
-            useOutageRetry(true, "/account/keys", retry);
-            return null;
-        }
         let renderer: ReactTestRenderer | undefined;
         await act(async () => {
-            renderer = create(<Panel />);
+            renderer = create(
+                <LoadError onRetry={retry} paths={["/account/keys"]}>
+                    Couldn’t load keys.
+                </LoadError>,
+            );
         });
+        // Longer than a failure lasts without a retry: the notice stays.
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(30_000);
+            await vi.advanceTimersByTimeAsync(120_000);
         });
         expect(retry).not.toHaveBeenCalled();
+        expect(JSON.stringify(renderer?.toJSON())).toContain("You’re offline.");
 
         vi.stubGlobal("navigator", { onLine: true });
         await act(async () => {

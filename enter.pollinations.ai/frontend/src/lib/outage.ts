@@ -14,8 +14,11 @@ let pruneTimer: ReturnType<typeof setInterval> | undefined;
 
 function update(): void {
     const now = Date.now();
+    // Offline, nothing retries: failures stay until the reconnect retry.
+    const offline = globalThis.navigator?.onLine === false;
     for (const [path, failedAt] of failures) {
-        if (now - failedAt > FAILURE_TTL_MS) failures.delete(path);
+        if (offline) failures.set(path, now);
+        else if (now - failedAt > FAILURE_TTL_MS) failures.delete(path);
     }
     if (failures.size > 0 && !pruneTimer) {
         pruneTimer = setInterval(update, OUTAGE_RETRY_MS);

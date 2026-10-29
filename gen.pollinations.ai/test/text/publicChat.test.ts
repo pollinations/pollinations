@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { calculatePrice } from "@shared/registry/registry.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -330,6 +331,81 @@ it.each([null, "", " \n\t"])(
         }
     },
 );
+
+it("reports exhausted reasoning budgets without fallback or caching, retaining usage", async () => {
+    const model = "openai/gpt-5-nano";
+    const wire = JSON.stringify({
+        id: "reasoning-budget-exhausted",
+        object: "chat.completion",
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "" },
+                finish_reason: "length",
+            },
+        ],
+        usage: {
+            prompt_tokens: 50,
+            completion_tokens: 60,
+            total_tokens: 110,
+            completion_tokens_details: { reasoning_tokens: 60 },
+        },
+    });
+    const prompt = `Exhausted reasoning budget ${crypto.randomUUID()}`;
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const { response, text, calls, balance } = await chatThroughHandler(
+            model,
+            [
+                "myceli-prod-eastus.cognitiveservices.azure.com",
+                "api.openai.com",
+            ],
+            wire,
+            false,
+            prompt,
+        );
+        expect(response.status, text).toBe(400);
+        expect(JSON.parse(text).error).toMatchObject({
+            code: "output_token_limit_exceeded",
+            message: expect.stringContaining("Increase the token limit"),
+        });
+        expect(calls).toBe(1);
+        expect(response.headers.get("x-cache")).not.toBe("HIT");
+        expect(balance.packBalance).toBeCloseTo(
+            100 -
+                calculatePrice(model, {
+                    promptTextTokens: 50,
+                    completionReasoningTokens: 60,
+                }).totalPrice,
+            8,
+        );
+    }
+});
+
+it("preserves a partial answer when the output token limit is reached", async () => {
+    const { response, text } = await chatThroughHandler(
+        "inception/mercury-3",
+        "openrouter.ai",
+        JSON.stringify({
+            id: "partial-completion",
+            object: "chat.completion",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "A partial answer" },
+                    finish_reason: "length",
+                },
+            ],
+            usage,
+        }),
+        false,
+    );
+    expect(response.status, text).toBe(200);
+    expect(JSON.parse(text).choices[0]).toMatchObject({
+        message: { content: "A partial answer" },
+        finish_reason: "length",
+    });
+});
 
 it.each([
     { content: null, refusal: "I cannot help with that request." },

@@ -364,7 +364,15 @@ export const CreateChatCompletionRequestSchema = z
             .default(null),
         logprobs: z.boolean().nullable().optional(),
         top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
-        max_tokens: z.number().int().min(0).nullable().optional(),
+        max_tokens: z
+            .number()
+            .int()
+            .min(0)
+            .nullable()
+            .optional()
+            .describe(
+                "Maximum generated tokens, including reasoning tokens for reasoning models. Non-streaming completions that exhaust the output limit without an answer return 400 output_token_limit_exceeded; increase the limit or reduce reasoning effort.",
+            ),
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
         seed: z.number().int().min(-1).max(2147483647).nullable().optional(),

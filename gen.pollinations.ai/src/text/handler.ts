@@ -142,27 +142,34 @@ export async function generateChatAttempt(
         requireChatCompletionUsage(result);
         // Reasoning is not an answer. Tool calls, refusals and media can be
         // valid without text, but a blank completion must never become a cache hit.
-        if (
-            !result.choices?.length ||
-            result.choices.some(
-                ({ message, finish_reason }) =>
-                    finish_reason !== "content_filter" &&
-                    (!message ||
-                        !(
-                            (typeof message.content === "string"
-                                ? message.content.trim()
-                                : message.content?.length) ||
-                            message.tool_calls?.length ||
-                            message.function_call ||
-                            message.audio ||
-                            (typeof message.refusal === "string" &&
-                                message.refusal.trim())
-                        )),
-            )
-        ) {
-            throw new UpstreamError(502, {
-                message: "Chat Completions provider returned an empty response",
-                errorCode: "empty_response",
+        const emptyChoices = (result.choices ?? []).filter(
+            ({ message, finish_reason }) =>
+                finish_reason !== "content_filter" &&
+                (!message ||
+                    !(
+                        (typeof message.content === "string"
+                            ? message.content.trim()
+                            : message.content?.length) ||
+                        message.tool_calls?.length ||
+                        message.function_call ||
+                        message.audio ||
+                        (typeof message.refusal === "string" &&
+                            message.refusal.trim())
+                    )),
+        );
+        if (!result.choices?.length || emptyChoices.length) {
+            const tokenLimitReached =
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ finish_reason }) => finish_reason === "length",
+                );
+            throw new UpstreamError(tokenLimitReached ? 400 : 502, {
+                message: tokenLimitReached
+                    ? "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort."
+                    : "Chat Completions provider returned an empty response",
+                errorCode: tokenLimitReached
+                    ? "output_token_limit_exceeded"
+                    : "empty_response",
                 requestUrl: result.upstreamRequestUrl,
                 billedUsage: openaiUsageToUsage(
                     result.usage as Parameters<typeof openaiUsageToUsage>[0],

@@ -1,3 +1,4 @@
+import { INVITE_REF_COOKIE } from "@shared/auth/additional-fields.ts";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { type FC, type PropsWithChildren, StrictMode } from "react";
 import ReactDOM from "react-dom/client";
@@ -16,6 +17,11 @@ if (
     ref === "agent_grant"
 ) {
     navigator.sendBeacon(`${config.apiBaseUrl}/referral?ref=${ref}`);
+} else if (ref && /^\d+$/.test(ref)) {
+    // An invite link carries the inviter's GitHub id. The router's redirects
+    // drop the query, so a cookie keeps it for the signup (enter's auth.ts).
+    // biome-ignore lint/suspicious/noDocumentCookie: one synchronous write before the router loads
+    document.cookie = `${INVITE_REF_COOKIE}=${ref}; path=/; max-age=2592000; samesite=lax`;
 }
 
 // Register the router instance for type safety

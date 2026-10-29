@@ -20,6 +20,7 @@ import type { Env } from "../env.ts";
 import { TOP_UP_QUEST_IDS } from "../services/quests/groups/account-setup.ts";
 import { BYOM_QUEST_IDS } from "../services/quests/groups/agent-usage.ts";
 import { BYOP_QUEST_IDS } from "../services/quests/groups/app-growth.ts";
+import { POLLINATIONS_AI_GITHUB_ID } from "../services/quests/groups/referrals.ts";
 
 // Every quest reward counts except the BYOP app-growth and BYOM model/agent
 // rewards, which pay for other people using what you built.
@@ -29,7 +30,7 @@ const EXCLUDED_QUEST_IDS = [...BYOP_QUEST_IDS, ...BYOM_QUEST_IDS];
 const LEADERBOARD_USER = and(
     notInArray(schema.user.id, ADMIN_USER_IDS),
     sql`coalesce(${schema.user.role}, '') not like '%admin%'`,
-    sql`coalesce(${schema.user.githubId}, 0) != 314960022`,
+    sql`coalesce(${schema.user.githubId}, 0) != ${POLLINATIONS_AI_GITHUB_ID}`,
 );
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";

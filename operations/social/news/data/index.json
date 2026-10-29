@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-28T06:12:09.415302+00:00",
+  "generated_at": "2026-10-29T06:06:53.430016+00:00",
   "models": [
     {
       "id": "2026-09-29:anthropic/claude-sonnet-5.5",
@@ -9976,46 +9976,6 @@
         15814
       ],
       "kind": "model"
-    },
-    {
-      "date": "2026-09-28",
-      "emoji": "🔗",
-      "title": "Client tools for prompt agents",
-      "text": "Pass your own function tools to prompt agents alongside their MCP tools. The agent returns calls for your client to execute and replay, with streaming and non-streaming support. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15655
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-09-28",
-      "emoji": "💡",
-      "title": "Polli routes coding clients",
-      "text": "Use `polli harness codex` or `polli harness claude-code` to connect those clients through their router tools, select a compatible model, and check routing status. [Find Polli on npm](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        15289
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-28",
-      "emoji": "🤖",
-      "title": "Frugal routes code requests",
-      "text": "Try `community/fadyabohamza-netizen/frugal`, a community code-agent example that picks compatible models using estimated request cost and recent health. It preserves conversation and tool history when forwarding requests. [View the model](https://enter.pollinations.ai/models?q=community/fadyabohamza-netizen/frugal).",
-      "prs": [
-        15213
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-28",
-      "emoji": "🤖",
-      "title": "Prism reviews engineering work",
-      "text": "Try `cesus-agent/prism-code-review-router` for code-review requests. It chooses a compatible model based on the task, model health, pricing, and available balance, then adds a review rubric for more involved work. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15226
-      ],
-      "kind": "product"
     }
   ]
 }

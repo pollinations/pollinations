@@ -1,4 +1,4 @@
-import { InlineLink } from "@pollinations/ui";
+import { InlineLink, OutageNotice } from "@pollinations/ui";
 import { AuthFlowLayout } from "@pollinations/ui/auth";
 import type { ComponentProps } from "react";
 import { authClient } from "../../auth.ts";
@@ -6,6 +6,7 @@ import {
     type AccountBalance,
     useAccountBalance,
 } from "../../hooks/use-account-balance.ts";
+import { useOutage, useOutageRetry } from "../../lib/outage.ts";
 import { REFUND_POLICY_URL, TERMS_URL } from "../pollen/pollen-balance.tsx";
 import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 
@@ -102,9 +103,15 @@ export function AuthFlowScreen({
     balance,
     topUpHref,
     footnote,
+    error,
+    children,
     ...props
 }: AuthFlowScreenProps) {
     const { data: session } = authClient.useSession();
+    // A step that failed while Pollinations is down failed because of it.
+    const outage = useOutage() && Boolean(error);
+    // Only a reload repeats the step that failed.
+    useOutageRetry(outage, () => window.location.reload());
     const user = session?.user;
     const fetchedBalance = useAccountBalance(
         Boolean(user) && balance === undefined,
@@ -112,6 +119,7 @@ export function AuthFlowScreen({
     return (
         <AuthFlowLayout
             {...props}
+            error={outage ? undefined : error}
             footnote={
                 footnote
                     ? footnotes[footnote]
@@ -133,6 +141,9 @@ export function AuthFlowScreen({
                     />
                 ) : undefined
             }
-        />
+        >
+            {outage && <OutageNotice retrying />}
+            {children}
+        </AuthFlowLayout>
     );
 }

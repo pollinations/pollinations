@@ -1,5 +1,12 @@
-import { Alert, Button, RefreshIcon, Section } from "@pollinations/ui";
+import {
+    Alert,
+    Button,
+    OutageNotice,
+    RefreshIcon,
+    Section,
+} from "@pollinations/ui";
 import { type ReactNode, useContext, useEffect, useState } from "react";
+import { useOutage, useOutageRetry } from "../../lib/outage.ts";
 import { PendingCount } from "./dashboard-shell.tsx";
 
 /** Render while something on the page is still loading; the shell shows one status until none remain. */
@@ -37,6 +44,7 @@ export function PageLoading({ titles }: { titles: readonly string[] }) {
     );
 }
 
+/** A failed load: the outage notice while Pollinations is down, else `children`. */
 export function LoadError({
     children,
     onRetry,
@@ -45,6 +53,8 @@ export function LoadError({
     onRetry?: () => unknown;
 }) {
     const [retrying, setRetrying] = useState(false);
+    const outage = useOutage();
+    useOutageRetry(outage, onRetry);
 
     async function retry() {
         if (!onRetry || retrying) return;
@@ -57,6 +67,8 @@ export function LoadError({
             setRetrying(false);
         }
     }
+
+    if (outage) return <OutageNotice retrying={Boolean(onRetry)} />;
 
     return (
         <Alert intent="danger">

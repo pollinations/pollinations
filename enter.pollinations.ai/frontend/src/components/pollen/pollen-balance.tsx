@@ -7,11 +7,14 @@ import {
     InfoTip,
     InlineLink,
     MailIcon,
+    OUTAGE_MESSAGE,
     ReceiptIcon,
     RefreshIcon,
+    ShieldCheckIcon,
     SproutIcon,
     Surface,
     WalletIcon,
+    WarningIcon,
 } from "@pollinations/ui";
 import {
     formatPollen,
@@ -261,6 +264,27 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
         </div>
     );
 };
+
+/** The drawer wallet while Pollinations is down: two rows, like the balances. */
+export const SidebarOutage: FC = () => (
+    <div
+        data-theme="accent"
+        title={OUTAGE_MESSAGE}
+        className="px-3 py-1 flex flex-col gap-1 text-xs font-bold"
+    >
+        <span className="flex items-center gap-1.5 text-intent-warning-text">
+            <WarningIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+            Temporary outage
+        </span>
+        <span className="flex items-center gap-1.5 text-theme-text-soft">
+            <ShieldCheckIcon
+                aria-hidden="true"
+                className="h-3.5 w-3.5 shrink-0"
+            />
+            Your pollen is safe
+        </span>
+    </div>
+);
 
 type BuyPollenPanelProps = {
     initialBilling: BillingOverview | null;

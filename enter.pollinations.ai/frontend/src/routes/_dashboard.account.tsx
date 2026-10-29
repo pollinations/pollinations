@@ -40,7 +40,7 @@ type DiscordConnection = {
 
 export const Route = createFileRoute("/_dashboard/account")({
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },

@@ -1,4 +1,3 @@
-import { OUTAGE_MESSAGE } from "../../compositions/OutageNotice.tsx";
 import { Chip } from "../../primitives/Chip.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import {
@@ -61,12 +60,7 @@ function PollenStatusBadge({
     const Icon = icons[state];
     const label = labels[state];
     return (
-        <Chip
-            size="sm"
-            intent={intents[state]}
-            aria-label={label}
-            title={state === "unavailable" ? OUTAGE_MESSAGE : undefined}
-        >
+        <Chip size="sm" intent={intents[state]} aria-label={label}>
             <Icon
                 aria-hidden="true"
                 className="polli:h-3.5 polli:w-3.5 polli:shrink-0"

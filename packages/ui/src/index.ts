@@ -93,6 +93,7 @@ export {
     OUTAGE_MESSAGE,
     OutageNotice,
     type OutageNoticeProps,
+    useOnline,
 } from "./compositions/OutageNotice.tsx";
 export {
     PeriodPicker,

@@ -6,6 +6,9 @@ export type AccountBalance = {
     packBalance: number;
 };
 
+/** The balance request's path, for outage checks. */
+export const BALANCE_PATH = "/account/balance";
+
 export async function fetchAccountBalance(): Promise<AccountBalance> {
     const response = await accountClient.balance.$get();
     if (!response.ok) throw new Error("Failed to load wallet");

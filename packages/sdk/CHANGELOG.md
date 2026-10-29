@@ -2,6 +2,18 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.25] - 2026-10-29
+
+### Added
+- `isOutageError(error)` tells a Pollinations outage (a 5xx, or no response)
+  from a request error such as 401 or 403. Exported from `@pollinations/sdk`
+  and `@pollinations/sdk/react`.
+
+### Changed
+- Account hooks retry on their own every 30 seconds while an outage lasts. A
+  network failure is a `PollinationsError` with status `0` and code
+  `NETWORK_ERROR`, so `isOutageError` recognises it.
+
 ## [5.1.0-alpha.24] - 2026-10-28
 
 ### Fixed

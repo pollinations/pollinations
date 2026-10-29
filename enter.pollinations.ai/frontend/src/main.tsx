@@ -3,10 +3,7 @@ import { type FC, type PropsWithChildren, StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { LoadError } from "./components/layout/dashboard-loading.tsx";
 import { DashboardPending } from "./components/layout/dashboard-pending.tsx";
-import {
-    DASHBOARD_AUTH_FAILED_MESSAGE,
-    DASHBOARD_SERVICE_UNAVAILABLE_MESSAGE,
-} from "./components/layout/dashboard-session-failure.ts";
+import { DASHBOARD_AUTH_FAILED_MESSAGE } from "./components/layout/dashboard-session-failure.ts";
 import { config } from "./config";
 import { routeTree } from "./routeTree.gen";
 
@@ -29,20 +26,14 @@ declare module "@tanstack/react-router" {
     }
 }
 
-// Only route-thrown failures with reviewed copy reach the visitor; anything
-// else keeps the generic message instead of leaking internals.
-const ROUTE_ERROR_MESSAGES = [
-    DASHBOARD_AUTH_FAILED_MESSAGE,
-    DASHBOARD_SERVICE_UNAVAILABLE_MESSAGE,
-];
-
 const router = createRouter({
     routeTree,
     defaultErrorComponent: ({ error }) => (
         <div className="p-6">
             <LoadError onRetry={() => router.invalidate()}>
+                {/* Only reviewed copy reaches the visitor, never internals. */}
                 {error instanceof Error &&
-                ROUTE_ERROR_MESSAGES.includes(error.message)
+                error.message === DASHBOARD_AUTH_FAILED_MESSAGE
                     ? error.message
                     : "Couldn’t load this page."}
             </LoadError>

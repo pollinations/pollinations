@@ -287,6 +287,10 @@ const MAX_ERROR_MESSAGE_LENGTH = 2000;
 const MAX_STACK_LENGTH = 12000;
 const MAX_UPSTREAM_BODY_LENGTH = 16000;
 
+// Drizzle/D1 errors embed the failing SQL text and its bound parameters, which
+// include stored API key hashes. They belong in the logs, never in a response.
+const QUERY_ERROR_PATTERN = /Failed query:|\nparams: /;
+
 export async function handleError<TEnv extends ErrorHandlerEnv>(
     err: Error,
     c: Context<TEnv>,
@@ -381,7 +385,7 @@ function createErrorResponse(
     return {
         success: false,
         error: {
-            message: error.message || getDefaultErrorMessage(status),
+            message: publicErrorMessage(error, status),
             code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
@@ -389,6 +393,22 @@ function createErrorResponse(
         },
         status,
     };
+}
+
+/**
+ * A 5xx body may carry the error message, but a database failure describes the
+ * query and its bound parameters. `emitServerError` has already logged the full
+ * error, so answer with the generic message instead of leaking the SQL text and
+ * stored API key hashes.
+ */
+function publicErrorMessage(
+    error: Error,
+    status: ContentfulStatusCode,
+): string {
+    const message = error.message || getDefaultErrorMessage(status);
+    return status >= 500 && QUERY_ERROR_PATTERN.test(message)
+        ? getDefaultErrorMessage(status)
+        : message;
 }
 
 function createValidationErrorResponse(

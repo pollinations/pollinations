@@ -763,6 +763,48 @@ describe("error observability", () => {
         });
     });
 
+    it("redacts a database error's SQL text and bound params from the 500 body", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () => new Response("ok"),
+        );
+
+        // Drizzle/D1 failures carry the query and its params in the message.
+        const leaked =
+            'Failed query: select "apikey"."key" from "apikey" where "apikey"."key" = ?\nparams: 0123456789abcdef';
+
+        const app = new Hono<Env>();
+        app.get("/db-failure", () => {
+            throw new Error(leaked);
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/db-failure"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
+        const body = (await response.json()) as {
+            error: { message: string; code: string };
+        };
+        expect(body.error).toMatchObject({
+            code: "INTERNAL_ERROR",
+            message: "Oh snap, something went wrong on our end. We're on it!",
+        });
+        expect(JSON.stringify(body)).not.toContain("apikey");
+        expect(JSON.stringify(body)).not.toContain("params:");
+    });
+
     it("maps text provider 429 to an actionable server error", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

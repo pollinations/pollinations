@@ -28,11 +28,6 @@
       "merge_sha": "aeffc7ffd84fe99fbd2eb206000adf1d32fc11c8",
       "merged_at": "2026-10-29T18:55:04Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/kpi",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"

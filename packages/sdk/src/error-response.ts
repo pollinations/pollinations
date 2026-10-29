@@ -29,10 +29,13 @@ function parseRetryAfter(response: Response): number | undefined {
  * response at all (status 0). 401 and 403 are not outages.
  */
 export function isOutageError(error: unknown): boolean {
-    return (
-        error instanceof PollinationsError &&
-        (error.status === 0 || error.status >= 500)
-    );
+    // By shape, not instanceof: the root and React entry points are separate
+    // bundles, each with its own PollinationsError class.
+    if (!(error instanceof Error) || error.name !== "PollinationsError") {
+        return false;
+    }
+    const { status } = error as PollinationsError;
+    return status === 0 || status >= 500;
 }
 
 /**

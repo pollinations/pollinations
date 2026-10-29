@@ -6,11 +6,20 @@ export default defineConfig({
         // The SDK source below resolves react from packages/sdk/node_modules
         // when that standalone install exists; keep one copy of React.
         dedupe: ["react", "react-dom"],
-        alias: {
-            "@pollinations/sdk/react": fileURLToPath(
-                new URL("../sdk/src/react/index.ts", import.meta.url),
-            ),
-        },
+        alias: [
+            {
+                find: /^@pollinations\/sdk\/react$/,
+                replacement: fileURLToPath(
+                    new URL("../sdk/src/react/index.ts", import.meta.url),
+                ),
+            },
+            {
+                find: /^@pollinations\/sdk$/,
+                replacement: fileURLToPath(
+                    new URL("../sdk/src/index.ts", import.meta.url),
+                ),
+            },
+        ],
     },
     test: {
         include: ["src/**/*.test.{ts,tsx}"],

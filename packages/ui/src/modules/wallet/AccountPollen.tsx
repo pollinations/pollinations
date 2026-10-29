@@ -1,6 +1,11 @@
+import { OUTAGE_MESSAGE } from "../../compositions/OutageNotice.tsx";
 import { Chip } from "../../primitives/Chip.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
-import { KeyIcon, WalletIcon } from "../../primitives/icons/index.tsx";
+import {
+    KeyIcon,
+    WalletIcon,
+    WarningIcon,
+} from "../../primitives/icons/index.tsx";
 import { formatPollen } from "./format-pollen.ts";
 import { WalletKindIcon } from "./wallet-display.tsx";
 
@@ -15,19 +20,36 @@ export type AccountPollenSource =
           /** The app's remaining budget, never the owner's wallet total. `null` = unlimited. */
           remaining?: number | null;
           generationEnabled?: boolean;
-      };
+      }
+    /** Pollinations is down, so the amount can't be read. */
+    | { type: "unavailable" };
 
 function isEmpty(amount: number | null | undefined): boolean {
     return amount != null && amount <= 0;
 }
 
-type PollenStatus = "limit-reached" | "no-pollen" | "unlimited";
+type PollenStatus = "limit-reached" | "no-pollen" | "unlimited" | "unavailable";
 
 const labels: Record<PollenStatus, string> = {
     "limit-reached": "Limit reached",
     "no-pollen": "No pollen",
     unlimited: "Unlimited",
+    unavailable: "Pollen unavailable",
 };
+
+const intents = {
+    "limit-reached": "danger",
+    "no-pollen": "danger",
+    unlimited: "info",
+    unavailable: "warning",
+} as const satisfies Record<PollenStatus, string>;
+
+const icons = {
+    "limit-reached": KeyIcon,
+    "no-pollen": WalletIcon,
+    unlimited: KeyIcon,
+    unavailable: WarningIcon,
+} satisfies Record<PollenStatus, unknown>;
 
 function PollenStatusBadge({
     state,
@@ -36,13 +58,14 @@ function PollenStatusBadge({
     state: PollenStatus;
     topUpHref?: string;
 }) {
-    const Icon = state === "no-pollen" ? WalletIcon : KeyIcon;
+    const Icon = icons[state];
     const label = labels[state];
     return (
         <Chip
             size="sm"
-            intent={state === "unlimited" ? "info" : "danger"}
+            intent={intents[state]}
             aria-label={label}
+            title={state === "unavailable" ? OUTAGE_MESSAGE : undefined}
         >
             <Icon
                 aria-hidden="true"
@@ -73,6 +96,8 @@ export function AccountPollen({
     /** Shown in the empty-wallet badge. A menu keeps recovery links in its dropdown. */
     topUpHref?: string;
 }) {
+    if (source.type === "unavailable")
+        return <PollenStatusBadge state="unavailable" />;
     if (source.type === "budget") {
         if (source.generationEnabled === false) return null;
         // null is the API's explicit "no budget"; undefined is not loaded yet.

@@ -77,6 +77,10 @@ def fail(msg: str):
     sys.exit(1)
 
 
+class ClassificationUnavailable(Exception):
+    """The classifier could not run, so the item is left unclassified."""
+
+
 def read_brief() -> str:
     with open(BRIEF_PATH, "r") as f:
         return f.read()
@@ -338,7 +342,9 @@ Body: {ISSUE_BODY[:2000]}
 {facts}
 """)
     if raw is None:
-        fail(f"AI classification failed for #{ISSUE_NUMBER}")
+        raise ClassificationUnavailable(
+            f"AI classification unavailable for #{ISSUE_NUMBER}"
+        )
     try:
         return classification_answer(raw, areas, IS_PULL_REQUEST)
     except ValueError as error:
@@ -385,7 +391,15 @@ def main():
     if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
         answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
     else:
-        answer = classify(brief, areas)
+        try:
+            answer = classify(brief, areas)
+        except ClassificationUnavailable as error:
+            # A model or API outage is not the contributor's failure. Leave the
+            # item unclassified instead of turning their check red; the
+            # workflow_dispatch run re-classifies later.
+            log_error(str(error))
+            print(f"SKIP #{ISSUE_NUMBER}\tclassifier unavailable\t{ISSUE_TITLE}")
+            return
         if not IS_PULL_REQUEST and answer["area"] is None:
             log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
             return

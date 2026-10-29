@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { authClient } from "../auth.ts";
+import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { isOutageStatus } from "../lib/outage.ts";
 
 export const Route = createFileRoute("/")({
@@ -9,7 +10,7 @@ export const Route = createFileRoute("/")({
         if (!result || (result.error && isOutageStatus(result.error.status))) {
             throw redirect({ to: "/pollen" });
         }
-        if (result.error) throw new Error("Authentication failed.");
+        if (result.error) throw new Error(DASHBOARD_AUTH_FAILED_MESSAGE);
         throw redirect({ to: result.data?.user ? "/pollen" : "/news" });
     },
 });

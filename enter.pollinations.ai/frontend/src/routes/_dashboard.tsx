@@ -24,6 +24,7 @@ import {
     LoadError,
     PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
+import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
@@ -76,7 +77,7 @@ export const Route = createFileRoute("/_dashboard")({
             if (!result || isOutageStatus(result.error.status)) {
                 return { user: null, sessionUnavailable: true };
             }
-            throw new Error("Authentication failed.");
+            throw new Error(DASHBOARD_AUTH_FAILED_MESSAGE);
         }
         const user = result.data?.user ?? null;
         // Another tab may have switched accounts: stop calling the account API

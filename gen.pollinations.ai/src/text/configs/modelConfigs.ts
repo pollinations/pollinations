@@ -1144,8 +1144,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 64000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>
-        createAnthropicConfig({
-            model: "claude-sonnet-5-5",
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-sonnet-5.5:aws": () =>
@@ -1159,8 +1159,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-haiku-5.5": () =>
-        createAnthropicConfig({
-            model: "claude-haiku-5-5",
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-haiku-5.5:anthropic": () =>
@@ -1204,8 +1204,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5": () =>
-        createAnthropicConfig({
-            model: "claude-opus-5-5",
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5:aws": () =>
@@ -1224,8 +1224,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1": () =>
-        createAnthropicConfig({
-            model: "claude-fable-5-1",
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5-1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1:aws": () =>

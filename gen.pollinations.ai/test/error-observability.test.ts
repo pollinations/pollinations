@@ -781,40 +781,45 @@ describe("error observability", () => {
         app.get("/db-failure", () => {
             throw new Error(leaked);
         });
+        // A text request's agent lookup fails inside the text boundary, which
+        // wraps the same message in an UpstreamError 500.
+        app.get("/wrapped-db-failure", () => throwTextError(new Error(leaked)));
         app.onError(handleError);
 
-        const ctx = createExecutionContext();
-        const response = await app.fetch(
-            new Request("https://gen.pollinations.ai/db-failure"),
-            {
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
+        for (const path of ["/db-failure", "/wrapped-db-failure"]) {
+            const ctx = createExecutionContext();
+            const response = await app.fetch(
+                new Request(`https://gen.pollinations.ai${path}`),
+                {
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
 
-        expect(response.status).toBe(500);
-        const body = (await response.json()) as {
-            error: { message: string; code: string };
-        };
-        expect(body.error).toMatchObject({
-            code: "INTERNAL_ERROR",
-            message: "Oh snap, something went wrong on our end. We're on it!",
-        });
-        expect(JSON.stringify(body)).not.toContain("apikey");
-        expect(JSON.stringify(body)).not.toContain("params:");
+            expect(response.status).toBe(500);
+            const body = (await response.json()) as {
+                error: { message: string; code: string };
+            };
+            expect(body.error).toMatchObject({
+                code: "INTERNAL_ERROR",
+                message:
+                    "Oh snap, something went wrong on our end. We're on it!",
+            });
+            expect(JSON.stringify(body)).not.toContain("apikey");
+            expect(JSON.stringify(body)).not.toContain("params:");
+        }
 
-        expect(tinybirdRequests).toHaveLength(1);
-        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
-            string,
-            unknown
-        >;
-        expect(tinybirdPayload.message).toBe(leaked);
+        expect(tinybirdRequests).toHaveLength(2);
+        for (const request of tinybirdRequests) {
+            const payload = (await request.json()) as Record<string, unknown>;
+            expect(payload.message).toBe(leaked);
+        }
     });
 
     it("maps text provider 429 to an actionable server error", async () => {

@@ -746,7 +746,8 @@ describe("error observability", () => {
             success: false,
             error: {
                 code: "INTERNAL_ERROR",
-                message: "pre-logger failure",
+                message:
+                    "Oh snap, something went wrong on our end. We're on it!",
             },
         });
 
@@ -764,8 +765,12 @@ describe("error observability", () => {
     });
 
     it("redacts a database error's SQL text and bound params from the 500 body", async () => {
+        const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
-            async () => new Response("ok"),
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
         );
 
         // Drizzle/D1 failures carry the query and its params in the message.
@@ -803,6 +808,13 @@ describe("error observability", () => {
         });
         expect(JSON.stringify(body)).not.toContain("apikey");
         expect(JSON.stringify(body)).not.toContain("params:");
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload.message).toBe(leaked);
     });
 
     it("maps text provider 429 to an actionable server error", async () => {

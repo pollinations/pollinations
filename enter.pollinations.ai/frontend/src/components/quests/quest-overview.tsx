@@ -9,6 +9,7 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
+    OutageNotice,
     RocketIcon,
     Section,
     SparkleIcon,
@@ -36,6 +37,7 @@ import type {
     QuestCheckResult,
     QuestStandingsResponse,
 } from "../../backend-types.ts";
+import { isOutageStatus, useOutage, useOutageRetry } from "../../lib/outage.ts";
 import {
     LoadError,
     PageStatus,
@@ -214,7 +216,10 @@ async function loadQuestData(): Promise<QuestData> {
     }
     const catalog = (await catalogResponse.json()) as QuestCatalogResponse;
 
-    const anonymous = rewardsResponse.status === 401;
+    // During an outage the list still shows, without the user's rewards.
+    const anonymous =
+        rewardsResponse.status === 401 ||
+        isOutageStatus(rewardsResponse.status);
     if (!rewardsResponse.ok && !anonymous) {
         throw new Error(`Failed to load quests (${rewardsResponse.status})`);
     }
@@ -596,16 +601,23 @@ export function QuestRow({
 }
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
-    const { user } = useLoaderData({ from: "/_dashboard" });
+    const { user, sessionUnavailable } = useLoaderData({ from: "/_dashboard" });
     return (
         <QuestOverviewContent
             key={user?.id ?? "anonymous"}
             userId={user?.id ?? null}
+            sessionUnavailable={sessionUnavailable}
         />
     );
 };
 
-function QuestOverviewContent({ userId }: { userId: string | null }) {
+function QuestOverviewContent({
+    userId,
+    sessionUnavailable,
+}: {
+    userId: string | null;
+    sessionUnavailable: boolean;
+}) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
@@ -937,6 +949,15 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             ? state.error
             : null;
     const showSummary = !initialError;
+    // During an outage the list still loads, but a possibly signed-in user's
+    // rewards and the standings don't: say so instead of showing 0 progress.
+    const outage = useOutage();
+    const progressUnavailable =
+        outage && state.anonymous && (sessionUnavailable || userId !== null);
+    const standingsUnavailable = outage && !state.loading && !state.standings;
+    useOutageRetry(progressUnavailable || standingsUnavailable, () =>
+        refreshRewards().catch(() => {}),
+    );
 
     return (
         <>
@@ -949,6 +970,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             >
                 <SectionContent loading={state.loading}>
                     {state.error && <LoadError>{state.error}</LoadError>}
+                    {progressUnavailable && <OutageNotice retrying />}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
                     {showSummary && !state.anonymous && (
                         <QuestSummary
@@ -992,11 +1014,17 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 </div>
             </Section>
 
-            {state.standings && (
+            {state.standings ? (
                 <QuestStandings
                     standings={state.standings}
                     openQuests={openQuests}
                 />
+            ) : (
+                standingsUnavailable && (
+                    <Section title="Leaderboard">
+                        <OutageNotice retrying />
+                    </Section>
+                )
             )}
 
             {CATEGORIES.map((category) => {
@@ -1013,7 +1041,8 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                         key={category.key}
                         title={category.label}
                         action={
-                            !initialError && (
+                            !initialError &&
+                            !progressUnavailable && (
                                 <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                                     {done} / {liveCards.length}
                                 </span>

@@ -171,7 +171,9 @@ function DashboardLayout() {
             ? (DASHBOARD_NAV_ITEMS.find((item) => item.to === pathname)
                   ?.label ?? "Account")
             : undefined;
-    useOutageRetry(data.sessionUnavailable, () => router.invalidate());
+    useOutageRetry(data.sessionUnavailable, "session", () =>
+        router.invalidate(),
+    );
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -256,7 +258,8 @@ function DashboardLayout() {
 /** The drawer's compact outage rows, or the usual error when it is not one. */
 function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
     const outage = useOutage([BALANCE_PATH]);
-    useOutageRetry(outage, onRetry);
+    // The same resource as the Pollen page's balance: one retry for both.
+    useOutageRetry(outage, BALANCE_PATH, onRetry);
     return outage ? (
         <SidebarOutage />
     ) : (

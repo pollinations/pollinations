@@ -58,8 +58,13 @@ export async function trackedFetch(
         return response;
     } catch (error) {
         // A timeout is no answer; any other abort is the page cancelling.
+        // Offline, the visitor's connection failed, not Pollinations.
         const signal = init?.signal;
-        if (!signal?.aborted || signal.reason?.name === "TimeoutError") {
+        const timedOut = signal?.reason?.name === "TimeoutError";
+        if (
+            (!signal?.aborted || timedOut) &&
+            globalThis.navigator?.onLine !== false
+        ) {
             failures.set(path, Date.now());
         }
         throw error;
@@ -75,29 +80,52 @@ export async function trackedFetch(
  */
 export function useOutage(paths?: readonly string[]): boolean {
     const snapshot = () => (paths ? paths.some(failing) : failures.size > 0);
-    return useSyncExternalStore(
-        (listener) => {
-            listeners.add(listener);
-            return () => listeners.delete(listener);
-        },
-        snapshot,
-        snapshot,
-    );
+    return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
 
-/** Calls `retry` every OUTAGE_RETRY_MS while `active`. */
+function subscribe(listener: () => void): () => void {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+}
+
+type RetryRef = { current: (() => unknown) | undefined };
+// Panels waiting out an outage, by resource: each tick retries a resource
+// once, however many panels show it.
+const retries = new Map<string, Set<RetryRef>>();
+let retryTimer: ReturnType<typeof setInterval> | undefined;
+
+function retryAll(): void {
+    for (const refs of retries.values()) {
+        const [ref] = refs;
+        // A failed retry leaves the panel as it is until the next one.
+        Promise.resolve(ref?.current?.()).catch(() => {});
+    }
+}
+
+/**
+ * Calls `retry` every OUTAGE_RETRY_MS while `active`. Panels with the same
+ * `resource` share one call per tick.
+ */
 export function useOutageRetry(
     active: boolean,
+    resource: string,
     retry: (() => unknown) | undefined,
 ): void {
     const latest = useRef(retry);
     latest.current = retry;
     useEffect(() => {
         if (!active) return;
-        const timer = setInterval(() => {
-            // A failed retry leaves the panel as it is until the next one.
-            Promise.resolve(latest.current?.()).catch(() => {});
-        }, OUTAGE_RETRY_MS);
-        return () => clearInterval(timer);
-    }, [active]);
+        const refs = retries.get(resource) ?? new Set<RetryRef>();
+        refs.add(latest);
+        retries.set(resource, refs);
+        retryTimer ??= setInterval(retryAll, OUTAGE_RETRY_MS);
+        return () => {
+            refs.delete(latest);
+            if (refs.size === 0) retries.delete(resource);
+            if (retries.size === 0) {
+                clearInterval(retryTimer);
+                retryTimer = undefined;
+            }
+        };
+    }, [active, resource]);
 }

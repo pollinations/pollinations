@@ -1,10 +1,19 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { act, create } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthFlowScreen } from "../frontend/src/components/auth/auth-flow-screen.tsx";
 import { LoadError } from "../frontend/src/components/layout/dashboard-loading.tsx";
 import { fetchModelCatalog } from "../frontend/src/components/models/model-catalog.ts";
-import { isOutageStatus, trackedFetch } from "../frontend/src/lib/outage.ts";
+import {
+    isOutageStatus,
+    trackedFetch,
+    useOutageRetry,
+} from "../frontend/src/lib/outage.ts";
 
+// The standalone screen reads the session; no request leaves the test.
+vi.mock("../frontend/src/auth.ts", () => ({
+    authClient: { useSession: () => ({ data: null }) },
+}));
 vi.mock("../frontend/src/config.ts", () => ({
     config: { apiBaseUrl: "/api", genBaseUrl: "https://gen.example" },
     genDocsUrl: (hash = "") => `https://gen.example/docs${hash}`,
@@ -143,6 +152,50 @@ describe("dashboard outage state", () => {
             }),
         ).rejects.toThrow();
         expect(render()).toContain(OUTAGE_TEXT);
+    });
+
+    it("ignores a failure while the visitor is offline", async () => {
+        vi.stubGlobal("navigator", { onLine: false });
+        vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+            new TypeError("Failed to fetch"),
+        );
+        await expect(
+            trackedFetch("https://gen.example/account/keys"),
+        ).rejects.toThrow();
+        expect(render()).toContain("Couldn’t load keys.");
+    });
+
+    it("retries each resource once per tick, however many panels show it", async () => {
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        vi.useFakeTimers();
+        const keys = [vi.fn(), vi.fn()];
+        const balance = vi.fn();
+        function Panel({
+            resource,
+            retry,
+        }: {
+            resource: string;
+            retry: () => void;
+        }) {
+            useOutageRetry(true, resource, retry);
+            return null;
+        }
+        const renderer = await act(async () =>
+            create(
+                <>
+                    <Panel resource="/account/keys" retry={keys[0]} />
+                    <Panel resource="/account/keys" retry={keys[1]} />
+                    <Panel resource="/account/balance" retry={balance} />
+                </>,
+            ),
+        );
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(30_000);
+        });
+        expect(keys[0].mock.calls.length + keys[1].mock.calls.length).toBe(1);
+        expect(balance).toHaveBeenCalledTimes(1);
+        await act(async () => renderer.unmount());
+        vi.useRealTimers();
     });
 
     it("ignores a request the page aborted", async () => {

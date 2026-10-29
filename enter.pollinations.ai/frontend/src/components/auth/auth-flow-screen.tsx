@@ -113,7 +113,7 @@ export function AuthFlowScreen({
     const { data: session } = authClient.useSession();
     const outage = useOutage(errorPaths) && Boolean(error);
     // Only a reload repeats the step that failed.
-    useOutageRetry(outage, () => window.location.reload());
+    useOutageRetry(outage, "page", () => window.location.reload());
     const user = session?.user;
     const fetchedBalance = useAccountBalance(
         Boolean(user) && balance === undefined,

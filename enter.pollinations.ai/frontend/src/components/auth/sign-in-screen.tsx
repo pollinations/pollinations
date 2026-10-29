@@ -28,7 +28,7 @@ export function SignInScreen({
     const session = authClient.useSession();
     const outage =
         session.error !== null && isOutageStatus(session.error.status);
-    useOutageRetry(outage, () => session.refetch());
+    useOutageRetry(outage, "session", () => session.refetch());
     if (outage) {
         return (
             <AuthFlowScreen title={title} subject={subject} footnote="help">

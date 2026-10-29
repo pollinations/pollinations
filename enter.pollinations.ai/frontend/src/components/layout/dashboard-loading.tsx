@@ -60,7 +60,7 @@ export function LoadError({
 }) {
     const [retrying, setRetrying] = useState(false);
     const outage = useOutage(paths);
-    useOutageRetry(outage, onRetry);
+    useOutageRetry(outage, paths?.join(" ") ?? "page", onRetry);
 
     async function retry() {
         if (!onRetry || retrying) return;

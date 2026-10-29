@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "DOG_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "dog",
+        name: "Dog",
+        description:
+            "Fetch dog breed info and random dog images from the Dog CEO API.",
+        binding: "DOG_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "The Dog CEO API is free and keyless.",
             rates: [],
         },
     },

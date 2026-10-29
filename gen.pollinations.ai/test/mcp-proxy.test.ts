@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "dog",
+                name: "Dog",
+                description:
+                    "Fetch dog breed info and random dog images from the Dog CEO API.",
+                url: "https://gen.pollinations.ai/mcp/dog",
+                pricing: {
+                    description: "The Dog CEO API is free and keyless.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -262,7 +273,7 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "machines", "dog"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

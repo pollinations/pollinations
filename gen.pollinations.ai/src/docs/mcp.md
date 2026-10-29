@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Dog | `https://gen.pollinations.ai/mcp/dog` | Fetch dog breed info and random dog images from the Dog CEO API | [Source](https://github.com/pollinations/pollinations/tree/main/apps/dog-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,13 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Dog MCP
+
+The Dog server fetches dog breed info and random dog images from the Dog CEO API.
+Use `listBreeds` for every breed and its sub-breeds, `randomDog` for a random dog
+image, and `dogImageByBreed` for a random image of a breed. The Dog CEO API is free
+and keyless; no additional MCP fee and no caller key is forwarded upstream.
 
 ### Billing and permissions
 

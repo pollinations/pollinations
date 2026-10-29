@@ -175,9 +175,9 @@ export function getAuthorizeInitialPermissions({
 }: AuthorizeDefaultsInput) {
     return {
         allowedModels: models,
-        pollenBudget: Math.min(
-            budget ?? DEFAULT_CONSENT_BUDGET,
-            MAX_LINK_CONSENT_BUDGET,
+        pollenBudget: Math.max(
+            0,
+            Math.min(budget ?? DEFAULT_CONSENT_BUDGET, MAX_LINK_CONSENT_BUDGET),
         ),
         expiryDays: expiry ?? DEFAULT_CONSENT_EXPIRY_DAYS,
         accountPermissions: getPreselectedConsentPermissions(permissions),

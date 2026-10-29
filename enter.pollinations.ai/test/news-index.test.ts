@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { currentAnnouncements } from "../frontend/src/components/news-faq/news-banner.tsx";
 import {
     apiDetails,
     apiDocsAnchor,
@@ -8,6 +9,20 @@ import {
     newsDaily,
     visibleModelNews,
 } from "../frontend/src/components/news-faq/news-index.ts";
+
+it("keeps four announcements visible after their launch dates", () => {
+    const announcements = currentAnnouncements();
+    const afterLaunches = new Date(`${announcements[0].date}T00:00:00.000Z`);
+    afterLaunches.setUTCFullYear(afterLaunches.getUTCFullYear() + 1);
+    vi.useFakeTimers();
+    try {
+        vi.setSystemTime(afterLaunches);
+        expect(currentAnnouncements()).toHaveLength(4);
+        expect(currentAnnouncements()).toEqual(announcements);
+    } finally {
+        vi.useRealTimers();
+    }
+});
 
 function news(overrides: Partial<ModelNews>): ModelNews {
     return {

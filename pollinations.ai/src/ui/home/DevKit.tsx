@@ -33,11 +33,12 @@ import { PaidChip } from "@pollinations/ui/wallet";
 import type { ComponentType, ReactNode } from "react";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useMcpServers, usePlatformStats } from "../../data/publicStats";
+import { SitePreview } from "./SitePreview";
 
 type Feature = {
     title: string;
     /** Short copy; wrap the phrase worth skimming in <Em>. */
-    body: ReactNode;
+    body?: ReactNode;
     /** A line under the title: a live catalog count, or a fixed note. */
     catalogCount?: "agents";
     note?: string;
@@ -150,16 +151,8 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Site hosting",
-        chips: ["Free", "Static"],
-        body: (
-            <>
-                <Em>Host a site for free</Em> at{" "}
-                <span className="whitespace-nowrap">
-                    your-name.pollinations.app
-                </span>
-                . Publish it from the CLI, SDK or an agent.
-            </>
-        ),
+        note: "Free static hosting",
+        detail: SitePreview,
         links: [
             {
                 label: "Visit pollinations.app",
@@ -335,7 +328,7 @@ function FeatureCard({
             ) : null}
             {Detail ? <Detail color={feature.color} /> : null}
 
-            <Text size="sm">{feature.body}</Text>
+            {feature.body ? <Text size="sm">{feature.body}</Text> : null}
 
             <div className="mt-auto flex flex-wrap gap-2">
                 {feature.links.map((link) => (

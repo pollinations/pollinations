@@ -35,11 +35,10 @@ import {
 /** Rows shown at first and added per "Show older". */
 const PAGE_SIZE = 10;
 
-/** A launch or change pinned by hand; it shows until `until` (UTC day). */
+/** A launch or change pinned by hand. */
 type Announcement = {
     /** The day it shipped or takes effect. */
     date: string;
-    until: string;
     label: "New" | "Updated" | "Changing";
     title: string;
     text: string;
@@ -48,14 +47,13 @@ type Announcement = {
 };
 
 /**
- * Newest first; only the first four current ones show. Cards share a row, so
- * keep them even: a title of a few words, one sentence of about 80 characters
- * and a two- or three-word button.
+ * Newest first; the latest four stay visible until newer cards replace them.
+ * Cards share a row, so keep them even: a title of a few words, one sentence
+ * of about 80 characters and a two- or three-word button.
  */
 const ANNOUNCEMENTS: Announcement[] = [
     {
         date: "2026-11-01",
-        until: "2026-11-15",
         label: "Changing",
         title: "Publishable keys",
         text: "From Nov 1, pk_ keys only identify your app; users pay through Connect User Wallets.",
@@ -67,7 +65,6 @@ const ANNOUNCEMENTS: Announcement[] = [
     },
     {
         date: "2026-10-22",
-        until: "2026-11-05",
         label: "New",
         title: "Free site hosting",
         text: "Publish a static site at your-name.pollinations.app from the CLI, SDK or an agent.",
@@ -79,7 +76,6 @@ const ANNOUNCEMENTS: Announcement[] = [
     },
     {
         date: "2026-10-17",
-        until: "2026-10-31",
         label: "Updated",
         title: "25% off selected Claude models",
         text: "Haiku 5.5, Sonnet 5.5, Opus 5.5 and Fable 5.1: 25% off standard API prices.",
@@ -88,7 +84,6 @@ const ANNOUNCEMENTS: Announcement[] = [
     },
     {
         date: "2026-10-13",
-        until: "2026-10-27",
         label: "Updated",
         title: "Sandboxes",
         text: "Now in your dashboard: create, resume and kill sandboxes, then connect over SSH.",
@@ -97,7 +92,6 @@ const ANNOUNCEMENTS: Announcement[] = [
     },
     {
         date: "2026-10-10",
-        until: "2026-10-24",
         label: "New",
         title: "A new pollinations.ai",
         text: "Redesigned: try models on Play, browse community apps and meet the builders.",
@@ -109,8 +103,7 @@ const ANNOUNCEMENTS: Announcement[] = [
     },
 ];
 
-export const currentAnnouncements = (today: string) =>
-    ANNOUNCEMENTS.filter(({ until }) => until >= today).slice(0, 4);
+export const currentAnnouncements = () => ANNOUNCEMENTS.slice(0, 4);
 
 function changeChip(
     { action, date, changes, status }: ModelNews,

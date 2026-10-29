@@ -25,9 +25,7 @@ type Tab = { label: string; links?: ReactNode; panel: ReactNode };
 export const NewsFaq: FC = () => {
     // Fetched on load, so the index tabs are ready when opened.
     const index = useNewsIndex();
-    const today = new Date().toISOString().slice(0, 10);
-    const announcements = currentAnnouncements(today);
-    // Announcements lead while one is current; the index tabs always show.
+    const announcements = currentAnnouncements();
     const tabs: Tab[] = [
         ...(announcements.length > 0
             ? [

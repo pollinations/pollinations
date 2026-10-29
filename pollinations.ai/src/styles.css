@@ -10,6 +10,178 @@
    the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
 @import "@pollinations/ui/app.css";
 
+/* A miniature site inside the hosting card. Only the visitor changes its
+   shape; there is no carousel timer competing with the app shelves. */
+.site-sketch-browser {
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background: var(--polli-color-surface-block);
+    transform: rotate(-2deg);
+    transition: transform 300ms ease;
+}
+
+.site-sketch:focus-within .site-sketch-browser,
+.site-sketch:hover .site-sketch-browser {
+    transform: rotate(0deg);
+}
+
+.site-sketch-address {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.625rem;
+    color: var(--polli-color-text-muted);
+    background: var(--polli-color-bg-subtle);
+}
+
+.site-sketch-dot {
+    width: 0.3rem;
+    height: 0.3rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+}
+
+.site-sketch-canvas {
+    position: relative;
+    height: 8.5rem;
+    color: var(--polli-color-text-strong);
+}
+
+.site-sketch-canvas > div {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.96);
+    transition: opacity 320ms ease, transform 450ms ease;
+}
+
+.site-sketch-canvas[data-example="Portfolio"] .site-sketch-portfolio,
+.site-sketch-canvas[data-example="Tool"] .site-sketch-tool,
+.site-sketch-canvas[data-example="Notebook"] .site-sketch-notebook {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.site-sketch-kicker {
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    color: var(--polli-color-text-muted);
+}
+
+.site-sketch-canvas strong {
+    font-family: var(--polli-font-subheading);
+    font-size: 1.25rem;
+    line-height: 1.05;
+    font-weight: 600;
+}
+
+.site-sketch-gallery {
+    display: flex;
+    gap: 0.375rem;
+    height: 2.5rem;
+    margin-top: auto;
+}
+
+.site-sketch-gallery span {
+    flex: 1;
+    border-radius: 0.25rem 1.5rem 0.25rem 0.25rem;
+    background: var(--polli-color-bg-active);
+}
+
+.site-sketch-gallery span:nth-child(2) {
+    border-radius: 50% 50% 0.25rem 0.25rem;
+    background: var(--polli-color-text-soft);
+}
+
+.site-sketch-gallery span:nth-child(3) {
+    border-radius: 0.25rem 0.25rem 1.5rem 0.25rem;
+    background: var(--polli-color-bg-hover);
+}
+
+.site-sketch-canvas .site-sketch-tool {
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.site-sketch-tool strong {
+    font-family: var(--polli-font-pixel);
+    font-size: 2.5rem;
+    font-weight: 400;
+}
+
+.site-sketch-start {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    background: var(--polli-color-bg-active);
+    font-size: 0.625rem;
+}
+
+.site-sketch-canvas .site-sketch-notebook {
+    gap: 0.75rem;
+}
+
+.site-sketch-notebook > span:not(.site-sketch-kicker) {
+    font-size: 0.625rem;
+    color: var(--polli-color-text-muted);
+}
+
+.site-sketch-lines {
+    flex: 1;
+    background: repeating-linear-gradient(
+        transparent 0 0.75rem,
+        var(--polli-color-divider) 0.75rem calc(0.75rem + 1px),
+        transparent calc(0.75rem + 1px) 1.5rem
+    );
+}
+
+.site-sketch-choices {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.125rem;
+    margin-top: 0.5rem;
+}
+
+.site-sketch-choices button {
+    min-height: 2.75rem;
+    padding-inline: 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.6875rem;
+    color: var(--polli-color-text-muted);
+    cursor: pointer;
+    transition: background-color 180ms ease, color 180ms ease;
+}
+
+.site-sketch-choices button[aria-pressed="true"],
+.site-sketch-choices button:hover {
+    background: var(--polli-color-bg-subtle);
+    color: var(--polli-color-text-strong);
+}
+
+.site-sketch-publish summary {
+    width: fit-content;
+    padding-block: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--polli-color-text-muted);
+    cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-sketch-browser,
+    .site-sketch-canvas > div,
+    .site-sketch-choices button {
+        transition: none;
+    }
+}
+
 /* Elastic overscroll (macOS, iOS) shows the root background: keep it the
    desk, not the browser's white or black. */
 html {

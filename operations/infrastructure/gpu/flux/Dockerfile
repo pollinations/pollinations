@@ -61,6 +61,7 @@ RUN git clone --recursive https://github.com/mit-han-lab/nunchaku.git /app/nunch
 
 # Copy application code
 COPY server.py .
+COPY dimensions.py .
 COPY safety_checker/ ./safety_checker/
 
 # Expose port

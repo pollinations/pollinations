@@ -262,16 +262,16 @@ describe("static provider fallbacks", () => {
                 );
             }
             expect(findModelByName(model)?.config()).toMatchObject({
-                provider: "anthropic",
-                model: upstream,
-                defaultOptions: { max_tokens: 128000 },
-            });
-            expect(findModelByName(`${model}:aws`)?.config()).toMatchObject({
                 provider: "bedrock",
                 model: `global.anthropic.${upstream}`,
                 defaultOptions: { max_tokens: 128000 },
             });
-            expect(getVisibleTextModels()).not.toContain(`${model}:aws`);
+            expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+                provider: "anthropic",
+                model: upstream,
+                defaultOptions: { max_tokens: 128000 },
+            });
+            expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
         },
     );
 
@@ -735,7 +735,7 @@ describe("static provider fallbacks", () => {
     it("keeps anthropic/claude-haiku-5.5's public quote when its backup multiplier is 1", () => {
         const model = "anthropic/claude-haiku-5.5";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:anthropic"];
         const billed = calculateUsageBilling({
             model,
             usage: {
@@ -801,9 +801,9 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(fallback.priceMultiplier).toBe(1);
-        expect(primary.priceMultiplier).toBe(1);
-        expect(billed.cost.totalCost).toBeCloseTo(0.001054, 12);
-        expect(billed.price.totalPrice).toBe(0.001054);
+        expect(primary.priceMultiplier).toBe(0.75);
+        expect(billed.cost.totalCost).toBeCloseTo(0.000527, 12);
+        expect(billed.price.totalPrice).toBe(0.00039525);
     });
 
     it("keeps D1 paid-only and charges its public quote on OpenRouter fallback", () => {
@@ -943,9 +943,9 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(fallback.priceMultiplier).toBe(1);
-        expect(primary.priceMultiplier).toBe(0.75);
+        expect(primary.priceMultiplier).toBe(1);
         expect(billed.cost.totalCost).toBeCloseTo(0.001054, 12);
-        expect(billed.price.totalPrice).toBe(0.0007905);
+        expect(billed.price.totalPrice).toBe(0.001054);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {

@@ -257,7 +257,7 @@ describe("static provider fallbacks", () => {
                     quotedBy: primary,
                 });
                 expect(billing.price.totalPrice).toBeCloseTo(
-                    billing.cost.totalCost * primary.priceMultiplier,
+                    billing.cost.totalCost * 0.75,
                     12,
                 );
             }
@@ -945,9 +945,9 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(fallback.priceMultiplier).toBe(1);
-        expect(primary.priceMultiplier).toBe(1);
+        expect(primary.priceMultiplier).toBe(0.75);
         expect(billed.cost.totalCost).toBeCloseTo(0.001054, 12);
-        expect(billed.price.totalPrice).toBe(0.001054);
+        expect(billed.price.totalPrice).toBe(0.0007905);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {

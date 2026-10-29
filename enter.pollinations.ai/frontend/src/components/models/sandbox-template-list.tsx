@@ -1,4 +1,10 @@
-import { ClockIcon, InlineLink, Surface, TerminalIcon } from "@pollinations/ui";
+import {
+    ClockIcon,
+    InlineLink,
+    SparklesIcon,
+    Surface,
+    TerminalIcon,
+} from "@pollinations/ui";
 import {
     callerRates,
     perSecond,
@@ -14,6 +20,9 @@ const HOURS_PER_MONTH = 720;
 
 const pollen = (amount: number) => `${Number(amount.toPrecision(2))} pollen`;
 const gb = (mb: number) => Math.round(mb / 1024);
+const shares = Object.values(SANDBOX_PROVIDERS).map(({ share }) => share);
+// The launch promo's discount, from the provider that discounts least.
+const launchDiscount = Math.round((1 - Math.max(...shares)) * 100);
 
 export const SandboxTemplateList: FC<{ query: string }> = ({ query }) => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -103,18 +112,28 @@ export const SandboxTemplateList: FC<{ query: string }> = ({ query }) => {
                     );
                 })}
             </div>
-            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>
-                    Paid 10 minutes at a time while running; paused sandboxes
-                    cost nothing. Create one on the{" "}
-                    <InlineLink href="/sandboxes">Sandboxes page</InlineLink> or
-                    with polli. See the{" "}
-                    <InlineLink href={genDocsUrl("#tag/sandboxes")}>
-                        Sandboxes docs
-                    </InlineLink>
-                </span>
-            </p>
+            <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
+                {launchDiscount > 0 && (
+                    <p className="flex items-start gap-1.5">
+                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>Launch price: {launchDiscount}% off.</span>
+                    </p>
+                )}
+                <p className="flex items-start gap-1.5">
+                    <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Paid 10 minutes at a time while running; paused
+                        sandboxes cost nothing. Create one on the{" "}
+                        <InlineLink href="/sandboxes">
+                            Sandboxes page
+                        </InlineLink>{" "}
+                        or with polli. See the{" "}
+                        <InlineLink href={genDocsUrl("#tag/sandboxes")}>
+                            Sandboxes docs
+                        </InlineLink>
+                    </span>
+                </p>
+            </div>
         </div>
     );
 };

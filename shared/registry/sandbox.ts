@@ -6,8 +6,8 @@ export type SandboxProvider = "e2b" | "azure";
 
 // What each provider charges us per running second, in pollen (1 pollen ≈ $1):
 // E2B's list prices, and Azure's for a running box, which our Azure credits
-// pay. Callers pay `share` of them. E2B's is a launch promo: set it back to 1
-// when the promo week ends.
+// pay. Callers pay `share` of them: a launch promo on both providers, review
+// by 2026-12-31.
 export const SANDBOX_PROVIDERS: Record<
     SandboxProvider,
     { name: string; vcpuSecond: number; gibSecond: number; share: number }

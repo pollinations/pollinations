@@ -664,14 +664,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "anthropic/claude-haiku-5.5",
-        config: portkeyConfig["anthropic/claude-haiku-5.5:aws"],
+        config: portkeyConfig["anthropic/claude-haiku-5.5"],
         // Sampling parameters are rejected on this model.
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-haiku-5.5:anthropic",
-        config: portkeyConfig["anthropic/claude-haiku-5.5:anthropic"],
-        // Sampling parameters are rejected on this model.
+        name: "anthropic/claude-haiku-5.5:aws",
+        config: portkeyConfig["anthropic/claude-haiku-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -696,14 +695,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "anthropic/claude-sonnet-5.5",
-        config: portkeyConfig["anthropic/claude-sonnet-5.5:aws"],
+        config: portkeyConfig["anthropic/claude-sonnet-5.5"],
         // Reasoning is mandatory on this route and sampling params are rejected.
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-sonnet-5.5:anthropic",
-        config: portkeyConfig["anthropic/claude-sonnet-5.5:anthropic"],
-        // Reasoning is mandatory on this route and sampling params are rejected.
+        name: "anthropic/claude-sonnet-5.5:aws",
+        config: portkeyConfig["anthropic/claude-sonnet-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -734,14 +732,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "anthropic/claude-opus-5.5",
-        config: portkeyConfig["anthropic/claude-opus-5.5:aws"],
+        config: portkeyConfig["anthropic/claude-opus-5.5"],
         // Adaptive thinking is always enabled for this model.
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-opus-5.5:anthropic",
-        config: portkeyConfig["anthropic/claude-opus-5.5:anthropic"],
-        // Adaptive thinking is always enabled for this model.
+        name: "anthropic/claude-opus-5.5:aws",
+        config: portkeyConfig["anthropic/claude-opus-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -766,12 +763,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "anthropic/claude-fable-5.1",
-        config: portkeyConfig["anthropic/claude-fable-5.1:aws"],
+        config: portkeyConfig["anthropic/claude-fable-5.1"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-fable-5.1:anthropic",
-        config: portkeyConfig["anthropic/claude-fable-5.1:anthropic"],
+        name: "anthropic/claude-fable-5.1:aws",
+        config: portkeyConfig["anthropic/claude-fable-5.1:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {

@@ -229,15 +229,14 @@ describe("static provider fallbacks", () => {
         ["anthropic/claude-opus-5.5", "claude-opus-5-5"],
         ["anthropic/claude-fable-5.1", "claude-fable-5-1"],
     ] as const)(
-        "tries AWS before direct Anthropic for %s",
+        "tries direct Anthropic before AWS for %s",
         (model, upstream) => {
             const primary: ModelDefinition = TEXT_SERVICES[model];
-            const fallback: ModelDefinition =
-                TEXT_SERVICES[`${model}:anthropic`];
-            expect(primary.provider).toBe("aws");
-            expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
+            const fallback: ModelDefinition = TEXT_SERVICES[`${model}:aws`];
+            expect(primary.provider).toBe("anthropic");
+            expect(primary.fallbacks).toEqual([`${model}:aws`]);
             expect(fallback).toMatchObject({
-                provider: "anthropic",
+                provider: "aws",
                 hidden: true,
                 fallbackOnly: true,
                 aliases: [],
@@ -262,18 +261,16 @@ describe("static provider fallbacks", () => {
                 );
             }
             expect(findModelByName(model)?.config()).toMatchObject({
-                provider: "bedrock",
-                model: `global.anthropic.${upstream}`,
-                defaultOptions: { max_tokens: 128000 },
-            });
-            expect(
-                findModelByName(`${model}:anthropic`)?.config(),
-            ).toMatchObject({
                 provider: "anthropic",
                 model: upstream,
                 defaultOptions: { max_tokens: 128000 },
             });
-            expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
+            expect(findModelByName(`${model}:aws`)?.config()).toMatchObject({
+                provider: "bedrock",
+                model: `global.anthropic.${upstream}`,
+                defaultOptions: { max_tokens: 128000 },
+            });
+            expect(getVisibleTextModels()).not.toContain(`${model}:aws`);
         },
     );
 
@@ -737,7 +734,7 @@ describe("static provider fallbacks", () => {
     it("keeps anthropic/claude-haiku-5.5's public quote when its backup multiplier is 1", () => {
         const model = "anthropic/claude-haiku-5.5";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:anthropic"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
         const billed = calculateUsageBilling({
             model,
             usage: {
@@ -790,7 +787,7 @@ describe("static provider fallbacks", () => {
     it("keeps anthropic/claude-sonnet-5.5's public quote when its backup multiplier is 1", () => {
         const model = "anthropic/claude-sonnet-5.5";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES["anthropic/claude-sonnet-5.5:anthropic"];
+        const fallback = TEXT_SERVICES["anthropic/claude-sonnet-5.5:aws"];
         const billed = calculateUsageBilling({
             model,
             usage: {
@@ -932,7 +929,7 @@ describe("static provider fallbacks", () => {
     it("keeps anthropic/claude-opus-5.5's public quote when its backup multiplier is 1", () => {
         const model = "anthropic/claude-opus-5.5";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES["anthropic/claude-opus-5.5:anthropic"];
+        const fallback = TEXT_SERVICES["anthropic/claude-opus-5.5:aws"];
         const billed = calculateUsageBilling({
             model,
             usage: {
@@ -1033,16 +1030,15 @@ describe("static provider fallbacks", () => {
 
     it("prices Claude Haiku 5.5 on AWS exactly as on Anthropic, including the long-context tier", () => {
         const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
-        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:anthropic"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
         expect(primary).toMatchObject({
-            provider: "aws",
+            provider: "anthropic",
             paidOnly: true,
             aliases: [],
-            priceMultiplier: 0.75,
-            fallbacks: ["anthropic/claude-haiku-5.5:anthropic"],
+            fallbacks: ["anthropic/claude-haiku-5.5:aws"],
         });
         expect(fallback).toMatchObject({
-            provider: "anthropic",
+            provider: "aws",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,

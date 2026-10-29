@@ -647,18 +647,18 @@ describe("resolveModelConfig", () => {
         ["anthropic/claude-opus-5.5", "claude-opus-5-5"],
         ["anthropic/claude-fable-5.1", "claude-fable-5-1"],
     ])(
-        "routes %s to AWS Bedrock with a direct Anthropic fallback",
+        "routes %s to Anthropic with a Bedrock global fallback",
         (model, upstream) => {
             const primary = resolveModelConfig(messages, { model });
-            expect(primary.options.model).toBe(`global.anthropic.${upstream}`);
-            expect(primary.options.modelConfig?.provider).toBe("bedrock");
+            expect(primary.options.model).toBe(upstream);
+            expect(primary.options.modelConfig?.provider).toBe("anthropic");
             expect(primary.options.max_tokens).toBe(128000);
 
             const fallback = resolveModelConfig(messages, {
-                model: `${model}:anthropic`,
+                model: `${model}:aws`,
             });
-            expect(fallback.options.model).toBe(upstream);
-            expect(fallback.options.modelConfig?.provider).toBe("anthropic");
+            expect(fallback.options.model).toBe(`global.anthropic.${upstream}`);
+            expect(fallback.options.modelConfig?.provider).toBe("bedrock");
             expect(fallback.options.max_tokens).toBe(128000);
         },
     );

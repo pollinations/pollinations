@@ -100,9 +100,10 @@ export const ImageParamsSchema = z
                 // Already an array (from POST JSON body)
                 if (Array.isArray(value)) return value;
                 // Keep commas inside URLs, matching the public query schema.
-                return value.includes("|")
+                const urls = value.includes("|")
                     ? value.split("|")
-                    : value.split(/,(?=https?:\/\/)/);
+                    : value.split(/,(?=\s*https?:\/\/)/i);
+                return urls.map((url) => url.trim()).filter(Boolean);
             })
             .catch([]),
         reference_images: referenceUrls.optional(),

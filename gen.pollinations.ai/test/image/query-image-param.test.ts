@@ -32,4 +32,22 @@ describe.each([
             parseImage("https://a.example/1,2.png|https://b.example/2.png"),
         ).toEqual(["https://a.example/1,2.png", "https://b.example/2.png"]);
     });
+
+    it("splits a list written with spaces around the separator", () => {
+        expect(
+            parseImage("https://a.example/1.png, https://b.example/2.png"),
+        ).toEqual(["https://a.example/1.png", "https://b.example/2.png"]);
+        expect(
+            parseImage("https://a.example/1.png ,https://b.example/2.png"),
+        ).toEqual(["https://a.example/1.png", "https://b.example/2.png"]);
+        expect(
+            parseImage("https://a.example/1.png | https://b.example/2.png"),
+        ).toEqual(["https://a.example/1.png", "https://b.example/2.png"]);
+    });
+
+    it("accepts an uppercase scheme, which URLs allow", () => {
+        expect(parseImage("HTTPS://a.example/1.png")).toEqual([
+            "HTTPS://a.example/1.png",
+        ]);
+    });
 });

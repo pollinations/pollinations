@@ -1,0 +1,9 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "install": "npm ci && npm ci --prefix ../.. --workspaces=false",
+  "build": "npm run test",
+  "deploy": "npm run deploy",
+  "watch": ["shared/registry/mcp.ts"],
+  "verify": ["https://currency-mcp.pollinations.ai/health"]
+}

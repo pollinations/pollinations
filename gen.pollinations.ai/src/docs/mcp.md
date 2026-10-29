@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Currency | `https://gen.pollinations.ai/mcp/currency` | Convert money and read published exchange rates, including historical series | [Source](https://github.com/pollinations/pollinations/tree/main/apps/currency-mcp) |
 
 Send the key with every request:
 
@@ -208,6 +209,19 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Currency MCP
+
+The Currency server reads European Central Bank reference rates and does the
+arithmetic itself. `convert_currency` takes an `amount`, a `from` and a
+`to` and returns the rate, the converted amount and the date the rate is from;
+`exchange_rates` returns the table for one base currency, optionally narrowed
+with `symbols`; `rate_history` returns the daily rates for one pair across a
+window with the change over it; and `list_currencies` names the covered codes,
+so a client can check a code before asking for a pair that may not exist. Rates
+are published on working days only, so a weekend or holiday date resolves to the
+preceding one. Lookups cost the caller their own API key and no additional MCP
+fee.
 
 ### Billing and permissions
 

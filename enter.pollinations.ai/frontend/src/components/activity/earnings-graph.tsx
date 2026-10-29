@@ -155,7 +155,10 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             <SectionContent loading={loading}>
                 <Surface>
                     {error && (
-                        <LoadError onRetry={() => fetchEarnings()}>
+                        <LoadError
+                            onRetry={() => fetchEarnings()}
+                            paths={["/account/earnings"]}
+                        >
                             {error}
                         </LoadError>
                     )}

@@ -44,16 +44,22 @@ export function PageLoading({ titles }: { titles: readonly string[] }) {
     );
 }
 
-/** A failed load: the outage notice while Pollinations is down, else `children`. */
+/**
+ * A failed load: the outage notice when one of `paths` (the requests behind
+ * it) failed with a 5xx or no response, else `children`.
+ */
 export function LoadError({
     children,
     onRetry,
+    paths,
 }: {
     children: string;
     onRetry?: () => unknown;
+    /** Without paths, any failed Enter or gen call counts. */
+    paths?: readonly string[];
 }) {
     const [retrying, setRetrying] = useState(false);
-    const outage = useOutage();
+    const outage = useOutage(paths);
     useOutageRetry(outage, onRetry);
 
     async function retry() {

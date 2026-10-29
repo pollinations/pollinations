@@ -30,7 +30,10 @@ import {
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
 import { SidebarOutage, SidebarWallet } from "../components/pollen";
-import { fetchAccountBalance } from "../hooks/use-account-balance.ts";
+import {
+    BALANCE_PATH,
+    fetchAccountBalance,
+} from "../hooks/use-account-balance.ts";
 import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 import { isOutageStatus, useOutage, useOutageRetry } from "../lib/outage.ts";
 
@@ -252,12 +255,14 @@ function DashboardLayout() {
 
 /** The drawer's compact outage rows, or the usual error when it is not one. */
 function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
-    const outage = useOutage();
+    const outage = useOutage([BALANCE_PATH]);
     useOutageRetry(outage, onRetry);
     return outage ? (
         <SidebarOutage />
     ) : (
-        <LoadError onRetry={onRetry}>Couldn’t load your balance.</LoadError>
+        <LoadError onRetry={onRetry} paths={[BALANCE_PATH]}>
+            Couldn’t load your balance.
+        </LoadError>
     );
 }
 

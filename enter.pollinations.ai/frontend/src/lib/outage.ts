@@ -4,11 +4,12 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 export const OUTAGE_RETRY_MS = 30_000;
 // A path nobody asks for again stops counting after this long.
 const FAILURE_TTL_MS = 3 * OUTAGE_RETRY_MS;
+// Gen account calls carry a token minted here; without one they get a 401.
+const SESSION_TOKEN_PATH = "/api/session-token";
 
 // Paths whose last answer was a 5xx or no answer at all, by failure time.
 const failures = new Map<string, number>();
 const listeners = new Set<() => void>();
-let outage = false;
 let pruneTimer: ReturnType<typeof setInterval> | undefined;
 
 function update(): void {
@@ -16,15 +17,21 @@ function update(): void {
     for (const [path, failedAt] of failures) {
         if (now - failedAt > FAILURE_TTL_MS) failures.delete(path);
     }
-    const next = failures.size > 0;
-    if (next && !pruneTimer) pruneTimer = setInterval(update, OUTAGE_RETRY_MS);
-    if (!next && pruneTimer) {
+    if (failures.size > 0 && !pruneTimer) {
+        pruneTimer = setInterval(update, OUTAGE_RETRY_MS);
+    }
+    if (failures.size === 0 && pruneTimer) {
         clearInterval(pruneTimer);
         pruneTimer = undefined;
     }
-    if (next === outage) return;
-    outage = next;
     for (const listener of listeners) listener();
+}
+
+function failing(path: string): boolean {
+    return (
+        failures.has(path) ||
+        (path.startsWith("/account/") && failures.has(SESSION_TOKEN_PATH))
+    );
 }
 
 /** Pollinations failed, not the request: no response (no status) or a 5xx. */
@@ -57,15 +64,20 @@ export async function trackedFetch(
     }
 }
 
-/** True while a recent Enter or gen call failed with a 5xx or no response. */
-export function useOutage(): boolean {
+/**
+ * True while one of `paths` recently failed with a 5xx or no response, so a
+ * panel shows the outage only for its own requests. Without `paths`, any
+ * Enter or gen call counts.
+ */
+export function useOutage(paths?: readonly string[]): boolean {
+    const snapshot = () => (paths ? paths.some(failing) : failures.size > 0);
     return useSyncExternalStore(
         (listener) => {
             listeners.add(listener);
             return () => listeners.delete(listener);
         },
-        () => outage,
-        () => outage,
+        snapshot,
+        snapshot,
     );
 }
 
@@ -78,10 +90,10 @@ export function useOutageRetry(
     latest.current = retry;
     useEffect(() => {
         if (!active) return;
-        const timer = setInterval(
-            () => void latest.current?.(),
-            OUTAGE_RETRY_MS,
-        );
+        const timer = setInterval(() => {
+            // A failed retry leaves the panel as it is until the next one.
+            Promise.resolve(latest.current?.()).catch(() => {});
+        }, OUTAGE_RETRY_MS);
         return () => clearInterval(timer);
     }, [active]);
 }

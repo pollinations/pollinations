@@ -13,7 +13,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useState } from "react";
 import { accountClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
 import { LoadError, PageStatus } from "../layout/dashboard-loading.tsx";
@@ -174,6 +174,8 @@ function sortLastEvents(events: LastEvent[]): LastEvent[] {
     });
 }
 
+const LAST_EVENTS_PATHS = ["/account/usage", "/account/earnings/transactions"];
+
 async function fetchLastEvents(
     limit: number,
 ): Promise<{ rows: LastEvent[]; hasMore: boolean }> {
@@ -207,20 +209,24 @@ export const LastEventsPanel: FC = () => {
         error: null,
     });
 
+    const load = useCallback(
+        () =>
+            fetchLastEvents(visibleCount).then(({ rows, hasMore }) =>
+                setState({ rows, hasMore, loading: false, error: null }),
+            ),
+        [visibleCount],
+    );
+
     useEffect(() => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
-        fetchLastEvents(visibleCount)
-            .then(({ rows, hasMore }) =>
-                setState({ rows, hasMore, loading: false, error: null }),
-            )
-            .catch(() =>
-                setState((prev) => ({
-                    ...prev,
-                    loading: false,
-                    error: "Failed to load last events",
-                })),
-            );
-    }, [visibleCount]);
+        load().catch(() =>
+            setState((prev) => ({
+                ...prev,
+                loading: false,
+                error: "Failed to load last events",
+            })),
+        );
+    }, [load]);
 
     const loadingMore = state.loading && state.rows.length > 0;
 
@@ -229,7 +235,11 @@ export const LastEventsPanel: FC = () => {
     }
 
     if (state.error && state.rows.length === 0) {
-        return <LoadError>{state.error}</LoadError>;
+        return (
+            <LoadError onRetry={load} paths={LAST_EVENTS_PATHS}>
+                {state.error}
+            </LoadError>
+        );
     }
 
     if (state.rows.length === 0) {
@@ -244,7 +254,11 @@ export const LastEventsPanel: FC = () => {
 
     return (
         <div className="flex flex-col gap-3">
-            {state.error && <LoadError>{state.error}</LoadError>}
+            {state.error && (
+                <LoadError onRetry={load} paths={LAST_EVENTS_PATHS}>
+                    {state.error}
+                </LoadError>
+            )}
             <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2 sm:hidden">
                     {state.rows.map((event) => (

@@ -10,9 +10,12 @@ vi.mock("../frontend/src/config.ts", () => ({
 
 const OUTAGE_TEXT = "Pollinations is having a temporary outage";
 
+// The keys panel, which loads only /account/keys.
 function render() {
     return renderToStaticMarkup(
-        <LoadError onRetry={() => {}}>Couldn’t load keys.</LoadError>,
+        <LoadError onRetry={() => {}} paths={["/account/keys"]}>
+            Couldn’t load keys.
+        </LoadError>,
     );
 }
 
@@ -30,9 +33,15 @@ describe("dashboard outage state", () => {
     });
 
     afterEach(async () => {
-        // The store is shared: answer the path the tests failed.
-        respond(200);
-        await trackedFetch("https://gen.example/account/keys");
+        // The store is shared: answer every path the tests failed.
+        for (const url of [
+            "https://gen.example/account/keys",
+            "https://gen.example/account/profile",
+            "https://enter.example/api/session-token",
+        ]) {
+            respond(200);
+            await trackedFetch(url);
+        }
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
@@ -66,6 +75,23 @@ describe("dashboard outage state", () => {
         await trackedFetch("https://gen.example/account/keys");
         expect(render()).toContain("Couldn’t load keys.");
         expect(render()).not.toContain(OUTAGE_TEXT);
+    });
+
+    it("keeps a permission error when a different request is down", async () => {
+        respond(503);
+        await trackedFetch("https://gen.example/account/profile");
+        respond(403);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).toContain("Couldn’t load keys.");
+        expect(render()).not.toContain(OUTAGE_TEXT);
+    });
+
+    it("counts a 401 without a token as an outage when minting failed", async () => {
+        respond(500);
+        await trackedFetch("https://enter.example/api/session-token");
+        respond(401);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).toContain(OUTAGE_TEXT);
     });
 
     it("ignores a request the page aborted", async () => {

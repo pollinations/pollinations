@@ -132,7 +132,7 @@ function KeysContent({
             <>
                 {["Secrets", "Apps"].map((title) => (
                     <Section key={title} title={title}>
-                        <LoadError onRetry={onRetry}>
+                        <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                             Couldn’t load keys.
                         </LoadError>
                     </Section>
@@ -144,7 +144,7 @@ function KeysContent({
     return (
         <>
             {apiKeys === null && (
-                <LoadError onRetry={onRetry}>
+                <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                     Couldn’t refresh keys. Showing the last loaded list.
                 </LoadError>
             )}

@@ -756,7 +756,7 @@ function QuestOverviewContent({
             filter: (match) => match.routeId === "/_dashboard",
         });
         const questData = await loadQuestData();
-        setState((current) => ({ ...current, ...questData }));
+        setState((current) => ({ ...current, ...questData, error: null }));
         window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
     }
 
@@ -951,12 +951,18 @@ function QuestOverviewContent({
     const showSummary = !initialError;
     // During an outage the list still loads, but a possibly signed-in user's
     // rewards and the standings don't: say so instead of showing 0 progress.
-    const outage = useOutage();
+    const rewardsDown = useOutage(["/account/quests/rewards"]);
+    const standingsDown = useOutage(["/api/quests/standings"]);
     const progressUnavailable =
-        outage && state.anonymous && (sessionUnavailable || userId !== null);
-    const standingsUnavailable = outage && !state.loading && !state.standings;
-    useOutageRetry(progressUnavailable || standingsUnavailable, () =>
-        refreshRewards().catch(() => {}),
+        rewardsDown &&
+        state.anonymous &&
+        (sessionUnavailable || userId !== null);
+    const standingsUnavailable =
+        standingsDown && !state.loading && !state.standings;
+    // A failed first load retries through its own LoadError instead.
+    useOutageRetry(
+        (progressUnavailable || standingsUnavailable) && !state.error,
+        refreshRewards,
     );
 
     return (
@@ -969,7 +975,17 @@ function QuestOverviewContent({
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
                 <SectionContent loading={state.loading}>
-                    {state.error && <LoadError>{state.error}</LoadError>}
+                    {state.error && (
+                        <LoadError
+                            onRetry={refreshRewards}
+                            paths={[
+                                "/api/quests/catalog",
+                                "/account/quests/rewards",
+                            ]}
+                        >
+                            {state.error}
+                        </LoadError>
+                    )}
                     {progressUnavailable && <OutageNotice retrying />}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
                     {showSummary && !state.anonymous && (

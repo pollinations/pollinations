@@ -205,11 +205,13 @@ async function loadQuestData(): Promise<QuestData> {
     // The catalog is public; the per-user rewards endpoint requires auth. A
     // logged-out visitor still gets the full catalog (rendered all-open as a
     // preview), so a 401 on rewards is expected, not an error.
+    // Rewards and standings fail on their own (null = no response); the
+    // list still shows.
     const [catalogResponse, rewardsResponse, standingsResponse] =
         await Promise.all([
             apiClient.quests.catalog.$get(),
-            accountClient.quests.rewards.$get(),
-            apiClient.quests.standings.$get(),
+            accountClient.quests.rewards.$get().catch(() => null),
+            apiClient.quests.standings.$get().catch(() => null),
         ]);
     if (!catalogResponse.ok) {
         throw new Error(`Failed to load quests (${catalogResponse.status})`);
@@ -218,17 +220,18 @@ async function loadQuestData(): Promise<QuestData> {
 
     // During an outage the list still shows, without the user's rewards.
     const anonymous =
-        rewardsResponse.status === 401 ||
-        isOutageStatus(rewardsResponse.status);
-    if (!rewardsResponse.ok && !anonymous) {
+        rewardsResponse?.status === 401 ||
+        isOutageStatus(rewardsResponse?.status);
+    if (rewardsResponse && !rewardsResponse.ok && !anonymous) {
         throw new Error(`Failed to load quests (${rewardsResponse.status})`);
     }
-    const rewards = anonymous
-        ? []
-        : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
-              .rewards;
+    const rewards =
+        anonymous || !rewardsResponse
+            ? []
+            : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
+                  .rewards;
 
-    const standings = standingsResponse.ok
+    const standings = standingsResponse?.ok
         ? ((await standingsResponse.json()) as QuestStandingsResponse)
         : null;
 

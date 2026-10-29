@@ -198,11 +198,17 @@ function DashboardLayout() {
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}
             accountArea={
-                data.user || data.sessionUnavailable ? undefined : (
+                data.user ? undefined : data.sessionUnavailable ? (
+                    // Who is signed in is unknown: the outage takes the
+                    // account's place.
+                    <div className="px-1">
+                        <SidebarOutage />
+                    </div>
+                ) : (
                     <SignedOutAccountArea />
                 )
             }
-            showFooterLinks={Boolean(data.user)}
+            showFooterLinks={Boolean(data.user) || data.sessionUnavailable}
             showQuestStatus={Boolean(data.user)}
             signInBanner={
                 data.user || data.sessionUnavailable ? undefined : (
@@ -210,9 +216,7 @@ function DashboardLayout() {
                 )
             }
             walletArea={
-                data.sessionUnavailable ? (
-                    <SidebarOutage />
-                ) : data.user ? (
+                data.user ? (
                     // Await adds no boundary for a null fallback; without this
                     // the whole dashboard would wait for the balance.
                     <Suspense fallback={<PageStatus />}>

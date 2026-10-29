@@ -723,29 +723,29 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-haiku-5.5": {
-        "anthropic/claude-haiku-5.5:aws": {
+        "anthropic/claude-haiku-5.5:anthropic": {
             priceMultiplier: 1,
-            provider: "aws",
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
     "anthropic/claude-opus-5.5": {
-        "anthropic/claude-opus-5.5:aws": {
+        "anthropic/claude-opus-5.5:anthropic": {
             priceMultiplier: 1,
-            provider: "aws",
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
     "anthropic/claude-sonnet-5.5": {
-        "anthropic/claude-sonnet-5.5:aws": {
+        "anthropic/claude-sonnet-5.5:anthropic": {
             priceMultiplier: 1,
-            provider: "aws",
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
     "anthropic/claude-fable-5.1": {
-        "anthropic/claude-fable-5.1:aws": {
-            provider: "aws",
+        "anthropic/claude-fable-5.1:anthropic": {
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },

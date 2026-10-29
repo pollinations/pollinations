@@ -177,6 +177,12 @@ test("GET /api/account/key - agent run token has no account permissions", {
         },
     );
     expect(createResponse.status).toBe(403);
+    // No grant link: granting it to the parent key wouldn't let the agent in.
+    const refusal = await createResponse.json();
+    expect(refusal.error).toMatchObject({
+        message: "Agent runs can't use 'account:keys'.",
+    });
+    expect(refusal.error).not.toHaveProperty("fixUrl");
 });
 
 test("GET /api/account/key - returns key status for publishable key", {

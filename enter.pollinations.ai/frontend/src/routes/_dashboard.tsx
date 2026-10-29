@@ -171,7 +171,7 @@ function DashboardLayout() {
             ? (DASHBOARD_NAV_ITEMS.find((item) => item.to === pathname)
                   ?.label ?? "Account")
             : undefined;
-    useOutageRetry(data.sessionUnavailable, "session", () =>
+    useOutageRetry(data.sessionUnavailable, "dashboard-session", () =>
         router.invalidate(),
     );
 

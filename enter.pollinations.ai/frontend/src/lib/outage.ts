@@ -58,13 +58,9 @@ export async function trackedFetch(
         return response;
     } catch (error) {
         // A timeout is no answer; any other abort is the page cancelling.
-        // Offline, the visitor's connection failed, not Pollinations.
+        // Offline counts too: the notice then says so and retries on reconnect.
         const signal = init?.signal;
-        const timedOut = signal?.reason?.name === "TimeoutError";
-        if (
-            (!signal?.aborted || timedOut) &&
-            globalThis.navigator?.onLine !== false
-        ) {
+        if (!signal?.aborted || signal.reason?.name === "TimeoutError") {
             failures.set(path, Date.now());
         }
         throw error;
@@ -118,13 +114,18 @@ export function useOutageRetry(
         const refs = retries.get(resource) ?? new Set<RetryRef>();
         refs.add(latest);
         retries.set(resource, refs);
-        retryTimer ??= setInterval(retryAll, OUTAGE_RETRY_MS);
+        if (!retryTimer) {
+            retryTimer = setInterval(retryAll, OUTAGE_RETRY_MS);
+            // Back online: retry now instead of at the next tick.
+            globalThis.window?.addEventListener("online", retryAll);
+        }
         return () => {
             refs.delete(latest);
             if (refs.size === 0) retries.delete(resource);
             if (retries.size === 0) {
                 clearInterval(retryTimer);
                 retryTimer = undefined;
+                globalThis.window?.removeEventListener("online", retryAll);
             }
         };
     }, [active, resource]);

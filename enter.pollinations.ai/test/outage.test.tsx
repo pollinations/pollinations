@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { act, create } from "react-test-renderer";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthFlowScreen } from "../frontend/src/components/auth/auth-flow-screen.tsx";
 import { LoadError } from "../frontend/src/components/layout/dashboard-loading.tsx";
@@ -38,9 +38,7 @@ function respond(status: number) {
 
 describe("dashboard outage state", () => {
     beforeEach(() => {
-        vi.stubGlobal("window", {
-            location: { href: "https://enter.example/keys" },
-        });
+        vi.stubGlobal("window", new EventTarget());
     });
 
     afterEach(async () => {
@@ -154,15 +152,22 @@ describe("dashboard outage state", () => {
         expect(render()).toContain(OUTAGE_TEXT);
     });
 
-    it("ignores a failure while the visitor is offline", async () => {
-        vi.stubGlobal("navigator", { onLine: false });
-        vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
-            new TypeError("Failed to fetch"),
-        );
-        await expect(
-            trackedFetch("https://gen.example/account/keys"),
-        ).rejects.toThrow();
-        expect(render()).toContain("Couldn’t load keys.");
+    it("retries right away when the connection comes back", async () => {
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        const retry = vi.fn();
+        function Panel() {
+            useOutageRetry(true, "/account/keys", retry);
+            return null;
+        }
+        let renderer: ReactTestRenderer | undefined;
+        await act(async () => {
+            renderer = create(<Panel />);
+        });
+        await act(async () => {
+            window.dispatchEvent(new Event("online"));
+        });
+        expect(retry).toHaveBeenCalledTimes(1);
+        await act(async () => renderer?.unmount());
     });
 
     it("retries each resource once per tick, however many panels show it", async () => {
@@ -180,21 +185,22 @@ describe("dashboard outage state", () => {
             useOutageRetry(true, resource, retry);
             return null;
         }
-        const renderer = await act(async () =>
-            create(
+        let renderer: ReactTestRenderer | undefined;
+        await act(async () => {
+            renderer = create(
                 <>
                     <Panel resource="/account/keys" retry={keys[0]} />
                     <Panel resource="/account/keys" retry={keys[1]} />
                     <Panel resource="/account/balance" retry={balance} />
                 </>,
-            ),
-        );
+            );
+        });
         await act(async () => {
             await vi.advanceTimersByTimeAsync(30_000);
         });
         expect(keys[0].mock.calls.length + keys[1].mock.calls.length).toBe(1);
         expect(balance).toHaveBeenCalledTimes(1);
-        await act(async () => renderer.unmount());
+        await act(async () => renderer?.unmount());
         vi.useRealTimers();
     });
 

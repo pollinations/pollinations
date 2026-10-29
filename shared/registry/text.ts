@@ -2109,11 +2109,11 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-haiku-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
         paidOnly: true,
+        provider: "aws",
         priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates (prompts up to 100K tokens);
@@ -2220,11 +2220,11 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-sonnet-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-28").getTime(),
         paidOnly: true,
+        provider: "aws",
         priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
@@ -2330,12 +2330,12 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-opus-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 0.75,
+        provider: "aws",
+        priceMultiplier: 1,
         // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
@@ -2410,12 +2410,12 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-fable-5.1": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 0.75,
+        provider: "aws",
+        priceMultiplier: 1,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),

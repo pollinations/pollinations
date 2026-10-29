@@ -229,14 +229,15 @@ describe("static provider fallbacks", () => {
         ["anthropic/claude-opus-5.5", "claude-opus-5-5"],
         ["anthropic/claude-fable-5.1", "claude-fable-5-1"],
     ] as const)(
-        "tries direct Anthropic before AWS for %s",
+        "tries AWS before direct Anthropic for %s",
         (model, upstream) => {
             const primary: ModelDefinition = TEXT_SERVICES[model];
-            const fallback: ModelDefinition = TEXT_SERVICES[`${model}:aws`];
-            expect(primary.provider).toBe("anthropic");
-            expect(primary.fallbacks).toEqual([`${model}:aws`]);
+            const fallback: ModelDefinition =
+                TEXT_SERVICES[`${model}:anthropic`];
+            expect(primary.provider).toBe("aws");
+            expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
             expect(fallback).toMatchObject({
-                provider: "aws",
+                provider: "anthropic",
                 hidden: true,
                 fallbackOnly: true,
                 aliases: [],
@@ -256,7 +257,7 @@ describe("static provider fallbacks", () => {
                     quotedBy: primary,
                 });
                 expect(billing.price.totalPrice).toBeCloseTo(
-                    billing.cost.totalCost * 0.75,
+                    billing.cost.totalCost * primary.priceMultiplier,
                     12,
                 );
             }
@@ -787,7 +788,7 @@ describe("static provider fallbacks", () => {
     it("keeps anthropic/claude-sonnet-5.5's public quote when its backup multiplier is 1", () => {
         const model = "anthropic/claude-sonnet-5.5";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES["anthropic/claude-sonnet-5.5:aws"];
+        const fallback = TEXT_SERVICES["anthropic/claude-sonnet-5.5:anthropic"];
         const billed = calculateUsageBilling({
             model,
             usage: {
@@ -800,9 +801,9 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(fallback.priceMultiplier).toBe(1);
-        expect(primary.priceMultiplier).toBe(0.75);
-        expect(billed.cost.totalCost).toBeCloseTo(0.000527, 12);
-        expect(billed.price.totalPrice).toBe(0.00039525);
+        expect(primary.priceMultiplier).toBe(1);
+        expect(billed.cost.totalCost).toBeCloseTo(0.001054, 12);
+        expect(billed.price.totalPrice).toBe(0.001054);
     });
 
     it("keeps D1 paid-only and charges its public quote on OpenRouter fallback", () => {
@@ -929,7 +930,7 @@ describe("static provider fallbacks", () => {
     it("keeps anthropic/claude-opus-5.5's public quote when its backup multiplier is 1", () => {
         const model = "anthropic/claude-opus-5.5";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES["anthropic/claude-opus-5.5:aws"];
+        const fallback = TEXT_SERVICES["anthropic/claude-opus-5.5:anthropic"];
         const billed = calculateUsageBilling({
             model,
             usage: {
@@ -1030,15 +1031,16 @@ describe("static provider fallbacks", () => {
 
     it("prices Claude Haiku 5.5 on AWS exactly as on Anthropic, including the long-context tier", () => {
         const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
-        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:anthropic"];
         expect(primary).toMatchObject({
-            provider: "anthropic",
+            provider: "aws",
             paidOnly: true,
             aliases: [],
-            fallbacks: ["anthropic/claude-haiku-5.5:aws"],
+            priceMultiplier: 0.75,
+            fallbacks: ["anthropic/claude-haiku-5.5:anthropic"],
         });
         expect(fallback).toMatchObject({
-            provider: "aws",
+            provider: "anthropic",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,

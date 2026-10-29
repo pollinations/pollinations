@@ -723,30 +723,34 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-haiku-5.5": {
-        "anthropic/claude-haiku-5.5:aws": {
+        // AWS primary; direct Anthropic is the hidden fallback (quest #18713).
+        "anthropic/claude-haiku-5.5:anthropic": {
             priceMultiplier: 1,
-            provider: "aws",
-            addedDate: new Date("2026-10-15").getTime(),
+            provider: "anthropic",
+            addedDate: new Date("2026-10-30").getTime(),
         },
     },
     "anthropic/claude-opus-5.5": {
-        "anthropic/claude-opus-5.5:aws": {
+        // AWS primary; direct Anthropic is the hidden fallback (quest #18713).
+        "anthropic/claude-opus-5.5:anthropic": {
             priceMultiplier: 1,
-            provider: "aws",
-            addedDate: new Date("2026-10-15").getTime(),
+            provider: "anthropic",
+            addedDate: new Date("2026-10-30").getTime(),
         },
     },
     "anthropic/claude-sonnet-5.5": {
-        "anthropic/claude-sonnet-5.5:aws": {
+        // AWS primary; direct Anthropic is the hidden fallback (quest #18713).
+        "anthropic/claude-sonnet-5.5:anthropic": {
             priceMultiplier: 1,
-            provider: "aws",
-            addedDate: new Date("2026-10-15").getTime(),
+            provider: "anthropic",
+            addedDate: new Date("2026-10-30").getTime(),
         },
     },
     "anthropic/claude-fable-5.1": {
-        "anthropic/claude-fable-5.1:aws": {
-            provider: "aws",
-            addedDate: new Date("2026-10-15").getTime(),
+        // AWS primary; direct Anthropic is the hidden fallback (quest #18713).
+        "anthropic/claude-fable-5.1:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-10-30").getTime(),
         },
     },
     "anthropic/claude-sonnet-5": {

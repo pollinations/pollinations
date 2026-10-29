@@ -67,6 +67,10 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: python3 -m unittest operations/infrastructure/gpu/test_tunnel_watchdog.py
 
+      - name: Test GPU backend sizing
+        if: steps.changes.outputs.changed == 'true'
+        run: python3 operations/infrastructure/gpu/flux/test_dimensions.py
+
   lint:
     name: Lint and build
     runs-on: ubuntu-latest

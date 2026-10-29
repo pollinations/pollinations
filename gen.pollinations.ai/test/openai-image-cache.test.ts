@@ -276,6 +276,88 @@ describe("OpenAI image cache", () => {
             ).not.toBe(results[0].identity);
         },
     );
+    it("keeps seed-less generation identity stable; execution owns the randomness", async () => {
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("model", {
+                    requested: "flux",
+                    resolved: "flux",
+                    definition: {} as Env["Variables"]["model"]["definition"],
+                });
+                await next();
+            })
+            .post(
+                "/v1/images/generations",
+                validator("json", CreateImageRequestSchema),
+                prepareOpenAIImageGeneration,
+                prepareGenerationRequest,
+                (c) =>
+                    c.json({
+                        body: c.var.generationRequestBody,
+                        identity: c.var.generationCacheBody,
+                    }),
+            )
+            .post(
+                "/generation-executor/v1/images/generations",
+                validator("json", CreateImageRequestSchema),
+                prepareOpenAIImageGeneration,
+                prepareGenerationRequest,
+                (c) => c.json({ identity: c.var.generationCacheBody }),
+            );
+        const generate = (payload: Record<string, unknown>) =>
+            app.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/v1/images/generations",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    },
+                ),
+                {} as CloudflareBindings,
+            );
+        const first = await (await generate({ prompt: "A sunflower" })).json<{
+            body: string;
+            identity: string;
+        }>();
+        expect(JSON.parse(first.body)).not.toHaveProperty("seed");
+
+        // Two identical seed-less requests must resolve one identity,
+        // so the second joins the flight instead of paying again.
+        const second = await (await generate({ prompt: "A sunflower" })).json<{
+            body: string;
+            identity: string;
+        }>();
+        expect(second.identity).toBe(first.identity);
+        expect(second.body).toBe(first.body);
+
+        // The executor replays the stored body; identity must not change.
+        const replay = await app.fetch(
+            new Request(
+                "https://gen.pollinations.ai/generation-executor/v1/images/generations",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: first.body,
+                },
+            ),
+            {} as CloudflareBindings,
+        );
+        expect((await replay.json<{ identity: string }>()).identity).toBe(
+            first.identity,
+        );
+
+        // Callers who want variation pass their own varying seed.
+        const seeded = await (
+            await generate({ prompt: "A sunflower", seed: 7 })
+        ).json<{ identity: string }>();
+        expect(seeded.identity).not.toBe(first.identity);
+        // seed: null is explicitly unset, so it matches seed-less.
+        const seededNull = await (
+            await generate({ prompt: "A sunflower", seed: null })
+        ).json<{ identity: string }>();
+        expect(seededNull.identity).toBe(first.identity);
+    });
     it("does not apply safety again when replaying an image edit", async () => {
         const app = new Hono<Env>()
             .use("*", async (c, next) => {

@@ -93,7 +93,9 @@ function resolveParams(opts: {
     width?: number;
     height?: number;
     quality: string;
-    seed: number;
+    // Omitted when the caller passed none, so identifications built from
+    // resolveParams stay identical across seed-less requests.
+    seed?: number;
 } {
     // Width/height are only emitted when the caller actually passed `size`.
     // Leaving them undefined lets the image-param schema fill model-specific
@@ -107,7 +109,9 @@ function resolveParams(opts: {
         ...(Number.isInteger(width) ? { width } : {}),
         ...(Number.isInteger(height) ? { height } : {}),
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
-        seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
+        // Leave random seed selection to execution so seed-less requests
+        // keep a stable identity and joined flights share one image.
+        ...(opts.seed == null ? {} : { seed: opts.seed }),
     };
 }
 
@@ -400,6 +404,9 @@ export async function handleImageGeneration(c: Context<Env>) {
     const response = await generateImageOrVideoResponse(c, body.prompt, {
         ...body,
         ...resolveParams(body),
+        // Randomize once per execution, mirroring the edits path: callers
+        // without a seed join one flight and share the image and the debit.
+        seed: body.seed ?? Math.floor(Math.random() * 2147483647),
         ...collectPassthrough(body, "image"),
         model,
     });

@@ -605,11 +605,13 @@ export function QuestRow({
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
     const { user, sessionUnavailable } = useLoaderData({ from: "/_dashboard" });
+    const [reloads, setReloads] = useState(0);
     return (
         <QuestOverviewContent
-            key={user?.id ?? "anonymous"}
+            key={`${user?.id ?? "anonymous"}:${reloads}`}
             userId={user?.id ?? null}
             sessionUnavailable={sessionUnavailable}
+            onRecovered={() => setReloads((count) => count + 1)}
         />
     );
 };
@@ -617,9 +619,12 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 function QuestOverviewContent({
     userId,
     sessionUnavailable,
+    onRecovered,
 }: {
     userId: string | null;
     sessionUnavailable: boolean;
+    /** Rewards are back after an outage skipped the per-user check. */
+    onRecovered: () => void;
 }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
@@ -759,6 +764,11 @@ function QuestOverviewContent({
             filter: (match) => match.routeId === "/_dashboard",
         });
         const questData = await loadQuestData();
+        // Reload once so the check the outage skipped runs, as on a visit.
+        if (!questData.anonymous && !autoCheckedRef.current) {
+            onRecovered();
+            return;
+        }
         setState((current) => ({ ...current, ...questData, error: null }));
         window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
     }
@@ -965,6 +975,7 @@ function QuestOverviewContent({
     // A failed first load retries through its own LoadError instead.
     useOutageRetry(
         (progressUnavailable || standingsUnavailable) && !state.error,
+        "quests",
         refreshRewards,
     );
 

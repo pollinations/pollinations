@@ -57,7 +57,11 @@ export async function trackedFetch(
         else failures.delete(path);
         return response;
     } catch (error) {
-        if (!init?.signal?.aborted) failures.set(path, Date.now());
+        // A timeout is no answer; any other abort is the page cancelling.
+        const signal = init?.signal;
+        if (!signal?.aborted || signal.reason?.name === "TimeoutError") {
+            failures.set(path, Date.now());
+        }
         throw error;
     } finally {
         update();

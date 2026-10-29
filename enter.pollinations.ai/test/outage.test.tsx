@@ -131,6 +131,20 @@ describe("dashboard outage state", () => {
         expect(topUp()).not.toContain("Couldn’t load your wallet.");
     });
 
+    it("counts a request that timed out", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+            new DOMException("Timed out", "TimeoutError"),
+        );
+        await expect(
+            trackedFetch("https://gen.example/account/keys", {
+                signal: AbortSignal.abort(
+                    new DOMException("Timed out", "TimeoutError"),
+                ),
+            }),
+        ).rejects.toThrow();
+        expect(render()).toContain(OUTAGE_TEXT);
+    });
+
     it("ignores a request the page aborted", async () => {
         const controller = new AbortController();
         controller.abort();

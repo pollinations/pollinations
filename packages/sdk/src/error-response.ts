@@ -25,6 +25,17 @@ function parseRetryAfter(response: Response): number | undefined {
 }
 
 /**
+ * True when Pollinations failed rather than the request: a 5xx response, or no
+ * response at all (status 0). 401 and 403 are not outages.
+ */
+export function isOutageError(error: unknown): boolean {
+    return (
+        error instanceof PollinationsError &&
+        (error.status === 0 || error.status >= 500)
+    );
+}
+
+/**
  * Convert a failed HTTP response into a PollinationsError.
  *
  * Understands both the nested `{error: {...}}` envelope the API serves and

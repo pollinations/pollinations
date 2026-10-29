@@ -6,7 +6,7 @@
   "scripts": {
     "check": "npm test && npm run build && wrangler deploy --dry-run",
     "decrypt-vars": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} local'",
-    "dev": "OBSERVABILITY_LOCAL=true vite dev",
+    "dev": "cross-env OBSERVABILITY_LOCAL=true vite dev",
     "deploy": "wrangler deploy",
     "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {}'",
     "containers:list": "wrangler containers list",
@@ -27,6 +27,7 @@
     "@cloudflare/vite-plugin": "^1.15.2",
     "@vitejs/plugin-react": "^5.1.1",
     "@tailwindcss/vite": "^4.0.0",
+    "cross-env": "^7.0.3",
     "vite": "^7.0.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3"

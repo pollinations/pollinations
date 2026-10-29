@@ -36,6 +36,46 @@ describe("OutageNotice", () => {
         );
     });
 
+    test("gives the full message once per page; later notices stay short", async () => {
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        vi.stubGlobal("window", new EventTarget());
+        vi.stubGlobal("navigator", { onLine: true });
+        vi.stubGlobal(
+            "Node",
+            class {
+                static DOCUMENT_POSITION_PRECEDING = 2;
+            },
+        );
+        // Stand-in elements that know their page order.
+        let order = 0;
+        const createNodeMock = () => {
+            const index = order++;
+            return {
+                index,
+                compareDocumentPosition: (other: { index: number }) =>
+                    other.index < index ? 2 : 4,
+            };
+        };
+        const page = (showFirst: boolean) => (
+            <>
+                {showFirst && <OutageNotice retrying />}
+                <OutageNotice retrying />
+            </>
+        );
+        let renderer: ReactTestRenderer | undefined;
+        await act(async () => {
+            renderer = create(page(true), { createNodeMock });
+        });
+        const text = () => JSON.stringify(renderer?.toJSON());
+        expect(text().match(/temporary outage/g)).toHaveLength(1);
+        expect(text()).toContain("Unavailable during the outage.");
+
+        await act(async () => renderer?.update(page(false)));
+        expect(text()).toContain("temporary outage");
+        expect(text()).not.toContain("Unavailable during the outage.");
+        await act(async () => renderer?.unmount());
+    });
+
     test("links the status page only when there is one", () => {
         expect(renderToStaticMarkup(<OutageNotice />)).not.toContain("<a");
         expect(

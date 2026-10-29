@@ -1,4 +1,10 @@
-import { type FC, useSyncExternalStore } from "react";
+import {
+    type FC,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useSyncExternalStore,
+} from "react";
 import { InlineLink } from "../primitives/InlineLink.tsx";
 import { Alert } from "./Alert.tsx";
 
@@ -24,6 +30,31 @@ export function useOnline(): boolean {
     );
 }
 
+// Notices on the page: the topmost gives the full message, the rest stay short.
+const notices = new Set<HTMLElement>();
+const listeners = new Set<() => void>();
+const useIsomorphicLayoutEffect =
+    typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+function subscribeNotices(listener: () => void): () => void {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+}
+
+function topNotice(): HTMLElement | undefined {
+    let top: HTMLElement | undefined;
+    for (const notice of notices) {
+        if (
+            !top ||
+            top.compareDocumentPosition(notice) &
+                Node.DOCUMENT_POSITION_PRECEDING
+        ) {
+            top = notice;
+        }
+    }
+    return top;
+}
+
 export type OutageNoticeProps = {
     /** The caller retries on its own, so the notice says so. */
     retrying?: boolean;
@@ -32,31 +63,54 @@ export type OutageNoticeProps = {
     className?: string;
 };
 
-/** Stands in for account data while Pollinations is down, or the visitor is offline. */
+/**
+ * Stands in for account data while Pollinations is down, or the visitor is
+ * offline. With several on a page, only the topmost gives the full message.
+ */
 export const OutageNotice: FC<OutageNoticeProps> = ({
     retrying = false,
     statusUrl,
     className,
 }) => {
     const online = useOnline();
-    if (!online) {
-        return (
-            <Alert intent="advisory" className={className}>
-                You’re offline.
-                {retrying && " This page retries when your connection is back."}
-            </Alert>
-        );
+    const ref = useRef<HTMLDivElement>(null);
+    useIsomorphicLayoutEffect(() => {
+        const notice = ref.current;
+        if (!notice) return;
+        notices.add(notice);
+        for (const listener of listeners) listener();
+        return () => {
+            notices.delete(notice);
+            for (const listener of listeners) listener();
+        };
+    }, []);
+    const isTop = useSyncExternalStore(
+        subscribeNotices,
+        () => !ref.current || topNotice() === ref.current,
+        () => true,
+    );
+
+    let message: string;
+    if (!isTop) {
+        message = online
+            ? "Unavailable during the outage."
+            : "Unavailable while you’re offline.";
+    } else if (!online) {
+        message = `You’re offline.${retrying ? " This page retries when your connection is back." : ""}`;
+    } else {
+        message = `${OUTAGE_MESSAGE}${retrying ? " Retrying automatically." : ""}`;
     }
     return (
-        <Alert intent="advisory" className={className}>
-            {OUTAGE_MESSAGE}
-            {retrying && " Retrying automatically."}
-            {statusUrl && (
-                <>
-                    {" "}
-                    <InlineLink href={statusUrl}>Status page</InlineLink>
-                </>
-            )}
-        </Alert>
+        <div ref={ref} className={className}>
+            <Alert intent="advisory">
+                {message}
+                {isTop && online && statusUrl && (
+                    <>
+                        {" "}
+                        <InlineLink href={statusUrl}>Status page</InlineLink>
+                    </>
+                )}
+            </Alert>
+        </div>
     );
 };

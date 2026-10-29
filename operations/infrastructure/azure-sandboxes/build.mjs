@@ -17,11 +17,16 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const here = new URL(".", import.meta.url).pathname;
 const wrangler = `${here}../../../gen.pollinations.ai/wrangler.toml`;
+// Staging first: the builder box runs there, and a broken image fails there
+// before production imports it.
+const staging = (url) => url.endsWith("/pollisbx-staging");
 const groups = [
     ...readFileSync(wrangler, "utf8").matchAll(
         /^AZURE_SANDBOX_GROUP_URL = "(.+)"$/gm,
     ),
-].map(([, url]) => url);
+]
+    .map(([, url]) => url)
+    .sort((a, b) => staging(b) - staging(a));
 
 // The image line follows its group's line in each environment's block.
 function pin(group, image) {

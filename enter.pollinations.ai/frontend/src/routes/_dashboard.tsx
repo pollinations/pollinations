@@ -16,6 +16,7 @@ import {
     LoadError,
     PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
+import { dashboardSessionFailureMessage } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/_dashboard")({
             dashboardSessionPromise = null;
             dashboardSessionExpiresAt = 0;
             if (lastDashboardSession) return lastDashboardSession;
-            throw new Error("Authentication failed.");
+            throw new Error(dashboardSessionFailureMessage(result?.error));
         }
         const user = result.data?.user ?? null;
         // Another tab may have switched accounts: stop calling the account API

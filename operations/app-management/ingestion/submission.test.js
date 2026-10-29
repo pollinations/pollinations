@@ -326,3 +326,85 @@ if (args[0] === "issue" && args[1] === "view") {
         "Quest #15600 is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.",
     ]);
 });
+
+// Regression: "App Language" is the last form field, so section() captures every
+// trailing line. Anything a submitter appends after it (a note, a rule, a footer)
+// used to be folded into the language value and failed ISO validation.
+for (const [label, trailing] of [
+    ["trailing note", "\n\n---\nHosted on Pollinations Sites."],
+    ["horizontal rule", "\n\n---"],
+    ["plain footer", "\n\nLive at https://example.com"],
+    [
+        "extra blank lines and rule",
+        "\n\n\n---\n\nCredit: made with Pollinations",
+    ],
+]) {
+    test(`keeps the language when the section has a ${label}`, () => {
+        const body = BODY.replace(
+            "### App Language\nen\n\n### Screenshot",
+            `### App Language\nen${trailing}\n\n### Screenshot`,
+        );
+        const withFooter = BODY.replace(
+            "### Discord Username\nsunflower",
+            `### Discord Username\nsunflower${trailing}`,
+        );
+        for (const candidate of [body, withFooter]) {
+            const submission = parseSubmission(candidate);
+            assert.equal(submission.language, "en", label);
+            assert.deepEqual(validateSubmission(submission), [], label);
+        }
+    });
+}
+
+test("rejects a language that is not an ISO code", () => {
+    const body = BODY.replace(
+        "### App Language\nen",
+        "### App Language\nEnglish",
+    );
+    const submission = parseSubmission(body);
+    assert.equal(submission.language, "");
+    assert.ok(
+        validateSubmission(submission).includes(
+            "App Language must be an ISO language code such as en or pt-BR.",
+        ),
+    );
+});
+
+// Regression: dropdown fields are single-line, so section() must not fold a
+// trailing note, rule or footer into the category or platform value.
+for (const [label, trailing] of [
+    ["trailing note", "\n\n---\nHosted on Pollinations Sites."],
+    ["horizontal rule", "\n\n---"],
+    ["plain footer", "\n\nLive at https://example.com"],
+]) {
+    test(`keeps category and platform with a ${label}`, () => {
+        const withCategoryNote = BODY.replace(
+            "### App Category\nimage",
+            `### App Category\nimage${trailing}`,
+        );
+        const withPlatformNote = BODY.replace(
+            "### Platform\nweb",
+            `### Platform\nweb${trailing}`,
+        );
+        for (const candidate of [withCategoryNote, withPlatformNote]) {
+            const submission = parseSubmission(candidate);
+            assert.equal(submission.category, "image", label);
+            assert.equal(submission.platform, "web", label);
+            assert.deepEqual(validateSubmission(submission), [], label);
+        }
+    });
+}
+
+test("still rejects a category outside the form options", () => {
+    const body = BODY.replace(
+        "### App Category\nimage",
+        "### App Category\npodcast",
+    );
+    const submission = parseSubmission(body);
+    assert.equal(submission.category, "podcast");
+    assert.ok(
+        validateSubmission(submission).includes(
+            "App Category must be selected from the submission form.",
+        ),
+    );
+});

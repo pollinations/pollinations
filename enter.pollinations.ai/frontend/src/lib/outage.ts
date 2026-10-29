@@ -49,7 +49,7 @@ export async function trackedFetch(
 ): Promise<Response> {
     const path = new URL(
         input instanceof Request ? input.url : input,
-        window.location.href,
+        globalThis.location?.href,
     ).pathname;
     try {
         const response = await fetch(input, init);

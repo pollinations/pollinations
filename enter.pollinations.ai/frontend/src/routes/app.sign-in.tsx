@@ -69,6 +69,7 @@ function AppSignIn() {
                 footnote="help"
                 title={title}
                 error="Couldn’t check this sign-in link."
+                errorPaths={["/api/auth/oauth2/public-client-prelogin"]}
                 actions={
                     <Button
                         icon={<RefreshIcon />}

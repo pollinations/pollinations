@@ -6,7 +6,7 @@ import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/my-apps")({
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },

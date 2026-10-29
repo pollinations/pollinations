@@ -1,3 +1,4 @@
+export { isOutageError } from "../error-response.js";
 export { usePollinationsChatTransport } from "./chat-transport.js";
 export type {
     AuthActionsValue,

@@ -565,7 +565,7 @@ Errors use Anthropic's error shape. `count_tokens`, batches, files, server tools
 | Field | Type | Description |
 |---|---|---|
 | `model` * | `string` | Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`. |
-| `max_tokens` * | `integer` | min: `1` |
+| `max_tokens` * | `integer` | Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; reported usage, including reasoning tokens, is billed. Increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens. · min: `1` |
 | `messages` * | `object`[] | — |
 | `messages[].role` * | `"user"` \| `"assistant"` \| `"system"` | — |
 | `messages[].content` * | `string` \| `object`[] | — |
@@ -655,7 +655,8 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `logit_bias` | `object` \| `null` | default: `null` |
 | `logprobs` | `any` | — |
 | `top_logprobs` | `integer` \| `null` | — |
-| `max_tokens` | `integer` \| `null` | — |
+| `max_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
+| `max_completion_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
 | `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
@@ -847,7 +848,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `input` * | `string` \| `any`[] | — |
 | `instructions` | `any` | — |
 | `reasoning` | `object` \| `null` | — |
-| `max_output_tokens` | `integer` \| `null` | — |
+| `max_output_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. For models served through Chat Completions, non-streaming requests that exhaust an explicit limit without an answer return 400 output_token_limit_exceeded; reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. Native Responses models can instead return status incomplete with reason max_output_tokens. |
 | `max_tool_calls` | `integer` \| `null` | — |
 | `stream` | `boolean` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
@@ -937,7 +938,8 @@ Identical requests may be answered from a shared cache, also for callers without
 | `logit_bias` | `object` \| `null` | default: `null` |
 | `logprobs` | `any` | — |
 | `top_logprobs` | `integer` \| `null` | — |
-| `max_tokens` | `integer` \| `null` | — |
+| `max_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
+| `max_completion_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
 | `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
@@ -5322,7 +5324,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | Field | Type | Description |
 |---|---|---|
 | `model` * | `string` | Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`. |
-| `max_tokens` * | `integer` | min: `1` |
+| `max_tokens` * | `integer` | Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; reported usage, including reasoning tokens, is billed. Increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens. · min: `1` |
 | `messages` * | `object`[] | — |
 | `messages[].role` * | `"user"` \| `"assistant"` \| `"system"` | — |
 | `messages[].content` * | `string` \| `object`[] | — |

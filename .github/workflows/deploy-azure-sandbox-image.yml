@@ -24,8 +24,10 @@ concurrency:
 
 jobs:
   build:
-    # The Azure login trusts workflows on main only.
+    # The Azure login trusts only jobs in this environment, which only main
+    # may use.
     if: github.ref == 'refs/heads/main'
+    environment: azure-sandbox-image
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

@@ -1,5 +1,6 @@
 import {
     createExecutionContext,
+    env,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import {
@@ -20,6 +21,7 @@ import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { balance } from "@/middleware/balance.ts";
 import { logger } from "@/middleware/logger.ts";
 import { handleChatCompletionLocal } from "@/text/handler.ts";
 import { isRetryableFallbackError } from "../src/fallback.ts";
@@ -69,6 +71,57 @@ function createTextTestApp() {
 }
 
 describe("error observability", () => {
+    it("preserves a failed balance read's D1 cause only in internal telemetry", async () => {
+        const requests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                requests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const app = new Hono<Env>();
+        app.use("*", logger, balance);
+        app.get("/", async (c) =>
+            c.json(await c.get("balance").getBalance("balance-error-test")),
+        );
+        app.onError(handleError);
+
+        // Make the real D1 query fail, then restore the local test schema.
+        await env.DB.exec(
+            "ALTER TABLE user RENAME TO unavailable_balance_user",
+        );
+        try {
+            const ctx = createExecutionContext();
+            const response = await app.fetch(
+                new Request("https://gen.test/"),
+                {
+                    ...env,
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                },
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+
+            const body = await response.text();
+            expect(response.status).toBe(503);
+            expect(body).toContain("Unable to verify balance");
+            expect(body).not.toContain("D1_ERROR");
+            expect(body).not.toContain("tier_balance");
+            expect(body).not.toContain("balance-error-test");
+            expect(requests).toHaveLength(1);
+            const event = (await requests[0].json()) as { stack: string };
+            expect(event.stack).toContain("D1_ERROR");
+            expect(event.stack).toContain("no such table");
+            expect(event.stack).not.toContain("params:");
+        } finally {
+            await env.DB.exec(
+                "ALTER TABLE unavailable_balance_user RENAME TO user",
+            );
+        }
+    });
+
     it.each(["error", "string", "long"])(
         "logs a bounded %s cause only in internal telemetry",
         async (kind) => {

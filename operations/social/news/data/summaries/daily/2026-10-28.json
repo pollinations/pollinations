@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-28",
+  "period_start": "2026-10-28",
+  "period_end": "2026-10-28",
+  "title": "Permission errors now point to a fix",
+  "summary": "A day of fixing the edges: actionable permission errors, stored media URLs in the SDK, and image references with commas intact.\n\nEnter now puts a grant link in missing-permission 403 errors and the JSON `fixUrl` field, so owners can add `keys`, `machines`, or `usage` permission to an existing key. The CLI tells users which consent box to select when keys or sandboxes are refused. Keys obtained through a website redirect cannot receive `keys` permission through a grant link; owners can add it on the Keys page.\n\nThe SDK's `videoUrl()` and `imageUrl()` now return stored media URLs rather than generation endpoints. The SDK updates also improve usage pagination when records share a timestamp, cancel in-flight device-login polls when aborted, and return refusal text in text and React chat responses.\n\nImage and video generation now preserve commas inside reference URLs such as Cloudinary transformation paths. Comma-separated HTTP URLs and pipe-separated URL lists still work.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 17422,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18579,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18583,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18612,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18615,
+      "date": "2026-10-28"
+    }
+  ],
+  "generated_at": "2026-10-30T21:13:36.667990+00:00",
+  "daily": [
+    {
+      "emoji": "🔗",
+      "title": "Grant missing key permissions",
+      "text": "Owners can use the grant link in Enter's 403 error, also returned as JSON `fixUrl`, to add missing `keys`, `machines`, or `usage` permission to an existing key. For keys obtained through a website redirect, add `keys` permission on the Keys page instead.",
+      "prs": [
+        18615
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
+}

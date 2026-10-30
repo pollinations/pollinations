@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-10-28",
+  "period_start": "2026-10-28",
+  "period_end": "2026-10-28",
+  "generated_at": "2026-10-30T21:13:36.667990+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/5ce55bd9906681335ce1e90b6fa32768918fb8c5fcbe90598b701b82b72d0c27"
+    }
+  ],
+  "text": "Enter's missing-permission 403s now include a grant link and JSON `fixUrl`. The CLI names the consent box to tick. SDK `imageUrl()` and `videoUrl()` return stored media URLs. Image reference URLs keep commas in Cloudinary paths. URLs needed supervision."
+}

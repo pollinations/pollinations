@@ -45,6 +45,18 @@ const app = new Hono<Env>()
     )
     .use("*", requestId())
     .use("*", logger)
+    // RFC 9728 section 5.1: a 401 tells the client where the protected
+    // resource metadata lives, so it finds the authorization server without
+    // out-of-band configuration. Mirrors gen's middleware.
+    .use("*", async (c, next) => {
+        await next();
+        if (c.res.status === 401) {
+            c.header(
+                "WWW-Authenticate",
+                `Bearer resource_metadata="${getPublicOrigin(c)}/.well-known/oauth-protected-resource"`,
+            );
+        }
+    })
     // Prevent search engines from indexing API responses (except docs)
     .use("/api/*", async (c, next) => {
         await next();

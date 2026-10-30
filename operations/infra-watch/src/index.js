@@ -40,7 +40,8 @@ async function post(env, { text, ping }) {
         throw new Error("DISCORD_WEBHOOK_URL missing");
     return send(env.DISCORD_WEBHOOK_URL, {
         content,
-        allowed_mentions: { users: ping ? MAINTAINERS : [] },
+        // parse: [] blocks @everyone, roles and any user not listed here.
+        allowed_mentions: { parse: [], users: ping ? MAINTAINERS : [] },
     });
 }
 
@@ -56,7 +57,7 @@ export class Watch extends DurableObject {
     async run() {
         const now = Date.now();
         let found;
-        let data = { recent: [], last10: [], last60: [] };
+        let data = { recent: [], last10: [], last60: [], official: new Set() };
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -70,12 +71,12 @@ export class Watch extends DurableObject {
                     statusRows(gen, 60),
                     getJson(`${gen}/models?reliability=all`),
                 ]);
-                data = { recent: r15, last10: r10, last60: r60 };
                 const models = Array.isArray(catalog) ? catalog : catalog.data;
                 const official = new Set(
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
-                found = conditions({ ...data, official, hosts });
+                data = { recent: r15, last10: r10, last60: r60, official };
+                found = conditions({ ...data, hosts });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });

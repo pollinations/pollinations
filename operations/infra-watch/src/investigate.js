@@ -61,12 +61,14 @@ const totals = (rows) => {
 };
 
 // What the model reads for one alert, built from our own status data only.
+// Official models only: community model names are chosen by their owners.
 export function evidence(post, data) {
     const { info } = post;
     if (info.kind === "PLATFORM_DROP") {
         const now = totals(data.last10);
         const hour = totals(data.last60);
         const biggestDrops = Object.entries(hour)
+            .filter(([model]) => data.official.has(model))
             .map(([model, total]) => ({
                 model,
                 now10: now[model] ?? 0,

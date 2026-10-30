@@ -4,7 +4,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Env } from "../env.ts";
-import { QUEST_GROUPS } from "./quests/index.ts";
+import { listSetupQuestIds, QUEST_GROUPS } from "./quests/index.ts";
 import {
     type QuestEvaluation,
     type QuestEvaluationContext,
@@ -78,12 +78,7 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
-    const setupQuestIds = new Set(
-        proposals
-            .filter(({ quest }) => quest.category === "setup")
-            .map(({ quest }) => quest.id),
-    );
-    if (setupQuestIds.size > 0) {
+    if (proposals.some(({ quest }) => quest.category === "setup")) {
         try {
             await recordSetupRewardDecision(env.DB, {
                 userId: user.id,
@@ -127,6 +122,7 @@ export async function checkQuestsForUser(
                     eq(schema.rewards.questId, AUTO_CLAIM_QUEST_ID),
                 ),
             );
+        const setupQuestIds = await listSetupQuestIds(ctx);
         for (const reward of pending) {
             await claimReward(ctx.db, {
                 rewardId: reward.id,

@@ -1372,6 +1372,69 @@ test("Polli CLI quest rewards device-login keys on accounts 3+ days old", async 
     expect(rewards).toEqual([{ userId: polliUserId, amount: 1 }]);
 });
 
+test("use_app counts only logins into another account's GitHub-linked app", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const githubOwner = await getOnlyUser();
+    // All four start logged in to the GitHub-linked fixture user's app.
+    const [ownAppUserId, googleAppUserId, githubAppUserId, polliUserId] =
+        await seedByopConnections(githubOwner.id, 4, "use-app");
+    if (!ownAppUserId || !googleAppUserId || !githubAppUserId || !polliUserId) {
+        throw new Error("Expected BYOP users");
+    }
+
+    const now = new Date();
+    const googleOwnerId = "use-app-google-owner";
+    await db.insert(schema.user).values({
+        id: googleOwnerId,
+        name: googleOwnerId,
+        email: `${googleOwnerId}@example.com`,
+        createdAt: now,
+        updatedAt: now,
+    });
+    // Polli CLI's app key; in production its owner is GitHub-linked.
+    const polliClientKeyId = "jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0";
+    // [logged-in user, app key, app owner]
+    const appOwners: [string, string, string][] = [
+        [ownAppUserId, "use-app-own-app-key", ownAppUserId],
+        [googleAppUserId, "use-app-google-app-key", googleOwnerId],
+        [polliUserId, polliClientKeyId, githubOwner.id],
+    ];
+    for (const [userId, appKeyId, ownerId] of appOwners) {
+        await db
+            .update(schema.apikey)
+            .set({ byopClientKeyId: appKeyId })
+            .where(eq(schema.apikey.referenceId, userId));
+        await db.insert(schema.apikey).values({
+            id: appKeyId,
+            key: `pk_${appKeyId}`,
+            referenceId: ownerId,
+            createdAt: now,
+            updatedAt: now,
+        });
+    }
+
+    for (const userId of [
+        ownAppUserId,
+        googleAppUserId,
+        githubAppUserId,
+        polliUserId,
+    ]) {
+        await checkQuestsForUser(env, userId, [
+            questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+        ]);
+    }
+
+    const rewards = await db
+        .select({ userId: schema.rewards.userId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "use_app"));
+    expect(new Set(rewards.map((reward) => reward.userId))).toEqual(
+        new Set([githubAppUserId, polliUserId]),
+    );
+});
+
 test("app milestones award their rewards at inclusive thresholds", async ({
     mocks,
     sessionToken: _sessionToken,

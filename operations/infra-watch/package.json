@@ -1,0 +1,12 @@
+{
+    "name": "infra-watch",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "wrangler dev --test-scheduled",
+        "test": "node --test src/rules.test.js"
+    },
+    "devDependencies": {
+        "wrangler": "^4.156.0"
+    }
+}

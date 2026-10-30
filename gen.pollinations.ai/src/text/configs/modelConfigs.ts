@@ -1111,6 +1111,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
+            // Mistral's server rejects unknown message fields on Azure too.
+            { supportsReasoningHistory: false },
         ),
 
     // -- Claude via Anthropic and AWS Bedrock ---------------------------------

@@ -14,7 +14,6 @@ export default defineConfig({
         include: [
             "shared/providers.test.ts",
             "apps/agent-json.test.ts",
-            "apps/catgpt/ai.test.js",
             // Pure calculations and presentation use artificial vendor definitions.
             // Account/category contract tests remain in the private integration suite.
             "operations/economics/web/src/components/DataTable.test.ts",

@@ -127,6 +127,9 @@ model health, usage, earnings, quests, and API keys.
 | `listKeys` | List API keys; requires `account:keys` permission |
 | `createKey` | Create a secret or publishable app key; requires `account:keys` permission |
 | `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
+| `listSites` | List the account's static sites and their limits; requires `account:machines` permission |
+| `deploySite` | Publish a static site at `https://<name>.pollinations.app` from inline files; requires `account:machines` permission |
+| `deleteSite` | Take a static site offline and free its name; requires `account:machines` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
 clients should not rely on a hardcoded model list.

@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { exclusive, send, settle, withTimeout } from "./delivery.js";
+import { exclusive, send, serial, settle, withTimeout } from "./delivery.js";
 import { allow, ask, evidence, followUp, investigates } from "./investigate.js";
 import { conditions, render, step } from "./rules.js";
 
@@ -49,6 +49,9 @@ async function post(env, { text, ping }) {
 // next cron could interleave with it: `once` skips a check while one runs.
 export class Watch extends DurableObject {
     once = exclusive();
+    // AI follow-ups queue here, outside `once`: a slow model call never
+    // delays the next check.
+    background = serial();
 
     async check() {
         return (await this.once(() => this.run())) ?? { skipped: true };
@@ -93,7 +96,7 @@ export class Watch extends DurableObject {
         );
         for (const [i, p] of next.posts.entries())
             if (delivered[i] && investigates(p))
-                await this.investigate(p, data, now);
+                this.background(() => this.investigate(p, data, now));
         const failed = delivered.filter((ok) => !ok).length;
         if (failed)
             console.error(

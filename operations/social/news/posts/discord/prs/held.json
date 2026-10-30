@@ -6,8 +6,30 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (image)"
       ]
+    },
+    "18811": {
+      "merge_sha": "75c8b4c4c409ce6537b8fb73c054c0155617a7f9",
+      "merged_at": "2026-10-30T23:27:45Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "18814": {
+      "merge_sha": "a69766cd1052803cdde4c3a8b2e16fc724f8ecca",
+      "merged_at": "2026-10-30T23:53:02Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-portkey-cloudflare.yml:deploy"
+      ]
+    },
+    "18816": {
+      "merge_sha": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb",
+      "merged_at": "2026-10-30T23:50:15Z",
+      "required": [
+        "deploy-legacy-caches.yml:deploy (text)"
+      ]
     }
   },
-  "production": "70b7fd6bcba8a07f5eda60e86e61d86ce623891a",
-  "master": "63be042f0514b1e8810274a0240df4d0b5f25691"
+  "production": "556e1258347c979cd4896c6cd3218c17b2826d8a",
+  "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

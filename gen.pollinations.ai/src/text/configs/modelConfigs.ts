@@ -1227,11 +1227,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             responsesEndpoint: undefined,
             directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
             defaultOptions: {
-                providerOptions: { gateway: { only: ["google"] } },
+                providerOptions: { gateway: { only: ["vertex", "google"] } },
             },
         }),
-    "google/gemini-2.5-flash-lite:search:vercel": () =>
-        portkeyConfig["google/gemini-2.5-flash-lite"](),
+    "google/gemini-2.5-flash-lite:search:vercel": () => ({
+        ...portkeyConfig["google/gemini-2.5-flash-lite"](),
+        defaultOptions: {
+            providerOptions: { gateway: { only: ["google"] } },
+        },
+    }),
     "google/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",

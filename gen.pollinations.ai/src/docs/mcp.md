@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| World Bank | `https://gen.pollinations.ai/mcp/worldbank` | Search World Bank indicators and read development data for countries | [Source](https://github.com/pollinations/pollinations/tree/main/apps/worldbank-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,15 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### World Bank MCP
+
+The World Bank server reads development indicators. `search_indicators`
+covers a curated catalog of common indicators and accepts any official code,
+`get_indicator_data` returns yearly values for up to ten countries, and
+`list_countries` resolves country codes, regions, income levels, and capitals.
+The API is public, so the caller's key is only checked at the proxy and is never
+sent upstream.
 
 ### Billing and permissions
 

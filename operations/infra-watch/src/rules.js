@@ -4,6 +4,9 @@ export const COOLDOWN_MS = 3 * 60 * 60 * 1000;
 // Analytics for the newest minute lag, so a drop or outage must hold for
 // this many consecutive checks before it alerts.
 export const CONFIRM_CHECKS = 3;
+// Status data is re-read every few minutes and reused in between, so a
+// platform drop is confirmed by fresh samples, not repeated looks at one.
+const PLATFORM_SAMPLES = 2;
 // A degraded model counts as recovered only after this many clean checks
 // with a fresh sample (one full 15-minute window), so a model hovering at
 // the threshold doesn't flap between alert and recovered every minute.
@@ -108,13 +111,7 @@ export function conditions({
     return found;
 }
 
-const CONFIRMED = new Set([
-    "gen",
-    "public",
-    "upstream",
-    "analytics",
-    "platform",
-]);
+const CONFIRMED = new Set(["gen", "public", "upstream", "analytics"]);
 const HOSTS = { gen: true, public: true, upstream: true };
 
 // Keys whose recovery we announce. A weak primary just expires: callers
@@ -122,7 +119,7 @@ const HOSTS = { gen: true, public: true, upstream: true };
 const RECOVERS = (key) => !key.startsWith("primary:");
 
 // Pure state transition: which messages to post, and the next state.
-export function step(state, found, now, recent = []) {
+export function step(state, found, now, recent = [], sampled = true) {
     // With gen down, nothing else can be judged, not even a single hostname.
     // With analytics down, only the hostname checks still have data.
     const active = { ...(state.active ?? {}) };
@@ -132,9 +129,15 @@ export function step(state, found, now, recent = []) {
     const health = modelHealth(recent);
 
     for (const [key, info] of Object.entries(found)) {
-        const streak = (state.streaks?.[key] ?? 0) + 1;
+        const counts = key !== "platform" || sampled;
+        const streak = (state.streaks?.[key] ?? 0) + (counts ? 1 : 0);
         streaks[key] = streak;
-        const needs = CONFIRMED.has(key) ? CONFIRM_CHECKS : 1;
+        const needs =
+            key === "platform"
+                ? PLATFORM_SAMPLES
+                : CONFIRMED.has(key)
+                  ? CONFIRM_CHECKS
+                  : 1;
         if (streak < needs) continue;
         const prev = active[key];
         if (prev && now - prev.postedAt < COOLDOWN_MS) continue;

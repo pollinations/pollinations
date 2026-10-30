@@ -15,6 +15,10 @@ const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
 // thomash, elliot
 const MAINTAINERS = ["304378879705874432", "884468469452656732"];
+// Liveness is checked every minute; model status (Tinybird behind gen) is
+// re-read at most this often and reused in between. Model alerts use
+// 15-minute windows, so they lose little.
+const STATUS_EVERY_MS = 3 * 60 * 1000;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -68,6 +72,9 @@ export class Watch extends DurableObject {
     // AI follow-ups queue here, outside `once`: a slow model call never
     // delays the next check.
     background = serial();
+    // Last model status read: { at, data }. Kept in memory; an evicted
+    // object just reads again.
+    status = null;
 
     async check() {
         return (await this.once(() => this.run())) ?? { skipped: true };
@@ -77,13 +84,18 @@ export class Watch extends DurableObject {
         const now = Date.now();
         let found;
         let data = { recent: [], last10: [], last60: [], official: new Set() };
+        let sampled = false;
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
         const gen = pub ? PUBLIC : UPSTREAM;
         if (!pub && !up) found = conditions({ hosts });
-        else
+        else if (this.status && now - this.status.at < STATUS_EVERY_MS) {
+            data = this.status.data;
+            found = conditions({ ...data, hosts });
+        } else
             try {
+                sampled = true;
                 const [r15, r10, r60, catalog] = await Promise.all([
                     statusRows(gen, 15),
                     statusRows(gen, 10),
@@ -95,14 +107,17 @@ export class Watch extends DurableObject {
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
+                this.status = { at: now, data };
                 found = conditions({ ...data, hosts });
             } catch (error) {
+                // No reuse after a failed read: the next minute tries again.
+                this.status = null;
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
 
         const state = (await this.ctx.storage.get("state")) ?? {};
-        const next = step(state, found, now, data.recent);
+        const next = step(state, found, now, data.recent, sampled);
         const tools = toolsFor(data, {
             tinybirdToken: this.env.TINYBIRD_TOKEN,
         });
@@ -149,6 +164,7 @@ export class Watch extends DurableObject {
             );
         return {
             found: Object.keys(found),
+            sampled,
             posted: delivered.filter(Boolean).length,
             failed,
         };

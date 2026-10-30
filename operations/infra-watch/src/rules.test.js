@@ -395,3 +395,20 @@ test("each alert carries its colour: red down, orange degraded, yellow weak, gre
         0x639922,
     );
 });
+
+test("platform drop needs 2 fresh samples; re-reading old data doesn't count", () => {
+    const found = {
+        platform: { kind: "PLATFORM_DROP", now10: 100, baseline10: 2000 },
+    };
+    // Status data is re-read every 3 minutes and reused in between.
+    let r = step({}, found, 0, [], true);
+    for (const t of [1, 2]) {
+        r = step(r.state, found, t, [], false);
+        assert.equal(r.posts.length, 0);
+    }
+    r = step(r.state, found, 3, [], true);
+    assert.deepEqual(
+        r.posts.map((p) => p.info.kind),
+        ["PLATFORM_DROP"],
+    );
+});

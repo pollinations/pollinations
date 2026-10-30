@@ -1,0 +1,174 @@
+#!/opt/homebrew/bin/python3
+"""Stage the Claude Code and Codex sessions Thomas chatted in recently as herdr panes.
+
+Each pane gets its session's cwd and the resume command typed but not run, so
+nothing starts (or uses memory) until Enter is pressed in that pane. Sessions
+already in a herdr pane, running elsewhere, or not interactive are skipped.
+
+Usage: herdr-recent [days]   (default 3)
+"""
+import glob, json, os, re, shlex, subprocess, sys, time
+
+DAYS = float(sys.argv[1]) if len(sys.argv) > 1 else 3
+SINCE_ISO = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(time.time() - DAYS * 86400))
+HOME = os.path.expanduser("~")
+FALLBACK_CWD = f"{HOME}/Documents/GitHub"
+WORKSPACE = "recent sessions"
+SCRATCH = ("/private/tmp", "/tmp", "/var/folders")
+RELAY = ("From Thomas", "read and follow /private/tmp/claude-501/")
+SKIP_TEXT = ("<", "This session is being continued", "[Request interrupted", "Caveat:", "# AGENTS.md")
+CLAUDE = f"{HOME}/.local/bin/claude"
+UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+
+def text_of(content):
+    if isinstance(content, str):
+        return content.strip()
+    return " ".join(x.get("text", "") for x in content or [] if isinstance(x, dict)).strip()
+
+
+def chatted(text):
+    return bool(text) and not text.startswith(SKIP_TEXT)
+
+
+def claude_sessions():
+    for f in glob.glob(f"{HOME}/.claude/projects/*/*.jsonl"):
+        if os.path.getmtime(f) < time.time() - DAYS * 86400:
+            continue
+        s = {"tool": "claude", "id": os.path.basename(f)[:-6], "cwd": None, "title": None, "last": "", "entry": None}
+        custom = None
+        for line in open(f, errors="replace"):
+            try:
+                e = json.loads(line)
+            except ValueError:
+                continue
+            if e.get("type") == "custom-title":
+                custom = e.get("customTitle") or custom
+            elif e.get("type") == "ai-title":
+                s["title"] = e.get("aiTitle") or s["title"]
+            if e.get("type") != "user" or e.get("isMeta") or e.get("isSidechain"):
+                continue
+            s["cwd"] = e.get("cwd") or s["cwd"]
+            s["entry"] = e.get("entrypoint") or s["entry"]
+            text = text_of(e["message"].get("content"))
+            # Relayed coordinator prompts count: Thomas chatted through them.
+            if e.get("timestamp", "") >= SINCE_ISO and (chatted(text) or text.startswith(RELAY)):
+                s["last"] = max(s["last"], e["timestamp"])
+        s["title"] = custom or s["title"]
+        if s["last"] and s["entry"] == "cli":
+            yield s
+
+
+def codex_sessions():
+    names = {}
+    for line in open(f"{HOME}/.codex/session_index.jsonl", errors="replace"):
+        try:
+            e = json.loads(line)
+            names[e["id"]] = e.get("thread_name")
+        except (ValueError, KeyError):
+            pass
+    for f in glob.glob(f"{HOME}/.codex/sessions/*/*/*/rollout-*.jsonl"):
+        if os.path.getmtime(f) < time.time() - DAYS * 86400:
+            continue
+        with open(f, errors="replace") as fh:
+            meta = json.loads(fh.readline()).get("payload", {})
+            # Skip codex exec runs and subagents (whose source is an object).
+            if not isinstance(meta.get("source"), str) or meta["source"] in ("exec", "mcp"):
+                continue
+            s = {"tool": "codex", "id": meta.get("id"), "cwd": meta.get("cwd"), "title": names.get(meta.get("id")), "last": ""}
+            # The CLI logs typed input as user_message events, the Desktop app
+            # only as user-role messages mixed with injected context.
+            for line in fh:
+                if '"user_message"' not in line and '"role":"user"' not in line:
+                    continue
+                e = json.loads(line)
+                p = e.get("payload", {})
+                if e.get("timestamp", "") < SINCE_ISO:
+                    continue
+                text = p.get("message", "").strip() if p.get("type") == "user_message" else text_of(p.get("content")) if p.get("role") == "user" else ""
+                if chatted(text):
+                    s["last"] = max(s["last"], e["timestamp"])
+        if s["last"]:
+            yield s
+
+
+def h(*args):
+    r = subprocess.run(["herdr", *args], capture_output=True, text=True)
+    if r.returncode:
+        sys.exit(f"herdr {' '.join(args)} failed: {r.stderr.strip()}")
+    return json.loads(r.stdout)["result"] if r.stdout.strip().startswith("{") else r.stdout
+
+
+def in_herdr():
+    """Session ids running in a herdr pane or typed into one."""
+    ids = set()
+    for w in h("workspace", "list")["workspaces"]:
+        for p in h("pane", "list", "--workspace", w["workspace_id"])["panes"]:
+            ids.add((p.get("agent_session") or {}).get("value"))
+            ids.update(UUID.findall(h("pane", "read", p["pane_id"], "--source", "recent-unwrapped", "--lines", "20")))
+    return ids
+
+
+def running_claude():
+    ids = set()
+    for f in glob.glob(f"{HOME}/.claude/sessions/*.json"):
+        try:
+            d = json.load(open(f))
+            os.kill(d["pid"], 0)
+            ids.add(d["sessionId"])
+        except (OSError, ValueError, KeyError):
+            pass
+    return ids
+
+
+def resume_cmd(s):
+    if s["tool"] == "codex":
+        return f"codex resume {s['id']}"
+    title = s["title"] or s["id"][:8]
+    return f"{CLAUDE} --resume {s['id']} --dangerously-skip-permissions --remote-control {shlex.quote(title)}"
+
+
+def split(pane, direction, cwd):
+    return h("pane", "split", pane, "--direction", direction, "--cwd", cwd, "--no-focus")["pane"]["pane_id"]
+
+
+def grid(root, sessions):
+    """Up to 4 panes in two columns, each started in its session's cwd."""
+    panes = [root]
+    if len(sessions) >= 2:
+        panes.append(split(root, "right", sessions[1]["cwd"]))
+    if len(sessions) >= 3:
+        panes.insert(1, split(root, "down", sessions[2]["cwd"]))
+    if len(sessions) >= 4:
+        panes.append(split(panes[2], "down", sessions[3]["cwd"]))
+    # grid() inserts pane 3 at index 1, so line sessions up the same way.
+    order = [sessions[0], *sessions[2:3], *sessions[1:2], *sessions[3:4]]
+    return list(zip(panes, order))
+
+
+skip = in_herdr() | running_claude()
+todo = [s for s in sorted([*claude_sessions(), *codex_sessions()], key=lambda s: s["last"], reverse=True)
+        if s["id"] not in skip and not (s["cwd"] or "/tmp").startswith(SCRATCH)]
+for s in todo:
+    if not os.path.isdir(s["cwd"] or ""):
+        s["cwd"] = FALLBACK_CWD
+if not todo:
+    sys.exit(f"Nothing new: every session from the last {DAYS:g} days is already in herdr or running.")
+
+ws = next((w for w in h("workspace", "list")["workspaces"] if w["label"] == WORKSPACE), None)
+for tool in ("claude", "codex"):
+    group = [s for s in todo if s["tool"] == tool]
+    for i in range(0, len(group), 4):
+        chunk = group[i:i + 4]
+        if ws is None:
+            w = h("workspace", "create", "--cwd", chunk[0]["cwd"], "--label", WORKSPACE, "--no-focus")
+            ws, tab, root = w["workspace"], w["tab"]["tab_id"], w["root_pane"]["pane_id"]
+        else:
+            t = h("tab", "create", "--workspace", ws["workspace_id"], "--cwd", chunk[0]["cwd"], "--no-focus")
+            tab, root = t["tab"]["tab_id"], t["root_pane"]["pane_id"]
+        h("tab", "rename", tab, f"{tool} {i // 4 + 1}")
+        for pane, s in grid(root, chunk):
+            h("pane", "rename", pane, (s["title"] or s["id"][:8])[:40])
+            h("pane", "send-text", pane, resume_cmd(s))
+            print(f"{tool:6} {s['last'][5:16]} {pane:7} {(s['title'] or '')[:50]}")
+print(f"Staged {len(todo)} sessions in workspace '{WORKSPACE}'. Press Enter in a pane to start it.")

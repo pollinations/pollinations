@@ -1,0 +1,32 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: how one model's final 5xx failures spread over
+    callers, as counts only (no user or key ids). Shows whether a single
+    caller explains an alert. Read by the infra-watch Worker's caller_spread
+    tool.
+
+NODE infra_watch_callers_node
+SQL >
+    %
+    SELECT
+        sum(caller_requests) AS requests,
+        sum(caller_failures) AS failures,
+        count() AS callers,
+        countIf(caller_failures > 0) AS failing_callers,
+        max(caller_failures) AS top_caller_failures,
+        argMax(caller_group, caller_failures) AS top_caller_group
+    FROM (
+        SELECT
+            user_id,
+            any(traffic_group) AS caller_group,
+            count() AS caller_requests,
+            countIf(response_status >= 500) AS caller_failures
+        FROM generation_events_classified
+        WHERE start_time >= now() - interval least(greatest({{Int32(minutes, 15)}}, 1), 60) minute
+            AND is_final
+            AND resolved_model_requested = {{String(model, required=True)}}
+        GROUP BY user_id
+    )
+
+TYPE endpoint

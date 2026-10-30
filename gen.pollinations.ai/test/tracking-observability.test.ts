@@ -238,6 +238,7 @@ function createSseStreamApp(
     includeUsage = true,
     user: AuthUser = trackingUser,
     primaryDelayMs = 0,
+    primaryError?: Error,
 ) {
     const app = new Hono<Env>();
 
@@ -269,9 +270,11 @@ function createSseStreamApp(
                 startedAt,
                 endedAt: new Date(),
                 settled: false,
-                error: new HTTPException(503, {
-                    message: "primary unavailable",
-                }),
+                error:
+                    primaryError ??
+                    new HTTPException(503, {
+                        message: "primary unavailable",
+                    }),
             });
         }
         c.var.track.attempts.push({
@@ -2526,6 +2529,63 @@ describe("tracking observability", () => {
         },
     );
 
+    it("records JSON error usage as provider cost without a wallet debit", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const before = await getUserBalance(drizzle(env.DB), trackingUser.id);
+        const rejection = UpstreamError.fromProvider(422, {
+            responseBody: JSON.stringify({
+                error: { code: "content_policy_violation" },
+                usage: {
+                    prompt_tokens: 7,
+                    completion_tokens: 0,
+                    total_tokens: 7,
+                },
+            }),
+        });
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            rejection,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream"),
+            {
+                ...env,
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(422);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 422,
+            isBilledUsage: false,
+            totalPrice: 0,
+            tokenCountPromptText: 7,
+            tokenCountCompletionText: 0,
+        });
+        expect(event.totalCost).toBeGreaterThan(0);
+        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0);
+        expect(await getUserBalance(drizzle(env.DB), trackingUser.id)).toEqual(
+            before,
+        );
+    });
+
     it("bills a failed video for the usage the provider charged", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -2821,6 +2881,16 @@ describe("tracking observability", () => {
             true,
             trackingUser,
             100,
+            Object.assign(new Error("primary unavailable"), {
+                status: 503,
+                responseBody: JSON.stringify({
+                    usage: {
+                        prompt_tokens: 7,
+                        completion_tokens: 2,
+                        total_tokens: 9,
+                    },
+                }),
+            }),
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -2853,6 +2923,13 @@ describe("tracking observability", () => {
             ),
         );
         expect(primary.isFinal).toBe(false);
+        expect(primary).toMatchObject({
+            isBilledUsage: false,
+            totalPrice: 0,
+            tokenCountPromptText: 7,
+            tokenCountCompletionText: 2,
+        });
+        expect(primary.totalCost).toBeGreaterThan(0);
         expect(primary.attemptResponseTime).toBe(primary.responseTime);
         expect(primary.attemptResponseTime).toBeGreaterThanOrEqual(100);
         expect(fallback.fallbackUsed).toBe(true);
@@ -3378,6 +3455,72 @@ function candidateFixture(
 }
 
 describe("trackResponse modelUsed", () => {
+    it.each([
+        "not JSON",
+        "null",
+        JSON.stringify({ error: { message: "blocked" } }),
+        JSON.stringify({ usage: { prompt_tokens: 7, total_tokens: 7 } }),
+        JSON.stringify({
+            usage: { prompt_tokens: -1, completion_tokens: 0, total_tokens: 0 },
+        }),
+    ])(
+        "does not fabricate cost from invalid JSON error usage: %s",
+        async (responseBody) => {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(),
+                new Response(null, { status: 422 }),
+                candidateFixture(),
+                undefined,
+                UpstreamError.fromProvider(422, { responseBody }),
+            );
+            expect(tracking.isBilledUsage).toBe(false);
+            expect(tracking.usage).toBeUndefined();
+            expect(tracking.cost).toBeUndefined();
+        },
+    );
+
+    it("prices JSON error usage by the attempted route and preserves cache metadata", async () => {
+        const model = "qwen/qwen3.8-max" as const;
+        const candidate = candidateFixture(model);
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(),
+            new Response(null, { status: 422 }),
+            candidate,
+            undefined,
+            UpstreamError.fromProvider(422, {
+                responseBody: JSON.stringify({
+                    model: "untrusted-upstream-model-name",
+                    usage: {
+                        prompt_tokens: 1000,
+                        completion_tokens: 0,
+                        total_tokens: 1000,
+                        prompt_tokens_details: {
+                            cached_tokens: 1000,
+                            cache_type: "ephemeral",
+                        },
+                    },
+                }),
+            }),
+        );
+        expect(tracking).toMatchObject({
+            isBilledUsage: false,
+            modelUsed: model,
+            fallbackUsed: true,
+            usage: { promptCachedTokens: 1000 },
+        });
+        expect(tracking.cost?.totalCost).toBe(
+            calculateUsageBilling({
+                model: "openai/gpt-5.4-nano",
+                usage: { promptCachedTokens: 1000 },
+                servedBy: getRegistryModelDefinition(model),
+                quotedBy: getRegistryModelDefinition("openai/gpt-5.4-nano"),
+                input: { hasExplicitCacheHit: true },
+            }).cost.totalCost,
+        );
+    });
+
     it("attributes a failed generation to the resolved model", async () => {
         const tracking = await trackResponse(
             "generate.text",

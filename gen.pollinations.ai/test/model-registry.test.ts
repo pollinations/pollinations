@@ -57,6 +57,7 @@ describe("getGenerationModelRegistry", () => {
             "openai/gpt-oss-20b",
             "respan/span-01-lite",
             "vllm-sr/d3",
+            "moonshotai/kimi-k3", // Retains Quest access after the AWS move.
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
             // Costs $0 while Vercel offers it as a stealth model.

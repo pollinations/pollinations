@@ -622,9 +622,9 @@ describe("static provider fallbacks", () => {
         expect(billing.servedPrice).toBe(0.0000882);
     });
 
-    it("preserves the Astra quote while recording direct OpenAI costs", () => {
+    it("preserves the Astra quote while recording AWS costs", () => {
         const primary = TEXT_SERVICES["openai/gpt-6-astra"];
-        const fallback = TEXT_SERVICES["openai/gpt-6-astra:openai"];
+        const fallback = TEXT_SERVICES["openai/gpt-6-astra:aws"];
         expect(primary.cost).toEqual({
             promptTextTokens: 10 / 1_000_000,
             promptCachedTokens: 1 / 1_000_000,
@@ -663,37 +663,107 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00036, 12);
-        expect(billing.price.totalPrice).toBe(0.00036);
-        const model = findModelByName("openai/gpt-6-astra:openai");
+        expect(billing.price.totalPrice).toBe(0.00027);
+        const model = findModelByName("openai/gpt-6-astra:aws");
         expect(model?.useResponsesApi).toBe(true);
         expect(model?.config()).toMatchObject({
-            provider: "openai",
-            model: "gpt-6-astra",
+            provider: "bedrock",
+            model: "global.openai.gpt-6-astra",
             serviceTier: "default",
-            responsesEndpoint: "https://api.openai.com/v1/responses",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
         });
     });
 
     it.each([
+        "openai/gpt-5.5",
+        "openai/gpt-6.1-terra",
         "openai/gpt-6-luna",
         "openai/gpt-6.1-sol",
         "openai/gpt-6-sol",
     ] as const)(
-        "keeps the same price and Quest access when %s falls back to OpenAI",
+        "keeps the same price and Quest access when %s falls back to AWS",
         (model) => {
             const primary = TEXT_SERVICES[model];
-            const fallback = TEXT_SERVICES[`${model}:openai`];
+            const fallback = TEXT_SERVICES[`${model}:aws`];
             expect(primary.provider).toBe("azure");
-            expect(primary.fallbacks).toEqual([`${model}:openai`]);
+            expect(primary.priceMultiplier).toBe(0.75);
+            expect(primary.fallbacks).toEqual([`${model}:aws`]);
             expect(primary.paidOnly).toBe(false);
-            expect(fallback.provider).toBe("openai");
+            expect(fallback.provider).toBe("aws");
             expect(fallback.paidOnly).toBe(false);
             expect(fallback.cost).toEqual(primary.cost);
             expect(fallback.costVariants).toEqual(primary.costVariants);
             expect(fallback.priceMultiplier).toBe(1);
-            expect(findModelByName(`${model}:openai`)?.config()).toMatchObject({
-                responsesEndpoint: "https://api.openai.com/v1/responses",
+            expect(findModelByName(`${model}:aws`)?.config()).toMatchObject({
+                responsesEndpoint:
+                    "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             });
+        },
+    );
+
+    it.each([
+        ["openai/gpt-audio-mini", 0.00584],
+        ["openai/gpt-audio-1.5", 0.0195],
+    ] as const)(
+        "keeps the discounted audio quote on %s recovery",
+        (model, cost) => {
+            const primary = TEXT_SERVICES[model];
+            const fallback = TEXT_SERVICES[`${model}:openai`];
+            const billed = calculateUsageBilling({
+                model,
+                usage: {
+                    promptTextTokens: 1000,
+                    completionTextTokens: 100,
+                    promptAudioTokens: 100,
+                    completionAudioTokens: 200,
+                },
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
+            expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 12);
+            expect(primary.fallbacks).toEqual([`${model}:openai`]);
+            expect(fallback).toMatchObject({
+                provider: "openai",
+                hidden: true,
+                aliases: [],
+            });
+        },
+    );
+
+    it.each(["openai/gpt-audio-mini", "openai/gpt-audio-1.5"] as const)(
+        "preserves Azure-only voices instead of substituting them on %s fallback",
+        (model) => {
+            for (const voice of ["amuch", "dan"]) {
+                const request = { audio: { voice, format: "wav" } };
+                expect(
+                    textCapabilityError(TEXT_SERVICES[model], request),
+                ).toBeUndefined();
+                expect(
+                    supportsTextFallbackRequest(
+                        TEXT_SERVICES[`${model}:openai`],
+                        request,
+                    ),
+                ).toBe(false);
+                expect(
+                    supportsTextFallbackRequest(
+                        TEXT_SERVICES[`${model}:openai`],
+                        { voice },
+                    ),
+                ).toBe(false);
+            }
+            for (const request of [
+                {},
+                { audio: { voice: "alloy", format: "wav" } },
+            ]) {
+                expect(
+                    supportsTextFallbackRequest(
+                        TEXT_SERVICES[`${model}:openai`],
+                        request,
+                    ),
+                ).toBe(true);
+            }
         },
     );
 
@@ -1101,13 +1171,13 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBe(0.00042);
     });
 
-    it("keeps the Azure gpt-5.6-sol quote when OpenAI serves it", () => {
+    it("keeps the Azure gpt-5.6-sol quote when AWS serves it", () => {
         const model = "openai/gpt-5.6-sol";
         expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            "openai/gpt-5.6-sol:openai",
+            "openai/gpt-5.6-sol:aws",
         ]);
-        expect(TEXT_SERVICES["openai/gpt-5.6-sol:openai"]).toMatchObject({
-            provider: "openai",
+        expect(TEXT_SERVICES["openai/gpt-5.6-sol:aws"]).toMatchObject({
+            provider: "aws",
             priceMultiplier: 1,
             hidden: true,
         });
@@ -1119,11 +1189,11 @@ describe("static provider fallbacks", () => {
                 "completionTextTokens": 100,
                 "promptCacheWriteTokens": 50,
             },
-            servedBy: TEXT_SERVICES["openai/gpt-5.6-sol:openai"],
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-sol:aws"],
             quotedBy: TEXT_SERVICES[model],
         });
         expect(billed.cost.totalCost).toBeCloseTo(0.00633, 12);
-        expect(billed.price.totalPrice).toBe(0.00211);
+        expect(billed.price.totalPrice).toBe(0.0047475);
     });
 
     it("prices Muse Wonder on Vercel at base rates and quotes the OpenRouter primary with its fee", () => {
@@ -1167,13 +1237,13 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
-    it("keeps the Azure gpt-5.6-luna quote when OpenAI serves it", () => {
+    it("keeps the Azure gpt-5.6-luna quote when AWS serves it", () => {
         const model = "openai/gpt-5.6-luna";
         expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            "openai/gpt-5.6-luna:openai",
+            "openai/gpt-5.6-luna:aws",
         ]);
-        expect(TEXT_SERVICES["openai/gpt-5.6-luna:openai"]).toMatchObject({
-            provider: "openai",
+        expect(TEXT_SERVICES["openai/gpt-5.6-luna:aws"]).toMatchObject({
+            provider: "aws",
             priceMultiplier: 1,
             hidden: true,
         });
@@ -1185,7 +1255,7 @@ describe("static provider fallbacks", () => {
                 "completionTextTokens": 100,
                 "promptCacheWriteTokens": 50,
             },
-            servedBy: TEXT_SERVICES["openai/gpt-5.6-luna:openai"],
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-luna:aws"],
             quotedBy: TEXT_SERVICES[model],
         });
         expect(billed.cost.totalCost).toBeCloseTo(0.0003365, 12);
@@ -1436,13 +1506,13 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("keeps the Azure gpt-5.6-terra quote when OpenAI serves it", () => {
+    it("keeps the Azure gpt-5.6-terra quote when AWS serves it", () => {
         const model = "openai/gpt-5.6-terra";
         expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            "openai/gpt-5.6-terra:openai",
+            "openai/gpt-5.6-terra:aws",
         ]);
-        expect(TEXT_SERVICES["openai/gpt-5.6-terra:openai"]).toMatchObject({
-            provider: "openai",
+        expect(TEXT_SERVICES["openai/gpt-5.6-terra:aws"]).toMatchObject({
+            provider: "aws",
             priceMultiplier: 1,
             hidden: true,
         });
@@ -1454,7 +1524,7 @@ describe("static provider fallbacks", () => {
                 "completionTextTokens": 100,
                 "promptCacheWriteTokens": 50,
             },
-            servedBy: TEXT_SERVICES["openai/gpt-5.6-terra:openai"],
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-terra:aws"],
             quotedBy: TEXT_SERVICES[model],
         });
         expect(billed.cost.totalCost).toBeCloseTo(0.003365, 12);

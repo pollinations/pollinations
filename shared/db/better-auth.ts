@@ -507,3 +507,33 @@ export const rewards = sqliteTable("rewards", {
 }, (table) => [
   index("idx_rewards_user_id").on(table.userId),
 ]);
+
+// One row per account, written at its first setup (onboarding) reward. A
+// held_reason blocks claiming setup rewards until an operator clears it.
+// Network and email domain are cleared after 30 days; the row stays.
+export const setupRewardDecision = sqliteTable("setup_reward_decision", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // IPv4 /24 or IPv6 /48 of the request that earned the first setup reward.
+  network: text("network"),
+  emailDomain: text("email_domain"),
+  firstRewardAt: integer("first_reward_at", { mode: "timestamp" }).notNull(),
+  // "network" or "domain" when the account crossed the limit, else null.
+  candidateReason: text("candidate_reason"),
+  // candidateReason when holds were switched on at decision time.
+  heldReason: text("held_reason"),
+}, (table) => [
+  index("idx_setup_reward_decision_network").on(
+    table.network,
+    table.firstRewardAt,
+  ),
+  index("idx_setup_reward_decision_domain").on(
+    table.emailDomain,
+    table.firstRewardAt,
+  ),
+  // Only rows that still hold a network or domain, so cleanup skips cleared rows.
+  index("idx_setup_reward_decision_time")
+    .on(table.firstRewardAt)
+    .where(sql`${table.emailDomain} IS NOT NULL`),
+]);

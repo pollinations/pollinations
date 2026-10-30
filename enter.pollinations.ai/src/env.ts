@@ -13,6 +13,8 @@ export type Env = {
         CODE_AGENT_DISPATCH_NAMESPACE?: string;
         SITES_DISPATCH_NAMESPACE?: string;
         SITES_HOST_SUFFIX?: string;
+        /** "on" makes new setup reward decisions holds; anything else, off. */
+        SETUP_REWARD_HOLDS?: string;
         CODE_AGENT_CONTEXT?: {
             authorization: string;
             origin: string;

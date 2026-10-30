@@ -151,6 +151,9 @@ simple = { limit = 600, period = 10 }
 
 [env.production.vars]
 ENVIRONMENT = "production"
+# "on" holds setup rewards past the per-network/domain limit; "off" only
+# records candidates. Existing holds block claims either way.
+SETUP_REWARD_HOLDS = "off"
 X402_HOLDING_USER_ID = "inFByWZoc0Cuwtj3Pau4Ae9d5VBvfxHp"
 WEFT_FACILITATOR_URL = "https://x402.weft.network"
 WEFT_PAY_TO = "0x657d15ea5f5a2877e766137861d7deee1a9422dc"
@@ -217,6 +220,9 @@ simple = { limit = 600, period = 10 }
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+# "on" holds setup rewards past the per-network/domain limit; "off" only
+# records candidates. Existing holds block claims either way.
+SETUP_REWARD_HOLDS = "off"
 X402_HOLDING_USER_ID = "x402-staging-holding-20260930"
 WEFT_FACILITATOR_URL = "https://x402.staging.weft.network"
 WEFT_PAY_TO = "0x3b0b371ae3cb08f272b87319684f6518b3b313a0"

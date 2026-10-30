@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { exclusive, send, settle } from "./delivery.js";
+import { exclusive, send, settle, withTimeout } from "./delivery.js";
 import { conditions, render, step } from "./rules.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
@@ -7,24 +7,23 @@ const UPSTREAM = "https://gen.myceli.ai";
 // thomash, elliot
 const MAINTAINERS = ["304378879705874432", "884468469452656732"];
 
-async function getJson(url) {
-    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
-    if (!res.ok) throw new Error(`${url} -> ${res.status}`);
-    return res.json();
-}
+const getJson = (url) =>
+    withTimeout(20_000, async (signal) => {
+        const res = await fetch(url, { signal });
+        if (!res.ok) throw new Error(`${url} -> ${res.status}`);
+        return res.json();
+    });
 
 const statusRows = async (gen, minutes) =>
     (await getJson(`${gen}/models/status?minutes=${minutes}`)).data;
 
-// Cancel the unread body: left open, it keeps the Durable Object running
-// until the 20 s timeout aborts it, on every check.
+// Only the status matters; cancel the unread body to free it.
 const isUp = (gen) =>
-    fetch(`${gen}/`, { signal: AbortSignal.timeout(20_000) })
-        .then((res) => {
-            res.body?.cancel();
-            return res.ok;
-        })
-        .catch(() => false);
+    withTimeout(20_000, async (signal) => {
+        const res = await fetch(`${gen}/`, { signal });
+        res.body?.cancel();
+        return res.ok;
+    }).catch(() => false);
 
 // Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an
 // error, never a silent dry run.

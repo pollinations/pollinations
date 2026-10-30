@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { exclusive, send, settle } from "./delivery.js";
+import { exclusive, send, settle, withTimeout } from "./delivery.js";
 
 const reply = (status, retryAfter) => ({
     ok: status >= 200 && status < 300,
@@ -73,6 +73,20 @@ test("overlapping checks: second is skipped until the first finishes", async () 
     release("first");
     assert.equal(await first, "first");
     assert.equal(await once(async () => "third"), "third");
+});
+
+test("withTimeout clears its timer once the work finishes", async () => {
+    const signal = await withTimeout(20, async (s) => s);
+    await new Promise((r) => setTimeout(r, 40));
+    assert.equal(signal.aborted, false);
+});
+
+test("withTimeout aborts work that runs too long", async () => {
+    const slow = (signal) =>
+        new Promise((_, reject) =>
+            signal.addEventListener("abort", () => reject(new Error("abort"))),
+        );
+    await assert.rejects(withTimeout(10, slow), /abort/);
 });
 
 test("send asks Discord to confirm the saved message (wait=true)", async () => {

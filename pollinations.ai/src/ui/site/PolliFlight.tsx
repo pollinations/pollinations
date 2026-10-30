@@ -12,12 +12,13 @@ const WIDTH = 70; // 2px per pixel of her 35-wide grid
 const HEIGHT = 68;
 const PERCH_INSET = 72; // from the card's right edge, clear of its ↗ icon
 const DWELL_MS = 300;
+const STEPS = 12; // keyframes per flight
 
 /**
  * One arc from `from` to `to`, lifted in the middle by up to 120px. She faces
  * the way she flies.
  */
-export function flightPath(from: Point, to: Point, steps = 12): FlightPoint[] {
+export function flightPath(from: Point, to: Point): FlightPoint[] {
     const lift = Math.min(120, Math.hypot(to.x - from.x, to.y - from.y) / 3);
     // A quadratic curve peaks halfway to its control point.
     const control = {
@@ -25,8 +26,8 @@ export function flightPath(from: Point, to: Point, steps = 12): FlightPoint[] {
         y: Math.min(from.y, to.y) - 2 * lift,
     };
     const face = to.x < from.x ? -1 : 1;
-    return Array.from({ length: steps }, (_, index) => {
-        const t = index / (steps - 1);
+    return Array.from({ length: STEPS }, (_, index) => {
+        const t = index / (STEPS - 1);
         const along = (a: number, c: number, b: number) =>
             (1 - t) ** 2 * a + 2 * (1 - t) * t * c + t ** 2 * b;
         return {

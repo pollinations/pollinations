@@ -243,33 +243,12 @@ const MODEL_KINDS: {
     icon: ComponentType<IconProps>;
     /** Catalog categories; the first one is the enter filter and the color. */
     categories: ModelCategory[];
-    pixels: PixelKind;
 }[] = [
-    { label: "Image", icon: ImageIcon, categories: ["image"], pixels: "image" },
-    {
-        label: "Text",
-        icon: ChatIcon,
-        categories: ["text", "decision"],
-        pixels: "text",
-    },
-    {
-        label: "Audio",
-        icon: AudioIcon,
-        categories: ["audio", "realtime"],
-        pixels: "audio",
-    },
-    {
-        label: "Video & 3D",
-        icon: VideoIcon,
-        categories: ["video", "3d"],
-        pixels: "video",
-    },
-    {
-        label: "Embeddings",
-        icon: SearchIcon,
-        categories: ["embedding"],
-        pixels: "embedding",
-    },
+    { label: "Image", icon: ImageIcon, categories: ["image"] },
+    { label: "Text", icon: ChatIcon, categories: ["text", "decision"] },
+    { label: "Audio", icon: AudioIcon, categories: ["audio", "realtime"] },
+    { label: "Video & 3D", icon: VideoIcon, categories: ["video", "3d"] },
+    { label: "Embeddings", icon: SearchIcon, categories: ["embedding"] },
 ];
 
 const PUBLISH_FEATURES: Feature[] = [
@@ -404,10 +383,11 @@ function Models() {
     const grid = useRef<HTMLUListElement>(null);
     const seen = useInView(grid, { once: true, threshold: 0.5 });
     const cards = [
-        ...MODEL_KINDS.map(({ label, icon, categories, pixels }) => ({
+        ...MODEL_KINDS.map(({ label, icon, categories }) => ({
             label,
             icon,
-            pixels,
+            // Drawings are keyed by each kind's first catalog category.
+            pixels: categories[0] as PixelKind,
             href: `https://enter.pollinations.ai/models?category=${categories[0]}`,
             count: stats
                 ? categories.reduce(

@@ -2431,10 +2431,10 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-10-15").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal's price per returned second: $0.010 during Mirelo's launch
-        // promo, $0.015 from 2026-12-14. Charges use fal's reported seconds at
+        // fal's price per returned second from 2026-12-14, after Mirelo's
+        // launch promo ($0.010) ended. Charges use fal's reported seconds at
         // its live endpoint price.
-        cost: { completionVideoSeconds: 0.01 },
+        cost: { completionVideoSeconds: 0.015 },
         // The output keeps the source video's dimensions.
         resolutions: ["source"],
         title: "Mirelo SFX 2.0",

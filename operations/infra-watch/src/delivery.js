@@ -3,6 +3,19 @@
 
 const TIMEOUT_MS = 10_000;
 
+// Gives `fn` a signal that aborts after `ms`, and clears the timer once `fn`
+// settles. A pending AbortSignal.timeout() keeps the Durable Object running
+// until it fires, long after the check itself returned.
+export async function withTimeout(ms, fn) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    try {
+        return await fn(controller.signal);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 const withWait = (url) => {
     const u = new URL(url);
     u.searchParams.set("wait", "true");
@@ -18,12 +31,14 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
         let res;
         try {
             // wait=true: Discord answers only after the message is saved.
-            res = await fetchImpl(withWait(url), {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify(body),
-                signal: AbortSignal.timeout(TIMEOUT_MS),
-            });
+            res = await withTimeout(TIMEOUT_MS, (signal) =>
+                fetchImpl(withWait(url), {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify(body),
+                    signal,
+                }),
+            );
         } catch {
             res = null;
         }

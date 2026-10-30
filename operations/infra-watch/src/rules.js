@@ -4,6 +4,10 @@ export const COOLDOWN_MS = 3 * 60 * 60 * 1000;
 // Analytics for the newest minute lag, so a drop or outage must hold for
 // this many consecutive checks before it alerts.
 export const CONFIRM_CHECKS = 3;
+// A degraded model counts as recovered only after this many clean checks
+// with a fresh sample (one full 15-minute window), so a model hovering at
+// the threshold doesn't flap between alert and recovered every minute.
+export const RECOVER_CHECKS = 15;
 
 const MIN_REQUESTS = 10;
 const MIN_SUCCESS = 0.9;
@@ -85,6 +89,7 @@ export function step(state, found, now, recent = []) {
     // With analytics down, only the hostname checks still have data.
     const active = { ...(state.active ?? {}) };
     const streaks = {};
+    const clears = {};
     const posts = [];
     const health = modelHealth(recent);
 
@@ -107,9 +112,15 @@ export function step(state, found, now, recent = []) {
             if (now - prev.postedAt >= COOLDOWN_MS) delete active[key];
             continue;
         }
-        // A model needs a fresh sample to count as recovered.
+        // A model needs RECOVER_CHECKS clean checks in a row to count as
+        // recovered; a thin sample neither counts nor resets the run, and
+        // never announces (not even a retry after a failed post).
         const model = key.startsWith("degraded:") ? key.slice(9) : null;
-        if (model && (health[model]?.nonClient ?? 0) < MIN_REQUESTS) continue;
+        if (model) {
+            const fresh = (health[model]?.nonClient ?? 0) >= MIN_REQUESTS;
+            clears[key] = (state.clears?.[key] ?? 0) + (fresh ? 1 : 0);
+            if (!fresh || clears[key] < RECOVER_CHECKS) continue;
+        }
         delete active[key];
         posts.push({
             type: "recovered",
@@ -118,7 +129,7 @@ export function step(state, found, now, recent = []) {
         });
     }
 
-    return { posts, state: { active, streaks } };
+    return { posts, state: { active, streaks, clears } };
 }
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;

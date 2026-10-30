@@ -7,6 +7,7 @@ import {
     extractApiKeyFromFragment,
     fetchBalance,
     fetchCommunityMemes,
+    fetchImage,
     fetchProfile,
     generateCatReply,
     generateImageURL,
@@ -164,7 +165,10 @@ const STORAGE_KEY = "catgpt-generated";
 
 function getSavedMemes() {
     try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        // Older entries can hold an image URL with the API key in it.
+        return (JSON.parse(localStorage.getItem(STORAGE_KEY)) || []).filter(
+            (meme) => !/[?&]key=/.test(meme.url),
+        );
     } catch {
         return [];
     }
@@ -357,16 +361,25 @@ function loadUserMemes() {
 
 function loadExamples() {
     dom.examplesGrid.innerHTML = "";
-    EXAMPLE_PROMPTS.forEach((q, i) => {
-        const card = createMemeCard(
-            q,
-            i,
-            generateImageURL(
-                createImageGenerationPrompt(q, "..."),
-                activeModel,
-            ),
-        );
-        if (card) dom.examplesGrid.appendChild(card);
+    if (!getStoredApiKey()) return;
+    EXAMPLE_PROMPTS.forEach(async (q, i) => {
+        try {
+            const response = await fetchImage(
+                generateImageURL(
+                    createImageGenerationPrompt(q, "..."),
+                    activeModel,
+                ),
+            );
+            if (!response.ok) return;
+            const card = createMemeCard(
+                q,
+                i,
+                URL.createObjectURL(await response.blob()),
+            );
+            if (card) dom.examplesGrid.appendChild(card);
+        } catch (error) {
+            console.error("Example meme failed:", error);
+        }
     });
 }
 
@@ -467,7 +480,7 @@ async function generateMeme() {
     );
 
     try {
-        const response = await fetch(imageUrl);
+        const response = await fetchImage(imageUrl);
         if (cancelled) return;
 
         if (!response.ok) {
@@ -476,13 +489,15 @@ async function generateMeme() {
         }
 
         // Archive the generated output publicly; uploaded references remain untagged.
-        await response.blob(); // ensure the image is fully loaded
+        const image = await response.blob();
         if (cancelled) return;
 
-        let resultUrl = imageUrl;
+        let resultUrl = URL.createObjectURL(image);
         try {
-            const published = await publishMemeToGallery(imageUrl);
+            const published = await publishMemeToGallery(image);
             resultUrl = published.url;
+            // Only a published meme has a lasting URL worth saving.
+            saveGeneratedMeme(question, resultUrl);
             loadCommunityMemes();
         } catch (error) {
             console.error("Community publish error:", error);
@@ -498,7 +513,6 @@ async function generateMeme() {
         show(dom.resultSection);
         scrollToGenerator();
         celebrate();
-        saveGeneratedMeme(question, resultUrl);
         loadUserMemes();
     } catch (error) {
         if (cancelled) return;

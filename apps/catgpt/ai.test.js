@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { pickModel } from "./ai.js";
+import { fetchImage, generateImageURL, pickModel } from "./ai.js";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -46,5 +46,19 @@ it("uses the existing fallback when the preferred model is unavailable", async (
     expect(await pickModel("test-key")).toEqual({
         model: "gptimage",
         isPremium: false,
+    });
+});
+
+it("sends the API key in the Authorization header, never in the image URL", async () => {
+    vi.stubGlobal("localStorage", { getItem: () => "sk_test" });
+    const fetchMock = vi.fn(async () => new Response("image"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const url = generateImageURL("a cat", "gptimage");
+    expect(new URL(url).searchParams.has("key")).toBe(false);
+
+    await fetchImage(url);
+    expect(fetchMock).toHaveBeenCalledWith(url, {
+        headers: { Authorization: "Bearer sk_test" },
     });
 });

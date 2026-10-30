@@ -306,8 +306,8 @@ const MediaListQuerySchema = z.object({
 
 const api = new Hono<{ Bindings: Env }>();
 
-// Every key check is a D1 lookup in Enter, so cap each key and client IP
-// before it; wrangler.toml sets the limits.
+// Every key check and gallery read is a D1 lookup in Enter, so cap each key
+// and client IP before it; wrangler.toml sets the limits.
 const keyCheckRateLimit = rateLimit({ byIp: true });
 const RateLimitedResponse = {
     description:
@@ -883,8 +883,10 @@ api.get(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
         },
     }),
+    keyCheckRateLimit,
     validator("query", MediaListQuerySchema, (result, c) => {
         // Emit validation failures in the same {error} shape as every other
         // error response instead of the validator's default body.

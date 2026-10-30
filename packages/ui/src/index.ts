@@ -90,6 +90,12 @@ export {
 } from "./compositions/MultiSelect.tsx";
 export { NavItem, type NavItemProps } from "./compositions/NavItem.tsx";
 export {
+    OUTAGE_MESSAGE,
+    OutageNotice,
+    type OutageNoticeProps,
+    useOnline,
+} from "./compositions/OutageNotice.tsx";
+export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./compositions/PeriodPicker.tsx";

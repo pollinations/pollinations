@@ -138,7 +138,58 @@ export async function generateChatAttempt(
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
     );
-    if (!attemptData.stream) requireChatCompletionUsage(result);
+    if (!attemptData.stream) {
+        requireChatCompletionUsage(result);
+        // Reasoning is not an answer. Tool calls, refusals and media can be
+        // valid without text, but a blank completion must never become a cache hit.
+        const emptyChoices = (result.choices ?? []).filter(
+            ({ message, finish_reason }) =>
+                finish_reason !== "content_filter" &&
+                (!message ||
+                    !(
+                        (typeof message.content === "string"
+                            ? message.content.trim()
+                            : message.content?.length) ||
+                        message.tool_calls?.length ||
+                        message.function_call ||
+                        message.audio ||
+                        (typeof message.refusal === "string" &&
+                            message.refusal.trim())
+                    )),
+        );
+        if (
+            !result.choices?.length ||
+            emptyChoices.length === result.choices.length
+        ) {
+            const tokenLimitReached =
+                (requestData.max_tokens != null ||
+                    requestData.max_completion_tokens != null) &&
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ finish_reason }) => finish_reason === "length",
+                );
+            const { status, ...details } = tokenLimitReached
+                ? {
+                      status: 400 as const,
+                      message:
+                          "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
+                      errorCode: "output_token_limit_exceeded",
+                  }
+                : {
+                      status: 502 as const,
+                      message:
+                          "Chat Completions provider returned an empty response",
+                      errorCode: "empty_response",
+                  };
+            throw new UpstreamError(status, {
+                ...details,
+                requestUrl: result.upstreamRequestUrl,
+                billedUsage: openaiUsageToUsage(
+                    result.usage as Parameters<typeof openaiUsageToUsage>[0],
+                ),
+            });
+        }
+    }
     return buffered ? completionToChatStream(result) : result;
 }
 

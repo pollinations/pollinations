@@ -151,6 +151,7 @@ function EditKeyPage() {
                 title={title}
                 subject={subject}
                 error="Couldn’t load this key. Check that you’re signed in to the account that owns it."
+                errorPaths={["/account/keys"]}
                 balance={balance}
                 topUpHref={topUpHref}
                 actions={

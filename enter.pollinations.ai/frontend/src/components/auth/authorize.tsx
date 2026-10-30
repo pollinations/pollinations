@@ -10,9 +10,10 @@ import {
 } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
-    CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    getConsentPermissionChoices,
     getGrantedOAuthScope,
+    getPreselectedConsentPermissions,
     isClientMetadataUrl,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
@@ -111,8 +112,10 @@ export function Authorize() {
     const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
         () => new Set(urlScope ?? []),
     );
-    const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
-        requestedScopes.has(p),
+    const visibleOptionalPermissions = getConsentPermissionChoices(
+        requestedScopes,
+        isDeviceMode,
+        parsedRedirectUrl,
     );
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
@@ -155,7 +158,7 @@ export function Authorize() {
                                 .filter(Boolean);
                             setRequestedScopes(new Set(scopes));
                             setAccountPermissions(
-                                sanitizeAuthorizeAccountPermissions(scopes),
+                                getPreselectedConsentPermissions(scopes),
                             );
                         }
                     })
@@ -519,6 +522,14 @@ export function Authorize() {
                 subject={subject}
                 description={access}
                 error={`Couldn’t connect: ${error}`}
+                errorPaths={[
+                    "/api/app-lookup",
+                    "/api/device/info",
+                    // Allow access: create the key, then hand it over.
+                    "/account/keys",
+                    "/api/oauth/code",
+                    "/api/device/approve",
+                ]}
                 actions={
                     <Button
                         intent="neutral"

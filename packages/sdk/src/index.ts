@@ -17,6 +17,7 @@
 
 // Main client class
 export { Pollinations } from "./client.js";
+export { isOutageError } from "./error-response.js";
 // Extra utilities
 export {
     type AudioResponseExt,
@@ -71,7 +72,6 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
-
 // Export all types
 export type {
     AccountBalance,
@@ -200,6 +200,5 @@ export type {
     VideoModel,
     VideoResponse,
 } from "./types.js";
-
 // Export runtime constants and the error class
 export { CHAT_ROUTING_CAPABILITIES, PollinationsError } from "./types.js";

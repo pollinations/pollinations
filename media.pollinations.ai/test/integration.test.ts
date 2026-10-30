@@ -2177,5 +2177,21 @@ describe("media.pollinations.ai", () => {
             expect(statuses).toEqual([401, 401, 429]);
             expect(globalThis.fetch).toHaveBeenCalledTimes(2);
         });
+
+        it("caps public gallery reads per IP before D1", async () => {
+            const mediaEnv = limitedEnv();
+            const list = (ip: string) =>
+                app.request(
+                    "/media?tag=flood",
+                    { headers: { "CF-Connecting-IP": ip } },
+                    mediaEnv,
+                );
+            const statuses = [];
+            for (let i = 0; i < 3; i++) {
+                statuses.push((await list("203.0.113.7")).status);
+            }
+            expect(statuses).toEqual([200, 200, 429]);
+            expect((await list("198.51.100.1")).status).toBe(200);
+        });
     });
 });

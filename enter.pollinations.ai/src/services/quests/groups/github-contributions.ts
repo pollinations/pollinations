@@ -226,7 +226,13 @@ type ReportedIssueNode = {
     url: string;
     author: GitHubUser | null;
     labels: { nodes: { name: string }[] };
-    closedByPullRequestsReferences: { nodes: { mergedAt: string | null }[] };
+    closedByPullRequestsReferences: { nodes: ClosingMerge[] };
+};
+
+// Only a merge into this repository accepts a report.
+type ClosingMerge = {
+    mergedAt: string | null;
+    repository: { nameWithOwner: string };
 };
 
 type RewardActor = GitHubUser & { __typename: string; login: string };
@@ -260,10 +266,11 @@ type MergedPrNode = Contribution & {
             repository: { nameWithOwner: string };
             labels: { nodes: { name: string }[] };
         }[];
+        pageInfo: { hasNextPage: boolean };
     };
 };
 type ClosedIssueNode = Contribution & {
-    closedByPullRequestsReferences: { nodes: { mergedAt: string | null }[] };
+    closedByPullRequestsReferences: { nodes: ClosingMerge[] };
 };
 type UserContributionsData<TNode> = {
     user: {
@@ -341,7 +348,7 @@ query($query:String!,$after:String){
         number title url author{ ... on User{ databaseId } }
         labels(first:20){ nodes{ name } }
         closedByPullRequestsReferences(first:10){
-          nodes{ mergedAt }
+          nodes{ mergedAt repository{ nameWithOwner } }
         }
       }
     }
@@ -379,6 +386,7 @@ query($login:String!,$after:String,$before:String){
       ${REWARD_COMMENTS}
       closingIssuesReferences(first:20){
         nodes{ repository{ nameWithOwner } labels(first:20){ nodes{ name } } }
+        pageInfo{ hasNextPage }
       }
     }
   } }
@@ -393,7 +401,7 @@ query($login:String!,$after:String,$before:String){
       repository{ nameWithOwner }
       author{ __typename login ... on User{ databaseId } }
       ${REWARD_COMMENTS}
-      closedByPullRequestsReferences(first:10){ nodes{ mergedAt } }
+      closedByPullRequestsReferences(first:10){ nodes{ mergedAt repository{ nameWithOwner } } }
     }
   } }
 }`;
@@ -806,7 +814,11 @@ async function reportedIssueProposals(
     )) {
         // The first merge accepts the report; a quote must come before it.
         const mergedAt = issue.closedByPullRequestsReferences.nodes
-            .flatMap((pr) => (pr.mergedAt ? [pr.mergedAt] : []))
+            .flatMap((pr) =>
+                pr.mergedAt && pr.repository.nameWithOwner === REPO
+                    ? [pr.mergedAt]
+                    : [],
+            )
             .sort()[0];
         if (!mergedAt) continue;
         const reward = await contributionReward(
@@ -835,12 +847,15 @@ async function mergedPrProposals(
         MERGED_PRS_QUERY,
         user,
     )) {
-        // A closed quest pays its bounty through the issue, replacing the quote.
-        const closesQuest = pr.closingIssuesReferences.nodes.some(
-            (issue) =>
-                issue.repository.nameWithOwner === REPO &&
-                hasQuestLabel(issue.labels.nodes),
-        );
+        // A closed quest pays its bounty through the issue, replacing the
+        // quote. Beyond the first page, assume one does rather than pay twice.
+        const closesQuest =
+            pr.closingIssuesReferences.pageInfo.hasNextPage ||
+            pr.closingIssuesReferences.nodes.some(
+                (issue) =>
+                    issue.repository.nameWithOwner === REPO &&
+                    hasQuestLabel(issue.labels.nodes),
+            );
         const reward = await contributionReward(
             token,
             quoteKey,
@@ -885,6 +900,7 @@ async function legacyReportedIssueProposals(token: string, user: QuestUser) {
                 !issue.closedByPullRequestsReferences.nodes.some(
                     (pr) =>
                         pr.mergedAt !== null &&
+                        pr.repository.nameWithOwner === REPO &&
                         Date.parse(pr.mergedAt) >= ISSUE_REPORT_START,
                 )
             ) {

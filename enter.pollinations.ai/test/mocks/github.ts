@@ -45,6 +45,7 @@ export type MockGithubState = {
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
+            repository?: string;
             headRefName?: string;
             author: {
                 __typename?: string;
@@ -142,6 +143,11 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 };
             };
             const variables = body.variables ?? {};
+            const closers = (issue: MockGithubState["questIssues"][number]) =>
+                (issue.closedByPullRequestsReferences ?? []).map((pr) => ({
+                    ...pr,
+                    repository: { nameWithOwner: pr.repository ?? REPO },
+                }));
             // The newest 20 comments before the cursor, as `comments(last:20)`.
             const commentPage = (comments: MockRewardComment[] = []) => {
                 const end = Number(variables.before ?? comments.length);
@@ -192,16 +198,21 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                               },
                               comments: commentPage(pr.comments),
                               closingIssuesReferences: {
-                                  nodes: (pr.closingIssueLabels ?? []).map(
-                                      (labels) => ({
+                                  pageInfo: {
+                                      hasNextPage:
+                                          (pr.closingIssueLabels ?? []).length >
+                                          20,
+                                  },
+                                  nodes: (pr.closingIssueLabels ?? [])
+                                      .slice(0, 20)
+                                      .map((labels) => ({
                                           repository: { nameWithOwner: REPO },
                                           labels: {
                                               nodes: labels.map((name) => ({
                                                   name,
                                               })),
                                           },
-                                      }),
-                                  ),
+                                      })),
                               },
                           }))
                     : state.questIssues
@@ -223,9 +234,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                               },
                               comments: commentPage(issue.comments),
                               closedByPullRequestsReferences: {
-                                  nodes:
-                                      issue.closedByPullRequestsReferences ??
-                                      [],
+                                  nodes: closers(issue),
                               },
                           }));
                 nodes.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -325,7 +334,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 },
                 labels: { nodes: issue.labels ?? [] },
                 closedByPullRequestsReferences: {
-                    nodes: issue.closedByPullRequestsReferences ?? [],
+                    nodes: closers(issue),
                 },
             }));
             const next = start + nodes.length;

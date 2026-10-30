@@ -2594,6 +2594,11 @@ test("merged PRs opened after the rollout pay a signed quote or a maintainer ove
             comments: [await quoteComment(20014, "Reward: 3 paid")],
         },
         {
+            number: 20017,
+            comments: [await quote(20017)],
+            closingIssueLabels: Array.from({ length: 21 }, () => []),
+        },
+        {
             number: 20015,
             comments: [await quote(20015)],
             repository: "someone/else",
@@ -2690,6 +2695,7 @@ test("PRs and issues opened before the rollout keep the old fixed rewards", asyn
         createdAt: string,
         comments: MockRewardComment[],
         mergedAt: string | null = MERGED_AFTER_QUOTE,
+        repository?: string,
     ) => {
         mocks.github.state.questIssues.push({
             number,
@@ -2706,7 +2712,7 @@ test("PRs and issues opened before the rollout keep the old fixed rewards", asyn
             },
             comments,
             closedByPullRequestsReferences: [
-                { number: number + 1000, mergedAt, author: null },
+                { number: number + 1000, mergedAt, repository, author: null },
             ],
         });
     };
@@ -2738,6 +2744,21 @@ test("PRs and issues opened before the rollout keep the old fixed rewards", asyn
             createdAt: "2026-11-05T00:00:00Z",
         }),
     ]);
+    // Only a merge into this repository fixes a report, old or new.
+    await reportedIssue(
+        21006,
+        OPENED_AFTER_REWARDS_START,
+        [await quoteComment(21006, "Reward: 1.5 quest")],
+        MERGED_AFTER_QUOTE,
+        "someone/else",
+    );
+    await reportedIssue(
+        21007,
+        "2026-10-01T00:00:00Z",
+        [],
+        MERGED_AFTER_QUOTE,
+        "someone/else",
+    );
 
     await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
     const rewards = await db

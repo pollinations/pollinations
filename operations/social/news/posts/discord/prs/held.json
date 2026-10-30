@@ -7,11 +7,6 @@
         "deploy-legacy-caches.yml:deploy (image)",
         "deploy-legacy-caches.yml:deploy (text)"
       ]
-    },
-    "18201": {
-      "merge_sha": "420529991138b51789ae7df3877fbf8b0822a2af",
-      "merged_at": "2026-10-29T22:30:02Z",
-      "required": []
     }
   },
   "production": "671ac42e2e92f049864b154d17e55bb2b738a0fa",

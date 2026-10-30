@@ -31,6 +31,7 @@ import {
     GENERATION_HANDOFF_PATH,
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
+import { createA2aRoutes } from "./routes/a2a.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -148,6 +149,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
 - [Live model catalog](${origin}/models): Current model IDs and capabilities.
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
+- [A2A agent card](${origin}/.well-known/agent-card.json): Agent2Agent protocol endpoint for agents that speak A2A.
 - [OAuth protected resource metadata](${origin}/.well-known/oauth-protected-resource): RFC 9728 pointer to the authorization server that issues API keys.
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 
@@ -289,6 +291,14 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     // only the exact /mcp/:serverId path, while its /mcp/* edge rate limit
     // still runs first because the cards are mounted after it.
     .route("/", mcpCardRoutes)
+    // A2A: the AgentCard is public discovery; POST /a2a authenticates and
+    // bills through the dispatched generation routes, like /v1/messages.
+    .route(
+        "/",
+        createA2aRoutes((request, c) =>
+            app.fetch(request, c.env, c.executionCtx),
+        ),
+    )
     .route(E2B_PATH, e2bRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.

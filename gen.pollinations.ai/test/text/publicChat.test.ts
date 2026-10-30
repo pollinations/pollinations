@@ -721,7 +721,10 @@ it("rejects the news failure's empty Responses completion through the Chat adapt
     };
     const { response, text, calls } = await chatThroughHandler(
         "openai/gpt-6-sol",
-        ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        [
+            "myceli-prod-eastus.openai.azure.com",
+            "bedrock-runtime.us-east-1.amazonaws.com",
+        ],
         async (request) => {
             const body = (await request.json()) as { stream?: boolean };
             return body.stream

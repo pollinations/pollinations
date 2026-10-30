@@ -14,6 +14,7 @@ import {
     callDirectResponses,
     type DirectResponsesTarget,
     resolveDirectResponsesTarget,
+    responsesTargetFromConfig,
 } from "@/text/responses/client.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
@@ -58,6 +59,60 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("signs the exact Responses payload for Bedrock without bearer authentication", async () => {
+        const target = responsesTargetFromConfig("global.openai.gpt-6-luna", {
+            provider: "bedrock",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+            "aws-access-key-id": "test-access-key",
+            "aws-secret-access-key": "test-secret-key",
+            "aws-region": "us-east-1",
+            serviceTier: "default",
+        });
+        if (!target) throw new Error("expected Bedrock target");
+        expect(target.authConfigured).toBe(true);
+        await callDirectResponses(request(), target, async (url, init) => {
+            expect(url).toBe(target.endpoint);
+            expect(init?.redirect).toBe("manual");
+            const headers = new Headers(init?.headers);
+            expect(headers.get("authorization")).toMatch(
+                /^AWS4-HMAC-SHA256 Credential=test-access-key\/\d{8}\/us-east-1\/bedrock\/aws4_request,/,
+            );
+            const digest = await crypto.subtle.digest(
+                "SHA-256",
+                encoder.encode(String(init?.body)),
+            );
+            expect(headers.get("x-amz-content-sha256")).toBe(
+                Array.from(new Uint8Array(digest), (byte) =>
+                    byte.toString(16).padStart(2, "0"),
+                ).join(""),
+            );
+            expect(headers.get("api-key")).toBeNull();
+            expect(JSON.parse(String(init?.body))).toMatchObject({
+                model: "global.openai.gpt-6-luna",
+                service_tier: "default",
+                store: false,
+            });
+            return Response.json({});
+        });
+    });
+
+    it("rejects incomplete AWS credentials before sending a Responses request", async () => {
+        const target = responsesTargetFromConfig("global.openai.gpt-6-luna", {
+            provider: "bedrock",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+            "aws-access-key-id": "test-access-key",
+            "aws-region": "us-east-1",
+        });
+        if (!target) throw new Error("expected Bedrock target");
+        const fetcher = vi.fn();
+        await expect(
+            callDirectResponses(request(), target, fetcher),
+        ).rejects.toMatchObject({ status: 500 });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+
     it("keeps the GPT-5 Nano backup on Standard for native Responses", () => {
         const input = request({
             model: "openai/gpt-5-nano:openai",
@@ -100,14 +155,16 @@ describe("direct Responses transport", () => {
     });
     it("keeps gpt-6-astra recovery on Standard in native Responses", () => {
         const input = request({
-            model: "openai/gpt-6-astra:openai",
+            model: "openai/gpt-6-astra:aws",
             service_tier: "priority",
         });
         const target = resolveDirectResponsesTarget(input.model, input);
-        if (!target) throw new Error("expected direct OpenAI target");
-        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        if (!target) throw new Error("expected AWS Responses target");
+        expect(target.endpoint).toBe(
+            "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+        );
         expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
-            model: "gpt-6-astra",
+            model: "global.openai.gpt-6-astra",
             service_tier: "default",
             store: false,
         });
@@ -200,14 +257,16 @@ describe("direct Responses transport", () => {
 
     it("keeps gpt-5.6-sol recovery on Standard in native Responses", () => {
         const input = request({
-            model: "openai/gpt-5.6-sol:openai",
+            model: "openai/gpt-5.6-sol:aws",
             service_tier: "priority",
         });
         const target = resolveDirectResponsesTarget(input.model, input);
-        if (!target) throw new Error("expected direct OpenAI target");
-        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        if (!target) throw new Error("expected AWS Responses target");
+        expect(target.endpoint).toBe(
+            "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+        );
         expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
-            model: "gpt-5.6-sol",
+            model: "global.openai.gpt-5.6-sol",
             service_tier: "default",
             store: false,
         });
@@ -240,14 +299,16 @@ describe("direct Responses transport", () => {
 
     it("keeps gpt-5.6-luna recovery on Standard in native Responses", () => {
         const input = request({
-            model: "openai/gpt-5.6-luna:openai",
+            model: "openai/gpt-5.6-luna:aws",
             service_tier: "priority",
         });
         const target = resolveDirectResponsesTarget(input.model, input);
-        if (!target) throw new Error("expected direct OpenAI target");
-        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        if (!target) throw new Error("expected AWS Responses target");
+        expect(target.endpoint).toBe(
+            "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+        );
         expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
-            model: "gpt-5.6-luna",
+            model: "global.openai.gpt-5.6-luna",
             service_tier: "default",
             store: false,
         });
@@ -352,14 +413,16 @@ describe("direct Responses transport", () => {
 
     it("keeps gpt-5.6-terra recovery on Standard in native Responses", () => {
         const input = request({
-            model: "openai/gpt-5.6-terra:openai",
+            model: "openai/gpt-5.6-terra:aws",
             service_tier: "priority",
         });
         const target = resolveDirectResponsesTarget(input.model, input);
-        if (!target) throw new Error("expected direct OpenAI target");
-        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        if (!target) throw new Error("expected AWS Responses target");
+        expect(target.endpoint).toBe(
+            "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+        );
         expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
-            model: "gpt-5.6-terra",
+            model: "global.openai.gpt-5.6-terra",
             service_tier: "default",
             store: false,
         });

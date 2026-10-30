@@ -370,8 +370,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         // Provider retires this route on 2028-01-11.
-        // Preserve the existing one-third customer price multiplier.
-        priceMultiplier: 1 / 3,
+        priceMultiplier: 0.75,
         paidOnly: false,
         // Azure Global Standard rates (retail prices API and billed meters,
         // 2026-10-12).
@@ -598,7 +597,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-04").getTime(),
         // Provider retires this route on 2028-01-11.
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
             promptTextTokens: perMillion(10.0),
@@ -655,7 +654,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.2),
@@ -712,7 +711,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-30").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // OpenAI list rates; Azure has not published GPT-6.1 Sol rates yet.
         cost: {
             promptTextTokens: perMillion(2),
@@ -771,7 +770,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),

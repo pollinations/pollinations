@@ -26,6 +26,7 @@ type LoginOptions = {
 
 interface ProfileResponse {
     githubUsername?: string | null;
+    name?: string | null;
     image?: string | null;
 }
 
@@ -146,7 +147,7 @@ async function fetchProfileLabel(key: string): Promise<string | null> {
         apiKey: key,
     }).catch(() => null);
     if (!profile) return null;
-    return `Logged in as ${profile.githubUsername ?? "unknown"}`;
+    return `Logged in as ${profile.name ?? profile.githubUsername ?? "unknown"}`;
 }
 
 /** Run the browser device flow, store the resulting key, and return it. */
@@ -300,7 +301,7 @@ export async function showAuthStatus(): Promise<void> {
     printResult({
         authenticated: true,
         key: masked,
-        name: profile.githubUsername ?? "unknown",
+        name: profile.name ?? profile.githubUsername ?? "unknown",
         pollen: wallet ?? "unknown",
         key_budget: balance?.balance !== wallet ? balance?.balance : undefined,
     });

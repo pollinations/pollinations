@@ -27,14 +27,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+  build:
     runs-on: ubuntu-latest
-    environment: production
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
     steps:
+      - name: Require production branch
+        working-directory: .
+        env:
+          DEPLOY_REF: ${{ github.ref }}
+          DEPLOY_EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$DEPLOY_REF" != 'refs/heads/production' ] ||
+             { [ "$DEPLOY_EVENT" != 'push' ] && [ "$DEPLOY_EVENT" != 'workflow_dispatch' ]; }; then
+            echo '::error::Sites deployments require a push or manual run from production.' >&2
+            exit 1
+          fi
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
@@ -45,9 +54,31 @@ jobs:
       - run: npm run typecheck --if-present
       - run: npm run test --if-present
       - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pollinations-site-${{ inputs.site-name }}
+          path: ${{ inputs.working-directory }}/${{ inputs.site-directory }}
+          if-no-files-found: error
+          # Keep .well-known files; the CLI still excludes other dotfiles.
+          include-hidden-files: true
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Install published CLI
+        run: npm install --global --ignore-scripts --no-audit --no-fund @pollinations/cli@0.1.72
+      - uses: actions/download-artifact@v4
+        with:
+          name: pollinations-site-${{ inputs.site-name }}
+          path: ${{ runner.temp }}/pollinations-site
       - name: Publish and verify
         env:
           POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
           SITE_NAME: ${{ inputs.site-name }}
-          SITE_DIRECTORY: ${{ inputs.site-directory }}
-        run: npx --yes @pollinations/cli@0.1.72 sites deploy "$SITE_DIRECTORY" --name "$SITE_NAME" --verify
+        run: polli sites deploy "$RUNNER_TEMP/pollinations-site" --name "$SITE_NAME" --verify

@@ -80,7 +80,11 @@ export function assetType(file: string) {
 }
 
 /** Read public assets without the deployment credential, following index.html redirects. */
-export async function verifySiteFiles(files: SiteFile[], siteUrl: string) {
+export async function verifySiteFiles(
+    files: SiteFile[],
+    siteUrl: string,
+    retryDelayMs = 5_000,
+) {
     for (const file of files) {
         const path = file.path.split("/").map(encodeURIComponent).join("/");
         for (let attempt = 0; ; attempt++) {
@@ -106,7 +110,7 @@ export async function verifySiteFiles(files: SiteFile[], siteUrl: string) {
                         `Verification failed for ${file.path}: ${errorMessage(error)}`,
                     );
                 }
-                await setTimeout(5_000);
+                await setTimeout(retryDelayMs);
             }
         }
     }
@@ -175,6 +179,7 @@ const deploy = new Command("deploy")
                 { hash: file.hash, size: file.size },
             ]),
         );
+        let site: Site | undefined;
         try {
             const path = `/account/sites/${encodeURIComponent(opts.name)}`;
             const session = await gen<UploadSession>(`${path}/upload`, {
@@ -183,23 +188,27 @@ const deploy = new Command("deploy")
                 apiKey: key,
             });
             const jwt = await uploadBuckets(session, files);
-            const site = await gen<Site>(path, {
+            site = await gen<Site>(path, {
                 method: "PUT",
                 body: { jwt },
                 apiKey: key,
             });
-            if (opts.verify) await verifySiteFiles(files, site.url);
             if (getOutputMode() === "json") {
                 printResult(site);
-                return;
+            } else {
+                const uploaded = session.buckets.flat().length;
+                printSuccess(`Published ${site.url}`);
+                printInfo(
+                    `${files.length} files, ${uploaded} uploaded, ${files.length - uploaded} unchanged`,
+                );
             }
-            const uploaded = session.buckets.flat().length;
-            printSuccess(`Published ${site.url}`);
-            printInfo(
-                `${files.length} files, ${uploaded} uploaded, ${files.length - uploaded} unchanged`,
-            );
+            if (opts.verify) await verifySiteFiles(files, site.url);
         } catch (error) {
-            printError(`Failed to deploy site: ${errorMessage(error)}`);
+            printError(
+                site
+                    ? `Site published at ${site.url}, but verification failed: ${errorMessage(error)}`
+                    : `Failed to deploy site: ${errorMessage(error)}`,
+            );
             throw new ExitSignal(1);
         }
     });

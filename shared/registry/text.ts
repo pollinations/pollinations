@@ -1319,7 +1319,8 @@ const TEXT_BASE_SERVICES = {
         // Provider retires this route on 2026-12-15.
         // 0.5x keeps output at the pre-Azure DeepInfra price.
         priceMultiplier: 0.5,
-        paidOnly: false,
+        // 10M TPM is below twice the observed 8.82M TPM peak.
+        paidOnly: true,
         perUserRpm: 60,
         cost: {
             // Azure Global Standard "V4.1 Flash" catalog rates (2026-10-15).

@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "Websim",
+    "url": "https://websim.pollinations.app",
+    "description": "Generate, preview, and download single-file HTML pages using Pollinations models and your own Pollen.",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "pollinations-ai",
+    "githubUserId": "314960022",
+    "repositoryUrl": "https://github.com/pollinations/websim",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-30",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18794",
+    "approvedDate": "2026-10-30",
+    "byop": true,
+    "requests24h": 2,
+    "screenshotUrl": "https://media.pollinations.ai/fcc581bd-bc70-49e5-b65a-5003a5088641"
+  },
+  {
     "emoji": "🖼️",
     "name": "Image Remix",
     "url": "https://image-remix.pollinations.app",
@@ -16020,7 +16041,7 @@
     "issueUrl": null,
     "approvedDate": "2025-10-02",
     "byop": true,
-    "requests24h": 1709
+    "requests24h": 5
   },
   {
     "emoji": "😼",

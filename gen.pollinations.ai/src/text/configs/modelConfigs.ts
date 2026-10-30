@@ -408,6 +408,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         model: "gpt-audio-mini-2025-12-15",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
         directEndpoint: "https://api.openai.com/v1/chat/completions",
+        serviceTier: "default",
         ...azureOpenAIParameters,
     }),
     "gpt-audio-1.5-openai": () => ({
@@ -415,6 +416,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         model: "gpt-audio-1.5",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
         directEndpoint: "https://api.openai.com/v1/chat/completions",
+        serviceTier: "default",
         ...azureOpenAIParameters,
     }),
     "gpt-audio-mini-2025-12-15": () =>

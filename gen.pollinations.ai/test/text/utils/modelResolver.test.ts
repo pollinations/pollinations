@@ -267,6 +267,19 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it.each(["openai/gpt-audio-mini:openai", "openai/gpt-audio-1.5:openai"])(
+        "keeps %s on Standard regardless of the caller's processing tier",
+        (model) => {
+            for (const service_tier of [undefined, "auto", "priority"]) {
+                const resolved = resolveModelConfig(messages, {
+                    model,
+                    service_tier,
+                });
+                expect(resolved.options.service_tier).toBe("default");
+            }
+        },
+    );
+
     it.each(["gpt-6-sol", "gpt-6.1-sol", "gpt-6-luna"])(
         "routes %s through Azure with AWS global fallback",
         (model) => {

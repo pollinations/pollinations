@@ -2109,7 +2109,7 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-haiku-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
@@ -2220,7 +2220,7 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-sonnet-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-28").getTime(),
@@ -2410,7 +2410,7 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-fable-5.1": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),

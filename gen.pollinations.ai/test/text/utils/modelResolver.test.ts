@@ -642,23 +642,30 @@ describe("resolveModelConfig", () => {
     });
 
     it.each([
-        ["anthropic/claude-haiku-5.5", "claude-haiku-5-5"],
-        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5"],
-        ["anthropic/claude-opus-5.5", "claude-opus-5-5"],
-        ["anthropic/claude-fable-5.1", "claude-fable-5-1"],
+        ["anthropic/claude-haiku-5.5", "claude-haiku-5-5", "anthropic"],
+        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", "anthropic"],
+        ["anthropic/claude-opus-5.5", "claude-opus-5-5", "bedrock"],
+        ["anthropic/claude-fable-5.1", "claude-fable-5-1", "anthropic"],
     ])(
-        "routes %s to AWS Bedrock with a direct Anthropic fallback",
-        (model, upstream) => {
+        "resolves the configured primary and fallback for %s",
+        (model, upstream, provider) => {
+            const awsPrimary = provider === "bedrock";
             const primary = resolveModelConfig(messages, { model });
-            expect(primary.options.model).toBe(`global.anthropic.${upstream}`);
-            expect(primary.options.modelConfig?.provider).toBe("bedrock");
+            expect(primary.options.model).toBe(
+                awsPrimary ? `global.anthropic.${upstream}` : upstream,
+            );
+            expect(primary.options.modelConfig?.provider).toBe(provider);
             expect(primary.options.max_tokens).toBe(128000);
 
             const fallback = resolveModelConfig(messages, {
-                model: `${model}:anthropic`,
+                model: `${model}:${awsPrimary ? "anthropic" : "aws"}`,
             });
-            expect(fallback.options.model).toBe(upstream);
-            expect(fallback.options.modelConfig?.provider).toBe("anthropic");
+            expect(fallback.options.model).toBe(
+                awsPrimary ? upstream : `global.anthropic.${upstream}`,
+            );
+            expect(fallback.options.modelConfig?.provider).toBe(
+                awsPrimary ? "anthropic" : "bedrock",
+            );
             expect(fallback.options.max_tokens).toBe(128000);
         },
     );

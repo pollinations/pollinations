@@ -669,8 +669,8 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-haiku-5.5:anthropic",
-        config: portkeyConfig["anthropic/claude-haiku-5.5:anthropic"],
+        name: "anthropic/claude-haiku-5.5:aws",
+        config: portkeyConfig["anthropic/claude-haiku-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -700,8 +700,8 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-sonnet-5.5:anthropic",
-        config: portkeyConfig["anthropic/claude-sonnet-5.5:anthropic"],
+        name: "anthropic/claude-sonnet-5.5:aws",
+        config: portkeyConfig["anthropic/claude-sonnet-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -767,8 +767,8 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-fable-5.1:anthropic",
-        config: portkeyConfig["anthropic/claude-fable-5.1:anthropic"],
+        name: "anthropic/claude-fable-5.1:aws",
+        config: portkeyConfig["anthropic/claude-fable-5.1:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {

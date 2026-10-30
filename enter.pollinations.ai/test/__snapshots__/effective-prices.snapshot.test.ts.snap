@@ -190,7 +190,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000075,
     },
   },
-  "anthropic/claude-fable-5.1:anthropic": {
+  "anthropic/claude-fable-5.1:aws": {
     "cost": {
       "completionTextTokens": 0.00005,
       "promptCacheWriteTokens": 0.0000125,
@@ -268,7 +268,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000075,
     },
   },
-  "anthropic/claude-haiku-5.5:anthropic": {
+  "anthropic/claude-haiku-5.5:aws": {
     "cost": {
       "completionTextTokens": 0.0000005,
       "promptCacheWriteTokens": 0.000000125,
@@ -472,7 +472,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
-  "anthropic/claude-sonnet-5.5:anthropic": {
+  "anthropic/claude-sonnet-5.5:aws": {
     "cost": {
       "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,

@@ -1144,23 +1144,23 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 64000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-sonnet-5-5",
-            defaultOptions: { max_tokens: 128000 },
-        }),
-    "anthropic/claude-sonnet-5.5:anthropic": () =>
         createAnthropicConfig({
             model: "claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "anthropic/claude-haiku-5.5": () =>
+    "anthropic/claude-sonnet-5.5:aws": () =>
         createBedrockNativeConfig({
-            model: "global.anthropic.claude-haiku-5-5",
+            model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "anthropic/claude-haiku-5.5:anthropic": () =>
+    "anthropic/claude-haiku-5.5": () =>
         createAnthropicConfig({
             model: "claude-haiku-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-haiku-5.5:aws": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-sonnet-5": () =>
@@ -1209,13 +1209,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-fable-5-1",
-            defaultOptions: { max_tokens: 128000 },
-        }),
-    "anthropic/claude-fable-5.1:anthropic": () =>
         createAnthropicConfig({
             model: "claude-fable-5-1",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.1:aws": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5-1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>

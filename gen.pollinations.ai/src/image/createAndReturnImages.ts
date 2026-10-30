@@ -29,6 +29,7 @@ import {
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
+    callOpenRouterMaiImageAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
@@ -934,6 +935,23 @@ const generateImage = async (
                 return await callAzureMaiImage(prompt, safeParams, userInfo);
             } catch (error) {
                 logError("Azure MAI image generation failed:", error.message);
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "microsoft/mai-image-2.6-flash:openrouter": {
+            try {
+                return await callOpenRouterMaiImageAPI(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                );
+            } catch (error) {
+                logError(
+                    "OpenRouter MAI image generation failed:",
+                    error.message,
+                );
                 await logGptImageError(prompt, safeParams, userInfo, error);
                 throw error;
             }

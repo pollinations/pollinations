@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-29",
+  "period_start": "2026-10-29",
+  "period_end": "2026-10-29",
+  "title": "Dashboard outages look like outages",
+  "summary": "A debugging marathon: clearer outage and token-limit errors, tighter delegated-key limits, and safer server-error messages.\n\nEnter now distinguishes temporary service failures from sign-in errors. Affected account panels show an outage notice and retry every 30 seconds, while unaffected content can remain visible. Retries pause when the browser is offline and resume on reconnect.\n\nNon-streaming requests that exhaust an explicit output limit without producing an answer now receive a 400 error instead of a retryable 502 in the affected Chat Completions, Messages, and Chat-adapted Responses paths. The guidance explains that reasoning tokens count toward the limit and reported usage is still billed. Streaming and native Responses behavior is unchanged. The API docs now spell out these cases.\n\nAPI keys that create or edit other keys must stay within their own permissions, model access, expiry, and Pollen budget. Agent-run credentials keep their parent key's generation limits but cannot use account permissions. Ordinary API-key delegation is unchanged.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 18201,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18650,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18660,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18692,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18694,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18702,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18709,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18710,
+      "date": "2026-10-29"
+    }
+  ],
+  "generated_at": "2026-10-30T06:07:17.610604+00:00",
+  "daily": [],
+  "changelog": [
+    {
+      "pr_number": 18709,
+      "url": "https://github.com/pollinations/pollinations/pull/18709",
+      "merged_at": "2026-10-29T18:31:03Z",
+      "api_changes": [
+        {
+          "id": "pr-18709:POST /text",
+          "endpoint": "POST /text",
+          "summary": "Text Generation With Messages",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:max_completion_tokens",
+              "before": null,
+              "after": {
+                "type": "integer|null",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18709:POST /v1/chat/completions",
+          "endpoint": "POST /v1/chat/completions",
+          "summary": "Chat Completions",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:max_completion_tokens",
+              "before": null,
+              "after": {
+                "type": "integer|null",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

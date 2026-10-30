@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-10-29",
+  "period_start": "2026-10-29",
+  "period_end": "2026-10-29",
+  "generated_at": "2026-10-30T06:07:17.610604+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/669075cdc15945f010154091e8cb1c2a10b8db72a07f98b6aebd62aac79feed6"
+    }
+  ],
+  "text": "Merged: dashboard outages now show an outage notice instead of a sign-in error. Affected panels retry every 30s, pause offline, and resume on reconnect. In affected non-streaming chat paths, exhausting an explicit output-token limit without an answer now returns 400, not 502."
+}

@@ -49,12 +49,16 @@ const PUBLIC_MAIL_DOMAINS = new Set([
 
 /**
  * The domain a registrant controls (Public Suffix List), so subdomains
- * (a1.farm.com, a2.farm.com) count as one and a public suffix (co.uk,
- * k12.ca.us) is never flagged.
+ * (a1.farm.com, a2.farm.com) count as one. Null when the host has none
+ * (co.uk, an IP): such sign-ups are never counted, so a public suffix is
+ * never flagged.
  */
-export function registrableDomain(email: string): string {
-    const host = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
-    return getDomain(host) ?? host;
+export function registrableDomain(email: string): string | null {
+    const host = email
+        .slice(email.lastIndexOf("@") + 1)
+        .toLowerCase()
+        .replace(/\.+$/, "");
+    return getDomain(host, { validateHostname: false });
 }
 
 /** A domain that a sign-up just flagged. */
@@ -85,7 +89,7 @@ export async function recordSetupRewardSignup(
             )`,
         )
         .bind(now - RETENTION_SECONDS);
-    if (PUBLIC_MAIL_DOMAINS.has(domain)) {
+    if (!domain || PUBLIC_MAIL_DOMAINS.has(domain)) {
         await cleanup.run();
         return null;
     }

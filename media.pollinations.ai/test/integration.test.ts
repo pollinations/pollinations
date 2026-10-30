@@ -149,19 +149,20 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "104857600",
         DB: env.DB,
+        ENTER: env.ENTER,
     };
 }
 
-// Answers Gen's key check and refuses every other outbound request.
+// Answers Enter's key check on the ENTER binding and refuses every public
+// outbound request.
 function mockAuth() {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        throw new Error(`Unexpected fetch: ${new Request(input, init).url}`);
+    });
+    vi.spyOn(env.ENTER, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
-        const url = new URL(request.url);
-        if (
-            url.origin !== "https://gen.pollinations.ai" ||
-            url.pathname !== "/account/key"
-        ) {
-            throw new Error(`Unexpected fetch: ${request.url}`);
+        if (new URL(request.url).pathname !== "/api/account/key") {
+            throw new Error(`Unexpected Enter call: ${request.url}`);
         }
         const key = (request.headers.get("authorization") ?? "").replace(
             /^Bearer /,
@@ -490,7 +491,7 @@ describe("media.pollinations.ai", () => {
     it.each([429, 500])(
         "answers 503, not 401, when the key check returns %i",
         async (status) => {
-            vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+            vi.mocked(env.ENTER.fetch).mockResolvedValueOnce(
                 new Response(null, { status }),
             );
             const res = await SELF.fetch(
@@ -507,6 +508,29 @@ describe("media.pollinations.ai", () => {
             expect(res.status).toBe(503);
         },
     );
+
+    // A public fetch through Gen would share the Workers egress IP's limit.
+    it("checks keys with Enter over the service binding, not through Gen", async () => {
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: TINY_PNG,
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "image/png",
+            },
+        });
+        expect(res.status).toBe(200);
+        const [input, init] = vi.mocked(env.ENTER.fetch).mock.calls[0];
+        const request = new Request(input, init);
+        expect(request.url).toBe(
+            "https://enter.pollinations.ai/api/account/key",
+        );
+        expect(request.headers.get("authorization")).toBe(
+            `Bearer ${VALID_KEY}`,
+        );
+        expect(request.headers.has("cf-connecting-ip")).toBe(false);
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
 
     it("upload and retrieve", async () => {
         const form = new FormData();
@@ -2155,7 +2179,7 @@ describe("media.pollinations.ai", () => {
                 statuses.push(res.status);
             }
             expect(statuses).toEqual([401, 401, 401, 429, 429]);
-            expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+            expect(env.ENTER.fetch).toHaveBeenCalledTimes(3);
 
             const otherIp = await send(mediaEnv, "POST", "/upload", {
                 key: "sk_fake5",
@@ -2175,7 +2199,7 @@ describe("media.pollinations.ai", () => {
                 statuses.push(res.status);
             }
             expect(statuses).toEqual([401, 401, 429]);
-            expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+            expect(env.ENTER.fetch).toHaveBeenCalledTimes(2);
         });
 
         it("caps public gallery reads per IP before D1", async () => {

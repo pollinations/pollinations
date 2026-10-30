@@ -47,9 +47,11 @@ import {
 export { MediaUpload } from "./media-upload.ts";
 
 const DOMAIN = "media.pollinations.ai";
-// gen.pollinations.ai proxies /account/* to enter — using the public path
-// keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+// Enter's key check, reached over the ENTER service binding (the host is not
+// used for routing). A public fetch through Gen would leave from the Workers
+// egress IP that every Worker shares, so it would count against Gen's per-IP
+// limit and a bad-key flood could turn valid uploads into 503s.
+const KEY_VERIFY_URL = "https://enter.pollinations.ai/api/account/key";
 // Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
 // IDs can be reused after expiry; neither should remain in downstream caches.
 const UNCACHED_CACHE_CONTROL = "no-store";
@@ -75,10 +77,11 @@ interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
+    ENTER: Fetcher;
 }
 
 /**
- * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
+ * Wire shape of `GET /api/account/key`. BYOP attribution arrives nested under
  * `byopApp`, which is null for keys not minted through the BYOP flow.
  */
 interface KeyVerifyResponse {
@@ -99,10 +102,15 @@ interface AuthResult {
     byopClientKeyId: string | null;
 }
 
-async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    const res = await fetch(KEY_VERIFY_URL, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    }).catch(() => undefined);
+async function verifyApiKey(
+    enter: Fetcher,
+    apiKey: string,
+): Promise<AuthResult | null> {
+    const res = await enter
+        .fetch(KEY_VERIFY_URL, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        })
+        .catch(() => undefined);
     // Only a 4xx means a bad key. A throttled or failing check must not tell
     // the owner of a valid key that it is invalid.
     if (!res || res.status === 429 || res.status >= 500) {
@@ -449,7 +457,7 @@ api.post(
                 401,
             );
         }
-        const authResult = await verifyApiKey(apiKey);
+        const authResult = await verifyApiKey(c.env.ENTER, apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
@@ -993,7 +1001,7 @@ api.delete(
                 401,
             );
         }
-        const auth = await verifyApiKey(apiKey);
+        const auth = await verifyApiKey(c.env.ENTER, apiKey);
         if (!auth) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }

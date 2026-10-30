@@ -23,6 +23,8 @@ import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
+import { filterKeys, type KeySort, sortKeys } from "./key-filter-sort.ts";
+import { KeyListToolbar } from "./key-list-toolbar.tsx";
 import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
@@ -48,6 +50,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [query, setQuery] = useState("");
+    const [sort, setSort] = useState<KeySort>("created");
 
     async function handleEdit(apiKey: ApiKey): Promise<void> {
         // The list is as old as the page; API calls since then spent the budget.
@@ -79,12 +83,17 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const visibleKeys = apiKeys.filter(
         (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
     );
-    const sortedKeys = [...visibleKeys].sort(
-        (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    const filteredKeys = filterKeys(visibleKeys, query);
+    const sortedKeys = sortKeys(filteredKeys, sort);
     const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
     const sortedAppKeys = sortedKeys.filter(isAppKey);
+    // Section actions and empty states depend on what the account owns, not on
+    // the active search, so each create button stays reachable when a filter
+    // hides the section's keys.
+    const hasSecretKeys = visibleKeys.some((apiKey) => !isAppKey(apiKey));
+    const hasAppKeys = visibleKeys.some(isAppKey);
+    const hasKeys = visibleKeys.length > 0;
+    const noMatches = hasKeys && sortedKeys.length === 0;
 
     function renderKeyCard(apiKey: ApiKey) {
         const isPublishable = isPublishableKey(apiKey);
@@ -322,13 +331,28 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     return (
         <>
+            {hasKeys && (
+                <KeyListToolbar
+                    query={query}
+                    onQueryChange={setQuery}
+                    sort={sort}
+                    onSortChange={setSort}
+                />
+            )}
+            {noMatches && (
+                <Surface className="p-6 text-center">
+                    <p className="text-sm text-theme-text-muted">
+                        No keys match “{query.trim()}”.
+                    </p>
+                </Surface>
+            )}
             <Section
                 title="Secrets"
                 id="api-keys"
-                action={sortedApiKeys.length > 0 && keyAction}
+                action={hasSecretKeys && keyAction}
             >
                 <div className="flex flex-col gap-3">
-                    {!sortedApiKeys.length && (
+                    {!hasSecretKeys && (
                         <Surface className="p-6 text-center">
                             <div className="mb-2">{keyAction}</div>
                             <p className="text-sm text-theme-text-muted">
@@ -351,10 +375,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             <Section
                 title="Apps"
                 id="app-keys"
-                action={sortedAppKeys.length > 0 && appAction}
+                action={hasAppKeys && appAction}
             >
                 <div className="flex flex-col gap-3">
-                    {!sortedAppKeys.length && (
+                    {!hasAppKeys && (
                         <Surface className="p-6 text-center">
                             <div className="mb-2">{appAction}</div>
                             <p className="text-sm text-theme-text-muted">

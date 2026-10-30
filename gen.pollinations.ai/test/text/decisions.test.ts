@@ -47,6 +47,7 @@ const questions = {
 type UpstreamState = {
     requests: Record<string, unknown>[];
     response?: Response;
+    failModel?: string;
     vercelResponse?: Response;
 };
 
@@ -57,6 +58,7 @@ function createDecisionsMock() {
         reset: () => {
             state.requests = [];
             state.response = undefined;
+            state.failModel = undefined;
             state.vercelResponse = undefined;
         },
         handlerMap: {
@@ -100,11 +102,18 @@ function createDecisionsMock() {
                 });
             },
             [DECISIONS_HOST]: async (request: Request) => {
+                const body = (await request.json()) as { model: string };
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
                     authorization: request.headers.get("authorization"),
-                    body: await request.json(),
+                    body,
                 });
+                if (body.model === state.failModel) {
+                    return Response.json(
+                        { error: { message: "Upstream unavailable" } },
+                        { status: 503 },
+                    );
+                }
                 if (state.response) return state.response.clone();
                 return Response.json({
                     model: "typesafe/jev-1.13-20260917",
@@ -541,6 +550,71 @@ test("falls back native D1 decisions and records OpenRouter cost with the public
     expect(balance.packBalance).toBeCloseTo(1 - (billed?.totalPrice ?? 0), 8);
 });
 
+for (const packBalance of [0, 1]) {
+    test(`caller decision fallback checks paid Pollen with pack balance ${packBalance}`, async ({
+        mocks,
+    }) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance },
+        });
+        mocks.decisions.state.failModel = "respan/span-01-lite";
+        const model = "respan/span-01-lite,typesafe/jev-1.13";
+        const { response, wait } = await post("/alpha/decisions", key, {
+            model,
+            state: "Disk at 93%.",
+            questions: { act: { type: "noul", instructions: "Act now?" } },
+        });
+
+        expect(response.status).toBe(packBalance ? 200 : 402);
+        if (packBalance) {
+            expect(response.headers.get("x-model-used")).toBe(
+                "typesafe/jev-1.13",
+            );
+            expect(response.headers.get("x-fallback-target")).toBe(
+                "config.targets[1]",
+            );
+            await expect(response.json()).resolves.toMatchObject({
+                model: "typesafe/jev-1.13",
+                provider: "TypeSafe",
+            });
+        } else {
+            await expect(response.json()).resolves.toMatchObject({
+                error: { code: "INSUFFICIENT_BALANCE" },
+            });
+        }
+
+        await wait();
+        expect(
+            mocks.decisions.state.requests.map((request) => request.body),
+        ).toEqual(
+            (packBalance
+                ? ["respan/span-01-lite", "typesafe-ai/jev-1.13.0"]
+                : ["respan/span-01-lite"]
+            ).map((model) => expect.objectContaining({ model })),
+        );
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(packBalance ? 1 : 0);
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(balance.tierBalance).toBe(1);
+        if (packBalance) {
+            expect(billed[0]).toMatchObject({
+                modelRequested: model,
+                modelUsed: "typesafe/jev-1.13",
+                modelProviderUsed: "vercel",
+            });
+            expect(billed[0].totalPrice).toBeGreaterThan(0);
+            expect(balance.packBalance).toBeCloseTo(
+                packBalance - billed[0].totalPrice,
+                8,
+            );
+        } else {
+            expect(balance.packBalance).toBe(0);
+        }
+    });
+}
+
 test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
     apiKey,
     mocks,
@@ -668,6 +742,31 @@ test("a text key needs decision on /alpha/decisions but still reaches Jev on cha
     expect(JSON.parse(body.choices[0].message.content)).toEqual(answers);
     await chat.wait();
     expect(mocks.decisions.state.requests).toHaveLength(1);
+});
+
+test("a text key keeps authorized decision alternatives on chat", async ({
+    mocks,
+}) => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["text"],
+        user: { tierBalance: 100, packBalance: 1 },
+    });
+    mocks.decisions.state.failModel = "respan/span-01-lite";
+    const { response, wait } = await post("/v1/chat/completions", key, {
+        model: "respan/span-01-lite,vllm-sr/d3",
+        messages: [
+            {
+                role: "user",
+                content: JSON.stringify({ state: "Disk at 91%.", questions }),
+            },
+        ],
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("vllm-sr/d3");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.json();
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
 test("the decision category holds exactly the models served at /alpha/decisions", async () => {

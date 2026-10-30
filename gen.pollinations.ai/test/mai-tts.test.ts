@@ -1,13 +1,21 @@
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { AUDIO_SERVICES, MAI_VOICE_21_VOICES } from "@shared/registry/audio.ts";
 import {
     type ModelDefinition,
     resolveModelName,
 } from "@shared/registry/registry.ts";
+import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import worker from "../src/index.ts";
 import {
     generateMaiSpeech,
     resolveMaiSpeechVoice,
 } from "../src/routes/audio.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const log = {
     info: vi.fn(),
@@ -177,4 +185,86 @@ describe("MAI Azure SSML", () => {
             String(text.length),
         );
     });
+});
+
+describe("MAI caller choices", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    workerTest.for([
+        ["microsoft/mai-voice-2.1", "microsoft/mai-voice-2.1-flash"],
+        ["microsoft/mai-voice-2.1-flash", "microsoft/mai-voice-2.1"],
+    ])(
+        "uses the chosen Azure voice suffix for %s then %s",
+        async ([primary, alternate], { paidApiKey }) => {
+            const realFetch = globalThis.fetch.bind(globalThis);
+            const ssml: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const url =
+                        input instanceof Request ? input.url : input.toString();
+                    if (
+                        url ===
+                        "https://swedencentral.tts.speech.microsoft.com/cognitiveservices/v1"
+                    ) {
+                        ssml.push(await new Request(input, init).text());
+                        if (ssml.length === 1) {
+                            return new Response("temporarily unavailable", {
+                                status: 503,
+                            });
+                        }
+                        return new Response(new Uint8Array([73, 68, 51, 4]), {
+                            headers: { "content-type": "audio/mpeg" },
+                        });
+                    }
+                    if (
+                        url.startsWith(
+                            "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                        ) ||
+                        url.startsWith("http://localhost:7181/")
+                    ) {
+                        return Response.json({ data: [] });
+                    }
+                    return realFetch(input, init);
+                },
+            );
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request("https://gen.pollinations.ai/v1/audio/speech", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: `${primary},${alternate}`,
+                        input: `MAI variant choices ${crypto.randomUUID()}`,
+                        safe: false,
+                    }),
+                }),
+                withInlineGenerationCoordinator({
+                    ...env,
+                    AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-azure-key",
+                } as unknown as CloudflareBindings),
+                ctx,
+            );
+
+            expect(response.status).toBe(200);
+            const suffix = (model: string) =>
+                model.endsWith("-flash")
+                    ? "MAI-Voice-2.1-Flash"
+                    : "MAI-Voice-2.1";
+            expect(ssml).toHaveLength(2);
+            expect(ssml[0]).toContain(`name="en-US-Harper:${suffix(primary)}"`);
+            expect(ssml[1]).toContain(
+                `name="en-US-Harper:${suffix(alternate)}"`,
+            );
+            expect(response.headers.get("x-tts-voice")).toBe(
+                `en-US-Harper:${suffix(alternate)}`,
+            );
+            expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(
+                0,
+            );
+            await waitOnExecutionContext(ctx);
+        },
+    );
 });

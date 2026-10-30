@@ -9,7 +9,7 @@ import type {
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../../fallback.ts";
-import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../../utils/generation-access.ts";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
 import {
@@ -41,13 +41,18 @@ export async function generateDecision(c: Context<Env>): Promise<Response> {
                 options,
             );
             c.set("upstreamRequestUrl", requestUrl);
+            const selectedModel = c.var.model.requested.includes(",")
+                ? candidate.entry
+                : undefined;
 
             const body: CreateDecisionResponse = {
                 id: `dec-${crypto.randomUUID()}`,
                 // The registry owns public model identity: the provider answers with
                 // its own dated build id, which is not a name callers can request.
-                model: c.var.model.resolved,
-                provider: c.var.model.definition.publisher ?? "",
+                model: selectedModel?.id ?? c.var.model.resolved,
+                provider:
+                    (selectedModel?.definition ?? c.var.model.definition)
+                        .publisher ?? "",
                 answers: result.answers as CreateDecisionResponse["answers"],
                 usage: {
                     input_tokens: result.usage.input_tokens,
@@ -63,6 +68,6 @@ export async function generateDecision(c: Context<Env>): Promise<Response> {
             });
         },
         c.var.track?.attempts,
-        (candidate) => enforceModelRateLimit(c, candidate),
+        (candidate) => requireModelAttemptAccess(c, candidate),
     ).catch(throwTextError);
 }

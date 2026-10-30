@@ -5,6 +5,7 @@ import {
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { keyAllowsModel } from "@shared/registry/model-permissions.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -15,6 +16,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
     type GenerationModelEntry,
+    type GenerationModelRegistry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
@@ -83,14 +85,40 @@ function getValidatedJsonBody<T>(req: {
     }
 }
 
-export async function resolveModelDefinition(
+/**
+ * A caller names their own fallback chain by listing models: "a,b,c" serves
+ * with a and tries b, then c, if it fails. Capped because every extra entry is
+ * one more upstream attempt the caller's own request waits on.
+ */
+const MAX_REQUESTED_MODELS = 4;
+
+/** The models a caller asked for, in the order they want them tried. */
+export function requestedModelIds(model: string): string[] {
+    if (!model.includes(",")) return [model];
+    const ids = model
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
+    if (ids.length === 0) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+    if (ids.length > MAX_REQUESTED_MODELS) {
+        throw new HTTPException(400, {
+            message: `Too many models: "${model}" lists ${ids.length}, at most ${MAX_REQUESTED_MODELS} are tried.`,
+        });
+    }
+    return ids;
+}
+
+function resolveModelEntry(
+    registry: GenerationModelRegistry,
     model: string,
     eventType: EventType,
-    env: CloudflareBindings,
     callerUserId?: string,
     supportedEndpoint?: string,
-): Promise<ModelVariables["model"]> {
-    const registry = await getGenerationModelRegistry(env);
+): GenerationModelEntry {
     const entry = registry.resolve(model);
     if (!entry) {
         throw new HTTPException(400, {
@@ -140,6 +168,48 @@ export async function resolveModelDefinition(
         });
     }
 
+    return entry;
+}
+
+export async function resolveModelDefinition(
+    model: string,
+    eventType: EventType,
+    env: CloudflareBindings,
+    callerUserId?: string,
+    supportedEndpoint?: string,
+): Promise<ModelVariables["model"]> {
+    const registry = await getGenerationModelRegistry(env);
+    const entries = requestedModelIds(model).map((id) =>
+        resolveModelEntry(
+            registry,
+            id,
+            eventType,
+            callerUserId,
+            supportedEndpoint,
+        ),
+    );
+    const [entry, ...alternates] = entries;
+    const mismatched = alternates.find(
+        (alternate) =>
+            alternate.definition.category !== entry.definition.category,
+    );
+    if (mismatched) {
+        throw new HTTPException(400, {
+            message: `Model lists must use the same model category: "${entry.id}" is ${entry.definition.category}, but "${mismatched.id}" is ${mismatched.definition.category}.`,
+        });
+    }
+    // Explicit lists replace configured fallbacks, preserving order and repeats.
+    const fallbackEntries = model.includes(",")
+        ? alternates
+        : (entry.fallbackEntries ?? []);
+    // An agent run executes tools and spends the caller's balance, so its
+    // answer belongs to that caller and must never be replayed to another —
+    // whether it serves as the primary or as someone's listed alternate.
+    const agent = entries.find(
+        (candidate) =>
+            candidate.communityEndpoint &&
+            usesAgentRunToken(candidate.communityEndpoint),
+    );
     return {
         requested: model,
         resolved: entry.id,
@@ -148,15 +218,8 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
-        // An agent run executes tools and spends the caller's balance, so its
-        // answer belongs to that caller and must never be replayed to another.
-        ...(entry.communityEndpoint &&
-            usesAgentRunToken(entry.communityEndpoint) && {
-                cacheScope: `agent:${entry.id}`,
-            }),
-        ...(entry.fallbackEntries && {
-            fallbackEntries: entry.fallbackEntries,
-        }),
+        ...(agent && { cacheScope: `agent:${agent.id}` }),
+        ...(fallbackEntries.length > 0 && { fallbackEntries }),
     };
 }
 
@@ -228,6 +291,20 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
+        // Caller-selected alternatives need their own permission. Declared
+        // provider routes retain the public model's existing permission.
+        if (model.includes(",") && resolved.fallbackEntries) {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            resolved.fallbackEntries = resolved.fallbackEntries.filter(
+                (entry) =>
+                    keyAllowsModel(
+                        allowedModels,
+                        entry.id,
+                        entry.definition,
+                        resolved.endpoint,
+                    ),
+            );
+        }
         c.set("model", resolved);
         c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();

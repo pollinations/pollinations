@@ -62,7 +62,7 @@ import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
@@ -191,7 +191,7 @@ async function withAudioFallback(
         c.var.model,
         attempt,
         c.var.track?.attempts,
-        (candidate) => enforceModelRateLimit(c, candidate),
+        (candidate) => requireModelAttemptAccess(c, candidate),
     );
 }
 type AudioRefChunk = {
@@ -3732,8 +3732,9 @@ async function dispatchAudioGeneration(
         case "microsoft/mai-voice-2.1-flash":
         case "microsoft/mai-voice-2.1-flash:vercel":
         case "microsoft/mai-voice-2.1-flash:openrouter": {
-            const upstreamModel = c.var.model
-                .resolved as keyof typeof MAI_TTS_MODEL_SUFFIXES;
+            const upstreamModel = (
+                model in MAI_TTS_MODEL_SUFFIXES ? model : c.var.model.resolved
+            ) as keyof typeof MAI_TTS_MODEL_SUFFIXES;
             const provider = AUDIO_SERVICES[model as AudioModelName].provider;
             return withSafetyHeaders(
                 c,
@@ -3831,18 +3832,11 @@ async function generateAudioFromSpeechRequest(
     request: CreateSpeechRequest,
     log: Logger,
 ): Promise<Response> {
-    const duration = resolveAudioDuration(
-        c.var.model.resolved,
-        c.var.model.definition,
-        request.duration ?? request.seconds,
-    );
     const {
         input,
         safe,
         voice,
-        response_format = c.var.model.resolved in GEMINI_TTS_MODELS
-            ? "wav"
-            : "mp3",
+        response_format,
         steps,
         negative_prompt,
         instrumental,
@@ -3858,67 +3852,89 @@ async function generateAudioFromSpeechRequest(
         loop,
         prompt_influence,
     } = request;
+    let safeInput: Promise<string> | undefined;
+    let safeDialogueInputs:
+        | Promise<{ text: string; voice: string }[]>
+        | undefined;
+    let referenceAudio: Promise<File> | undefined;
 
-    // Speed 1 is every model's normal output, so clients that always send the
-    // OpenAI default keep working on other models.
-    if (
-        speed !== undefined &&
-        speed !== 1 &&
-        !["openai/tts-1", "openai/tts-1-hd"].includes(c.var.model.resolved)
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "The speed parameter is only supported by openai/tts-1 and openai/tts-1-hd",
-        });
-    }
-
-    requireElevenMusicOptions(c.var.model.resolved, {
-        referenceAudio: reference_audio,
-        compositionPlan: composition_plan,
-        conditioningRef: conditioning_ref,
-        storeForInpainting: store_for_inpainting,
-    });
-    if (reference_video && c.var.model.resolved !== SONILO_MODEL) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `reference_video is only supported with model=${SONILO_MODEL}.`,
-        });
-    }
-    requireStableAudioStrength(c.var.model.resolved, {
-        strength,
-        referenceAudio: reference_audio,
-    });
-
-    if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
-        const inputs = parseDialogueInput(input);
-        const safeTexts = await applySafetyToInput(
-            c,
-            inputs.map((turn) => turn.text),
-            safe,
+    return withAudioFallback(c, async (candidate) => {
+        // Declared provider routes retain their public model's options; caller
+        // alternatives use their own model's defaults and validation.
+        const model = candidate.definition?.fallbackOnly
+            ? c.var.model.resolved
+            : candidate.id;
+        const responseFormat =
+            response_format ?? (model in GEMINI_TTS_MODELS ? "wav" : "mp3");
+        const duration = resolveAudioDuration(
+            model,
+            candidate.definition ?? c.var.model.definition,
+            request.duration ?? request.seconds,
         );
-        const safeInputs = inputs.map((turn, index) => ({
-            ...turn,
-            text: safeTexts[index],
-        }));
-        const response = await generateElevenLabsDialogue({
-            inputs: safeInputs,
-            responseFormat: response_format,
-            seed,
-            apiKey: c.env.ELEVENLABS_API_KEY,
-            log,
+
+        // Speed 1 is every model's normal output, so clients that always send
+        // the OpenAI default keep working on other models.
+        if (
+            speed !== undefined &&
+            speed !== 1 &&
+            !["openai/tts-1", "openai/tts-1-hd"].includes(model)
+        ) {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message:
+                    "The speed parameter is only supported by openai/tts-1 and openai/tts-1-hd",
+            });
+        }
+
+        requireElevenMusicOptions(model, {
+            referenceAudio: reference_audio,
+            compositionPlan: composition_plan,
+            conditioningRef: conditioning_ref,
+            storeForInpainting: store_for_inpainting,
         });
-        return withSafetyHeaders(c, response);
-    }
+        if (reference_video && model !== SONILO_MODEL) {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: `reference_video is only supported with model=${SONILO_MODEL}.`,
+            });
+        }
+        requireStableAudioStrength(model, {
+            strength,
+            referenceAudio: reference_audio,
+        });
 
-    const safeInput = await applySafetyToInput(c, input, safe);
-    const referenceAudio = reference_audio
-        ? await fetchReferenceAudio(reference_audio)
-        : undefined;
+        if (candidate.id === "elevenlabs/eleven-v3:dialogue") {
+            safeDialogueInputs ??= (async () => {
+                const inputs = parseDialogueInput(input);
+                const safeTexts = await applySafetyToInput(
+                    c,
+                    inputs.map((turn) => turn.text),
+                    safe,
+                );
+                return inputs.map((turn, index) => ({
+                    ...turn,
+                    text: safeTexts[index],
+                }));
+            })();
+            return withSafetyHeaders(
+                c,
+                await generateElevenLabsDialogue({
+                    inputs: await safeDialogueInputs,
+                    responseFormat,
+                    seed,
+                    apiKey: c.env.ELEVENLABS_API_KEY,
+                    log,
+                }),
+            );
+        }
 
-    return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
-            text: safeInput,
+        safeInput ??= applySafetyToInput(c, input, safe);
+        const text = await safeInput;
+        if (reference_audio) {
+            referenceAudio ??= fetchReferenceAudio(reference_audio);
+        }
+        return dispatchAudioGeneration(c, candidate.id, {
+            text,
             voice,
-            responseFormat: response_format,
+            responseFormat,
             communityEndpoint: candidate.communityEndpoint,
             seed,
             duration,
@@ -3928,7 +3944,7 @@ async function generateAudioFromSpeechRequest(
             storeForInpainting: store_for_inpainting,
             conditioningRef: conditioning_ref,
             compositionPlan: composition_plan,
-            referenceAudio,
+            referenceAudio: await referenceAudio,
             referenceVideo: reference_video,
             strength,
             instructions,
@@ -3943,8 +3959,8 @@ async function generateAudioFromSpeechRequest(
             falKey: c.env.FAL_KEY,
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,
-        }),
-    );
+        });
+    });
 }
 
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
@@ -4002,13 +4018,15 @@ export async function handleVoiceChanger(c: AudioContext): Promise<Response> {
         });
     }
 
-    return changeVoiceWithElevenLabs({
-        audio,
-        voice: typeof voice === "string" && voice !== "" ? voice : "alloy",
-        responseFormat: resolvedFormat,
-        apiKey: c.env.ELEVENLABS_API_KEY,
-        log,
-    });
+    return withAudioFallback(c, () =>
+        changeVoiceWithElevenLabs({
+            audio,
+            voice: typeof voice === "string" && voice !== "" ? voice : "alloy",
+            responseFormat: resolvedFormat,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            log,
+        }),
+    );
 }
 
 export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
@@ -4025,11 +4043,13 @@ export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
             message: "Missing required audio file.",
         });
     }
-    return isolateVoiceWithElevenLabs({
-        audio,
-        apiKey: c.env.ELEVENLABS_API_KEY,
-        log,
-    });
+    return withAudioFallback(c, () =>
+        isolateVoiceWithElevenLabs({
+            audio,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            log,
+        }),
+    );
 }
 
 export async function handleSpeech(c: AudioContext): Promise<Response> {

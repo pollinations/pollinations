@@ -6,6 +6,8 @@ import {
 import type { Context } from "hono";
 import { parseBuffer } from "music-metadata";
 import type { Env } from "../env.ts";
+import { withModelFallbackResponse } from "../fallback.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 
 export const STEM_VARIATIONS = ["two_stems_v1", "six_stems_v1"] as const;
 export type StemVariation = (typeof STEM_VARIATIONS)[number];
@@ -129,46 +131,59 @@ export async function handleStemSeparation(c: Context<Env>): Promise<Response> {
             message: "Stem separation is not configured.",
         });
     }
-    const body = new FormData();
-    body.set("file", file, file.name);
-    body.set("stem_variation_id", variation);
     const endpoint =
         "https://api.elevenlabs.io/v1/music/stem-separation?output_format=mp3_44100_128";
-    const response = await ensureUpstreamOk(
-        await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "xi-api-key": c.env.ELEVENLABS_API_KEY,
-                Accept: "application/zip",
-            },
-            body,
-        }),
-        endpoint,
-    );
-    // audio/* would otherwise pass audio billing and caching.
-    if (!response.headers.get("content-type")?.startsWith("application/zip")) {
-        await response.body?.cancel();
-        throw new UpstreamError(502, {
-            message: "Stem separation returned an invalid archive response.",
-        });
-    }
-    // No usage headers are returned; bill the decoded input duration, which
-    // matches workspace analytics. Upload headers (MP3 Xing, FLAC, Ogg, M4A)
-    // can under-report it, so never bill less than the output: one 128 kbps
-    // MP3 per stem, 16,000 bytes a second plus under 1 KB of headers.
-    const stems = variation === "two_stems_v1" ? 2 : 6;
-    const outputSeconds =
-        (Number(response.headers.get("content-length")) - stems * 1000) /
-        (stems * 16_000);
-    const billedSeconds = Math.max(inputSeconds, outputSeconds || 0);
-    return new Response(response.body, {
-        headers: {
-            "Content-Type": "application/zip",
-            "Content-Disposition": 'attachment; filename="stems.zip"',
-            ...buildUsageHeaders(
-                c.var.model.resolved,
-                createAudioSecondsUsage(billedSeconds),
-            ),
+    return withModelFallbackResponse(
+        c.var.model,
+        async (candidate) => {
+            const body = new FormData();
+            body.set("file", file, file.name);
+            body.set("stem_variation_id", variation);
+            const response = await ensureUpstreamOk(
+                await fetch(endpoint, {
+                    method: "POST",
+                    headers: {
+                        "xi-api-key": c.env.ELEVENLABS_API_KEY,
+                        Accept: "application/zip",
+                    },
+                    body,
+                }),
+                endpoint,
+            );
+            // audio/* would otherwise pass audio billing and caching.
+            if (
+                !response.headers
+                    .get("content-type")
+                    ?.startsWith("application/zip")
+            ) {
+                await response.body?.cancel();
+                throw new UpstreamError(502, {
+                    message:
+                        "Stem separation returned an invalid archive response.",
+                });
+            }
+            // No usage headers are returned; bill the decoded input duration, which
+            // matches workspace analytics. Upload headers (MP3 Xing, FLAC, Ogg, M4A)
+            // can under-report it, so never bill less than the output: one 128 kbps
+            // MP3 per stem, 16,000 bytes a second plus under 1 KB of headers.
+            const stems = variation === "two_stems_v1" ? 2 : 6;
+            const outputSeconds =
+                (Number(response.headers.get("content-length")) -
+                    stems * 1000) /
+                (stems * 16_000);
+            const billedSeconds = Math.max(inputSeconds, outputSeconds || 0);
+            return new Response(response.body, {
+                headers: {
+                    "Content-Type": "application/zip",
+                    "Content-Disposition": 'attachment; filename="stems.zip"',
+                    ...buildUsageHeaders(
+                        candidate.id,
+                        createAudioSecondsUsage(billedSeconds),
+                    ),
+                },
+            });
         },
-    });
+        c.var.track.attempts,
+        (candidate) => requireModelAttemptAccess(c, candidate),
+    );
 }

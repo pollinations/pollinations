@@ -358,12 +358,9 @@ export type FallbackAttempt = {
 /**
  * Runs `attempt` against each candidate until one succeeds.
  *
- * Placed around the upstream call itself rather than around the request, so
- * authentication, balance and moderation run exactly once no matter how many
- * models are tried. A local per-candidate guard may run immediately before an
- * attempt. Every candidate is tried at most once: the dominant failure is an
- * exhausted quota, and asking the same endpoint again would only spend more of
- * a budget that is already gone.
+ * Authentication is reused across attempts. Caller-selected alternatives
+ * recheck their own balance rules immediately before an attempt. Each list
+ * position is tried once; callers may explicitly repeat a model.
  *
  * Every upstream call is appended to `attempts`, including the one that serves
  * or ends the request. Recording is not the same as retrying: this loop decides

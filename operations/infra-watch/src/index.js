@@ -1,6 +1,13 @@
 import { DurableObject } from "cloudflare:workers";
 import { exclusive, send, serial, settle, withTimeout } from "./delivery.js";
-import { allow, ask, evidence, followUp, investigates } from "./investigate.js";
+import {
+    allow,
+    ask,
+    evidence,
+    followUp,
+    investigates,
+    toolsFor,
+} from "./investigate.js";
 import { conditions, render, step } from "./rules.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
@@ -121,7 +128,7 @@ export class Watch extends DurableObject {
         try {
             const key = this.env.POLLINATIONS_API_KEY;
             if (!key) throw new Error("POLLINATIONS_API_KEY missing");
-            const lines = await ask(key, evidence(p, data));
+            const lines = await ask(key, evidence(p, data), toolsFor(data));
             if (!lines) throw new Error("off-format answer");
             const text = followUp(p, lines);
             if (!(await post(this.env, { text, ping: false })))

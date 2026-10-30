@@ -83,6 +83,7 @@ How to read a status row:
 - retried_503s: attempts that got a 503 and were retried on another backend. The retry may still have failed, so this is not a count of saved requests.
 - fallback_rescues: requests that finally succeeded through a fallback.
 - Latencies are in milliseconds; times are UTC.
+- A PRIMARY_WEAK alert means callers are fine thanks to a fallback, but the model's primary route fails often: explain why the primary fails and whether the fallback keeps up.
 - A platform-drop alert lists the models whose traffic fell the most: now10 is the last 10 minutes, baseline10 the average 10 minutes before.
 
 Reply in plain text, without headings or code blocks:
@@ -151,7 +152,7 @@ const TOOL_SPECS = [
 
 export const investigates = (post) =>
     post.type === "alert" &&
-    ["DEGRADED", "PLATFORM_DROP"].includes(post.info.kind);
+    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP"].includes(post.info.kind);
 
 const only = (fields, row) =>
     Object.fromEntries(fields.map((f) => [f, row[f]]));

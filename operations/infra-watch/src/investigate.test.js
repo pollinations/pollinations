@@ -36,11 +36,11 @@ const degraded = {
     info: { kind: "DEGRADED", model: "a/model", success: 0.8, nonClient: 100 },
 };
 
-test("only degraded and platform-drop alerts are investigated", () => {
+test("degraded, weak-primary and platform-drop alerts are investigated", () => {
     assert.equal(investigates(degraded), true);
-    const drop = { type: "alert", info: { kind: "PLATFORM_DROP" } };
-    assert.equal(investigates(drop), true);
-    for (const kind of ["SPILLOVER", "GEN_DOWN", "ANALYTICS_DOWN"])
+    for (const kind of ["PLATFORM_DROP", "PRIMARY_WEAK"])
+        assert.equal(investigates({ type: "alert", info: { kind } }), true);
+    for (const kind of ["GEN_DOWN", "ANALYTICS_DOWN"])
         assert.equal(investigates({ type: "alert", info: { kind } }), false);
     assert.equal(investigates({ ...degraded, type: "recovered" }), false);
 });

@@ -43,16 +43,74 @@ test("degraded official model, ignoring 4xx and thin samples", () => {
     assert.equal(found["degraded:a/model"].success, 0.8);
 });
 
-test("spillover only when final success stays high", () => {
+// One backend route of a model: a provider's attempts, primary by default.
+const route = (model, provider, ok, total, extra = {}) =>
+    row(model, ok, total, {
+        is_rollup: 0,
+        provider,
+        fallback_used: false,
+        ...extra,
+    });
+// Live case: gemma-4-26b's primary fails 3 in 4, its fallback saves all.
+const weakPrimary = [
+    row("a/model", 64, 64),
+    route("a/model", "openrouter", 26, 102),
+    route("a/model", "deepinfra", 38, 38, { fallback_used: true }),
+];
+
+test("primary weak: the primary route fails but callers are fine", () => {
+    const found = conditions(quiet(weakPrimary));
+    assert.deepEqual(Object.keys(found), ["primary:a/model"]);
+    assert.equal(found["primary:a/model"].kind, "PRIMARY_WEAK");
+});
+
+test("a mostly healthy primary stays quiet, even with retried 503s", () => {
+    // Live case: flux's primary at 94%, plus a primary too thin to judge.
     const found = conditions(
         quiet([
-            row("a/model", 100, 100, {
-                retried_503s: 15,
-                fallback_rescues: 15,
+            row("a/model", 335, 335, {
+                retried_503s: 20,
+                fallback_rescues: 20,
             }),
+            route("a/model", "vast", 315, 335, { retried_503s: 20 }),
+            route("a/model", "deepinfra", 20, 20, { fallback_used: true }),
+            row("b/model", 4, 4),
+            route("b/model", "openrouter", 0, 4),
+            route("b/model", "deepinfra", 4, 4, { fallback_used: true }),
         ]),
     );
-    assert.deepEqual(Object.keys(found), ["spillover:a/model"]);
+    assert.deepEqual(found, {});
+});
+
+test("a weak primary is posted without a ping, naming each route", () => {
+    const info = conditions(quiet(weakPrimary))["primary:a/model"];
+    const { text, ping } = render({
+        type: "alert",
+        key: "primary:a/model",
+        info,
+    });
+    assert.equal(ping, false);
+    assert.match(text, /PRIMARY\s+openrouter 26\/102 \(25%\)/);
+    assert.match(text, /FALLBACK deepinfra 38\/38/);
+    assert.doesNotMatch(text, /\bBY\b/);
+});
+
+test("degraded panels name each route and still ping", () => {
+    const info = conditions(
+        quiet([
+            row("a/model", 50, 100),
+            route("a/model", "azure", 40, 90),
+            route("a/model", "openai", 10, 50, { fallback_used: true }),
+        ]),
+    )["degraded:a/model"];
+    const { text, ping } = render({
+        type: "alert",
+        key: "degraded:a/model",
+        info,
+    });
+    assert.equal(ping, true);
+    assert.match(text, /PRIMARY\s+azure 40\/90 \(44%\)/);
+    assert.match(text, /FALLBACK openai 10\/50 \(20%\)/);
 });
 
 test("platform drop against the previous 50 minutes", () => {
@@ -249,20 +307,4 @@ test("one hostname down, then both down: no false recovery", () => {
     }
     assert.ok(r.state.active.public);
     assert.ok(r.state.active.gen);
-});
-
-test("long field names keep a space before the value", () => {
-    const { text } = render({
-        type: "alert",
-        key: "spillover:x",
-        info: {
-            kind: "SPILLOVER",
-            model: "x",
-            success: 1,
-            nonClient: 50,
-            retried503s: 12,
-            rescues: 58,
-        },
-    });
-    assert.match(text, /FALLBACK 58 rescued/);
 });

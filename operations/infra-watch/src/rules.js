@@ -11,7 +11,11 @@ export const RECOVER_CHECKS = 15;
 
 const MIN_REQUESTS = 10;
 const MIN_SUCCESS = 0.9;
+// A primary route below this, while callers stay above MIN_SUCCESS thanks
+// to a fallback, is "primary weak".
+const PRIMARY_MIN_SUCCESS = 0.8;
 const PLATFORM_MIN_BASELINE = 1000;
+const MAX_ROUTE_LINES = 4;
 
 // Final user-visible outcome per model: the rollup rows.
 function modelHealth(rows) {
@@ -23,12 +27,34 @@ function modelHealth(rows) {
             nonClient,
             ok: row.status_2xx,
             success: nonClient > 0 ? row.status_2xx / nonClient : 1,
-            retried503s: row.retried_503s,
-            rescues: row.fallback_rescues,
         };
     }
     return health;
 }
+
+// Each model's backend routes (attempts per provider), primaries first.
+function modelRoutes(rows) {
+    const routes = {};
+    for (const row of rows) {
+        if (row.is_rollup) continue;
+        (routes[row.model] ??= []).push({
+            provider: row.provider,
+            fallback: Boolean(row.fallback_used),
+            ok: row.status_2xx,
+            attempts: row.total_requests - row.errors_4xx,
+        });
+    }
+    for (const list of Object.values(routes))
+        list.sort((a, b) => a.fallback - b.fallback || b.attempts - a.attempts);
+    return routes;
+}
+
+const primaryOf = (routes = []) => {
+    const primaries = routes.filter((r) => !r.fallback);
+    const ok = primaries.reduce((sum, r) => sum + r.ok, 0);
+    const attempts = primaries.reduce((sum, r) => sum + r.attempts, 0);
+    return { attempts, success: attempts > 0 ? ok / attempts : 1 };
+};
 
 const totalRequests = (rows) =>
     rows
@@ -55,12 +81,18 @@ export function conditions({
         found.analytics = { kind: "ANALYTICS_DOWN" };
         return found;
     }
+    const routes = modelRoutes(recent);
     for (const [model, h] of Object.entries(modelHealth(recent))) {
         if (!official.has(model) || h.nonClient < MIN_REQUESTS) continue;
+        const info = { model, ...h, routes: routes[model] ?? [] };
+        const primary = primaryOf(info.routes);
         if (h.success < MIN_SUCCESS) {
-            found[`degraded:${model}`] = { kind: "DEGRADED", model, ...h };
-        } else if (h.retried503s >= 10 && h.retried503s >= 0.1 * h.ok) {
-            found[`spillover:${model}`] = { kind: "SPILLOVER", model, ...h };
+            found[`degraded:${model}`] = { kind: "DEGRADED", ...info };
+        } else if (
+            primary.attempts >= MIN_REQUESTS &&
+            primary.success < PRIMARY_MIN_SUCCESS
+        ) {
+            found[`primary:${model}`] = { kind: "PRIMARY_WEAK", ...info };
         }
     }
     const now10 = totalRequests(last10);
@@ -80,8 +112,9 @@ const CONFIRMED = new Set([
 ]);
 const HOSTS = { gen: true, public: true, upstream: true };
 
-// Keys whose recovery we announce. Spillover just expires.
-const RECOVERS = (key) => !key.startsWith("spillover:");
+// Keys whose recovery we announce. A weak primary just expires: callers
+// were never affected.
+const RECOVERS = (key) => !key.startsWith("primary:");
 
 // Pure state transition: which messages to post, and the next state.
 export function step(state, found, now, recent = []) {
@@ -172,7 +205,6 @@ export function render(post) {
                 ["", "gen.pollinations.ai  DOWN"],
                 ["", "gen.myceli.ai        DOWN"],
                 ["", "-> the Worker itself, not DNS"],
-                ["BY", "infra-watch"],
             ]),
             ping: true,
         };
@@ -192,7 +224,6 @@ export function render(post) {
                         ? "-> domain/DNS/route; Worker OK"
                         : "-> Myceli domain/route; users OK",
                 ],
-                ["BY", "infra-watch"],
             ]),
             ping: pub,
         };
@@ -204,7 +235,6 @@ export function render(post) {
                 ["MODEL", "/models/status (analytics)"],
                 ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
                 ["", "model alerts paused"],
-                ["BY", "infra-watch"],
             ]),
             ping: true,
         };
@@ -216,13 +246,12 @@ export function render(post) {
                 ["MODEL", "platform-wide"],
                 ["REQS", `${info.now10} last 10m`],
                 ["", `baseline ${Math.round(info.baseline10)}`],
-                ["BY", "infra-watch"],
             ]),
             ping: true,
         };
     }
     const lines = [
-        ["STATUS", info.kind],
+        ["STATUS", info.kind.replace("_", " ")],
         ["MODEL", info.model],
         ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
     ];
@@ -230,10 +259,13 @@ export function render(post) {
         // Public data has no caller split: one bad caller can trip this.
         lines.push(["CHECK", "unconfirmed: callers unknown"]);
     }
-    if (info.kind === "SPILLOVER") {
-        lines.push(["QUEUE", `${info.retried503s} retried`]);
-        lines.push(["FALLBACK", `${info.rescues} rescued`]);
+    for (const r of (info.routes ?? []).slice(0, MAX_ROUTE_LINES)) {
+        const rate = r.attempts > 0 ? r.ok / r.attempts : 1;
+        lines.push([
+            r.fallback ? "FALLBACK" : "PRIMARY",
+            `${r.provider} ${r.ok}/${r.attempts} (${Math.round(rate * 100)}%)`,
+        ]);
     }
-    lines.push(["BY", "infra-watch"]);
-    return { text: panel(lines), ping: true };
+    // A weak primary is posted quietly: the fallback keeps callers whole.
+    return { text: panel(lines), ping: info.kind === "DEGRADED" };
 }

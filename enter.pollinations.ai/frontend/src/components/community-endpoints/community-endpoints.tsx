@@ -109,7 +109,12 @@ export function DeploymentsPlaceholder({
         <>
             {titles.map((title) => (
                 <Section key={title} title={title}>
-                    <LoadError onRetry={onRetry}>{error}</LoadError>
+                    <LoadError
+                        onRetry={onRetry}
+                        paths={["/account/my-models", "/account/agents"]}
+                    >
+                        {error}
+                    </LoadError>
                 </Section>
             ))}
         </>

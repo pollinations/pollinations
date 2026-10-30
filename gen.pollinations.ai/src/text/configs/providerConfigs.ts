@@ -108,6 +108,18 @@ export function createBedrockNativeConfig(
     };
 }
 
+export function createBedrockResponsesConfig(model: string): ProviderConfig {
+    const region = textEnvironmentValue("AWS_REGION") || "us-east-1";
+    return createBedrockNativeConfig({
+        model,
+        responsesEndpoint: `https://bedrock-runtime.${region}.amazonaws.com/openai/v1/responses`,
+        responsesStreamUpstream: true,
+        serviceTier: "default",
+        supportsMaxCompletionTokens: true,
+        supportsStreamOptions: true,
+    });
+}
+
 export function createFireworksModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

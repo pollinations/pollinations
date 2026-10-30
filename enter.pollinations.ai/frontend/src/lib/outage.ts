@@ -8,7 +8,7 @@ const FAILURE_TTL_MS = 3 * OUTAGE_RETRY_MS;
 const SESSION_TOKEN_PATH = "/api/session-token";
 
 // Paths whose last answer was a 5xx or no answer at all, by failure time.
-const failures = new Map<string, number>();
+const failures = new Map<string, { failedAt: number; timeout: boolean }>();
 const listeners = new Set<() => void>();
 let pruneTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -16,9 +16,9 @@ function update(): void {
     const now = Date.now();
     // Offline, nothing retries: failures stay until the reconnect retry.
     const offline = globalThis.navigator?.onLine === false;
-    for (const [path, failedAt] of failures) {
-        if (offline) failures.set(path, now);
-        else if (now - failedAt > FAILURE_TTL_MS) failures.delete(path);
+    for (const [path, failure] of failures) {
+        if (offline) failure.failedAt = now;
+        else if (now - failure.failedAt > FAILURE_TTL_MS) failures.delete(path);
     }
     if (failures.size > 0 && !pruneTimer) {
         pruneTimer = setInterval(update, OUTAGE_RETRY_MS);
@@ -30,10 +30,13 @@ function update(): void {
     for (const listener of listeners) listener();
 }
 
-function failing(path: string): boolean {
-    return (
-        failures.has(path) ||
-        (path.startsWith("/account/") && failures.has(SESSION_TOKEN_PATH))
+function relevantFailures(paths?: readonly string[]) {
+    return [...failures].filter(
+        ([path]) =>
+            !paths ||
+            paths.includes(path) ||
+            (path === SESSION_TOKEN_PATH &&
+                paths.some((p) => p.startsWith("/account/"))),
     );
 }
 
@@ -56,7 +59,11 @@ export async function trackedFetch(
     ).pathname;
     try {
         const response = await fetch(input, init);
-        if (isOutageStatus(response.status)) failures.set(path, Date.now());
+        if (isOutageStatus(response.status))
+            failures.set(path, {
+                failedAt: Date.now(),
+                timeout: response.status === 504,
+            });
         else failures.delete(path);
         return response;
     } catch (error) {
@@ -64,7 +71,10 @@ export async function trackedFetch(
         // Offline counts too: the notice then says so and retries on reconnect.
         const signal = init?.signal;
         if (!signal?.aborted || signal.reason?.name === "TimeoutError") {
-            failures.set(path, Date.now());
+            failures.set(path, {
+                failedAt: Date.now(),
+                timeout: false,
+            });
         }
         throw error;
     } finally {
@@ -78,7 +88,19 @@ export async function trackedFetch(
  * Enter or gen call counts.
  */
 export function useOutage(paths?: readonly string[]): boolean {
-    const snapshot = () => (paths ? paths.some(failing) : failures.size > 0);
+    const snapshot = () => relevantFailures(paths).length > 0;
+    return useSyncExternalStore(subscribe, snapshot, snapshot);
+}
+
+/** Only an HTTP 504 response uses the request-timeout message. */
+export function useRequestTimeout(paths?: readonly string[]): boolean {
+    const snapshot = () => {
+        const relevant = relevantFailures(paths);
+        return (
+            relevant.length > 0 &&
+            relevant.every(([, failure]) => failure.timeout)
+        );
+    };
     return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
 

@@ -328,6 +328,7 @@ export const LastEventsPanel: FC = () => {
 
     return (
         <div className="flex flex-col gap-3">
+            {loadingMore && <PageStatus />}
             {state.error && (
                 <LoadError onRetry={load} paths={LAST_EVENTS_PATHS}>
                     {state.error}

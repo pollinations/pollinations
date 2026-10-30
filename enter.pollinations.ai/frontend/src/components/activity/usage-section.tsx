@@ -12,7 +12,11 @@ import {
 } from "@pollinations/ui";
 import { type FC, useState } from "react";
 import { accountClient } from "../../api.ts";
-import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
 import {
     ActivityEmptyState,
     ActivityFilter,
@@ -119,6 +123,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
                 )
             }
         >
+            {refreshing && <PageStatus />}
             <ActivityToolbar
                 label="Usage"
                 period={period}

@@ -1,6 +1,8 @@
+import type { Dispatch, SetStateAction } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import { forgetSessionToken } from "../frontend/src/api.ts";
+import { PendingCount } from "../frontend/src/components/layout/dashboard-shell.tsx";
 import { LastEventsPanel } from "../frontend/src/components/pollen/last-events-panel.tsx";
 
 vi.mock("../frontend/src/config.ts", () => ({
@@ -21,11 +23,15 @@ afterEach(async () => {
     vi.unstubAllGlobals();
 });
 
-async function mount() {
+async function mount(setPending: Dispatch<SetStateAction<number>> = () => {}) {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     vi.stubGlobal("window", new EventTarget());
     await act(async () => {
-        renderer = create(<LastEventsPanel />);
+        renderer = create(
+            <PendingCount.Provider value={setPending}>
+                <LastEventsPanel />
+            </PendingCount.Provider>,
+        );
     });
     await act(async () => {
         await vi.waitFor(() =>
@@ -176,6 +182,62 @@ it("retains displayed rows and both cursors when one next-page request fails", a
     await act(async () => older()?.props.onClick());
     expect(displayedRows()).toHaveLength(40);
     expect(older()).toBeUndefined();
+});
+
+it("uses the shared page loading status for older rows and clears it after failure and retry", async () => {
+    let pending = 0;
+    const setPending: Dispatch<SetStateAction<number>> = (update) => {
+        pending = typeof update === "function" ? update(pending) : update;
+    };
+    let respond: (response: Response) => void = () => {};
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/api/session-token")
+            return Response.json({ token: "session-test", expiresIn: 3600 });
+        if (url.pathname === "/account/earnings/transactions")
+            return Response.json({ transactions: [] });
+        if (!url.searchParams.has("before"))
+            return Response.json({
+                usage: Array.from({ length: 16 }, (_, index) => ({
+                    timestamp: `2026-10-30 12:00:${59 - index}`,
+                    cursor_event_id: `usage-${99 - index}`,
+                    model: "owner/model",
+                    meter_source: "pack",
+                    cost_usd: 0.1,
+                })),
+            });
+        return new Promise<Response>((resolve) => {
+            respond = resolve;
+        });
+    });
+
+    await mount(setPending);
+    expect(pending).toBe(0);
+    let request: Promise<void> | undefined;
+    await act(async () => {
+        request = older()?.props.onClick();
+    });
+    expect(pending).toBe(1);
+    expect(displayedRows()).toHaveLength(15);
+    const loading = renderer?.root.findAll(
+        (node) => node.type === "button" && node.children.includes("Loading…"),
+    )[0];
+    expect(loading?.props.disabled).toBe(true);
+    await act(async () => {
+        respond(new Response(null, { status: 400 }));
+        await request;
+    });
+    expect(pending).toBe(0);
+    await act(async () => {
+        request = older()?.props.onClick();
+    });
+    expect(pending).toBe(1);
+    await act(async () => {
+        respond(Response.json({ usage: [] }));
+        await request;
+    });
+    expect(pending).toBe(0);
+    expect(displayedRows()).toHaveLength(16);
 });
 
 it("aborts pending stream requests when the panel unmounts", async () => {

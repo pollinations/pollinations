@@ -27,6 +27,10 @@ const PLATFORMS = new Set([
     "api",
 ]);
 
+// The catalog blurb is one line in a card; longer text wraps or gets cut.
+const DESCRIPTION_LIMIT = 200;
+const DESCRIPTION_INPUT_LIMIT = 2000;
+
 const CATEGORY_EMOJI = {
     image: "🖼️",
     video_audio: "🎬",
@@ -102,7 +106,10 @@ function parseScreenshotUrl(value) {
 
 function parseSubmission(body) {
     const name = clean(section(body, "App Name"), 80);
-    const description = clean(section(body, "App Description"), 200);
+    const description = clean(
+        section(body, "App Description"),
+        DESCRIPTION_INPUT_LIMIT,
+    );
     const appUrl = normalizeUrl(section(body, "App URL"));
     const repoUrl = normalizeUrl(section(body, "GitHub Repository URL"));
     const category = clean(section(body, "App Category"), 30).toLowerCase();
@@ -136,6 +143,10 @@ function validateSubmission(submission) {
     if (submission.description.length < 20)
         errors.push(
             "App Description must explain what the app does and how it uses Pollinations.",
+        );
+    if (submission.description.length > DESCRIPTION_LIMIT)
+        errors.push(
+            `App Description is ${submission.description.length} characters; the catalog shows ${DESCRIPTION_LIMIT}. Shorten it and submit again.`,
         );
     if (!submission.appUrl && !submission.repoUrl)
         errors.push(

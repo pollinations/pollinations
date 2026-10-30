@@ -36,7 +36,7 @@ body:
     id: app-description
     attributes:
       label: App Description
-      description: Briefly explain what the app does and how it uses Pollinations.
+      description: Briefly explain what the app does and how it uses Pollinations. 200 characters max.
       placeholder: Creates collaborative images using the Pollinations image API.
     validations:
       required: true

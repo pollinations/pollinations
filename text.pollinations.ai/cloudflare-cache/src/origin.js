@@ -509,6 +509,8 @@ function readParams(data, prompt) {
             tool_choice: data.tool_choice || undefined,
             modalities: data.modalities,
             audio: data.audio,
+            // Changed: the VM omitted effort by default. Low reduces
+            // token-budget failures under MAX_TOKENS.
             reasoning_effort:
                 data.reasoning_effort == null
                     ? "low"

@@ -210,6 +210,44 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
+    it("advertises the native video and 3D routes on their categories", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const visible = registry.visibleEntries();
+
+        const video = visible.filter(
+            (entry) => entry.definition.category === "video",
+        );
+        expect(video.length).toBeGreaterThan(0);
+        for (const entry of video) {
+            expect(entry.supportedEndpoints, entry.id).toContain(
+                "/video/{prompt}",
+            );
+            expect(entry.info.supported_endpoints, entry.id).toContain(
+                "/video/{prompt}",
+            );
+            // Video generation is not an image edit.
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+
+        const model3d = visible.filter(
+            (entry) => entry.definition.category === "3d",
+        );
+        expect(model3d.length).toBeGreaterThan(0);
+        for (const entry of model3d) {
+            expect(entry.supportedEndpoints, entry.id).toContain(
+                "/3d/{prompt}",
+            );
+            expect(entry.info.supported_endpoints, entry.id).toContain(
+                "/3d/{prompt}",
+            );
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+    });
+
     it("serves the community catalog from KV without querying D1", async () => {
         await resetGenerationModelRegistryCache(env);
         const healthy = await getGenerationModelRegistry(env);

@@ -24,3 +24,12 @@ it("rejects a stream that ends before [DONE]", async () => {
         "Stream interrupted before [DONE]",
     );
 });
+
+it("yields refusal deltas as text", async () => {
+    const response = new Response(
+        'data: {"choices":[{"delta":{"refusal":"I cannot help with that."}}]}\n\ndata: [DONE]\n\n',
+    );
+    const chunks: string[] = [];
+    for await (const chunk of streamSSE(response)) chunks.push(chunk);
+    expect(chunks).toEqual(["I cannot help with that."]);
+});

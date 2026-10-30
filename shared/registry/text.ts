@@ -370,8 +370,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         // Provider retires this route on 2028-01-11.
-        // Preserve the existing one-third customer price multiplier.
-        priceMultiplier: 1 / 3,
+        priceMultiplier: 0.75,
         paidOnly: false,
         // Azure Global Standard rates (retail prices API and billed meters,
         // 2026-10-12).
@@ -598,7 +597,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-04").getTime(),
         // Provider retires this route on 2028-01-11.
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
             promptTextTokens: perMillion(10.0),
@@ -655,7 +654,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.2),
@@ -712,7 +711,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-30").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // OpenAI list rates; Azure has not published GPT-6.1 Sol rates yet.
         cost: {
             promptTextTokens: perMillion(2),
@@ -771,7 +770,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -2330,12 +2329,12 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-opus-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
@@ -2410,12 +2409,12 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-fable-5.1": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),
@@ -2428,7 +2427,7 @@ const TEXT_BASE_SERVICES = {
             "Frontier intelligence for complex reasoning, coding and long-running agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
+        maxReferenceImages: 20, // Preserve the image limit across both providers.
         tools: true,
         reasoning: true,
         contextLength: 1000000,

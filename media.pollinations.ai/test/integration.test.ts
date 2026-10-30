@@ -135,6 +135,14 @@ const KEY_IDENTITIES: Record<
         userId: "user_bob",
         byopApp: null,
     },
+    // An agent run token reports its parent key's identity, type included.
+    ag_alice: {
+        valid: true,
+        type: "secret",
+        name: "alice-secret",
+        userId: "user_alice",
+        byopApp: null,
+    },
     // The response shape of an enter deployment that predates the identity
     // fields — userId/byopApp entirely absent, not null.
     sk_legacy: {
@@ -149,19 +157,20 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "104857600",
         DB: env.DB,
+        ENTER: env.ENTER,
     };
 }
 
-// Answers Gen's key check and refuses every other outbound request.
+// Answers Enter's key check on the ENTER binding and refuses every public
+// outbound request.
 function mockAuth() {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        throw new Error(`Unexpected fetch: ${new Request(input, init).url}`);
+    });
+    vi.spyOn(env.ENTER, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
-        const url = new URL(request.url);
-        if (
-            url.origin !== "https://gen.pollinations.ai" ||
-            url.pathname !== "/account/key"
-        ) {
-            throw new Error(`Unexpected fetch: ${request.url}`);
+        if (new URL(request.url).pathname !== "/api/account/key") {
+            throw new Error(`Unexpected Enter call: ${request.url}`);
         }
         const key = (request.headers.get("authorization") ?? "").replace(
             /^Bearer /,
@@ -487,26 +496,47 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(401);
     });
 
-    it.each([429, 500])(
-        "answers 503, not 401, when the key check returns %i",
-        async (status) => {
-            vi.mocked(globalThis.fetch).mockResolvedValueOnce(
-                new Response(null, { status }),
-            );
-            const res = await SELF.fetch(
-                "https://media.pollinations.ai/upload",
-                {
-                    method: "POST",
-                    body: TINY_PNG,
-                    headers: {
-                        Authorization: `Bearer ${VALID_KEY}`,
-                        "Content-Type": "image/png",
-                    },
-                },
-            );
-            expect(res.status).toBe(503);
-        },
-    );
+    it.each([
+        ["is throttled", () => new Response(null, { status: 429 })],
+        ["fails", () => new Response(null, { status: 500 })],
+        ["redirects", () => new Response(null, { status: 302 })],
+        ["sends no JSON", () => new Response("not json")],
+        ["omits valid", () => Response.json({})],
+    ])("answers 503, not 401, when the key check %s", async (_, response) => {
+        vi.mocked(env.ENTER.fetch).mockResolvedValueOnce(response());
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: TINY_PNG,
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "image/png",
+            },
+        });
+        expect(res.status).toBe(503);
+    });
+
+    // A public fetch through Gen would share the Workers egress IP's limit.
+    it("checks keys with Enter over the service binding, not through Gen", async () => {
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: TINY_PNG,
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "image/png",
+            },
+        });
+        expect(res.status).toBe(200);
+        const [input, init] = vi.mocked(env.ENTER.fetch).mock.calls[0];
+        const request = new Request(input, init);
+        expect(request.url).toBe(
+            "https://enter.pollinations.ai/api/account/key",
+        );
+        expect(request.headers.get("authorization")).toBe(
+            `Bearer ${VALID_KEY}`,
+        );
+        expect(request.headers.has("cf-connecting-ip")).toBe(false);
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
 
     it("upload and retrieve", async () => {
         const form = new FormData();
@@ -2002,6 +2032,14 @@ describe("media.pollinations.ai", () => {
             });
             expect(publishable.status).toBe(403);
 
+            // Agent run tokens are handed to generated code, so they can't
+            // delete the owner's media even though they report "secret".
+            const agentToken = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer ag_alice" },
+            });
+            expect(agentToken.status).toBe(403);
+
             const nonOwner = await SELF.fetch(url, {
                 method: "DELETE",
                 headers: { Authorization: "Bearer sk_bob" },
@@ -2155,7 +2193,7 @@ describe("media.pollinations.ai", () => {
                 statuses.push(res.status);
             }
             expect(statuses).toEqual([401, 401, 401, 429, 429]);
-            expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+            expect(env.ENTER.fetch).toHaveBeenCalledTimes(3);
 
             const otherIp = await send(mediaEnv, "POST", "/upload", {
                 key: "sk_fake5",
@@ -2175,7 +2213,23 @@ describe("media.pollinations.ai", () => {
                 statuses.push(res.status);
             }
             expect(statuses).toEqual([401, 401, 429]);
-            expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+            expect(env.ENTER.fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it("caps public gallery reads per IP before D1", async () => {
+            const mediaEnv = limitedEnv();
+            const list = (ip: string) =>
+                app.request(
+                    "/media?tag=flood",
+                    { headers: { "CF-Connecting-IP": ip } },
+                    mediaEnv,
+                );
+            const statuses = [];
+            for (let i = 0; i < 3; i++) {
+                statuses.push((await list("203.0.113.7")).status);
+            }
+            expect(statuses).toEqual([200, 200, 429]);
+            expect((await list("198.51.100.1")).status).toBe(200);
         });
     });
 });

@@ -404,9 +404,10 @@ export type UsageBilling = {
     costVariantStatus: CostVariantSelectionStatus;
     /**
      * What the model that actually ran would have been charged for this usage.
-     * Equal to `price.totalPrice` unless a fallback served, where it is what
-     * bounds the serving owner's reward — they are paid on their own listing,
-     * not on the (higher) one the caller bought.
+     * Equal to `price.totalPrice` whenever that listing is the one billed — a
+     * normal request and a fallback to a different listing alike. It differs
+     * only when an internal provider route served and the caller kept the
+     * listing they bought, where it still bounds the serving owner's reward.
      */
     servedPrice: number;
 };
@@ -506,9 +507,11 @@ function rateAgainst(
 /**
  * What the generation cost us, and what the caller pays for it.
  *
- * Trusted provider billing units and their rate replace estimated cost;
- * price is that cost times the serving model's multiplier. A fallback still
- * charges the requested listing's price.
+ * Trusted provider billing units and their rate replace estimated cost; price
+ * is that cost times the serving model's multiplier. A fallback bills the
+ * listing that actually served, except when an internal provider route served:
+ * a route is the same model reached another way, so the caller keeps the price
+ * they were quoted rather than the route's own provider rate.
  */
 export function calculateUsageBilling({
     model,
@@ -531,9 +534,19 @@ export function calculateUsageBilling({
             ),
         };
     }
-    if (quotedBy === servedBy) {
+    // A community listing's declared fallbacks are linked only when the target
+    // costs no more on any rate, so billing the served listing never exceeds
+    // the quote and charges nothing when a free endpoint rescued the request.
+    // Provider routes are exempt: they are the same model reached another way,
+    // so they keep the price the caller was quoted.
+    if (
+        quotedBy === servedBy ||
+        (quotedBy.provider === "community" && servedBy.fallbackOnly !== true)
+    ) {
         return { ...served, servedPrice: served.price.totalPrice };
     }
+    // A first-party catalog rescue is left on the quote: it may cost more than
+    // it charged, which is deliberate and visible as cost > price.
     // Rated independently rather than rescaled: see rateAgainst.
     const quoted = rateAgainst(model, usage, quotedBy, output, input);
     const selectionStatuses = [

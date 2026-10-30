@@ -4,9 +4,14 @@ import {
     OutageNotice,
     RefreshIcon,
     Section,
+    useOnline,
 } from "@pollinations/ui";
 import { type ReactNode, useContext, useEffect, useState } from "react";
-import { useOutage, useOutageRetry } from "../../lib/outage.ts";
+import {
+    useOutage,
+    useOutageRetry,
+    useRequestTimeout,
+} from "../../lib/outage.ts";
 import { PendingCount } from "./dashboard-shell.tsx";
 
 /** Render while something on the page is still loading; the shell shows one status until none remain. */
@@ -60,6 +65,8 @@ export function LoadError({
 }) {
     const [retrying, setRetrying] = useState(false);
     const outage = useOutage(paths);
+    const timeout = useRequestTimeout(paths);
+    const online = useOnline();
     useOutageRetry(outage, paths?.join(" ") ?? "page", onRetry);
 
     async function retry() {
@@ -74,12 +81,17 @@ export function LoadError({
         }
     }
 
-    if (outage) return <OutageNotice retrying={Boolean(onRetry)} />;
+    if (outage && (!timeout || !online))
+        return <OutageNotice retrying={Boolean(onRetry)} />;
 
     return (
         <Alert intent="danger">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <span>{children}</span>
+                <span>
+                    {timeout
+                        ? `This data took too long to load.${onRetry ? " Retrying automatically, or try again now." : " Please try again."}`
+                        : children}
+                </span>
                 {onRetry && (
                     <Button
                         intent="neutral"

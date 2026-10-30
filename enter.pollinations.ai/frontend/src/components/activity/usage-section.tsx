@@ -1,4 +1,5 @@
 import {
+    Button,
     InlineLink,
     Surface,
     TabButton,
@@ -9,9 +10,13 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import type { FC } from "react";
+import { type FC, useState } from "react";
 import { accountClient } from "../../api.ts";
-import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
 import {
     ActivityEmptyState,
     ActivityFilter,
@@ -118,6 +123,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
                 )
             }
         >
+            {refreshing && <PageStatus />}
             <ActivityToolbar
                 label="Usage"
                 period={period}
@@ -254,12 +260,14 @@ type UsageBreakdownTableProps = {
     stats: ReturnType<typeof useUsageData>["stats"];
 };
 
-const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
+export const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
     stats,
     metric,
     groupBy,
     onGroupByChange,
 }) => {
+    const [page, setPage] = useState({ rows: stats.breakdowns, limit: 15 });
+    const visibleCount = page.rows === stats.breakdowns ? page.limit : 15;
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
     return (
         <Surface className="max-w-full overflow-x-auto">
@@ -308,7 +316,7 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {stats.breakdowns.map((row) => (
+                    {stats.breakdowns.slice(0, visibleCount).map((row) => (
                         <TableRow key={row.id}>
                             <TableCell className="max-w-64 break-words text-xs">
                                 {row.label}
@@ -344,6 +352,20 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
                     </TableRow>
                 </tfoot>
             </Table>
+            {visibleCount < stats.breakdowns.length && (
+                <div className="mt-4 flex justify-end">
+                    <Button
+                        onClick={() =>
+                            setPage({
+                                rows: stats.breakdowns,
+                                limit: visibleCount + 15,
+                            })
+                        }
+                    >
+                        Show more
+                    </Button>
+                </div>
+            )}
         </Surface>
     );
 };

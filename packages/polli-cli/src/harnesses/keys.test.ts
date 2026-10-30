@@ -58,10 +58,11 @@ beforeAll(async () => {
             return;
         }
         // The polli login on a Mac can create keys; the one gen writes into a
-        // sandbox can't.
+        // sandbox can't, and one with a budget would have to split it.
         const login = {
             "Bearer sk_mac_login": ["profile", "usage", "keys", "machines"],
             "Bearer sk_sandbox_login": ["profile", "usage", "machines"],
+            "Bearer sk_budget_login": ["profile", "usage", "keys", "machines"],
         }[request.headers.authorization ?? ""];
         if (request.url === "/account/key" && login) {
             response.writeHead(200, { "Content-Type": "application/json" });
@@ -69,6 +70,11 @@ beforeAll(async () => {
                 JSON.stringify({
                     valid: true,
                     permissions: { account: login },
+                    pollenBudget:
+                        request.headers.authorization ===
+                        "Bearer sk_budget_login"
+                            ? 5
+                            : null,
                 }),
             );
             return;
@@ -123,6 +129,7 @@ describe("harness keys", () => {
             ["GET /account/key", "POST /account/keys"],
         ],
         ["sk_sandbox_login", "sk_sandbox_login", ["GET /account/key"]],
+        ["sk_budget_login", "sk_budget_login", ["GET /account/key"]],
     ])("with the login %s, the harness uses %s", async (login, key, calls) => {
         requests.length = 0;
         setKeyOverride(login);

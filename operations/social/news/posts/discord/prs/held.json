@@ -7,8 +7,30 @@
         "deploy-legacy-caches.yml:deploy (image)",
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18584": {
+      "merge_sha": "33d04a6384f8d86a8fdd6962c80b02370be885d4",
+      "merged_at": "2026-10-30T11:07:37Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-media"
+      ]
+    },
+    "18738": {
+      "merge_sha": "da45e70f95c0057a2f197cd2700b3f199d47647a",
+      "merged_at": "2026-10-30T10:33:25Z",
+      "required": []
+    },
+    "18739": {
+      "merge_sha": "26c66b48c7c9ae9e91bf9322017e8369910fca1d",
+      "merged_at": "2026-10-30T10:40:47Z",
+      "required": []
+    },
+    "18741": {
+      "merge_sha": "950d13cda9ca410f99ee9f0e6ee0c715205713bc",
+      "merged_at": "2026-10-30T10:46:41Z",
+      "required": []
     }
   },
-  "production": "a77eab471bfdf68a6669d2d6b152213b9273ae1b",
+  "production": "9018f6c2b8a7f47d22ef931932ff6c6a43e40edf",
   "master": "a2a962686bd7e26589a2b5e9c7259f75e67fc967"
 }

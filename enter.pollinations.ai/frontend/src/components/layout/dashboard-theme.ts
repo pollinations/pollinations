@@ -66,6 +66,7 @@ export function isDashboardPath(path: string): path is DashboardPath {
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
     "models",
+    "pollen",
     "quests",
 ]);
 

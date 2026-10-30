@@ -9,7 +9,7 @@ describe("Polli's flight path", () => {
         const path = flightPath(from, to);
         expect(path).toHaveLength(12);
         expect(path[0]).toMatchObject(from);
-        expect(path.at(-1)).toMatchObject(to);
+        expect(path[path.length - 1]).toMatchObject(to);
     });
 
     it("arcs above the straight line between the ends", () => {

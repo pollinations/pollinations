@@ -30,10 +30,17 @@ import {
 } from "@pollinations/ui";
 import { modalityBgVar, modalityTextColor } from "@pollinations/ui/gen";
 import { PaidChip } from "@pollinations/ui/wallet";
-import type { ComponentType, ReactNode } from "react";
+import {
+    type ComponentType,
+    type CSSProperties,
+    type ReactNode,
+    useRef,
+} from "react";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useMcpServers, usePlatformStats } from "../../data/publicStats";
 import { POLLI_PERCH } from "../site/PolliFlight";
+import { useInView } from "../site/useInView";
+import { ModelPixels, type PixelKind } from "./ModelPixels";
 
 type Feature = {
     title: string;
@@ -236,12 +243,33 @@ const MODEL_KINDS: {
     icon: ComponentType<IconProps>;
     /** Catalog categories; the first one is the enter filter and the color. */
     categories: ModelCategory[];
+    pixels: PixelKind;
 }[] = [
-    { label: "Image", icon: ImageIcon, categories: ["image"] },
-    { label: "Text", icon: ChatIcon, categories: ["text", "decision"] },
-    { label: "Audio", icon: AudioIcon, categories: ["audio", "realtime"] },
-    { label: "Video & 3D", icon: VideoIcon, categories: ["video", "3d"] },
-    { label: "Embeddings", icon: SearchIcon, categories: ["embedding"] },
+    { label: "Image", icon: ImageIcon, categories: ["image"], pixels: "image" },
+    {
+        label: "Text",
+        icon: ChatIcon,
+        categories: ["text", "decision"],
+        pixels: "text",
+    },
+    {
+        label: "Audio",
+        icon: AudioIcon,
+        categories: ["audio", "realtime"],
+        pixels: "audio",
+    },
+    {
+        label: "Video & 3D",
+        icon: VideoIcon,
+        categories: ["video", "3d"],
+        pixels: "video",
+    },
+    {
+        label: "Embeddings",
+        icon: SearchIcon,
+        categories: ["embedding"],
+        pixels: "embedding",
+    },
 ];
 
 const PUBLISH_FEATURES: Feature[] = [
@@ -373,10 +401,13 @@ function FeatureCard({
  */
 function Models() {
     const { data: stats } = usePlatformStats();
+    const grid = useRef<HTMLUListElement>(null);
+    const seen = useInView(grid, { once: true, threshold: 0.5 });
     const cards = [
-        ...MODEL_KINDS.map(({ label, icon, categories }) => ({
+        ...MODEL_KINDS.map(({ label, icon, categories, pixels }) => ({
             label,
             icon,
+            pixels,
             href: `https://enter.pollinations.ai/models?category=${categories[0]}`,
             count: stats
                 ? categories.reduce(
@@ -393,6 +424,7 @@ function Models() {
         {
             label: "Community",
             icon: SproutIcon,
+            pixels: "community" as const,
             href: "https://enter.pollinations.ai/models?q=source:community",
             count: stats?.community ?? null,
             names: stats?.newest.community ?? [],
@@ -407,26 +439,42 @@ function Models() {
             title="Models"
             description="From official providers and the community. Add yours too."
         >
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <ul
+                ref={grid}
+                data-seen={seen ? "" : undefined}
+                className="grid grid-cols-2 gap-4 sm:grid-cols-3"
+            >
                 {cards.map(
-                    ({
-                        label,
-                        icon: Icon,
-                        href,
-                        count,
-                        names,
-                        color,
-                        background,
-                    }) => (
-                        <li key={label}>
+                    (
+                        {
+                            label,
+                            icon: Icon,
+                            pixels,
+                            href,
+                            count,
+                            names,
+                            color,
+                            background,
+                        },
+                        index,
+                    ) => (
+                        <li
+                            key={label}
+                            style={
+                                {
+                                    "--card-delay": `${index * 120}ms`,
+                                } as CSSProperties
+                            }
+                        >
                             <LinkCard
                                 href={href}
                                 surfaceClassName={cn(
-                                    "gap-0 p-3.5 sm:p-5",
+                                    "site-model-card relative gap-0 p-3.5 sm:p-5",
                                     POLLI_PERCH,
                                 )}
                                 tint={background}
                             >
+                                <ModelPixels kind={pixels} color={color} />
                                 <span
                                     className="flex items-center gap-2"
                                     style={{ color }}

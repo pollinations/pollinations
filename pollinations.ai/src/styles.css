@@ -355,6 +355,96 @@ main > * {
     }
 }
 
+/* ── Model card pixels ───────────────────────────────────────────────
+   Each card's drawing (ModelPixels) plays once, staggered, when the grid
+   first comes into view, and again on hover or focus. Layers set their own
+   motion through --px-* properties; the two triggers below apply it. */
+.site-model-pixels {
+    position: absolute;
+    top: 2.5rem;
+    right: 0.875rem;
+    width: 48px;
+    height: 36px;
+    fill: currentColor;
+    pointer-events: none;
+}
+
+@media (min-width: 40rem) {
+    .site-model-pixels {
+        top: 3rem;
+        right: 1.25rem;
+        width: 60px;
+        height: 45px;
+    }
+}
+
+.site-px-seen,
+.site-px-hover {
+    transform-box: fill-box;
+    transform-origin: var(--px-origin, center);
+}
+
+[data-seen] .site-px-seen {
+    animation: var(--px-anim)
+        calc(var(--card-delay, 0ms) + var(--px-delay, 0ms)) 1 both;
+}
+
+.site-model-card:is(:hover, :focus-within) .site-px-hover {
+    animation: var(--px-anim) var(--px-delay, 0ms) 2 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-px-seen,
+    .site-px-hover {
+        animation: none !important;
+    }
+}
+
+@keyframes site-px-appear {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes site-px-type {
+    from {
+        transform: scaleX(0);
+    }
+}
+
+@keyframes site-px-blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+@keyframes site-px-bounce {
+    50% {
+        transform: scaleY(var(--px-low));
+    }
+}
+
+@keyframes site-px-gather {
+    50% {
+        transform: translate(var(--px-dx), var(--px-dy));
+    }
+}
+
+@keyframes site-px-run {
+    25%,
+    75% {
+        transform: translateX(1px);
+    }
+
+    50% {
+        transform: none;
+    }
+}
+
 /* ── /play ───────────────────────────────────────────────────────────── */
 /* The native audio player, rounded to sit inside its result card. */
 .play-audio {

@@ -377,7 +377,17 @@ export const CreateChatCompletionRequestSchema = z
         max_completion_tokens: ChatOutputTokenLimitSchema,
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
-        seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
+        seed: z
+            .number()
+            .int()
+            .min(-1)
+            .max(2147483647)
+            .nullable()
+            .optional()
+            .meta({
+                description:
+                    "Seed for reproducible text generation on supported models. -1 requests a fresh random seed and generation for each request.",
+            }),
         stop: z
             .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
             .optional(),

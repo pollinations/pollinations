@@ -569,7 +569,7 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(2);
     });
 
-    it("caches seed -1 in POST bodies and GET query params", async () => {
+    it("generates fresh results for seed -1 even when request IDs repeat", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
         const env = createTextCacheEnv();
@@ -615,10 +615,15 @@ describe("text cache", () => {
         await consumeAndWait(secondGet);
 
         expect(firstPost.response.headers.get("X-Cache")).toBe("MISS");
-        expect(secondPost.response.headers.get("X-Cache")).toBe("HIT");
+        expect(secondPost.response.headers.get("X-Cache")).toBe("MISS");
         expect(firstGet.response.headers.get("X-Cache")).toBe("MISS");
-        expect(secondGet.response.headers.get("X-Cache")).toBe("HIT");
-        expect(cache.originHits).toBe(2);
+        expect(secondGet.response.headers.get("X-Cache")).toBe("MISS");
+        expect(cache.originHits).toBe(4);
+        for (const result of [firstPost, secondPost, firstGet, secondGet]) {
+            expect(result.response.headers.get("Cache-Control")).toBe(
+                "private, no-store",
+            );
+        }
     });
 
     it("does not cache SSE protocol errors", async () => {

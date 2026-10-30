@@ -107,6 +107,70 @@ test.beforeEach(async ({ page }) => {
     ).toBeVisible();
 });
 
+test("session failures do not block guest checkout or lose its key on recovery", async ({
+    page,
+}) => {
+    await page.route("**/api/auth/get-session", (route) =>
+        route.fulfill({ status: 503 }),
+    );
+    await page.reload();
+    await expect(
+        page.getByRole("heading", { name: "Buy prepaid Pollen" }),
+    ).toBeVisible();
+    await page
+        .getByRole("button", { name: "Review payment", exact: true })
+        .click();
+    await expect(
+        page.getByText("Pay 2.00 USDC on Base for 2 Pollen."),
+    ).toBeVisible();
+    await page.route("**/api/x402/keys/*", (route) =>
+        route.request().headers()["payment-signature"]
+            ? route.fulfill({ json: { key: "sk_browser_fixture", pollen: 2 } })
+            : route.fallback(),
+    );
+    await page
+        .getByRole("button", { name: "Connect wallet", exact: true })
+        .click();
+    await page
+        .getByRole("button", { name: "Pay 2.00 USDC", exact: true })
+        .click();
+    await expect(
+        page.getByRole("button", { name: "Copy prepaid API key" }),
+    ).toBeVisible();
+    await page.route("http://localhost:8788/**", (route) =>
+        route.fulfill({ status: 401 }),
+    );
+    await page.route("**/api/auth/get-session", (route) =>
+        route.fulfill({
+            json: {
+                session: {
+                    id: "fixture-session",
+                    userId: "fixture-buyer",
+                    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+                },
+                user: {
+                    id: "fixture-buyer",
+                    name: "Fixture buyer",
+                    email: "fixture@example.com",
+                },
+            },
+        }),
+    );
+    const recovered = page.waitForResponse(
+        (response) =>
+            response.url().includes("/auth/get-session") &&
+            response.status() === 200,
+    );
+    await page.evaluate(() => window.dispatchEvent(new Event("online")));
+    await recovered;
+    await expect(
+        page.getByText("Temporary outage", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+        page.getByRole("button", { name: "Copy prepaid API key" }),
+    ).toBeVisible();
+});
+
 test("double-clicks sign once, uncertain retries reuse the proof, and the key checks its balance", async ({
     page,
     context,
@@ -221,6 +285,70 @@ test("double-clicks sign once, uncertain retries reuse the proof, and the key ch
         .check();
     await page.getByRole("link", { name: "Terms", exact: true }).click();
     await expect(page).toHaveURL(/\/terms$/);
+});
+
+test("an approval that expires in the wallet can be retried without submitting the old proof", async ({
+    page,
+}) => {
+    const now = Date.now();
+    await page.clock.setFixedTime(now);
+    await page.exposeFunction("expireFixturePrompt", () =>
+        page.clock.setFixedTime(now + 61_000),
+    );
+    await page.evaluate(() => {
+        const state = window as Window & {
+            ethereum: {
+                request: (args: { method: string }) => Promise<unknown>;
+            };
+            expireFixturePrompt: () => Promise<void>;
+        };
+        const request = state.ethereum.request;
+        let firstApproval = true;
+        state.ethereum.request = async (args) => {
+            const result = await request(args);
+            if (args.method === "eth_signTypedData_v4" && firstApproval) {
+                firstApproval = false;
+                await state.expireFixturePrompt();
+            }
+            return result;
+        };
+    });
+    let payments = 0;
+    await page.route("**/api/x402/keys/*", (route) => {
+        if (!route.request().headers()["payment-signature"])
+            return route.fallback();
+        payments++;
+        return route.fulfill({
+            json: { key: "sk_browser_fixture", pollen: 2 },
+        });
+    });
+    await page
+        .getByRole("button", { name: "Review payment", exact: true })
+        .click();
+    await page
+        .getByRole("button", { name: "Connect wallet", exact: true })
+        .click();
+    await page
+        .getByRole("button", { name: "Pay 2.00 USDC", exact: true })
+        .click();
+    await expect(
+        page.getByText("Your approval expired before the payment was sent.", {
+            exact: false,
+        }),
+    ).toBeVisible();
+    expect(payments).toBe(0);
+    expect(signatures).toBe(1);
+    await page
+        .getByRole("button", { name: "Connect wallet", exact: true })
+        .click();
+    await page
+        .getByRole("button", { name: "Pay 2.00 USDC", exact: true })
+        .click();
+    await expect(
+        page.getByText("Your key is ready with 2 Pollen."),
+    ).toBeVisible();
+    expect(payments).toBe(1);
+    expect(signatures).toBe(2);
 });
 
 test("quick amounts update the reviewed price and missing wallets get a specific message", async ({

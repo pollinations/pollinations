@@ -1,6 +1,10 @@
 import { x402Client, x402HTTPClient } from "@x402/core/client";
 import type { PaymentRequired } from "@x402/core/types";
-import type { ClientEvmSigner } from "@x402/evm";
+import {
+    type ClientEvmSigner,
+    type ExactEvmPayloadV2,
+    isEIP3009Payload,
+} from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import {
     BaseError,
@@ -14,6 +18,8 @@ import { base } from "viem/chains";
 const BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 const WALLET_ERRORS: Record<string, string> = {
+    payment_expired:
+        "Your approval expired before the payment was sent. Connect again to approve a fresh payment.",
     wallet_missing:
         "No browser wallet was found. Open this page in a browser with an Ethereum wallet installed.",
     4001: "You declined the wallet request. No payment was submitted. You can connect again when ready.",
@@ -102,9 +108,18 @@ export async function prepaidPaymentHeaders(
         .setSpendControls({ maxAmountPerPayment: `$${prepaidAmount(amount)}` })
         .register("eip155:8453", new ExactEvmScheme(signer));
     const http = new x402HTTPClient(client);
-    return http.encodePaymentSignatureHeader(
-        await http.createPaymentPayload(quote),
-    );
+    const payload = await http.createPaymentPayload(quote);
+    const evm = payload.payload as ExactEvmPayloadV2;
+    const deadline = isEIP3009Payload(evm)
+        ? evm.authorization.validBefore
+        : evm.permit2Authorization.deadline;
+    // Wallet prompts can outlast the provider's signed authorization window.
+    // Reject before submitting; retries of an already-sent proof stay unchanged.
+    if (BigInt(deadline) <= BigInt(Math.floor(Date.now() / 1000)))
+        throw Object.assign(new Error("Payment approval expired"), {
+            code: "payment_expired",
+        });
+    return http.encodePaymentSignatureHeader(payload);
 }
 
 export async function connectPrepaidWallet() {

@@ -16,7 +16,7 @@ import type {
     submitPrepaidPayment,
 } from "../../lib/prepaid-checkout.ts";
 
-export function PrepaidCheckout() {
+export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
     const [amount, setAmount] = useState("2.00");
     const [quote, setQuote] = useState<Awaited<
         ReturnType<typeof loadPrepaidQuote>
@@ -47,6 +47,7 @@ export function PrepaidCheckout() {
 
     async function checkout() {
         if (inFlight.current) return;
+        onStart();
         inFlight.current = true;
         setBusy(true);
         setError(undefined);

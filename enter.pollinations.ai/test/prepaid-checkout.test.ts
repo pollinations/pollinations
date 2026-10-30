@@ -150,3 +150,23 @@ test("retries an uncertain purchase with identical signed payment bytes", async 
         headers["PAYMENT-SIGNATURE"],
     );
 });
+
+test("does not submit an authorization that expires while the wallet prompt is open", async () => {
+    const clock = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000);
+    try {
+        await expect(
+            prepaidPaymentHeaders(quote, "2", {
+                address: signer.address,
+                signTypedData: async (data) => {
+                    const signature = await signer.signTypedData(
+                        data as Parameters<typeof signer.signTypedData>[0],
+                    );
+                    clock.mockReturnValue(1_800_000_061_000);
+                    return signature;
+                },
+            }),
+        ).rejects.toMatchObject({ code: "payment_expired" });
+    } finally {
+        clock.mockRestore();
+    }
+});

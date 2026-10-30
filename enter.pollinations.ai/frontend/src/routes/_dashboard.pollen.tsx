@@ -6,7 +6,7 @@ import {
     useNavigate,
     useRouter,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue } from "react";
+import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import {
     LoadError,
@@ -48,8 +48,13 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 });
 
 function PollenPage() {
-    const { user, sessionUnavailable } = DashboardRoute.useLoaderData();
-    if (!user && !sessionUnavailable) return <PrepaidCheckout />;
+    const { user } = DashboardRoute.useLoaderData();
+    const [guestCheckoutStarted, setGuestCheckoutStarted] = useState(false);
+    // Session recovery must not unmount a guest payment or its unsaved key.
+    if (!user || guestCheckoutStarted)
+        return (
+            <PrepaidCheckout onStart={() => setGuestCheckoutStarted(true)} />
+        );
     return <AccountPollenPage />;
 }
 

@@ -1,0 +1,75 @@
+// Webhook delivery and state commits. No Cloudflare imports, so it is
+// testable with plain Node.
+
+const TIMEOUT_MS = 10_000;
+
+const withWait = (url) => {
+    const u = new URL(url);
+    u.searchParams.set("wait", "true");
+    return u.toString();
+};
+const MAX_TRIES = 3;
+
+// True only once Discord accepted the message. Retries 429 (honouring
+// retry_after, capped) and 5xx/network errors.
+export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
+    const wait = sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+    for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+        let res;
+        try {
+            // wait=true: Discord answers only after the message is saved.
+            res = await fetchImpl(withWait(url), {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify(body),
+                signal: AbortSignal.timeout(TIMEOUT_MS),
+            });
+        } catch {
+            res = null;
+        }
+        if (res?.ok) return true;
+        if (res && res.status < 500 && res.status !== 429) return false;
+        if (attempt === MAX_TRIES) break;
+        const header = res?.headers?.get?.("retry-after");
+        const retryAfter = header == null ? Number.NaN : Number(header);
+        await wait(
+            Math.min(
+                Number.isFinite(retryAfter)
+                    ? retryAfter * 1000
+                    : 1000 * attempt,
+                5000,
+            ),
+        );
+    }
+    return false;
+}
+
+// Keep a post's state change only if it was delivered: an undelivered alert
+// stays eligible next check, an undelivered recovery stays active.
+export function settle(prev, next, posts, delivered) {
+    const active = { ...next.active };
+    posts.forEach((post, i) => {
+        if (delivered[i]) return;
+        const before = prev.active?.[post.key];
+        if (before) active[post.key] = before;
+        else delete active[post.key];
+    });
+    return { ...next, active };
+}
+
+// Runs `fn` unless a previous run is still in flight; returns null when
+// skipped. The lease never expires early: every network call in a run has a
+// timeout, so a run always finishes, and an expired lease would let two runs
+// send and write state at once.
+export function exclusive() {
+    let running = false;
+    return async (fn) => {
+        if (running) return null;
+        running = true;
+        try {
+            return await fn();
+        } finally {
+            running = false;
+        }
+    };
+}

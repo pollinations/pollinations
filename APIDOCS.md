@@ -4531,16 +4531,20 @@ curl "https://gen.pollinations.ai/account/usage/daily?format=json&days=90" \
 
 #### `GET` `/account/earnings/transactions` — Get Earnings Transactions
 
-Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.
+Returns recent per-request earnings transactions, newest first. Pass the last row's timestamp and cursor fields as `before`, `before_event_id`, `before_source`, and `before_entity_id` together to fetch the next page. Requires `account:usage` permission when using API keys.
 
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
 |---|---|---|---|
 | `limit` | `query` | `integer` | default: `100` · range: `1…50000` |
+| `before` | `query` | `string` \| `string · date-time` | — |
+| `before_event_id` | `query` | `string` | — |
 | `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |
 | `period` | `query` | `string` | — |
 | `timezone` | `query` | `string` | IANA time zone for calendar windows and date buckets. Defaults to UTC. Request timestamps remain UTC. |
+| `before_source` | `query` | `string` | — |
+| `before_entity_id` | `query` | `string` | — |
 | `days` | `query` | `integer` | default: `30` · range: `1…365` |
 
 <sub>`*` = required parameter</sub>
@@ -4552,6 +4556,8 @@ Returns recent per-request earnings transactions, newest first. Requires `accoun
 | `transactions` * | `object`[] | Earning transaction records |
 | `transactions[].timestamp` * | `string` | Request timestamp in UTC (YYYY-MM-DD HH:mm:ss format) |
 | `transactions[].cursor_event_id` * | `string` | Stable event id |
+| `transactions[].cursor_source` * | `string` | Earning source used for pagination |
+| `transactions[].cursor_entity_id` * | `string` | Earning entity id used for pagination |
 | `transactions[].entity_name` * | `string` | Earning entity display name |
 | `transactions[].model` * | `any` | Model used for generation |
 | `transactions[].meter_source` * | `any` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
@@ -4563,7 +4569,7 @@ Returns recent per-request earnings transactions, newest first. Requires `accoun
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/account/earnings/transactions?limit=100&granularity=day" \
+curl "https://gen.pollinations.ai/account/earnings/transactions?limit=100&before=2026-01-01T00%3A00%3A00Z" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 

@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "DIAGRAM_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "diagram",
+        name: "Diagrams",
+        description:
+            "Render, validate, and generate Mermaid, flowchart, architecture, and SVG diagrams for agents.",
+        binding: "DIAGRAM_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Diagram validation and SVG rendering are free. Enhanced diagram generations use the caller's selected model rate.",
             rates: [],
         },
     },

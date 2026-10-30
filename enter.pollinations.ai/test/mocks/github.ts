@@ -5,6 +5,14 @@ import {
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 
+export type MockRewardComment = {
+    body: string;
+    createdAt: string;
+    lastEditedAt: string | null;
+    author: { __typename: string; login: string; databaseId?: number } | null;
+    editor: MockRewardComment["author"];
+};
+
 export type MockGithubState = {
     secretScanningPublicKeys: Array<{
         key_identifier: string;
@@ -20,6 +28,7 @@ export type MockGithubState = {
     };
     questIssues: Array<{
         number: number;
+        repository?: string;
         title: string;
         state: "open" | "closed";
         html_url: string;
@@ -30,6 +39,7 @@ export type MockGithubState = {
         user: { login: string; databaseId?: number | null } | null;
         assignees?: { login: string; databaseId?: number | null }[];
         labels?: Array<{ name: string }>;
+        comments?: MockRewardComment[];
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
@@ -43,8 +53,18 @@ export type MockGithubState = {
     }>;
     mergedPullRequests: Array<{
         number: number;
+        repository?: string;
         authorLogin: string;
-        mergedAt: string;
+        mergedAt: string | null;
+        authorId?: number;
+        authorType?: string;
+        title?: string;
+        headRefOid?: string;
+        comments?: MockRewardComment[];
+        closingIssuesReferences?: Array<{
+            number: number;
+            repository?: string;
+        }>;
     }>;
     // Commit author GitHub ids per PR number, including co-authors.
     commitAuthors: Record<number, number[]>;
@@ -118,8 +138,89 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 variables?: {
                     query?: string;
                     after?: string | null;
+                    before?: string | null;
+                    number?: number;
+                    login?: string;
                 };
             };
+            const commentPage = (comments: MockRewardComment[] = []) => {
+                const end = Number(body.variables?.before ?? comments.length);
+                const start = Math.max(0, end - 20);
+                return {
+                    nodes: comments.slice(start, end),
+                    pageInfo: {
+                        hasPreviousPage: start > 0,
+                        startCursor: String(start),
+                    },
+                };
+            };
+            const closingIssuesPage = (
+                pr: MockGithubState["mergedPullRequests"][number] | undefined,
+                after: string | null = null,
+            ) => {
+                const issues =
+                    pr?.closingIssuesReferences ??
+                    state.questIssues.filter((issue) =>
+                        issue.closedByPullRequestsReferences?.some(
+                            (closer) => closer.number === pr?.number,
+                        ),
+                    );
+                const start = Number(after ?? 0);
+                const nodes = issues.slice(start, start + 100).map((issue) => ({
+                    number: issue.number,
+                    repository: {
+                        nameWithOwner:
+                            issue.repository ?? "pollinations/pollinations",
+                    },
+                }));
+                return {
+                    nodes,
+                    pageInfo: {
+                        hasNextPage: start + nodes.length < issues.length,
+                        endCursor: String(start + nodes.length),
+                    },
+                };
+            };
+            if (body.query?.includes("issueOrPullRequest")) {
+                const item = [
+                    ...state.questIssues,
+                    ...state.mergedPullRequests,
+                ].find(
+                    (entry) =>
+                        entry.number === body.variables?.number &&
+                        (!entry.repository ||
+                            entry.repository === "pollinations/pollinations"),
+                );
+                return c.json({
+                    data: {
+                        repository: {
+                            issueOrPullRequest: {
+                                comments: commentPage(item?.comments),
+                            },
+                        },
+                    },
+                });
+            }
+            if (body.query?.includes("pullRequest(number:$number)")) {
+                const pr = state.mergedPullRequests.find(
+                    (entry) =>
+                        entry.number === body.variables?.number &&
+                        (!entry.repository ||
+                            entry.repository === "pollinations/pollinations"),
+                );
+                return c.json({
+                    data: {
+                        repository: {
+                            pullRequest: {
+                                closingIssuesReferences: closingIssuesPage(
+                                    pr,
+                                    body.variables?.after,
+                                ),
+                            },
+                        },
+                    },
+                });
+            }
             // Commit authors arrive as one query with a `pr<number>:` alias
             // per pull request.
             const prNumbers = [
@@ -153,36 +254,82 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ data: { repository } });
             }
             const search = body.variables?.query ?? "";
-            if (search.includes("is:pr")) {
-                const author = search.match(/\bauthor:([^\s]+)/)?.[1];
-                const nodes = state.mergedPullRequests
-                    .filter((pr) => !author || pr.authorLogin === author)
-                    .slice(0, 1)
-                    .map((pr) => ({
-                        number: pr.number,
-                        mergedAt: pr.mergedAt,
-                    }));
-                return c.json({ data: { search: { nodes } } });
+            if (body.query?.includes("contributions:pullRequests")) {
+                const author = body.variables?.login;
+                const matches = state.mergedPullRequests.filter(
+                    (pr) =>
+                        (!author || pr.authorLogin === author) &&
+                        pr.mergedAt !== null,
+                );
+                const start = Number(body.variables?.after ?? 0);
+                const nodes = matches.slice(start, start + 100).map((pr) => ({
+                    number: pr.number,
+                    repository: {
+                        nameWithOwner:
+                            pr.repository ?? "pollinations/pollinations",
+                    },
+                    mergedAt: pr.mergedAt,
+                    title: pr.title ?? `PR ${pr.number}`,
+                    url: `https://github.com/${pr.repository ?? "pollinations/pollinations"}/pull/${pr.number}`,
+                    headRefOid: pr.headRefOid ?? "a".repeat(40),
+                    author: {
+                        __typename: pr.authorType ?? "User",
+                        login: pr.authorLogin,
+                        databaseId: pr.authorId ?? state.user.id,
+                    },
+                    comments: commentPage(pr.comments),
+                    closingIssuesReferences: closingIssuesPage(pr),
+                }));
+                return c.json({
+                    data: {
+                        user: {
+                            contributions: {
+                                nodes,
+                                pageInfo: {
+                                    hasNextPage:
+                                        start + nodes.length < matches.length,
+                                    endCursor: String(start + nodes.length),
+                                },
+                            },
+                        },
+                    },
+                });
             }
 
-            const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+            const userIssues = body.query?.includes("contributions:issues");
+            const author = userIssues
+                ? body.variables?.login
+                : search.match(/\bauthor:([^\s]+)/)?.[1];
             const label = search.match(/\blabel:([^\s]+)/)?.[1];
             const issues = state.questIssues.filter(
                 (issue) =>
                     (!author || issue.user?.login === author) &&
+                    (userIssues
+                        ? issue.state === "closed"
+                        : !issue.repository ||
+                          issue.repository === "pollinations/pollinations") &&
                     (!label ||
                         issue.labels?.some(({ name }) => name === label)),
             );
             const start = Number(body.variables?.after ?? 0);
             const nodes = issues.slice(start, start + 100).map((issue) => ({
                 number: issue.number,
+                repository: {
+                    nameWithOwner:
+                        issue.repository ?? "pollinations/pollinations",
+                },
                 state: issue.state.toUpperCase(),
                 title: issue.title,
                 url: issue.html_url,
                 body: issue.body,
                 author: issue.user
-                    ? { databaseId: issue.user.databaseId ?? null }
+                    ? {
+                          __typename: "User",
+                          login: issue.user.login,
+                          databaseId: issue.user.databaseId ?? null,
+                      }
                     : null,
+                comments: commentPage(issue.comments),
                 assignees: {
                     nodes: (issue.assignees ?? []).map((assignee) => ({
                         login: assignee.login,
@@ -195,17 +342,17 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 },
             }));
             const next = start + nodes.length;
-            return c.json({
-                data: {
-                    search: {
-                        nodes,
-                        pageInfo: {
-                            hasNextPage: next < issues.length,
-                            endCursor:
-                                next < issues.length ? String(next) : null,
-                        },
-                    },
+            const connection = {
+                nodes,
+                pageInfo: {
+                    hasNextPage: next < issues.length,
+                    endCursor: next < issues.length ? String(next) : null,
                 },
+            };
+            return c.json({
+                data: userIssues
+                    ? { user: { contributions: connection } }
+                    : { search: connection },
             });
         })
         .get("/user/emails", (c) => {

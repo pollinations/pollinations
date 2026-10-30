@@ -6,9 +6,11 @@ project-manager.md is the brief: the only definition of areas, types and priorit
 import sys
 import os
 import json
+import math
 import re
 import requests
 import time
+from decimal import Decimal
 from functools import cache
 from typing import Optional
 
@@ -61,6 +63,10 @@ SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
 LABEL_SOURCES = [("Apps", "APP-SUBMISSION"), ("Quests", "POLLEN-QUEST")]
 NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
+REWARD_COMMENT_MARKER = "<!-- pollinations-reward -->"
+REWARD_BOT_ID = 247793354
+MAX_REWARD = 100
+MAX_PATCH_CHARS = 20_000
 
 
 def log_debug(msg: str):
@@ -199,16 +205,25 @@ def author_source() -> str:
 @cache
 def closing_issues() -> list:
     """Linked issues provide Source labels and work-type hints."""
-    data = graphql_request(
-        """query($id: ID!) { node(id: $id) { ... on PullRequest { closingIssuesReferences(first: 30) { nodes {
-            number issueType { name } labels(first: 20) { nodes { name } }
-        } } } } }""",
-        {"id": ISSUE_NODE_ID},
-    )
-    node = data.get("node")
-    if node is None:
-        fail(f"Failed to fetch linked issues for PR #{ISSUE_NUMBER}")
-    return node["closingIssuesReferences"]["nodes"]
+    issues = []
+    after = None
+    while True:
+        data = graphql_request(
+            """query($id: ID!, $after: String) { node(id: $id) { ... on PullRequest { closingIssuesReferences(first: 100, after: $after) {
+                nodes { number body repository { nameWithOwner } issueType { name } labels(first: 100) { nodes { name } } }
+                pageInfo { hasNextPage endCursor }
+            } } } }""",
+            {"id": ISSUE_NODE_ID, "after": after},
+        )
+        node = data.get("node")
+        if node is None:
+            fail(f"Failed to fetch linked issues for PR #{ISSUE_NUMBER}")
+        connection = node["closingIssuesReferences"]
+        issues.extend(issue for issue in connection["nodes"]
+                      if issue["repository"]["nameWithOwner"] == f"{REPO_OWNER}/{REPO_NAME}")
+        if not connection["pageInfo"]["hasNextPage"]:
+            return issues
+        after = connection["pageInfo"]["endCursor"]
 
 
 def item_source(labels: set) -> str:
@@ -312,7 +327,7 @@ def fetch_pr_files() -> list:
             fail(f"Exception fetching files for PR #{ISSUE_NUMBER}: {e}")
         if r.status_code != 200:
             fail(f"Failed to fetch files for PR #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
-        batch = [f["filename"] for f in r.json()]
+        batch = r.json()
         files.extend(batch)
         if len(batch) < 100:
             return files
@@ -320,14 +335,19 @@ def fetch_pr_files() -> list:
 
 
 def classify(brief: str, areas: list) -> dict:
-    """Area and type for work; priority only for issues."""
+    """Classify and assess the same item with one model call."""
     if IS_PULL_REQUEST:
         files = fetch_pr_files()
-        facts = f"Changed files ({len(files)}):\n" + "\n".join(files[:300])
+        facts = f"Changed files ({len(files)}):\n" + "\n".join(file["filename"] for file in files[:300])
         if len(files) > 300:
             facts += f"\n... and {len(files) - 300} more"
         linked = [{"number": issue["number"], "type": (issue.get("issueType") or {}).get("name")} for issue in closing_issues()]
         facts += "\nLinked issue types (hints, verify against PR scope):\n" + json.dumps(linked)
+        patches = "\n".join(
+            f"File: {file['filename']}\n{file.get('patch') or '[patch unavailable]'}"
+            for file in files
+        )
+        facts += "\nUntrusted diff excerpts (may be incomplete):\n" + patches[:MAX_PATCH_CHARS]
     else:
         facts = ""
     author = "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User")
@@ -335,12 +355,20 @@ def classify(brief: str, areas: list) -> dict:
 Author: {ISSUE_AUTHOR} ({author})
 Title: {ISSUE_TITLE}
 Body: {ISSUE_BODY[:2000]}
+Labels: {json.dumps([label.get('name') for label in ITEM_DATA.get('labels', [])])}
 {facts}
 """)
     if raw is None:
         fail(f"AI classification failed for #{ISSUE_NUMBER}")
     try:
-        return classification_answer(raw, areas, IS_PULL_REQUEST)
+        answer = {**classification_answer(raw, areas, IS_PULL_REQUEST), **reward_answer(raw)}
+        if ITEM_DATA.get("user", {}).get("type") == "Bot":
+            answer.update(reward=0, reward_reason="Bot accounts do not earn contribution rewards.")
+        elif IS_PULL_REQUEST:
+            bounty = closing_bounty_reward()
+            if bounty is not None:
+                answer.update(bounty)
+        return answer
     except ValueError as error:
         fail(f"Invalid classification for #{ISSUE_NUMBER}: {error}")
 
@@ -360,6 +388,88 @@ def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
     return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"]}
 
 
+def reward_answer(raw: dict) -> dict:
+    amount = raw.get("reward")
+    if type(amount) not in (int, float) or not 0 <= amount <= MAX_REWARD or not math.isfinite(amount):
+        raise ValueError("reward must be a finite number between 0 and 100")
+    reason = raw.get("reward_reason")
+    if not isinstance(reason, str) or not reason.strip() or len(reason) > 400:
+        raise ValueError("reward_reason must be a non-empty sentence of at most 400 characters")
+    return {"reward": amount, "reward_reason": " ".join(reason.split())}
+
+
+def closing_bounty_reward() -> Optional[dict]:
+    """A declared quest reward is the solver's promise, not an extra AI bonus."""
+    bounties = [issue for issue in closing_issues()
+                if any(label["name"] == "POLLEN-QUEST" for label in issue["labels"]["nodes"])]
+    if not bounties:
+        return None
+    total = Decimal(0)
+    for issue in bounties:
+        match = re.search(r"(?:^|\n)###\s*Reward\s*\n+\s*(\d+(?:\.\d+)?)(?=\s|$)", issue.get("body") or "", re.IGNORECASE)
+        if not match:
+            return {"reward": 0, "reward_reason": "A linked quest has an invalid reward. Elliot or Thomas must correct the advertised amount before merge."}
+        total += Decimal(match[1])
+    if not 0 < total <= MAX_REWARD:
+        return {"reward": 0, "reward_reason": "The linked quest rewards are outside the 0–100 Pollen limit. Elliot or Thomas must resolve the advertised amount before merge."}
+    return {"reward": float(total), "reward_reason": "This is the advertised solver reward for the linked quest(s), replacing the ordinary contribution reward."}
+
+
+def write_reward_comment(answer: dict):
+    """Maintain one bot-owned quote; this job never grants or claims Pollen."""
+    if ITEM_DATA.get("state") == "closed" or ITEM_DATA.get("merged_at"):
+        return
+    lines = [REWARD_COMMENT_MARKER, f"Reward: {Decimal(str(answer['reward'])):f} quest"]
+    if IS_PULL_REQUEST:
+        head = ITEM_DATA.get("head", {}).get("sha", "")
+        if not re.fullmatch(r"[0-9a-f]{40}", head):
+            fail("Cannot quote a PR reward without its exact head SHA")
+        lines.append(f"<!-- head: {head} -->")
+    eligibility = "No contribution reward is offered by this assessment." if answer["reward"] == 0 else (
+        "The PR author can claim this reward after merge." if IS_PULL_REQUEST
+        else "The issue author can claim this reward after a merged PR closes this issue.")
+    lines.extend(["", f"Reason: {answer['reward_reason']}", "", eligibility,
+                  "Claim at https://enter.pollinations.ai/quests. Elliot or Thomas can override with a separate comment containing only `Reward: 3` (Quest) or `Reward: 3 paid`, from 0 to 100 Pollen."])
+    body = "\n".join(lines)
+    if DRY_RUN:
+        print(f"DRY-RUN reward comment for #{ISSUE_NUMBER}:\n{body}")
+        return
+
+    base = f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}"
+    existing = None
+    page = 1
+    while True:
+        response = requests.get(f"{base}/issues/{ISSUE_NUMBER}/comments", headers=GITHUB_HEADERS,
+                                params={"per_page": 100, "page": page}, timeout=30)
+        response.raise_for_status()
+        comments = response.json()
+        existing = next((comment for comment in comments
+                         if comment.get("user", {}).get("id") == REWARD_BOT_ID
+                         and comment["user"].get("type") == "Bot"
+                         and comment["user"].get("login") == "pollinations-ai[bot]"
+                         and (comment.get("body") or "").startswith(REWARD_COMMENT_MARKER + "\n")), None)
+        if existing or len(comments) < 100:
+            break
+        page += 1
+
+    # The event can be stale while the model is running. Never publish a quote
+    # for a different revision or overwrite it after the item has closed.
+    resource = "pulls" if IS_PULL_REQUEST else "issues"
+    response = requests.get(f"{base}/{resource}/{ISSUE_NUMBER}", headers=GITHUB_HEADERS, timeout=30)
+    response.raise_for_status()
+    current = response.json()
+    if (current.get("state") != "open" or current.get("merged_at")
+            or current.get("title") != ISSUE_TITLE or (current.get("body") or "") != ISSUE_BODY
+            or (IS_PULL_REQUEST and current.get("head", {}).get("sha") != head)):
+        log_debug(f"#{ISSUE_NUMBER} changed or closed during assessment; leaving reward comment unchanged")
+        return
+    if existing and existing.get("body") == body:
+        return
+    url = f"{base}/issues/comments/{existing['id']}" if existing else f"{base}/issues/{ISSUE_NUMBER}/comments"
+    response = (requests.patch if existing else requests.post)(url, headers=GITHUB_HEADERS, json={"body": body}, timeout=30)
+    response.raise_for_status()
+
+
 def main():
     if not GITHUB_TOKEN or not POLLINATIONS_TOKEN:
         fail("GITHUB_TOKEN and POLLINATIONS_TOKEN are required")
@@ -369,6 +479,7 @@ def main():
     labels = {l.get("name", "").upper() for l in ITEM_DATA.get("labels", []) if isinstance(l, dict)}
     if not IS_PULL_REQUEST and labels & NOT_WORK_LABELS:
         log_debug(f"#{ISSUE_NUMBER} is a survey response; skipping")
+        write_reward_comment({"reward": 0, "reward_reason": "Census responses have their own survey reward."})
         return
 
     brief = read_brief()
@@ -382,13 +493,13 @@ def main():
         set_field(add_to_dev(), fields["Source"], source)
         return
 
+    answer = classify(brief, areas)
     if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
-        answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
-    else:
-        answer = classify(brief, areas)
-        if not IS_PULL_REQUEST and answer["area"] is None:
-            log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
-            return
+        answer.update(area=APP_SUBMISSION_AREA, type=None, priority=None)
+    elif not IS_PULL_REQUEST and answer["area"] is None:
+        write_reward_comment(answer)
+        log_debug(f"#{ISSUE_NUMBER} is not work; skipping project classification")
+        return
 
     source = item_source(labels)
     # A priority that is already set (by a person, an earlier run or the Express job) is kept.
@@ -405,6 +516,8 @@ def main():
         set_field(item_id, fields["Work type"], answer["type"])
     elif answer["type"]:
         set_issue_type(answer["type"])
+
+    write_reward_comment(answer)
 
     # The gist pipeline consumes the same classification after the project update.
     if output := os.getenv("CLASSIFICATION_OUTPUT"):

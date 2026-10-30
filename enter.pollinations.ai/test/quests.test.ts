@@ -7,7 +7,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect, vi } from "vitest";
+import { assert, expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
 import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
@@ -15,7 +15,7 @@ import * as discordCommunity from "../src/services/quests/groups/discord-communi
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
-import type { MockGithubState } from "./mocks/github.ts";
+import type { MockGithubState, MockRewardComment } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
 const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
@@ -28,6 +28,24 @@ const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
 const BEFORE_QUEST_REWARDS_LAUNCH_MILLIS =
     QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS - 1;
 const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
+const CONTRIBUTION_GROUPS = questIndex.QUEST_GROUPS.filter(
+    (group) => group.id === "github-contributions",
+);
+const PR_HEAD = "a".repeat(40);
+
+function rewardComment(body: string, humanId?: number): MockRewardComment {
+    return {
+        body: humanId
+            ? body
+            : `<!-- pollinations-reward -->\n${body}\n<!-- head: ${PR_HEAD} -->\nAssessed contribution.`,
+        createdAt: "2026-10-30T12:00:00Z",
+        lastEditedAt: null,
+        author: humanId
+            ? { __typename: "User", login: "maintainer", databaseId: humanId }
+            : { __typename: "Bot", login: "pollinations-ai" },
+        editor: null,
+    };
+}
 
 test("omits the Discord quest when its configuration is incomplete", async () => {
     const ctx = {
@@ -325,7 +343,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -470,7 +488,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -506,7 +524,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
-        rewardAmount: 3,
+        rewardAmount: 0,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });
@@ -517,7 +535,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -578,7 +596,7 @@ test("catalog keeps the last GitHub quest issues while GitHub is rate limited", 
         reward: 6,
     });
     const catalogIds = async () => {
-        await env.KV.delete("quests:catalog:v30");
+        await env.KV.delete("quests:catalog:v31");
         const response = await SELF.fetch(
             "http://localhost:3000/api/quests/catalog",
         );
@@ -615,7 +633,7 @@ test("quest checks reuse the GitHub quest issues the catalog just fetched", asyn
         completedByGithubId: user.githubId,
         completedByLogin: user.githubUsername,
     });
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
     );
@@ -640,7 +658,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(
@@ -2067,12 +2085,12 @@ test("issue bounties with out-of-range rewards record nothing and do not fail th
     mocks.github.state.user.created_at = new Date().toISOString();
     await mocks.enable("github", "tinybird");
 
-    // The issue body is author-editable, so a reward of 0 or above the
-    // MAX_REWARD_AMOUNT cap can appear at any time. Before the fix both
-    // parsed into a quest definition and recordRewards threw on the amount,
-    // failing every bounty in the same check, including the valid one.
+    // Invalid body amounts must not prevent valid bounties in the same check.
+    // New contributions are capped at 100; the ledger's higher legacy limit
+    // remains in place so previously recorded rewards can still be claimed.
     for (const issue of [
-        { issueNumber: 951, reward: 10001 },
+        { issueNumber: 951, reward: 101 },
+        { issueNumber: 954, reward: 10001 },
         { issueNumber: 953, reward: 0 },
         { issueNumber: 952, reward: 17 },
     ]) {
@@ -2275,7 +2293,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
         }
     }
 
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
     mocks.github.state.requests = [];
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -2299,7 +2317,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
     expect(rewards).toEqual([{ questId: "github:issue:941" }]);
 });
 
-test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including converted quests", async ({
+test("reporters earn the assessed reward on every kind of fixed issue, only with a pre-merge quote", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2307,8 +2325,8 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
 
-    const afterLaunch = "2026-09-24T12:00:00Z";
-    const excludedTitles: Record<number, string> = {
+    const afterLaunch = "2026-10-31T12:00:00Z";
+    const exampleTitles: Record<number, string> = {
         9107: "[Community Publisher Access]: Example",
         9109: "[App Submission]: Example",
         9110: "[Project Submission]: Example",
@@ -2339,7 +2357,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         mocks.github.state.questIssues.push({
             number: issue.number,
             state: "closed",
-            title: excludedTitles[issue.number] ?? `Issue ${issue.number}`,
+            title: exampleTitles[issue.number] ?? `Issue ${issue.number}`,
             html_url: `https://github.com/pollinations/pollinations/issues/${issue.number}`,
             body: "A useful issue report",
             created_at: "2026-09-22T00:00:00Z",
@@ -2350,6 +2368,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
                 databaseId: user.githubId,
             },
             labels: issue.labels,
+            comments: [rewardComment("Reward: 1 quest")],
             closedByPullRequestsReferences: [
                 {
                     number: issue.number + 1000,
@@ -2379,13 +2398,16 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         [
             `quest:github:reported_issue:9101:github:${user.githubId}`,
             `quest:github:reported_issue:9102:github:${user.githubId}`,
+            `quest:github:reported_issue:9104:github:${user.githubId}`,
             `quest:github:reported_issue:9105:github:${user.githubId}`,
-            `quest:github:reported_issue:9108:github:${user.githubId}`,
+            `quest:github:reported_issue:9107:github:${user.githubId}`,
+            `quest:github:reported_issue:9109:github:${user.githubId}`,
+            `quest:github:reported_issue:9110:github:${user.githubId}`,
             `quest:github:reported_issue:9111:github:${user.githubId}`,
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        3, 3, 3, 3, 3,
+        1, 1, 1, 1, 1, 1, 1, 1,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2401,7 +2423,395 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 8);
+});
+
+test("assessed PR rewards paginate and are recorded once per human-authored merged PR", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    const base = {
+        authorLogin: user.githubUsername ?? "",
+        authorId: user.githubId ?? 0,
+        mergedAt: "2026-10-31T12:00:00Z",
+        comments: [rewardComment("Reward: 0.5 quest")],
+    };
+    for (let number = 10000; number < 10101; number++) {
+        mocks.github.state.mergedPullRequests.push({ ...base, number });
+    }
+    mocks.github.state.mergedPullRequests.push(
+        { ...base, number: 10201, authorId: 999 },
+        { ...base, number: 10202, authorType: "Bot" },
+        { ...base, number: 10203, mergedAt: null },
+        { ...base, number: 10204, comments: [] },
+        { ...base, number: 10205, mergedAt: "2026-10-29T12:00:00Z" },
+        { ...base, number: 10206, headRefOid: "b".repeat(40) },
+        { ...base, number: 10207, repository: "someone/else" },
+    );
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const rewards = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(rewards).toHaveLength(101);
+    expect(new Set(rewards.map((reward) => reward.questId)).size).toBe(101);
+    expect(
+        rewards.every(
+            (reward) =>
+                reward.pollenAmount === 0.5 &&
+                reward.balanceBucket === "tier" &&
+                reward.claimedAt === null,
+        ),
+    ).toBe(true);
+    expect(rewards.some((reward) => reward.questId === "merged_pr")).toBe(
+        false,
+    );
+});
+
+test("only authorized reward comments can set amounts and Paid Pollen, including older pages", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    const quote = () => rewardComment("Reward: 0.5 quest");
+    const cases: {
+        comments: MockRewardComment[];
+        expected?: [number, string];
+    }[] = [
+        {
+            comments: [quote(), rewardComment("Reward: 20 paid", 5099901)],
+            expected: [20, "pack"],
+        },
+        {
+            comments: [quote(), rewardComment("Reward: 0.25", 36901823)],
+            expected: [0.25, "tier"],
+        },
+        { comments: [quote(), rewardComment("Reward: 0", 5099901)] },
+        {
+            comments: [quote(), rewardComment("Reward: 100 paid", 36901823)],
+            expected: [100, "pack"],
+        },
+        ...[
+            "Reward: 100.1 paid",
+            "Reward: -1",
+            "Reward: Infinity",
+            "Reward: 3oops",
+            "Reward: 1e2",
+            "Example:\nReward: 100 paid",
+            "Reward: 100 paid\nReward: 1",
+        ].map((body) => ({
+            comments: [quote(), rewardComment(body, 5099901)],
+            expected: [0.5, "tier"] as [number, string],
+        })),
+        {
+            comments: [quote(), rewardComment("Reward: 100 paid", 999)],
+            expected: [0.5, "tier"],
+        },
+        { comments: [rewardComment("Reward: 100 paid")] },
+        { comments: [rewardComment("Reward: 101 quest")] },
+        {
+            comments: [
+                {
+                    ...quote(),
+                    lastEditedAt: "2026-11-01T12:00:00Z",
+                    editor: quote().author,
+                },
+            ],
+        },
+        {
+            comments: [
+                {
+                    ...quote(),
+                    body: quote().body.replace(PR_HEAD, "b".repeat(40)),
+                },
+                rewardComment("Reward: 2 paid", 5099901),
+            ],
+            expected: [2, "pack"],
+        },
+        {
+            comments: [
+                {
+                    ...quote(),
+                    author: {
+                        __typename: "User",
+                        login: "pollinations-ai",
+                        databaseId: 999,
+                    },
+                },
+            ],
+        },
+        {
+            comments: [
+                quote(),
+                {
+                    ...rewardComment("Reward: 100 paid", 5099901),
+                    lastEditedAt: "2026-10-30T13:00:00Z",
+                    editor: {
+                        __typename: "User",
+                        login: "other",
+                        databaseId: 999,
+                    },
+                },
+            ],
+            expected: [0.5, "tier"],
+        },
+        {
+            comments: [
+                {
+                    ...quote(),
+                    lastEditedAt: "2026-10-30T13:00:00Z",
+                    editor: null,
+                },
+            ],
+        },
+        {
+            comments: [
+                quote(),
+                rewardComment("Reward: 10 paid", 5099901),
+                {
+                    ...rewardComment("Reward: 2", 36901823),
+                    createdAt: "2026-10-30T13:00:00Z",
+                },
+            ],
+            expected: [2, "tier"],
+        },
+        {
+            comments: [
+                quote(),
+                rewardComment("Reward: 7 paid", 5099901),
+                ...Array.from({ length: 25 }, () =>
+                    rewardComment("ordinary discussion", 999),
+                ),
+            ],
+            expected: [7, "pack"],
+        },
+    ];
+    cases.forEach(({ comments }, index) => {
+        mocks.github.state.mergedPullRequests.push({
+            number: 11000 + index,
+            authorLogin: user.githubUsername ?? "",
+            authorId: user.githubId ?? 0,
+            mergedAt: "2026-10-31T12:00:00Z",
+            comments,
+        });
+    });
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const rewards = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    for (const [index, { expected }] of cases.entries()) {
+        const reward = rewards.find(
+            (entry) => entry.questId === `github:merged_pr:${11000 + index}`,
+        );
+        if (!expected) expect(reward, `case ${index}`).toBeUndefined();
+        else
+            expect(reward, `case ${index}`).toMatchObject({
+                pollenAmount: expected[0],
+                balanceBucket: expected[1],
+            });
+    }
+});
+
+test("a bounty becomes one assessed PR reward and the existing UI API claims its overridden bucket once", async ({
+    mocks,
+    accountToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 12000,
+        title: "Useful implementation",
+        goal: "Solve the problem",
+        reward: 20,
+        completedByPrNumber: 12001,
+        completedByGithubId: user.githubId,
+        completedByLogin: user.githubUsername,
+        updatedAt: new Date("2026-10-31T12:00:00Z"),
+    });
+    const pr = mocks.github.state.mergedPullRequests.find(
+        (entry) => entry.number === 12001,
+    );
+    assert(pr);
+    pr.authorId = user.githubId ?? 0;
+    pr.comments = [
+        rewardComment("Reward: 20 quest"),
+        rewardComment("Reward: 20 paid", 5099901),
+    ];
+    await recordRewards(db, [
+        {
+            idempotencyKey: rewardKey("merged_pr", user),
+            userId: user.id,
+            questId: "merged_pr",
+            title: "Previous first PR",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const rows = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(rows).toHaveLength(2);
+    expect(rows.find((row) => row.questId === "merged_pr")?.pollenAmount).toBe(
+        5,
+    );
+    const reward = rows.find((row) => row.questId === "github:merged_pr:12001");
+    assert(reward);
+    expect(reward).toMatchObject({
+        pollenAmount: 20,
+        balanceBucket: "pack",
+        claimedAt: null,
+    });
+    expect(rows.some((row) => row.questId === "github:issue:12000")).toBe(
+        false,
+    );
+    pr.comments.push({
+        ...rewardComment("Reward: 1 quest", 36901823),
+        createdAt: "2026-11-01T12:00:00Z",
+    });
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const headers = { Authorization: `Bearer ${accountToken}` };
+    const listed = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/rewards",
+        { headers },
+    );
+    expect(listed.status).toBe(200);
+    expect(await listed.json()).toMatchObject({
+        rewards: expect.arrayContaining([
+            expect.objectContaining({
+                id: reward.id,
+                pollenAmount: 20,
+                balanceBucket: "pack",
+                claimedAt: null,
+            }),
+        ]),
+    });
+    const balances = async () =>
+        (
+            await db
+                .select({
+                    tier: schema.user.tierBalance,
+                    pack: schema.user.packBalance,
+                })
+                .from(schema.user)
+                .where(eq(schema.user.id, user.id))
+        )[0];
+    const before = await balances();
+    const claimUrl = `http://localhost:3000/api/account/quests/rewards/${reward.id}/claim`;
+    const claimed = await SELF.fetch(claimUrl, { method: "POST", headers });
+    expect(claimed.status).toBe(200);
+    expect(await claimed.json()).toMatchObject({ claimed: true });
+    const after = await balances();
+    expect(after.tier).toBe(before.tier);
+    expect(after.pack).toBeCloseTo((before.pack ?? 0) + 20);
+    const retry = await SELF.fetch(claimUrl, { method: "POST", headers });
+    expect(await retry.json()).toMatchObject({ claimed: false });
+    expect(await balances()).toEqual(after);
+});
+
+test("issue bounties and PR assessments cannot pay the same solution twice, even with a stale cache or deleted quote", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    for (const issueNumber of [12010, 12012]) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber,
+            title: "Accepted quest",
+            goal: "Complete the solution",
+            reward: 20,
+            completedByPrNumber: issueNumber + 1,
+            completedByGithubId: user.githubId,
+            completedByLogin: user.githubUsername,
+            updatedAt: new Date("2026-10-31T12:00:00Z"),
+        });
+        const pr = mocks.github.state.mergedPullRequests.at(-1);
+        assert(pr);
+        pr.comments = [rewardComment("Reward: 20 quest")];
+        pr.closingIssuesReferences =
+            issueNumber === 12010
+                ? [
+                      ...Array.from({ length: 100 }, (_, i) => ({
+                          number: 13000 + i,
+                      })),
+                      { number: 12010 },
+                  ]
+                : [
+                      { number: 12010, repository: "someone/else" },
+                      { number: issueNumber },
+                  ];
+    }
+    await recordRewards(db, [
+        {
+            idempotencyKey: rewardKey("github:issue:12010", user),
+            userId: user.id,
+            questId: "github:issue:12010",
+            title: "Already earned bounty",
+            amount: 20,
+            bucket: "tier",
+        },
+    ]);
+    // Account deletion preserves the immutable reward key with a null userId.
+    await db
+        .update(schema.rewards)
+        .set({ userId: null, earnedAt: new Date("2026-11-01T12:00:00Z") })
+        .where(eq(schema.rewards.questId, "github:issue:12010"));
+    await env.KV.put(
+        "quests:github-issues:v2",
+        JSON.stringify({ issues: [], checkedAt: Date.now() }),
+    );
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const keys = async () =>
+        (
+            await db
+                .select({ questId: schema.rewards.questId })
+                .from(schema.rewards)
+        )
+            .map((row) => row.questId)
+            .sort();
+    expect(await keys()).toEqual([
+        "github:issue:12010",
+        "github:merged_pr:12013",
+    ]);
+
+    const pr = mocks.github.state.mergedPullRequests.find(
+        (entry) => entry.number === 12013,
+    );
+    assert(pr);
+    pr.comments = [];
+    await env.KV.delete("quests:github-issues:v2");
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    expect(await keys()).toEqual([
+        "github:issue:12010",
+        "github:merged_pr:12013",
+    ]);
+
+    // An older award must not block a later, separate PR for a recurring quest.
+    mocks.github.state.mergedPullRequests.push({
+        number: 12015,
+        authorLogin: user.githubUsername ?? "",
+        authorId: user.githubId ?? 0,
+        mergedAt: "2026-11-02T12:00:00Z",
+        comments: [rewardComment("Reward: 20 quest")],
+        closingIssuesReferences: [{ number: 12010 }],
+    });
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    expect(await keys()).toEqual([
+        "github:issue:12010",
+        "github:merged_pr:12013",
+        "github:merged_pr:12015",
+    ]);
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

@@ -2,9 +2,9 @@ name: Repo / Organize issues and PRs
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened, edited, labeled]
   pull_request_target:
-    types: [opened]
+    types: [opened, edited, synchronize]
   # Re-classify existing items: overwrites Area, Source and type; fills Priority only when empty (defaults to every open PR).
   workflow_dispatch:
     inputs:
@@ -35,6 +35,11 @@ jobs:
       repository-projects: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          # This privileged workflow reads PR patches through the API; it must
+          # never execute files from a contributor's branch.
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
 
       - name: Generate Pollinations AI Token
         id: pollinations-ai

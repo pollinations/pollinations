@@ -16,8 +16,8 @@ import {
     questStandingsResponseSchema,
 } from "./quest-leaderboard.ts";
 
-// Bumped to v30: the app-spend quest is worth 10 Pollen.
-const CACHE_KEY = "quests:catalog:v30";
+// Contribution rewards are assessed per issue and PR by the project manager.
+const CACHE_KEY = "quests:catalog:v31";
 const CACHE_TTL = 60;
 
 export type QuestCatalogResponse = {

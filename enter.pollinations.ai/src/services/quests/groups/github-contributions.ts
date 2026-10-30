@@ -1,5 +1,4 @@
 import { getLogger } from "@logtape/logtape";
-import { MAX_REWARD_AMOUNT } from "@shared/billing/rewards.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -24,15 +23,9 @@ import {
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
-const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
-    "DRAFT-QUEST",
-    "APP-SUBMISSION",
-    "AUTOMATED",
-]);
-// Fixed 90-day lookback from launch; later visits must not move the cutoff.
-const ISSUE_REPORT_START = Date.parse("2026-06-25T19:45:46Z");
-const ISSUE_REPORT_EXCLUDED_TITLE =
-    /\[(?:App|Project) Submission\]|^\[Community(?: Model)? Publisher Access\]/i;
+const REWARD_MAINTAINERS = new Set([5099901, 36901823]); // Thomas, Elliot
+const REWARD_MARKER = "<!-- pollinations-reward -->";
+const CONTRIBUTION_REWARD_LIMIT = 100;
 const REPO_OWNER = "pollinations";
 const REPO_NAME = "pollinations";
 const REPO = `${REPO_OWNER}/${REPO_NAME}`;
@@ -52,7 +45,7 @@ const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 // ponytail: refreshes are not coordinated, so a burst or another location can
 // fetch again before the new copy is visible. Move the list to a Durable Object
 // if those refreshes exhaust the budget.
-const QUEST_ISSUES_CACHE_KEY = "quests:github-issues:v1";
+const QUEST_ISSUES_CACHE_KEY = "quests:github-issues:v2";
 const QUEST_ISSUES_CACHE_MS = 5 * 60 * 1000;
 
 const log = getLogger(["enter", "quests"]);
@@ -87,24 +80,24 @@ const HONEY_CENSUS: Survey = {
 // Buying only the smallest pack (2 Pollen) doesn't qualify for the Honey Census.
 const HONEY_CENSUS_MIN_POLLEN_BOUGHT = 2;
 
-const firstMergedPrQuest: QuestDefinition = {
+const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
     description:
-        "Your pull request got merged to the Pollinations [repository](https://github.com/pollinations/pollinations).",
+        "Earn a reward for each merged pull request. The project manager comments with the assessed amount; claim it here after merge.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 5,
+    rewardAmount: 0,
     balanceBucket: "tier",
 };
 
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions do not count.`,
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose). The project manager comments with the assessed reward; claim it here when a merged PR closes your issue.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 3,
+    rewardAmount: 0,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -160,7 +153,7 @@ type DerivedQuestIssue = {
     rewardAmount: number | null;
     // "completed" issues stay off the open board once assigned or merged.
     state: "available" | "completed";
-    completedByGithubIds: number[];
+    completedBy: { prNumber: number; githubId: number }[];
 };
 
 type GitHubUser = {
@@ -203,16 +196,51 @@ type GitHubIssueNode = {
 type GitHubPullRequestNode = {
     number: number;
     mergedAt: string | null;
+    title: string;
+    url: string;
+    headRefOid: string;
+    repository: { nameWithOwner: string };
+    author: RewardActor | null;
+    comments: RewardComments;
+    closingIssuesReferences: GitHubConnection<{
+        number: number;
+        repository: { nameWithOwner: string };
+    }>;
 };
 
 type ReportedIssueNode = {
     number: number;
     title: string;
     url: string;
-    author: GitHubUser | null;
-    labels: { nodes: { name: string }[] };
+    repository: { nameWithOwner: string };
+    author: RewardActor | null;
+    comments: RewardComments;
     closedByPullRequestsReferences: { nodes: { mergedAt: string | null }[] };
 };
+
+type RewardActor = GitHubUser & { __typename: string; login: string };
+type RewardComment = {
+    body: string;
+    createdAt: string;
+    lastEditedAt: string | null;
+    author: RewardActor | null;
+    editor: RewardActor | null;
+};
+type RewardComments = {
+    nodes: RewardComment[];
+    pageInfo: { hasPreviousPage: boolean; startCursor: string | null };
+};
+type AssessedReward = Pick<QuestDefinition, "rewardAmount" | "balanceBucket">;
+
+// Most discussions fit on one page; paginate older comments so a long thread
+// cannot hide a maintainer override. GitHub returns them in creation order.
+const REWARD_COMMENTS = `comments(last:20,before:$before){
+  nodes{ body createdAt lastEditedAt
+    author{ __typename login ... on User{ databaseId } }
+    editor{ __typename login ... on User{ databaseId } }
+  }
+  pageInfo{ hasPreviousPage startCursor }
+}`;
 
 type SurveyIssueNode = {
     body: string;
@@ -225,10 +253,14 @@ type SearchData<TNode> = {
     };
 };
 
-type PaginatedSearchData<TNode> = {
-    search: SearchData<TNode>["search"] & {
-        pageInfo: { hasNextPage: boolean; endCursor: string | null };
-    };
+type GitHubConnection<TNode> = {
+    nodes: TNode[];
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+};
+
+type PaginatedSearchData<TNode> = { search: GitHubConnection<TNode> };
+type UserContributionsData<TNode> = {
+    user: { contributions: GitHubConnection<TNode> };
 };
 
 // Multi-winner quests can keep pending submissions open alongside merged ones.
@@ -260,32 +292,36 @@ function commitAuthorsQuery(numbers: number[]): string {
     return `query{ repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){ ${pullRequests.join(" ")} } }`;
 }
 
-const FIRST_MERGED_PR_QUERY = `
-query($query:String!){
-  search(query:$query,type:ISSUE,first:1){
+const MERGED_PRS_QUERY = `
+query($login:String!,$after:String,$before:String){
+  user(login:$login){ contributions:pullRequests(states:MERGED,first:100,after:$after){
+    pageInfo{ hasNextPage endCursor }
     nodes{
-      ... on PullRequest{
-        number
-        mergedAt
-      }
+        number title url mergedAt headRefOid
+        repository{ nameWithOwner }
+        author{ __typename login ... on User{ databaseId } }
+        ${REWARD_COMMENTS}
+        closingIssuesReferences(first:100){
+          nodes{ number repository{ nameWithOwner } }
+          pageInfo{ hasNextPage endCursor }
+        }
     }
-  }
+  } }
 }`;
 
 const REPORTED_ISSUES_QUERY = `
-query($query:String!,$after:String){
-  search(query:$query,type:ISSUE,first:100,after:$after){
+query($login:String!,$after:String,$before:String){
+  user(login:$login){ contributions:issues(states:CLOSED,first:100,after:$after){
     pageInfo{ hasNextPage endCursor }
     nodes{
-      ... on Issue{
-        number title url author{ ... on User{ databaseId } }
-        labels(first:20){ nodes{ name } }
+        number title url author{ __typename login ... on User{ databaseId } }
+        repository{ nameWithOwner }
+        ${REWARD_COMMENTS}
         closedByPullRequestsReferences(first:10){
           nodes{ mergedAt }
         }
-      }
     }
-  }
+  } }
 }`;
 
 const SURVEY_QUERY = `
@@ -307,12 +343,114 @@ function parseReward(body: string): number | null {
     const match = body.match(QUEST_REWARD_REGEX);
     if (!match) return null;
     const amount = Number(match[1]);
-    // The body is author-editable. An out-of-range amount must not become a
-    // payable quest: recordRewards throws on amounts outside
-    // (0, MAX_REWARD_AMOUNT], and one throw fails the whole quest check.
-    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_REWARD_AMOUNT)
+    // Apply the contribution cap to new bounty proposals too. Existing ledger
+    // rewards keep their recorded amount and remain claimable.
+    if (
+        !Number.isFinite(amount) ||
+        amount <= 0 ||
+        amount > CONTRIBUTION_REWARD_LIMIT
+    )
         return null;
     return amount;
+}
+
+function isRewardMaintainer(actor: RewardActor | null): boolean {
+    return (
+        actor?.__typename === "User" &&
+        REWARD_MAINTAINERS.has(actor.databaseId ?? 0)
+    );
+}
+
+function isRewardBot(actor: RewardActor | null): boolean {
+    return actor?.__typename === "Bot" && actor.login === "pollinations-ai";
+}
+
+function parseAssessment(body: string): AssessedReward | undefined {
+    const match = body
+        .trim()
+        .match(/^Reward:[ \t]*(\d+(?:\.\d+)?)(?:[ \t]+(quest|paid))?[ \t]*$/);
+    if (!match) return;
+    const rewardAmount = Number(match[1]);
+    if (
+        !Number.isFinite(rewardAmount) ||
+        rewardAmount > CONTRIBUTION_REWARD_LIMIT
+    )
+        return;
+    return {
+        rewardAmount,
+        balanceBucket: match[2] === "paid" ? "pack" : "tier",
+    };
+}
+
+async function contributionAssessment(
+    token: string,
+    number: number,
+    comments: RewardComments,
+    mergedAt: string,
+    head?: string,
+): Promise<{ assessed: boolean; reward?: AssessedReward }> {
+    const all = [...comments.nodes];
+    let page = comments;
+    while (page.pageInfo.hasPreviousPage) {
+        const data = await graphql<{
+            repository: { issueOrPullRequest: { comments: RewardComments } };
+        }>(
+            token,
+            `query($number:Int!,$before:String){
+          repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){
+            issueOrPullRequest(number:$number){
+              ... on Issue{ ${REWARD_COMMENTS} }
+              ... on PullRequest{ ${REWARD_COMMENTS} }
+            }
+          }
+        }`,
+            { number, before: page.pageInfo.startCursor },
+        );
+        page = data.repository.issueOrPullRequest.comments;
+        all.unshift(...page.nodes);
+    }
+    all.sort(
+        (a, b) =>
+            Date.parse(b.lastEditedAt ?? b.createdAt) -
+            Date.parse(a.lastEditedAt ?? a.createdAt),
+    );
+
+    const quotes = all.filter(
+        (comment) =>
+            isRewardBot(comment.author) &&
+            comment.body.startsWith(`${REWARD_MARKER}\n`) &&
+            Date.parse(comment.createdAt) <= Date.parse(mergedAt) &&
+            (!comment.lastEditedAt ||
+                isRewardBot(comment.editor) ||
+                isRewardMaintainer(comment.editor)),
+    );
+    // The organizer only assesses open items. Requiring its pre-merge quote
+    // makes rollout prospective without back-paying the repository's history.
+    if (quotes.length === 0) return { assessed: false };
+
+    for (const comment of all) {
+        if (
+            !isRewardMaintainer(comment.author) ||
+            (comment.lastEditedAt && !isRewardMaintainer(comment.editor))
+        )
+            continue;
+        const reward = parseAssessment(comment.body);
+        if (reward) return { assessed: true, reward };
+    }
+    for (const comment of quotes) {
+        if (
+            comment.lastEditedAt &&
+            Date.parse(comment.lastEditedAt) > Date.parse(mergedAt) &&
+            !isRewardMaintainer(comment.editor)
+        )
+            continue;
+        if (head && comment.body.split("\n")[2] !== `<!-- head: ${head} -->`)
+            continue;
+        const reward = parseAssessment(comment.body.split("\n")[1] ?? "");
+        // The model never authorizes Paid Pollen; that requires a human override.
+        if (reward?.balanceBucket === "tier") return { assessed: true, reward };
+    }
+    return { assessed: true };
 }
 
 // Pull a short human description out of the issue body: prefer a Goal/Scope
@@ -408,10 +546,11 @@ function toDerivedQuestIssue(
         url: issue.url,
         rewardAmount: parseReward(body),
         state,
-        completedByGithubIds: closers.flatMap((pr) =>
-            isAppPublishPr(pr)
+        completedBy: closers.flatMap((pr) =>
+            (isAppPublishPr(pr)
                 ? (appPublishPayees.get(pr.number) ?? [])
-                : githubIds([pr.author]),
+                : githubIds([pr.author])
+            ).map((githubId) => ({ prNumber: pr.number, githubId })),
         ),
     };
 }
@@ -501,7 +640,7 @@ export async function listQuestCards(
 ): Promise<QuestCard[]> {
     const issues = await cachedQuestIssues(ctx.env);
     return [
-        questToCard(firstMergedPrQuest),
+        questToCard(mergedPrQuest),
         questToCard(reportedIssueQuest),
         questToCard(solveGithubIssueQuest),
         questToCard(beeCensusQuest),
@@ -516,30 +655,36 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
     const proposals: QuestEvaluation["proposals"] = [];
     let after: string | null = null;
     do {
-        const data: PaginatedSearchData<ReportedIssueNode> = await graphql<
-            PaginatedSearchData<ReportedIssueNode>
+        const data: UserContributionsData<ReportedIssueNode> = await graphql<
+            UserContributionsData<ReportedIssueNode>
         >(token, REPORTED_ISSUES_QUERY, {
-            query: `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-06-25`,
+            login: user.githubUsername,
             after,
         });
-        for (const issue of data.search.nodes) {
+        for (const issue of data.user.contributions.nodes) {
             if (
-                issue.author?.databaseId !== user.githubId ||
-                ISSUE_REPORT_EXCLUDED_TITLE.test(issue.title) ||
-                issue.labels.nodes.some((label) =>
-                    ISSUE_REPORT_EXCLUDED_LABELS.has(label.name),
-                ) ||
-                !issue.closedByPullRequestsReferences.nodes.some(
-                    (pr) =>
-                        pr.mergedAt !== null &&
-                        Date.parse(pr.mergedAt) >= ISSUE_REPORT_START,
-                )
+                issue.repository.nameWithOwner !== REPO ||
+                issue.author?.__typename !== "User" ||
+                issue.author.databaseId !== user.githubId
             ) {
                 continue;
             }
+            const mergedAt = issue.closedByPullRequestsReferences.nodes
+                .flatMap((pr) => (pr.mergedAt ? [pr.mergedAt] : []))
+                .sort()
+                .at(-1);
+            if (!mergedAt) continue;
+            const { reward } = await contributionAssessment(
+                token,
+                issue.number,
+                issue.comments,
+                mergedAt,
+            );
+            if (!reward || reward.rewardAmount === 0) continue;
             proposals.push({
                 quest: {
                     ...reportedIssueQuest,
+                    ...reward,
                     id: `github:reported_issue:${issue.number}`,
                     title: `Reported issue #${issue.number}: ${issue.title}`,
                     url: issue.url,
@@ -547,23 +692,95 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
                 userId: user.id,
             });
         }
-        after = data.search.pageInfo.hasNextPage
-            ? data.search.pageInfo.endCursor
+        after = data.user.contributions.pageInfo.hasNextPage
+            ? data.user.contributions.pageInfo.endCursor
             : null;
     } while (after);
     return proposals;
 }
 
-async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
-    if (!user.githubUsername) return false;
-    const data = await graphql<SearchData<GitHubPullRequestNode>>(
-        token,
-        FIRST_MERGED_PR_QUERY,
-        {
-            query: `repo:${REPO} is:pr is:merged author:${user.githubUsername}`,
-        },
-    );
-    return data.search.nodes.some((pr) => pr.mergedAt !== null);
+async function mergedPrProposals(token: string, user: QuestUser) {
+    const proposals: QuestEvaluation["proposals"] = [];
+    const assessedPrs = new Set<number>();
+    const closingIssuesByPr = new Map<
+        number,
+        { numbers: number[]; mergedAt: string }
+    >();
+    if (!user.githubUsername || user.githubId === null)
+        return { proposals, assessedPrs, closingIssuesByPr };
+    let after: string | null = null;
+    do {
+        const data: UserContributionsData<GitHubPullRequestNode> =
+            await graphql(token, MERGED_PRS_QUERY, {
+                login: user.githubUsername,
+                after,
+            });
+        for (const pr of data.user.contributions.nodes) {
+            if (
+                !pr.mergedAt ||
+                pr.repository.nameWithOwner !== REPO ||
+                pr.author?.__typename !== "User" ||
+                pr.author.databaseId !== user.githubId
+            )
+                continue;
+            const { assessed, reward } = await contributionAssessment(
+                token,
+                pr.number,
+                pr.comments,
+                pr.mergedAt,
+                pr.headRefOid,
+            );
+            if (assessed) assessedPrs.add(pr.number);
+            if (!reward || reward.rewardAmount === 0) continue;
+            const closingIssues = [...pr.closingIssuesReferences.nodes];
+            let page = pr.closingIssuesReferences;
+            while (page.pageInfo.hasNextPage) {
+                const data = await graphql<{
+                    repository: {
+                        pullRequest: Pick<
+                            GitHubPullRequestNode,
+                            "closingIssuesReferences"
+                        >;
+                    };
+                }>(
+                    token,
+                    `query($number:Int!,$after:String){
+                      repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){
+                        pullRequest(number:$number){
+                          closingIssuesReferences(first:100,after:$after){
+                            nodes{ number repository{ nameWithOwner } }
+                            pageInfo{ hasNextPage endCursor }
+                          }
+                        }
+                      }
+                    }`,
+                    { number: pr.number, after: page.pageInfo.endCursor },
+                );
+                page = data.repository.pullRequest.closingIssuesReferences;
+                closingIssues.push(...page.nodes);
+            }
+            closingIssuesByPr.set(pr.number, {
+                numbers: closingIssues
+                    .filter((issue) => issue.repository.nameWithOwner === REPO)
+                    .map((issue) => issue.number),
+                mergedAt: pr.mergedAt,
+            });
+            proposals.push({
+                quest: {
+                    ...mergedPrQuest,
+                    ...reward,
+                    id: `github:merged_pr:${pr.number}`,
+                    title: `Merged PR #${pr.number}: ${pr.title}`,
+                    url: pr.url,
+                },
+                userId: user.id,
+            });
+        }
+        after = data.user.contributions.pageInfo.hasNextPage
+            ? data.user.contributions.pageInfo.endCursor
+            : null;
+    } while (after);
+    return { proposals, assessedPrs, closingIssuesByPr };
 }
 
 async function answeredSurvey(
@@ -625,25 +842,67 @@ export async function evaluateUser(
     if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
-    const [issues, mergedPr, reportedIssues, beeCensus, honeyCensus] =
-        await Promise.all([
-            cachedQuestIssues(ctx.env),
-            hasMergedPr(token, user),
-            reportedIssueProposals(token, user),
-            answeredSurvey(token, user, BEE_CENSUS),
-            pollenBought(ctx.db, user.id).then(
-                (bought) =>
-                    bought > HONEY_CENSUS_MIN_POLLEN_BOUGHT &&
-                    answeredSurvey(token, user, HONEY_CENSUS),
-            ),
-        ]);
+    const [
+        issues,
+        mergedPrs,
+        reportedIssues,
+        beeCensus,
+        honeyCensus,
+        recorded,
+    ] = await Promise.all([
+        cachedQuestIssues(ctx.env),
+        mergedPrProposals(token, user),
+        reportedIssueProposals(token, user),
+        answeredSurvey(token, user, BEE_CENSUS),
+        pollenBought(ctx.db, user.id).then(
+            (bought) =>
+                bought > HONEY_CENSUS_MIN_POLLEN_BOUGHT &&
+                answeredSurvey(token, user, HONEY_CENSUS),
+        ),
+        ctx.db.all<{ questId: string | null; earnedAt: number }>(sql`
+                SELECT quest_id AS questId, earned_at AS earnedAt FROM rewards
+                WHERE user_id = ${user.id}
+                   OR idempotency_key LIKE ${`quest:%:github:${githubId}`}`),
+    ]);
+
+    const earned = new Map(
+        recorded.map((reward) => [reward.questId, reward.earnedAt]),
+    );
+    // The same accepted solution can appear under an issue bounty or a PR
+    // quote. Keep its first ledger entry, even if the assessment is removed.
+    const alreadyRewardedPrs = new Set(
+        [...mergedPrs.closingIssuesByPr]
+            .filter(([, { numbers, mergedAt }]) =>
+                numbers.some(
+                    (number) =>
+                        // Earlier awards may belong to a different PR on a recurring quest.
+                        (earned.get(`github:issue:${number}`) ?? 0) >=
+                        Math.floor(Date.parse(mergedAt) / 1000),
+                ),
+            )
+            .map(([prNumber]) => prNumber),
+    );
+    const assessedOrRewardedPrs = new Set([
+        ...mergedPrs.assessedPrs,
+        ...recorded.flatMap(({ questId }) => {
+            const match = questId?.match(/^github:merged_pr:(\d+)$/);
+            return match ? [Number(match[1])] : [];
+        }),
+    ]);
 
     // Payable issue bounties: completed by a merged PR authored by the current
     // user's linked GitHub account, with a positive reward.
     const issueProposals = issues
         .filter(
             (issue) =>
-                issue.completedByGithubIds.includes(githubId) &&
+                issue.completedBy.some(
+                    ({ githubId: authorId }) => authorId === githubId,
+                ) &&
+                !issue.completedBy.some(
+                    ({ prNumber, githubId: authorId }) =>
+                        authorId === githubId &&
+                        assessedOrRewardedPrs.has(prNumber),
+                ) &&
                 (issue.rewardAmount ?? 0) > 0,
         )
         .map((issue) => ({
@@ -655,9 +914,10 @@ export async function evaluateUser(
         proposals: [
             ...issueProposals,
             ...reportedIssues,
-            ...(mergedPr
-                ? [{ quest: firstMergedPrQuest, userId: user.id }]
-                : []),
+            ...mergedPrs.proposals.filter(
+                ({ quest }) =>
+                    !alreadyRewardedPrs.has(Number(quest.id.split(":").at(-1))),
+            ),
             ...(beeCensus ? [{ quest: beeCensusQuest, userId: user.id }] : []),
             ...(honeyCensus
                 ? [{ quest: honeyCensusQuest, userId: user.id }]

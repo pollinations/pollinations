@@ -663,7 +663,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00036, 12);
-        expect(billing.price.totalPrice).toBe(0.00036);
+        expect(billing.price.totalPrice).toBe(0.00027);
         const model = findModelByName("openai/gpt-6-astra:aws");
         expect(model?.useResponsesApi).toBe(true);
         expect(model?.config()).toMatchObject({
@@ -685,6 +685,7 @@ describe("static provider fallbacks", () => {
             const primary = TEXT_SERVICES[model];
             const fallback = TEXT_SERVICES[`${model}:aws`];
             expect(primary.provider).toBe("azure");
+            expect(primary.priceMultiplier).toBe(0.75);
             expect(primary.fallbacks).toEqual([`${model}:aws`]);
             expect(primary.paidOnly).toBe(false);
             expect(fallback.provider).toBe("aws");
@@ -1125,7 +1126,7 @@ describe("static provider fallbacks", () => {
             quotedBy: TEXT_SERVICES[model],
         });
         expect(billed.cost.totalCost).toBeCloseTo(0.00633, 12);
-        expect(billed.price.totalPrice).toBe(0.00211);
+        expect(billed.price.totalPrice).toBe(0.0047475);
     });
 
     it("prices Muse Wonder on Vercel at base rates and quotes the OpenRouter primary with its fee", () => {

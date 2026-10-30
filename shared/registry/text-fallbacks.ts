@@ -228,7 +228,7 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6-sol": {
-        "openai/gpt-6-sol:aws": { provider: "aws" },
+        "openai/gpt-6-sol:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "openai/gpt-5.4": {
         "openai/gpt-5.4:openai": {
@@ -237,10 +237,10 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6.1-sol": {
-        "openai/gpt-6.1-sol:aws": { provider: "aws" },
+        "openai/gpt-6.1-sol:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "openai/gpt-6-luna": {
-        "openai/gpt-6-luna:aws": { provider: "aws" },
+        "openai/gpt-6-luna:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "x-ai/grok-4.6": {
         "x-ai/grok-4.6:xai": {

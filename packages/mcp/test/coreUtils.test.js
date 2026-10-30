@@ -51,6 +51,25 @@ test("429 errors preserve the gateway cooldown retry duration", () => {
     );
 });
 
+test("parseApiError surfaces insufficient-pollen 402 with actionable guidance", () => {
+    const errorJson = JSON.stringify({
+        error: { message: "Insufficient pollen balance" },
+    });
+    const message = parseApiError(402, errorJson);
+    assert.equal(
+        message,
+        "Insufficient pollen balance Your account balance is too low to pay for this request. Add funds or use a key with a positive balance at https://enter.pollinations.ai/keys",
+    );
+});
+
+test("parseApiError surfaces insufficient-pollen 402 guidance even with empty body", () => {
+    const message = parseApiError(402, "");
+    assert.equal(
+        message,
+        "Insufficient pollen balance. Your account balance is too low to pay for this request. Add funds or use a key with a positive balance at https://enter.pollinations.ai/keys",
+    );
+});
+
 test("parseApiError provides generic fallback when 403 body has no details", () => {
     const message = parseApiError(403, "");
     assert.equal(

@@ -102,7 +102,7 @@ function parseScreenshotUrl(value) {
 
 function parseSubmission(body) {
     const name = clean(section(body, "App Name"), 80);
-    const description = clean(section(body, "App Description"), 200);
+    const description = clean(section(body, "App Description"), 1000);
     const appUrl = normalizeUrl(section(body, "App URL"));
     const repoUrl = normalizeUrl(section(body, "GitHub Repository URL"));
     const category = clean(section(body, "App Category"), 30).toLowerCase();

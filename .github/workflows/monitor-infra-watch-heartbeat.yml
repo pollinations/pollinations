@@ -34,7 +34,7 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: .heartbeat
-          key: infra-watch-heartbeat-${{ github.run_id }}
+          key: infra-watch-heartbeat-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: infra-watch-heartbeat-
       - name: Check infra-watch is alive
         id: check
@@ -49,4 +49,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .heartbeat
-          key: infra-watch-heartbeat-${{ github.run_id }}
+          key: infra-watch-heartbeat-${{ github.run_id }}-${{ github.run_attempt }}

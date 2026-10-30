@@ -173,6 +173,14 @@ export const CHAT_PARAMETERS = {
     azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
     // Bedrock Qwen3 Coder rejects stop and has no seed/logprobs controls.
     bedrockQwenCoder: [...TOOL_CHAT, ...SAMPLING],
+    // Bedrock Kimi fixes top_p at 0.95, rejects penalties and omits logprobs.
+    bedrockKimi: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "reasoning_effort",
+        "parallel_tool_calls",
+    ],
     openRouterMistralSmall32: [
         ...SAMPLED_CHAT,
         ...PENALTIES,

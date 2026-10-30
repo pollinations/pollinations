@@ -1084,17 +1084,36 @@ describe("resolveModelConfig", () => {
         expect(transformed?.options.reasoning_effort).toBe("high");
     });
 
-    it("routes Kimi K3 directly to Fireworks without fallback", () => {
+    it("routes Kimi K3 to global Bedrock Standard without filtering optional controls", () => {
         const result = resolveModelConfig(messages, {
             model: "moonshotai/kimi-k3",
+            service_tier: "priority",
+            presence_penalty: 0.1,
+            logprobs: true,
         });
 
-        expect(result.options.model).toBe("accounts/fireworks/models/kimi-k3");
+        expect(result.options).toMatchObject({
+            model: "global.moonshotai.kimi-k3",
+            service_tier: "default",
+            presence_penalty: 0.1,
+            logprobs: true,
+        });
         expect(result.options.modelConfig).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+        });
+        expect(result.options.provider).toBeUndefined();
+        const fallback = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k3:fireworks",
+        });
+        expect(fallback.options.model).toBe(
+            "accounts/fireworks/models/kimi-k3",
+        );
+        expect(fallback.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Nemotron 3.5 Super VL directly to DeepInfra with a Together fallback", () => {

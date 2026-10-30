@@ -580,6 +580,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
+            cost: {
+                promptTextTokens: perMillion(3),
+                promptCachedTokens: perMillion(0.3),
+                completionTextTokens: perMillion(15),
+            },
+        },
         "moonshotai/kimi-k3:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",

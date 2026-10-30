@@ -6,6 +6,7 @@ import {
     createAnthropicConfig,
     createAzureModelConfig,
     createAzureResponsesModelConfig,
+    createBedrockChatConfig,
     createBedrockNativeConfig,
     createBedrockResponsesConfig,
     createDeepInfraModelConfig,
@@ -822,7 +823,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "moonshotai/Kimi-K2.6": () =>
         createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
     "moonshotai/Kimi-K3": () =>
-        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K3" }),
+        createDeepInfraModelConfig({
+            model: "moonshotai/Kimi-K3",
+            serviceTier: "default",
+        }),
     "meta-llama/Llama-3.3-70B-Instruct-Turbo": () =>
         createDeepInfraModelConfig({
             model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
@@ -1066,11 +1070,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/deepseek-v4p1-flash-1017",
         }),
 
-    // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
+    // -- Kimi K3 (global Bedrock, then Fireworks) -----------------------------
+    "kimi-k3-bedrock": () =>
+        createBedrockChatConfig("global.moonshotai.kimi-k3"),
     "accounts/fireworks/models/kimi-k3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k3",
+            serviceTier: "default",
         }),
+    // -- Fireworks AI (Qwen) ------------------------------------------------
     "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",

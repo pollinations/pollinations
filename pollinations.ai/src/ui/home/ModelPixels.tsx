@@ -80,18 +80,13 @@ const DRAWINGS: Record<PixelKind, Layer[]> = {
     // Three lines type in, then the cursor blinks.
     text: [
         { rows: ["", "#########..."], motion: type(9, 0) },
-        { rows: ["", "", "", "############"], motion: type(12, 360) },
-        { rows: ["", "", "", "", "", "######......"], motion: type(6, 840) },
+        { rows: ["", "", "", "", "############"], motion: type(12, 360) },
         {
-            rows: [
-                "",
-                "",
-                "",
-                "",
-                ".......+....",
-                ".......+....",
-                ".......+....",
-            ],
+            rows: ["", "", "", "", "", "", "", "######......"],
+            motion: type(6, 840),
+        },
+        {
+            rows: ["", "", "", "", "", "", ".......+", ".......+", ".......+"],
             motion: {
                 "--px-anim": "site-px-blink 400ms steps(1)",
                 "--px-delay": "1080ms",
@@ -134,30 +129,31 @@ const DRAWINGS: Record<PixelKind, Layer[]> = {
         { rows: dot(1, 7), motion: gather(3, -3) },
         { rows: dot(9, 6), motion: gather(-3, -2) },
     ],
-    // A sprout grows in three stages.
+    // A sprout grows: stem, then one leaf, then the other.
     community: [
+        {
+            rows: ["", "", "", "", "", "", "", "..++++++++..", ".++++++++++."],
+        },
         {
             rows: [
                 "",
                 "",
                 "",
                 "",
-                "",
-                "",
-                "..#########.",
-                "...#######..",
-                "...#######..",
+                "....#..#....",
+                ".....##.....",
+                ".....##.....",
             ],
-        },
-        {
-            rows: ["", "", "", "......#.....", "......#.....", "......#....."],
             motion: appear(0),
         },
         {
-            rows: ["", "", "...##...##..", "....##.##..."],
+            rows: ["", "..###.......", ".####.......", "..###......."],
             motion: appear(200),
         },
-        { rows: ["", ".....+#+....", "......#....."], motion: appear(400) },
+        {
+            rows: ["", ".......###..", ".......####.", ".......###.."],
+            motion: appear(400),
+        },
     ],
 };
 

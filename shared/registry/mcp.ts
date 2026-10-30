@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "NEWS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,17 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "news",
+        name: "News",
+        description: "Search worldwide news articles with GDELT.",
+        binding: "NEWS_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "News searches are free. No additional MCP fee.",
             rates: [],
         },
     },

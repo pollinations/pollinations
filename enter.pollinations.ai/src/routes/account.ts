@@ -980,12 +980,6 @@ const accountQuestRewardSchema = z.object({
     claimedAt: z.string().nullable(),
 });
 
-const heldSchema = z
-    .boolean()
-    .describe(
-        "True when this onboarding quest's reward is on hold for review and can't be claimed. Contact hello@pollinations.ai.",
-    );
-
 const accountQuestSchema = z.object({
     id: z.string(),
     title: z.string(),
@@ -997,7 +991,11 @@ const accountQuestSchema = z.object({
     balanceBucket: z.enum(["tier", "pack"]),
     url: z.string().nullable(),
     reward: accountQuestRewardSchema.nullable(),
-    held: heldSchema,
+    held: z
+        .boolean()
+        .describe(
+            "True when this onboarding quest's reward is on hold for review and can't be claimed. Contact hello@pollinations.ai.",
+        ),
 });
 
 const accountQuestsResponseSchema = z.object({
@@ -1006,11 +1004,13 @@ const accountQuestsResponseSchema = z.object({
 
 const accountQuestRewardsResponseSchema = z.object({
     rewards: z.array(
-        accountQuestRewardSchema.extend({
-            url: z.string().nullable(),
-            held: heldSchema,
-        }),
+        accountQuestRewardSchema.extend({ url: z.string().nullable() }),
     ),
+    held: z
+        .boolean()
+        .describe(
+            "True when the account's onboarding quest rewards are on hold for review and can't be claimed. Contact hello@pollinations.ai.",
+        ),
 });
 
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
@@ -1360,18 +1360,12 @@ export const accountRoutes = new Hono<Env>()
                     .orderBy(desc(rewardsTable.earnedAt)),
                 isSetupRewardHeld(c.env, db, user.id),
             ]);
-            const heldQuestIds = held
-                ? await listSetupQuestIds({ db, env: c.env })
-                : new Set<string>();
             return c.json({
                 rewards: rows.map((row) => ({
                     ...formatReward(row),
                     url: row.url,
-                    held:
-                        !row.claimedAt &&
-                        row.questId !== null &&
-                        heldQuestIds.has(row.questId),
                 })),
+                held,
             });
         },
     )

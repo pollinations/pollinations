@@ -2850,6 +2850,8 @@ test("setup rewards: subdomains count as the domain a registrant controls", asyn
     expect(await tierBalanceOf(ids[30])).toBe(0);
     expect(registrableDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
     expect(registrableDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
+    expect(registrableDomain("x@a_1.sub.test.")).toBe("sub.test");
+    expect(registrableDomain("x@co.uk")).toBeNull();
 });
 
 test("setup rewards: public mail domains are never recorded or flagged", async () => {
@@ -3012,10 +3014,10 @@ test("setup rewards: a held account creates keys and sees held in the API, while
     const questHeld = new Map(quests.map((quest) => [quest.id, quest.held]));
     expect(questHeld.get("first_api_key")).toBe(true);
     expect(questHeld.get("merged_pr")).toBe(false);
-    const { rewards } = (await get("quests/rewards")) as {
-        rewards: { questId: string; held: boolean }[];
-    };
-    expect(rewards).toMatchObject([{ questId: "first_api_key", held: true }]);
+    expect(await get("quests/rewards")).toMatchObject({
+        held: true,
+        rewards: [{ questId: "first_api_key" }],
+    });
     expect(await claim(firstKey.id)).toBe(false);
 
     await recordRewards(db, [

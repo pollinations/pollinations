@@ -20,7 +20,6 @@ import {
     TargetIcon,
     TerminalIcon,
     Text,
-    Tooltip,
     TrendUpIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
@@ -64,7 +63,6 @@ type QuestReward = {
     earnedAt: string;
     claimedAt: string | null;
     url?: string | null;
-    held?: boolean;
 };
 
 type FetchState = {
@@ -81,6 +79,8 @@ type FetchState = {
     // per-user rewards endpoint 401s, so there is nothing to claim and every
     // quest is rendered open as a "here's what you can earn" preview.
     anonymous: boolean;
+    // The account's onboarding (Setup) rewards are on hold until it is verified.
+    held: boolean;
 };
 
 const INITIAL_STATE: FetchState = {
@@ -93,6 +93,7 @@ const INITIAL_STATE: FetchState = {
     error: null,
     claimingRewardIds: [],
     anonymous: false,
+    held: false,
 };
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -202,7 +203,7 @@ function rewardIconKind(
 
 type QuestData = Pick<
     FetchState,
-    "catalog" | "rewards" | "standings" | "anonymous"
+    "catalog" | "rewards" | "standings" | "anonymous" | "held"
 >;
 
 async function loadQuestData(): Promise<QuestData> {
@@ -229,11 +230,13 @@ async function loadQuestData(): Promise<QuestData> {
     if (rewardsResponse && !rewardsResponse.ok && !anonymous) {
         throw new Error(`Failed to load quests (${rewardsResponse.status})`);
     }
-    const rewards =
+    const account =
         anonymous || !rewardsResponse
-            ? []
-            : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
-                  .rewards;
+            ? { rewards: [], held: false }
+            : ((await rewardsResponse.json()) as {
+                  rewards: QuestReward[];
+                  held: boolean;
+              });
 
     const standings = standingsResponse?.ok
         ? ((await standingsResponse.json()) as QuestStandingsResponse)
@@ -241,9 +244,10 @@ async function loadQuestData(): Promise<QuestData> {
 
     return {
         catalog: catalog.quests ?? [],
-        rewards: rewards ?? [],
+        rewards: account.rewards ?? [],
         standings,
         anonymous,
+        held: account.held,
     };
 }
 
@@ -267,33 +271,46 @@ export type QuestCard = {
     // coming_soon quests render at the bottom of their lane in the receded
     // (claimed) style, with a clock + "Coming soon" in place of the reward.
     comingSoon?: boolean;
-    // A held onboarding reward shows how to unlock it in place of Claim.
-    held?: boolean;
+    // A Setup quest of an account on hold: locked, with no Claim button.
+    locked?: boolean;
 };
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
-// Ways an account on a flagged email domain unlocks its onboarding rewards.
-const UNLOCK_OPTIONS = (
-    <span className="flex flex-col gap-2 text-sm">
-        <span className="flex items-center gap-2">
-            <CardIcon className="h-4 w-4 shrink-0" />
-            <InlineLink href="/pollen#buy-pollen">
-                Buy any pollen pack
-            </InlineLink>
-        </span>
-        <span className="flex items-center gap-2">
-            <GitHubIcon className="h-4 w-4 shrink-0" />
-            <InlineLink href="/account">Connect your GitHub account</InlineLink>
-        </span>
-        <span className="flex items-center gap-2">
-            <MailIcon className="h-4 w-4 shrink-0" />
-            <InlineLink href="mailto:hello@pollinations.ai">
-                Email hello@pollinations.ai
-            </InlineLink>
-        </span>
-    </span>
-);
+// Atop the Setup lane while the account's onboarding rewards are on hold:
+// what happened, then each way to unlock them.
+function SetupHoldNotice() {
+    const line = "flex items-center gap-2";
+    return (
+        <Alert intent="warning" title="Onboarding rewards locked">
+            <div className="flex flex-col gap-2 text-sm">
+                <span className={line}>
+                    <LockIcon className="h-4 w-4 shrink-0" />
+                    We couldn't verify your account. Unlock these rewards with
+                    one of:
+                </span>
+                <span className={line}>
+                    <CardIcon className="h-4 w-4 shrink-0" />
+                    <InlineLink href="/pollen#buy-pollen">
+                        Buy any pollen pack
+                    </InlineLink>
+                </span>
+                <span className={line}>
+                    <GitHubIcon className="h-4 w-4 shrink-0" />
+                    <InlineLink href="/account">
+                        Connect your GitHub account
+                    </InlineLink>
+                </span>
+                <span className={line}>
+                    <MailIcon className="h-4 w-4 shrink-0" />
+                    <InlineLink href="mailto:hello@pollinations.ai">
+                        Email hello@pollinations.ai
+                    </InlineLink>
+                </span>
+            </div>
+        </Alert>
+    );
+}
 
 // Soft bucket-colored tile for the reward chip: amber paid / green Quest,
 // so the row's reward badge carries the bucket identity.
@@ -429,25 +446,30 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
 //   claimable → muted theme well + check (works in light and dark — receded
 //                relative to the open tile, but readable on either surface)
 //   claimed   → no tile, muted check (banked already, fully receded)
+//   locked    → muted well + lock (held until the account is verified)
 function QuestMarker({
     icon: Icon,
     status,
     comingSoon,
+    locked,
 }: {
     icon: IconComponent;
     status: QuestCardStatus;
     comingSoon?: boolean;
+    locked?: boolean;
 }) {
-    // coming_soon → clock; open → the lane's section icon; otherwise the
-    // earned/banked check.
+    // coming_soon → clock; locked → lock; open → the lane's section icon;
+    // otherwise the earned/banked check.
     function resolveIcon(): IconComponent {
         if (comingSoon) return ClockIcon;
+        if (locked) return LockIcon;
         if (status === "open") return Icon;
         return CheckIcon;
     }
     // open → ambient active tile; claimable → muted well; claimed (and
     // coming_soon, which always renders claimed) → no tile, muted glyph.
     function resolveTile(): string {
+        if (locked) return "bg-theme-bg-subtle text-theme-text-muted";
         if (!comingSoon && status === "open")
             return "bg-theme-bg-active text-theme-text-strong";
         if (status === "claimable")
@@ -479,8 +501,10 @@ export function QuestRow({
 }) {
     const earned = card.status !== "open";
     const claimed = card.status === "claimed";
+    // Claimed and locked quests both recede: nothing to do on them now.
+    const receded = claimed || card.locked;
     const claimableRewardId =
-        card.status === "claimable" ? card.rewardId : undefined;
+        card.status === "claimable" && !card.locked ? card.rewardId : undefined;
     // A claimed quest no longer needs its progress bar — the reward is banked,
     // so the "N / N" count is done and just adds noise.
     const progress =
@@ -497,7 +521,7 @@ export function QuestRow({
 
     // Shared pieces, placed differently per breakpoint below.
     const title = (
-        <Text as="span" weight="semibold" tone={claimed ? "muted" : "strong"}>
+        <Text as="span" weight="semibold" tone={receded ? "muted" : "strong"}>
             {card.title}
         </Text>
     );
@@ -534,7 +558,7 @@ export function QuestRow({
             intent="neutral"
             size="lg"
             className={`gap-1.5 tabular-nums ${
-                claimed
+                receded
                     ? "bg-transparent text-theme-text-muted"
                     : BUCKET_CHIP_CLASS[rewardIcon]
             }`}
@@ -543,23 +567,7 @@ export function QuestRow({
             {rewardLabel}
         </Chip>
     );
-    const claimButton = !claimableRewardId ? null : card.held ? (
-        <Text
-            as="span"
-            tone="muted"
-            className="flex items-center gap-1.5 text-sm"
-        >
-            <LockIcon className="h-4 w-4 shrink-0" />
-            <span>
-                We couldn't verify your account.{" "}
-                <Tooltip tapEnabled content={UNLOCK_OPTIONS}>
-                    <span className="underline underline-offset-2">
-                        How to unlock
-                    </span>
-                </Tooltip>
-            </span>
-        </Text>
-    ) : (
+    const claimButton = claimableRewardId ? (
         <Button
             type="button"
             intent="commit"
@@ -570,7 +578,7 @@ export function QuestRow({
             <SparkleIcon className="h-4 w-4 shrink-0" />
             {claiming ? "Claiming" : "Claim"}
         </Button>
-    );
+    ) : null;
     // Both layouts place the claim button and reward chip separately: claim
     // beside the text, chip pinned to the right edge (ml-auto).
 
@@ -587,6 +595,7 @@ export function QuestRow({
                             icon={icon}
                             status={card.status}
                             comingSoon={card.comingSoon}
+                            locked={card.locked}
                         />
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
@@ -622,6 +631,7 @@ export function QuestRow({
                     icon={icon}
                     status={card.status}
                     comingSoon={card.comingSoon}
+                    locked={card.locked}
                 />
                 <div className="flex min-w-0 flex-col gap-1">
                     <div>{title}</div>
@@ -880,7 +890,10 @@ function QuestOverviewContent({
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: deriveCardStatus(comingSoon, previewAll, reward),
-                held: reward?.held,
+                locked:
+                    state.held &&
+                    quest.category === "setup" &&
+                    !reward?.claimedAt,
                 earnedAmount: reward?.pollenAmount ?? undefined,
                 progress:
                     reward && quest.goal
@@ -912,6 +925,7 @@ function QuestOverviewContent({
         rewardedCatalogIds,
         rewardByKey,
         previewAll,
+        state.held,
     ]);
 
     // Rewards created by a maintainer or another non-catalog source still need
@@ -967,12 +981,20 @@ function QuestOverviewContent({
         return stats;
     }, [state.rewards]);
 
-    // Keep pending rewards separate from the claimed totals above them.
+    // Keep pending rewards separate from the claimed totals above them. A
+    // held account's Setup rewards are locked, so they aren't claimable.
     const claimable = useMemo(() => {
+        const locked = new Set(
+            state.held
+                ? state.catalog
+                      .filter((quest) => quest.category === "setup")
+                      .map((quest) => quest.id)
+                : [],
+        );
         const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
         for (const reward of state.rewards) {
-            if (reward.claimedAt == null && !reward.held) {
+            if (reward.claimedAt == null && !locked.has(reward.questId ?? "")) {
                 byKind[rewardIconKind(reward.balanceBucket)] +=
                     reward.pollenAmount;
                 count += 1;
@@ -982,7 +1004,7 @@ function QuestOverviewContent({
             .filter((kind) => byKind[kind] > 0)
             .map((kind) => ({ kind, pollen: byKind[kind] }));
         return { count, segments };
-    }, [state.rewards]);
+    }, [state.rewards, state.catalog, state.held]);
 
     // Quests the viewer can still earn, for the leaderboard's "next step" line.
     const openQuests = useMemo(
@@ -1125,6 +1147,9 @@ function QuestOverviewContent({
                         }
                     >
                         <div className="flex flex-col gap-2">
+                            {category.key === "setup" && state.held && (
+                                <SetupHoldNotice />
+                            )}
                             {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}

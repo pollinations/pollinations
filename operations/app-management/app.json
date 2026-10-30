@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Reel Hook Generator",
+    "url": "https://anojan-va.github.io/reel-hook-generator",
+    "description": "Type a reel topic and get five scroll-stopping hooks in different styles (curiosity gap, shock fact, direct question, bold claim, mini story), each read aloud with Pollinations text-to-speech so you c",
+    "language": "en",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "anojan-va",
+    "githubUserId": "26676571",
+    "repositoryUrl": "https://github.com/anojan-va/reel-hook-generator",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-24",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18257",
+    "approvedDate": "2026-10-30",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/01f2c604-6225-499a-a559-46b9a278aa0c"
+  },
+  {
     "emoji": "🎮",
     "name": "Tiny Fighter Arena",
     "url": "https://kreggscode.github.io/tiny-fighter-arena",

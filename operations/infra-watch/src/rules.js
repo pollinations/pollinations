@@ -40,7 +40,8 @@ function modelRoutes(rows) {
     const routes = {};
     for (const row of rows) {
         if (row.is_rollup) continue;
-        (routes[row.model] ??= []).push({
+        routes[row.model] ??= [];
+        routes[row.model].push({
             provider: row.provider,
             fallback: Boolean(row.fallback_used),
             ok: row.status_2xx,
@@ -170,33 +171,36 @@ export function step(state, found, now, recent = []) {
 }
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
-// Values up to 38 characters, the longest official model id, show whole.
 const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
 
-function panel(lines) {
-    const width = 48;
-    const top = `┌─ MONITOR ${"─".repeat(width - 10)}┐`;
-    const body = lines.map(([field, value]) => {
-        const text = `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`;
-        return `│ ${text.padEnd(width - 2)} │`;
-    });
-    return ["```", top, ...body, `└${"─".repeat(width)}┘`, "```"].join("\n");
+// A box titled with the alert and what it is about. It is as wide as its
+// title or its longest row needs, so a full model id is never cut.
+function panel(title, lines) {
+    const body = lines.map(
+        ([field, value]) =>
+            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
+    );
+    const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
+    return [
+        "```",
+        `┌─ ${title} ${"─".repeat(inner - title.length - 1)}┐`,
+        ...body.map((t) => `│ ${t.padEnd(inner)} │`),
+        `└${"─".repeat(inner + 2)}┘`,
+        "```",
+    ].join("\n");
 }
 
-// The plain sentence above each alert panel, one per kind.
-const DESCRIBE = {
-    GEN_DOWN: () => "gen is down on both hostnames",
-    PUBLIC_DOWN: () =>
-        "gen.pollinations.ai is unreachable; gen.myceli.ai still works",
-    UPSTREAM_DOWN: () => "gen.myceli.ai is unreachable; users are not affected",
-    ANALYTICS_DOWN: () =>
-        "Model status data is unreachable; model alerts are paused",
-    PLATFORM_DROP: () => "Platform traffic fell by more than half",
-    DEGRADED: (info) => `\`${info.model}\` is failing for some callers`,
-    PRIMARY_WEAK: (info) =>
-        `\`${info.model}\`: the primary provider is failing, the fallback is covering`,
+// Each alert's box title: what happened, and to what.
+const TITLE = {
+    GEN_DOWN: () => "DOWN: gen Worker",
+    PUBLIC_DOWN: () => "DOWN: gen.pollinations.ai",
+    UPSTREAM_DOWN: () => "DOWN: gen.myceli.ai",
+    ANALYTICS_DOWN: () => "BLIND: model status data",
+    PLATFORM_DROP: () => "DEGRADED: platform-wide",
+    DEGRADED: (info) => `DEGRADED: ${info.model}`,
+    PRIMARY_WEAK: (info) => `PRIMARY WEAK: ${info.model}`,
 };
-const framed = (info, lines) => `${DESCRIBE[info.kind](info)}\n${panel(lines)}`;
+const framed = (info, lines) => panel(TITLE[info.kind](info), lines);
 
 // Last line of an alert while the AI looks into it. The same message is
 // then edited: the AI's line replaces it, or it simply goes.
@@ -225,8 +229,6 @@ export function render(post) {
     if (info.kind === "GEN_DOWN") {
         return {
             text: framed(info, [
-                ["STATUS", "DOWN"],
-                ["MODEL", "gen Worker"],
                 ["WHY", "both hostnames failing:"],
                 ["", "gen.pollinations.ai  DOWN"],
                 ["", "gen.myceli.ai        DOWN"],
@@ -239,8 +241,6 @@ export function render(post) {
         const pub = info.kind === "PUBLIC_DOWN";
         return {
             text: framed(info, [
-                ["STATUS", "DOWN"],
-                ["MODEL", pub ? "gen.pollinations.ai" : "gen.myceli.ai"],
                 ["WHY", "one hostname failing:"],
                 ["", `gen.pollinations.ai  ${pub ? "DOWN" : "up"}`],
                 ["", `gen.myceli.ai        ${pub ? "up" : "DOWN"}`],
@@ -257,8 +257,6 @@ export function render(post) {
     if (info.kind === "ANALYTICS_DOWN") {
         return {
             text: framed(info, [
-                ["STATUS", "BLIND"],
-                ["MODEL", "/models/status (analytics)"],
                 ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
                 ["", "model alerts paused"],
             ]),
@@ -268,8 +266,6 @@ export function render(post) {
     if (info.kind === "PLATFORM_DROP") {
         return {
             text: framed(info, [
-                ["STATUS", "DEGRADED"],
-                ["MODEL", "platform-wide"],
                 ["REQS", `${info.now10} last 10m`],
                 ["", `baseline ${Math.round(info.baseline10)}`],
             ]),
@@ -277,8 +273,6 @@ export function render(post) {
         };
     }
     const lines = [
-        ["STATUS", info.kind.replace("_", " ")],
-        ["MODEL", info.model],
         ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
     ];
     // Accounts behind the failures, from Tinybird; unknown if it couldn't say.

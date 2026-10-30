@@ -92,6 +92,7 @@ test("a weak primary is posted without a ping, naming each route", () => {
         info,
     });
     assert.equal(ping, false);
+    assert.match(text, /┌─ PRIMARY WEAK: a\/model ─/);
     assert.match(text, /PRIMARY\s+openrouter 26\/102 \(25%\)/);
     assert.match(text, /FALLBACK deepinfra 38\/38/);
     assert.doesNotMatch(text, /\bBY\b/);
@@ -210,7 +211,7 @@ test("gen down and platform drop need 3 checks in a row", () => {
     assert.equal(step(reset.state, found, 2).posts.length, 0);
 });
 
-test("panel stays 48 chars wide and shows a 38-char model id whole", () => {
+test("the box title carries the status and the full model id", () => {
     const longest = "inferenceport-ai/lightning-image-turbo";
     const { text, ping } = render({
         type: "alert",
@@ -218,10 +219,14 @@ test("panel stays 48 chars wide and shows a 38-char model id whole", () => {
         info: { kind: "DEGRADED", model: longest, success: 0.5, nonClient: 20 },
     });
     assert.equal(ping, true);
-    assert.match(text, new RegExp(`MODEL\\s+${longest}`));
-    for (const line of text.split("\n").filter((l) => /^[│┌└]/.test(l))) {
-        assert.equal([...line].length, 50);
-    }
+    const lines = text.split("\n");
+    // Nothing above the box: it opens the message.
+    assert.equal(lines[0], "```");
+    assert.ok(lines[1].startsWith(`┌─ DEGRADED: ${longest} ─`));
+    assert.doesNotMatch(text, /MONITOR|STATUS|MODEL /);
+    const box = lines.filter((l) => /^[│┌└]/.test(l));
+    const width = [...box[0]].length;
+    for (const line of box) assert.equal([...line].length, width);
 });
 
 test("analytics outage pauses recovery but is not gen down", () => {
@@ -250,15 +255,6 @@ const degradedInfo = (callers) => ({
     success: 0.5,
     nonClient: 20,
     callers,
-});
-
-test("alerts open with a plain description naming the full model id", () => {
-    const { text } = render({
-        type: "alert",
-        key: "degraded:a/model",
-        info: degradedInfo(),
-    });
-    assert.equal(text.split("\n")[0], "`a/model` is failing for some callers");
 });
 
 test("CALLERS shows how many accounts fail, or unknown", () => {

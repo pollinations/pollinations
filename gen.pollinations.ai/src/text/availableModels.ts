@@ -281,6 +281,12 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "openai/gpt-5.5:aws",
+        config: portkeyConfig["gpt-5.5-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.6-sol:aws",
         config: portkeyConfig["gpt-5.6-sol-bedrock"],
         transform: omitOpenAISampling,
@@ -301,6 +307,12 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6.1-terra",
         config: portkeyConfig["gpt-6.1-terra"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.1-terra:aws",
+        config: portkeyConfig["gpt-6.1-terra-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -650,6 +662,16 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-audio-1.5",
         config: portkeyConfig["gpt-audio-1.5"],
+        transform: pipe(audioDefaultsTransform, stripReasoning),
+    },
+    {
+        name: "openai/gpt-audio-mini:openai",
+        config: portkeyConfig["gpt-audio-mini-openai"],
+        transform: pipe(audioDefaultsTransform, stripReasoning),
+    },
+    {
+        name: "openai/gpt-audio-1.5:openai",
+        config: portkeyConfig["gpt-audio-1.5-openai"],
         transform: pipe(audioDefaultsTransform, stripReasoning),
     },
     {

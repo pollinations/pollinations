@@ -12,8 +12,52 @@ import type { FallbackMap } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import { CHAT_PARAMETERS } from "./text-parameters";
 
+// Public chat-audio voices also accepted by direct OpenAI; amuch/dan are Azure-only.
+const OPENAI_CHAT_AUDIO_VOICES = [
+    "alloy",
+    "echo",
+    "fable",
+    "onyx",
+    "nova",
+    "shimmer",
+    "coral",
+    "verse",
+    "ballad",
+    "ash",
+    "sage",
+];
+
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "openai/gpt-5.5": {
+        // Global rates are inferred by removing AWS's documented 10% regional
+        // premium; using them before confirmation is a maintainer-approved risk.
+        "openai/gpt-5.5:aws": {
+            provider: "aws",
+            priceMultiplier: 1,
+        },
+    },
+    "openai/gpt-6.1-terra": {
+        "openai/gpt-6.1-terra:aws": {
+            provider: "aws",
+            priceMultiplier: 1,
+        },
+    },
+    "openai/gpt-audio-mini": {
+        // Direct OpenAI retires this checkpoint on 2027-01-20.
+        "openai/gpt-audio-mini:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+            voices: OPENAI_CHAT_AUDIO_VOICES,
+        },
+    },
+    "openai/gpt-audio-1.5": {
+        "openai/gpt-audio-1.5:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+            voices: OPENAI_CHAT_AUDIO_VOICES,
+        },
+    },
     "openai/gpt-5-nano": {
         "openai/gpt-5-nano:openai": {
             provider: "openai",

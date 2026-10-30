@@ -676,6 +676,8 @@ describe("static provider fallbacks", () => {
     });
 
     it.each([
+        "openai/gpt-5.5",
+        "openai/gpt-6.1-terra",
         "openai/gpt-6-luna",
         "openai/gpt-6.1-sol",
         "openai/gpt-6-sol",
@@ -697,6 +699,71 @@ describe("static provider fallbacks", () => {
                 responsesEndpoint:
                     "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             });
+        },
+    );
+
+    it.each([
+        ["openai/gpt-audio-mini", 0.00584],
+        ["openai/gpt-audio-1.5", 0.0195],
+    ] as const)(
+        "keeps the discounted audio quote on %s recovery",
+        (model, cost) => {
+            const primary = TEXT_SERVICES[model];
+            const fallback = TEXT_SERVICES[`${model}:openai`];
+            const billed = calculateUsageBilling({
+                model,
+                usage: {
+                    promptTextTokens: 1000,
+                    completionTextTokens: 100,
+                    promptAudioTokens: 100,
+                    completionAudioTokens: 200,
+                },
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
+            expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 12);
+            expect(primary.fallbacks).toEqual([`${model}:openai`]);
+            expect(fallback).toMatchObject({
+                provider: "openai",
+                hidden: true,
+                aliases: [],
+            });
+        },
+    );
+
+    it.each(["openai/gpt-audio-mini", "openai/gpt-audio-1.5"] as const)(
+        "preserves Azure-only voices instead of substituting them on %s fallback",
+        (model) => {
+            for (const voice of ["amuch", "dan"]) {
+                const request = { audio: { voice, format: "wav" } };
+                expect(
+                    textCapabilityError(TEXT_SERVICES[model], request),
+                ).toBeUndefined();
+                expect(
+                    supportsTextFallbackRequest(
+                        TEXT_SERVICES[`${model}:openai`],
+                        request,
+                    ),
+                ).toBe(false);
+                expect(
+                    supportsTextFallbackRequest(
+                        TEXT_SERVICES[`${model}:openai`],
+                        { voice },
+                    ),
+                ).toBe(false);
+            }
+            for (const request of [
+                {},
+                { audio: { voice: "alloy", format: "wav" } },
+            ]) {
+                expect(
+                    supportsTextFallbackRequest(
+                        TEXT_SERVICES[`${model}:openai`],
+                        request,
+                    ),
+                ).toBe(true);
+            }
         },
     );
 

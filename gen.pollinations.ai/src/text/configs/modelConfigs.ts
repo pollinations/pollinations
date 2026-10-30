@@ -319,6 +319,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
+    "gpt-5.5-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.5"),
     "gpt-5.5": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
@@ -349,6 +351,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.1-terra/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6.1-terra-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6.1-terra"),
     "gpt-5.6-terra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -399,6 +403,20 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockResponsesConfig("global.openai.gpt-6-luna"),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
+    "gpt-audio-mini-openai": () => ({
+        provider: "openai",
+        model: "gpt-audio-mini-2025-12-15",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        ...azureOpenAIParameters,
+    }),
+    "gpt-audio-1.5-openai": () => ({
+        provider: "openai",
+        model: "gpt-audio-1.5",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        ...azureOpenAIParameters,
+    }),
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,

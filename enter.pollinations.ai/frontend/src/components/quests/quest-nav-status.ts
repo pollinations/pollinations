@@ -1,14 +1,18 @@
 export const QUEST_STATUS_UPDATED_EVENT = "pollinations:quest-status-updated";
 
 type Quest = { id: string; state: string };
-type Reward = { questId: string | null; claimedAt: string | null };
+type Reward = {
+    questId: string | null;
+    claimedAt: string | null;
+    held?: boolean;
+};
 
 export function questNavLabel(
     quests: readonly Quest[],
     rewards: readonly Reward[],
 ): string | null {
     const claimable = rewards.filter(
-        (reward) => reward.claimedAt == null,
+        (reward) => reward.claimedAt == null && !reward.held,
     ).length;
     if (claimable > 0) return `${claimable} claimable!`;
 

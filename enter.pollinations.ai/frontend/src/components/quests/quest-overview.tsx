@@ -61,6 +61,7 @@ type QuestReward = {
     earnedAt: string;
     claimedAt: string | null;
     url?: string | null;
+    held?: boolean;
 };
 
 type FetchState = {
@@ -263,6 +264,8 @@ export type QuestCard = {
     // coming_soon quests render at the bottom of their lane in the receded
     // (claimed) style, with a clock + "Coming soon" in place of the reward.
     comingSoon?: boolean;
+    // A held onboarding reward shows a contact note in place of Claim.
+    held?: boolean;
 };
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
@@ -515,7 +518,21 @@ export function QuestRow({
             {rewardLabel}
         </Chip>
     );
-    const claimButton = claimableRewardId ? (
+    const claimButton = !claimableRewardId ? null : card.held ? (
+        <Text
+            as="span"
+            tone="muted"
+            className="flex items-center gap-1.5 text-sm"
+        >
+            <ClockIcon className="h-4 w-4 shrink-0" />
+            <span>
+                On hold, contact{" "}
+                <InlineLink href="mailto:hello@pollinations.ai">
+                    hello@pollinations.ai
+                </InlineLink>
+            </span>
+        </Text>
+    ) : (
         <Button
             type="button"
             intent="commit"
@@ -526,7 +543,7 @@ export function QuestRow({
             <SparkleIcon className="h-4 w-4 shrink-0" />
             {claiming ? "Claiming" : "Claim"}
         </Button>
-    ) : null;
+    );
     // Both layouts place the claim button and reward chip separately: claim
     // beside the text, chip pinned to the right edge (ml-auto).
 
@@ -836,6 +853,7 @@ function QuestOverviewContent({
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: deriveCardStatus(comingSoon, previewAll, reward),
+                held: reward?.held,
                 earnedAmount: reward?.pollenAmount ?? undefined,
                 progress:
                     reward && quest.goal
@@ -927,7 +945,7 @@ function QuestOverviewContent({
         const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
         for (const reward of state.rewards) {
-            if (reward.claimedAt == null) {
+            if (reward.claimedAt == null && !reward.held) {
                 byKind[rewardIconKind(reward.balanceBucket)] +=
                     reward.pollenAmount;
                 count += 1;

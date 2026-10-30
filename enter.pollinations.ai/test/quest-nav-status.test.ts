@@ -31,6 +31,15 @@ describe("questNavLabel", () => {
         ).toBe("2 new!");
     });
 
+    it("does not count held rewards as claimable", () => {
+        expect(
+            questNavLabel(
+                [available("done")],
+                [{ ...reward("done", null), held: true }],
+            ),
+        ).toBeNull();
+    });
+
     it("hides the badge when nothing needs attention", () => {
         expect(
             questNavLabel(

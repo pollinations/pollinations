@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
-import { numberOption } from "../lib/number-option.js";
 import {
     fail,
     getOutputMode,
@@ -165,7 +164,7 @@ const create = new Command("create")
         "Key type: secret or publishable app key",
         "secret",
     )
-    .option("--expires-in <seconds>", "Expiry in seconds (max 365 days)")
+    .option("--expires-in <seconds>", "Expiry in seconds")
     .option("--models <models...>", MODELS_HELP)
     .option("--budget <pollen>", "Pollen budget cap")
     .option(
@@ -205,13 +204,13 @@ Examples:
                 fail("--earnings requires --type publishable");
             }
             if (opts.expiresIn !== undefined) {
-                body.expiresIn = numberOption(
-                    "--expires-in",
-                    opts.expiresIn,
-                    1,
-                    365 * 86400,
-                    true,
-                );
+                const expiresIn = Number(opts.expiresIn);
+                if (!Number.isInteger(expiresIn) || expiresIn < 1) {
+                    fail(
+                        "--expires-in must be a whole number of seconds above 0",
+                    );
+                }
+                body.expiresIn = expiresIn;
             }
             if (opts.models) body.allowedModels = opts.models;
             if (opts.budget !== undefined) {

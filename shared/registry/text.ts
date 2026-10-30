@@ -1027,7 +1027,8 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         // Provider retires this route on 2027-06-15.
         priceMultiplier: 0.75,
-        paidOnly: false,
+        // Azure 30K TPM is below twice the observed 41,480 TPM peak.
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.6),
             completionTextTokens: perMillion(2.4),

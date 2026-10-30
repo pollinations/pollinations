@@ -87,17 +87,19 @@ ownership review; absence of a deploy manifest does not prove they are unused.
 - [x] Audit repository deployments and agree the extraction sequence.
 - [x] Check existing Pollinations repositories; identify CatGPT and Sirius homes.
 - [x] Prepare and verify standalone builds for the five Pollinations-owned
-  consumers (PR #18751; merge pending). Websim now uses published SDK/UI packages;
+  consumers. Websim now uses published SDK/UI packages in its own repository;
   CatGPT and OpenClaw render independently, Sirius builds independently, and
   Open WebUI passes its existing deployment dry-run independently.
-- [ ] Extract the four low-use Pollinations-owned apps.
-  - Websim repository created with 17 app-history commits, MIT license, published
-    packages, build CI, and a production-branch-only deployment workflow.
-    Standalone typecheck/build/dry-run, desktop/mobile rendering, PKCE request,
-    and real authenticated generation passed. Deployment credential addition,
-    CI deployment verification, and monorepo removal remain pending.
-    Automatic deployments remain disabled until the old registration is removed
-    from the monorepo's production branch. Existing domains are unchanged.
+- [x] Extract and deploy Websim from [its own repository](https://github.com/pollinations/websim).
+  Preserve 17 app-history commits and the MIT license. Build CI, Worker dry-run,
+  desktop/mobile rendering, PKCE request, and live authenticated generation pass.
+  A dedicated account-owned token has Editor access to Websim alone. The existing
+  Worker, asset binding, and both domains are verified. PR #18751 removes its
+  monorepo source and deployment manifest; merge and production promotion remain.
+- [ ] Finish Websim deployment handoff. Once #18751 reaches the monorepo's
+  production branch, set `AUTO_DEPLOY=true` in `pollinations/websim` and verify
+  its next production deployment. Until then, new-repo deployments are manual.
+- [ ] Extract CatGPT, OpenClaw, and Sirius using the same sequence.
 - [ ] Move verified destinations to `.app` and add redirects.
 - [ ] Extract and migrate Open WebUI.
 - [ ] Complete accepted community handoffs and remove migrated source.

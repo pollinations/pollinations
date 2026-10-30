@@ -1,8 +1,0 @@
-{
-  "target": "worker",
-  "credentials": "myceli",
-  "subdomain": "websim",
-  "install": "npm ci",
-  "build": "npm run build",
-  "deploy": "npx wrangler deploy worker.js"
-}

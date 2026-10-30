@@ -14,9 +14,10 @@ import {
     toReward,
 } from "./quests/types.ts";
 import {
-    recordSetupRewardDecision,
-    reportSetupRewardCandidate,
-    type SetupRewardCandidate,
+    type FlaggedDomain,
+    recordSetupRewardSignup,
+    reportFlaggedDomain,
+    setupRewardHoldsOn,
 } from "./setup-reward-holds.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
@@ -37,8 +38,6 @@ export async function checkQuestsForUser(
     env: Env["Bindings"],
     userId: string,
     groups: QuestGroup[] = QUEST_GROUPS,
-    /** IPv4 /24 or IPv6 /48 of the request running the check. */
-    network?: string,
 ): Promise<QuestCheckResult> {
     const db = drizzle(env.DB, { schema });
     log.info("QUEST_CHECK_START: userId={userId} groups={groups}", {
@@ -82,30 +81,27 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
-    let setupDecisionFailed = false;
-    let candidate: SetupRewardCandidate | null = null;
-    const holds = env.SETUP_REWARD_HOLDS === "on";
+    let setupSignupFailed = false;
+    let flagged: FlaggedDomain | null = null;
     if (proposals.some(({ quest }) => quest.category === "setup")) {
         try {
-            candidate = await recordSetupRewardDecision(env.DB, {
+            flagged = await recordSetupRewardSignup(env.DB, {
                 userId: user.id,
                 email: user.email,
-                network,
-                holds,
             });
         } catch (error) {
-            // Without a decision row, no setup reward is recorded; the next
-            // quest check retries.
-            log.error("QUEST_CHECK_SETUP_DECISION_FAILED: {error}", { error });
-            setupDecisionFailed = true;
+            // Without the sign-up record, no setup reward is recorded; the
+            // next quest check retries.
+            log.error("QUEST_CHECK_SETUP_SIGNUP_FAILED: {error}", { error });
+            setupSignupFailed = true;
             proposals = proposals.filter(
                 ({ quest }) => quest.category !== "setup",
             );
         }
     }
-    if (candidate) {
+    if (flagged) {
         // Reporting is best effort: rewards and holds never wait on Discord.
-        await reportSetupRewardCandidate(env, candidate, holds).catch((error) =>
+        await reportFlaggedDomain(env, flagged).catch((error) =>
             log.warn("SETUP_REWARD_REPORT_FAILED: {error}", { error }),
         );
     }
@@ -136,7 +132,9 @@ export async function checkQuestsForUser(
                     eq(schema.rewards.questId, AUTO_CLAIM_QUEST_ID),
                 ),
             );
-        const setupQuestIds = await listSetupQuestIds(ctx);
+        const setupQuestIds = setupRewardHoldsOn(env)
+            ? await listSetupQuestIds(ctx)
+            : undefined;
         for (const reward of pending) {
             await claimReward(ctx.db, {
                 rewardId: reward.id,
@@ -148,8 +146,7 @@ export async function checkQuestsForUser(
 
     const result = {
         success:
-            !setupDecisionFailed &&
-            sourceResults.every((entry) => !entry.error),
+            !setupSignupFailed && sourceResults.every((entry) => !entry.error),
         recorded: recorded.recorded,
         rewardIds: recorded.rewardIds,
         progress: sourceResults.flatMap((entry) => entry.progress ?? []),

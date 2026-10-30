@@ -20,7 +20,6 @@ import {
 } from "@shared/billing/deduction.ts";
 import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { claimReward } from "@shared/billing/rewards.ts";
-import { getRealClientIp, truncateIpToSubnet } from "@shared/client-ip.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -50,9 +49,11 @@ import {
     ACCOUNT_SETUP_QUEST_GROUP,
     listQuestCards,
     listSetupQuestIds,
-    QUEST_GROUPS,
 } from "../services/quests/index.ts";
-import { isSetupRewardHeld } from "../services/setup-reward-holds.ts";
+import {
+    isSetupRewardHeld,
+    setupRewardHoldsOn,
+} from "../services/setup-reward-holds.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
@@ -1286,7 +1287,7 @@ export const accountRoutes = new Hono<Env>()
                     .from(rewardsTable)
                     .where(eq(rewardsTable.userId, user.id))
                     .orderBy(desc(rewardsTable.earnedAt)),
-                isSetupRewardHeld(db, user.id),
+                isSetupRewardHeld(c.env, db, user.id),
             ]);
 
             const rewardsByQuestId = new Map<
@@ -1357,7 +1358,7 @@ export const accountRoutes = new Hono<Env>()
                     .from(rewardsTable)
                     .where(eq(rewardsTable.userId, user.id))
                     .orderBy(desc(rewardsTable.earnedAt)),
-                isSetupRewardHeld(db, user.id),
+                isSetupRewardHeld(c.env, db, user.id),
             ]);
             const heldQuestIds = held
                 ? await listSetupQuestIds({ db, env: c.env })
@@ -1401,14 +1402,7 @@ export const accountRoutes = new Hono<Env>()
             expirationTtl: QUEST_CHECK_THROTTLE_SECONDS,
         });
 
-        return c.json(
-            await checkQuestsForUser(
-                c.env,
-                user.id,
-                QUEST_GROUPS,
-                truncateIpToSubnet(getRealClientIp(c)),
-            ),
-        );
+        return c.json(await checkQuestsForUser(c.env, user.id));
     })
     .post("/quests/rewards/:rewardId/claim", async (c) => {
         await c.var.auth.requireAuthorization({
@@ -1425,7 +1419,9 @@ export const accountRoutes = new Hono<Env>()
         const result = await claimReward(db, {
             rewardId: c.req.param("rewardId"),
             userId: user.id,
-            setupQuestIds: await listSetupQuestIds({ db, env: c.env }),
+            setupQuestIds: setupRewardHoldsOn(c.env)
+                ? await listSetupQuestIds({ db, env: c.env })
+                : undefined,
         });
         if (!result.reward) {
             throw new HTTPException(404, { message: "Reward not found" });
@@ -2024,12 +2020,9 @@ export const accountRoutes = new Hono<Env>()
 
             // Awarding the first-key quest is a few D1 queries; awaiting it
             // means the balance and quests the caller reads next include it.
-            await checkQuestsForUser(
-                c.env,
-                user.id,
-                [ACCOUNT_SETUP_QUEST_GROUP],
-                truncateIpToSubnet(getRealClientIp(c)),
-            ).catch((error) =>
+            await checkQuestsForUser(c.env, user.id, [
+                ACCOUNT_SETUP_QUEST_GROUP,
+            ]).catch((error) =>
                 c.get("log").warn("API key quest check failed: {error}", {
                     error,
                 }),

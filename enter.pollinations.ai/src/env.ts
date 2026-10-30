@@ -13,7 +13,7 @@ export type Env = {
         CODE_AGENT_DISPATCH_NAMESPACE?: string;
         SITES_DISPATCH_NAMESPACE?: string;
         SITES_HOST_SUFFIX?: string;
-        /** "on" makes new setup reward decisions holds; anything else, off. */
+        /** "on" holds setup rewards on flagged domains; anything else, off. */
         SETUP_REWARD_HOLDS?: string;
         /** Discord webhook for setup reward reports; shared with infra-watch. */
         SETUP_REWARD_DISCORD_WEBHOOK_URL?: string;

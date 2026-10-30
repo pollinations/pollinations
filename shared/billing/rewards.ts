@@ -2,8 +2,9 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type * as schema from "../db/better-auth.ts";
 import {
+    flaggedEmailDomain,
     rewards,
-    setupRewardDecision,
+    stripeCheckoutCredits,
     user as userTable,
 } from "../db/better-auth.ts";
 import type { Bucket } from "./deduction.ts";
@@ -70,6 +71,22 @@ export interface ClaimRewardResult {
 
 type AuthDb = DrizzleD1Database<typeof schema>;
 
+/**
+ * True while the account's email domain is flagged and not allowed, and the
+ * account isn't verified: no purchase and no linked GitHub account.
+ */
+export const setupRewardHeld = (userId: string) => sql`EXISTS (
+    SELECT 1 FROM ${userTable} u
+    JOIN ${flaggedEmailDomain} f
+        ON f.domain = lower(substr(u.email, instr(u.email, '@') + 1))
+    WHERE u.id = ${userId}
+        AND f.allowed_at IS NULL
+        AND u.github_id IS NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM ${stripeCheckoutCredits} c WHERE c.user_id = u.id
+        )
+)`;
+
 function assertRewardAmount(amount: number): void {
     if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_REWARD_AMOUNT) {
         throw new Error(
@@ -134,7 +151,7 @@ export async function recordRewards(
  * Claims one pending reward and credits the chosen balance bucket. The balance
  * update is gated on the preceding `claimed_at IS NULL` update, so retries and
  * double-clicks cannot double-pay. Rewards for `setupQuestIds` also stay
- * unclaimed while the account's setup reward decision has a held_reason.
+ * unclaimed while the account is held (see setupRewardHeld).
  */
 export async function claimReward(
     db: AuthDb,
@@ -170,7 +187,7 @@ export async function claimReward(
                     eq(rewards.userId, userId),
                     isNull(rewards.claimedAt),
                     row.questId !== null && setupQuestIds?.has(row.questId)
-                        ? sql`NOT EXISTS (SELECT 1 FROM ${setupRewardDecision} WHERE ${setupRewardDecision.userId} = ${userId} AND ${setupRewardDecision.heldReason} IS NOT NULL)`
+                        ? sql`NOT ${setupRewardHeld(userId)}`
                         : undefined,
                 ),
             ),

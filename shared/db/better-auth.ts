@@ -508,32 +508,26 @@ export const rewards = sqliteTable("rewards", {
   index("idx_rewards_user_id").on(table.userId),
 ]);
 
-// One row per account, written at its first setup (onboarding) reward. A
-// held_reason blocks claiming setup rewards until an operator clears it.
-// After 30 days network and email domain are cleared, or the row is removed if
-// the account was deleted. No foreign key: deleting accounts must not lower
-// the 24-hour count.
-export const setupRewardDecision = sqliteTable("setup_reward_decision", {
+// Accounts on private email domains, recorded at their first setup
+// (onboarding) reward and deleted after 30 days. Counts sign-ups per domain;
+// no foreign key, so deleting accounts can't lower the count.
+export const setupRewardSignup = sqliteTable("setup_reward_signup", {
   userId: text("user_id").primaryKey(),
-  // IPv4 /24 or IPv6 /48 of the request that earned the first setup reward.
-  network: text("network"),
-  emailDomain: text("email_domain"),
+  emailDomain: text("email_domain").notNull(),
   firstRewardAt: integer("first_reward_at", { mode: "timestamp" }).notNull(),
-  // "network" or "domain" when the account crossed the limit, else null.
-  candidateReason: text("candidate_reason"),
-  // candidateReason when holds were switched on at decision time.
-  heldReason: text("held_reason"),
 }, (table) => [
-  index("idx_setup_reward_decision_network").on(
-    table.network,
-    table.firstRewardAt,
-  ),
-  index("idx_setup_reward_decision_domain").on(
+  index("idx_setup_reward_signup_domain").on(
     table.emailDomain,
     table.firstRewardAt,
   ),
-  // Only rows that still hold a network or domain, so cleanup skips cleared rows.
-  index("idx_setup_reward_decision_time")
-    .on(table.firstRewardAt)
-    .where(sql`${table.emailDomain} IS NOT NULL`),
+  index("idx_setup_reward_signup_time").on(table.firstRewardAt),
 ]);
+
+// Private email domains that passed 30 accounts in 24 hours. While holds are
+// on, their accounts can't claim setup rewards until verified or allowed.
+export const flaggedEmailDomain = sqliteTable("flagged_email_domain", {
+  domain: text("domain").primaryKey(),
+  flaggedAt: integer("flagged_at", { mode: "timestamp" }).notNull(),
+  accounts: integer("accounts").notNull(),
+  allowedAt: integer("allowed_at", { mode: "timestamp" }),
+});

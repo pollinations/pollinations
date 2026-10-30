@@ -1,26 +1,22 @@
 import { getLogger } from "@logtape/logtape";
-import { setupRewardDecision } from "@shared/db/better-auth.ts";
-import { and, eq, isNotNull } from "drizzle-orm";
+import { setupRewardHeld } from "@shared/billing/rewards.ts";
+import { sql } from "drizzle-orm";
 import type { Env } from "../env.ts";
 import type { QuestDb } from "./quests/types.ts";
 
 const log = getLogger(["enter", "setup-reward-holds"]);
 
-/** Other accounts on one network or private domain in 24 hours before holds. */
+/** Accounts on one private email domain in 24 hours before it is flagged. */
 const SETUP_REWARD_LIMIT = 30;
 const DAY_SECONDS = 24 * 60 * 60;
 const RETENTION_SECONDS = 30 * DAY_SECONDS;
 const CLEANUP_BATCH_SIZE = 100;
-/** Accounts in 24 hours on one network or domain that each post to Discord once. */
-const REPORT_MILESTONES = [SETUP_REWARD_LIMIT, 100, 1000];
+// Discord embed side bar, as in infra-watch: yellow while holds are off,
+// orange once they're on.
+const WATCHING = 0xef9f27;
+const HOLDING = 0xd85a30;
 
-/** A new account that crossed the limit. */
-export type SetupRewardCandidate = {
-    reason: "network" | "domain";
-    key: string;
-};
-
-/** Shared mail providers are never counted by domain. */
+/** Shared mail providers are never counted or flagged. */
 const PUBLIC_MAIL_DOMAINS = new Set([
     "gmail.com",
     "googlemail.com",
@@ -50,96 +46,75 @@ const PUBLIC_MAIL_DOMAINS = new Set([
     "zoho.com",
 ]);
 
+/** A domain that a sign-up just flagged. */
+export type FlaggedDomain = { domain: string; accounts: number };
+
+export const setupRewardHoldsOn = (env: Env["Bindings"]) =>
+    env.SETUP_REWARD_HOLDS === "on";
+
 /**
- * Writes the account's decision at its first setup reward. Counting, deciding
- * and inserting is one statement, and D1 runs one statement at a time, so
- * concurrent requests can't pass the limit and retries keep the first row.
- * The same batch handles rows older than 30 days: a deleted account's row is
- * removed, a live account's keeps only its decision. Returns the new row's
- * reason when the account crossed the limit.
+ * Records an account on a private email domain at its first setup reward and
+ * flags the domain once more than 30 accounts on it did so in 24 hours. A D1
+ * batch is one transaction, so concurrent sign-ups flag a domain once and
+ * retries count once. The batch also deletes sign-ups older than 30 days.
  */
-export async function recordSetupRewardDecision(
+export async function recordSetupRewardSignup(
     d1: D1Database,
-    {
-        userId,
-        email,
-        network,
-        holds,
-    }: {
-        userId: string;
-        email: string;
-        network: string | undefined;
-        holds: boolean;
-    },
-): Promise<SetupRewardCandidate | null> {
+    { userId, email }: { userId: string; email: string },
+): Promise<FlaggedDomain | null> {
     const now = Math.floor(Date.now() / 1000);
     const domain = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
-    const countedDomain = PUBLIC_MAIL_DOMAINS.has(domain) ? null : domain;
-    const expired = (accountExists: boolean) =>
-        `SELECT user_id FROM setup_reward_decision
-        WHERE email_domain IS NOT NULL AND first_reward_at < ?1
-            AND ${accountExists ? "" : "NOT "}EXISTS (
-                SELECT 1 FROM user WHERE user.id = setup_reward_decision.user_id
-            )
-        ORDER BY first_reward_at
-        LIMIT ${CLEANUP_BATCH_SIZE}`;
-    const [inserted] = await d1.batch<{
-        candidate_reason: SetupRewardCandidate["reason"] | null;
-        network: string | null;
-    }>([
+    const cleanup = d1
+        .prepare(
+            `DELETE FROM setup_reward_signup WHERE user_id IN (
+                SELECT user_id FROM setup_reward_signup
+                WHERE first_reward_at < ?1
+                ORDER BY first_reward_at
+                LIMIT ${CLEANUP_BATCH_SIZE}
+            )`,
+        )
+        .bind(now - RETENTION_SECONDS);
+    if (PUBLIC_MAIL_DOMAINS.has(domain)) {
+        await cleanup.run();
+        return null;
+    }
+    const [, flagged] = await d1.batch<FlaggedDomain>([
         d1
             .prepare(
-                `INSERT INTO setup_reward_decision
-                    (user_id, network, email_domain, first_reward_at, candidate_reason, held_reason)
-                SELECT ?1, ?2, ?3, ?4, reason, CASE WHEN ?5 THEN reason END
-                FROM (SELECT CASE
-                    WHEN (SELECT COUNT(*) FROM setup_reward_decision
-                        WHERE network = ?2 AND first_reward_at > ?4 - ${DAY_SECONDS}
-                    ) >= ${SETUP_REWARD_LIMIT} THEN 'network'
-                    WHEN (SELECT COUNT(*) FROM setup_reward_decision
-                        WHERE email_domain = ?6 AND first_reward_at > ?4 - ${DAY_SECONDS}
-                    ) >= ${SETUP_REWARD_LIMIT} THEN 'domain'
-                END AS reason)
-                WHERE true
-                ON CONFLICT (user_id) DO NOTHING
-                RETURNING candidate_reason, network`,
+                `INSERT INTO setup_reward_signup (user_id, email_domain, first_reward_at)
+                VALUES (?1, ?2, ?3)
+                ON CONFLICT (user_id) DO NOTHING`,
             )
-            .bind(
-                userId,
-                network ?? null,
-                domain,
-                now,
-                holds ? 1 : 0,
-                countedDomain,
-            ),
+            .bind(userId, domain, now),
         d1
             .prepare(
-                `DELETE FROM setup_reward_decision
-                WHERE user_id IN (${expired(false)})`,
+                `INSERT INTO flagged_email_domain (domain, flagged_at, accounts)
+                SELECT ?1, ?2, accounts FROM (
+                    SELECT COUNT(*) AS accounts FROM setup_reward_signup
+                    WHERE email_domain = ?1 AND first_reward_at > ?2 - ${DAY_SECONDS}
+                )
+                WHERE accounts > ${SETUP_REWARD_LIMIT}
+                ON CONFLICT (domain) DO NOTHING
+                RETURNING domain, accounts`,
             )
-            .bind(now - RETENTION_SECONDS),
-        d1
-            .prepare(
-                `UPDATE setup_reward_decision SET network = NULL, email_domain = NULL
-                WHERE user_id IN (${expired(true)})`,
-            )
-            .bind(now - RETENTION_SECONDS),
+            .bind(domain, now),
+        cleanup,
     ]);
-    const row = inserted?.results[0];
-    if (!row?.candidate_reason) return null;
-    return {
-        reason: row.candidate_reason,
-        key:
-            row.candidate_reason === "network"
-                ? (row.network ?? "")
-                : (countedDomain ?? ""),
-    };
+    return flagged?.results[0] ?? null;
 }
 
-// Discord embed side bar, as in infra-watch: yellow while only recording,
-// orange once new accounts are held.
-const WATCHING = 0xef9f27;
-const HOLDING = 0xd85a30;
+/** Whether the account's setup rewards are held right now. */
+export async function isSetupRewardHeld(
+    env: Env["Bindings"],
+    db: QuestDb,
+    userId: string,
+): Promise<boolean> {
+    if (!setupRewardHoldsOn(env)) return false;
+    const [row] = await db.all<{ held: number }>(
+        sql`SELECT ${setupRewardHeld(userId)} AS held`,
+    );
+    return Boolean(row?.held);
+}
 
 /** A box titled with what happened, in infra-watch's alert style. */
 function panel(title: string, rows: [string, string][]): string {
@@ -155,46 +130,34 @@ function panel(title: string, rows: [string, string][]): string {
 }
 
 /**
- * Posts to Discord when a network or private domain passes 30, 100 and 1,000
- * accounts in 24 hours, once per milestone. Without a webhook (local, tests)
- * the message is only logged.
+ * Posts to Discord when a domain is flagged: what happened, the numbers and
+ * the decision. Without a webhook (local, tests) the message is only logged.
  */
-export async function reportSetupRewardCandidate(
+export async function reportFlaggedDomain(
     env: Env["Bindings"],
-    { reason, key }: SetupRewardCandidate,
-    holds: boolean,
+    { domain, accounts }: FlaggedDomain,
 ): Promise<void> {
-    const column = reason === "network" ? "network" : "email_domain";
+    const holds = setupRewardHoldsOn(env);
     const row = await env.DB.prepare(
-        `SELECT COUNT(*) AS accounts, MIN(first_reward_at) AS since
-        FROM setup_reward_decision
-        WHERE ${column} = ?1 AND first_reward_at > ?2`,
+        `SELECT MIN(first_reward_at) AS since FROM setup_reward_signup
+        WHERE email_domain = ?1 AND first_reward_at > ?2`,
     )
-        .bind(key, Math.floor(Date.now() / 1000) - DAY_SECONDS)
-        .first<{ accounts: number; since: number }>();
-    const accounts = row?.accounts ?? 0;
-    const milestone = REPORT_MILESTONES.findLast((m) => accounts > m);
-    if (!row || !milestone) return;
-    const sentKey = `setup-reward-report:${reason}:${key}:${milestone}`;
-    if (await env.KV.get(sentKey)) return;
-    await env.KV.put(sentKey, "1", { expirationTtl: DAY_SECONDS });
-
-    const where =
-        reason === "network"
-            ? `network ${key}/${key.includes(":") ? 48 : 24}`
-            : `domain ${key}`;
+        .bind(domain, Math.floor(Date.now() / 1000) - DAY_SECONDS)
+        .first<{ since: number }>();
+    const since = new Date((row?.since ?? 0) * 1000)
+        .toISOString()
+        .slice(0, 16)
+        .replace("T", " ");
     const staging = env.ENVIRONMENT === "staging" ? "[staging] " : "";
-    const description = panel(
-        `${staging}${holds ? "HOLDING" : "WATCHING"}: ${where}`,
+    const description = panel(`${staging}FLAGGED: domain ${domain}`, [
+        ["ACCOUNTS", `${accounts} in 24h (limit ${SETUP_REWARD_LIMIT})`],
+        ["SINCE", `${since} UTC`],
         [
-            ["ACCOUNTS", `${accounts} in 24h (limit ${SETUP_REWARD_LIMIT})`],
-            [
-                "SINCE",
-                `${new Date(row.since * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC`,
-            ],
-            ["REWARDS", holds ? "new accounts held" : "paid, holds are off"],
+            "DECISION",
+            holds ? "onboarding rewards held" : "recorded only, holds are off",
         ],
-    );
+        ["UNDO", "allow the domain in Enter"],
+    ]);
     const webhook = env.SETUP_REWARD_DISCORD_WEBHOOK_URL;
     if (!webhook) {
         log.info("SETUP_REWARD_REPORT (no webhook):\n{description}", {
@@ -213,21 +176,4 @@ export async function reportSetupRewardCandidate(
         signal: AbortSignal.timeout(5_000),
     });
     if (!response.ok) throw new Error(`Discord webhook -> ${response.status}`);
-}
-
-export async function isSetupRewardHeld(
-    db: QuestDb,
-    userId: string,
-): Promise<boolean> {
-    const rows = await db
-        .select({ userId: setupRewardDecision.userId })
-        .from(setupRewardDecision)
-        .where(
-            and(
-                eq(setupRewardDecision.userId, userId),
-                isNotNull(setupRewardDecision.heldReason),
-            ),
-        )
-        .limit(1);
-    return rows.length > 0;
 }

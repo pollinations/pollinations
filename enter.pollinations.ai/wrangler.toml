@@ -151,8 +151,8 @@ simple = { limit = 600, period = 10 }
 
 [env.production.vars]
 ENVIRONMENT = "production"
-# "on" holds setup rewards past the per-network/domain limit; "off" only
-# records candidates. Existing holds block claims either way.
+# "on" holds onboarding rewards on flagged email domains; "off" only flags
+# domains and reports them to Discord.
 SETUP_REWARD_HOLDS = "off"
 X402_HOLDING_USER_ID = "inFByWZoc0Cuwtj3Pau4Ae9d5VBvfxHp"
 WEFT_FACILITATOR_URL = "https://x402.weft.network"
@@ -220,8 +220,8 @@ simple = { limit = 600, period = 10 }
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
-# "on" holds setup rewards past the per-network/domain limit; "off" only
-# records candidates. Existing holds block claims either way.
+# "on" holds onboarding rewards on flagged email domains; "off" only flags
+# domains and reports them to Discord.
 SETUP_REWARD_HOLDS = "off"
 X402_HOLDING_USER_ID = "x402-staging-holding-20260930"
 WEFT_FACILITATOR_URL = "https://x402.staging.weft.network"
@@ -317,6 +317,8 @@ id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.test.vars]
 ENVIRONMENT = "test"
+# Tests exercise the holds; tests of the off state override it.
+SETUP_REWARD_HOLDS = "on"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"

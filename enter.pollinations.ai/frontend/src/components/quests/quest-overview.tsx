@@ -9,6 +9,8 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
+    LockIcon,
+    MailIcon,
     OutageNotice,
     RocketIcon,
     Section,
@@ -18,6 +20,7 @@ import {
     TargetIcon,
     TerminalIcon,
     Text,
+    Tooltip,
     TrendUpIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
@@ -264,11 +267,33 @@ export type QuestCard = {
     // coming_soon quests render at the bottom of their lane in the receded
     // (claimed) style, with a clock + "Coming soon" in place of the reward.
     comingSoon?: boolean;
-    // A held onboarding reward shows a contact note in place of Claim.
+    // A held onboarding reward shows how to unlock it in place of Claim.
     held?: boolean;
 };
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
+
+// Ways an account on a flagged email domain unlocks its onboarding rewards.
+const UNLOCK_OPTIONS = (
+    <span className="flex flex-col gap-2 text-sm">
+        <span className="flex items-center gap-2">
+            <CardIcon className="h-4 w-4 shrink-0" />
+            <InlineLink href="/pollen#buy-pollen">
+                Buy any pollen pack
+            </InlineLink>
+        </span>
+        <span className="flex items-center gap-2">
+            <GitHubIcon className="h-4 w-4 shrink-0" />
+            <InlineLink href="/account">Connect your GitHub account</InlineLink>
+        </span>
+        <span className="flex items-center gap-2">
+            <MailIcon className="h-4 w-4 shrink-0" />
+            <InlineLink href="mailto:hello@pollinations.ai">
+                Email hello@pollinations.ai
+            </InlineLink>
+        </span>
+    </span>
+);
 
 // Soft bucket-colored tile for the reward chip: amber paid / green Quest,
 // so the row's reward badge carries the bucket identity.
@@ -524,12 +549,14 @@ export function QuestRow({
             tone="muted"
             className="flex items-center gap-1.5 text-sm"
         >
-            <ClockIcon className="h-4 w-4 shrink-0" />
+            <LockIcon className="h-4 w-4 shrink-0" />
             <span>
-                We couldn't verify your account. Email{" "}
-                <InlineLink href="mailto:hello@pollinations.ai">
-                    hello@pollinations.ai
-                </InlineLink>
+                We couldn't verify your account.{" "}
+                <Tooltip tapEnabled content={UNLOCK_OPTIONS}>
+                    <span className="underline underline-offset-2">
+                        How to unlock
+                    </span>
+                </Tooltip>
             </span>
         </Text>
     ) : (

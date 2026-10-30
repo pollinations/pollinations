@@ -1,0 +1,52 @@
+name: Monitor / infra-watch heartbeat
+
+on:
+  schedule:
+    # infra-watch runs on Cloudflare; this checks it from GitHub, so one
+    # platform failing can't silence both. It alerts when infra-watch has
+    # completed no check for 10 minutes.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-watch-heartbeat
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.repository == 'pollinations/pollinations'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # The script that matches the deployed Worker.
+      - uses: actions/checkout@v5
+        with:
+          ref: production
+          sparse-checkout: operations/infra-watch
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - uses: nhedger/setup-sops@v3
+      # Whether an alert is already open, saved only when it changes.
+      - uses: actions/cache/restore@v4
+        with:
+          path: .heartbeat
+          key: infra-watch-heartbeat-${{ github.run_id }}
+          restore-keys: infra-watch-heartbeat-
+      - name: Check infra-watch is alive
+        id: check
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          DISCORD_WEBHOOK_URL="$(sops decrypt --extract '["DISCORD_WEBHOOK_URL"]' operations/infra-watch/secrets.vars.json)"
+          echo "::add-mask::$DISCORD_WEBHOOK_URL"
+          export DISCORD_WEBHOOK_URL
+          node operations/infra-watch/heartbeat.mjs
+      - if: steps.check.outputs.changed == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .heartbeat
+          key: infra-watch-heartbeat-${{ github.run_id }}

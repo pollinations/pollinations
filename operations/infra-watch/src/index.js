@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import {
     edit,
     exclusive,
+    MAINTAINERS,
     payload,
     send,
     serial,
@@ -13,8 +14,6 @@ import { CHECKING, complete, conditions, render, step } from "./rules.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
-// thomash, elliot
-const MAINTAINERS = ["304378879705874432", "884468469452656732"];
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -68,6 +67,10 @@ export class Watch extends DurableObject {
     // AI follow-ups queue here, outside `once`: a slow model call never
     // delays the next check.
     background = serial();
+
+    async lastCheck() {
+        return (await this.ctx.storage.get("checkedAt")) ?? null;
+    }
 
     async check() {
         return (await this.once(() => this.run())) ?? { skipped: true };
@@ -137,6 +140,8 @@ export class Watch extends DurableObject {
             "state",
             settle(state, next.state, next.posts, delivered),
         );
+        // A completed check: what /health reports to the outside heartbeat.
+        await this.ctx.storage.put("checkedAt", now);
         for (const [i, p] of next.posts.entries())
             if (delivered[i] && messages[i].investigate)
                 this.background(() =>
@@ -182,8 +187,12 @@ export default {
     async scheduled(_event, env) {
         await watch(env).check();
     },
-    // Local testing only (workers_dev and routes are off in production).
-    async fetch(_request, env) {
-        return Response.json(await watch(env).check());
+    // GET /health: the last completed check, read by heartbeat.mjs from
+    // outside Cloudflare. It never runs a check; local runs use
+    // /__scheduled (wrangler dev --test-scheduled).
+    async fetch(request, env) {
+        if (new URL(request.url).pathname !== "/health")
+            return new Response("not found", { status: 404 });
+        return Response.json({ checkedAt: await watch(env).lastCheck() });
     },
 };

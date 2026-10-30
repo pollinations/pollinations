@@ -63,6 +63,9 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     return false;
 }
 
+// Pinged on alerts that need a person: thomash, elliot.
+export const MAINTAINERS = ["304378879705874432", "884468469452656732"];
+
 // A webhook body: the alert as a coloured embed, mentions outside it, since
 // Discord never pings from inside an embed. parse: [] blocks @everyone,
 // roles and any user not listed.

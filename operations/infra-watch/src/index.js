@@ -128,7 +128,11 @@ export class Watch extends DurableObject {
         try {
             const key = this.env.POLLINATIONS_API_KEY;
             if (!key) throw new Error("POLLINATIONS_API_KEY missing");
-            const lines = await ask(key, evidence(p, data), toolsFor(data));
+            const lines = await ask(
+                key,
+                evidence(p, data),
+                toolsFor(data, { tinybirdToken: this.env.TINYBIRD_TOKEN }),
+            );
             if (!lines) throw new Error("off-format answer");
             const text = followUp(p, lines);
             if (!(await post(this.env, { text, ping: false })))

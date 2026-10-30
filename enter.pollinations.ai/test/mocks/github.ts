@@ -40,6 +40,10 @@ export type MockGithubState = {
                 databaseId?: number | null;
             } | null;
         }>;
+        crossReferencedPullRequests?: Array<{
+            mergedAt: string | null;
+            willCloseTarget: boolean;
+        }>;
     }>;
     mergedPullRequests: Array<{
         number: number;
@@ -192,6 +196,14 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 labels: { nodes: issue.labels ?? [] },
                 closedByPullRequestsReferences: {
                     nodes: issue.closedByPullRequestsReferences ?? [],
+                },
+                timelineItems: {
+                    nodes: (issue.crossReferencedPullRequests ?? []).map(
+                        (pullRequest) => ({
+                            willCloseTarget: pullRequest.willCloseTarget,
+                            source: { mergedAt: pullRequest.mergedAt },
+                        }),
+                    ),
                 },
             }));
             const next = start + nodes.length;

@@ -462,15 +462,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins gpt-5.4 recovery to exact OpenAI Standard", () => {
+    it("pins gpt-5.4 recovery to global AWS Standard on native Chat", () => {
         const resolved = resolveModelConfig(messages, {
-            model: "openai/gpt-5.4:openai",
+            model: "openai/gpt-5.4:aws",
             service_tier: "priority",
         });
-        expect(resolved.options.model).toBe("gpt-5.4-2026-03-05");
+        expect(resolved.options.model).toBe("global.openai.gpt-5.4");
         expect(resolved.options.service_tier).toBe("default");
         expect(resolved.options.modelConfig).toMatchObject({
-            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             supportsMaxCompletionTokens: true,
             supportsStreamOptions: true,
         });

@@ -1327,13 +1327,11 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
-    it("keeps the Azure gpt-5.4 quote when OpenAI serves it", () => {
+    it("keeps the Azure gpt-5.4 quote when global AWS serves it", () => {
         const model = "openai/gpt-5.4";
-        expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            "openai/gpt-5.4:openai",
-        ]);
-        expect(TEXT_SERVICES["openai/gpt-5.4:openai"]).toMatchObject({
-            provider: "openai",
+        expect(TEXT_SERVICES[model].fallbacks).toEqual(["openai/gpt-5.4:aws"]);
+        expect(TEXT_SERVICES["openai/gpt-5.4:aws"]).toMatchObject({
+            provider: "aws",
             priceMultiplier: 1,
             hidden: true,
         });
@@ -1344,7 +1342,7 @@ describe("static provider fallbacks", () => {
                 "promptCachedTokens": 200,
                 "completionTextTokens": 100,
             },
-            servedBy: TEXT_SERVICES["openai/gpt-5.4:openai"],
+            servedBy: TEXT_SERVICES["openai/gpt-5.4:aws"],
             quotedBy: TEXT_SERVICES[model],
         });
         expect(billed.cost.totalCost).toBeCloseTo(0.00405, 12);

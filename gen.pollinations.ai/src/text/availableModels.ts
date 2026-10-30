@@ -250,10 +250,9 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-oss-20b"],
     },
     {
-        name: "openai/gpt-5.4:openai",
-        config: portkeyConfig["gpt-5.4-openai"],
+        name: "openai/gpt-5.4:aws",
+        config: portkeyConfig["gpt-5.4-bedrock"],
         transform: omitOpenAISampling,
-        useResponsesApi: true,
     },
     {
         name: "openai/gpt-oss-20b:deepinfra",

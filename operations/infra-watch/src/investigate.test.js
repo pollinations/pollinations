@@ -162,6 +162,34 @@ test("ask stops offering tools after MAX_TOOL_CALLS", async () => {
     assert.equal(toolResults.length, MAX_TOOL_CALLS);
 });
 
+test("a batch of tool calls cannot run past MAX_TOOL_CALLS", async () => {
+    let executed = 0;
+    const batch = Array.from({ length: MAX_TOOL_CALLS + 1 }, (_, i) =>
+        toolCall("model_status", { model: "a/model" }, `call_${i}`),
+    );
+    const replies = [
+        answer({ content: null, tool_calls: batch }),
+        answer({ content: "WHY x\nSentence." }),
+    ];
+    const bodies = [];
+    const fetchImpl = async (_url, init) => {
+        bodies.push(JSON.parse(init.body));
+        return replies.shift();
+    };
+    const tools = {
+        model_status: () => {
+            executed++;
+            return { rows: [] };
+        },
+    };
+    await ask("sk_test", {}, tools, { fetchImpl });
+    assert.equal(executed, MAX_TOOL_CALLS);
+    // Every call still gets an answer, as the chat protocol requires.
+    const results = bodies[1].messages.filter((m) => m.role === "tool");
+    assert.equal(results.length, MAX_TOOL_CALLS + 1);
+    assert.ok("error" in JSON.parse(results.at(-1).content));
+});
+
 test("unknown tools and bad arguments come back as errors, not crashes", async () => {
     const bodies = [];
     const replies = [

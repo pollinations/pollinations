@@ -197,12 +197,17 @@ export async function ask(key, payload, tools, { fetchImpl = fetch } = {}) {
             if (!offer || !message.tool_calls?.length)
                 return reply(message.content);
             messages.push(message);
+            // The budget is checked per call: one reply can hold many calls.
             for (const call of message.tool_calls) {
+                const result =
+                    calls < MAX_TOOL_CALLS
+                        ? await runTool(tools, call)
+                        : { error: "tool call budget used up" };
                 calls++;
                 messages.push({
                     role: "tool",
                     tool_call_id: call.id,
-                    content: JSON.stringify(await runTool(tools, call)),
+                    content: JSON.stringify(result),
                 });
             }
         }

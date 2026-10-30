@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "packages",
+                name: "Packages",
+                description:
+                    "Package versions, known vulnerabilities and public Hugging Face models and Spaces.",
+                url: "https://gen.pollinations.ai/mcp/packages",
+                pricing: {
+                    description: "Public registry lookups. No Pollen charge.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -262,7 +273,34 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test("Packages is available with zero balance and does not charge", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 0 },
+    });
+    const payload = {
+        ...MCP_REQUEST,
+        params: { name: "package_lookup", arguments: { name: "zod" } },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/packages",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ payload });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "machines", "packages"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

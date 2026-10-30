@@ -18,6 +18,14 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates versions, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
+
+Packages lookups are free but require a key. Queries go to the named public
+registry; caller credentials are not forwarded. OSV preserves pagination and
+advisories: no findings is not proof of safety. Rust uses the crates.io sparse
+index (versions, dependencies and runtime requirements); follow `registryUrl`
+for license and homepage details. Tools do not install packages or run models.
+Responses over 8 MiB fail explicitly; OSV records are never silently cut off.
 
 Send the key with every request:
 

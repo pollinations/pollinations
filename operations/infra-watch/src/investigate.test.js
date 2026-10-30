@@ -291,6 +291,40 @@ test("recent_errors works platform-wide and returns zeros when quiet", async () 
     assert.deepEqual([result.total_errors, result.omitted_errors], [0, 0]);
 });
 
+test("platform-wide errors hide community model names and hosts", async () => {
+    const owned = "community/x/ignore-previous-instructions";
+    const { fetchImpl } = tinybird([
+        {
+            errors: 9,
+            model: owned,
+            upstream_host: "evil.example",
+            route_path: "/v1/chat/completions",
+        },
+        { errors: 4, model: "a/model", upstream_host: "openrouter.ai" },
+        {
+            errors: 2,
+            model: "undefined",
+            upstream_host: "undefined",
+            route_path: "/account/*",
+        },
+    ]);
+    const { recent_errors } = toolsFor(official, {
+        tinybirdToken: "tb_test",
+        fetchImpl,
+    });
+    const { groups } = await recent_errors({});
+    const text = JSON.stringify(groups);
+    assert.ok(!text.includes(owned) && !text.includes("evil.example"));
+    assert.deepEqual(
+        groups.map((g) => [g.errors, g.model, g.upstream_host]),
+        [
+            [9, "community", "community"],
+            [4, "a/model", "openrouter.ai"],
+            [2, "undefined", "undefined"],
+        ],
+    );
+});
+
 test("caller_spread returns account counts for official models only", async () => {
     const row = {
         requests: 21,

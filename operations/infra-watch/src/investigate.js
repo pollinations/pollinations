@@ -222,6 +222,13 @@ export const toolsFor = (data, tinybird = {}) => {
         model != null && !data.official.has(model)
             ? { error: "not an official model" }
             : null;
+    // Platform-wide errors include community models, whose names and hosts
+    // are chosen by their owners: the model reads them as "community".
+    // "undefined" is our own non-model routes.
+    const community = (row) =>
+        row.model === "undefined" || data.official.has(row.model)
+            ? row
+            : { ...row, model: "community", upstream_host: "community" };
     return {
         model_status: ({ model, minutes }) => {
             if (!data.official.has(model))
@@ -249,7 +256,7 @@ export const toolsFor = (data, tinybird = {}) => {
                     total_groups: rows[0]?.total_groups ?? 0,
                     shown_errors: shown,
                     omitted_errors: total - shown,
-                    groups: rows.map((r) => only(ERROR_FIELDS, r)),
+                    groups: rows.map((r) => community(only(ERROR_FIELDS, r))),
                 };
             } catch (error) {
                 return { error: error.message };

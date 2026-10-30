@@ -15,12 +15,11 @@ Committed (source of truth — edit here, then deploy):
   "Probe load" below).
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
   cycle gets a fresh Claude process and systemd starts the next one 30 minutes
-  after completion. Headless cycles cannot be remote-controlled; a separate
-  persistent `claude --remote-control community-monitor` session runs alongside
-  as a phone-accessible console.
+  after completion. There is no persistent console: a remote-control session
+  with this runtime's tokens and an unsandboxed shell is a prompt-injection path
+  to every credential on the box, so none is run.
 - `.claude/settings.json` — project-scoped Claude Code settings. It fixes the
-  auto-compaction calculation window at 300,000 tokens for both headless cycles
-  and the remote-control session launched from the monitor directory, and
+  auto-compaction calculation window at 300,000 tokens for headless cycles and
   sandboxes their shell commands (see "Sandbox" below).
 - `update-from-repo.sh` — before each cycle, fetches `origin/main` and atomically
   refreshes only the committed prompt/runtime files. It does not activate until
@@ -63,10 +62,8 @@ Secret Mutation Safety rules. Only after that approval, `rsync -a` the whole
 `/home/ubuntu` (this carries
 `~/.claude/` — credentials, session transcripts, and the agent's memory —
 plus `.env`, `state.json`, and `people_mapping.json`), copy the systemd unit
-and crontab, stop the old service and screen session, then on the new host
-`systemctl enable --now community-monitor` and relaunch the console with
-`screen -dmS rc-console bash -lc 'cd /home/ubuntu/monitor && set -a && source .env && set +a && exec claude --resume <session-id> --remote-control community-monitor --dangerously-skip-permissions'`.
-Pick "Resume full session" at the prompt to keep the session state intact.
+and crontab, stop the old service, then on the new host
+`systemctl enable --now community-monitor`.
 
 ## Sandbox
 
@@ -102,8 +99,8 @@ start):
    `loop.log` for exit status 0, a fresh `probe-results.json`, and (at the
    daily slot) that the leaderboards still render and upload.
 
-The remote-control console keeps `--dangerously-skip-permissions`; its shell
-commands are sandboxed too, but in that mode other hosts are still allowed.
+Never run Claude in this directory with `--dangerously-skip-permissions`, and
+never give a monitor session a Cloudflare (`wrangler`) login.
 
 ## Automatic prompt/runtime updates
 
@@ -236,8 +233,8 @@ comparisons and careful interpretation.
 `CLAUDE_CODE_AUTO_COMPACT_WINDOW=300000` is committed in
 `.claude/settings.json`. This is Claude Code's effective context capacity for
 auto-compaction calculations, not a model output-token limit. Project scope is
-intentional: it applies reproducibly to the headless service and the persistent
-remote-control session without modifying the machine's personal settings.
+intentional: it applies reproducibly to the headless service without
+modifying the machine's personal settings.
 
 Codex 5.6 Sol at medium effort is the preferred replacement once the EC2 box
 has its own non-personal Codex authentication. Do not copy a maintainer's local

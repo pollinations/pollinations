@@ -23,6 +23,7 @@ claude -p "$(cat CYCLE.md)" \
     --no-session-persistence \
     --permission-mode dontAsk \
     --allowedTools "Bash,mcp__discord__discord_read_messages,mcp__discord__discord_send" \
+    --disallowedTools "Read,Write,Edit,NotebookEdit,WebFetch,WebSearch,Task" \
     >/dev/null 2>&1 || status=$?
 rm -rf /home/ubuntu/.cache/claude-cli-nodejs/-home-ubuntu-monitor/mcp-logs-discord
 echo "=== cycle end $(date -u +%FT%TZ) exit=$status ===" | tee -a "$LOG"

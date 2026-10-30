@@ -70,8 +70,7 @@ export async function fetchTinybirdRows<T>(
         }
         if (response.status === 408 || response.status === 504) {
             throw new HTTPException(504, {
-                message:
-                    "Analytics query timed out. Try a shorter period or try again.",
+                message: "Analytics query timed out. Please try again.",
                 cause: new Error(message),
             });
         }

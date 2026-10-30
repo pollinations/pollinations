@@ -106,6 +106,26 @@ describe("dashboard outage state", () => {
         expect(render()).toContain(OUTAGE_TEXT);
     });
 
+    it("shares session timeout matching and prefers a relevant outage over a timeout", async () => {
+        respond(504);
+        await trackedFetch("https://enter.example/api/session-token");
+        respond(401);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).toContain("This data took too long to load.");
+        expect(render()).not.toContain(OUTAGE_TEXT);
+        const catalogError = renderToStaticMarkup(
+            <LoadError paths={["/models"]}>Could not load models.</LoadError>,
+        );
+        expect(catalogError).toContain("Could not load models.");
+        expect(catalogError).not.toContain("This data took too long to load.");
+        expect(catalogError).not.toContain(OUTAGE_TEXT);
+
+        respond(503);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).toContain(OUTAGE_TEXT);
+        expect(render()).not.toContain("This data took too long to load.");
+    });
+
     it("tracks the model catalog", async () => {
         respond(503);
         await expect(fetchModelCatalog({ refresh: true })).rejects.toThrow();

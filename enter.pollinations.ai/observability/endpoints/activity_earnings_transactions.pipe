@@ -34,6 +34,7 @@ SQL >
             {% end %}
             {% if defined(until) %} AND timestamp < toDateTime({{ String(until) }}, {{ String(timezone, 'UTC') }}) {% end %}
             {% if defined(before) %}
+                AND timestamp <= {{ DateTime(before) }}
                 AND (timestamp, event_id, source, entity_id) < (
                     {{ DateTime(before) }}, {{ String(before_event_id) }},
                     {{ String(before_source) }}, {{ String(before_entity_id) }}

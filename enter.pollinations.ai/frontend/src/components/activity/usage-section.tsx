@@ -348,17 +348,18 @@ export const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
                 </tfoot>
             </Table>
             {visibleCount < stats.breakdowns.length && (
-                <Button
-                    intent="neutral"
-                    onClick={() =>
-                        setPage({
-                            rows: stats.breakdowns,
-                            limit: visibleCount + 15,
-                        })
-                    }
-                >
-                    Show more
-                </Button>
+                <div className="mt-4 flex justify-end">
+                    <Button
+                        onClick={() =>
+                            setPage({
+                                rows: stats.breakdowns,
+                                limit: visibleCount + 15,
+                            })
+                        }
+                    >
+                        Show more
+                    </Button>
+                </div>
             )}
         </Surface>
     );

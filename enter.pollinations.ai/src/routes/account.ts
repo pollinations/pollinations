@@ -905,8 +905,8 @@ async function respondDetailedUsage(
 
         return c.json({ usage, count: usage.length });
     } catch (error) {
-        log.error("Error fetching usage: {error}", { error });
         if (error instanceof HTTPException) throw error;
+        log.error("Error fetching usage: {error}", { error });
         return c.json({ error: "Failed to fetch usage data" }, 500);
     }
 }
@@ -1655,8 +1655,8 @@ export const accountRoutes = new Hono<Env>()
                     count: usage.length,
                 });
             } catch (error) {
-                log.error("Error fetching daily usage: {error}", { error });
                 if (error instanceof HTTPException) throw error;
+                log.error("Error fetching daily usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
             }
         },
@@ -1744,10 +1744,10 @@ export const accountRoutes = new Hono<Env>()
 
                 return c.json({ transactions, count: transactions.length });
             } catch (error) {
+                if (error instanceof HTTPException) throw error;
                 log.error("Error fetching earnings transactions: {error}", {
                     error,
                 });
-                if (error instanceof HTTPException) throw error;
                 return c.json(
                     { error: "Failed to fetch earnings transactions" },
                     500,
@@ -1844,8 +1844,8 @@ export const accountRoutes = new Hono<Env>()
 
                 return c.json({ daily, perEntity });
             } catch (error) {
-                log.error("Error fetching earnings: {error}", { error });
                 if (error instanceof HTTPException) throw error;
+                log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
         },

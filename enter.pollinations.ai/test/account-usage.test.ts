@@ -744,8 +744,7 @@ test("analytics timeouts stay 504 across activity routes instead of becoming gen
         expect(await response.json()).toMatchObject({
             error: {
                 code: "GATEWAY_TIMEOUT",
-                message:
-                    "Analytics query timed out. Try a shorter period or try again.",
+                message: "Analytics query timed out. Please try again.",
             },
         });
     }

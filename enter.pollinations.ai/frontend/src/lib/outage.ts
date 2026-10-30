@@ -30,10 +30,13 @@ function update(): void {
     for (const listener of listeners) listener();
 }
 
-function failing(path: string): boolean {
-    return (
-        failures.has(path) ||
-        (path.startsWith("/account/") && failures.has(SESSION_TOKEN_PATH))
+function relevantFailures(paths?: readonly string[]) {
+    return [...failures].filter(
+        ([path]) =>
+            !paths ||
+            paths.includes(path) ||
+            (path === SESSION_TOKEN_PATH &&
+                paths.some((p) => p.startsWith("/account/"))),
     );
 }
 
@@ -86,20 +89,14 @@ export async function trackedFetch(
  * Enter or gen call counts.
  */
 export function useOutage(paths?: readonly string[]): boolean {
-    const snapshot = () => (paths ? paths.some(failing) : failures.size > 0);
+    const snapshot = () => relevantFailures(paths).length > 0;
     return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
 
 /** A slow request is not evidence of a platform outage. */
 export function useRequestTimeout(paths?: readonly string[]): boolean {
     const snapshot = () => {
-        const relevant = [...failures].filter(
-            ([path]) =>
-                !paths ||
-                paths.includes(path) ||
-                (path === SESSION_TOKEN_PATH &&
-                    paths.some((p) => p.startsWith("/account/"))),
-        );
+        const relevant = relevantFailures(paths);
         return (
             relevant.length > 0 &&
             relevant.every(([, failure]) => failure.timeout)

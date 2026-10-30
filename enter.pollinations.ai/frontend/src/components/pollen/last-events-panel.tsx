@@ -207,11 +207,7 @@ async function fillEventPage(
               { init: { signal } },
           ));
     if (!response.ok) {
-        throw new Error(
-            response.status === 504
-                ? "Recent activity took too long to load. Please try again."
-                : "Couldn’t load recent activity. Please try again.",
-        );
+        throw new Error("Couldn’t load recent activity. Please try again.");
     }
     const data = await response.json();
     const rows =

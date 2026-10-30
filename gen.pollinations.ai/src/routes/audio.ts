@@ -3047,8 +3047,8 @@ export async function generateXaiSpeech(opts: {
     });
 }
 
-export async function generateAzureSpeech(opts: {
-    modelName: "openai/tts-1" | "openai/tts-1-hd";
+export async function generateOpenAITts(opts: {
+    modelName: "openai/tts-1" | "openai/tts-1-hd" | "openai/tts-1:openai";
     text: string;
     voice: string;
     responseFormat: string;
@@ -3058,18 +3058,27 @@ export async function generateAzureSpeech(opts: {
     const { modelName, text, voice, responseFormat, speed, apiKey } = opts;
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "Azure speech service is not configured",
+            message: `${modelName} speech service is not configured`,
         });
     }
     const characters = [...text].length;
+    const directOpenAI = modelName === "openai/tts-1:openai";
+    const upstreamModel = modelName.split(":")[0].slice("openai/".length);
     const deployment = modelName === "openai/tts-1" ? "tts" : "tts-hd";
-    const endpoint = `https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/${deployment}/audio/speech?api-version=2025-04-01-preview`;
+    const endpoint = directOpenAI
+        ? "https://api.openai.com/v1/audio/speech"
+        : `https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/${deployment}/audio/speech?api-version=2025-04-01-preview`;
     const response = await ensureUpstreamOk(
         await fetch(endpoint, {
             method: "POST",
-            headers: { "api-key": apiKey, "Content-Type": "application/json" },
+            headers: {
+                ...(directOpenAI
+                    ? { Authorization: `Bearer ${apiKey}` }
+                    : { "api-key": apiKey }),
+                "Content-Type": "application/json",
+            },
             body: JSON.stringify({
-                model: modelName.slice("openai/".length),
+                model: upstreamModel,
                 input: text,
                 voice,
                 response_format: responseFormat,
@@ -3704,16 +3713,20 @@ async function dispatchAudioGeneration(
                 }),
             );
         case "openai/tts-1":
+        case "openai/tts-1:openai":
         case "openai/tts-1-hd":
             return withSafetyHeaders(
                 c,
-                await generateAzureSpeech({
+                await generateOpenAITts({
                     modelName: model,
                     text,
                     voice,
                     responseFormat,
                     speed,
-                    apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+                    apiKey:
+                        model === "openai/tts-1:openai"
+                            ? c.env.OPENAI_API_KEY
+                            : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                 }),
             );
         case "fish-audio/s2.1-pro":

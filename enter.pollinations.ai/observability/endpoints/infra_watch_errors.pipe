@@ -1,29 +1,31 @@
 TOKEN infra_watch_read READ
 
 DESCRIPTION >
-    infra-watch monitor: recent server errors, newest first, with safe fields
-    only. No prompts, user ids, key ids, headers or stack traces; messages and
-    provider bodies are cut to 300 characters. Read by the infra-watch
-    Worker's recent_errors tool.
+    infra-watch monitor: server errors of the last 60 minutes at most, grouped
+    by kind (model, route, status, error code, provider), largest first. Each
+    group has its count, first and last time seen, median duration and its
+    newest example. Safe fields only: no prompts, user ids, key ids, headers
+    or stack traces; messages and provider bodies are cut to 300 characters.
+    Read by the infra-watch Worker's recent_errors tool.
 
 NODE infra_watch_errors_node
 SQL >
     %
     SELECT
-        timestamp,
-        request_id,
+        count() AS errors,
+        min(timestamp) AS first_seen,
+        max(timestamp) AS last_seen,
+        resolved_model_requested AS model,
         route_path,
         status,
         error_code,
         error_class,
-        substringUTF8(message, 1, 300) AS message,
         upstream_host,
         upstream_status,
-        substringUTF8(upstream_body, 1, 300) AS upstream_body,
-        model_requested,
-        resolved_model_requested,
-        edge_colo,
-        duration_ms
+        round(quantile(0.5)(duration_ms)) AS duration_p50_ms,
+        argMax(request_id, timestamp) AS example_request_id,
+        substringUTF8(argMax(message, timestamp), 1, 300) AS example_message,
+        substringUTF8(argMax(upstream_body, timestamp), 1, 300) AS example_upstream_body
     FROM error_event
     WHERE timestamp >= now() - interval least(greatest({{Int32(minutes, 15)}}, 1), 60) minute
     {% if defined(model) %}
@@ -32,7 +34,15 @@ SQL >
             OR model_requested = {{String(model)}}
         )
     {% end %}
-    ORDER BY timestamp DESC
-    LIMIT least(greatest({{Int32(limit, 20)}}, 1), 20)
+    GROUP BY
+        model,
+        route_path,
+        status,
+        error_code,
+        error_class,
+        upstream_host,
+        upstream_status
+    ORDER BY errors DESC
+    LIMIT 20
 
 TYPE endpoint

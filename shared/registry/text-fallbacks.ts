@@ -167,8 +167,8 @@ export const TEXT_FALLBACKS = {
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
     "openai/gpt-5.6-sol": {
-        "openai/gpt-5.6-sol:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-sol:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
@@ -184,8 +184,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-5.6-luna": {
-        "openai/gpt-5.6-luna:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-luna:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
@@ -222,13 +222,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6-astra": {
-        "openai/gpt-6-astra:openai": {
-            provider: "openai",
+        "openai/gpt-6-astra:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
     "openai/gpt-6-sol": {
-        "openai/gpt-6-sol:openai": { provider: "openai" },
+        "openai/gpt-6-sol:aws": { provider: "aws" },
     },
     "openai/gpt-5.4": {
         "openai/gpt-5.4:openai": {
@@ -237,10 +237,10 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6.1-sol": {
-        "openai/gpt-6.1-sol:openai": { provider: "openai" },
+        "openai/gpt-6.1-sol:aws": { provider: "aws" },
     },
     "openai/gpt-6-luna": {
-        "openai/gpt-6-luna:openai": { provider: "openai" },
+        "openai/gpt-6-luna:aws": { provider: "aws" },
     },
     "x-ai/grok-4.6": {
         "x-ai/grok-4.6:xai": {
@@ -351,8 +351,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-5.6-terra": {
-        "openai/gpt-5.6-terra:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-terra:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },

@@ -217,6 +217,8 @@ export default defineConfig(async ({ mode }) => {
                                 cookie: request.headers.get("cookie"),
                                 payload: await request.json(),
                             }),
+                        EXCALIDRAW_MCP: async () =>
+                            new Response("excalidraw test stub"),
                         FFMPEG_MCP: async (request: Request) => {
                             if (
                                 request.headers.has("authorization") ||

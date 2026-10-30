@@ -149,6 +149,14 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "excalidraw",
+                name: "Excalidraw",
+                description:
+                    "Draw hand-drawn diagrams in chat and open them on excalidraw.com.",
+                url: "https://gen.pollinations.ai/mcp/excalidraw",
+                pricing: { description: "Free. No MCP fee.", rates: [] },
+            },
         ],
     });
 });
@@ -262,7 +270,7 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "machines", "excalidraw"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

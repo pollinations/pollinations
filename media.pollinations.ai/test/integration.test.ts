@@ -4,10 +4,7 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import {
-    apikey as apikeyTable,
-    user as userTable,
-} from "@shared/db/better-auth.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { eq } from "drizzle-orm";
@@ -81,37 +78,7 @@ interface MediaPageResponse {
 // Kept for the pre-existing tests that don't care about identity.
 const VALID_KEY = "sk_app_alice";
 
-// Key rows in Enter's D1, which media reads directly.
-const API_KEYS: Record<
-    string,
-    { id: string; name: string; userId: string; byopClientKeyId?: string }
-> = {
-    // Uploading is secret-key only; publishable keys ship inside public
-    // clients. pk_alice stays for the tests that check that refusal.
-    pk_alice: {
-        id: "key_alice_public",
-        name: "alice-public-key",
-        userId: "user_alice",
-    },
-    sk_app_alice: {
-        id: "key_alice",
-        name: "alice-key",
-        userId: "user_alice",
-        byopClientKeyId: "pk_app_1",
-    },
-    sk_app_bob: { id: "key_bob", name: "bob-key", userId: "user_bob" },
-    // Deleting media is secret-key only, so delete tests use these.
-    sk_alice: {
-        id: "key_alice_secret",
-        name: "alice-secret",
-        userId: "user_alice",
-    },
-    sk_bob: { id: "key_bob_secret", name: "bob-secret", userId: "user_bob" },
-    sk_banned: { id: "key_banned", name: "banned-key", userId: "user_banned" },
-};
-
-// Gen still checks agent run tokens; its /account/key answers with these.
-const AGENT_RUN_TOKENS: Record<
+const KEY_IDENTITIES: Record<
     string,
     {
         id?: string;
@@ -122,24 +89,55 @@ const AGENT_RUN_TOKENS: Record<
         byopApp?: { clientKeyId: string } | null;
     }
 > = {
-    ag_alice: {
+    // Uploading is secret-key only; publishable keys ship inside public
+    // clients. pk_alice stays for the tests that check that refusal.
+    pk_alice: {
+        valid: true,
+        type: "publishable",
+        name: "alice-public-key",
+        userId: "user_alice",
+        byopApp: null,
+    },
+    sk_app_alice: {
         id: "key_alice",
         valid: true,
         type: "secret",
         name: "alice-key",
         userId: "user_alice",
+        byopApp: { clientKeyId: "pk_app_1" },
+    },
+    sk_app_bob: {
+        valid: true,
+        type: "secret",
+        name: "bob-key",
+        userId: "user_bob",
         byopApp: null,
     },
-    ag_nouser: {
+    sk_nouser: {
         valid: true,
         type: "secret",
         name: "service-key",
         userId: null,
         byopApp: null,
     },
+    // Deleting media is secret-key only, so delete tests use these.
+    sk_alice: {
+        valid: true,
+        type: "secret",
+        name: "alice-secret",
+        userId: "user_alice",
+        byopApp: null,
+    },
+    sk_bob: {
+        valid: true,
+        type: "secret",
+        name: "bob-secret",
+        userId: "user_bob",
+        byopApp: null,
+    },
     // The response shape of an enter deployment that predates the identity
     // fields — userId/byopApp entirely absent, not null.
-    ag_legacy: {
+    sk_legacy: {
         valid: true,
         type: "secret",
         name: "legacy-key",
@@ -154,8 +152,7 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
     };
 }
 
-// Answers Gen's agent run token check and refuses every other outbound
-// request.
+// Answers Gen's key check and refuses every other outbound request.
 function mockAuth() {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
@@ -170,50 +167,24 @@ function mockAuth() {
             /^Bearer /,
             "",
         );
-        return Response.json(AGENT_RUN_TOKENS[key] ?? { valid: false });
+        return Response.json(KEY_IDENTITIES[key] ?? { valid: false });
     });
 }
 
-// How Better Auth stores a key (its defaultKeyHasher): unpadded base64url
-// SHA-256.
-async function hashApiKey(rawKey: string): Promise<string> {
-    const digest = await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(rawKey),
-    );
-    return btoa(String.fromCharCode(...new Uint8Array(digest)))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
-}
-
-async function seedUsersAndKeys() {
+async function seedUsers() {
     const db = drizzle(env.DB);
     const now = new Date();
-    for (const id of ["user_alice", "user_bob", "user_banned"]) {
+    for (const id of ["user_alice", "user_bob"]) {
         await db
             .insert(userTable)
             .values({
                 id,
                 name: id,
                 email: `${id}@test.com`,
-                banned: id === "user_banned",
-                banReason: id === "user_banned" ? "spam" : null,
                 createdAt: now,
                 updatedAt: now,
             })
             .onConflictDoNothing({ target: userTable.id });
-    }
-    for (const [rawKey, key] of Object.entries(API_KEYS)) {
-        await db.insert(apikeyTable).values({
-            id: key.id,
-            name: key.name,
-            key: await hashApiKey(rawKey),
-            referenceId: key.userId,
-            byopClientKeyId: key.byopClientKeyId,
-            createdAt: now,
-            updatedAt: now,
-        });
     }
 }
 
@@ -425,7 +396,7 @@ describe("media.pollinations.ai", () => {
         expect(bucket.putCount).toBe(1);
     });
     beforeAll(async () => {
-        await seedUsersAndKeys();
+        await seedUsers();
     });
 
     beforeEach(() => {
@@ -516,49 +487,8 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(401);
     });
 
-    it("checks API keys in Enter's D1 without calling Gen", async () => {
-        expect((await uploadViaForm(VALID_KEY)).status).toBe(200);
-        expect(await uploadViaForm("sk_unknown")).toEqual({
-            status: 401,
-            body: { error: "Invalid or expired API key" },
-        });
-        expect(globalThis.fetch).not.toHaveBeenCalled();
-    });
-
-    it("refuses keys whose owner is banned", async () => {
-        expect(await uploadViaForm("sk_banned")).toEqual({
-            status: 403,
-            body: { error: "Account banned: spam" },
-        });
-    });
-
-    it("answers 503, not 401, when D1 fails during the key check", async () => {
-        const ctx = createExecutionContext();
-        const res = await app.fetch(
-            new Request("https://media.pollinations.ai/upload", {
-                method: "POST",
-                body: TINY_PNG,
-                headers: {
-                    Authorization: `Bearer ${VALID_KEY}`,
-                    "Content-Type": "image/png",
-                },
-            }),
-            {
-                ...createMediaEnv(),
-                DB: {
-                    prepare() {
-                        throw new Error("D1 overloaded");
-                    },
-                } as unknown as D1Database,
-            },
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(res.status).toBe(503);
-    });
-
     it.each([429, 500])(
-        "answers 503, not 401, when Gen's agent run token check returns %i",
+        "answers 503, not 401, when the key check returns %i",
         async (status) => {
             vi.mocked(globalThis.fetch).mockResolvedValueOnce(
                 new Response(null, { status }),
@@ -569,7 +499,7 @@ describe("media.pollinations.ai", () => {
                     method: "POST",
                     body: TINY_PNG,
                     headers: {
-                        Authorization: "Bearer ag_alice",
+                        Authorization: `Bearer ${VALID_KEY}`,
                         "Content-Type": "image/png",
                     },
                 },
@@ -1121,7 +1051,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("requires account identity for custom IDs", async () => {
-        for (const key of ["ag_nouser", "ag_legacy"]) {
+        for (const key of ["sk_nouser", "sk_legacy"]) {
             expect(
                 (await uploadViaForm(key, { extraFields: { id: "cover" } }))
                     .status,
@@ -1757,7 +1687,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("keys without a user can't publish, but plain uploads still work", async () => {
-        const withTag = await uploadViaForm("ag_nouser", {
+        const withTag = await uploadViaForm("sk_nouser", {
             fileName: "nouser-tagged.png",
             bytes: variant(8),
             tags: ["should-fail"],
@@ -1767,7 +1697,7 @@ describe("media.pollinations.ai", () => {
             /requires a user-owned API key/,
         );
 
-        const plain = await uploadViaForm("ag_nouser", {
+        const plain = await uploadViaForm("sk_nouser", {
             fileName: "nouser-plain.png",
             bytes: variant(9),
         });
@@ -1777,14 +1707,14 @@ describe("media.pollinations.ai", () => {
 
         // An /account/key response predating the identity fields (userId
         // absent, not null) must read as not-user-attached: same behavior.
-        const legacyTagged = await uploadViaForm("ag_legacy", {
+        const legacyTagged = await uploadViaForm("sk_legacy", {
             fileName: "legacy-tagged.png",
             bytes: variant(11),
             tags: ["should-fail"],
         });
         expect(legacyTagged.status).toBe(400);
 
-        const legacyPlain = await uploadViaForm("ag_legacy", {
+        const legacyPlain = await uploadViaForm("sk_legacy", {
             fileName: "legacy-plain.png",
             bytes: variant(12),
         });
@@ -2081,7 +2011,7 @@ describe("media.pollinations.ai", () => {
             // A valid key with no attached user has no library to own.
             const noUser = await SELF.fetch(url, {
                 method: "DELETE",
-                headers: { Authorization: "Bearer ag_nouser" },
+                headers: { Authorization: "Bearer sk_nouser" },
             });
             expect(noUser.status).toBe(403);
 
@@ -2090,7 +2020,7 @@ describe("media.pollinations.ai", () => {
             // normalization guard, exercised on the delete path.
             const legacy = await SELF.fetch(url, {
                 method: "DELETE",
-                headers: { Authorization: "Bearer ag_legacy" },
+                headers: { Authorization: "Bearer sk_legacy" },
             });
             expect(legacy.status).toBe(403);
 
@@ -2211,14 +2141,11 @@ describe("media.pollinations.ai", () => {
                     },
                 },
                 mediaEnv,
-                createExecutionContext(),
             );
         }
 
         it("stops rotating bad keys from one IP before the key check", async () => {
             const mediaEnv = limitedEnv();
-            // Every key check first opens the cache of rejected keys.
-            const keyChecks = vi.spyOn(caches, "open");
             const statuses = [];
             for (let i = 0; i < 5; i++) {
                 const res = await send(mediaEnv, "POST", "/upload", {
@@ -2228,7 +2155,7 @@ describe("media.pollinations.ai", () => {
                 statuses.push(res.status);
             }
             expect(statuses).toEqual([401, 401, 401, 429, 429]);
-            expect(keyChecks).toHaveBeenCalledTimes(3);
+            expect(globalThis.fetch).toHaveBeenCalledTimes(3);
 
             const otherIp = await send(mediaEnv, "POST", "/upload", {
                 key: "sk_fake5",
@@ -2239,7 +2166,6 @@ describe("media.pollinations.ai", () => {
 
         it("stops one key across IPs before the delete key check", async () => {
             const mediaEnv = limitedEnv();
-            const keyChecks = vi.spyOn(caches, "open");
             const statuses = [];
             for (let i = 0; i < 3; i++) {
                 const res = await send(mediaEnv, "DELETE", "/media/any-id", {
@@ -2249,7 +2175,7 @@ describe("media.pollinations.ai", () => {
                 statuses.push(res.status);
             }
             expect(statuses).toEqual([401, 401, 429]);
-            expect(keyChecks).toHaveBeenCalledTimes(2);
+            expect(globalThis.fetch).toHaveBeenCalledTimes(2);
         });
     });
 });

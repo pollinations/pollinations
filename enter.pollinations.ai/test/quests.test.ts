@@ -2933,6 +2933,37 @@ test("setup rewards: a hold sticks through a network change and the 30-day clean
     expect(await tierBalanceOf(held)).toBe(0);
 });
 
+test("setup rewards: deleted accounts still count for 30 days, then their rows go", async () => {
+    const db = drizzle(env.DB, { schema });
+    const ids = await seedSetupAccounts("deleted", 31, "gmail.com");
+    const [last] = ids.splice(30);
+    for (const id of ids) await earnFirstKey(HOLDS_ON, id, FARM_NETWORK);
+    // Accounts that spend their rewards and delete themselves still count.
+    await db.delete(schema.user).where(inArray(schema.user.id, ids));
+    await earnFirstKey(HOLDS_ON, last, FARM_NETWORK);
+    expect(await setupDecision(last)).toMatchObject({ heldReason: "network" });
+
+    // Past 30 days, the next write removes the deleted accounts' rows and
+    // keeps only the live account's decision.
+    await db.update(schema.setupRewardDecision).set({
+        firstRewardAt: sql`${schema.setupRewardDecision.firstRewardAt} - ${31 * DAY_SECONDS}`,
+    });
+    const [fresh] = await seedSetupAccounts("deleted-fresh", 1, "gmail.com");
+    await earnFirstKey(HOLDS_ON, fresh, FARM_NETWORK);
+    const rows = await db
+        .select({
+            userId: schema.setupRewardDecision.userId,
+            network: schema.setupRewardDecision.network,
+            heldReason: schema.setupRewardDecision.heldReason,
+        })
+        .from(schema.setupRewardDecision)
+        .orderBy(schema.setupRewardDecision.userId);
+    expect(rows).toEqual([
+        { userId: last, network: null, heldReason: "network" },
+        { userId: fresh, network: FARM_NETWORK, heldReason: null },
+    ]);
+});
+
 test("setup rewards: a held account creates keys and claims other rewards, and its setup reward pays once after release", async ({
     accountToken,
     mocks,

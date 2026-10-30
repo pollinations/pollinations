@@ -510,11 +510,11 @@ export const rewards = sqliteTable("rewards", {
 
 // One row per account, written at its first setup (onboarding) reward. A
 // held_reason blocks claiming setup rewards until an operator clears it.
-// Network and email domain are cleared after 30 days; the row stays.
+// After 30 days network and email domain are cleared, or the row is removed if
+// the account was deleted. No foreign key: deleting accounts must not lower
+// the 24-hour count.
 export const setupRewardDecision = sqliteTable("setup_reward_decision", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => user.id, { onDelete: "cascade" }),
+  userId: text("user_id").primaryKey(),
   // IPv4 /24 or IPv6 /48 of the request that earned the first setup reward.
   network: text("network"),
   emailDomain: text("email_domain"),

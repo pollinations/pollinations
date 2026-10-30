@@ -42,7 +42,8 @@ const PUBLIC_MAIL_DOMAINS = new Set([
  * Writes the account's decision at its first setup reward. Counting, deciding
  * and inserting is one statement, and D1 runs one statement at a time, so
  * concurrent requests can't pass the limit and retries keep the first row.
- * The same batch clears network and domain on rows older than 30 days.
+ * The same batch handles rows older than 30 days: a deleted account's row is
+ * removed, a live account's keeps only its decision.
  */
 export async function recordSetupRewardDecision(
     d1: D1Database,
@@ -61,6 +62,14 @@ export async function recordSetupRewardDecision(
     const now = Math.floor(Date.now() / 1000);
     const domain = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
     const countedDomain = PUBLIC_MAIL_DOMAINS.has(domain) ? null : domain;
+    const expired = (accountExists: boolean) =>
+        `SELECT user_id FROM setup_reward_decision
+        WHERE email_domain IS NOT NULL AND first_reward_at < ?1
+            AND ${accountExists ? "" : "NOT "}EXISTS (
+                SELECT 1 FROM user WHERE user.id = setup_reward_decision.user_id
+            )
+        ORDER BY first_reward_at
+        LIMIT ${CLEANUP_BATCH_SIZE}`;
     await d1.batch([
         d1
             .prepare(
@@ -88,13 +97,14 @@ export async function recordSetupRewardDecision(
             ),
         d1
             .prepare(
+                `DELETE FROM setup_reward_decision
+                WHERE user_id IN (${expired(false)})`,
+            )
+            .bind(now - RETENTION_SECONDS),
+        d1
+            .prepare(
                 `UPDATE setup_reward_decision SET network = NULL, email_domain = NULL
-                WHERE user_id IN (
-                    SELECT user_id FROM setup_reward_decision
-                    WHERE email_domain IS NOT NULL AND first_reward_at < ?1
-                    ORDER BY first_reward_at
-                    LIMIT ${CLEANUP_BATCH_SIZE}
-                )`,
+                WHERE user_id IN (${expired(true)})`,
             )
             .bind(now - RETENTION_SECONDS),
     ]);

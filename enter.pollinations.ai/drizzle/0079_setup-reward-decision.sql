@@ -2,10 +2,12 @@
 -- request's network (IPv4 /24, IPv6 /48), the email domain, and whether 30 or
 -- more other accounts had already been recorded on that network or private
 -- domain in the previous 24 hours. A held_reason blocks claiming setup rewards
--- until an operator clears it. Network and domain are cleared after 30 days;
--- the row stays so the decision survives.
+-- until an operator clears it. After 30 days the row of a live account keeps
+-- only its decision (network and domain are cleared), and the row of a deleted
+-- account is removed. No foreign key: deleting accounts must not lower the
+-- 24-hour count.
 CREATE TABLE `setup_reward_decision` (
-    `user_id` text PRIMARY KEY NOT NULL REFERENCES `user`(`id`) ON DELETE CASCADE,
+    `user_id` text PRIMARY KEY NOT NULL,
     `network` text,
     `email_domain` text,
     `first_reward_at` integer NOT NULL,

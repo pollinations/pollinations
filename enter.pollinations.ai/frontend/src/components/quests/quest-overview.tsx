@@ -282,12 +282,11 @@ export type QuestCard = {
 function SetupHoldNotice() {
     const line = "flex items-center gap-2";
     return (
-        <Alert intent="warning" title="Onboarding rewards locked">
+        <Alert intent="warning" title="We couldn't verify your account">
             <div className="flex flex-col gap-2 text-sm">
                 <span className={line}>
                     <LockIcon className="h-4 w-4 shrink-0" />
-                    We couldn't verify your account. Unlock these rewards with
-                    one of:
+                    Onboarding rewards are locked. Unlock them with one of:
                 </span>
                 <span className={line}>
                     <CardIcon className="h-4 w-4 shrink-0" />

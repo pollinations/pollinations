@@ -73,8 +73,7 @@ export async function trackedFetch(
         if (!signal?.aborted || signal.reason?.name === "TimeoutError") {
             failures.set(path, {
                 failedAt: Date.now(),
-                timeout:
-                    error instanceof Error && error.name === "TimeoutError",
+                timeout: false,
             });
         }
         throw error;
@@ -93,7 +92,7 @@ export function useOutage(paths?: readonly string[]): boolean {
     return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
 
-/** A slow request is not evidence of a platform outage. */
+/** Only an HTTP 504 response uses the request-timeout message. */
 export function useRequestTimeout(paths?: readonly string[]): boolean {
     const snapshot = () => {
         const relevant = relevantFailures(paths);

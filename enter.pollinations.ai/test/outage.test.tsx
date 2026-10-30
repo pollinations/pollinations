@@ -159,7 +159,7 @@ describe("dashboard outage state", () => {
         expect(topUp()).not.toContain("Couldn’t load your wallet.");
     });
 
-    it("shows a timeout without declaring an outage when a request times out", async () => {
+    it("counts a browser request timeout as an outage", async () => {
         vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
             new DOMException("Timed out", "TimeoutError"),
         );
@@ -170,8 +170,20 @@ describe("dashboard outage state", () => {
                 ),
             }),
         ).rejects.toThrow();
-        expect(render()).toContain("This data took too long to load.");
-        expect(render()).not.toContain(OUTAGE_TEXT);
+        expect(render()).toContain(OUTAGE_TEXT);
+        expect(render()).not.toContain("This data took too long to load.");
+    });
+
+    it("shows the outage notice when the model catalog request times out", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+            new DOMException("Timed out", "TimeoutError"),
+        );
+        await expect(fetchModelCatalog({ refresh: true })).rejects.toThrow();
+        const error = renderToStaticMarkup(
+            <LoadError paths={["/models"]}>Could not load models.</LoadError>,
+        );
+        expect(error).toContain(OUTAGE_TEXT);
+        expect(error).not.toContain("This data took too long to load.");
     });
 
     it("keeps gateway timeouts retryable without claiming an outage", async () => {

@@ -1092,6 +1092,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "moonshotai/kimi-k3",
+        config: portkeyConfig["kimi-k3-bedrock"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "moonshotai/kimi-k3:fireworks",
         config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
         transform: fireworksThinkingWithoutCacheControl,
     },

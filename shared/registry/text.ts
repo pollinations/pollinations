@@ -2541,18 +2541,20 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k3": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.bedrockKimi,
         aliases: ["kimi-k3"],
-        provider: "fireworks",
+        provider: "aws",
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        // Fireworks standard serverless rates (2026-07-30).
+        // Global Standard rates, including explicit 30-minute cache writes (2026-10-30).
+        // https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-moonshot-ai-kimi-k3.html
         cost: {
             promptTextTokens: perMillion(3),
             promptCachedTokens: perMillion(0.3),
+            promptCacheWriteTokens: perMillion(3.75),
             completionTextTokens: perMillion(15),
         },
         title: "Kimi K3",

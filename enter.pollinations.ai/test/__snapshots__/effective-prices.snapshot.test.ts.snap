@@ -2579,11 +2579,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "moonshotai/kimi-k3": {
     "cost": {
       "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.00000375,
       "promptCachedTokens": 0.0000003,
       "promptTextTokens": 0.000003,
     },
     "price": {
       "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.00000375,
       "promptCachedTokens": 0.0000003,
       "promptTextTokens": 0.000003,
     },
@@ -2598,6 +2600,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00001425,
       "promptCachedTokens": 0.000000285,
       "promptTextTokens": 0.00000285,
+    },
+  },
+  "moonshotai/kimi-k3:fireworks": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptCachedTokens": 0.0000003,
+      "promptTextTokens": 0.000003,
+    },
+    "price": {
+      "completionTextTokens": 0.000015,
+      "promptCachedTokens": 0.0000003,
+      "promptTextTokens": 0.000003,
     },
   },
   "nex-agi/nex-n2.5-mini": {

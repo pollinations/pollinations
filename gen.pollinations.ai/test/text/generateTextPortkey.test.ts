@@ -26,6 +26,96 @@ afterEach(() => {
 });
 
 describe("generateTextPortkey", () => {
+    it.each([
+        { status: 429, failures: 1 },
+        { status: 503, failures: 2 },
+        { status: 503, failures: 3 },
+        { status: 400, failures: 1 },
+    ])(
+        "uses ordinary Kimi failover for $status after $failures failures",
+        async ({ status, failures }) => {
+            syncTextEnvironment({
+                ...env,
+                AWS_ACCESS_KEY_ID: "test-access-key",
+                AWS_SECRET_ACCESS_KEY: "test-secret-key",
+                AWS_REGION: "us-east-1",
+            });
+            const primary = "moonshotai/kimi-k3" as const;
+            const ids = [primary, ...TEXT_SERVICES[primary].fallbacks];
+            const upstreams = [
+                "global.moonshotai.kimi-k3",
+                "accounts/fireworks/models/kimi-k3",
+                "moonshotai/Kimi-K3",
+            ];
+            const attempts: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const body = JSON.parse(String(init?.body));
+                    attempts.push(body.model);
+                    // Optional controls are forwarded, never used to choose a provider.
+                    expect(body.presence_penalty).toBe(0.1);
+                    expect(body.logprobs).toBe(true);
+                    expect(body.service_tier).toBe("default");
+                    if (attempts.length === 1) {
+                        expect(String(input)).toBe(
+                            "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+                        );
+                        expect(
+                            new Headers(init?.headers).get("authorization"),
+                        ).toMatch(/^AWS4-HMAC-SHA256 /);
+                    }
+                    if (attempts.length <= failures) {
+                        return Response.json(
+                            { error: { message: "Provider rejected request" } },
+                            { status },
+                        );
+                    }
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "Hello",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 10,
+                            completion_tokens: 1,
+                            total_tokens: 11,
+                        },
+                    });
+                },
+            );
+            const run = withModelFallback(
+                ids.map((id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                })),
+                ({ id }) =>
+                    generateTextPortkey([{ role: "user", content: "Hello" }], {
+                        model: id,
+                        max_tokens: 128,
+                        presence_penalty: 0.1,
+                        logprobs: true,
+                        service_tier: "priority",
+                    }),
+            );
+            if (status === 400 || failures === ids.length) {
+                await expect(run).rejects.toThrow();
+            } else {
+                expect((await run).candidate.id).toBe(ids[failures]);
+            }
+            expect(attempts).toEqual(
+                upstreams.slice(
+                    0,
+                    status === 400 ? 1 : Math.min(failures + 1, ids.length),
+                ),
+            );
+        },
+    );
+
     it.each([0, 1, 2, 3])(
         "uses the GLM 5.3 chain with %i failed providers",
         async (failures) => {

@@ -4,6 +4,7 @@ import {
     requireAccountPermission,
 } from "@shared/auth/account-permissions.ts";
 import { verifyGrantAgent } from "@shared/auth/agent-run-token.ts";
+import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import {
     type ApiKeyType,
     createApiKeyForUser,
@@ -13,6 +14,10 @@ import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
+import {
+    atomicAdjustApiKeyBalance,
+    atomicReserveApiKeyBalance,
+} from "@shared/billing/deduction.ts";
 import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { claimReward } from "@shared/billing/rewards.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
@@ -23,8 +28,11 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { toModelPermissions } from "@shared/registry/model-permissions.ts";
-import { and, desc, eq } from "drizzle-orm";
+import {
+    keyAllowsModelPermissions,
+    toModelPermissions,
+} from "@shared/registry/model-permissions.ts";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -202,6 +210,72 @@ const GrantAgentSchema = z.intersection(
     ]),
     z.object({ agent: z.string().min(1), sig: z.string().min(1) }),
 );
+
+/**
+ * A key can't give another key more than it has itself: the key it creates or
+ * edits ends up with account permissions, models and lifetime within its own
+ * (null is no limit), and a key with a budget can only hand out budget taken
+ * from its own, so its keys can't outspend it together. The account owner (no
+ * key) can grant anything. Returns the budget taken from the calling key.
+ */
+async function grantFromCallerKey(
+    db: D1Database,
+    callerKey: AuthenticatedApiKey | undefined,
+    grant: {
+        accountPermissions?: string[] | null;
+        allowedModels: string[] | null;
+        expiresAt: Date | null;
+        pollenBudget: number | null;
+    },
+    budgetToReserve = grant.pollenBudget ?? 0,
+): Promise<number> {
+    if (!callerKey) return 0;
+    const deny = (message: string): never => {
+        throw new HTTPException(403, { message });
+    };
+
+    const accountPermissions = callerKey.permissions?.account ?? [];
+    if (
+        sanitizeAuthorizeAccountPermissions(grant.accountPermissions)?.some(
+            (permission) => !accountPermissions.includes(permission),
+        )
+    ) {
+        deny("An API key can only grant account permissions it has");
+    }
+
+    const models = callerKey.permissions?.models;
+    if (
+        models &&
+        !(
+            grant.allowedModels &&
+            (await keyAllowsModelPermissions(db, models, grant.allowedModels))
+        )
+    ) {
+        deny("An API key can only grant models it can use");
+    }
+
+    if (
+        callerKey.expiresAt &&
+        !(grant.expiresAt && grant.expiresAt <= callerKey.expiresAt)
+    ) {
+        deny("An API key can't grant a key that outlives it");
+    }
+
+    if (typeof callerKey.pollenBalance !== "number") return 0;
+    if (grant.pollenBudget === null) {
+        deny(
+            "An API key with a pollen budget can only grant a budget, taken from its own",
+        );
+    }
+    if (budgetToReserve <= 0) return 0;
+    const { ok } = await atomicReserveApiKeyBalance(
+        drizzle(db),
+        callerKey.id,
+        budgetToReserve,
+    );
+    if (!ok) deny("This API key's budget is too low to grant that budget");
+    return budgetToReserve;
+}
 
 function parsePermissions(
     raw: string | null | undefined,
@@ -1161,7 +1235,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const db = drizzle(c.env.DB, { schema });
             const [cards, rewardRows] = await Promise.all([
@@ -1230,7 +1304,7 @@ export const accountRoutes = new Hono<Env>()
                 message: "Authentication required to view quest rewards",
             });
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const rows = await drizzle(c.env.DB)
                 .select()
@@ -1400,7 +1474,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireAccountPermission(apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const {
                 format,
@@ -1487,7 +1561,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireAccountPermission(apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const {
                 format,
@@ -1595,7 +1669,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireAccountPermission(apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const { limit, days, granularity, period, timezone } =
                 c.req.valid("query");
@@ -1673,7 +1747,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireAccountPermission(apiKey, "usage");
+            requireAccountPermission(c, "usage");
 
             const { format, days, granularity, period, timezone } =
                 c.req.valid("query");
@@ -1749,7 +1823,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
 
             const keys = await drizzle(c.env.DB)
                 .select()
@@ -1765,7 +1839,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it.',
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it. A key created with an API key stays within the account permissions, models and expiry of that key, and inherits its models and expiry when they are omitted. If the calling key has a pollen budget, the new key needs a `pollenBudget`, which is deducted from the budget of the calling key.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },
@@ -1776,7 +1850,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
 
             const {
                 name,
@@ -1806,14 +1880,40 @@ export const accountRoutes = new Hono<Env>()
                   ? "api"
                   : "dashboard";
 
+            // The calling key's model and expiry limits carry over unless the
+            // request sets narrower ones.
+            const callerKey = c.var.auth.apiKey;
+            const keyModels =
+                allowedModels === undefined
+                    ? callerKey?.permissions?.models
+                    : allowedModels;
+            const keyExpiresIn =
+                expiresIn ??
+                (callerKey?.expiresAt
+                    ? Math.floor(
+                          (callerKey.expiresAt.getTime() - Date.now()) / 1000,
+                      )
+                    : undefined);
+            const budgetTaken = await grantFromCallerKey(c.env.DB, callerKey, {
+                accountPermissions,
+                allowedModels: keyModels ?? null,
+                expiresAt:
+                    keyExpiresIn === undefined
+                        ? null
+                        : new Date(Date.now() + keyExpiresIn * 1000),
+                // Publishable keys never have a budget.
+                pollenBudget:
+                    type === "publishable" ? 0 : (pollenBudget ?? null),
+            });
+
             const created = await createApiKeyForUser({
                 authClient: c.var.auth.client,
                 dbBinding: c.env.DB,
                 userId: user.id,
                 name,
                 type,
-                expiresIn,
-                allowedModels,
+                expiresIn: keyExpiresIn,
+                allowedModels: keyModels,
                 pollenBudget,
                 // A child key can't spend what its creator can't.
                 questPollenOnly:
@@ -1830,6 +1930,16 @@ export const accountRoutes = new Hono<Env>()
                         : (c.var.auth.apiKey?.metadata?.originAppKeyId as
                               | string
                               | undefined)),
+            }).catch(async (error) => {
+                // Give back the budget taken for a key that wasn't created.
+                if (callerKey && budgetTaken) {
+                    await atomicAdjustApiKeyBalance(
+                        drizzle(c.env.DB),
+                        callerKey.id,
+                        -budgetTaken,
+                    );
+                }
+                throw error;
             });
 
             // Awarding the first-key quest is a few D1 queries; awaiting it
@@ -1850,22 +1960,31 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update API Key",
             description:
-                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys.",
+                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.",
             responses: {
                 200: { description: "Updated API key" },
                 400: { description: "Invalid update" },
                 401: { description: "Unauthorized" },
                 403: { description: "Permission denied" },
                 404: { description: "Key not found" },
+                409: { description: "Key changed during the update" },
             },
         }),
         validator("json", UpdateKeySchema),
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const callerKey = c.var.auth.apiKey;
+            requireAccountPermission(c, "keys");
 
             const { id } = c.req.param();
+            // As with revoking, a key can't change itself.
+            if (callerKey?.id === id) {
+                throw new HTTPException(403, {
+                    message:
+                        "Cannot update the API key used to authenticate this request",
+                });
+            }
             const {
                 name,
                 allowedModels,
@@ -1879,16 +1998,18 @@ export const accountRoutes = new Hono<Env>()
             } = c.req.valid("json");
 
             const db = drizzle(c.env.DB);
-            const key = await db
-                .select()
-                .from(apikeyTable)
-                .where(
-                    and(
-                        eq(apikeyTable.id, id),
-                        eq(apikeyTable.referenceId, user.id),
-                    ),
-                )
-                .get();
+            const readKey = () =>
+                db
+                    .select()
+                    .from(apikeyTable)
+                    .where(
+                        and(
+                            eq(apikeyTable.id, id),
+                            eq(apikeyTable.referenceId, user.id),
+                        ),
+                    )
+                    .get();
+            let key = await readKey();
             if (!key) {
                 throw new HTTPException(404, { message: "API key not found" });
             }
@@ -1903,12 +2024,12 @@ export const accountRoutes = new Hono<Env>()
             }
             // As on creation: a key can't grant spending it doesn't have.
             if (
-                questPollenOnly === false &&
-                c.var.auth.apiKey?.questPollenOnly
+                callerKey?.questPollenOnly &&
+                !(questPollenOnly ?? key.questPollenOnly)
             ) {
                 throw new HTTPException(403, {
                     message:
-                        "A Quest Pollen only key can't lift that limit from a key",
+                        "A Quest Pollen only key can only edit Quest Pollen only keys",
                 });
             }
 
@@ -1938,34 +2059,103 @@ export const accountRoutes = new Hono<Env>()
                     earningsEnabled,
                 }).filter(([, value]) => value !== undefined),
             );
+            // A budgeted key works out its payment from the key as read, so
+            // its update only lands while the key's balance and expiry are
+            // unchanged; otherwise it could pay twice, or refill for free what
+            // the key spent meanwhile. If a concurrent update or the key's
+            // spending changed them, the payment goes back and the update
+            // starts over from the key as it is now.
+            for (let attempt = 1; ; attempt++) {
+                // Raising a budget takes the difference; an unlimited key
+                // counts as having none.
+                const budgetChange =
+                    pollenBudget != null
+                        ? pollenBudget - (key.pollenBalance ?? 0)
+                        : 0;
+                const updatedBudget =
+                    pollenBudget === undefined
+                        ? key.pollenBalance
+                        : pollenBudget;
+                // Renewing a grant authorizes all its remaining spending
+                // again, even when its budget is unchanged or reduced.
+                const extendsExpiry =
+                    key.expiresAt !== null &&
+                    expiresAt !== undefined &&
+                    (expiresAt === null || expiresAt > key.expiresAt);
+                // A key can only edit keys that end up within its own limits.
+                const budgetTaken = await grantFromCallerKey(
+                    c.env.DB,
+                    callerKey,
+                    {
+                        accountPermissions: permissions.account ?? null,
+                        allowedModels: permissions.models ?? null,
+                        expiresAt:
+                            expiresAt === undefined ? key.expiresAt : expiresAt,
+                        pollenBudget: updatedBudget,
+                    },
+                    extendsExpiry ? (updatedBudget ?? 0) : budgetChange,
+                );
+                const unchangedSinceRead = and(
+                    key.pollenBalance === null
+                        ? isNull(apikeyTable.pollenBalance)
+                        : eq(apikeyTable.pollenBalance, key.pollenBalance),
+                    key.expiresAt === null
+                        ? isNull(apikeyTable.expiresAt)
+                        : eq(apikeyTable.expiresAt, key.expiresAt),
+                );
 
-            const [updated] = await db
-                .update(apikeyTable)
-                .set({
-                    ...(name !== undefined && { name }),
-                    ...(pollenBudget !== undefined && {
-                        pollenBalance: pollenBudget,
-                    }),
-                    ...(questPollenOnly !== undefined && { questPollenOnly }),
-                    ...(expiresAt !== undefined && { expiresAt }),
-                    ...((allowedModels !== undefined ||
-                        accountPermissions !== undefined) && {
-                        permissions: Object.keys(permissions).length
-                            ? JSON.stringify(permissions)
-                            : null,
-                    }),
-                    ...(Object.keys(metadataPatch).length > 0 && {
-                        metadata: JSON.stringify({
-                            ...parseMetadata(key.metadata),
-                            ...metadataPatch,
+                const [updated] = await db
+                    .update(apikeyTable)
+                    .set({
+                        ...(name !== undefined && { name }),
+                        ...(pollenBudget !== undefined && {
+                            pollenBalance: pollenBudget,
                         }),
-                    }),
-                    updatedAt: new Date(),
-                })
-                .where(eq(apikeyTable.id, id))
-                .returning();
+                        ...(questPollenOnly !== undefined && {
+                            questPollenOnly,
+                        }),
+                        ...(expiresAt !== undefined && { expiresAt }),
+                        ...((allowedModels !== undefined ||
+                            accountPermissions !== undefined) && {
+                            permissions: Object.keys(permissions).length
+                                ? JSON.stringify(permissions)
+                                : null,
+                        }),
+                        ...(Object.keys(metadataPatch).length > 0 && {
+                            metadata: JSON.stringify({
+                                ...parseMetadata(key.metadata),
+                                ...metadataPatch,
+                            }),
+                        }),
+                        updatedAt: new Date(),
+                    })
+                    .where(
+                        typeof callerKey?.pollenBalance === "number"
+                            ? and(eq(apikeyTable.id, id), unchangedSinceRead)
+                            : eq(apikeyTable.id, id),
+                    )
+                    .returning();
+                if (updated) return c.json(formatKey(updated));
 
-            return c.json(formatKey(updated));
+                if (callerKey && budgetTaken) {
+                    await atomicAdjustApiKeyBalance(
+                        db,
+                        callerKey.id,
+                        -budgetTaken,
+                    );
+                }
+                if (attempt === 3) {
+                    throw new HTTPException(409, {
+                        message: "The key changed during the update; try again",
+                    });
+                }
+                key = await readKey();
+                if (!key) {
+                    throw new HTTPException(404, {
+                        message: "API key not found",
+                    });
+                }
+            }
         },
     )
     .get(
@@ -2033,7 +2223,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const callerKey = c.var.auth.apiKey;
-            requireAccountPermission(callerKey, "keys");
+            requireAccountPermission(c, "keys");
 
             const { id } = c.req.param();
 

@@ -199,7 +199,10 @@ const UsageChartView: FC<UsageChartViewProps> = ({
             <SectionContent loading={loading}>
                 <Surface>
                     {error && (
-                        <LoadError onRetry={() => fetchUsage()}>
+                        <LoadError
+                            onRetry={() => fetchUsage()}
+                            paths={["/account/usage/daily"]}
+                        >
                             {error}
                         </LoadError>
                     )}

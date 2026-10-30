@@ -565,7 +565,7 @@ Errors use Anthropic's error shape. `count_tokens`, batches, files, server tools
 | Field | Type | Description |
 |---|---|---|
 | `model` * | `string` | Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`. |
-| `max_tokens` * | `integer` | min: `1` |
+| `max_tokens` * | `integer` | Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; reported usage, including reasoning tokens, is billed. Increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens. · min: `1` |
 | `messages` * | `object`[] | — |
 | `messages[].role` * | `"user"` \| `"assistant"` \| `"system"` | — |
 | `messages[].content` * | `string` \| `object`[] | — |
@@ -655,7 +655,8 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `logit_bias` | `object` \| `null` | default: `null` |
 | `logprobs` | `any` | — |
 | `top_logprobs` | `integer` \| `null` | — |
-| `max_tokens` | `integer` \| `null` | — |
+| `max_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
+| `max_completion_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
 | `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
@@ -847,7 +848,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `input` * | `string` \| `any`[] | — |
 | `instructions` | `any` | — |
 | `reasoning` | `object` \| `null` | — |
-| `max_output_tokens` | `integer` \| `null` | — |
+| `max_output_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. For models served through Chat Completions, non-streaming requests that exhaust an explicit limit without an answer return 400 output_token_limit_exceeded; reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. Native Responses models can instead return status incomplete with reason max_output_tokens. |
 | `max_tool_calls` | `integer` \| `null` | — |
 | `stream` | `boolean` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
@@ -937,7 +938,8 @@ Identical requests may be answered from a shared cache, also for callers without
 | `logit_bias` | `object` \| `null` | default: `null` |
 | `logprobs` | `any` | — |
 | `top_logprobs` | `integer` \| `null` | — |
-| `max_tokens` | `integer` \| `null` | — |
+| `max_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
+| `max_completion_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
 | `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
@@ -3332,7 +3334,7 @@ Stored image, video, audio, and 3D files are linked through `Link: <https://medi
 | `GET /media?tag={tag}` | List the public gallery for a tag (no auth) |
 | `DELETE /media/{id}` | Delete a published item you own (secret `sk_` key) |
 
-Upload requires an API key; retrieval is public. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
+Upload requires a secret (`sk_`) API key; retrieval is public. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
 
 Raw file body (streams to storage; returns a random, unlisted ID):
 
@@ -4663,7 +4665,7 @@ curl "https://gen.pollinations.ai/account/keys" \
 
 #### `POST` `/account/keys` — Create API Key
 
-Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it.
+Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it. A key created with an API key stays within the account permissions, models and expiry of that key, and inherits its models and expiry when they are omitted. If the calling key has a pollen budget, the new key needs a `pollenBudget`, which is deducted from the budget of the calling key.
 
 📥 **Request body** · `application/json`
 
@@ -4702,7 +4704,7 @@ curl -X POST "https://gen.pollinations.ai/account/keys" \
 
 #### `PATCH` `/account/keys/{id}` — Update API Key
 
-Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys.
+Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.
 
 ⚙️ **Parameters**
 
@@ -5322,7 +5324,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | Field | Type | Description |
 |---|---|---|
 | `model` * | `string` | Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`. |
-| `max_tokens` * | `integer` | min: `1` |
+| `max_tokens` * | `integer` | Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; reported usage, including reasoning tokens, is billed. Increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens. · min: `1` |
 | `messages` * | `object`[] | — |
 | `messages[].role` * | `"user"` \| `"assistant"` \| `"system"` | — |
 | `messages[].content` * | `string` \| `object`[] | — |

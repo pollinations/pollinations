@@ -82,7 +82,7 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-10-31",
         label: "Updated",
         title: "25% off selected Claude models",
-        text: "Haiku 5.5, Sonnet 5.5, Opus 5.5 and Fable 5.1: 25% off standard API prices.",
+        text: "Sonnet 5.5 and Haiku 5.5: 25% off standard API prices.",
         icon: WalletIcon,
         cta: { label: "View models", href: "/models?q=anthropic" },
     },

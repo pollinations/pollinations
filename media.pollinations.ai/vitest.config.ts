@@ -22,6 +22,13 @@ export default defineConfig(async () => {
                     bindings: {
                         TEST_MIGRATIONS: migrations,
                     },
+                    // Each test answers Enter's key check itself; see mockAuth.
+                    serviceBindings: {
+                        ENTER: () =>
+                            new Response("Enter is not mocked", {
+                                status: 500,
+                            }),
+                    },
                 },
             }),
         ],

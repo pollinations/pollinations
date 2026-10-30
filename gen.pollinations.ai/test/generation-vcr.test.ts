@@ -3433,7 +3433,7 @@ test.for([429, 404, 403, 500, 524])(
         mocks.gptImage.state.azureStatus = azureStatus;
         const { key } = await createTestApiKey({
             allowedModels: ["openai/gpt-image-2"],
-            user: { tierBalance: 100 },
+            user: { packBalance: 100 },
         });
 
         const { response, wait } = await fetchWorker(
@@ -3481,7 +3481,7 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
     await mocks.enable("tinybird", "gptImage");
     const { key } = await createTestApiKey({
         allowedModels: ["openai/gpt-image-2"],
-        user: { tierBalance: 100 },
+        user: { packBalance: 100 },
     });
     const { response, wait } = await fetchWorker(
         "/image/image-host-capacity?model=gpt-image-2&quality=low&width=1024&height=1024&image=https%3A%2F%2Fgpt-reference.test%2Finput.png&seed=9350",
@@ -3517,7 +3517,7 @@ test("gpt-image-2 does not retry a dead reference image link on OpenAI", async (
     await mocks.enable("tinybird", "gptImage");
     const { key } = await createTestApiKey({
         allowedModels: ["openai/gpt-image-2"],
-        user: { tierBalance: 100 },
+        user: { packBalance: 100 },
     });
     const { response, wait } = await fetchWorker(
         "/image/dead-reference?model=gpt-image-2&quality=low&width=1024&height=1024&image=https%3A%2F%2Fgpt-dead-reference.test%2Finput.png&seed=9351",

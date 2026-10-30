@@ -1,5 +1,6 @@
 import asyncio
 import codecs
+import inspect
 import json
 import logging
 import time
@@ -90,6 +91,25 @@ from .tools import GITHUB_TOOLS
 from ..discord.replies import REPLY_INSTRUCTIONS
 
 logger = logging.getLogger(__name__)
+
+
+def _offered_actions(tools: list[dict]) -> dict[str, set[str] | None]:
+    """Each offered tool's name mapped to the actions its schema lists (None: no action enum)."""
+    offered: dict[str, set[str] | None] = {}
+    for tool in tools:
+        function = tool.get("function", {})
+        enum = function.get("parameters", {}).get("properties", {}).get("action", {}).get("enum")
+        offered[function.get("name")] = {str(action).lower() for action in enum} if enum else None
+    return offered
+
+
+def _default_action(handler) -> str:
+    """The action a handler runs when a call names none ("" if it has no default)."""
+    try:
+        default = inspect.signature(handler).parameters["action"].default
+    except (KeyError, TypeError, ValueError):
+        return ""
+    return "" if default is inspect.Parameter.empty else str(default)
 
 
 class PollinationsClient:
@@ -579,6 +599,7 @@ class PollinationsClient:
                 discord_username,
                 tool_context=tool_context,
                 blocked_signatures=failed_signatures,
+                offered_tools=_offered_actions(tools),
             )
             tools_time = time.time() - start_time
             logger.info(f"Tools execution took {tools_time:.1f}s")
@@ -663,11 +684,14 @@ class PollinationsClient:
         discord_username: str,
         tool_context: dict | None = None,
         blocked_signatures: set[str] | None = None,
+        offered_tools: dict[str, set[str] | None] | None = None,
     ) -> list[dict]:
         """Execute multiple tool calls in parallel.
 
         ``blocked_signatures`` holds calls that already failed this turn; repeating one
         verbatim cannot produce a different result, so it is answered without dispatching.
+        ``offered_tools`` maps each tool offered this turn to the actions its schema
+        offered; anything else is refused, since the model can name hidden ones too.
         """
         blocked_signatures = blocked_signatures or set()
 
@@ -693,6 +717,15 @@ class PollinationsClient:
                 args = _json_loads(tool_call["function"]["arguments"])
             except ValueError:
                 args = {}
+
+            if offered_tools is not None:
+                if func_name not in offered_tools:
+                    return {"error": f"Tool not available here: {func_name}"}
+                actions = offered_tools[func_name]
+                # An omitted action runs the handler's default, so check that one.
+                action = str(args.get("action", _default_action(self._tool_handlers.get(func_name)))).lower()
+                if actions is not None and action not in actions:
+                    return {"error": f"Action not available here: {func_name} {action}"}
 
             if (tool_context or {}).get("discord_mixed_batch") and (
                 func_name in API_EXCLUDED_TOOLS

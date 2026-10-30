@@ -9,6 +9,7 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
+    OutageNotice,
     RocketIcon,
     Section,
     SparkleIcon,
@@ -36,6 +37,7 @@ import type {
     QuestCheckResult,
     QuestStandingsResponse,
 } from "../../backend-types.ts";
+import { isOutageStatus, useOutage, useOutageRetry } from "../../lib/outage.ts";
 import {
     LoadError,
     PageStatus,
@@ -203,27 +205,33 @@ async function loadQuestData(): Promise<QuestData> {
     // The catalog is public; the per-user rewards endpoint requires auth. A
     // logged-out visitor still gets the full catalog (rendered all-open as a
     // preview), so a 401 on rewards is expected, not an error.
+    // Rewards and standings fail on their own (null = no response); the
+    // list still shows.
     const [catalogResponse, rewardsResponse, standingsResponse] =
         await Promise.all([
             apiClient.quests.catalog.$get(),
-            accountClient.quests.rewards.$get(),
-            apiClient.quests.standings.$get(),
+            accountClient.quests.rewards.$get().catch(() => null),
+            apiClient.quests.standings.$get().catch(() => null),
         ]);
     if (!catalogResponse.ok) {
         throw new Error(`Failed to load quests (${catalogResponse.status})`);
     }
     const catalog = (await catalogResponse.json()) as QuestCatalogResponse;
 
-    const anonymous = rewardsResponse.status === 401;
-    if (!rewardsResponse.ok && !anonymous) {
+    // During an outage the list still shows, without the user's rewards.
+    const anonymous =
+        rewardsResponse?.status === 401 ||
+        isOutageStatus(rewardsResponse?.status);
+    if (rewardsResponse && !rewardsResponse.ok && !anonymous) {
         throw new Error(`Failed to load quests (${rewardsResponse.status})`);
     }
-    const rewards = anonymous
-        ? []
-        : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
-              .rewards;
+    const rewards =
+        anonymous || !rewardsResponse
+            ? []
+            : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
+                  .rewards;
 
-    const standings = standingsResponse.ok
+    const standings = standingsResponse?.ok
         ? ((await standingsResponse.json()) as QuestStandingsResponse)
         : null;
 
@@ -596,16 +604,28 @@ export function QuestRow({
 }
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
-    const { user } = useLoaderData({ from: "/_dashboard" });
+    const { user, sessionUnavailable } = useLoaderData({ from: "/_dashboard" });
+    const [reloads, setReloads] = useState(0);
     return (
         <QuestOverviewContent
-            key={user?.id ?? "anonymous"}
+            key={`${user?.id ?? "anonymous"}:${reloads}`}
             userId={user?.id ?? null}
+            sessionUnavailable={sessionUnavailable}
+            onRecovered={() => setReloads((count) => count + 1)}
         />
     );
 };
 
-function QuestOverviewContent({ userId }: { userId: string | null }) {
+function QuestOverviewContent({
+    userId,
+    sessionUnavailable,
+    onRecovered,
+}: {
+    userId: string | null;
+    sessionUnavailable: boolean;
+    /** Rewards are back after an outage skipped the per-user check. */
+    onRecovered: () => void;
+}) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
@@ -744,7 +764,12 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             filter: (match) => match.routeId === "/_dashboard",
         });
         const questData = await loadQuestData();
-        setState((current) => ({ ...current, ...questData }));
+        // Reload once so the check the outage skipped runs, as on a visit.
+        if (!questData.anonymous && !autoCheckedRef.current) {
+            onRecovered();
+            return;
+        }
+        setState((current) => ({ ...current, ...questData, error: null }));
         window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
     }
 
@@ -937,6 +962,22 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             ? state.error
             : null;
     const showSummary = !initialError;
+    // During an outage the list still loads, but a possibly signed-in user's
+    // rewards and the standings don't: say so instead of showing 0 progress.
+    const rewardsDown = useOutage(["/account/quests/rewards"]);
+    const standingsDown = useOutage(["/api/quests/standings"]);
+    const progressUnavailable =
+        rewardsDown &&
+        state.anonymous &&
+        (sessionUnavailable || userId !== null);
+    const standingsUnavailable =
+        standingsDown && !state.loading && !state.standings;
+    // A failed first load retries through its own LoadError instead.
+    useOutageRetry(
+        (progressUnavailable || standingsUnavailable) && !state.error,
+        "quests",
+        refreshRewards,
+    );
 
     return (
         <>
@@ -948,7 +989,18 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
                 <SectionContent loading={state.loading}>
-                    {state.error && <LoadError>{state.error}</LoadError>}
+                    {state.error && (
+                        <LoadError
+                            onRetry={refreshRewards}
+                            paths={[
+                                "/api/quests/catalog",
+                                "/account/quests/rewards",
+                            ]}
+                        >
+                            {state.error}
+                        </LoadError>
+                    )}
+                    {progressUnavailable && <OutageNotice retrying />}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
                     {showSummary && !state.anonymous && (
                         <QuestSummary
@@ -992,11 +1044,17 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 </div>
             </Section>
 
-            {state.standings && (
+            {state.standings ? (
                 <QuestStandings
                     standings={state.standings}
                     openQuests={openQuests}
                 />
+            ) : (
+                standingsUnavailable && (
+                    <Section title="Leaderboard">
+                        <OutageNotice retrying />
+                    </Section>
+                )
             )}
 
             {CATEGORIES.map((category) => {
@@ -1013,7 +1071,8 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                         key={category.key}
                         title={category.label}
                         action={
-                            !initialError && (
+                            !initialError &&
+                            !progressUnavailable && (
                                 <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                                     {done} / {liveCards.length}
                                 </span>

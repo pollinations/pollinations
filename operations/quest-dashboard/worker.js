@@ -236,18 +236,27 @@ const HTML = `<!doctype html>
 </body>
 </html>`;
 
+// /data scans the whole prod rewards table, so serve it from the Cache API:
+// D1 runs at most once per poll interval per colo. The key drops the query
+// string so ?x=1 can't bust the cache.
+async function cachedData(request, env, ctx) {
+    const key = new Request(new URL("/data", request.url));
+    const hit = await caches.default.match(key);
+    if (hit) return hit;
+    const response = new Response(JSON.stringify(await snapshot(env)), {
+        headers: {
+            "content-type": "application/json",
+            "cache-control": "public, max-age=20",
+        },
+    });
+    ctx.waitUntil(caches.default.put(key, response.clone()));
+    return response;
+}
+
 export default {
-    async fetch(request, env) {
+    async fetch(request, env, ctx) {
         const url = new URL(request.url);
-        if (url.pathname === "/data") {
-            const data = await snapshot(env);
-            return new Response(JSON.stringify(data), {
-                headers: {
-                    "content-type": "application/json",
-                    "cache-control": "no-store",
-                },
-            });
-        }
+        if (url.pathname === "/data") return cachedData(request, env, ctx);
         if (ASSET_PATHS.has(url.pathname)) {
             return env.ASSETS.fetch(request);
         }

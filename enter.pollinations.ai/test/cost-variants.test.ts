@@ -293,10 +293,10 @@ describe("long-context cost variants", () => {
     });
 
     it.each([
-        ["openai/gpt-5.6-sol", 8, 0.8, 10, 30, 1 / 3],
+        ["openai/gpt-5.6-sol", 8, 0.8, 10, 30, 0.75],
         ["openai/gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
         ["openai/gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
-        ["openai/gpt-6-astra", 20, 2, 25, 75, 1],
+        ["openai/gpt-6-astra", 20, 2, 25, 75, 0.75],
     ] satisfies [ModelName, number, number, number, number, number][])(
         "%s applies every Azure long-context meter to the full request",
         (model, input, cached, cacheWrite, output, multiplier) => {

@@ -15,9 +15,13 @@ service = "pollinations-composio-mcp"
 [dev]
 port = 3000
 
+# Never add a `binding` here. Enter is gen's dispatch-namespace outbound Worker:
+# with an assets binding Cloudflare rejects POST /deployments (10013) and live
+# /api/* returns 503 (1105). See #18189 and #18552; checked by
+# scripts/assets-binding.test.mjs.
 [assets]
 directory = "dist/client"
-not_found_handling = "single-page-application"
+not_found_handling = "404-page"
 run_worker_first = [ "/api/*", "/.well-known/*" ]
 
 [[d1_databases]]

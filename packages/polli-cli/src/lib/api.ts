@@ -24,6 +24,24 @@ export const requireKey = (): string => {
     return key;
 };
 
+// The consent screen leaves these unticked, so a login approved as-is gets a
+// 403 from every route that needs one. Name the box to tick instead.
+const PERMISSION_HINTS: Record<string, string> = {
+    keys: 'Your login didn\'t allow managing keys, agents and models. Run `polli auth login` again and tick "Manage keys, agents and models".',
+    machines:
+        'Your login didn\'t allow sandboxes or sites. Run `polli auth login` again and tick "Run hosted sandboxes".',
+};
+
+const permissionHint = (status: number, text: string) => {
+    const permission =
+        status === 403 && text.match(/'account:(keys|machines)'/)?.[1];
+    if (!permission) return undefined;
+    // Gen's sandbox refusal also links a page that adds it to this key.
+    const grant = text.match(/https:\/\/[^\s"]+\/grant\?[^\s"]+/)?.[0];
+    const hint = PERMISSION_HINTS[permission];
+    return grant ? `${hint}\nOr allow it for this login: ${grant}` : hint;
+};
+
 interface RequestOptions {
     method?: string;
     body?: unknown;
@@ -54,7 +72,8 @@ const send = async (
         const text = await res.text().catch(() => "Unknown error");
         throw new ApiError(
             res.status,
-            `${res.status} ${res.statusText}: ${text}`,
+            permissionHint(res.status, text) ??
+                `${res.status} ${res.statusText}: ${text}`,
             text,
         );
     }

@@ -267,8 +267,21 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it.each(["openai/gpt-audio-mini:openai", "openai/gpt-audio-1.5:openai"])(
+        "keeps %s on Standard regardless of the caller's processing tier",
+        (model) => {
+            for (const service_tier of [undefined, "auto", "priority"]) {
+                const resolved = resolveModelConfig(messages, {
+                    model,
+                    service_tier,
+                });
+                expect(resolved.options.service_tier).toBe("default");
+            }
+        },
+    );
+
     it.each(["gpt-6-sol", "gpt-6.1-sol", "gpt-6-luna"])(
-        "routes %s through Azure with direct OpenAI fallback",
+        "routes %s through Azure with AWS global fallback",
         (model) => {
             const canonical = `openai/${model}`;
             const result = resolveModelConfig(messages, { model: canonical });
@@ -282,28 +295,30 @@ describe("resolveModelConfig", () => {
                     "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
             });
             expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
-            expect(
-                findModelByName(`${canonical}:openai`)?.config(),
-            ).toMatchObject({
-                provider: "openai",
-                model,
-                responsesEndpoint: "https://api.openai.com/v1/responses",
-            });
+            expect(findModelByName(`${canonical}:aws`)?.config()).toMatchObject(
+                {
+                    provider: "bedrock",
+                    model: `global.openai.${model}`,
+                    responsesEndpoint:
+                        "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+                },
+            );
             expect(() => resolveModelConfig(messages, { model })).toThrow(
                 `Model configuration not found for: ${model}`,
             );
         },
     );
 
-    it("pins gpt-6-astra recovery to exact OpenAI Standard", () => {
+    it("pins gpt-6-astra recovery to exact AWS global Standard", () => {
         const resolved = resolveModelConfig(messages, {
-            model: "openai/gpt-6-astra:openai",
+            model: "openai/gpt-6-astra:aws",
             service_tier: "priority",
         });
-        expect(resolved.options.model).toBe("gpt-6-astra");
+        expect(resolved.options.model).toBe("global.openai.gpt-6-astra");
         expect(resolved.options.service_tier).toBe("default");
         expect(resolved.options.modelConfig).toMatchObject({
-            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             supportsMaxCompletionTokens: true,
             supportsStreamOptions: true,
         });
@@ -367,15 +382,16 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins gpt-5.6-sol recovery to exact OpenAI Standard", () => {
+    it("pins gpt-5.6-sol recovery to exact AWS global Standard", () => {
         const resolved = resolveModelConfig(messages, {
-            model: "openai/gpt-5.6-sol:openai",
+            model: "openai/gpt-5.6-sol:aws",
             service_tier: "priority",
         });
-        expect(resolved.options.model).toBe("gpt-5.6-sol");
+        expect(resolved.options.model).toBe("global.openai.gpt-5.6-sol");
         expect(resolved.options.service_tier).toBe("default");
         expect(resolved.options.modelConfig).toMatchObject({
-            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             supportsMaxCompletionTokens: true,
             supportsStreamOptions: true,
         });
@@ -419,15 +435,16 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins gpt-5.6-luna recovery to exact OpenAI Standard", () => {
+    it("pins gpt-5.6-luna recovery to exact AWS global Standard", () => {
         const resolved = resolveModelConfig(messages, {
-            model: "openai/gpt-5.6-luna:openai",
+            model: "openai/gpt-5.6-luna:aws",
             service_tier: "priority",
         });
-        expect(resolved.options.model).toBe("gpt-5.6-luna");
+        expect(resolved.options.model).toBe("global.openai.gpt-5.6-luna");
         expect(resolved.options.service_tier).toBe("default");
         expect(resolved.options.modelConfig).toMatchObject({
-            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             supportsMaxCompletionTokens: true,
             supportsStreamOptions: true,
         });
@@ -533,15 +550,16 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins gpt-5.6-terra recovery to exact OpenAI Standard", () => {
+    it("pins gpt-5.6-terra recovery to exact AWS global Standard", () => {
         const resolved = resolveModelConfig(messages, {
-            model: "openai/gpt-5.6-terra:openai",
+            model: "openai/gpt-5.6-terra:aws",
             service_tier: "priority",
         });
-        expect(resolved.options.model).toBe("gpt-5.6-terra");
+        expect(resolved.options.model).toBe("global.openai.gpt-5.6-terra");
         expect(resolved.options.service_tier).toBe("default");
         expect(resolved.options.modelConfig).toMatchObject({
-            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             supportsMaxCompletionTokens: true,
             supportsStreamOptions: true,
         });
@@ -642,23 +660,30 @@ describe("resolveModelConfig", () => {
     });
 
     it.each([
-        ["anthropic/claude-haiku-5.5", "claude-haiku-5-5"],
-        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5"],
-        ["anthropic/claude-opus-5.5", "claude-opus-5-5"],
-        ["anthropic/claude-fable-5.1", "claude-fable-5-1"],
+        ["anthropic/claude-haiku-5.5", "claude-haiku-5-5", "anthropic"],
+        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", "anthropic"],
+        ["anthropic/claude-opus-5.5", "claude-opus-5-5", "bedrock"],
+        ["anthropic/claude-fable-5.1", "claude-fable-5-1", "bedrock"],
     ])(
-        "routes %s to Anthropic with a Bedrock global fallback",
-        (model, upstream) => {
+        "resolves the configured primary and fallback for %s",
+        (model, upstream, provider) => {
+            const awsPrimary = provider === "bedrock";
             const primary = resolveModelConfig(messages, { model });
-            expect(primary.options.model).toBe(upstream);
-            expect(primary.options.modelConfig?.provider).toBe("anthropic");
+            expect(primary.options.model).toBe(
+                awsPrimary ? `global.anthropic.${upstream}` : upstream,
+            );
+            expect(primary.options.modelConfig?.provider).toBe(provider);
             expect(primary.options.max_tokens).toBe(128000);
 
             const fallback = resolveModelConfig(messages, {
-                model: `${model}:aws`,
+                model: `${model}:${awsPrimary ? "anthropic" : "aws"}`,
             });
-            expect(fallback.options.model).toBe(`global.anthropic.${upstream}`);
-            expect(fallback.options.modelConfig?.provider).toBe("bedrock");
+            expect(fallback.options.model).toBe(
+                awsPrimary ? upstream : `global.anthropic.${upstream}`,
+            );
+            expect(fallback.options.modelConfig?.provider).toBe(
+                awsPrimary ? "anthropic" : "bedrock",
+            );
             expect(fallback.options.max_tokens).toBe(128000);
         },
     );

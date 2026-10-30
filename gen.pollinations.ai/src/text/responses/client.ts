@@ -1,5 +1,7 @@
+import { Sha256 } from "@aws-crypto/sha256-js";
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
+import { SignatureV4 } from "@smithy/signature-v4";
 import { createParser } from "eventsource-parser";
 import { findModelByName } from "../availableModels.js";
 import { imageUrlToBase64Transform } from "../transforms/imageUrlToBase64Transform.js";
@@ -18,6 +20,7 @@ export type DirectResponsesTarget = {
     disableReasoningForForcedTools?: true;
     endpoint: string;
     headers: Record<string, string>;
+    aws?: { accessKeyId: string; secretAccessKey: string; region: string };
     model: string;
     defaults: JsonObject;
     serviceTier?: string;
@@ -39,6 +42,20 @@ export function responsesTargetFromConfig(
     if (typeof endpoint !== "string") return null;
 
     const authKey = config.authKey;
+    const aws =
+        config.provider === "bedrock" &&
+        typeof config["aws-access-key-id"] === "string" &&
+        config["aws-access-key-id"] &&
+        typeof config["aws-secret-access-key"] === "string" &&
+        config["aws-secret-access-key"] &&
+        typeof config["aws-region"] === "string" &&
+        config["aws-region"]
+            ? {
+                  accessKeyId: config["aws-access-key-id"],
+                  secretAccessKey: config["aws-secret-access-key"],
+                  region: config["aws-region"],
+              }
+            : undefined;
     const authHeader: Record<string, string> =
         typeof authKey !== "string" || !authKey
             ? {}
@@ -50,7 +67,9 @@ export function responsesTargetFromConfig(
         : {};
 
     return {
-        authConfigured: typeof authKey === "string" && authKey.length > 0,
+        authConfigured:
+            !!aws || (typeof authKey === "string" && authKey.length > 0),
+        ...(aws ? { aws } : {}),
         ...(config.responsesDisableReasoningForForcedTools === true
             ? { disableReasoningForForcedTools: true as const }
             : {}),
@@ -205,16 +224,35 @@ export async function callDirectResponses(
 
     let response: Response;
     try {
+        const body = JSON.stringify(
+            buildDirectResponsesRequestBody(request, target),
+        );
+        let headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            ...target.headers,
+        };
+        if (target.aws) {
+            const signer = new SignatureV4({
+                credentials: target.aws,
+                region: target.aws.region,
+                service: "bedrock",
+                sha256: Sha256,
+            });
+            const signed = await signer.sign({
+                method: "POST",
+                protocol: requestUrl.protocol,
+                hostname: requestUrl.hostname,
+                path: requestUrl.pathname,
+                headers: { ...headers, host: requestUrl.host },
+                body,
+            });
+            headers = signed.headers;
+        }
         response = await fetcher(target.endpoint, {
             method: "POST",
             redirect: "manual",
-            headers: {
-                "Content-Type": "application/json",
-                ...target.headers,
-            },
-            body: JSON.stringify(
-                buildDirectResponsesRequestBody(request, target),
-            ),
+            headers,
+            body,
         });
     } catch (thrown) {
         const error =

@@ -426,7 +426,7 @@ await image.saveToFile('robot.png');
 const base64 = image.toBase64();
 const dataUrl = image.toDataURL();
 
-// Just get the URL (no download)
+// Stored media URL to share, e.g. in <img src>
 const url = await imageUrl('a sunset');
 ```
 

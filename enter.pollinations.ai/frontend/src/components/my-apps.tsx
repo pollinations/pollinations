@@ -206,7 +206,7 @@ export function MyApps({
             {apps === undefined ? (
                 <PageStatus />
             ) : apps === null ? (
-                <LoadError onRetry={onRetry}>
+                <LoadError onRetry={onRetry} paths={["/account/apps"]}>
                     Couldn’t load your apps. Please try again.
                 </LoadError>
             ) : (

@@ -67,6 +67,7 @@ const PROTOCOL_VENDORS: Record<string, string> = {
 };
 const HOST_VENDORS: Record<string, string> = {
     "api.openai.com": "openai",
+    "bedrock-runtime.us-east-1.amazonaws.com": "aws",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
     "api.inferenceport.ai": "inferenceport",

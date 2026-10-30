@@ -24,6 +24,7 @@ import {
     ReturnToApp,
 } from "../lib/return-to-app.tsx";
 import { updateApiKey } from "../lib/update-api-key.ts";
+import { PAGE_TITLES, pageTitle } from "../page-meta.ts";
 
 type EditKeySearch = {
     id: string;
@@ -37,7 +38,7 @@ type EditKeySearch = {
  */
 export const Route = createFileRoute("/edit-key")({
     head: () => ({
-        meta: [{ title: "Edit access | pollinations.ai" }],
+        meta: [{ title: pageTitle("/edit-key") }],
     }),
     validateSearch: (search: Record<string, unknown>): EditKeySearch => ({
         id: typeof search.id === "string" ? search.id : "",
@@ -56,7 +57,7 @@ function EditKeyPage() {
     const [apiKey, setApiKey] = useState<ApiKey | null | undefined>(undefined);
     const accessContext = apiKey ? getKeyAccessContext(apiKey) : undefined;
     const title = !apiKey
-        ? "Edit access"
+        ? PAGE_TITLES["/edit-key"]
         : accessContext
           ? `Edit ${accessContext} access`
           : isAppKey(apiKey)
@@ -150,6 +151,7 @@ function EditKeyPage() {
                 title={title}
                 subject={subject}
                 error="Couldn’t load this key. Check that you’re signed in to the account that owns it."
+                errorPaths={["/account/keys"]}
                 balance={balance}
                 topUpHref={topUpHref}
                 actions={

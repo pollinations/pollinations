@@ -8,6 +8,12 @@ export interface MediaModel {
     pricing?: Record<string, string>;
     pricing_units?: Record<string, { unit: string; quantity?: number }>;
     pricing_variants?: { label: string }[];
+    pricing_adjustments?: {
+        name: string;
+        price: string;
+        quantity: number;
+        unit: string;
+    }[];
     flat_rate?: boolean;
     default_duration?: number;
 }
@@ -72,6 +78,21 @@ export function estimateMediaCost(model: MediaModel, req: MediaRequest) {
             if (req.audio) add(duration, "audio second");
         } else if (field === "promptVideoSeconds") continue;
         else unpriced.push(field);
+    }
+    // Fixed fees on top of the base rates, e.g. a per-generation execution fee.
+    for (const fee of model.pricing_adjustments ?? []) {
+        if (fee.unit !== "generation") {
+            unpriced.push(fee.name);
+            continue;
+        }
+        const unitRate = Number(fee.price) / fee.quantity;
+        lines.push({
+            field: fee.name,
+            rate: unitRate,
+            quantity: 1,
+            unit: "generation",
+            cost: unitRate,
+        });
     }
 
     const total =

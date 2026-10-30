@@ -9435,6 +9435,13 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     commit = "b".repeat(40);
     repositoryDescription = "Updated on GitHub";
     source = "export default async () => new Response('updated');";
+    // Sync refuses agents written in the last 30 seconds.
+    const allowSync = () =>
+        db
+            .update(communityEndpointTable)
+            .set({ updatedAt: new Date(Date.now() - 60_000) })
+            .where(eq(communityEndpointTable.id, agent.id));
+    await allowSync();
     const syncResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
@@ -9449,7 +9456,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     });
     expect(deploymentFetch).toHaveBeenCalledTimes(8);
 
-    await enterEnv.KV.delete(`code-agent-sync:throttle:${agent.id}`);
+    await allowSync();
     const unchangedSyncResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {

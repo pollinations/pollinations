@@ -281,8 +281,14 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
-        name: "openai/gpt-5.6-sol:openai",
-        config: portkeyConfig["gpt-5.6-sol-openai"],
+        name: "openai/gpt-5.5:aws",
+        config: portkeyConfig["gpt-5.5-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-5.6-sol:aws",
+        config: portkeyConfig["gpt-5.6-sol-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -293,8 +299,8 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-5.6-terra:openai",
-        config: portkeyConfig["gpt-5.6-terra-openai"],
+        name: "openai/gpt-5.6-terra:aws",
+        config: portkeyConfig["gpt-5.6-terra-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -305,14 +311,20 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6.1-terra:aws",
+        config: portkeyConfig["gpt-6.1-terra-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-5.6-luna:openai",
-        config: portkeyConfig["gpt-5.6-luna-openai"],
+        name: "openai/gpt-5.6-luna:aws",
+        config: portkeyConfig["gpt-5.6-luna-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -323,8 +335,8 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-6-astra:openai",
-        config: portkeyConfig["gpt-6-astra-openai"],
+        name: "openai/gpt-6-astra:aws",
+        config: portkeyConfig["gpt-6-astra-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -341,8 +353,8 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-6-sol:openai",
-        config: portkeyConfig["gpt-6-sol-openai"],
+        name: "openai/gpt-6-sol:aws",
+        config: portkeyConfig["gpt-6-sol-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -353,8 +365,8 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-6.1-sol:openai",
-        config: portkeyConfig["gpt-6.1-sol-openai"],
+        name: "openai/gpt-6.1-sol:aws",
+        config: portkeyConfig["gpt-6.1-sol-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -365,8 +377,8 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-6-luna:openai",
-        config: portkeyConfig["gpt-6-luna-openai"],
+        name: "openai/gpt-6-luna:aws",
+        config: portkeyConfig["gpt-6-luna-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -653,6 +665,16 @@ const models: ModelDefinition[] = [
         transform: pipe(audioDefaultsTransform, stripReasoning),
     },
     {
+        name: "openai/gpt-audio-mini:openai",
+        config: portkeyConfig["gpt-audio-mini-openai"],
+        transform: pipe(audioDefaultsTransform, stripReasoning),
+    },
+    {
+        name: "openai/gpt-audio-1.5:openai",
+        config: portkeyConfig["gpt-audio-1.5-openai"],
+        transform: pipe(audioDefaultsTransform, stripReasoning),
+    },
+    {
         name: "anthropic/claude-haiku-4.5",
         config: portkeyConfig["claude-haiku-4-5"],
         transform: pipe(claudeManualThinking, preferTemperature),
@@ -737,8 +759,8 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-opus-5.5:aws",
-        config: portkeyConfig["anthropic/claude-opus-5.5:aws"],
+        name: "anthropic/claude-opus-5.5:anthropic",
+        config: portkeyConfig["anthropic/claude-opus-5.5:anthropic"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -767,8 +789,8 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-fable-5.1:aws",
-        config: portkeyConfig["anthropic/claude-fable-5.1:aws"],
+        name: "anthropic/claude-fable-5.1:anthropic",
+        config: portkeyConfig["anthropic/claude-fable-5.1:anthropic"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {

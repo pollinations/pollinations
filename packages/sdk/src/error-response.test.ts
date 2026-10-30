@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { pollinationsErrorFromResponse } from "./error-response.js";
+import {
+    isOutageError,
+    pollinationsErrorFromResponse,
+} from "./error-response.js";
 
 // Build a minimal Response good enough for the error-parsing path.
 function makeErrorResponse(
@@ -60,5 +63,21 @@ describe("pollinationsErrorFromResponse request IDs", () => {
             }),
         );
         expect(err.requestId).toBeUndefined();
+    });
+});
+
+describe("isOutageError", () => {
+    it("recognises an outage from another entry point's error class", () => {
+        // The root and React bundles each define their own PollinationsError.
+        class OtherBundleError extends Error {
+            name = "PollinationsError";
+            constructor(readonly status: number) {
+                super("Request failed");
+            }
+        }
+        expect(isOutageError(new OtherBundleError(503))).toBe(true);
+        expect(isOutageError(new OtherBundleError(0))).toBe(true);
+        expect(isOutageError(new OtherBundleError(403))).toBe(false);
+        expect(isOutageError(new Error("Failed to fetch"))).toBe(false);
     });
 });

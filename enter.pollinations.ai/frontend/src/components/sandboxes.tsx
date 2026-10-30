@@ -550,7 +550,14 @@ export function Sandboxes() {
                 </ButtonGroup>
             }
         >
-            {loadError && <LoadError onRetry={load}>{loadError}</LoadError>}
+            {loadError && (
+                <LoadError
+                    onRetry={load}
+                    paths={["/alpha/e2b/pricing", "/alpha/e2b/v2/sandboxes"]}
+                >
+                    {loadError}
+                </LoadError>
+            )}
             {actionError && (
                 <Alert intent="danger">
                     {actionError}

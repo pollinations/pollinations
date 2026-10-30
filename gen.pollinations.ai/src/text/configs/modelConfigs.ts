@@ -7,6 +7,7 @@ import {
     createAzureModelConfig,
     createAzureResponsesModelConfig,
     createBedrockNativeConfig,
+    createBedrockResponsesConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
     createInferencePortModelConfig,
@@ -318,6 +319,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
+    "gpt-5.5-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.5"),
     "gpt-5.5": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
@@ -332,66 +335,40 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
-    "gpt-5.6-sol-openai": () => ({
-        provider: "openai",
-        model: "gpt-5.6-sol",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-5.6-sol-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.6-sol"),
     "gpt-5.6-sol": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
-    "gpt-5.6-terra-openai": () => ({
-        provider: "openai",
-        model: "gpt-5.6-terra",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-5.6-terra-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.6-terra"),
     "gpt-6.1-terra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.1-terra/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6.1-terra-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6.1-terra"),
     "gpt-5.6-terra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
-    "gpt-5.6-luna-openai": () => ({
-        provider: "openai",
-        model: "gpt-5.6-luna",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-5.6-luna-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.6-luna"),
     "gpt-5.6-luna": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
-    "gpt-6-astra-openai": () => ({
-        provider: "openai",
-        model: "gpt-6-astra",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-6-astra-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6-astra"),
     "gpt-6-astra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -417,27 +394,31 @@ export const portkeyConfig: PortkeyConfigMap = {
             azureOpenAIParameters,
         ),
 
-    // -- OpenAI direct (GPT-6) -------------------------------------------------
-    "gpt-6-sol-openai": () => ({
-        provider: "openai",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        model: "gpt-6-sol",
-    }),
-    "gpt-6.1-sol-openai": () => ({
-        provider: "openai",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        model: "gpt-6.1-sol",
-    }),
-    "gpt-6-luna-openai": () => ({
-        provider: "openai",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        model: "gpt-6-luna",
-    }),
+    // -- AWS Bedrock fallback (GPT-6) ---------------------------------------
+    "gpt-6-sol-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6-sol"),
+    "gpt-6.1-sol-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6.1-sol"),
+    "gpt-6-luna-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6-luna"),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
+    "gpt-audio-mini-openai": () => ({
+        provider: "openai",
+        model: "gpt-audio-mini-2025-12-15",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
+    "gpt-audio-1.5-openai": () => ({
+        provider: "openai",
+        model: "gpt-audio-1.5",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
@@ -1194,13 +1175,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5": () =>
-        createAnthropicConfig({
-            model: "claude-opus-5-5",
-            defaultOptions: { max_tokens: 128000 },
-        }),
-    "anthropic/claude-opus-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5.5:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-fable-5": () =>
@@ -1209,13 +1190,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1": () =>
-        createAnthropicConfig({
-            model: "claude-fable-5-1",
-            defaultOptions: { max_tokens: 128000 },
-        }),
-    "anthropic/claude-fable-5.1:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-fable-5-1",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.1:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>

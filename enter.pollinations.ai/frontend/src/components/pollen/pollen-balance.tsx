@@ -9,9 +9,12 @@ import {
     MailIcon,
     ReceiptIcon,
     RefreshIcon,
+    ShieldCheckIcon,
     SproutIcon,
     Surface,
+    useOnline,
     WalletIcon,
+    WarningIcon,
 } from "@pollinations/ui";
 import {
     formatPollen,
@@ -258,6 +261,32 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     )}
                 </span>
             </div>
+        </div>
+    );
+};
+
+/** The drawer wallet while Pollinations is down: two rows, like the balances. */
+export const SidebarOutage: FC = () => {
+    const online = useOnline();
+    return (
+        <div
+            data-theme="accent"
+            className="px-3 py-1 flex flex-col gap-1 text-xs font-bold"
+        >
+            <span className="flex items-center gap-1.5 text-intent-warning-text">
+                <WarningIcon
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 shrink-0"
+                />
+                {online ? "Temporary outage" : "You’re offline"}
+            </span>
+            <span className="flex items-center gap-1.5 text-theme-text-soft">
+                <ShieldCheckIcon
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 shrink-0"
+                />
+                Your pollen is safe
+            </span>
         </div>
     );
 };

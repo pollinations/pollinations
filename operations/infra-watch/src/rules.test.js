@@ -122,3 +122,37 @@ test("panel stays 44 chars wide", () => {
         assert.equal([...line].length, 46);
     }
 });
+
+test("analytics outage pauses recovery but is not gen down", () => {
+    const degraded = {
+        "degraded:a/model": {
+            kind: "DEGRADED",
+            model: "a/model",
+            success: 0.5,
+            nonClient: 20,
+        },
+    };
+    let r = step({}, degraded, 0);
+    const blind = conditions({ analyticsDown: true });
+    assert.deepEqual(Object.keys(blind), ["analytics"]);
+    for (const t of [1, 2, 3]) r = step(r.state, blind, t);
+    assert.deepEqual(
+        r.posts.map((p) => p.info.kind),
+        ["ANALYTICS_DOWN"],
+    );
+    assert.ok(r.state.active["degraded:a/model"]);
+});
+
+test("degraded alerts are labelled unconfirmed", () => {
+    const { text } = render({
+        type: "alert",
+        key: "degraded:a/model",
+        info: {
+            kind: "DEGRADED",
+            model: "a/model",
+            success: 0.5,
+            nonClient: 20,
+        },
+    });
+    assert.match(text, /unconfirmed: callers unknown/);
+});

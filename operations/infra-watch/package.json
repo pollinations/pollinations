@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "dev": "wrangler dev --test-scheduled",
-        "test": "node --test src/rules.test.js"
+        "test": "node --test src/rules.test.js",
+        "deploy": "wrangler deploy"
     },
     "devDependencies": {
         "wrangler": "^4.156.0"

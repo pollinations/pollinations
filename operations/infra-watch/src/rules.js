@@ -32,12 +32,18 @@ const totalRequests = (rows) =>
         .reduce((sum, row) => sum + row.total_requests, 0);
 
 // Returns the conditions true right now, keyed by alert key.
-export function conditions({ recent, last10, last60, official, genDown }) {
+// `gen` = gen's own liveness; `analytics` = /models/status (Tinybird) reads.
+export function conditions({
+    recent,
+    last10,
+    last60,
+    official,
+    genDown,
+    analyticsDown,
+}) {
     const found = {};
-    if (genDown) {
-        found.gen = { kind: "GEN_DOWN" };
-        return found;
-    }
+    if (genDown) return { gen: { kind: "GEN_DOWN" } };
+    if (analyticsDown) return { analytics: { kind: "ANALYTICS_DOWN" } };
     for (const [model, h] of Object.entries(modelHealth(recent))) {
         if (!official.has(model) || h.nonClient < MIN_REQUESTS) continue;
         if (h.success < MIN_SUCCESS) {
@@ -54,11 +60,16 @@ export function conditions({ recent, last10, last60, official, genDown }) {
     return found;
 }
 
+const CONFIRMED = new Set(["gen", "analytics", "platform"]);
+
 // Keys whose recovery we announce. Spillover just expires.
 const RECOVERS = (key) => !key.startsWith("spillover:");
 
 // Pure state transition: which messages to post, and the next state.
+// With missing data (gen or analytics down) nothing else may count as
+// recovered: only the outage key itself is judged.
 export function step(state, found, now, recent = []) {
+    const blind = Boolean(found.gen || found.analytics);
     const active = { ...(state.active ?? {}) };
     const streaks = {};
     const posts = [];
@@ -67,7 +78,7 @@ export function step(state, found, now, recent = []) {
     for (const [key, info] of Object.entries(found)) {
         const streak = (state.streaks?.[key] ?? 0) + 1;
         streaks[key] = streak;
-        const needs = key === "gen" || key === "platform" ? CONFIRM_CHECKS : 1;
+        const needs = CONFIRMED.has(key) ? CONFIRM_CHECKS : 1;
         if (streak < needs) continue;
         const prev = active[key];
         if (prev && now - prev.postedAt < COOLDOWN_MS) continue;
@@ -77,6 +88,7 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, prev] of Object.entries(active)) {
         if (found[key]) continue;
+        if (blind && key !== "gen") continue;
         if (!RECOVERS(key)) {
             if (now - prev.postedAt >= COOLDOWN_MS) delete active[key];
             continue;
@@ -113,7 +125,10 @@ export function render(post) {
     if (post.type === "recovered") {
         const what =
             info.model ??
-            (post.key === "gen" ? "gen.pollinations.ai" : "platform traffic");
+            { gen: "gen.pollinations.ai", analytics: "model status analytics" }[
+                post.key
+            ] ??
+            "platform traffic";
         const rate =
             info.success != null
                 ? ` — ${pct(info.success)} final success (${info.nonClient} reqs, 15 min)`
@@ -125,7 +140,19 @@ export function render(post) {
             text: panel([
                 ["STATUS", "DOWN"],
                 ["MODEL", "gen.pollinations.ai"],
-                ["WHY", `/models/status unreachable ${CONFIRM_CHECKS}x`],
+                ["WHY", `gen.pollinations.ai/ failed ${CONFIRM_CHECKS}x`],
+                ["BY", "infra-watch"],
+            ]),
+            ping: true,
+        };
+    }
+    if (info.kind === "ANALYTICS_DOWN") {
+        return {
+            text: panel([
+                ["STATUS", "BLIND"],
+                ["MODEL", "/models/status (analytics)"],
+                ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
+                ["", "model alerts paused"],
                 ["BY", "infra-watch"],
             ]),
             ping: true,
@@ -148,6 +175,10 @@ export function render(post) {
         ["MODEL", info.model],
         ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
     ];
+    if (info.kind === "DEGRADED") {
+        // Public data has no caller split: one bad caller can trip this.
+        lines.push(["CHECK", "unconfirmed: callers unknown"]);
+    }
     if (info.kind === "SPILLOVER") {
         lines.push(["QUEUE", `${info.retried503s} retried`]);
         lines.push(["FALLBACK", `${info.rescues} rescued`]);

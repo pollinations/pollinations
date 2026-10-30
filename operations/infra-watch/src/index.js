@@ -39,23 +39,35 @@ export class Watch extends DurableObject {
         const now = Date.now();
         let found;
         let recent = [];
-        try {
-            const [r15, r10, r60, catalog] = await Promise.all([
-                statusRows(15),
-                statusRows(10),
-                statusRows(60),
-                getJson(`${GEN}/models?reliability=all`),
-            ]);
-            recent = r15;
-            const models = Array.isArray(catalog) ? catalog : catalog.data;
-            const official = new Set(
-                models.filter((m) => !m.community).map((m) => m.name),
-            );
-            found = conditions({ recent, last10: r10, last60: r60, official });
-        } catch (error) {
-            console.error(`check failed: ${error.message}`);
-            found = conditions({ genDown: true });
-        }
+        const genUp = await fetch(`${GEN}/`, {
+            signal: AbortSignal.timeout(20_000),
+        })
+            .then((res) => res.ok)
+            .catch(() => false);
+        if (!genUp) found = conditions({ genDown: true });
+        else
+            try {
+                const [r15, r10, r60, catalog] = await Promise.all([
+                    statusRows(15),
+                    statusRows(10),
+                    statusRows(60),
+                    getJson(`${GEN}/models?reliability=all`),
+                ]);
+                recent = r15;
+                const models = Array.isArray(catalog) ? catalog : catalog.data;
+                const official = new Set(
+                    models.filter((m) => !m.community).map((m) => m.name),
+                );
+                found = conditions({
+                    recent,
+                    last10: r10,
+                    last60: r60,
+                    official,
+                });
+            } catch (error) {
+                console.error(`check failed: ${error.message}`);
+                found = conditions({ analyticsDown: true });
+            }
 
         const state = (await this.ctx.storage.get("state")) ?? {};
         const next = step(state, found, now, recent);

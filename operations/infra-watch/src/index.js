@@ -16,9 +16,14 @@ async function getJson(url) {
 const statusRows = async (gen, minutes) =>
     (await getJson(`${gen}/models/status?minutes=${minutes}`)).data;
 
+// Cancel the unread body: left open, it keeps the Durable Object running
+// until the 20 s timeout aborts it, on every check.
 const isUp = (gen) =>
     fetch(`${gen}/`, { signal: AbortSignal.timeout(20_000) })
-        .then((res) => res.ok)
+        .then((res) => {
+            res.body?.cancel();
+            return res.ok;
+        })
         .catch(() => false);
 
 // Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { COOLDOWN_MS, conditions, render, step } from "./rules.js";
+import {
+    COOLDOWN_MS,
+    conditions,
+    RECOVER_CHECKS,
+    render,
+    step,
+} from "./rules.js";
 
 const row = (model, ok, total, extra = {}) => ({
     model,
@@ -74,12 +80,37 @@ test("alerts once, respects cooldown, then announces recovery", () => {
     assert.equal(r.posts.length, 0);
     r = step(r.state, found, COOLDOWN_MS + 1);
     assert.equal(r.posts.length, 1);
-    r = step(r.state, {}, COOLDOWN_MS + 2, [row("a/model", 20, 20)]);
+    for (let i = 1; i < RECOVER_CHECKS; i++) {
+        r = step(r.state, {}, COOLDOWN_MS + 1 + i, [row("a/model", 20, 20)]);
+        assert.equal(r.posts.length, 0);
+    }
+    r = step(r.state, {}, COOLDOWN_MS + 99, [row("a/model", 20, 20)]);
     assert.deepEqual(
         r.posts.map((p) => p.type),
         ["recovered"],
     );
     assert.deepEqual(r.state.active, {});
+});
+
+test("a model hovering at the threshold alerts once, without flapping", () => {
+    const bad = {
+        "degraded:a/model": {
+            kind: "DEGRADED",
+            model: "a/model",
+            success: 0.89,
+            nonClient: 58,
+        },
+    };
+    let r = { state: {} };
+    const posts = [];
+    for (let t = 0; t < 60; t++) {
+        r =
+            t % 2 === 0
+                ? step(r.state, bad, t * 60_000)
+                : step(r.state, {}, t * 60_000, [row("a/model", 53, 58)]);
+        posts.push(...r.posts.map((p) => p.type));
+    }
+    assert.deepEqual(posts, ["alert"]);
 });
 
 test("recovery waits for a fresh sample", () => {

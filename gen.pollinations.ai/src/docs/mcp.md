@@ -13,6 +13,7 @@ then choose a server:
 | --- | --- | --- | --- |
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
+| Catalog Diff | `https://gen.pollinations.ai/mcp/catalog-diff` | Snapshot the model catalog and diff two snapshots for changes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/catalog-diff-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
@@ -142,6 +143,15 @@ with the link can access it, and it expires after 30 days.
 probabilities. Include relevant facts in `state`; confidence can remain high
 when facts are missing. Calls use Jev's listed model rate with no additional
 MCP fee.
+
+### Catalog Diff MCP
+
+`get_catalog` returns a normalized, timestamped snapshot of `/v1/models`.
+`diff_catalog` compares a caller-supplied baseline snapshot against a fresh
+fetch and reports added models, removed models, and field-level changes. No
+history is retained server-side; results are snapshot-to-snapshot
+comparisons. An unusable baseline returns `history_unavailable`, and an
+invalid or empty fresh fetch fails instead of manufacturing removals.
 
 ### FFmpeg MCP
 

@@ -295,6 +295,66 @@ main > * {
     }
 }
 
+/* ── Hero pollen ──────────────────────────────────────────────────────
+   Drifting pixels over the hero art (HeroMotes); fireflies at night. Only
+   transform and opacity move, and the layer pauses off screen. */
+.site-motes {
+    pointer-events: none;
+}
+
+.site-mote {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--polli-color-brand-accent);
+    /* Outlined like the art's pixels, so pollen reads on the pale day sky. */
+    box-shadow: 0 0 0 1px
+        color-mix(in oklab, var(--polli-color-paid-deep) 45%, transparent);
+    animation:
+        site-mote-drift var(--mote-duration) ease-in-out var(--mote-delay)
+            infinite alternate,
+        site-mote-twinkle calc(var(--mote-duration) / 3) ease-in-out
+            var(--mote-delay) infinite alternate;
+}
+
+.dark .site-mote {
+    box-shadow: 0 0 8px 2px
+        color-mix(in oklab, var(--polli-color-brand-accent) 70%, transparent);
+}
+
+.site-motes[data-paused] .site-mote {
+    animation-play-state: paused;
+}
+
+@media (min-width: 40rem) {
+    .site-mote {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-motes {
+        display: none;
+    }
+}
+
+@keyframes site-mote-drift {
+    to {
+        transform: translate(var(--mote-drift), -24px);
+    }
+}
+
+@keyframes site-mote-twinkle {
+    from {
+        opacity: 0.2;
+    }
+
+    to {
+        opacity: 0.9;
+    }
+}
+
 /* ── /play ───────────────────────────────────────────────────────────── */
 /* The native audio player, rounded to sit inside its result card. */
 .play-audio {

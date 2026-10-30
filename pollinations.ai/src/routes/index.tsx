@@ -29,7 +29,7 @@ function HelloPage() {
     return (
         <>
             {/* Polli herself opens the site — the one the brand already had. */}
-            <HeroScene page="home" wide>
+            <HeroScene page="home" wide ambient>
                 <ContentHeader
                     eyebrow="Open infrastructure for AI-natives"
                     title="Models. Agents. Tools. One API."

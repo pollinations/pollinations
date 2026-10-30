@@ -2964,6 +2964,89 @@ test("setup rewards: deleted accounts still count for 30 days, then their rows g
     ]);
 });
 
+const REPORT_WEBHOOK = "https://discord.test/api/webhooks/setup-rewards";
+
+/** Records Discord webhook posts; any other fetch fails the test. */
+function stubDiscord(status: number) {
+    const posts: unknown[] = [];
+    vi.stubGlobal(
+        "fetch",
+        async (input: RequestInfo | URL, init?: RequestInit) => {
+            if (String(input) !== REPORT_WEBHOOK) {
+                throw new Error(`Unexpected fetch: ${String(input)}`);
+            }
+            posts.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status });
+        },
+    );
+    return posts;
+}
+
+test("setup rewards: Discord gets one message when a network passes the limit", async () => {
+    const posts = stubDiscord(204);
+    try {
+        const reporting = {
+            ...HOLDS_OFF,
+            SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
+        };
+        const ids = await seedSetupAccounts("report", 32, "gmail.com");
+        for (const id of ids) await earnFirstKey(reporting, id, FARM_NETWORK);
+
+        expect(posts).toHaveLength(1);
+        expect(posts[0]).toMatchObject({
+            username: "Onboarding rewards",
+            embeds: [{ color: 0xef9f27 }],
+            allowed_mentions: { parse: [] },
+        });
+        const { description } = (
+            posts[0] as { embeds: { description: string }[] }
+        ).embeds[0];
+        expect(description).toContain("WATCHING: network 203.0.113.0/24");
+        expect(description).toContain("ACCOUNTS 31 in 24h (limit 30)");
+        expect(description).toContain("REWARDS  paid, holds are off");
+    } finally {
+        vi.unstubAllGlobals();
+    }
+});
+
+test("setup rewards: a failed Discord post still holds the account", async () => {
+    const posts = stubDiscord(500);
+    try {
+        const reporting = {
+            ...HOLDS_ON,
+            ENVIRONMENT: "staging",
+            SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
+        };
+        const ids = await seedSetupAccounts("report-farm", 31, "farm.test");
+        let last: Awaited<ReturnType<typeof checkQuestsForUser>> | undefined;
+        for (const [index, id] of ids.entries()) {
+            last = await checkQuestsForUser(
+                reporting,
+                id,
+                [questIndex.ACCOUNT_SETUP_QUEST_GROUP],
+                `10.1.${index}.0`,
+            );
+        }
+
+        expect(posts).toHaveLength(1);
+        const [{ embeds }] = posts as {
+            embeds: { description: string; color: number }[];
+        }[];
+        expect(embeds[0].color).toBe(0xd85a30);
+        expect(embeds[0].description).toContain(
+            "[staging] HOLDING: domain farm.test",
+        );
+        expect(embeds[0].description).toContain("REWARDS  new accounts held");
+        expect(last?.success).toBe(true);
+        expect(await setupDecision(ids[30])).toMatchObject({
+            heldReason: "domain",
+        });
+        expect(await claimSetupReward(ids[30], "first_api_key")).toBe(false);
+    } finally {
+        vi.unstubAllGlobals();
+    }
+});
+
 test("setup rewards: a held account creates keys and claims other rewards, and its setup reward pays once after release", async ({
     accountToken,
     mocks,

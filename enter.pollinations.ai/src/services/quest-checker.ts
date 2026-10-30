@@ -13,7 +13,11 @@ import {
     type QuestUser,
     toReward,
 } from "./quests/types.ts";
-import { recordSetupRewardDecision } from "./setup-reward-holds.ts";
+import {
+    recordSetupRewardDecision,
+    reportSetupRewardCandidate,
+    type SetupRewardCandidate,
+} from "./setup-reward-holds.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
@@ -79,13 +83,15 @@ export async function checkQuestsForUser(
                 !earned.has(proposal.quest.id),
         );
     let setupDecisionFailed = false;
+    let candidate: SetupRewardCandidate | null = null;
+    const holds = env.SETUP_REWARD_HOLDS === "on";
     if (proposals.some(({ quest }) => quest.category === "setup")) {
         try {
-            await recordSetupRewardDecision(env.DB, {
+            candidate = await recordSetupRewardDecision(env.DB, {
                 userId: user.id,
                 email: user.email,
                 network,
-                holds: env.SETUP_REWARD_HOLDS === "on",
+                holds,
             });
         } catch (error) {
             // Without a decision row, no setup reward is recorded; the next
@@ -96,6 +102,12 @@ export async function checkQuestsForUser(
                 ({ quest }) => quest.category !== "setup",
             );
         }
+    }
+    if (candidate) {
+        // Reporting is best effort: rewards and holds never wait on Discord.
+        await reportSetupRewardCandidate(env, candidate, holds).catch((error) =>
+            log.warn("SETUP_REWARD_REPORT_FAILED: {error}", { error }),
+        );
     }
     const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(

@@ -15,6 +15,8 @@ export type Env = {
         SITES_HOST_SUFFIX?: string;
         /** "on" makes new setup reward decisions holds; anything else, off. */
         SETUP_REWARD_HOLDS?: string;
+        /** Discord webhook for setup reward reports; shared with infra-watch. */
+        SETUP_REWARD_DISCORD_WEBHOOK_URL?: string;
         CODE_AGENT_CONTEXT?: {
             authorization: string;
             origin: string;

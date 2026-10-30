@@ -526,7 +526,7 @@ export function QuestRow({
         >
             <ClockIcon className="h-4 w-4 shrink-0" />
             <span>
-                On hold, contact{" "}
+                Can't verify account, contact{" "}
                 <InlineLink href="mailto:hello@pollinations.ai">
                     hello@pollinations.ai
                 </InlineLink>

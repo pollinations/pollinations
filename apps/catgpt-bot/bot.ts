@@ -19,10 +19,10 @@ const MEDIA_API = "https://media.pollinations.ai/upload";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const ORIGINAL_CATGPT =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
+    "https://catgpt.pollinations.app/images/original-catgpt.png";
 // must be a durable URL — media.pollinations.ai uploads expire after 30 days (broke twice: #10826 + Jul 2026)
 const SELFIE_CATGPT =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/selfie-catgpt.png";
+    "https://catgpt.pollinations.app/images/selfie-catgpt.png";
 const MODEL = "nanobanana-2-lite";
 
 function log(...args: any[]) {

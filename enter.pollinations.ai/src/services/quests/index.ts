@@ -33,4 +33,24 @@ export async function listQuestCards(
     return lists.flat();
 }
 
+/**
+ * Onboarding quests, whose rewards a setup reward hold blocks. GitHub issue
+ * quests are never onboarding quests; skipping them keeps claims off GitHub.
+ */
+export async function listSetupQuestIds(
+    ctx: QuestEvaluationContext,
+): Promise<Set<string>> {
+    const lists = await Promise.all(
+        QUEST_GROUPS.filter((group) => group.id !== "github-contributions").map(
+            (group) => group.listQuestCards(ctx),
+        ),
+    );
+    return new Set(
+        lists
+            .flat()
+            .filter((card) => card.category === "setup")
+            .map(({ id }) => id),
+    );
+}
+
 export type { QuestCard };

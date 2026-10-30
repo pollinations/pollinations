@@ -5,11 +5,15 @@ import {
     rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
+import type {
+    QuestCategory,
+    QuestDefinition,
+} from "../src/services/quests/definitions.ts";
 import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
@@ -2664,4 +2668,445 @@ test("account quest history accepts account usage permission", async ({
     await expect(response.json()).resolves.toMatchObject({
         rewards: [{ questId: "first_api_key" }],
     });
+});
+
+// Setup reward holds: one decision row per account at its first setup reward.
+const HOLDS_ON = { ...env, SETUP_REWARD_HOLDS: "on" };
+const HOLDS_OFF = { ...env, SETUP_REWARD_HOLDS: "off" };
+const FARM_NETWORK = "203.0.113.0";
+const DAY_SECONDS = 24 * 60 * 60;
+
+/** Accounts with an API key, so their next setup check earns first_api_key. */
+async function seedSetupAccounts(
+    prefix: string,
+    count: number,
+    domain: string,
+): Promise<string[]> {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+    const ids = Array.from(
+        { length: count },
+        (_, index) => `${prefix}-${index}`,
+    );
+    for (const id of ids) {
+        await db.insert(schema.user).values({
+            id,
+            name: id,
+            email: `${id}@${domain}`,
+            emailVerified: true,
+            createdAt: now,
+            updatedAt: now,
+            githubId: hashGithubId(id),
+            githubUsername: id,
+            tierBalance: 0,
+            packBalance: 0,
+        });
+        await db.insert(schema.apikey).values({
+            id: `${id}-key`,
+            name: "Key",
+            key: `sk_${id}`,
+            prefix: "sk",
+            referenceId: id,
+            createdAt: now,
+            updatedAt: now,
+        });
+    }
+    return ids;
+}
+
+function earnFirstKey(
+    bindings: typeof HOLDS_ON,
+    userId: string,
+    network?: string,
+) {
+    return checkQuestsForUser(
+        bindings,
+        userId,
+        [questIndex.ACCOUNT_SETUP_QUEST_GROUP],
+        network,
+    );
+}
+
+/** A quest every account completes, e.g. a later onboarding reward. */
+function completedQuestGroup(
+    questId: string,
+    category: QuestCategory = "setup",
+): QuestGroup {
+    const quest: QuestDefinition = {
+        id: questId,
+        title: questId,
+        description: "",
+        category,
+        scope: "perUser",
+        rewardAmount: 0.25,
+        balanceBucket: "tier",
+    };
+    return {
+        id: questId,
+        listQuestCards: async () => [],
+        evaluateUser: async (_ctx, user) => ({
+            proposals: [{ quest, userId: user.id }],
+        }),
+    };
+}
+
+async function setupDecision(userId: string) {
+    const [row] = await drizzle(env.DB, { schema })
+        .select()
+        .from(schema.setupRewardDecision)
+        .where(eq(schema.setupRewardDecision.userId, userId));
+    return row;
+}
+
+async function tierBalanceOf(userId: string) {
+    const [row] = await drizzle(env.DB, { schema })
+        .select({ value: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, userId));
+    return row?.value ?? 0;
+}
+
+async function questReward(userId: string, questId: string) {
+    const [reward] = await drizzle(env.DB, { schema })
+        .select()
+        .from(schema.rewards)
+        .where(
+            and(
+                eq(schema.rewards.userId, userId),
+                eq(schema.rewards.questId, questId),
+            ),
+        );
+    if (!reward) throw new Error(`Expected ${questId} reward`);
+    return reward;
+}
+
+async function claimSetupReward(userId: string, questId: string) {
+    const reward = await questReward(userId, questId);
+    const result = await claimReward(drizzle(env.DB, { schema }), {
+        rewardId: reward.id,
+        userId,
+        setupQuestIds: new Set([questId]),
+    });
+    return result.claimed;
+}
+
+test("setup rewards: the claim guard covers every setup quest in the catalog", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+    const ctx = { db: drizzle(env.DB, { schema }), env };
+    const catalogSetupIds = (await questIndex.listQuestCards(ctx))
+        .filter((card) => card.category === "setup")
+        .map((card) => card.id);
+    expect(catalogSetupIds).toContain("first_api_key");
+    expect([...(await questIndex.listSetupQuestIds(ctx))].sort()).toEqual(
+        catalogSetupIds.sort(),
+    );
+});
+
+test("setup rewards: the 31st account on one network is held, the 30th is paid", async () => {
+    const ids = await seedSetupAccounts("net", 31, "gmail.com");
+    for (const id of ids) await earnFirstKey(HOLDS_ON, id, FARM_NETWORK);
+
+    expect(await setupDecision(ids[29])).toMatchObject({
+        network: FARM_NETWORK,
+        emailDomain: "gmail.com",
+        candidateReason: null,
+        heldReason: null,
+    });
+    expect(await tierBalanceOf(ids[29])).toBeCloseTo(0.25);
+    expect(await setupDecision(ids[30])).toMatchObject({
+        candidateReason: "network",
+        heldReason: "network",
+    });
+    expect(await tierBalanceOf(ids[30])).toBe(0);
+    expect(await claimSetupReward(ids[30], "first_api_key")).toBe(false);
+});
+
+test("setup rewards: private domains are limited, public mail domains never", async () => {
+    const farm = await seedSetupAccounts("farm", 31, "farm.test");
+    const mail = await seedSetupAccounts("mail", 31, "gmail.com");
+    for (const [index, id] of [...farm, ...mail].entries()) {
+        await earnFirstKey(HOLDS_ON, id, `10.0.${index}.0`);
+    }
+
+    expect(await setupDecision(farm[29])).toMatchObject({
+        candidateReason: null,
+    });
+    expect(await setupDecision(farm[30])).toMatchObject({
+        emailDomain: "farm.test",
+        candidateReason: "domain",
+        heldReason: "domain",
+    });
+    for (const id of mail) {
+        expect((await setupDecision(id))?.candidateReason).toBeNull();
+    }
+});
+
+test("setup rewards: concurrent first rewards admit only 30 accounts and count retries once", async () => {
+    const db = drizzle(env.DB, { schema });
+    const ids = await seedSetupAccounts("burst", 35, "gmail.com");
+    await Promise.all(
+        ids.map((id) => earnFirstKey(HOLDS_ON, id, FARM_NETWORK)),
+    );
+
+    const decisions = await db.select().from(schema.setupRewardDecision);
+    expect(decisions.filter((row) => row.heldReason === null)).toHaveLength(30);
+    expect(
+        decisions.filter((row) => row.heldReason === "network"),
+    ).toHaveLength(5);
+    const balances = await Promise.all(ids.map(tierBalanceOf));
+    expect(balances.filter((balance) => balance > 0)).toHaveLength(30);
+
+    const [retry] = await seedSetupAccounts("retry", 1, "gmail.com");
+    await Promise.all(
+        Array.from({ length: 5 }, () =>
+            earnFirstKey(HOLDS_ON, retry, "198.51.100.0"),
+        ),
+    );
+    const retryRows = await db
+        .select()
+        .from(schema.setupRewardDecision)
+        .where(eq(schema.setupRewardDecision.network, "198.51.100.0"));
+    expect(retryRows).toHaveLength(1);
+    expect(retryRows[0]?.heldReason).toBeNull();
+    expect(await tierBalanceOf(retry)).toBeCloseTo(0.25);
+});
+
+test("setup rewards: a hold sticks through a network change and the 30-day cleanup", async () => {
+    const db = drizzle(env.DB, { schema });
+    const ids = await seedSetupAccounts("sticky", 31, "gmail.com");
+    for (const id of ids) await earnFirstKey(HOLDS_ON, id, FARM_NETWORK);
+    const held = ids[30];
+
+    await checkQuestsForUser(
+        HOLDS_ON,
+        held,
+        [completedQuestGroup("later_setup")],
+        "198.51.100.0",
+    );
+    expect(await setupDecision(held)).toMatchObject({
+        network: FARM_NETWORK,
+        heldReason: "network",
+    });
+    expect(await claimSetupReward(held, "later_setup")).toBe(false);
+
+    // Age every row past 30 days; the next first reward clears them.
+    await db.update(schema.setupRewardDecision).set({
+        firstRewardAt: sql`${schema.setupRewardDecision.firstRewardAt} - ${31 * DAY_SECONDS}`,
+    });
+    const decisionsOf = () =>
+        db
+            .select({
+                userId: schema.setupRewardDecision.userId,
+                candidateReason: schema.setupRewardDecision.candidateReason,
+                heldReason: schema.setupRewardDecision.heldReason,
+            })
+            .from(schema.setupRewardDecision)
+            .where(inArray(schema.setupRewardDecision.userId, ids));
+    const before = await decisionsOf();
+    const [fresh] = await seedSetupAccounts("fresh", 1, "gmail.com");
+    await earnFirstKey(HOLDS_ON, fresh, FARM_NETWORK);
+
+    const cleared = await db
+        .select()
+        .from(schema.setupRewardDecision)
+        .where(ne(schema.setupRewardDecision.userId, fresh));
+    expect(cleared).toHaveLength(31);
+    for (const row of cleared) {
+        expect(row.network).toBeNull();
+        expect(row.emailDomain).toBeNull();
+    }
+    expect(await decisionsOf()).toEqual(before);
+    expect(await setupDecision(fresh)).toMatchObject({
+        network: FARM_NETWORK,
+        candidateReason: null,
+    });
+
+    await checkQuestsForUser(
+        HOLDS_ON,
+        held,
+        [completedQuestGroup("after_cleanup")],
+        FARM_NETWORK,
+    );
+    expect(await claimSetupReward(held, "after_cleanup")).toBe(false);
+    expect(await tierBalanceOf(held)).toBe(0);
+});
+
+test("setup rewards: a held account creates keys and claims other rewards, and its setup reward pays once after release", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    const startBalance = await tierBalanceOf(user.id);
+    // Holds were switched on when this account's first setup reward was decided.
+    await db.insert(schema.setupRewardDecision).values({
+        userId: user.id,
+        network: FARM_NETWORK,
+        emailDomain: "example.com",
+        firstRewardAt: new Date(),
+        candidateReason: "network",
+        heldReason: "network",
+    });
+
+    await createApiKeyViaApi(accountToken, { name: "held-account-key" });
+    const firstKey = await questReward(user.id, "first_api_key");
+    expect(firstKey.claimedAt).toBeNull();
+    expect(await tierBalanceOf(user.id)).toBeCloseTo(startBalance);
+
+    const get = async (path: string) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/${path}`,
+            { headers: { Authorization: `Bearer ${accountToken}` } },
+        );
+        expect(response.status).toBe(200);
+        return response.json();
+    };
+    const claim = async (rewardId: string) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/quests/rewards/${rewardId}/claim`,
+            {
+                method: "POST",
+                headers: { Authorization: `Bearer ${accountToken}` },
+            },
+        );
+        expect(response.status).toBe(200);
+        return ((await response.json()) as { claimed: boolean }).claimed;
+    };
+    const heldByQuestId = async () => {
+        const { rewards } = (await get("quests/rewards")) as {
+            rewards: { questId: string; held: boolean }[];
+        };
+        return Object.fromEntries(
+            rewards.map((reward) => [reward.questId, reward.held]),
+        );
+    };
+
+    const { quests } = (await get("quests")) as {
+        quests: { id: string; held: boolean }[];
+    };
+    const questHeld = new Map(quests.map((quest) => [quest.id, quest.held]));
+    expect(questHeld.get("first_api_key")).toBe(true);
+    expect(questHeld.get("merged_pr")).toBe(false);
+    expect(await heldByQuestId()).toEqual({ first_api_key: true });
+    expect(await claim(firstKey.id)).toBe(false);
+
+    await recordRewards(db, [
+        {
+            idempotencyKey: "promo:held-account",
+            userId: user.id,
+            questId: "promo:launch",
+            title: "Promo",
+            amount: 1,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "quest:merged_pr:held-account",
+            userId: user.id,
+            questId: "merged_pr",
+            title: "Contribute a pull request",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+    for (const questId of ["promo:launch", "merged_pr"]) {
+        expect(await claim((await questReward(user.id, questId)).id)).toBe(
+            true,
+        );
+    }
+    expect(await tierBalanceOf(user.id)).toBeCloseTo(startBalance + 6);
+
+    // Release: one point update by user id.
+    await db
+        .update(schema.setupRewardDecision)
+        .set({ heldReason: null })
+        .where(eq(schema.setupRewardDecision.userId, user.id));
+    expect(await heldByQuestId()).toMatchObject({ first_api_key: false });
+    expect(await claim(firstKey.id)).toBe(true);
+    expect(await claim(firstKey.id)).toBe(false);
+    expect(await tierBalanceOf(user.id)).toBeCloseTo(startBalance + 6.25);
+
+    await checkQuestsForUser(
+        HOLDS_ON,
+        user.id,
+        [completedQuestGroup("after_release")],
+        FARM_NETWORK,
+    );
+    expect(await claimSetupReward(user.id, "after_release")).toBe(true);
+});
+
+test("setup rewards: a failed decision write records no setup reward until the next check", async () => {
+    const [id] = await seedSetupAccounts("offline", 1, "gmail.com");
+    const groups = [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+        completedQuestGroup("offline_contribution", "contribute"),
+    ];
+
+    await env.DB.exec(
+        "ALTER TABLE setup_reward_decision RENAME TO setup_reward_decision_offline",
+    );
+    try {
+        const failed = await checkQuestsForUser(
+            HOLDS_ON,
+            id,
+            groups,
+            FARM_NETWORK,
+        );
+        expect(failed.recorded).toBe(1);
+    } finally {
+        await env.DB.exec(
+            "ALTER TABLE setup_reward_decision_offline RENAME TO setup_reward_decision",
+        );
+    }
+    await expect(questReward(id, "first_api_key")).rejects.toThrow();
+    await questReward(id, "offline_contribution");
+
+    const retried = await checkQuestsForUser(
+        HOLDS_ON,
+        id,
+        groups,
+        FARM_NETWORK,
+    );
+    expect(retried.recorded).toBe(1);
+    expect(await setupDecision(id)).toMatchObject({ network: FARM_NETWORK });
+    expect((await questReward(id, "first_api_key")).claimedAt).not.toBeNull();
+});
+
+test("setup rewards: with holds off only candidates are recorded, and existing holds still block claims", async () => {
+    const ids = await seedSetupAccounts("switch", 32, "gmail.com");
+    for (const id of ids.slice(0, 30)) {
+        await earnFirstKey(HOLDS_OFF, id, FARM_NETWORK);
+    }
+    const [held, candidate] = ids.slice(30);
+    await earnFirstKey(HOLDS_ON, held, FARM_NETWORK);
+    await earnFirstKey(HOLDS_OFF, candidate, FARM_NETWORK);
+
+    expect(await setupDecision(held)).toMatchObject({
+        candidateReason: "network",
+        heldReason: "network",
+    });
+    expect(await setupDecision(candidate)).toMatchObject({
+        candidateReason: "network",
+        heldReason: null,
+    });
+    expect(await tierBalanceOf(candidate)).toBeCloseTo(0.25);
+
+    // Switching off keeps the existing hold; switching on holds no earlier account.
+    await checkQuestsForUser(
+        HOLDS_OFF,
+        held,
+        [completedQuestGroup("switched_off")],
+        FARM_NETWORK,
+    );
+    expect(await claimSetupReward(held, "switched_off")).toBe(false);
+    await checkQuestsForUser(
+        HOLDS_ON,
+        candidate,
+        [completedQuestGroup("switched_on")],
+        FARM_NETWORK,
+    );
+    expect(await setupDecision(candidate)).toMatchObject({ heldReason: null });
+    expect(await claimSetupReward(candidate, "switched_on")).toBe(true);
 });

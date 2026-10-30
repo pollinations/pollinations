@@ -3,6 +3,7 @@ import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import type { Env } from "../env.ts";
 import { QUEST_GROUPS } from "./quests/index.ts";
 import {
     type QuestEvaluation,
@@ -12,6 +13,7 @@ import {
     type QuestUser,
     toReward,
 } from "./quests/types.ts";
+import { recordSetupRewardDecision } from "./setup-reward-holds.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
@@ -28,9 +30,11 @@ export type QuestCheckResult = {
 };
 
 export async function checkQuestsForUser(
-    env: CloudflareBindings,
+    env: Env["Bindings"],
     userId: string,
     groups: QuestGroup[] = QUEST_GROUPS,
+    /** IPv4 /24 or IPv6 /48 of the request running the check. */
+    network?: string,
 ): Promise<QuestCheckResult> {
     const db = drizzle(env.DB, { schema });
     log.info("QUEST_CHECK_START: userId={userId} groups={groups}", {
@@ -66,7 +70,7 @@ export async function checkQuestsForUser(
                 .where(eq(schema.rewards.userId, user.id))
         ).map((reward) => reward.questId),
     );
-    const proposals = sourceResults
+    let proposals = sourceResults
         .flatMap((entry) => entry.proposals)
         .filter(
             (proposal) =>
@@ -74,6 +78,28 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
+    const setupQuestIds = new Set(
+        proposals
+            .filter(({ quest }) => quest.category === "setup")
+            .map(({ quest }) => quest.id),
+    );
+    if (setupQuestIds.size > 0) {
+        try {
+            await recordSetupRewardDecision(env.DB, {
+                userId: user.id,
+                email: user.email,
+                network,
+                holds: env.SETUP_REWARD_HOLDS === "on",
+            });
+        } catch (error) {
+            // Without a decision row, no setup reward is recorded; the next
+            // quest check retries.
+            log.error("QUEST_CHECK_SETUP_DECISION_FAILED: {error}", { error });
+            proposals = proposals.filter(
+                ({ quest }) => quest.category !== "setup",
+            );
+        }
+    }
     const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",
@@ -102,7 +128,11 @@ export async function checkQuestsForUser(
                 ),
             );
         for (const reward of pending) {
-            await claimReward(ctx.db, { rewardId: reward.id, userId: user.id });
+            await claimReward(ctx.db, {
+                rewardId: reward.id,
+                userId: user.id,
+                setupQuestIds,
+            });
         }
     }
 
@@ -123,13 +153,14 @@ export async function checkQuestsForUser(
 async function loadQuestUser(
     db: ReturnType<typeof drizzle<typeof schema>>,
     userId: string,
-): Promise<QuestUser | null> {
+): Promise<(QuestUser & { email: string }) | null> {
     const rows = await db
         .select({
             id: schema.user.id,
             githubId: schema.user.githubId,
             githubUsername: schema.user.githubUsername,
             googleId: schema.account.accountId,
+            email: schema.user.email,
         })
         .from(schema.user)
         .leftJoin(

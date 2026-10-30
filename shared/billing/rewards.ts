@@ -1,7 +1,11 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type * as schema from "../db/better-auth.ts";
-import { rewards, user as userTable } from "../db/better-auth.ts";
+import {
+    rewards,
+    setupRewardDecision,
+    user as userTable,
+} from "../db/better-auth.ts";
 import type { Bucket } from "./deduction.ts";
 import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 
@@ -129,16 +133,19 @@ export async function recordRewards(
 /**
  * Claims one pending reward and credits the chosen balance bucket. The balance
  * update is gated on the preceding `claimed_at IS NULL` update, so retries and
- * double-clicks cannot double-pay.
+ * double-clicks cannot double-pay. Rewards for `setupQuestIds` also stay
+ * unclaimed while the account's setup reward decision has a held_reason.
  */
 export async function claimReward(
     db: AuthDb,
     {
         rewardId,
         userId,
+        setupQuestIds,
     }: {
         rewardId: string;
         userId: string;
+        setupQuestIds?: ReadonlySet<string>;
     },
 ): Promise<ClaimRewardResult> {
     const row = await loadRewardForUser(db, rewardId, userId);
@@ -162,6 +169,9 @@ export async function claimReward(
                     eq(rewards.id, rewardId),
                     eq(rewards.userId, userId),
                     isNull(rewards.claimedAt),
+                    row.questId !== null && setupQuestIds?.has(row.questId)
+                        ? sql`NOT EXISTS (SELECT 1 FROM ${setupRewardDecision} WHERE ${setupRewardDecision.userId} = ${userId} AND ${setupRewardDecision.heldReason} IS NOT NULL)`
+                        : undefined,
                 ),
             ),
         db

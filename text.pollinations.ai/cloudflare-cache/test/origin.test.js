@@ -23,7 +23,7 @@ const SSE_UNTIL_DONE =
 /** The IP_SLOT alarm of an IP whose last generation ended: within the interval */
 const released = async (ip) => {
     const alarm = await alarmOf(ip);
-    return alarm !== null && alarm <= Date.now() + 30_000;
+    return alarm !== null && alarm <= Date.now() + 45_000;
 };
 
 /** env with a GEN binding that records the bodies it sends to gen */
@@ -888,7 +888,7 @@ test("the 431 starts where it did for the production measurement of GET /models"
 test("while a free generation runs, a stream from the same IP gets a 429", async () => {
     const ip = nextIp();
     const running = call("/gen:slow", { ip });
-    await expect.poll(() => alarmOf(ip)).toBeGreaterThan(Date.now() + 30_000);
+    await expect.poll(() => alarmOf(ip)).toBeGreaterThan(Date.now() + 45_000);
 
     const stream = await call("/meanwhile?stream=true", { ip });
 
@@ -904,13 +904,13 @@ test("while a free generation runs, a stream from the same IP gets a 429", async
 
 test("a stream that waits for the slot holds the IP, so a second waiter gets 429", async () => {
     const ip = nextIp();
-    // The last free generation started 29.8 s ago and has ended
+    // The last free generation started 44.8 s ago and has ended
     await runInDurableObject(env.IP_SLOT.getByName(ip), (_slot, state) =>
         state.storage.setAlarm(Date.now() + 200),
     );
 
     const waiting = call("/first%20waiter?stream=true", { ip });
-    await expect.poll(() => alarmOf(ip)).toBeGreaterThan(Date.now() + 30_000);
+    await expect.poll(() => alarmOf(ip)).toBeGreaterThan(Date.now() + 45_000);
     const second = await call("/second%20waiter?stream=true", { ip });
 
     expect(second.response.status).toBe(429);

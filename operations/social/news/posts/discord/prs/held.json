@@ -4,11 +4,15 @@
       "merge_sha": "a2a962686bd7e26589a2b5e9c7259f75e67fc967",
       "merged_at": "2026-10-25T12:31:42Z",
       "required": [
-        "deploy-legacy-caches.yml:deploy (image)",
-        "deploy-legacy-caches.yml:deploy (text)"
+        "deploy-legacy-caches.yml:deploy (image)"
       ]
+    },
+    "18812": {
+      "merge_sha": "63be042f0514b1e8810274a0240df4d0b5f25691",
+      "merged_at": "2026-10-30T23:21:02Z",
+      "required": []
     }
   },
   "production": "d55a4a25d304cade1df4d272f765e14751ac3104",
-  "master": "a2a962686bd7e26589a2b5e9c7259f75e67fc967"
+  "master": "63be042f0514b1e8810274a0240df4d0b5f25691"
 }

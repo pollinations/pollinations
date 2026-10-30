@@ -54,7 +54,7 @@ jobs:
       - run: npm run typecheck --if-present
       - run: npm run test --if-present
       - run: npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pollinations-site-${{ inputs.site-name }}
           path: ${{ inputs.working-directory }}/${{ inputs.site-directory }}
@@ -73,7 +73,7 @@ jobs:
           node-version: "24"
       - name: Install published CLI
         run: npm install --global --ignore-scripts --no-audit --no-fund @pollinations/cli@0.1.72
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: pollinations-site-${{ inputs.site-name }}
           path: ${{ runner.temp }}/pollinations-site

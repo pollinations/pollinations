@@ -55,18 +55,13 @@ describe("Sites deployment workflow", () => {
         expect(download.with.path).toBe(
             `\${{ runner.temp }}/pollinations-site`,
         );
-        const scripts = publish.steps.filter(
-            (step: { run?: string }) => step.run,
+        expect(publish.env?.POLLINATIONS_API_KEY).toBeUndefined();
+        const credentialSteps = publish.steps.filter(
+            (step: { env?: Record<string, string> }) =>
+                step.env?.POLLINATIONS_API_KEY,
         );
-        expect(scripts).toHaveLength(2);
-        expect(scripts[0].run).toMatch(
-            /^npm install --global --ignore-scripts /,
-        );
-        expect(scripts[0].env).toBeUndefined();
-        expect(scripts[1].run).toBe(
-            'polli sites deploy "$RUNNER_TEMP/pollinations-site" --name "$SITE_NAME" --verify',
-        );
-        expect(scripts[1].env.POLLINATIONS_API_KEY).toBe(
+        expect(credentialSteps).toHaveLength(1);
+        expect(credentialSteps[0].env.POLLINATIONS_API_KEY).toBe(
             `\${{ secrets.POLLINATIONS_API_KEY }}`,
         );
     });

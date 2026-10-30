@@ -5,13 +5,16 @@ monorepo copies after verification. Operations stay in place. Open WebUI moves l
 
 ## Sequence
 
-1. **Make consumers standalone — first PR.** Replace repository-local dependencies
-   with published npm packages where needed. Prove that each app builds or runs
-   from an isolated copy. Preserve current behavior and deployment addresses.
-2. **Extract low-use apps.** Create separate Pollinations repositories for CatGPT,
-   OpenClaw, Sirius, and Websim. Preserve licenses and contributor attribution.
-   Transfer CI/deployment ownership one app at a time, retaining current addresses
-   initially and preventing competing deployments from the two repositories.
+1. **Check existing repositories first — every app.** Search Pollinations repos,
+   including private and archived ones, and the app's upstream links. Compare code,
+   history, licenses, branches, and deployments before selecting a destination.
+   Reuse a suitable existing repository; create one only when none fits.
+2. **Migrate one low-use app per PR, starting with Websim.** Make it independent in
+   its destination repository using published packages. Test that repository's
+   build, deployment, login, and generation. Transfer deployment ownership, then
+   remove the monorepo copy in the same app's migration PR. Preserve attribution
+   and current addresses; prevent competing deployments. Expand PR #18751 for
+   Websim rather than adding a separate preparation or cleanup PR.
 3. **Move domains separately.** Publish static apps through Pollinations Sites;
    retain backend Workers where needed. Verify new `.app` addresses, login,
    generation, assets, and deep links before redirecting old `.ai` addresses.
@@ -20,10 +23,10 @@ monorepo copies after verification. Operations stay in place. Open WebUI moves l
 4. **Migrate Open WebUI last.** Extract its deployment code while preserving its
    container, database, configuration, and existing user data. Verify login,
    conversation history, generation, and integrations before changing its domain.
-5. **Remove migrated consumers — cleanup PR.** Remove source and deployment
-   registrations only after their replacements work independently. Preserve
-   catalog links and redirects. Community handoffs use the same sequence under
-   accepting maintainers' own repositories and Pollinations accounts.
+5. **Complete community handoffs.** Use the same verified migration sequence under
+   accepting maintainers' own repositories and Pollinations accounts. Remove each
+   app and its deployment registration in its own migration PR; preserve catalog
+   links and redirects.
 6. **Reorganize remaining services — separate PR.** Review the home of MCP and
    agent services after consumers are gone. Keep existing API endpoints stable;
    leave operations applications and their folder unchanged.
@@ -32,10 +35,10 @@ monorepo copies after verification. Operations stay in place. Open WebUI moves l
 
 | App | Repository/account owner | Planned destination |
 | --- | --- | --- |
-| CatGPT | Pollinations, separate repository | `catgpt.pollinations.app` |
+| CatGPT | Reuse [pollinations/catgpt](https://github.com/pollinations/catgpt) after comparison | `catgpt.pollinations.app` |
 | OpenClaw | Pollinations, separate repository | `openclaw.pollinations.app` |
-| Sirius Elevator | Pollinations, separate repository | `sirius-elevator.pollinations.app` |
-| Websim | Pollinations, separate repository | `websim.pollinations.app` |
+| Sirius Elevator | Reuse [existing Sirius repository](https://github.com/pollinations/sirius-cybernetics-elevator-challenge) after comparison | `sirius-elevator.pollinations.app` |
+| Websim | [pollinations/websim](https://github.com/pollinations/websim), created after inventory check | `websim.pollinations.app` |
 | Open WebUI | Pollinations, separate repository; migrate last | `openwebui.pollinations.app` |
 | AI Dungeon Master | Proposed: `codevector-2003` | `ai-dungeon-master.pollinations.app` |
 | Map to Isometric | Proposed: `AdityaTel89` | `map-to-isometric.pollinations.app` |
@@ -46,6 +49,14 @@ monorepo copies after verification. Operations stay in place. Open WebUI moves l
 
 Maintainer acceptance is pending. Prepare outreach for review before sending it.
 No app is automatically removed because a maintainer has not replied.
+
+Repository inventory checked on 2026-10-30: 128 accessible Pollinations repos,
+including 85 archived repos. CatGPT contains the original comic app and already
+has GitHub Pages deployments. Sirius contains an older Next.js implementation;
+no GitHub deployment records were returned. Preserve their existing history and
+visibility. Before extraction, no matching organization repository was found for Websim, OpenClaw,
+Open WebUI, or the six community apps listed above. Recheck before each migration;
+a name match alone is not permission to overwrite existing work.
 
 After verification, old website addresses redirect with HTTP 301 to their new
 destinations, preserving relevant paths and query strings. Sirius's old address
@@ -59,8 +70,9 @@ ownership review; absence of a deploy manifest does not prove they are unused.
 
 ## Validation and rollback
 
-- First PR: isolated installs/builds, declared checks, and relevant browser/API
-  checks using published dependencies; no domain or hosting changes.
+- Each app: isolated installs/builds, declared checks, and relevant browser/API
+  checks using published dependencies, followed by verification from its actual
+  destination repository before removing the monorepo copy.
 - Before extraction: make license/attribution and standalone dependencies explicit.
 - Before cutover: verify the replacement and keep the old deployment available.
   Restore old routing if the replacement fails. Delete hosting resources only
@@ -73,11 +85,19 @@ ownership review; absence of a deploy manifest does not prove they are unused.
 ## Progress
 
 - [x] Audit repository deployments and agree the extraction sequence.
+- [x] Check existing Pollinations repositories; identify CatGPT and Sirius homes.
 - [x] Prepare and verify standalone builds for the five Pollinations-owned
-  consumers (first PR; merge pending). Websim now uses published SDK/UI packages;
+  consumers (PR #18751; merge pending). Websim now uses published SDK/UI packages;
   CatGPT and OpenClaw render independently, Sirius builds independently, and
   Open WebUI passes its existing deployment dry-run independently.
 - [ ] Extract the four low-use Pollinations-owned apps.
+  - Websim repository created with 17 app-history commits, MIT license, published
+    packages, build CI, and a production-branch-only deployment workflow.
+    Standalone typecheck/build/dry-run, desktop/mobile rendering, PKCE request,
+    and real authenticated generation passed. Deployment credential addition,
+    CI deployment verification, and monorepo removal remain pending.
+    Automatic deployments remain disabled until the old registration is removed
+    from the monorepo's production branch. Existing domains are unchanged.
 - [ ] Move verified destinations to `.app` and add redirects.
 - [ ] Extract and migrate Open WebUI.
 - [ ] Complete accepted community handoffs and remove migrated source.

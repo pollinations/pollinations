@@ -2,17 +2,19 @@ TOKEN infra_watch_read READ
 
 DESCRIPTION >
     infra-watch monitor: server errors of the last 60 minutes at most, grouped
-    by kind (model, route, status, error code, provider), largest first. Each
-    group has its count, first and last time seen, median duration and its
-    newest example. Safe fields only: no prompts, user ids, key ids, headers
-    or stack traces; messages and provider bodies are cut to 300 characters.
-    Read by the infra-watch Worker's recent_errors tool.
+    by kind, largest first, at most 20 groups. Each row also carries the
+    totals over all groups, so a caller can tell what the cut left out.
+    Structured fields only: the raw message and provider body never leave
+    this pipe. They are reduced to a fixed error_kind; raw details stay
+    reachable through example_request_id.
 
 NODE infra_watch_errors_node
 SQL >
     %
     SELECT
         count() AS errors,
+        sum(count()) OVER () AS total_errors,
+        count() OVER () AS total_groups,
         min(timestamp) AS first_seen,
         max(timestamp) AS last_seen,
         resolved_model_requested AS model,
@@ -20,26 +22,42 @@ SQL >
         status,
         error_code,
         error_class,
+        error_kind,
         upstream_host,
         upstream_status,
         round(quantile(0.5)(duration_ms)) AS duration_p50_ms,
-        argMax(request_id, timestamp) AS example_request_id,
-        substringUTF8(argMax(message, timestamp), 1, 300) AS example_message,
-        substringUTF8(argMax(upstream_body, timestamp), 1, 300) AS example_upstream_body
-    FROM error_event
-    WHERE timestamp >= now() - interval least(greatest({{Int32(minutes, 15)}}, 1), 60) minute
-    {% if defined(model) %}
-        AND (
-            resolved_model_requested = {{String(model)}}
-            OR model_requested = {{String(model)}}
-        )
-    {% end %}
+        argMax(request_id, timestamp) AS example_request_id
+    FROM (
+        SELECT
+            *,
+            lower(concat(message, ' ', upstream_body)) AS text,
+            multiIf(
+                upstream_status = 429 OR match(text, 'rate.?limit|too many requests'), 'rate_limited',
+                match(text, 'quota|insufficient|billing|credit'), 'quota_or_billing',
+                match(text, 'content.?filter|safety|moderation|policy'), 'content_filtered',
+                upstream_status IN (401, 403) OR match(text, 'unauthori|forbidden|api.?key|authenticat'), 'auth',
+                match(text, 'time.?out|timed out|deadline'), 'timeout',
+                upstream_status IN (502, 503, 529) OR match(text, 'overload|capacity|unavailable'), 'overloaded',
+                match(text, 'network|connection|socket|fetch failed|econn'), 'network',
+                match(text, 'not configured|endpoint|config'), 'config',
+                'other'
+            ) AS error_kind
+        FROM error_event
+        WHERE timestamp >= now() - interval least(greatest({{Int32(minutes, 15)}}, 1), 60) minute
+        {% if defined(model) %}
+            AND (
+                resolved_model_requested = {{String(model)}}
+                OR model_requested = {{String(model)}}
+            )
+        {% end %}
+    )
     GROUP BY
         model,
         route_path,
         status,
         error_code,
         error_class,
+        error_kind,
         upstream_host,
         upstream_status
     ORDER BY errors DESC

@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| CVE Lookup | `https://gen.pollinations.ai/mcp/cve` | Look up CVE records and search the NVD vulnerability database | [Source](https://github.com/pollinations/pollinations/tree/main/apps/cve-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,15 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### CVE MCP
+
+The CVE server reads the public [NVD](https://nvd.nist.gov/) database run
+by NIST. Use `get_cve` for the full record of one CVE (description, CVSS
+score and severity, CWE weaknesses, affected products, references) and
+`search_cves` to find CVEs by keyword, with optional CVSS v3 severity and
+published-date filters. Lookups are free and need no NVD key; the keyless
+NVD limit of 5 requests per 30 seconds applies.
 
 ### Billing and permissions
 

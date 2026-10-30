@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "cve",
+                name: "CVE Lookup",
+                description:
+                    "Look up CVE records and search the NVD vulnerability database.",
+                url: "https://gen.pollinations.ai/mcp/cve",
+                pricing: {
+                    description: "CVE lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -262,7 +273,42 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test("routes CVE with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+            name: "get_cve",
+            arguments: { id: "CVE-2021-44228" },
+        },
+    };
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/cve", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=secret",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "machines", "cve"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

@@ -850,14 +850,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000009,
     },
   },
-  "cohere/embed-v4.0:azure:sweden": {
+  "cohere/embed-v4.0:aws": {
     "cost": {
-      "promptImageTokens": 0.00000047,
+      "promptImageTokens": 0.00000012,
       "promptTextTokens": 0.00000012,
     },
     "price": {
-      "promptImageTokens": 0.0000003525,
-      "promptTextTokens": 0.00000009,
+      "promptImageTokens": 0.00000012,
+      "promptTextTokens": 0.00000012,
     },
   },
   "deepseek/deepseek-v4-flash": {

@@ -1614,7 +1614,7 @@ Gemini task instructions count toward prompt token usage. Cohere requests contai
 
 **Gemini GA migration:** `google/gemini-embedding-2` now uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.
 
-**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-small:openai, openai/text-embedding-3-large, openai/text-embedding-3-large:openai, cohere/embed-v4.0, cohere/embed-v4.0:azure:sweden, qwen/qwen3-embedding-8b, qwen/qwen3-embedding-8b:fireworks
+**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-small:openai, openai/text-embedding-3-large, openai/text-embedding-3-large:openai, cohere/embed-v4.0, cohere/embed-v4.0:aws, qwen/qwen3-embedding-8b, qwen/qwen3-embedding-8b:fireworks
 
 ## Community embedding endpoints
 

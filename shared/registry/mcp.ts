@@ -47,6 +47,7 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
+    | "RESEARCH_MCP"
     | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
@@ -212,6 +213,18 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "research",
+        name: "Research",
+        description:
+            "Search Wikipedia, read articles, and look up Wiktionary definitions.",
+        binding: "RESEARCH_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Research lookups are free. No additional MCP fee.",
+            rates: [],
+        },
     },
     {
         id: "machines",

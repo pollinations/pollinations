@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Research | `https://gen.pollinations.ai/mcp/research` | Search Wikipedia, read articles, and look up Wiktionary definitions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
 
 Send the key with every request:
 
@@ -192,6 +193,17 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Research MCP
+
+`wikipedia_search` finds pages in a language edition (`en` by default).
+`wikipedia_page` reads a summary, or `full: true` returns up to 20000 characters.
+`wiktionary_define` returns definitions and examples, selected by language code
+or name. Search excerpts and dictionary entries retain the source's HTML markup.
+Results include source links for citation; Wikimedia text is CC BY-SA.
+Lookups are free and require a Pollinations key, which is never sent to Wikimedia.
+Calls share Wikimedia's upstream limit. A busy source returns a tool error with
+a retry delay instead of queueing; wait that long before retrying.
 
 ### Machines MCP
 

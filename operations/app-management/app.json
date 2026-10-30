@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "Screenshot to Bug Report",
+    "url": "https://screenshot-to-bug-report.pollinations.app",
+    "description": "Paste, drop or upload a screenshot and add rough notes. The community prompt agent community/danhquach/bug-report-writer reads the screenshot and writes a clean Markdown bug report: title, what happen",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "danhquach",
+    "githubUserId": "3012542",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-27",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18597",
+    "approvedDate": "2026-10-30",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/8164a2f5-4e5c-455e-9836-34218742b7f8"
+  },
+  {
     "emoji": "🖼️",
     "name": "Prompt to Image",
     "url": "https://prompt-to-image.pollinations.app",

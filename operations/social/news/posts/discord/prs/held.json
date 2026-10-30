@@ -17,8 +17,20 @@
       "merge_sha": "fa62d091df444f952d0894e573e3193bd47bf5ab",
       "merged_at": "2026-10-30T14:57:26Z",
       "required": []
+    },
+    "18763": {
+      "merge_sha": "2929d2968873b8736bf7d43c64cfd3539ead7007",
+      "merged_at": "2026-10-30T15:26:11Z",
+      "required": []
+    },
+    "18772": {
+      "merge_sha": "d7f5ad0a8dede6131d67e2453ea9debfd37681e9",
+      "merged_at": "2026-10-30T17:16:39Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
     }
   },
-  "production": "058c1932c18bd6a2d2a5cc58c9d9b04cf2b88b3b",
+  "production": "f29b2eb13a46d6d58e52978b3d4ba1e8c283f2e0",
   "master": "a2a962686bd7e26589a2b5e9c7259f75e67fc967"
 }

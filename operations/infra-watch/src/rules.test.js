@@ -358,3 +358,40 @@ test("one hostname down, then both down: no false recovery", () => {
     assert.ok(r.state.active.public);
     assert.ok(r.state.active.gen);
 });
+
+test("each alert carries its colour: red down, orange degraded, yellow weak, green recovered", () => {
+    const colorOf = (post) => render(post).color;
+    assert.equal(
+        colorOf({ type: "alert", key: "gen", info: { kind: "GEN_DOWN" } }),
+        0xe24b4a,
+    );
+    assert.equal(
+        colorOf({
+            type: "alert",
+            key: "analytics",
+            info: { kind: "ANALYTICS_DOWN" },
+        }),
+        0xe24b4a,
+    );
+    assert.equal(
+        colorOf({
+            type: "alert",
+            key: "degraded:a/model",
+            info: degradedInfo(),
+        }),
+        0xd85a30,
+    );
+    const weak = conditions(quiet(weakPrimary))["primary:a/model"];
+    assert.equal(
+        colorOf({ type: "alert", key: "primary:a/model", info: weak }),
+        0xef9f27,
+    );
+    assert.equal(
+        colorOf({
+            type: "recovered",
+            key: "degraded:a/model",
+            info: { model: "a/model", success: 1, nonClient: 20 },
+        }),
+        0x639922,
+    );
+});

@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
     edit,
     exclusive,
+    payload,
     send,
     serial,
     settle,
@@ -164,4 +165,15 @@ test("edit patches the webhook's own message", async () => {
     );
     assert.equal(seen.method, "PATCH");
     assert.equal(seen.body.content, "done");
+});
+
+test("alerts go out as a coloured embed; mentions stay outside it", () => {
+    const message = { text: "box", color: 0xd85a30 };
+    const pinged = payload({ ...message, ping: true }, ["1", "2"]);
+    assert.equal(pinged.content, "<@1> <@2>");
+    assert.deepEqual(pinged.embeds, [{ description: "box", color: 0xd85a30 }]);
+    assert.deepEqual(pinged.allowed_mentions, { parse: [], users: ["1", "2"] });
+    const quiet = payload({ ...message, ping: false }, ["1", "2"]);
+    assert.equal(quiet.content, "");
+    assert.deepEqual(quiet.allowed_mentions, { parse: [], users: [] });
 });

@@ -63,6 +63,15 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     return false;
 }
 
+// A webhook body: the alert as a coloured embed, mentions outside it, since
+// Discord never pings from inside an embed. parse: [] blocks @everyone,
+// roles and any user not listed.
+export const payload = ({ text, ping, color }, maintainers) => ({
+    content: ping ? maintainers.map((id) => `<@${id}>`).join(" ") : "",
+    embeds: [{ description: text, color }],
+    allowed_mentions: { parse: [], users: ping ? maintainers : [] },
+});
+
 // Replaces the content of a message this webhook posted. One try: if the
 // edit fails, the alert simply stays as it was.
 export async function edit(url, id, body, { fetchImpl = fetch } = {}) {

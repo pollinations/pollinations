@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import {
     edit,
     exclusive,
+    payload,
     send,
     serial,
     settle,
@@ -33,37 +34,31 @@ const isUp = (gen) =>
         return res.ok;
     }).catch(() => false);
 
-const contentOf = ({ text, ping }) =>
-    ping ? `${MAINTAINERS.map((id) => `<@${id}>`).join(" ")}\n${text}` : text;
-// parse: [] blocks @everyone, roles and any user not listed here.
-const mentions = (ping) => ({ parse: [], users: ping ? MAINTAINERS : [] });
+const show = (label, body) =>
+    console.log(
+        `[${label}] ${body.content} color=#${body.embeds[0].color?.toString(16)}\n${body.embeds[0].description}`,
+    );
 
 // Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an
 // error, never a silent dry run. Returns the saved message's id.
 async function post(env, message) {
-    const content = contentOf(message);
+    const body = payload(message, MAINTAINERS);
     if (env.DRY_RUN === "1") {
-        console.log(`[dry-run]\n${content}`);
+        show("dry-run", body);
         return "dry-run";
     }
     if (!env.DISCORD_WEBHOOK_URL)
         throw new Error("DISCORD_WEBHOOK_URL missing");
-    return send(env.DISCORD_WEBHOOK_URL, {
-        content,
-        allowed_mentions: mentions(message.ping),
-    });
+    return send(env.DISCORD_WEBHOOK_URL, body);
 }
 
 async function update(env, id, message) {
-    const content = contentOf(message);
+    const body = payload(message, MAINTAINERS);
     if (env.DRY_RUN === "1") {
-        console.log(`[dry-run edit]\n${content}`);
+        show("dry-run edit", body);
         return true;
     }
-    return edit(env.DISCORD_WEBHOOK_URL, id, {
-        content,
-        allowed_mentions: mentions(message.ping),
-    });
+    return edit(env.DISCORD_WEBHOOK_URL, id, body);
 }
 
 // One instance holds all alert state. A check awaits network calls, so the

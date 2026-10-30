@@ -204,11 +204,30 @@ const framed = (info, lines) => panel(TITLE[info.kind](info), lines);
 
 // Last line of an alert while the AI looks into it. The same message is
 // then edited: the AI's line replaces it, or it simply goes.
-export const CHECKING = "-# checking why…";
+export const CHECKING = "*checking why…*";
 export const complete = (text, line) =>
     text.replace(`\n${CHECKING}`, line ? `\n↳ ${line}` : "");
 
-export function render(post) {
+// Embed side-bar colour by severity: red down, orange degraded, yellow weak
+// primary, green recovered.
+const RED = 0xe24b4a;
+const COLOR = {
+    GEN_DOWN: RED,
+    PUBLIC_DOWN: RED,
+    UPSTREAM_DOWN: RED,
+    ANALYTICS_DOWN: RED,
+    PLATFORM_DROP: RED,
+    DEGRADED: 0xd85a30,
+    PRIMARY_WEAK: 0xef9f27,
+};
+const GREEN = 0x639922;
+
+export const render = (post) => ({
+    ...draw(post),
+    color: post.type === "recovered" ? GREEN : COLOR[post.info.kind],
+});
+
+function draw(post) {
     const { info } = post;
     if (post.type === "recovered") {
         const what =

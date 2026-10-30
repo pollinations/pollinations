@@ -511,7 +511,7 @@ function readParams(data, prompt) {
             audio: data.audio,
             reasoning_effort:
                 data.reasoning_effort == null
-                    ? undefined
+                    ? "low"
                     : String(data.reasoning_effort),
             response_format:
                 data.response_format ||

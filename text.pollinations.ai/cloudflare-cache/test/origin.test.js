@@ -79,7 +79,7 @@ test("a free GET answers gen's text with the VM's headers and is stored", async 
     );
 });
 
-test("gen gets the VM's request: bridge key, gpt-oss, system prompt, 1500 tokens, clamped parameters", async () => {
+test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 1500 tokens, clamped parameters", async () => {
     const get = await call(
         "/gen:echo?temperature=9&top_p=-1&presence_penalty=5&frequency_penalty=-9&seed=4.7&json=true&model=openai&voice=nova",
     );
@@ -102,18 +102,20 @@ test("gen gets the VM's request: bridge key, gpt-oss, system prompt, 1500 tokens
         top_p: 0,
         presence_penalty: 2,
         frequency_penalty: -2,
+        reasoning_effort: "low",
         response_format: { type: "json_object" },
         stream: false,
         max_tokens: 1500,
     });
 
     // A given system prompt replaces the default; empty user messages get a placeholder
-    const post = await call("/", {
+    const post = await call("/?reasoning_effort=medium", {
         method: "POST",
         headers: JSON_BODY,
         body: JSON.stringify({
             system: "Be brief.",
             max_tokens: 99,
+            reasoning_effort: "high",
             messages: [
                 { role: "user", content: " " },
                 { role: "user", content: "gen:echo" },
@@ -127,6 +129,10 @@ test("gen gets the VM's request: bridge key, gpt-oss, system prompt, 1500 tokens
         { role: "user", content: "gen:echo" },
     ]);
     expect(body.max_tokens).toBe(1500);
+    expect(body.reasoning_effort).toBe("high");
+
+    const override = await call("/gen:echo?reasoning_effort=medium");
+    expect(JSON.parse(override.text).body.reasoning_effort).toBe("medium");
 
     // "/openai*" without messages: the rest of the path is the user message
     const openai = await call("/openaigen:echo", { method: "POST" });
@@ -217,9 +223,11 @@ test("a message without content answers the message itself as JSON", async () =>
 });
 
 test("a stream ends after data: [DONE] and is stored once complete", async () => {
-    const { response, text } = await call("/stream?stream=true");
+    const { bodies, testEnv } = recordingGen();
+    const { response, text } = await call("/stream?stream=true", { testEnv });
 
     expect(response.status).toBe(200);
+    expect(bodies[0].reasoning_effort).toBe("low");
     expect(response.headers.get("content-type")).toBe(
         "text/event-stream; charset=utf-8",
     );

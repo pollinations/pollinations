@@ -85,6 +85,7 @@ function unavailable(message: string): GenerationOutcome {
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
     private handoff?: { nonce: string; job: GenerationJobHead };
+    private admission = Promise.resolve();
 
     /**
      * The body arrives as a stream: RPC streams it with flow control, while
@@ -97,12 +98,8 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         let immediate: GenerationOutcome | undefined;
         let wait: Promise<GenerationOutcome> | undefined;
 
-        await this.ctx.blockConcurrencyWhile(async () => {
-            const cachePresent = await cacheExists(this.env, job.cache);
-            const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
-
+        await this.admit(job, body, async (cachePresent, stored) => {
             if (cachePresent) {
-                await body?.cancel();
                 if (stored) {
                     await this.clear(stored.bodyChunks, true);
                     // The alarm cancelled above may have died after writing
@@ -111,13 +108,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 }
                 immediate = { status: "cached" };
                 return;
-            }
-
-            if (stored) {
-                // Joiners share the owner's persisted body.
-                await body?.cancel();
-            } else {
-                await this.persist(job, body);
             }
 
             wait = new Promise<GenerationOutcome>((resolve) => {
@@ -136,9 +126,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         body?: ReadableStream<Uint8Array>,
     ): Promise<AsyncJobRecord["status"]> {
         let status: AsyncJobRecord["status"] = "pending";
-        await this.ctx.blockConcurrencyWhile(async () => {
-            const cachePresent = await cacheExists(this.env, job.cache);
-            const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
+        await this.admit(job, body, async (cachePresent, stored) => {
             const previous = await this.readRecord();
             const sameRun = stored && previous?.status === "pending";
             // Every account that submitted this identical request keeps
@@ -149,12 +137,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             ];
             status = cachePresent ? "succeeded" : "pending";
             if (cachePresent) {
-                await body?.cancel();
                 if (stored) await this.clear(stored.bodyChunks, true);
-            } else if (stored) {
-                await body?.cancel();
-            } else {
-                await this.persist(job, body);
             }
             await this.ctx.storage.put<AsyncJobRecord>(ASYNC_KEY, {
                 ownerIds,
@@ -168,6 +151,44 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
         });
         return status;
+    }
+
+    /** Serialize admissions so the first caller owns the body, without
+     * blocking status, handoff or alarm events during the upload. */
+    private async admit(
+        job: GenerationJobHead,
+        body: ReadableStream<Uint8Array> | undefined,
+        accept: (cachePresent: boolean, stored?: PersistedJob) => Promise<void>,
+    ): Promise<void> {
+        const admission = this.admission.then(async () => {
+            let needsBody = false;
+            await this.ctx.blockConcurrencyWhile(async () => {
+                const cachePresent = await cacheExists(this.env, job.cache);
+                const stored =
+                    await this.ctx.storage.get<PersistedJob>(JOB_KEY);
+                if (!cachePresent && !stored) {
+                    needsBody = true;
+                    return;
+                }
+                await accept(cachePresent, stored);
+            });
+            if (!needsBody) return true;
+
+            const chunks = body ? await readBodyChunks(body) : [];
+            await this.ctx.blockConcurrencyWhile(async () => {
+                // Register the waiter/async record before the alarm can run.
+                await this.persist(job, chunks);
+                await accept(false);
+            });
+            return false;
+        });
+        // A failed upload must not prevent the next caller from starting.
+        this.admission = admission.then(
+            () => {},
+            () => {},
+        );
+        // Discarded bodies must not hold either the runtime gate or the queue.
+        if (await admission) await body?.cancel();
     }
 
     /** Other accounts see a 404, even if they can guess the request hash. */
@@ -291,9 +312,8 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
 
     private async persist(
         job: GenerationJobHead,
-        body?: ReadableStream<Uint8Array>,
+        chunks: Uint8Array[],
     ): Promise<void> {
-        const chunks = body ? await readBodyChunks(body) : [];
         const stored: PersistedJob = {
             cache: job.cache,
             auth: job.auth,

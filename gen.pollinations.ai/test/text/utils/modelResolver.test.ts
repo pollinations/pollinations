@@ -603,23 +603,31 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Grok 4.7 to xAI with a base-xAI OpenRouter fallback", () => {
-        const primary = resolveModelConfig(messages, {
-            model: "x-ai/grok-4.7",
-        });
-        const fallback = resolveModelConfig(messages, {
-            model: "x-ai/grok-4.7:openrouter",
-        });
+    it.each([undefined, "auto", "priority"])(
+        "routes Grok 4.7 to global AWS with Standard xAI recovery (%s)",
+        (service_tier) => {
+            const primary = resolveModelConfig(messages, {
+                model: "x-ai/grok-4.7",
+                service_tier,
+            });
+            const fallback = resolveModelConfig(messages, {
+                model: "x-ai/grok-4.7:xai",
+                service_tier,
+            });
 
-        expect(primary.options.model).toBe("grok-4.7");
-        expect(primary.options.provider).toBeUndefined();
-        expect(fallback.options.model).toBe("x-ai/grok-4.7");
-        expect(fallback.options.provider).toEqual({
-            only: ["xai"],
-            ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
-            allow_fallbacks: false,
-        });
-    });
+            expect(primary.options.model).toBe("global.xai.grok-4.7");
+            expect(primary.options.provider).toBeUndefined();
+            expect(primary.options.modelConfig).toMatchObject({
+                provider: "bedrock",
+                directEndpoint:
+                    "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            });
+            expect(primary.options.service_tier).toBe("default");
+            expect(fallback.options.model).toBe("grok-4.7");
+            expect(fallback.options.provider).toBeUndefined();
+            expect(fallback.options.service_tier).toBe("default");
+        },
+    );
 
     it.each([
         ["xiaomi/mimo-v2.6-flash", "xiaomimimo/mimo-v2.6-flash"],
@@ -688,14 +696,15 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("keeps Grok 4.6 recovery on direct xAI", () => {
+    it("routes Grok 4.6 recovery through global AWS", () => {
         const resolved = resolveModelConfig(messages, {
-            model: "x-ai/grok-4.6:xai",
+            model: "x-ai/grok-4.6:aws",
         });
         expect(resolved.options.modelConfig).toMatchObject({
-            provider: "openai",
-            model: "grok-4.6",
-            directEndpoint: "https://api.x.ai/v1/chat/completions",
+            provider: "bedrock",
+            model: "global.xai.grok-4.6",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
         });
         expect(findModelByName("x-ai/grok-4.6:azure:sweden")).toBeNull();
     });

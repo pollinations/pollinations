@@ -1707,9 +1707,9 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.6 / 1_000_000) * 1.055,
         });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
-            "x-ai/grok-4.6:xai",
+            "x-ai/grok-4.6:aws",
         ]);
-        expect(TEXT_SERVICES["x-ai/grok-4.6:xai"].priceMultiplier).toBe(1);
+        expect(TEXT_SERVICES["x-ai/grok-4.6:aws"].priceMultiplier).toBe(1);
 
         expect(
             TEXT_SERVICES["deepseek/deepseek-v4-flash:deepinfra"].cost,
@@ -2247,10 +2247,11 @@ describe("static provider fallbacks", () => {
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {
-        expect(findModelByName("x-ai/grok-4.6:xai")?.config()).toMatchObject({
-            provider: "openai",
-            directEndpoint: "https://api.x.ai/v1/chat/completions",
-            model: "grok-4.6",
+        expect(findModelByName("x-ai/grok-4.6:aws")?.config()).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            model: "global.xai.grok-4.6",
         });
         expect(
             findModelByName("deepseek/deepseek-v4-flash:deepinfra")?.config(),

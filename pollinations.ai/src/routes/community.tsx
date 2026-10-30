@@ -8,6 +8,7 @@ import {
     cn,
     EmptyState,
     ExternalLinkButton,
+    GitBranchIcon,
     Heading,
     InlineLink,
     LinkCard,
@@ -168,7 +169,12 @@ function CommunityParticipation() {
             >
                 <ContentHeader
                     eyebrow="Get involved"
-                    title="Help shape Pollinations"
+                    title={
+                        <>
+                            Help <span className="site-shape-mark">shape</span>{" "}
+                            Pollinations
+                        </>
+                    }
                     subtitle="Share your work, contribute, or help decide what we build next."
                 />
                 <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
@@ -310,7 +316,12 @@ function Contributors() {
         <section className="flex flex-col gap-5">
             <ContentHeader
                 eyebrow="Contributors"
-                title="Top code contributors"
+                title={
+                    <span className="site-contributor-title">
+                        <GitBranchIcon aria-hidden="true" />
+                        Top code contributors
+                    </span>
+                }
                 subtitle="The top 20 by pull requests merged in the last 6 months, people and agents alike. Want to join them?"
                 action={
                     <InlineLink href={SOCIAL_LINKS.github.url}>

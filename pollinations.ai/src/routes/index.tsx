@@ -30,7 +30,12 @@ function HelloPage() {
             <HeroScene page="home" wide>
                 <ContentHeader
                     eyebrow="Open infrastructure for AI-natives"
-                    title="Models. Agents. Tools. One API."
+                    title={
+                        <>
+                            Models. Agents. Tools.{" "}
+                            <span className="site-api-stroke">One API.</span>
+                        </>
+                    }
                     subtitle="The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps."
                     variant="page"
                     className="[&_h1]:text-balance sm:[&_h1]:max-w-[18ch]"

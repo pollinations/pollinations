@@ -33,10 +33,12 @@ export const SYSTEM_PROMPT = `You explain one infra-watch alert to the Pollinati
 The user message is JSON: the alert, and public request statistics for the last 15 and 60 minutes.
 
 How to read a status row:
-- is_rollup 1: what callers finally received for the model. is_rollup 0: one backend that was tried (model_used at provider).
+- is_rollup 1: one count per request, what callers finally received for the model. is_rollup 0: attempts on one backend (model_used at provider). A retried request appears on more than one backend row, so backend rows can add up to more than the rollup.
 - fallback_used true on a backend row: that backend was tried as a fallback after the primary failed.
 - errors_4xx includes errors_402. errors_402 means the caller had no balance; it is not a fault. Other 4xx are caller errors such as bad requests or rate limits.
-- errors_5xx: server or provider failures. retried_503s and fallback_rescues: requests saved by a retry or a fallback.
+- errors_5xx: server or provider failures.
+- retried_503s: attempts that got a 503 and were retried on another backend. The retry may still have failed, so this is not a count of saved requests.
+- fallback_rescues: requests that finally succeeded through a fallback.
 - Latencies are in milliseconds; times are UTC.
 - A platform-drop alert lists the models whose traffic fell the most: now10 is the last 10 minutes, baseline10 the average 10 minutes before.
 

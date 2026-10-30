@@ -7,8 +7,49 @@
         "deploy-legacy-caches.yml:deploy (image)",
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18754": {
+      "merge_sha": "2d2228176090644d7f9f85c6ee23ac0971051483",
+      "merged_at": "2026-10-30T21:26:52Z",
+      "required": []
+    },
+    "18791": {
+      "merge_sha": "dfd9e36e24f99bd1f77d08b9fab6c086a72b61f4",
+      "merged_at": "2026-10-30T21:01:22Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
+    },
+    "18792": {
+      "merge_sha": "29cfe1b4c1a741fac8220ee6f84da1bd1fd62552",
+      "merged_at": "2026-10-30T21:01:39Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "18793": {
+      "merge_sha": "e1e164d1fcb90fddfb4a4b31247454993d45e57d",
+      "merged_at": "2026-10-30T20:57:33Z",
+      "required": []
+    },
+    "18797": {
+      "merge_sha": "aa169b95285368e1d1288edf19a2ab1df21f1e09",
+      "merged_at": "2026-10-30T21:16:53Z",
+      "required": []
+    },
+    "18798": {
+      "merge_sha": "d160e416dc07500c3c975ea6fdeac52643cb216d",
+      "merged_at": "2026-10-30T21:32:15Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
+    },
+    "18800": {
+      "merge_sha": "032bd9d60e96d613d444bf8147657b31992d0559",
+      "merged_at": "2026-10-30T21:44:58Z",
+      "required": []
     }
   },
-  "production": "53f16dfd3297fdcf674f47969f5bcd6095fab96d",
+  "production": "d55a4a25d304cade1df4d272f765e14751ac3104",
   "master": "a2a962686bd7e26589a2b5e9c7259f75e67fc967"
 }

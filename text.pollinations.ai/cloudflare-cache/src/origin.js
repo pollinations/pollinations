@@ -22,7 +22,7 @@ import { prepareForwardedHeaders } from "./index.js";
 // bridge key.
 
 const GEN_URL = "https://gen.pollinations.ai/v1/chat/completions";
-const FREE_INTERVAL_MS = 30_000;
+const FREE_INTERVAL_MS = 45_000;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
 const MAX_TOKENS = 1500;
 // Node's default --max-http-header-size on the VM. Node 22 counts the request

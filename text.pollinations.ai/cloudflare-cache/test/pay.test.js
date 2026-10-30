@@ -158,7 +158,7 @@ async function payFor(path, options) {
 
 const ENTER = "https://enter.pollinations.ai/?ref=classic";
 const NOTICE =
-    /^Free limit reached: 1 reply every 30 seconds per IP\. Please wait \d+ seconds or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\), then try again\./;
+    /^Free limit reached: 1 reply every 45 seconds per IP\. Please wait \d+ seconds or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\), then try again\./;
 
 test("a script or app past the free limit gets the notice in the 402, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
     for (const host of ["text.pollinations.ai", "text.myceli.ai"]) {
@@ -173,7 +173,7 @@ test("a script or app past the free limit gets the notice in the 402, a Retry-Af
         );
         const wait = Number(response.headers.get("retry-after"));
         expect(wait).toBeGreaterThan(0);
-        expect(wait).toBeLessThanOrEqual(30);
+        expect(wait).toBeLessThanOrEqual(45);
         expect(text).toMatch(NOTICE);
         // The challenge names the VM's origin host and path, without the query
         const challenge = JSON.parse(
@@ -203,7 +203,7 @@ test("a JSON-mode request past the free limit gets gen's error body and the VM's
         success: false,
         error: {
             code: "FREE_LIMIT",
-            message: `Free limit reached: 1 reply every 30 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
+            message: `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
             timestamp: body.error.timestamp,
             fixUrl: ENTER,
         },
@@ -248,7 +248,7 @@ test("POST /openai past the free limit gets gen's error body and the challenge",
     const { error } = JSON.parse(text);
     expect(error.code).toBe("FREE_LIMIT");
     expect(error.message).toBe(
-        `Free limit reached: 1 reply every 30 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
+        `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
     );
     expect(response.headers.get("payment-required")).not.toBeNull();
 });
@@ -269,7 +269,7 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     const [, price] = text.match(/([\d.]+) USD per reply with Weft/) ?? [];
     expect(Math.round(Number(price) * 1e6)).toBe(Number(accepts[0].amount));
     expect(text).toContain(
-        "1 free reply every 30 seconds. Please wait: this page reloads by itself when your next reply is ready.",
+        "1 free reply every 45 seconds. Please wait: this page reloads by itself when your next reply is ready.",
     );
     expect(text).toContain("Skip the wait");
     expect(text).not.toContain("undefined");
@@ -413,7 +413,7 @@ test("without every WEFT_* value the paywall is off: rate-limited requests queue
     expect(held.response.status).toBe(429);
     expect(JSON.parse(held.text).error.code).toBe("RATE_LIMITED");
 
-    // The last free generation started 29.8 s ago and has ended
+    // The last free generation started 44.8 s ago and has ended
     const ip = nextIp();
     await runInDurableObject(env.IP_SLOT.getByName(ip), (_slot, state) =>
         state.storage.setAlarm(Date.now() + 200),

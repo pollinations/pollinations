@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { exclusive, send, settle } from "./delivery.js";
 import { conditions, render, step } from "./rules.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
@@ -20,28 +21,34 @@ const isUp = (gen) =>
         .then((res) => res.ok)
         .catch(() => false);
 
+// Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an
+// error, never a silent dry run.
 async function post(env, { text, ping }) {
     const content = ping
         ? `${MAINTAINERS.map((id) => `<@${id}>`).join(" ")}\n${text}`
         : text;
-    if (!env.DISCORD_WEBHOOK_URL) {
+    if (env.DRY_RUN === "1") {
         console.log(`[dry-run]\n${content}`);
-        return;
+        return true;
     }
-    const res = await fetch(env.DISCORD_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-            content,
-            allowed_mentions: { users: ping ? MAINTAINERS : [] },
-        }),
+    if (!env.DISCORD_WEBHOOK_URL)
+        throw new Error("DISCORD_WEBHOOK_URL missing");
+    return send(env.DISCORD_WEBHOOK_URL, {
+        content,
+        allowed_mentions: { users: ping ? MAINTAINERS : [] },
     });
-    if (!res.ok) console.error(`webhook ${res.status}`);
 }
 
-// One instance holds all alert state, so checks never run concurrently.
+// One instance holds all alert state. A check awaits network calls, so the
+// next cron could interleave with it: `once` skips a check while one runs.
 export class Watch extends DurableObject {
+    once = exclusive(55_000);
+
     async check() {
+        return (await this.once(() => this.run())) ?? { skipped: true };
+    }
+
+    async run() {
         const now = Date.now();
         let found;
         let recent = [];
@@ -77,9 +84,23 @@ export class Watch extends DurableObject {
 
         const state = (await this.ctx.storage.get("state")) ?? {};
         const next = step(state, found, now, recent);
-        for (const p of next.posts) await post(this.env, render(p));
-        await this.ctx.storage.put("state", next.state);
-        return { found: Object.keys(found), posted: next.posts.length };
+        const delivered = [];
+        for (const p of next.posts)
+            delivered.push(await post(this.env, render(p)));
+        await this.ctx.storage.put(
+            "state",
+            settle(state, next.state, next.posts, delivered),
+        );
+        const failed = delivered.filter((ok) => !ok).length;
+        if (failed)
+            console.error(
+                `${failed} webhook post(s) failed; retrying next check`,
+            );
+        return {
+            found: Object.keys(found),
+            posted: delivered.filter(Boolean).length,
+            failed,
+        };
     }
 }
 

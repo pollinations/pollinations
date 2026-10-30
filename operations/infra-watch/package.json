@@ -3,8 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "wrangler dev --test-scheduled",
-        "test": "node --test src/rules.test.js",
+        "dev": "wrangler dev --test-scheduled --var DRY_RUN:1",
+        "test": "node --test src/rules.test.js src/delivery.test.js",
         "deploy": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --secrets-file {}'"
     },
     "devDependencies": {

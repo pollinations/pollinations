@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Icons | `https://gen.pollinations.ai/mcp/icons` | Search open-source icon sets and get SVG markup with license details | [Source](https://github.com/pollinations/pollinations/tree/main/apps/icons-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,20 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Icons MCP
+
+The Icons server searches the public [Iconify](https://iconify.design) catalog
+of open-source icon sets. `search_icons` takes a free-text `query`, an optional
+`prefix` to limit results to one set, and `limit`/`start` for paging. It returns
+prefixed icon names such as `mdi:home` plus the author and license of every
+collection in the results. `get_icon` fetches one icon as SVG, with optional
+`color` and `size`, and returns the SVG, a direct Iconify URL, and the
+collection license. Check the license before shipping an icon.
+
+Both tools need no provider key; the caller's key is only checked at the proxy
+and is never sent upstream. Icon searches and SVG lookups are free, with no
+additional MCP fee.
 
 ### Billing and permissions
 

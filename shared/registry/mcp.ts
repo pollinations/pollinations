@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "ICONS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "icons",
+        name: "Icons",
+        description:
+            "Search open-source icon sets and get SVG markup with license details.",
+        binding: "ICONS_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Icon searches and SVG lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

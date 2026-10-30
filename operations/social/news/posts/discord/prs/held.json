@@ -11,9 +11,7 @@
     "18591": {
       "merge_sha": "6451bfd5e2a6615bc2e99e1c874295239163b30e",
       "merged_at": "2026-10-30T09:42:00Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/mcp"
-      ]
+      "required": []
     },
     "18593": {
       "merge_sha": "700a5d06812a8fa2bf6fa1e7ad34326e9ff0a5cb",

@@ -1,10 +1,14 @@
-import { env, SELF } from "cloudflare:test";
-import { decodePaymentRequiredHeader } from "@x402/core/http";
+import { createExecutionContext, env, SELF } from "cloudflare:test";
+import {
+    decodePaymentRequiredHeader,
+    encodePaymentSignatureHeader,
+} from "@x402/core/http";
 import { describe, expect, vi } from "vitest";
 import { x402KeysRoutes } from "../../src/routes/x402-keys.ts";
 import {
     creditPurchase,
     getPurchase,
+    paymentId,
     preparePurchase,
 } from "../../src/services/x402-key-purchases.ts";
 import { createApiKeyViaApi, test } from "../fixtures.ts";
@@ -228,5 +232,52 @@ describe("x402 prepaid API keys", () => {
         await expect(
             preparePurchase(env, undefined, id, owner.user_id, "p5"),
         ).rejects.toThrow("another purchase");
+    });
+
+    test("answers a settled payment replayed for another pack with 409", async ({
+        accountToken,
+    }) => {
+        const ownerKey = await createApiKeyViaApi(accountToken, {
+            name: "holding-owner-replay",
+        });
+        const owner = await env.DB.prepare(
+            "SELECT user_id FROM apikey WHERE id = ?",
+        )
+            .bind(ownerKey.id)
+            .first<{ user_id: string }>();
+        if (!owner) throw new Error("Test account is missing");
+        const signature = encodePaymentSignatureHeader({
+            x402Version: 2,
+            payload: { nonce: crypto.randomUUID() },
+        } as unknown as Parameters<typeof encodePaymentSignatureHeader>[0]);
+        const id = await paymentId(signature);
+        const issued = await preparePurchase(
+            env,
+            undefined,
+            id,
+            owner.user_id,
+            "p2",
+        );
+        await creditPurchase(env.DB, id, owner.user_id, issued.id);
+
+        const replay = (pack: string) =>
+            x402KeysRoutes.request(
+                `http://localhost/${pack}`,
+                { method: "POST", headers: { "payment-signature": signature } },
+                {
+                    ...env,
+                    X402_HOLDING_USER_ID: owner.user_id,
+                    WEFT_SELLER_API_KEY: "ax_test",
+                    WEFT_FACILITATOR_URL: "https://x402.staging.weft.network",
+                    WEFT_NETWORK: "eip155:84532",
+                    WEFT_PAY_TO: "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
+                },
+                createExecutionContext(),
+            );
+
+        const same = await replay("p2");
+        expect(same.status).toBe(200);
+        expect(((await same.json()) as { key: string }).key).toBe(issued.key);
+        expect((await replay("p5")).status).toBe(409);
     });
 });

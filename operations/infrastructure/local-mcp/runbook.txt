@@ -1,0 +1,198 @@
+LOCAL MCP PILOT: RUNBOOK
+
+Unpublished, single-operator pilot of local-shell-mcp (fwerkor/local-shell-mcp
+066abd563016bf20aee5df9e9a752b5ba8d9e396, MIT) as a remote-only relay:
+
+  cloud agent -> https://local-mcp.pollinations.ai/mcp (OAuth) -> named
+  Cloudflare tunnel -> controller container on community-monitor
+  (3.221.108.127, arm64) <- outbound worker <- Thomas's Mac
+
+Not in the Gen registry or app catalog. Nothing here is live until every
+gate below is passed, each with its own approval.
+
+FILES
+
+  Dockerfile, requirements-controller.in/.txt   controller image: pinned base
+      digest, upstream archive checked by SHA-256, complete hashed lock.
+      Regenerate the lock with the command at the top of the .txt.
+  compose.yaml, cloudflared.yaml   controller (uid 10001, read-only, 512 MiB,
+      0.50 CPU, loopback port 18765) and tunnel sidecar (128 MiB, 0.25 CPU,
+      outbound only). No inbound EC2 port, no Docker socket mount. Only
+      the project network's fixed subnet (10.254.75.0/28; verify.sh uses
+      10.254.76.0/28) may set X-Forwarded-For, so PIN retry limits and the
+      audit log key on the client address Cloudflare appended.
+  preflight.py, verify.sh   local shell/files/stdio registration denied,
+      only the compose subnet may set the client address, OAuth metadata,
+      401 for missing/invalid bearer. Public fixtures only.
+  local-mcp-pilot   root-owned SSH forced command on the host. It runs
+      the host's standalone Docker Compose v5.6.1 at
+      /home/ubuntu/pollinations-local-mcp-pilot/bin/docker-compose (the host
+      has no Compose plugin) after checking its SHA-256; CI uses the same
+      binary.
+  ci-remote.sh, known_hosts   the Actions side; host and host key pinned.
+  bootstrap-host.sh   installs or updates the deploy identity.
+  local-mcp.test.cjs, test-bootstrap.sh   command restrictions and switch,
+      restore and stop logic; bootstrap as root on a throwaway CI runner.
+  .github/workflows/deploy-local-mcp-pilot.yml   Deploy / Local MCP pilot.
+
+HOW A DEPLOY WORKS
+
+  Thomas dispatches the workflow on production (operation: deploy) and
+  approves the local-mcp-pilot-production environment. CI builds and checks
+  the image on an arm64 runner, then SSHes as local-mcp-deploy with
+  "deploy <production SHA>". The host wrapper confirms the SHA is on
+  production (GitHub compare API), downloads only the fixed release files at
+  that SHA, builds and runs verify.sh; a failure there leaves the live
+  release alone. It then switches and checks limits, loopback OAuth/401 and
+  the same through https://local-mcp.pollinations.ai. Only then is the
+  release live. If any check fails it restores the release that was live
+  and checks it the same way; if there was none (first activation) or the
+  restore fails, it stops the pilot and checks the public URL is down.
+  rollback uses the same switch; stop and status skip the build.
+
+  The host rebuilds from the same reviewed files, hashed lock, pinned base
+  digest and checksummed upstream archive as CI. It does not reuse the CI
+  image, so the two are not byte-identical; each is verified separately.
+
+WHAT THE DEPLOY IDENTITY CAN AND CANNOT DO
+
+  Can: status, stop, rollback, and deploy any commit reachable from
+  production. Cannot: shell, PTY, port/agent/X11 forwarding, sftp/scp,
+  Docker socket, other projects (authorized_keys "restrict" + forced
+  command; sudoers allows only the wrapper with no arguments).
+  Not claimed: the wrapper runs as root and Compose is root-equivalent, so
+  anyone who can merge to production decides what runs on the host. A
+  holder of the deploy key can redeploy or stop the pilot. The controller
+  holds the JWT key and PIN in its environment; host and Docker admins can
+  read them and all relayed command/file data. The public check proves the
+  route serves an OAuth-protected controller naming the pilot issuer, not
+  which release answers; the loopback check ties that to the release.
+
+GATES, IN ORDER (each "Yes, you can ..." phrase is required verbatim, in a
+fresh message, before that step; plan approval is not secret approval)
+
+  0. Merge this change to main, promote to production by promotion PR.
+     Recheck before any credential: host free RAM/disk, community-monitor
+     and Discord units healthy, no existing tunnel named
+     pollinations-local-mcp-pilot, no DNS record local-mcp.pollinations.ai,
+     no secret named LOCAL_MCP_PILOT_DEPLOY_SSH_KEY. Check the host's
+     Compose binary (sha256sum; must match COMPOSE_SHA256 in
+     local-mcp-pilot) and that "docker build" works there without the
+     plugin. Compare the pinned host key with the EC2 console output:
+       ssh-keygen -lf operations/infrastructure/local-mcp/known_hosts
+     Check that neither 10.254.75.0/28 (pilot) nor 10.254.76.0/28 (verify)
+     overlaps a host route, the VPC CIDR or an existing Docker network:
+       ip -4 route
+       docker network inspect --format \
+         '{{.Name}} {{range .IPAM.Config}}{{.Subnet}} {{end}}' \
+         $(docker network ls -q)
+     On a collision change the value in compose.yaml or verify.sh by PR,
+     never on the host. Confirm the instance's security group admits SSH
+     on port 22 from GitHub-hosted runners (the "actions" ranges in
+     https://api.github.com/meta); widening it needs its own approval.
+     Abort on any collision or mismatch rather than overwrite.
+
+  1. GitHub environment (Thomas, repo settings): local-mcp-pilot-production,
+     deployment branches = production only, required reviewer Thomas. Store
+     the deploy key only there, never as a repository secret.
+
+  2. LOCAL_MCP_PILOT_DEPLOY_SSH_KEY
+     "Yes, you can add LOCAL_MCP_PILOT_DEPLOY_SSH_KEY to local provisioning
+     and GitHub Actions environment local-mcp-pilot-production now."
+     In bash, in a new 0700 temp directory:
+       ssh-keygen -t ed25519 -N '' -C local-mcp-pilot-deploy -f "$tmp/key"
+       gh secret set LOCAL_MCP_PILOT_DEPLOY_SSH_KEY \
+         --repo pollinations/pollinations --env local-mcp-pilot-production \
+         < "$tmp/key"
+     From a production checkout, over the existing admin SSH:
+       ssh community-monitor 'install -d -m 755 ~/pollinations-local-mcp-pilot &&
+         mkdir -m 700 /tmp/local-mcp-bootstrap'
+       scp operations/infrastructure/local-mcp/bootstrap-host.sh \
+         operations/infrastructure/local-mcp/local-mcp-pilot "$tmp/key.pub" \
+         community-monitor:/tmp/local-mcp-bootstrap/
+       ssh community-monitor 'cd /tmp/local-mcp-bootstrap &&
+         sudo bash bootstrap-host.sh key.pub && rm -r /tmp/local-mcp-bootstrap'
+     Match the printed fingerprint with ssh-keygen -lf "$tmp/key.pub".
+     Then prove the restrictions with
+     the deploy key, asserting the message text, not the exit code:
+       ssh -F /dev/null -i "$tmp/key" -o IdentitiesOnly=yes \
+         local-mcp-deploy@3.221.108.127 status       -> wrapper output
+       ... 'bash -c id'                             -> "rejected command"
+       ... -tt / -N -L 18765:127.0.0.1:18765 / sftp   -> refused or rejected
+       a config holding only a different key        -> "Permission denied (publickey)"
+     Delete "$tmp". Bootstrap starts nothing. It checks every account, key
+     and path before changing anything and refuses, untouched, an existing
+     local-mcp-deploy account, group, home, authorized_keys, wrapper or
+     sudoers file it did not create. Rerun it with the same key after a
+     merged change to local-mcp-pilot: that replaces only the wrapper. A
+     different key is refused and needs its own rotation approval.
+
+  3. Runtime secrets live only in
+     /home/ubuntu/pollinations-local-mcp-pilot/secrets/ (dir 0700, files
+     0600, owner ubuntu). No SOPS, Worker or GitHub copy. Never print them,
+     put them in arguments, dashboards or logs, or render compose config.
+     Write each value from bash over the admin SSH session, refusing to
+     overwrite:
+     a. "Yes, you can add LOCAL_SHELL_MCP_OAUTH_JWT_SECRET to local
+        provisioning and local MCP production pilot controller now."
+          printf 'LOCAL_SHELL_MCP_OAUTH_JWT_SECRET=%s\n' "$(openssl rand -hex 32)" |
+            ssh community-monitor 'umask 077; d=~/pollinations-local-mcp-pilot/secrets;
+              mkdir -p "$d"; f="$d/controller.env"; test ! -e "$f" && cat > "$f"'
+     b. "Yes, you can add LOCAL_SHELL_MCP_OAUTH_ADMIN_PIN to local
+        provisioning and local MCP production pilot controller now."
+          printf 'LOCAL_SHELL_MCP_OAUTH_ADMIN_PIN=%s\n' "$(openssl rand -hex 12)" |
+            ssh community-monitor 'f=~/pollinations-local-mcp-pilot/secrets/controller.env;
+              ! grep -q "^LOCAL_SHELL_MCP_OAUTH_ADMIN_PIN=" "$f" && cat >> "$f"'
+        Thomas reads the PIN privately over his own admin SSH when he
+        approves a connector; it never goes to the dashboard.
+     c. "Yes, you can add CLOUDFLARE_TUNNEL_CREDENTIALS_LOCAL_MCP to
+        Cloudflare, local provisioning and local MCP production pilot tunnel
+        sidecar now."
+          cloudflared tunnel create pollinations-local-mcp-pilot   (existing local cert.pem)
+          ssh community-monitor 'umask 077; f=~/pollinations-local-mcp-pilot/secrets/tunnel-credentials.json;
+            test ! -e "$f" && cat > "$f"' < ~/.cloudflared/<TUNNEL_UUID>.json
+          compare the UUID on the host without printing the file:
+            python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["TunnelID"])' <file>
+          delete the local JSON, then add only the new route:
+          cloudflared tunnel route dns pollinations-local-mcp-pilot local-mcp.pollinations.ai
+          Record the tunnel UUID, DNS record ID and TTL (non-secret).
+
+  4. Dispatch: gh workflow run deploy-local-mcp-pilot.yml --ref production
+     -f operation=deploy, approve the environment, then -f operation=status.
+
+  5. Accept the empty relay: run log shows verify, limits and the public
+     OAuth/401 check; status shows workers=0 invites=0; community-monitor
+     and Discord units still active. Metadata and 401 do not prove an
+     authorized MCP/SSE session; that is Phase 2.
+
+  Phase 2 (separate approvals, not implemented here): Thomas names the
+  cloud client; LOCAL_MCP_THOMAS_MAC_INVITE (one use, 600 s),
+  LOCAL_MCP_THOMAS_MAC_WORKER_TOKEN (foreground pinned worker, disposable
+  folder, no auto-start), LOCAL_MCP_THOMAS_CONNECTOR_GRANT (PIN/PKCE
+  consent). Acceptance and device revoke as in the 2026-10-25 plan.
+
+OPERATIONS
+
+  Deploy, status, stop and rollback run only as Actions dispatches on
+  production; there is no admin-SSH path for them. stop removes only this
+  project's containers and checks the public URL no longer answers; state
+  volume, secrets and releases stay, and the last live release becomes the
+  rollback target. With no previous release, rollback refuses; use stop.
+  status succeeds for a stopped or never-deployed pilot and fails when the
+  recorded release has no running controller or fails a check.
+  Stopping the Mac's foreground worker (Ctrl-C) is the immediate cutoff
+  for the Mac and needs neither Actions nor the host.
+
+  Rolling back the activation: dispatch stop, then remove the
+  local-mcp.pollinations.ai DNS route added in gate 3c. Removing that new
+  route is not a secret mutation and needs no separate secret approval.
+
+LIFECYCLE LIMITS
+
+  The deploy key, JWT signing key, admin PIN and tunnel credential do not
+  expire. Access tokens last one hour; there is no per-token revoke, and a
+  new PIN does not invalidate issued tokens. Rotating or revoking any
+  credential, and deleting the tunnel, deploy authorization, GitHub secret
+  or secret files, each need a new scoped secret approval. Deleting the
+  state volume (pollinations-local-mcp-pilot_state) needs Thomas's
+  approval: registry backups in it contain worker credentials.

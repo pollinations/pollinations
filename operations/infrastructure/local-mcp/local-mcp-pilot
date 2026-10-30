@@ -1,0 +1,263 @@
+#!/usr/bin/env bash
+# SSH forced command for the Local MCP pilot deployment identity, installed
+# root-owned as /usr/local/sbin/local-mcp-pilot by bootstrap-host.sh. The
+# deploy key's authorized_keys entry is `restrict,command="sudo -n <this>"`,
+# so the identity gets no shell, PTY, forwarding or Docker socket: only the
+# commands below, read from SSH_ORIGINAL_COMMAND.
+#
+#   status        releases, containers, limits, enrolled-worker count, checks
+#   deploy <sha>  fetch the release files at a commit on production, build,
+#                 verify, switch
+#   rollback      switch back to the previous release
+#   stop          stop and remove this project's containers (state and
+#                 secrets stay)
+#
+# A switch is live only after the loopback and public OAuth/401 checks pass.
+# Otherwise the release that was live before is restored and checked the
+# same way, or the pilot is stopped and the public URL checked down.
+#
+# The identity can only pick production commits, but whoever can merge to
+# production decides what this root wrapper builds and starts.
+set -euo pipefail
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin LC_ALL=C
+umask 022
+
+ROOT=/home/ubuntu/pollinations-local-mcp-pilot
+PROJECT=pollinations-local-mcp-pilot
+PUBLIC=https://local-mcp.pollinations.ai
+SOURCE=https://raw.githubusercontent.com/pollinations/pollinations
+COMPARE=https://api.github.com/repos/pollinations/pollinations/compare
+RELEASE_FILES=(Dockerfile .dockerignore requirements-controller.txt compose.yaml cloudflared.yaml preflight.py verify.sh)
+SECRETS_UID=1000 # ubuntu owns the host-only secret files
+# The host has no Compose plugin. ubuntu (an administrator) installed the
+# standalone Docker Compose v5.6.1 linux-aarch64 release binary here; it is
+# checked against the release digest before every use.
+COMPOSE=$ROOT/bin/docker-compose
+COMPOSE_SHA256=42cfa75f51ad0ccf290bad37899e0038a8c10a0069e85233ecc1d53e3ff1347d
+tunnel_id=
+
+fail() {
+  echo "local-mcp-pilot: $*" >&2
+  exit 1
+}
+
+release_sha() { # current | previous
+  [[ -f $ROOT/$1 ]] && grep -Ex '[0-9a-f]{40}' "$ROOT/$1" || true
+}
+
+container() { # service
+  docker ps --quiet --filter "label=com.docker.compose.project=$PROJECT" \
+    --filter "label=com.docker.compose.service=$1"
+}
+
+check_compose() {
+  [[ -f $COMPOSE && ! -L $COMPOSE && -x $COMPOSE && $(sha256sum <"$COMPOSE") == "$COMPOSE_SHA256  -" ]] ||
+    fail "$COMPOSE must be the pinned Docker Compose binary (sha256 $COMPOSE_SHA256)"
+}
+
+load_secrets() {
+  local dir=$ROOT/secrets name key
+  [[ -d $dir && ! -L $dir && $(stat -c '%u %a' "$dir") == "$SECRETS_UID 700" ]] ||
+    fail "secrets/ must be a directory owned by uid $SECRETS_UID with mode 700"
+  for name in controller.env tunnel-credentials.json; do
+    [[ -f $dir/$name && ! -L $dir/$name && $(stat -c '%u %a' "$dir/$name") == "$SECRETS_UID 600" ]] ||
+      fail "secrets/$name must be a file owned by uid $SECRETS_UID with mode 600"
+  done
+  for key in LOCAL_SHELL_MCP_OAUTH_JWT_SECRET LOCAL_SHELL_MCP_OAUTH_ADMIN_PIN; do
+    grep -Eq "^$key=.+" "$dir/controller.env" || fail "secrets/controller.env lacks $key"
+  done
+  # The tunnel UUID is not secret; read only that field, never print the file.
+  tunnel_id=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["TunnelID"])' \
+    "$dir/tunnel-credentials.json" 2>/dev/null) || true
+  [[ $tunnel_id =~ ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$ ]] ||
+    fail "secrets/tunnel-credentials.json has no TunnelID"
+}
+
+compose() { # sha, compose arguments...
+  local release=$ROOT/releases/$1
+  shift
+  env -i PATH="$PATH" HOME=/root LOCAL_MCP_CONTROLLER_IMAGE="$PROJECT:${release##*/}" \
+    LOCAL_MCP_TUNNEL_ID="$tunnel_id" \
+    "$COMPOSE" --project-name "$PROJECT" --project-directory "$release" \
+    --env-file "$ROOT/secrets/controller.env" --file "$release/compose.yaml" "$@"
+}
+
+expect_container() { # service, expected "user read-only memory nano-cpus"
+  local id actual
+  id=$(container "$1")
+  [[ -n $id ]] || {
+    echo "local-mcp-pilot: $1 is not running" >&2
+    return 1
+  }
+  actual=$(docker inspect --format \
+    '{{.Config.User}} {{.HostConfig.ReadonlyRootfs}} {{.HostConfig.Memory}} {{.HostConfig.NanoCpus}}' "$id")
+  [[ $actual == "$2" ]] || {
+    echo "local-mcp-pilot: $1 runs with '$actual', expected '$2'" >&2
+    return 1
+  }
+}
+
+check_url() { # sha, url, attempts: OAuth metadata and 401 via that release's preflight.py
+  local attempt
+  for ((attempt = 1; attempt <= $3; attempt++)); do
+    python3 "$ROOT/releases/$1/preflight.py" http "$2" && return
+    ((attempt == $3)) || sleep 10
+  done
+  return 1
+}
+
+# The tunnel needs a few seconds to reconnect after a switch.
+start_release() { # sha
+  compose "$1" up --detach --no-build --remove-orphans --wait --wait-timeout 120 &&
+    expect_container controller "10001:10001 true 536870912 500000000" &&
+    expect_container tunnel "1000:1000 true 134217728 250000000" &&
+    check_url "$1" http://127.0.0.1:18765 1 &&
+    check_url "$1" "$PUBLIC" 6
+}
+
+public_down() {
+  local code
+  for _ in 1 2 3 4 5 6; do
+    code=$(curl --silent --output /dev/null --write-out '%{http_code}' --proto '=https' \
+      --max-time 10 "$PUBLIC/healthz") || true
+    if [[ $code != 200 ]]; then
+      echo "local-mcp-pilot: $PUBLIC/healthz no longer answers (status $code)"
+      return
+    fi
+    sleep 10
+  done
+  return 1
+}
+
+# Leaves the pilot stopped, proved locally and publicly. The release that was
+# live becomes the rollback target. Empty output from a failed docker ps is
+# not proof, so each listing must succeed.
+halt() {
+  local listed ids
+  listed=$(docker ps --all --quiet --filter "label=com.docker.compose.project=$PROJECT") ||
+    fail "could not list pilot containers; stop not proved"
+  if [[ -n $listed ]]; then
+    mapfile -t ids <<<"$listed"
+    docker stop --time 30 "${ids[@]}" >/dev/null
+    docker rm "${ids[@]}" >/dev/null
+  fi
+  listed=$(docker ps --all --quiet --filter "label=com.docker.compose.project=$PROJECT") ||
+    fail "could not list pilot containers after stopping them; stop not proved"
+  [[ -z $listed ]] || fail "pilot containers remain after stop"
+  [[ -z $(release_sha current) ]] || mv "$ROOT/current" "$ROOT/previous"
+  public_down || fail "containers removed, but $PUBLIC still answers; another tunnel connector may hold the credential"
+  echo "local-mcp-pilot: stopped; containers removed, state volume and secrets kept"
+}
+
+switch_release() { # sha, verb
+  local target=$1 verb=$2 current
+  current=$(release_sha current)
+  if start_release "$target"; then
+    [[ -z $current || $current == "$target" ]] || echo "$current" >"$ROOT/previous"
+    echo "$target" >"$ROOT/current"
+    echo "local-mcp-pilot: $verb $target: live, loopback and public checks passed"
+    return
+  fi
+  if [[ -n $current && $current != "$target" ]] && start_release "$current"; then
+    fail "$verb $target failed; restored $current, loopback and public checks passed"
+  fi
+  halt
+  fail "$verb $target failed; pilot stopped"
+}
+
+fetch_release() { # sha
+  local release=$ROOT/releases/$1 partial=$ROOT/releases/.partial-$1 status file
+  status=$(curl --fail --silent --show-error --proto '=https' --max-time 30 \
+    --header 'Accept: application/vnd.github+json' "$COMPARE/$1...production?per_page=1" |
+    python3 -c 'import json, sys; print(json.load(sys.stdin)["status"])') ||
+    fail "could not compare $1 with production"
+  [[ $status == identical || $status == ahead ]] ||
+    fail "$1 is not on the production branch (compare status: $status)"
+  [[ -d $release ]] && return
+  rm -rf "$partial"
+  mkdir "$partial"
+  for file in "${RELEASE_FILES[@]}"; do
+    curl --fail --silent --show-error --proto '=https' --max-time 60 --output "$partial/$file" \
+      "$SOURCE/$1/operations/infrastructure/local-mcp/$file" || fail "could not fetch $file at $1"
+  done
+  mv "$partial" "$release"
+}
+
+deploy() { # sha
+  load_secrets
+  check_compose
+  fetch_release "$1"
+  if ! docker build --tag "$PROJECT:$1" "$ROOT/releases/$1" ||
+    ! bash "$ROOT/releases/$1/verify.sh" "$PROJECT:$1" "$ROOT/releases/$1" "$COMPOSE"; then
+    fail "build or verification of $1 failed; live release unchanged"
+  fi
+  switch_release "$1" deploy
+}
+
+rollback() {
+  local previous
+  previous=$(release_sha previous)
+  [[ -n $previous && -d $ROOT/releases/$previous ]] || fail "no previous release to roll back to"
+  load_secrets
+  check_compose
+  switch_release "$previous" rollback
+}
+
+status() {
+  local service id current failed=0
+  current=$(release_sha current)
+  echo "releases: current=${current:-none} previous=$(release_sha previous)"
+  for service in controller tunnel; do
+    id=$(container "$service")
+    if [[ -z $id ]]; then
+      echo "$service: not running"
+      continue
+    fi
+    # Selected fields only: the container environment holds the secrets.
+    docker inspect --format "$service: {{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} image={{.Config.Image}} user={{.Config.User}} read-only={{.HostConfig.ReadonlyRootfs}} memory={{.HostConfig.Memory}} nano-cpus={{.HostConfig.NanoCpus}}" "$id"
+  done
+  # Stopped or never deployed is a healthy state; a recorded release whose
+  # controller is gone is not.
+  [[ -n $current ]] || return 0
+  id=$(container controller)
+  [[ -n $id ]] || {
+    echo "local-mcp-pilot: current release $current has no running controller" >&2
+    return 1
+  }
+  docker exec "$id" python -c 'import json, pathlib
+path = pathlib.Path("/state/registry/remote-workers.json")
+data = json.loads(path.read_text()) if path.exists() else {}
+print("registry: workers=%d invites=%d" % (len(data.get("workers", [])), len(data.get("invites", []))))' ||
+    echo "registry: unreadable"
+  check_url "$current" http://127.0.0.1:18765 1 || failed=1
+  check_url "$current" "$PUBLIC" 1 || failed=1
+  return "$failed"
+}
+
+main() {
+  local request=${SSH_ORIGINAL_COMMAND-} sha=
+  if [[ $request =~ ^(status|stop|rollback)$ ]]; then
+    :
+  elif [[ $request =~ ^deploy\ ([0-9a-f]{40})$ ]]; then
+    sha=${BASH_REMATCH[1]}
+    request=deploy
+  else
+    fail "rejected command; allowed: status, stop, rollback, deploy <40-hex production SHA>"
+  fi
+  [[ $(id -u) -eq 0 ]] || fail "$request must run as root through the deploy key's forced sudo command"
+  [[ -d $ROOT ]] || fail "$ROOT is not provisioned"
+  mkdir -p "$ROOT/releases"
+  exec 9>"$ROOT/.operation.lock"
+  flock -n 9 || fail "another pilot operation is running"
+  case $request in
+  status) status ;;
+  stop) halt ;;
+  rollback) rollback ;;
+  deploy) deploy "$sha" ;;
+  esac
+}
+
+# local-mcp.test.cjs sources this file to exercise the switch logic.
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  main
+fi

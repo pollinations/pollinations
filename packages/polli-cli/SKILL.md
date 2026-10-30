@@ -255,11 +255,13 @@ Creating an agent also creates its callable model listing. Managed agents are te
 ### Publish a static site
 ```bash
 npm run build
-polli sites deploy ./dist --name my-app   # → https://my-app.pollinations.app
+polli sites deploy ./dist --name my-app --verify   # → https://my-app.pollinations.app
 polli sites list
 polli sites delete my-app
 ```
 Publishes a folder of static files with an `index.html`; unknown paths serve `index.html`, so single-page apps route on the client. Deploying the same name again replaces the site and uploads only changed files. Names are 3–32 lowercase letters, digits and hyphens, starting with a letter; the first deploy claims the name. Limits: 5 sites per account, 200 MB and 1,000 files per site, 25 MiB per file. Dotfiles and `node_modules` are not uploaded. Sites are public: never put an API key in them. To call Pollinations from a site, let visitors sign in with their own Pollen (see [Connect User Wallets](https://gen.pollinations.ai/docs/llm.txt?section=byop)). Share the URL the command prints rather than composing one from the name.
+
+`--verify` reads every published file without credentials and compares its bytes to the build, following redirects and retrying failures. A failed check exits non-zero after publication; it does not roll back. For automatic deployments, use the reusable workflow documented in the [CLI README](https://github.com/pollinations/pollinations/blob/main/packages/polli-cli/README.md#deploy-from-github).
 
 ### Manage API keys
 ```bash

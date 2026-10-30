@@ -51,6 +51,47 @@ For npx or a local/project install, `update` prints instructions instead of crea
 
 Interactive commands show an occasional update notice without waiting for the network. Set `NO_UPDATE_NOTIFIER=1` to disable it. Notices are skipped for scripts, pipes, and `--json`; updates are never installed automatically. Updating leaves credentials and harness settings untouched.
 
+## Deploy from GitHub
+
+The reusable `deploy-pollinations-site.yml` workflow installs locked npm
+dependencies, runs declared `typecheck` and `test` scripts, builds, and publishes
+with the released CLI. It verifies every uploaded file against the build, including
+redirects and assets outside `assets/`. Verification failure fails the job; the
+site has already been published, so roll back by redeploying a known-good commit.
+
+Add this caller to your app's `.github/workflows/deploy.yml`, replacing
+`RELEASE_COMMIT_SHA` with the reviewed workflow commit after CLI 0.1.72 is published:
+
+```yaml
+name: Deploy
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || vars.AUTO_DEPLOY == 'true'
+    uses: pollinations/pollinations/.github/workflows/deploy-pollinations-site.yml@RELEASE_COMMIT_SHA
+    with:
+      site-name: my-app
+    secrets:
+      POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+```
+
+Keep your deployment key in your repository's `production` environment, with
+`account:machines` permission and no generation budget. Set the repository variable
+`AUTO_DEPLOY=true` to deploy production pushes. The shared workflow accepts only
+production pushes or manual runs from production; PRs use your normal CI.
+For a monorepo, set `working-directory: apps/my-app`. Build output defaults to
+`dist` inside that directory; override `site-directory` when needed. Each npm
+project needs a lockfile and a `build` script.
+
+Pin the workflow to a reviewed commit and update that reference through a PR.
+The shared workflow pins its published CLI version; SDK/UI dependencies remain
+in your app's lockfile. No Cloudflare credentials are needed.
+
 ## Generate
 
 ```bash

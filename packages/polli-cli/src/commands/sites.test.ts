@@ -1,8 +1,16 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+} from "node:fs";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { assetType, collectSiteFiles } from "./sites.js";
+import { assetType, collectSiteFiles, verifySiteFiles } from "./sites.js";
 
 describe("collectSiteFiles", () => {
     let dir: string;
@@ -52,4 +60,87 @@ describe("assetType", () => {
         expect(assetType("logo.PNG")).toBe("image/png");
         expect(assetType("data.unknown")).toBe("application/null");
     });
+});
+
+describe("verifySiteFiles", () => {
+    it("follows redirects, retries and checks binary filenames without sending credentials", async () => {
+        const dir = mkdtempSync(join(tmpdir(), "polli-verify-"));
+        writeFileSync(join(dir, "index.html"), "<h1>hello</h1>");
+        writeFileSync(join(dir, "cat #?%.png"), Buffer.from([0, 255, 128, 10]));
+        const requests: { path: string; authorization?: string }[] = [];
+        const server = createServer((req, res) => {
+            const path = req.url ?? "/";
+            requests.push({ path, authorization: req.headers.authorization });
+            if (requests.length === 1) {
+                res.writeHead(503).end();
+            } else if (path === "/index.html") {
+                res.writeHead(301, { Location: "/" }).end();
+            } else {
+                res.end(
+                    readFileSync(
+                        join(
+                            dir,
+                            path === "/"
+                                ? "index.html"
+                                : decodeURIComponent(path),
+                        ),
+                    ),
+                );
+            }
+        });
+        try {
+            await new Promise<void>((resolve) =>
+                server.listen(0, "127.0.0.1", resolve),
+            );
+            const { port } = server.address() as AddressInfo;
+            await verifySiteFiles(
+                collectSiteFiles(dir),
+                `http://127.0.0.1:${port}`,
+            );
+            expect(
+                requests.filter(({ path }) => path === "/cat%20%23%3F%25.png"),
+            ).toHaveLength(2);
+            expect(requests.some(({ path }) => path === "/")).toBe(true);
+            expect(
+                requests.every(
+                    ({ authorization }) => authorization === undefined,
+                ),
+            ).toBe(true);
+        } finally {
+            server.closeAllConnections();
+            await new Promise<void>((resolve) => server.close(() => resolve()));
+            rmSync(dir, { recursive: true, force: true });
+        }
+    }, 15_000);
+
+    it.each([
+        404, 200,
+    ])("fails when a file stays unavailable or serves SPA fallback (HTTP %i)", async (status) => {
+        const dir = mkdtempSync(join(tmpdir(), "polli-verify-"));
+        writeFileSync(join(dir, "app.js"), "console.log('app')");
+        let requests = 0;
+        const server = createServer((_req, res) => {
+            requests++;
+            res.writeHead(status).end("<h1>fallback</h1>");
+        });
+        try {
+            await new Promise<void>((resolve) =>
+                server.listen(0, "127.0.0.1", resolve),
+            );
+            const { port } = server.address() as AddressInfo;
+            await expect(
+                verifySiteFiles(
+                    collectSiteFiles(dir),
+                    `http://127.0.0.1:${port}`,
+                ),
+            ).rejects.toThrow(
+                `Verification failed for /app.js: ${status === 404 ? "HTTP 404" : "deployed bytes differ from the local file"}`,
+            );
+            expect(requests).toBe(6);
+        } finally {
+            server.closeAllConnections();
+            await new Promise<void>((resolve) => server.close(() => resolve()));
+            rmSync(dir, { recursive: true, force: true });
+        }
+    }, 40_000);
 });

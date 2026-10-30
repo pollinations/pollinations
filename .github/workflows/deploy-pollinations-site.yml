@@ -1,0 +1,53 @@
+name: Deploy / Pollinations Site
+
+on:
+  workflow_call:
+    inputs:
+      site-name:
+        description: Existing or new Pollinations Sites name
+        required: true
+        type: string
+      working-directory:
+        description: npm project directory (also supports monorepo apps)
+        type: string
+        default: .
+      site-directory:
+        description: Build output, relative to the project directory
+        type: string
+        default: dist
+    secrets:
+      POLLINATIONS_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pollinations-site-${{ inputs.site-name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - run: npm ci
+      - run: npm run typecheck --if-present
+      - run: npm run test --if-present
+      - run: npm run build
+      - name: Publish and verify
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+          SITE_NAME: ${{ inputs.site-name }}
+          SITE_DIRECTORY: ${{ inputs.site-directory }}
+        run: npx --yes @pollinations/cli@0.1.72 sites deploy "$SITE_DIRECTORY" --name "$SITE_NAME" --verify

@@ -43,14 +43,15 @@ export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
 }
 
 // Private community models are owner-only, so a public listing must not name
-// one, as the model asked for or as a fallback route that served it. A
-// community ID the registry cannot resolve is dropped too, so a degraded
-// registry hides rows instead of leaking them.
+// one, as the model asked for or as a fallback route that served it. Any ID or
+// alias of a community model must resolve to a public one; a community ID the
+// registry cannot resolve is dropped too, so a degraded registry hides rows
+// instead of leaking them.
 function isListedPublicly(registry: GenerationModelRegistry, id = ""): boolean {
-    return (
-        !id.startsWith(COMMUNITY_MODEL_PREFIX) ||
-        registry.resolve(id)?.communityEndpoint?.visibility === "public"
-    );
+    const community = registry.resolve(id)?.communityEndpoint;
+    return community
+        ? community.visibility === "public"
+        : !id.startsWith(COMMUNITY_MODEL_PREFIX);
 }
 
 // Exists only for the shared edge cache: Tinybird runs the query on every

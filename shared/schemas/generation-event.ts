@@ -81,6 +81,8 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     /** Resolved request's listing type at execution time, not today's catalog. */
     communityEndpointType?: CommunityEndpointRuntime["type"];
+    /** The requested or serving model was owner-only; public stats skip the row. */
+    privateModel?: boolean;
     /** Exact registry ID attempted: the primary or a fallback, on success or failure. */
     modelUsed?: string;
     modelProviderUsed?: string;

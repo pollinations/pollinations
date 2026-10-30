@@ -74,7 +74,7 @@ import {
     UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
 
-const CreateSpeechRequestSchema = z
+export const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
         input: z.string().min(1).max(10000).meta({
@@ -171,7 +171,7 @@ const CreateSpeechRequestSchema = z
                 "Emotion/style instruction (Gemini TTS and qwen/qwen-audio-3.0-tts-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
-        speed: z.number().optional().meta({
+        speed: z.number().min(0.25).max(4).optional().meta({
             description:
                 "Speech speed, 0.25-4 (openai/tts-1 and openai/tts-1-hd only; other models accept only 1).",
             example: 1.25,

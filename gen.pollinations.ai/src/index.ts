@@ -24,7 +24,10 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { agentDiscoveryLinks } from "@/middleware/agent-discovery.ts";
+import {
+    acceptsMarkdown,
+    agentDiscoveryLinks,
+} from "@/middleware/agent-discovery.ts";
 import { logger } from "@/middleware/logger.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import {
@@ -237,7 +240,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route(GENERATION_HANDOFF_PATH, generationHandoffRoutes)
     .get("/", async (c) => {
         c.header("Vary", "Accept", { append: true });
-        if (c.req.header("accept")?.includes("text/markdown")) {
+        if (acceptsMarkdown(c.req.header("accept") ?? "")) {
             // Cloudflare ignores Vary on cached responses: keep it private.
             return c.body(await llmsTxt(c).text(), 200, {
                 "Content-Type": "text/markdown; charset=utf-8",

@@ -135,6 +135,14 @@ const KEY_IDENTITIES: Record<
         userId: "user_bob",
         byopApp: null,
     },
+    // An agent run token reports its parent key's identity, type included.
+    ag_alice: {
+        valid: true,
+        type: "secret",
+        name: "alice-secret",
+        userId: "user_alice",
+        byopApp: null,
+    },
     // The response shape of an enter deployment that predates the identity
     // fields — userId/byopApp entirely absent, not null.
     sk_legacy: {
@@ -488,26 +496,24 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(401);
     });
 
-    it.each([429, 500])(
-        "answers 503, not 401, when the key check returns %i",
-        async (status) => {
-            vi.mocked(env.ENTER.fetch).mockResolvedValueOnce(
-                new Response(null, { status }),
-            );
-            const res = await SELF.fetch(
-                "https://media.pollinations.ai/upload",
-                {
-                    method: "POST",
-                    body: TINY_PNG,
-                    headers: {
-                        Authorization: `Bearer ${VALID_KEY}`,
-                        "Content-Type": "image/png",
-                    },
-                },
-            );
-            expect(res.status).toBe(503);
-        },
-    );
+    it.each([
+        ["is throttled", () => new Response(null, { status: 429 })],
+        ["fails", () => new Response(null, { status: 500 })],
+        ["redirects", () => new Response(null, { status: 302 })],
+        ["sends no JSON", () => new Response("not json")],
+        ["omits valid", () => Response.json({})],
+    ])("answers 503, not 401, when the key check %s", async (_, response) => {
+        vi.mocked(env.ENTER.fetch).mockResolvedValueOnce(response());
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: TINY_PNG,
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "image/png",
+            },
+        });
+        expect(res.status).toBe(503);
+    });
 
     // A public fetch through Gen would share the Workers egress IP's limit.
     it("checks keys with Enter over the service binding, not through Gen", async () => {
@@ -2025,6 +2031,14 @@ describe("media.pollinations.ai", () => {
                 headers: { Authorization: "Bearer pk_alice" },
             });
             expect(publishable.status).toBe(403);
+
+            // Agent run tokens are handed to generated code, so they can't
+            // delete the owner's media even though they report "secret".
+            const agentToken = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer ag_alice" },
+            });
+            expect(agentToken.status).toBe(403);
 
             const nonOwner = await SELF.fetch(url, {
                 method: "DELETE",

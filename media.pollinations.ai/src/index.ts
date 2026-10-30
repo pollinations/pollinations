@@ -1,3 +1,4 @@
+import { AGENT_RUN_TOKEN_PREFIX } from "@shared/auth/agent-run-token.ts";
 import { extractApiKey } from "@shared/auth/api-key.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
@@ -94,7 +95,6 @@ interface KeyVerifyResponse {
 }
 
 interface AuthResult {
-    valid: boolean;
     type: string;
     name: string | null;
     keyId: string | null;
@@ -111,21 +111,24 @@ async function verifyApiKey(
             headers: { Authorization: `Bearer ${apiKey}` },
         })
         .catch(() => undefined);
-    // Only a 4xx means a bad key. A throttled or failing check must not tell
-    // the owner of a valid key that it is invalid.
-    if (!res || res.status === 429 || res.status >= 500) {
+    // Only a 4xx means a bad key. A throttled, failing or malformed check must
+    // not tell the owner of a valid key that it is invalid.
+    if (res && res.status >= 400 && res.status < 500 && res.status !== 429) {
+        return null;
+    }
+    const data = res?.ok
+        ? await res.json<KeyVerifyResponse>().catch(() => null)
+        : null;
+    if (typeof data?.valid !== "boolean") {
         throw new HTTPException(503, {
             message: "API key check unavailable. Please retry.",
         });
     }
-    if (!res.ok) return null;
-    const data = await res.json<KeyVerifyResponse>();
     if (!data.valid) return null;
     // Normalize: an enter deployment that predates the identity fields
     // omits them, and `undefined` would slip past the `=== null` guards
     // downstream — never treat an unattested key as user-attached.
     return {
-        valid: true,
         type: data.type,
         name: data.name ?? null,
         keyId: data.id ?? null,
@@ -975,7 +978,7 @@ api.delete(
             },
             403: {
                 description:
-                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
+                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else. Agent run tokens (`ag_`) can't delete media",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -1013,8 +1016,12 @@ api.delete(
         }
         // Publishable keys ship inside public clients — anyone holding one
         // could delete the owner's published media, so deletion is
-        // secret-key only.
-        if (auth.type !== "secret") {
+        // secret-key only. Agent run tokens report their parent key's type,
+        // but they're handed to generated code, so they can't delete either.
+        if (
+            auth.type !== "secret" ||
+            apiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)
+        ) {
             return c.json(
                 { error: "Deleting media requires a secret (sk_) API key" },
                 403,

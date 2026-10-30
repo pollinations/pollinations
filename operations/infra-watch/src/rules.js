@@ -80,10 +80,9 @@ const HOSTS = { gen: true, public: true, upstream: true };
 const RECOVERS = (key) => !key.startsWith("spillover:");
 
 // Pure state transition: which messages to post, and the next state.
-// With missing data (gen or analytics down) nothing else may count as
-// recovered: only the outage key itself is judged.
 export function step(state, found, now, recent = []) {
-    const blind = Boolean(found.gen || found.analytics);
+    // With gen down, nothing else can be judged, not even a single hostname.
+    // With analytics down, only the hostname checks still have data.
     const active = { ...(state.active ?? {}) };
     const streaks = {};
     const posts = [];
@@ -102,7 +101,8 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, prev] of Object.entries(active)) {
         if (found[key]) continue;
-        if (blind && !HOSTS[key]) continue;
+        if (found.gen && key !== "gen") continue;
+        if (found.analytics && !HOSTS[key]) continue;
         if (!RECOVERS(key)) {
             if (now - prev.postedAt >= COOLDOWN_MS) delete active[key];
             continue;
@@ -128,7 +128,7 @@ function panel(lines) {
     const width = 44;
     const top = `┌─ MONITOR ${"─".repeat(width - 10)}┐`;
     const body = lines.map(([field, value]) => {
-        const text = `${field.padEnd(8)}${fit(String(value))}`;
+        const text = `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`;
         return `│ ${text.padEnd(width - 2)} │`;
     });
     return ["```", top, ...body, `└${"─".repeat(width)}┘`, "```"].join("\n");

@@ -42,7 +42,7 @@ async function post(env, { text, ping }) {
 // One instance holds all alert state. A check awaits network calls, so the
 // next cron could interleave with it: `once` skips a check while one runs.
 export class Watch extends DurableObject {
-    once = exclusive(55_000);
+    once = exclusive();
 
     async check() {
         return (await this.once(() => this.run())) ?? { skipped: true };

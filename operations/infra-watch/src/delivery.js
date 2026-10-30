@@ -2,6 +2,12 @@
 // testable with plain Node.
 
 const TIMEOUT_MS = 10_000;
+
+const withWait = (url) => {
+    const u = new URL(url);
+    u.searchParams.set("wait", "true");
+    return u.toString();
+};
 const MAX_TRIES = 3;
 
 // True only once Discord accepted the message. Retries 429 (honouring
@@ -11,7 +17,8 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
         let res;
         try {
-            res = await fetchImpl(url, {
+            // wait=true: Discord answers only after the message is saved.
+            res = await fetchImpl(withWait(url), {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify(body),
@@ -50,17 +57,19 @@ export function settle(prev, next, posts, delivered) {
     return { ...next, active };
 }
 
-// Runs `fn` unless a previous run is still in flight (lease expires after
-// `leaseMs`, in case a run hung). Returns null when skipped.
-export function exclusive(leaseMs, now = Date.now) {
-    let since = 0;
+// Runs `fn` unless a previous run is still in flight; returns null when
+// skipped. The lease never expires early: every network call in a run has a
+// timeout, so a run always finishes, and an expired lease would let two runs
+// send and write state at once.
+export function exclusive() {
+    let running = false;
     return async (fn) => {
-        if (since && now() - since < leaseMs) return null;
-        since = now();
+        if (running) return null;
+        running = true;
         try {
             return await fn();
         } finally {
-            since = 0;
+            running = false;
         }
     };
 }

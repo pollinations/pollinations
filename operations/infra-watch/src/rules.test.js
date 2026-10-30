@@ -190,3 +190,35 @@ test("model alerts keep working when only one hostname is down", () => {
     });
     assert.deepEqual(Object.keys(found).sort(), ["degraded:a/model", "public"]);
 });
+
+test("one hostname down, then both down: no false recovery", () => {
+    let r = { state: {} };
+    const pubDown = conditions({
+        ...quiet([]),
+        hosts: { public: false, upstream: true },
+    });
+    for (const t of [1, 2, 3]) r = step(r.state, pubDown, t);
+    const bothDown = conditions({ hosts: { public: false, upstream: false } });
+    for (const t of [4, 5, 6]) {
+        r = step(r.state, bothDown, t);
+        assert.ok(!r.posts.some((p) => p.type === "recovered"));
+    }
+    assert.ok(r.state.active.public);
+    assert.ok(r.state.active.gen);
+});
+
+test("long field names keep a space before the value", () => {
+    const { text } = render({
+        type: "alert",
+        key: "spillover:x",
+        info: {
+            kind: "SPILLOVER",
+            model: "x",
+            success: 1,
+            nonClient: 50,
+            retried503s: 12,
+            rescues: 58,
+        },
+    });
+    assert.match(text, /FALLBACK 58 rescued/);
+});

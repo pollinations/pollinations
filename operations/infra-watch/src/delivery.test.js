@@ -12,7 +12,10 @@ const noSleep = async () => {};
 test("send retries 429 and 5xx, then succeeds", async () => {
     const statuses = [429, 500, 204];
     const fetchImpl = async () => reply(statuses.shift(), "0");
-    assert.equal(await send("u", {}, { fetchImpl, sleep: noSleep }), true);
+    assert.equal(
+        await send("https://x.test/h", {}, { fetchImpl, sleep: noSleep }),
+        true,
+    );
 });
 
 test("send gives up after 3 failures and on 4xx", async () => {
@@ -22,20 +25,24 @@ test("send gives up after 3 failures and on 4xx", async () => {
         return reply(503);
     };
     assert.equal(
-        await send("u", {}, { fetchImpl: down, sleep: noSleep }),
+        await send("https://x.test/h", {}, { fetchImpl: down, sleep: noSleep }),
         false,
     );
     assert.equal(calls, 3);
     const bad = async () => reply(404);
     assert.equal(
-        await send("u", {}, { fetchImpl: bad, sleep: noSleep }),
+        await send("https://x.test/h", {}, { fetchImpl: bad, sleep: noSleep }),
         false,
     );
     const thrown = async () => {
         throw new Error("network");
     };
     assert.equal(
-        await send("u", {}, { fetchImpl: thrown, sleep: noSleep }),
+        await send(
+            "https://x.test/h",
+            {},
+            { fetchImpl: thrown, sleep: noSleep },
+        ),
         false,
     );
 });
@@ -54,7 +61,7 @@ test("undelivered alert stays eligible, undelivered recovery stays active", () =
 });
 
 test("overlapping checks: second is skipped until the first finishes", async () => {
-    const once = exclusive(55_000);
+    const once = exclusive();
     let release;
     const first = once(
         () =>
@@ -68,10 +75,16 @@ test("overlapping checks: second is skipped until the first finishes", async () 
     assert.equal(await once(async () => "third"), "third");
 });
 
-test("a hung check releases after the lease", async () => {
-    let t = 0;
-    const once = exclusive(55_000, () => t);
-    once(() => new Promise(() => {}));
-    t = 56_000;
-    assert.equal(await once(async () => "ran"), "ran");
+test("send asks Discord to confirm the saved message (wait=true)", async () => {
+    let seen;
+    const fetchImpl = async (url) => {
+        seen = url;
+        return reply(200);
+    };
+    await send(
+        "https://discord.com/api/webhooks/1/abc",
+        {},
+        { fetchImpl, sleep: noSleep },
+    );
+    assert.equal(new URL(seen).searchParams.get("wait"), "true");
 });

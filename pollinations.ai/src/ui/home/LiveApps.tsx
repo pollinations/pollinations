@@ -6,7 +6,6 @@ import {
     EmptyState,
     ScrollArea,
     Skeleton,
-    SproutIcon,
     TabButton,
     TrendUpIcon,
 } from "@pollinations/ui";
@@ -38,18 +37,7 @@ export function LiveApps() {
 
     return (
         <section className="flex flex-col gap-5">
-            <ContentHeader
-                eyebrow={null}
-                title={
-                    <>
-                        Apps from the{" "}
-                        <span className="site-community-growth">
-                            community.
-                            <SproutIcon aria-hidden="true" />
-                        </span>
-                    </>
-                }
-            />
+            <ContentHeader eyebrow={null} title="Apps from the community." />
             <div className="flex flex-wrap items-center gap-2">
                 {TABS.map((label) => {
                     const Icon = TAB_ICONS[label];

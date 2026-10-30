@@ -457,20 +457,7 @@ function AppsPage() {
                     <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
                         <ContentHeader
                             eyebrow="pollen pay"
-                            title={
-                                <>
-                                    Most used{" "}
-                                    <span className="site-week-mark">
-                                        this week
-                                        <span
-                                            aria-hidden="true"
-                                            className="site-week-spark"
-                                        >
-                                            ✳
-                                        </span>
-                                    </span>
-                                </>
-                            }
+                            title="Most used this week"
                             subtitle="Apps ranked by requests their users paid for with their own pollen."
                         />
                     </div>

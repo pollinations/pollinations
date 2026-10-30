@@ -11,7 +11,6 @@ import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
-import { MediaSketch } from "../ui/site/MediaSketch";
 import { validatePlaySearch } from "./-play-search";
 
 export const Route = createFileRoute("/play")({
@@ -76,16 +75,7 @@ function PlayHero() {
         <HeroScene page="play" compactBottom>
             <ContentHeader
                 eyebrow="Models in the browser"
-                title={
-                    <span className="site-play-title">
-                        Try it out.
-                        <span className="site-media-fan" aria-hidden="true">
-                            <MediaSketch kind="image" />
-                            <MediaSketch kind="video" />
-                            <MediaSketch kind="audio" />
-                        </span>
-                    </span>
-                }
+                title="Try it out."
                 subtitle={
                     <>
                         Create images, video and audio. {connect} to use your

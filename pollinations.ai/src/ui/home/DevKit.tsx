@@ -11,6 +11,7 @@ import {
     cn,
     ExternalLinkButton,
     ExternalLinkIcon,
+    GlobeIcon,
     Heading,
     type IconProps,
     IconTile,
@@ -32,11 +33,9 @@ import { PaidChip } from "@pollinations/ui/wallet";
 import type { ComponentType, ReactNode } from "react";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useMcpServers, usePlatformStats } from "../../data/publicStats";
-import { MediaSketch } from "../site/MediaSketch";
 
 type Feature = {
     title: string;
-    className?: string;
     /** Short copy; wrap the phrase worth skimming in <Em>. */
     body: ReactNode;
     /** A line under the title: a live catalog count, or a fixed note. */
@@ -69,7 +68,6 @@ function Em({ children }: { children: ReactNode }) {
 const BUILD_FEATURES: Feature[] = [
     {
         title: "Agents",
-        className: "site-agent-accent",
         catalogCount: "agents",
         chips: ["Prompt + tools", "Code (agent.ts)", "Your own server"],
         body: (
@@ -89,7 +87,6 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Sandboxes",
-        className: "site-sandbox-accent",
         chips: ["SSH", "VS Code", "E2B or Azure"],
         body: (
             <>
@@ -112,7 +109,6 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Hosted MCP tools",
-        className: "site-mcp-accent",
         body: (
             <>
                 <Em>A private computer, web search and connected apps</Em> like
@@ -131,7 +127,6 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Pollinations CLI",
-        className: "site-cli-accent",
         note: "For humans, AI agents and everything in between",
         chips: ["npx @pollinations/cli"],
         body: (
@@ -155,7 +150,6 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Site hosting",
-        className: "site-hosting-accent",
         chips: ["Free", "Static"],
         body: (
             <>
@@ -176,12 +170,11 @@ const BUILD_FEATURES: Feature[] = [
                 href: "https://gen.pollinations.ai/docs#tag/sites",
             },
         ],
-        icon: AppIcon,
+        icon: GlobeIcon,
         color: "var(--polli-color-modality-embedding)",
     },
     {
         title: "Users pay",
-        className: "site-wallet-accent",
         chips: ["BYOP", "Earnings"],
         body: (
             <>
@@ -199,7 +192,6 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Media storage",
-        className: "site-storage-accent",
         chips: ["Images", "Audio", "Video"],
         body: (
             <>
@@ -218,7 +210,6 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Safety checks",
-        className: "site-safety-accent",
         chips: ["Privacy", "Secrets", "NSFW", "Prompt attacks"],
         body: (
             <>
@@ -315,25 +306,14 @@ function FeatureCard({
     return (
         <Surface
             variant="card"
-            className={cn(
-                "flex h-full flex-col gap-5 p-5 sm:p-6",
-                feature.className,
-            )}
+            className="flex h-full flex-col gap-5 p-5 sm:p-6"
         >
             <div className="flex items-center gap-3">
-                <span
-                    className="site-feature-icon"
-                    style={{
-                        color: feature.color ?? "var(--polli-color-paid-deep)",
-                    }}
-                    aria-hidden="true"
-                >
-                    <IconTile
-                        icon={feature.icon}
-                        color={feature.color}
-                        tone="paid"
-                    />
-                </span>
+                <IconTile
+                    icon={feature.icon}
+                    color={feature.color}
+                    tone="paid"
+                />
                 <div className="flex min-w-0 flex-col gap-1">
                     <Heading as="h3" size="card">
                         {feature.title}
@@ -408,9 +388,6 @@ function Models() {
             ),
             color: modalityTextColor(categories[0]),
             background: modalityBgVar(categories[0]),
-            sketch: ["image", "audio", "video"].includes(categories[0])
-                ? (categories[0] as "image" | "audio" | "video")
-                : undefined,
         })),
         {
             label: "Community",
@@ -421,7 +398,6 @@ function Models() {
             // The wallet's Paid card colors: the brand gold, softened.
             color: "var(--polli-color-paid-deep)",
             background: "var(--polli-color-paid-pale)",
-            sketch: undefined,
         },
     ];
 
@@ -440,12 +416,11 @@ function Models() {
                         names,
                         color,
                         background,
-                        sketch,
                     }) => (
                         <li key={label}>
                             <LinkCard
                                 href={href}
-                                surfaceClassName="site-model-card relative gap-0 p-3.5 sm:p-5"
+                                surfaceClassName="gap-0 p-3.5 sm:p-5"
                                 tint={background}
                             >
                                 <span
@@ -466,7 +441,6 @@ function Models() {
                                 >
                                     {count}
                                 </span>
-                                {sketch && <MediaSketch kind={sketch} />}
                                 <Text size="sm" tone="muted" className="mt-1.5">
                                     {names.length > 0 ? (
                                         <>
@@ -510,7 +484,7 @@ function McpServers({ color }: { color?: string }) {
 /** Labels in the card's icon colour: the icon tile's wash, darker text. */
 function ChipList({ names, color }: { names: string[]; color?: string }) {
     return (
-        <ul className="site-feature-chips flex flex-wrap gap-2">
+        <ul className="flex flex-wrap gap-2">
             {names.map((name) => (
                 <li key={name}>
                     {color ? (

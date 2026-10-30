@@ -6,10 +6,12 @@ import {
     Section,
     Surface,
 } from "@pollinations/ui";
+import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import { useBlocker } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { config, genDocsUrl } from "../../config.ts";
 import type {
+    connectPrepaidWallet,
     loadPrepaidQuote,
     submitPrepaidPayment,
 } from "../../lib/prepaid-checkout.ts";
@@ -27,6 +29,10 @@ export function PrepaidCheckout() {
         ReturnType<typeof submitPrepaidPayment>
     > | null>(null);
     const [saved, setSaved] = useState(false);
+    const [wallet, setWallet] = useState<Awaited<
+        ReturnType<typeof connectPrepaidWallet>
+    > | null>(null);
+    const [balance, setBalance] = useState<number | null>(null);
     const [busy, setBusy] = useState(false);
     const inFlight = useRef(false);
     const [error, setError] = useState<string>();
@@ -45,8 +51,9 @@ export function PrepaidCheckout() {
         setBusy(true);
         setError(undefined);
         let sending = Boolean(pending);
+        let api: typeof import("../../lib/prepaid-checkout.ts") | undefined;
         try {
-            const api = await import("../../lib/prepaid-checkout.ts");
+            api = await import("../../lib/prepaid-checkout.ts");
             const value = api.prepaidAmount(amount);
             const url = `${config.apiBaseUrl}/x402/keys/${value}`;
             if (!quote) {
@@ -55,13 +62,16 @@ export function PrepaidCheckout() {
             }
             let payment = pending;
             if (!payment) {
-                const signer = await api.connectPrepaidWallet();
+                if (!wallet) {
+                    setWallet(await api.connectPrepaidWallet());
+                    return;
+                }
                 payment = {
                     url,
                     headers: await api.prepaidPaymentHeaders(
                         quote,
                         value,
-                        signer,
+                        wallet,
                     ),
                 };
                 setPending(payment);
@@ -71,13 +81,38 @@ export function PrepaidCheckout() {
                 await api.submitPrepaidPayment(payment.url, payment.headers),
             );
             setPending(null);
-        } catch {
+        } catch (error) {
+            if (!sending) setWallet(null);
             setError(
                 sending
                     ? "Payment is not confirmed. Keep this page open and retry this payment to recover the same key without paying again."
                     : !quote
                       ? "Couldn’t get a payment quote. Choose an amount from $0.01 to $10,000 in cents and try again later if checkout is unavailable."
-                      : "Wallet approval didn’t complete. Use a browser with an Ethereum wallet, check its connection and USDC balance on Base, then try again.",
+                      : (api?.prepaidWalletError(error) ??
+                        "Wallet approval could not complete. Try again."),
+            );
+        } finally {
+            inFlight.current = false;
+            setBusy(false);
+        }
+    }
+
+    async function checkBalance() {
+        if (!result || inFlight.current) return;
+        inFlight.current = true;
+        setBusy(true);
+        setError(undefined);
+        try {
+            const api = await import("../../lib/prepaid-checkout.ts");
+            setBalance(
+                await api.prepaidBalance(
+                    `${config.genBaseUrl}/account/balance`,
+                    result.key,
+                ),
+            );
+        } catch {
+            setError(
+                "Couldn’t check your balance. Your key is still shown above; you can try again.",
             );
         } finally {
             inFlight.current = false;
@@ -112,9 +147,25 @@ export function PrepaidCheckout() {
                             }
                         />
                         <p>
-                            Keep this key secret. Use it as your API key at
-                            gen.pollinations.ai.
+                            Keep this key secret. Use gen.pollinations.ai as
+                            your API base URL and send
+                            <code> Authorization: Bearer YOUR_PREPAID_KEY</code>{" "}
+                            with requests. Replace the placeholder with the key
+                            above. Closing this page removes your copy; signing
+                            in later will not recover it.
                         </p>
+                        <Button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void checkBalance()}
+                        >
+                            {busy
+                                ? "Checking balance…"
+                                : "Check remaining Pollen"}
+                        </Button>
+                        {balance !== null && (
+                            <p role="status">Remaining Pollen: {balance}</p>
+                        )}
                         <label className="flex items-center gap-2">
                             <input
                                 type="checkbox"
@@ -134,6 +185,32 @@ export function PrepaidCheckout() {
                             void checkout();
                         }}
                     >
+                        <fieldset
+                            disabled={busy || Boolean(pending)}
+                            className="space-y-2"
+                        >
+                            <legend>Quick amounts</legend>
+                            <div className="flex flex-wrap gap-2">
+                                {POLLEN_PACKS.map((pack) => (
+                                    <Button
+                                        key={pack.packKey}
+                                        type="button"
+                                        aria-pressed={
+                                            Number(amount) === pack.amountUsd
+                                        }
+                                        onClick={() => {
+                                            setAmount(
+                                                pack.amountUsd.toFixed(2),
+                                            );
+                                            setQuote(null);
+                                            setError(undefined);
+                                        }}
+                                    >
+                                        {pack.amountUsd} USDC
+                                    </Button>
+                                ))}
+                            </div>
+                        </fieldset>
                         <label
                             className="flex flex-col gap-2"
                             htmlFor="prepaid-amount"
@@ -171,13 +248,26 @@ export function PrepaidCheckout() {
                                 </p>
                             </div>
                         )}
+                        {wallet && (
+                            <p className="break-all text-sm" role="status">
+                                Connected wallet: {wallet.address} · Base
+                            </p>
+                        )}
+                        {quote && (
+                            <p className="text-sm text-theme-text-muted">
+                                Your wallet needs USDC on Base to pay. No funds
+                                move until you approve the payment.
+                            </p>
+                        )}
                         <Button type="submit" intent="brand" disabled={busy}>
                             {busy
                                 ? "Processing…"
                                 : pending
                                   ? "Retry this payment"
                                   : quote
-                                    ? `Connect wallet and pay ${Number(amount).toFixed(2)} USDC`
+                                    ? wallet
+                                        ? `Pay ${Number(amount).toFixed(2)} USDC`
+                                        : "Connect wallet"
                                     : "Review payment"}
                         </Button>
                         {pending && (

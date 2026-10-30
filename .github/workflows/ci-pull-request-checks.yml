@@ -183,6 +183,16 @@ jobs:
         working-directory: enter.pollinations.ai
         run: npm run build:frontend
 
+      - name: Install browser for enter checkout tests
+        if: steps.enter-frontend.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: npx playwright install --with-deps chromium
+
+      - name: Test enter checkout in the browser
+        if: steps.enter-frontend.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: npm run test:browser
+
       - name: Test UI package exports
         run: node --test packages/ui/scripts/package-exports.test.mjs
 

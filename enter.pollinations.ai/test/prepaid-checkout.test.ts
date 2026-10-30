@@ -3,12 +3,15 @@ import {
     encodePaymentRequiredHeader,
 } from "@x402/core/http";
 import type { PaymentRequired } from "@x402/core/types";
+import { BaseError } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { afterEach, expect, test, vi } from "vitest";
 import {
     loadPrepaidQuote,
     prepaidAmount,
+    prepaidBalance,
     prepaidPaymentHeaders,
+    prepaidWalletError,
     submitPrepaidPayment,
     validatePrepaidQuote,
 } from "../frontend/src/lib/prepaid-checkout.ts";
@@ -37,6 +40,41 @@ const quote: PaymentRequired = {
 };
 
 afterEach(() => vi.unstubAllGlobals());
+
+test("shows actionable wallet errors without displaying provider details", () => {
+    const rejected = new BaseError("Do not display this signed payload", {
+        cause: Object.assign(new Error("private provider details"), {
+            code: 4001,
+        }),
+    });
+    expect(prepaidWalletError(rejected)).toContain("You declined");
+    expect(prepaidWalletError(rejected)).not.toContain("private");
+    expect(prepaidWalletError({ code: "wallet_missing" })).toContain(
+        "No browser wallet",
+    );
+    expect(prepaidWalletError({ code: 4901 })).toContain("Switch to Base");
+    expect(
+        prepaidWalletError(new Error("private provider details")),
+    ).not.toContain("private");
+});
+
+test("checks a prepaid balance using only the authorization header", async () => {
+    const transport = vi
+        .fn()
+        .mockResolvedValue(Response.json({ balance: 0.01 }));
+    vi.stubGlobal("fetch", transport);
+    const balanceUrl = "https://gen.example/account/balance";
+    expect(await prepaidBalance(balanceUrl, "sk_prepaid_fixture")).toBe(0.01);
+    expect(transport).toHaveBeenCalledWith(balanceUrl, {
+        credentials: "omit",
+        cache: "no-store",
+        headers: { Authorization: "Bearer sk_prepaid_fixture" },
+    });
+    transport.mockResolvedValueOnce(Response.json({ balance: "0.01" }));
+    await expect(
+        prepaidBalance(balanceUrl, "sk_prepaid_fixture"),
+    ).rejects.toThrow("Invalid balance");
+});
 
 test("accepts cent amounts within the prepaid API range", () => {
     expect(prepaidAmount("0.01")).toBe("0.01");

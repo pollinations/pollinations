@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Jobs | `https://gen.pollinations.ai/mcp/jobs` | Run image, video, audio, and 3D generations as async jobs, then check, wait, and download results | [Source](https://github.com/pollinations/pollinations/tree/main/apps/jobs-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,20 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Jobs MCP
+
+The Jobs server runs media generation the slow way on purpose: `submit_media_job`
+queues one image, video, audio, or 3D generation as an asynchronous job
+(`Prefer: respond-async`) and returns immediately with a job id, `get_media_job`
+reads its status in one free call, `wait_media_job` polls inside a bounded
+timeout using the server's `Retry-After`, and `download_media_job_result` brings
+the finished file back, inlined as an image or text when it fits and as media
+metadata with an unlisted `media_url` when it does not. Identical requests join
+the same generation and one charge, and polling never bills again; a request
+that was already generated answers with `already_complete` and its `media_url`
+instead of a job. Jobs and their status records expire 24 hours after
+completion.
 
 ### Billing and permissions
 

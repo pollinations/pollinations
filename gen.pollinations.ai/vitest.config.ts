@@ -217,6 +217,14 @@ export default defineConfig(async ({ mode }) => {
                                 cookie: request.headers.get("cookie"),
                                 payload: await request.json(),
                             }),
+                        JOBS_MCP: async (request: Request) =>
+                            Response.json({
+                                pathname: new URL(request.url).pathname,
+                                authorization:
+                                    request.headers.get("authorization"),
+                                cookie: request.headers.get("cookie"),
+                                payload: await request.json(),
+                            }),
                         FFMPEG_MCP: async (request: Request) => {
                             if (
                                 request.headers.has("authorization") ||

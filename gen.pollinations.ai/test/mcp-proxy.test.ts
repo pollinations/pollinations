@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "jobs",
+                name: "Jobs",
+                description:
+                    "Run image, video, audio, and 3D generations as async jobs, then check, wait, and download results.",
+                url: "https://gen.pollinations.ai/mcp/jobs",
+                pricing: {
+                    description:
+                        "Generation jobs use each selected model's listed rate; status polling and job downloads add no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -262,7 +274,7 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "machines", "jobs"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

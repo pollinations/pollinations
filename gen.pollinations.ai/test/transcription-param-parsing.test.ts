@@ -74,6 +74,44 @@ test.for(["text", "empty"])(
     },
 );
 
+test.for([
+    ["abc", "temperature must be a number"],
+    ["0.5abc", "temperature must be a number"],
+    ["5", "temperature must be between 0 and 1"],
+    ["-1", "temperature must be between 0 and 1"],
+])(
+    "transcription rejects temperature=%s before calling the provider",
+    async ([value, message], { paidApiKey }) => {
+        const mocks = createFetchMock({ tinybird: createMockTinybird() });
+        await mocks.enable("tinybird");
+        const form = new FormData();
+        form.set("model", "openai/whisper-large-v3");
+        form.set(
+            "file",
+            new File(["audio"], "test.mp3", { type: "audio/mpeg" }),
+        );
+        form.set("temperature", value);
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/audio/transcriptions", {
+                method: "POST",
+                headers: { authorization: `Bearer ${paidApiKey}` },
+                body: form,
+            }),
+            withInlineGenerationCoordinator(env),
+            ctx,
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: { message },
+        });
+        await waitOnExecutionContext(ctx);
+        expect(
+            mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+        ).toHaveLength(0);
+    },
+);
+
 test("transcription enforces the API key's allowed models", async ({
     restrictedApiKey,
 }) => {

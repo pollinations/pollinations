@@ -7,7 +7,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { assert, expect, vi } from "vitest";
+import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
 import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
@@ -31,18 +31,60 @@ const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
 const CONTRIBUTION_GROUPS = questIndex.QUEST_GROUPS.filter(
     (group) => group.id === "github-contributions",
 );
-const PR_HEAD = "a".repeat(40);
+// Contribution assessments start on 2026-11-02.
+const OPENED_AFTER_REWARDS_START = "2026-11-03T00:00:00Z";
+const QUOTED_AT = "2026-11-03T12:00:00Z";
+const MERGED_AFTER_QUOTE = "2026-11-04T00:00:00Z";
 
-function rewardComment(body: string, humanId?: number): MockRewardComment {
+function humanComment(
+    body: string,
+    databaseId: number,
+    createdAt = QUOTED_AT,
+): MockRewardComment {
     return {
-        body: humanId
-            ? body
-            : `<!-- pollinations-reward -->\n${body}\n<!-- head: ${PR_HEAD} -->\nAssessed contribution.`,
-        createdAt: "2026-10-30T12:00:00Z",
+        body,
+        createdAt,
         lastEditedAt: null,
-        author: humanId
-            ? { __typename: "User", login: "maintainer", databaseId: humanId }
-            : { __typename: "Bot", login: "pollinations-ai" },
+        author: { __typename: "User", login: `user${databaseId}`, databaseId },
+        editor: null,
+    };
+}
+
+async function signQuote(number: number, line: string, secret: string) {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(secret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+    );
+    const signature = await crypto.subtle.sign(
+        "HMAC",
+        key,
+        encoder.encode(`pollinations/pollinations#${number}\n${line}`),
+    );
+    return [...new Uint8Array(signature)]
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+// The quote comment as operations/github/project_manager.py posts it.
+async function quoteComment(
+    number: number,
+    line: string,
+    {
+        signedFor = number,
+        secret = env.CONTRIBUTION_REWARD_KEY,
+        createdAt = QUOTED_AT,
+    } = {},
+): Promise<MockRewardComment> {
+    const signature = await signQuote(signedFor, line, secret);
+    return {
+        body: `<!-- pollinations-reward -->\n${line}\n<!-- signature: ${signature} -->\n\nReason: Fixes a reproducible bug.`,
+        createdAt,
+        lastEditedAt: null,
+        author: { __typename: "Bot", login: "pollinations-ai" },
         editor: null,
     };
 }
@@ -2086,8 +2128,8 @@ test("issue bounties with out-of-range rewards record nothing and do not fail th
     await mocks.enable("github", "tinybird");
 
     // Invalid body amounts must not prevent valid bounties in the same check.
-    // New contributions are capped at 100; the ledger's higher legacy limit
-    // remains in place so previously recorded rewards can still be claimed.
+    // New bounties are capped at 100; the ledger's higher legacy limit remains
+    // so previously recorded rewards can still be claimed.
     for (const issue of [
         { issueNumber: 951, reward: 101 },
         { issueNumber: 954, reward: 10001 },
@@ -2317,7 +2359,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
     expect(rewards).toEqual([{ questId: "github:issue:941" }]);
 });
 
-test("reporters earn the assessed reward on every kind of fixed issue, only with a pre-merge quote", async ({
+test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including converted quests", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2325,8 +2367,8 @@ test("reporters earn the assessed reward on every kind of fixed issue, only with
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
 
-    const afterLaunch = "2026-10-31T12:00:00Z";
-    const exampleTitles: Record<number, string> = {
+    const afterLaunch = "2026-09-24T12:00:00Z";
+    const excludedTitles: Record<number, string> = {
         9107: "[Community Publisher Access]: Example",
         9109: "[App Submission]: Example",
         9110: "[Project Submission]: Example",
@@ -2357,7 +2399,7 @@ test("reporters earn the assessed reward on every kind of fixed issue, only with
         mocks.github.state.questIssues.push({
             number: issue.number,
             state: "closed",
-            title: exampleTitles[issue.number] ?? `Issue ${issue.number}`,
+            title: excludedTitles[issue.number] ?? `Issue ${issue.number}`,
             html_url: `https://github.com/pollinations/pollinations/issues/${issue.number}`,
             body: "A useful issue report",
             created_at: "2026-09-22T00:00:00Z",
@@ -2368,7 +2410,6 @@ test("reporters earn the assessed reward on every kind of fixed issue, only with
                 databaseId: user.githubId,
             },
             labels: issue.labels,
-            comments: [rewardComment("Reward: 1 quest")],
             closedByPullRequestsReferences: [
                 {
                     number: issue.number + 1000,
@@ -2398,16 +2439,13 @@ test("reporters earn the assessed reward on every kind of fixed issue, only with
         [
             `quest:github:reported_issue:9101:github:${user.githubId}`,
             `quest:github:reported_issue:9102:github:${user.githubId}`,
-            `quest:github:reported_issue:9104:github:${user.githubId}`,
             `quest:github:reported_issue:9105:github:${user.githubId}`,
-            `quest:github:reported_issue:9107:github:${user.githubId}`,
-            `quest:github:reported_issue:9109:github:${user.githubId}`,
-            `quest:github:reported_issue:9110:github:${user.githubId}`,
+            `quest:github:reported_issue:9108:github:${user.githubId}`,
             `quest:github:reported_issue:9111:github:${user.githubId}`,
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        1, 1, 1, 1, 1, 1, 1, 1,
+        3, 3, 3, 3, 3,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2423,121 +2461,56 @@ test("reporters earn the assessed reward on every kind of fixed issue, only with
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 8);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
 });
 
-test("assessed PR rewards paginate and are recorded once per human-authored merged PR", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const user = await getOnlyUser();
-    const db = drizzle(env.DB, { schema });
-    await mocks.enable("github");
-    const base = {
-        authorLogin: user.githubUsername ?? "",
-        authorId: user.githubId ?? 0,
-        mergedAt: "2026-10-31T12:00:00Z",
-        comments: [rewardComment("Reward: 0.5 quest")],
-    };
-    for (let number = 10000; number < 10101; number++) {
-        mocks.github.state.mergedPullRequests.push({ ...base, number });
-    }
-    mocks.github.state.mergedPullRequests.push(
-        { ...base, number: 10201, authorId: 999 },
-        { ...base, number: 10202, authorType: "Bot" },
-        { ...base, number: 10203, mergedAt: null },
-        { ...base, number: 10204, comments: [] },
-        { ...base, number: 10205, mergedAt: "2026-10-29T12:00:00Z" },
-        { ...base, number: 10206, headRefOid: "b".repeat(40) },
-        { ...base, number: 10207, repository: "someone/else" },
-    );
-    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
-    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
-    const rewards = await db
-        .select()
-        .from(schema.rewards)
-        .where(eq(schema.rewards.userId, user.id));
-    expect(rewards).toHaveLength(101);
-    expect(new Set(rewards.map((reward) => reward.questId)).size).toBe(101);
+test("quote signatures match the project manager's", async () => {
+    // Same vector as test_project_manager.py.
     expect(
-        rewards.every(
-            (reward) =>
-                reward.pollenAmount === 0.5 &&
-                reward.balanceBucket === "tier" &&
-                reward.claimedAt === null,
+        await signQuote(
+            42,
+            "Reward: 2.5 quest",
+            "test-contribution-reward-key",
         ),
-    ).toBe(true);
-    expect(rewards.some((reward) => reward.questId === "merged_pr")).toBe(
-        false,
-    );
+    ).toBe("dab6089f5883a110b3d8d0533410801a48c26f6b6dc128d37dbb4ceece40033f");
 });
 
-test("only authorized reward comments can set amounts and Paid Pollen, including older pages", async ({
+test("merged PRs opened after the rollout pay a signed quote or a maintainer override; nothing else pays", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
     const user = await getOnlyUser();
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github");
-    const quote = () => rewardComment("Reward: 0.5 quest");
+    const elliot = 36901823;
+    const thomas = 5099901;
+    const quote = (number: number, options = {}) =>
+        quoteComment(number, "Reward: 2.5 quest", options);
+    const discussion = Array.from({ length: 25 }, () =>
+        humanComment("Looks good", 999),
+    );
     const cases: {
+        number: number;
         comments: MockRewardComment[];
-        expected?: [number, string];
+        expected?: [number, "tier" | "pack"];
+        authorId?: number;
+        repository?: string;
+        closingIssueLabels?: string[][];
     }[] = [
         {
-            comments: [quote(), rewardComment("Reward: 20 paid", 5099901)],
-            expected: [20, "pack"],
+            number: 20001,
+            comments: [await quote(20001)],
+            expected: [2.5, "tier"],
         },
+        // A quote copied from another item, signed with another key, posted by
+        // a person or after the merge never pays.
+        { number: 20002, comments: [await quote(20002, { signedFor: 20001 })] },
+        { number: 20003, comments: [await quote(20003, { secret: "other" })] },
         {
-            comments: [quote(), rewardComment("Reward: 0.25", 36901823)],
-            expected: [0.25, "tier"],
-        },
-        { comments: [quote(), rewardComment("Reward: 0", 5099901)] },
-        {
-            comments: [quote(), rewardComment("Reward: 100 paid", 36901823)],
-            expected: [100, "pack"],
-        },
-        ...[
-            "Reward: 100.1 paid",
-            "Reward: -1",
-            "Reward: Infinity",
-            "Reward: 3oops",
-            "Reward: 1e2",
-            "Example:\nReward: 100 paid",
-            "Reward: 100 paid\nReward: 1",
-        ].map((body) => ({
-            comments: [quote(), rewardComment(body, 5099901)],
-            expected: [0.5, "tier"] as [number, string],
-        })),
-        {
-            comments: [quote(), rewardComment("Reward: 100 paid", 999)],
-            expected: [0.5, "tier"],
-        },
-        { comments: [rewardComment("Reward: 100 paid")] },
-        { comments: [rewardComment("Reward: 101 quest")] },
-        {
+            number: 20004,
             comments: [
                 {
-                    ...quote(),
-                    lastEditedAt: "2026-11-01T12:00:00Z",
-                    editor: quote().author,
-                },
-            ],
-        },
-        {
-            comments: [
-                {
-                    ...quote(),
-                    body: quote().body.replace(PR_HEAD, "b".repeat(40)),
-                },
-                rewardComment("Reward: 2 paid", 5099901),
-            ],
-            expected: [2, "pack"],
-        },
-        {
-            comments: [
-                {
-                    ...quote(),
+                    ...(await quote(20004)),
                     author: {
                         __typename: "User",
                         login: "pollinations-ai",
@@ -2547,11 +2520,39 @@ test("only authorized reward comments can set amounts and Paid Pollen, including
             ],
         },
         {
+            number: 20005,
             comments: [
-                quote(),
+                await quote(20005, { createdAt: "2026-11-05T00:00:00Z" }),
+            ],
+        },
+        {
+            number: 20006,
+            comments: [humanComment("Reward: 4", elliot)],
+            expected: [4, "tier"],
+        },
+        {
+            number: 20007,
+            comments: [
+                await quote(20007),
+                humanComment("Reward: 20 paid", thomas),
+            ],
+            expected: [20, "pack"],
+        },
+        {
+            number: 20008,
+            comments: [await quote(20008), humanComment("Reward: 0", elliot)],
+        },
+        {
+            number: 20009,
+            comments: [
+                await quote(20009),
+                humanComment("Reward: 50", 999),
+                humanComment("Reward: 101", elliot),
+                humanComment("Reward: 1e2", elliot),
+                humanComment("Example:\nReward: 30 paid", thomas),
                 {
-                    ...rewardComment("Reward: 100 paid", 5099901),
-                    lastEditedAt: "2026-10-30T13:00:00Z",
+                    ...humanComment("Reward: 40 paid", thomas),
+                    lastEditedAt: "2026-11-03T13:00:00Z",
                     editor: {
                         __typename: "User",
                         login: "other",
@@ -2559,67 +2560,206 @@ test("only authorized reward comments can set amounts and Paid Pollen, including
                     },
                 },
             ],
-            expected: [0.5, "tier"],
+            expected: [2.5, "tier"],
         },
         {
+            number: 20010,
             comments: [
-                {
-                    ...quote(),
-                    lastEditedAt: "2026-10-30T13:00:00Z",
-                    editor: null,
-                },
-            ],
-        },
-        {
-            comments: [
-                quote(),
-                rewardComment("Reward: 10 paid", 5099901),
-                {
-                    ...rewardComment("Reward: 2", 36901823),
-                    createdAt: "2026-10-30T13:00:00Z",
-                },
+                await quote(20010),
+                humanComment("Reward: 10 paid", thomas),
+                humanComment("Reward: 2", elliot, "2026-11-03T13:00:00Z"),
             ],
             expected: [2, "tier"],
         },
+        // The quote sits on an older page of a long thread.
         {
-            comments: [
-                quote(),
-                rewardComment("Reward: 7 paid", 5099901),
-                ...Array.from({ length: 25 }, () =>
-                    rewardComment("ordinary discussion", 999),
-                ),
-            ],
-            expected: [7, "pack"],
+            number: 20011,
+            comments: [await quote(20011), ...discussion],
+            expected: [2.5, "tier"],
         },
+        // A closed quest pays its bounty instead; only an override adds to it.
+        {
+            number: 20012,
+            comments: [await quote(20012)],
+            closingIssueLabels: [["POLLEN-QUEST"]],
+        },
+        {
+            number: 20013,
+            comments: [await quote(20013), humanComment("Reward: 5", elliot)],
+            closingIssueLabels: [["POLLEN-QUEST"]],
+            expected: [5, "tier"],
+        },
+        {
+            number: 20014,
+            comments: [await quoteComment(20014, "Reward: 3 paid")],
+        },
+        {
+            number: 20015,
+            comments: [await quote(20015)],
+            repository: "someone/else",
+        },
+        { number: 20016, comments: [await quote(20016)], authorId: 999 },
     ];
-    cases.forEach(({ comments }, index) => {
+    for (const {
+        number,
+        comments,
+        authorId,
+        repository,
+        closingIssueLabels,
+    } of cases) {
         mocks.github.state.mergedPullRequests.push({
-            number: 11000 + index,
+            number,
             authorLogin: user.githubUsername ?? "",
-            authorId: user.githubId ?? 0,
-            mergedAt: "2026-10-31T12:00:00Z",
+            authorId: authorId ?? user.githubId ?? 0,
+            createdAt: OPENED_AFTER_REWARDS_START,
+            mergedAt: MERGED_AFTER_QUOTE,
+            repository,
             comments,
+            closingIssueLabels,
         });
-    });
+    }
+
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
     await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
     const rewards = await db
         .select()
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
-    for (const [index, { expected }] of cases.entries()) {
-        const reward = rewards.find(
-            (entry) => entry.questId === `github:merged_pr:${11000 + index}`,
-        );
-        if (!expected) expect(reward, `case ${index}`).toBeUndefined();
-        else
-            expect(reward, `case ${index}`).toMatchObject({
-                pollenAmount: expected[0],
-                balanceBucket: expected[1],
-            });
-    }
+    expect(
+        Object.fromEntries(
+            rewards.map((reward) => [
+                reward.questId,
+                [reward.pollenAmount, reward.balanceBucket],
+            ]),
+        ),
+    ).toEqual(
+        Object.fromEntries(
+            cases.flatMap(({ number, expected }) =>
+                expected ? [[`github:merged_pr:${number}`, expected]] : [],
+            ),
+        ),
+    );
 });
 
-test("a bounty becomes one assessed PR reward and the existing UI API claims its overridden bucket once", async ({
+test("without CONTRIBUTION_REWARD_KEY no quote pays, but overrides still do", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    mocks.github.state.mergedPullRequests.push(
+        {
+            number: 20101,
+            authorLogin: user.githubUsername ?? "",
+            authorId: user.githubId ?? 0,
+            createdAt: OPENED_AFTER_REWARDS_START,
+            mergedAt: MERGED_AFTER_QUOTE,
+            comments: [await quoteComment(20101, "Reward: 2.5 quest")],
+        },
+        {
+            number: 20102,
+            authorLogin: user.githubUsername ?? "",
+            authorId: user.githubId ?? 0,
+            createdAt: OPENED_AFTER_REWARDS_START,
+            mergedAt: MERGED_AFTER_QUOTE,
+            comments: [humanComment("Reward: 1", 36901823)],
+        },
+    );
+    await checkQuestsForUser(
+        { ...env, CONTRIBUTION_REWARD_KEY: "" },
+        user.id,
+        CONTRIBUTION_GROUPS,
+    );
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(rewards).toEqual([{ questId: "github:merged_pr:20102" }]);
+});
+
+test("PRs and issues opened before the rollout keep the old fixed rewards", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    const reportedIssue = async (
+        number: number,
+        createdAt: string,
+        comments: MockRewardComment[],
+        mergedAt: string | null = MERGED_AFTER_QUOTE,
+    ) => {
+        mocks.github.state.questIssues.push({
+            number,
+            state: "closed",
+            title: `Issue ${number}`,
+            html_url: `https://github.com/pollinations/pollinations/issues/${number}`,
+            body: "A useful issue report",
+            created_at: createdAt,
+            updated_at: MERGED_AFTER_QUOTE,
+            closed_at: MERGED_AFTER_QUOTE,
+            user: {
+                login: user.githubUsername ?? "",
+                databaseId: user.githubId,
+            },
+            comments,
+            closedByPullRequestsReferences: [
+                { number: number + 1000, mergedAt, author: null },
+            ],
+        });
+    };
+    // Opened before the rollout: the old 3 for a fixed issue, whatever the
+    // comments say, and the old 5 for a first merged PR.
+    await reportedIssue(21001, "2026-10-01T00:00:00Z", [
+        humanComment("Reward: 9", 36901823),
+    ]);
+    mocks.github.state.mergedPullRequests.push({
+        number: 21101,
+        authorLogin: user.githubUsername ?? "",
+        mergedAt: "2026-10-02T00:00:00Z",
+    });
+    // Opened after it: the signed quote or an override, once a merged PR fixes it.
+    await reportedIssue(21002, OPENED_AFTER_REWARDS_START, [
+        await quoteComment(21002, "Reward: 1.5 quest"),
+    ]);
+    await reportedIssue(21003, OPENED_AFTER_REWARDS_START, [
+        humanComment("Reward: 2 paid", 5099901),
+    ]);
+    await reportedIssue(
+        21004,
+        OPENED_AFTER_REWARDS_START,
+        [await quoteComment(21004, "Reward: 1.5 quest")],
+        null,
+    );
+    await reportedIssue(21005, OPENED_AFTER_REWARDS_START, [
+        await quoteComment(21005, "Reward: 1.5 quest", {
+            createdAt: "2026-11-05T00:00:00Z",
+        }),
+    ]);
+
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const rewards = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(
+        Object.fromEntries(
+            rewards.map((reward) => [
+                reward.questId,
+                [reward.pollenAmount, reward.balanceBucket],
+            ]),
+        ),
+    ).toEqual({
+        merged_pr: [5, "tier"],
+        "github:reported_issue:21001": [3, "tier"],
+        "github:reported_issue:21002": [1.5, "tier"],
+        "github:reported_issue:21003": [2, "pack"],
+    });
+});
+
+test("a quest PR earns the bounty plus an override, and the override's Paid reward claims once", async ({
     mocks,
     accountToken,
 }) => {
@@ -2627,74 +2767,47 @@ test("a bounty becomes one assessed PR reward and the existing UI API claims its
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github");
     seedQuestIssue(mocks.github.state, {
-        issueNumber: 12000,
+        issueNumber: 22000,
         title: "Useful implementation",
         goal: "Solve the problem",
         reward: 20,
-        completedByPrNumber: 12001,
+        completedByPrNumber: 22001,
         completedByGithubId: user.githubId,
         completedByLogin: user.githubUsername,
-        updatedAt: new Date("2026-10-31T12:00:00Z"),
+        updatedAt: new Date(MERGED_AFTER_QUOTE),
     });
-    const pr = mocks.github.state.mergedPullRequests.find(
-        (entry) => entry.number === 12001,
-    );
-    assert(pr);
-    pr.authorId = user.githubId ?? 0;
-    pr.comments = [
-        rewardComment("Reward: 20 quest"),
-        rewardComment("Reward: 20 paid", 5099901),
-    ];
-    await recordRewards(db, [
-        {
-            idempotencyKey: rewardKey("merged_pr", user),
-            userId: user.id,
-            questId: "merged_pr",
-            title: "Previous first PR",
-            amount: 5,
-            bucket: "tier",
-        },
-    ]);
+    const pr = mocks.github.state.mergedPullRequests.at(-1);
+    if (!pr) throw new Error("Expected the quest PR");
+    Object.assign(pr, {
+        authorId: user.githubId ?? 0,
+        createdAt: OPENED_AFTER_REWARDS_START,
+        closingIssueLabels: [["POLLEN-QUEST"]],
+        comments: [
+            await quoteComment(22001, "Reward: 3 quest"),
+            humanComment("Reward: 20 paid", 5099901),
+        ],
+    });
+
     await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
     const rows = await db
         .select()
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
-    expect(rows).toHaveLength(2);
-    expect(rows.find((row) => row.questId === "merged_pr")?.pollenAmount).toBe(
-        5,
-    );
-    const reward = rows.find((row) => row.questId === "github:merged_pr:12001");
-    assert(reward);
-    expect(reward).toMatchObject({
-        pollenAmount: 20,
-        balanceBucket: "pack",
-        claimedAt: null,
+    expect(
+        Object.fromEntries(
+            rows.map((row) => [
+                row.questId,
+                [row.pollenAmount, row.balanceBucket],
+            ]),
+        ),
+    ).toEqual({
+        "github:issue:22000": [20, "tier"],
+        "github:merged_pr:22001": [20, "pack"],
     });
-    expect(rows.some((row) => row.questId === "github:issue:12000")).toBe(
-        false,
-    );
-    pr.comments.push({
-        ...rewardComment("Reward: 1 quest", 36901823),
-        createdAt: "2026-11-01T12:00:00Z",
-    });
-    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+
+    const reward = rows.find((row) => row.questId === "github:merged_pr:22001");
+    if (!reward) throw new Error("Expected the override reward");
     const headers = { Authorization: `Bearer ${accountToken}` };
-    const listed = await SELF.fetch(
-        "http://localhost:3000/api/account/quests/rewards",
-        { headers },
-    );
-    expect(listed.status).toBe(200);
-    expect(await listed.json()).toMatchObject({
-        rewards: expect.arrayContaining([
-            expect.objectContaining({
-                id: reward.id,
-                pollenAmount: 20,
-                balanceBucket: "pack",
-                claimedAt: null,
-            }),
-        ]),
-    });
     const balances = async () =>
         (
             await db
@@ -2708,7 +2821,6 @@ test("a bounty becomes one assessed PR reward and the existing UI API claims its
     const before = await balances();
     const claimUrl = `http://localhost:3000/api/account/quests/rewards/${reward.id}/claim`;
     const claimed = await SELF.fetch(claimUrl, { method: "POST", headers });
-    expect(claimed.status).toBe(200);
     expect(await claimed.json()).toMatchObject({ claimed: true });
     const after = await balances();
     expect(after.tier).toBe(before.tier);
@@ -2716,102 +2828,6 @@ test("a bounty becomes one assessed PR reward and the existing UI API claims its
     const retry = await SELF.fetch(claimUrl, { method: "POST", headers });
     expect(await retry.json()).toMatchObject({ claimed: false });
     expect(await balances()).toEqual(after);
-});
-
-test("issue bounties and PR assessments cannot pay the same solution twice, even with a stale cache or deleted quote", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const user = await getOnlyUser();
-    const db = drizzle(env.DB, { schema });
-    await mocks.enable("github");
-    for (const issueNumber of [12010, 12012]) {
-        seedQuestIssue(mocks.github.state, {
-            issueNumber,
-            title: "Accepted quest",
-            goal: "Complete the solution",
-            reward: 20,
-            completedByPrNumber: issueNumber + 1,
-            completedByGithubId: user.githubId,
-            completedByLogin: user.githubUsername,
-            updatedAt: new Date("2026-10-31T12:00:00Z"),
-        });
-        const pr = mocks.github.state.mergedPullRequests.at(-1);
-        assert(pr);
-        pr.comments = [rewardComment("Reward: 20 quest")];
-        pr.closingIssuesReferences =
-            issueNumber === 12010
-                ? [
-                      ...Array.from({ length: 100 }, (_, i) => ({
-                          number: 13000 + i,
-                      })),
-                      { number: 12010 },
-                  ]
-                : [
-                      { number: 12010, repository: "someone/else" },
-                      { number: issueNumber },
-                  ];
-    }
-    await recordRewards(db, [
-        {
-            idempotencyKey: rewardKey("github:issue:12010", user),
-            userId: user.id,
-            questId: "github:issue:12010",
-            title: "Already earned bounty",
-            amount: 20,
-            bucket: "tier",
-        },
-    ]);
-    // Account deletion preserves the immutable reward key with a null userId.
-    await db
-        .update(schema.rewards)
-        .set({ userId: null, earnedAt: new Date("2026-11-01T12:00:00Z") })
-        .where(eq(schema.rewards.questId, "github:issue:12010"));
-    await env.KV.put(
-        "quests:github-issues:v2",
-        JSON.stringify({ issues: [], checkedAt: Date.now() }),
-    );
-    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
-    const keys = async () =>
-        (
-            await db
-                .select({ questId: schema.rewards.questId })
-                .from(schema.rewards)
-        )
-            .map((row) => row.questId)
-            .sort();
-    expect(await keys()).toEqual([
-        "github:issue:12010",
-        "github:merged_pr:12013",
-    ]);
-
-    const pr = mocks.github.state.mergedPullRequests.find(
-        (entry) => entry.number === 12013,
-    );
-    assert(pr);
-    pr.comments = [];
-    await env.KV.delete("quests:github-issues:v2");
-    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
-    expect(await keys()).toEqual([
-        "github:issue:12010",
-        "github:merged_pr:12013",
-    ]);
-
-    // An older award must not block a later, separate PR for a recurring quest.
-    mocks.github.state.mergedPullRequests.push({
-        number: 12015,
-        authorLogin: user.githubUsername ?? "",
-        authorId: user.githubId ?? 0,
-        mergedAt: "2026-11-02T12:00:00Z",
-        comments: [rewardComment("Reward: 20 quest")],
-        closingIssuesReferences: [{ number: 12010 }],
-    });
-    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
-    expect(await keys()).toEqual([
-        "github:issue:12010",
-        "github:merged_pr:12013",
-        "github:merged_pr:12015",
-    ]);
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

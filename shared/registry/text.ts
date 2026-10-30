@@ -1574,7 +1574,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.7": {
-        supportedParameters: CHAT_PARAMETERS.openRouterGrok47,
+        supportedParameters: CHAT_PARAMETERS.grok47,
         aliases: [],
         provider: "aws",
         publisher: "xAI",

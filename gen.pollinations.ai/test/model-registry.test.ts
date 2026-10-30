@@ -108,6 +108,8 @@ describe("getGenerationModelRegistry", () => {
             ["openai/gpt-audio-mini", "stream", true],
             ["openai/gpt-audio-1.5", "max_completion_tokens", true],
             ["x-ai/grok-4.3", "max_tokens", true],
+            ["x-ai/grok-4.7", "logprobs", false],
+            ["x-ai/grok-4.7", "top_logprobs", false],
             ["anthropic/claude-sonnet-4.6", "response_format", true],
             ["anthropic/claude-sonnet-5", "temperature", false],
             ["anthropic/claude-sonnet-5", "response_format", false],

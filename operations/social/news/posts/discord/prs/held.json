@@ -11,11 +11,19 @@
     "18780": {
       "merge_sha": "57a97266f40a0685c05d39302b506d8208f05b0a",
       "merged_at": "2026-10-30T18:40:09Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/infra-watch"
-      ]
+      "required": []
+    },
+    "18784": {
+      "merge_sha": "8ab0fe82a7f990c1b6758f1de227bfb78592c14a",
+      "merged_at": "2026-10-30T18:52:49Z",
+      "required": []
+    },
+    "18787": {
+      "merge_sha": "2ae437328fa4e959f78d7b5ec8df405838dfcb80",
+      "merged_at": "2026-10-30T19:33:38Z",
+      "required": []
     }
   },
-  "production": "4dd9a34d6dcce89e9bb05e35dc63b672b8569879",
+  "production": "fd2f78bcbd7c373d00524af5902cd38fd6bece08",
   "master": "a2a962686bd7e26589a2b5e9c7259f75e67fc967"
 }

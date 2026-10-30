@@ -120,6 +120,14 @@ export function createBedrockResponsesConfig(model: string): ProviderConfig {
     });
 }
 
+/** Keep Chat controls on the native Chat endpoint; Responses remains available. */
+export function createBedrockChatConfig(model: string): ProviderConfig {
+    const config = createBedrockResponsesConfig(model);
+    const endpoint = new URL(config.responsesEndpoint as string);
+    endpoint.pathname = "/openai/v1/chat/completions";
+    return { ...config, directEndpoint: endpoint.href };
+}
+
 export function createFireworksModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

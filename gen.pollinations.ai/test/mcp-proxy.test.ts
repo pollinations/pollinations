@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "crypto-tools",
+                name: "Crypto Tools",
+                description:
+                    "Hash text, generate UUIDs, transform base64, mint secure tokens, and compute HMAC signatures.",
+                url: "https://gen.pollinations.ai/mcp/crypto-tools",
+                pricing: {
+                    description:
+                        "Free. Pure local computation, no model calls and no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

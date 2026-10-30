@@ -1,16 +1,16 @@
 import { OAUTH_SCOPES } from "@shared/auth/authorize-config.ts";
-import { getPublicOrigin } from "@shared/public-origin.ts";
+import { getPublicOrigin, siblingOrigin } from "@shared/public-origin.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import type { Env } from "../env.ts";
 import { DEVICE_CODE_GRANT } from "./oauth.ts";
 
-/** The gen origin for this enter host: enter.* maps to gen.*, over https. */
+/**
+ * The gen origin for this enter host: known tiers map to their sibling
+ * (staging.enter -> staging.gen), everything else to production gen.
+ */
 export function getCurrentGenOrigin(c: Context<Env>): string {
-    const url = new URL(getPublicOrigin(c));
-    url.protocol = "https:";
-    url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
-    return url.origin;
+    return siblingOrigin(getPublicOrigin(c), "gen");
 }
 
 /**

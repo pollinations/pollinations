@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "NETWORK_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "network",
+        name: "Network",
+        description:
+            "Public DNS records, HTTP diagnostics and IPv4/IPv6 subnet inspection.",
+        binding: "NETWORK_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Network diagnostics. No Pollen charge.",
             rates: [],
         },
     },

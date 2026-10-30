@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "network",
+                name: "Network",
+                description:
+                    "Public DNS records, HTTP diagnostics and IPv4/IPv6 subnet inspection.",
+                url: "https://gen.pollinations.ai/mcp/network",
+                pricing: {
+                    description: "Network diagnostics. No Pollen charge.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -262,7 +273,7 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "machines", "network"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(
@@ -276,6 +287,33 @@ test.for(["pollinations", "ask-jev", "machines"])(
         expect(response.status).toBe(401);
     },
 );
+
+test("Network is available with zero balance and does not charge", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 0 },
+    });
+    const payload = {
+        ...MCP_REQUEST,
+        params: { name: "inspect_cidr", arguments: { cidr: "10.0.0.0/8" } },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/network",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ payload });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 0,
+    });
+});
 
 test("proxies FFmpeg without caller credentials and bills reported usage", async () => {
     const { key, userId } = await createTestApiKey({

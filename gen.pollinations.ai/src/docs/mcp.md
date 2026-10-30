@@ -18,6 +18,13 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Network | `https://gen.pollinations.ai/mcp/network` | Look up DNS records, inspect HTTP responses and redirects, and calculate IPv4/IPv6 subnets | [Source](https://github.com/pollinations/pollinations/tree/main/apps/network-mcp) |
+
+Network (`https://gen.pollinations.ai/mcp/network`) provides free `dns_lookup`,
+`http_probe` and `inspect_cidr` tools. A key is still required. HTTP probes accept
+public hostnames on standard HTTP(S) ports, follow at most five redirects, and
+return at most 4 KiB of text. DNS results are one resolver's cached view, not a
+propagation or safety check. CIDR inspection is local and does not scan hosts.
 
 Send the key with every request:
 

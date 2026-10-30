@@ -89,7 +89,7 @@ polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint
 polli docs --open            # open in browser
-polli quests                 # public quest catalog
+polli quests                 # your quests with claim state (requires login)
 polli quests --claimed       # already-completed and earned quest status
 ```
 

@@ -7,16 +7,13 @@
     "type": "module",
     "scripts": {
         "dev": "npm run build && wrangler dev worker.js --local",
-        "build": "npm run build:deps && npm run build:app",
-        "build:app": "vite build",
-        "build:deps": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+        "build": "vite build",
         "deploy": "npm run build && wrangler deploy worker.js",
-        "pretypecheck": "npm run build:deps",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@pollinations/sdk": "file:../../packages/sdk",
-        "@pollinations/ui": "file:../../packages/ui",
+        "@pollinations/sdk": "5.1.0-alpha.25",
+        "@pollinations/ui": "0.1.0-alpha.25",
         "react": "^19.2.0",
         "react-dom": "^19.2.0"
     },

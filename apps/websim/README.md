@@ -5,11 +5,14 @@ Worker-backed BYOP app for generating shareable single-file HTML pages with Poll
 ## Local Development
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
 The Worker runs on `http://localhost:16386` and serves the Vite-built app from `dist`.
+Run these commands from the Websim directory. Dependencies come from npm;
+the app also builds outside the Pollinations repository with `npm run build`.
+Run `npm run typecheck` to check the frontend types.
 
 ## Routes
 

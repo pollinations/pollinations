@@ -187,6 +187,8 @@ type ReplayableRequestInit = Omit<RequestInit, "body"> & { body?: string };
  * Fetches from the weighted pool, retrying distinct workers only when the
  * request was not accepted (HTTP 503, Cloudflare 1033, or a known network
  * failure). The body is restricted to a string so every retry can resend it.
+ * The caller validates the full image before recording the selected server's
+ * latency; headers alone do not establish successful delivery.
  *
  * Do not add AbortSignal.timeout() here without production Workerd validation:
  * a timeout signal previously broke every pool request despite passing locally.
@@ -194,7 +196,7 @@ type ReplayableRequestInit = Omit<RequestInit, "body"> & { body?: string };
 export const fetchFromWeightedServer = async (
     type: ServerType = "flux",
     options: ReplayableRequestInit,
-): Promise<Response> => {
+): Promise<{ response: Response; serverUrl: string; startedAt: number }> => {
     const remainingServers = await getRegisteredServers(type);
     if (remainingServers.length === 0) {
         throw UpstreamError.fromProvider(503, {
@@ -214,22 +216,23 @@ export const fetchFromWeightedServer = async (
         try {
             response = await fetch(`${serverUrl}/generate`, options);
         } catch (error) {
-            if (!isNetworkFailure(error) || remainingServers.length === 0) {
+            if (!isNetworkFailure(error)) {
                 throw error;
+            }
+            if (remainingServers.length === 0) {
+                throw new UpstreamError(502, {
+                    message: "Image backend request failed",
+                    requestUrl: new URL(`${serverUrl}/generate`),
+                    cause: error,
+                });
             }
             console.warn(
                 `[${type}] Network failure from ${serverUrl}; retrying another pool worker`,
             );
             continue;
         }
-        // Record latency for successful responses only (a 5xx/timeout would
-        // record the full timeout window and wrongly down-weight a recovering
-        // server). Awaited (not fire-and-forget): a floating promise can be
-        // cancelled when the Worker invocation completes, dropping the KV
-        // write. The cost is bounded by the in-memory write throttle.
         if (response.ok) {
-            await recordLatency(type, serverUrl, Date.now() - startedAt);
-            return response;
+            return { response, serverUrl, startedAt };
         }
 
         let errorBody = "";

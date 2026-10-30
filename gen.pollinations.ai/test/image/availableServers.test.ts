@@ -120,7 +120,7 @@ describe("fetchFromWeightedServer", () => {
             body: "request-body",
         });
 
-        expect(response.status).toBe(200);
+        expect(response.response.status).toBe(200);
         expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
         expect(errorLog).not.toHaveBeenCalled();
         expect(warnLog).toHaveBeenCalledOnce();
@@ -141,7 +141,7 @@ describe("fetchFromWeightedServer", () => {
 
         const response = await fetchFromWeightedServer("sana", options);
 
-        expect(response.status).toBe(200);
+        expect(response.response.status).toBe(200);
         expect(fetchMock.mock.calls).toEqual([
             ["https://w1/generate", options],
             ["https://w2/generate", options],
@@ -235,7 +235,7 @@ describe("fetchFromWeightedServer", () => {
             body: "request-body",
         });
 
-        expect(response.status).toBe(200);
+        expect(response.response.status).toBe(200);
         expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
     });
 
@@ -250,6 +250,23 @@ describe("fetchFromWeightedServer", () => {
             fetchFromWeightedServer("flux", { method: "POST" }),
         ).rejects.toThrow("Cannot read properties of null");
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("retains the last backend after exhausting network retries", async () => {
+        await registerServer("https://w1", "flux");
+        await registerServer("https://w2", "flux");
+        const cause = new TypeError("fetch failed: connection refused");
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(cause);
+        await expect(
+            fetchFromWeightedServer("flux", { method: "POST" }),
+        ).rejects.toMatchObject({
+            status: 502,
+            requestUrl: new URL("https://w2/generate"),
+            cause,
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
     it("does not retry failures other than queue-full 503", async () => {

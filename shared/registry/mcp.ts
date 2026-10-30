@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "HUGGINGFACE_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "huggingface",
+        name: "Hugging Face",
+        description:
+            "Search Hugging Face models, read model details, inspect Spaces — no provider key needed.",
+        binding: "HUGGINGFACE_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Free. Anonymous Hugging Face API access needs no provider key.",
             rates: [],
         },
     },

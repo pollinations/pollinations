@@ -2849,6 +2849,7 @@ test("setup rewards: subdomains count as the domain a registrant controls", asyn
     expect(await flaggedDomains()).toMatchObject([{ domain: "sub.test" }]);
     expect(await tierBalanceOf(ids[30])).toBe(0);
     expect(registrableDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
+    expect(registrableDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
 });
 
 test("setup rewards: public mail domains are never recorded or flagged", async () => {

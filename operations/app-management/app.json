@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Image Remix",
+    "url": "https://image-remix.pollinations.app",
+    "description": "Upload a photo (PNG, JPEG or WebP) and describe the change, or pick an idea such as \"Winter night\" or \"Watercolor painting\". A Pollinations image-editing model returns the edited image at the source's",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "danhquach",
+    "githubUserId": "3012542",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-30",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18774",
+    "approvedDate": "2026-10-30",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/7a81ffcc-dd38-494e-bf6d-f91d0beb967c"
+  },
+  {
     "emoji": "🛠️",
     "name": "Screenshot to Bug Report",
     "url": "https://screenshot-to-bug-report.pollinations.app",

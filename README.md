@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Image Remix](https://image-remix.pollinations.app) | Upload a photo (PNG, JPEG or WebP) and describe the change, or pick an idea such as "Winter night" or "Watercolor painting". A Pollinations image-editing model returns the edited image at the source's | [@danhquach](https://github.com/danhquach) |
 | [🛠️ Screenshot to Bug Report](https://screenshot-to-bug-report.pollinations.app) | Paste, drop or upload a screenshot and add rough notes. The community prompt agent community/danhquach/bug-report-writer reads the screenshot and writes a clean Markdown bug report: title, what happen | [@danhquach](https://github.com/danhquach) |
 | [🖼️ Prompt to Image](https://prompt-to-image.pollinations.app) | Type a rough image idea and pick a style. The community prompt agent community/danhquach/prompt-enhancer expands it into a detailed prompt, which you can edit, and a Pollinations image model renders i | [@danhquach](https://github.com/danhquach) |
 | [🎬 Reel Hook Generator](https://anojan-va.github.io/reel-hook-generator) | Type a reel topic and get five scroll-stopping hooks in different styles (curiosity gap, shock fact, direct question, bold claim, mini story), each read aloud with Pollinations text-to-speech so you c | [@anojan-va](https://github.com/anojan-va) |
@@ -30,7 +31,6 @@
 | [🎬 AI ad video generator](https://github.com/zee7lubricantsoperations-collab/AI-ad-video-generator-free-no-cahrges-) | AI Ad Video Maker is a Windows desktop app that produces 7–10 s advertisement videos with AI‑generated scripts, visuals, voice‑overs, captions and background music. It supports 21 languages, multiple | [@zee7lubricantsoperations-collab](https://github.com/zee7lubricantsoperations-collab) |
 | [🖼️ Poster Iklan Pantas](https://poster.simetry.digital) | Malay-language ad poster maker for small sellers in Malaysia. Users type product, headline and offer, pick style and size (feed, story, banner), optionally upload a product photo, and get a ready-to-p | [@Syafixit](https://github.com/Syafixit) |
 | [🖼️ Pollinations Model Tester](https://polli-model-tester-9321atohv-scriptsnsenses-8753s-projects.vercel.app) | The app is [Pollinations.ai](https://pollinations.ai/) Models Tester — a single-file, browser-based playground for comparing Pollinations text models side-by-side. The app lets you enter any model ID | [@scriptsnsenses-sys](https://github.com/scriptsnsenses-sys) |
-| [🖼️ Teapot Art](https://svirepyibambr.github.io/teapot-art) | A one-page image generator: describe what you want in words — get a picture. Single static HTML file, no build step, no dependencies. Generation goes through the Pollinations image API; a user key is | [@SvirepyiBambr](https://github.com/SvirepyiBambr) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

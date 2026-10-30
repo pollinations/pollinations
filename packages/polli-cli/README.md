@@ -39,7 +39,7 @@ Every command is agent-friendly:
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
-Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 Set `POLLINATIONS_ENV=staging` to use the staging API, with a separate login stored in `~/.pollinations/credentials.staging.json`. `polli upload` has no staging.
 
@@ -82,12 +82,14 @@ polli gen chat --model openai/gpt-5.4-nano            # interactive multi-turn
 
 ```bash
 polli models                 # all models
-polli models --type image    # filter (text, image, audio, video, 3d, embedding)
+polli models --type image    # filter (text, decision, image, audio, video, 3d, embedding, realtime)
+polli models flux --source community   # search; --reliability all adds unhealthy community models
+polli models --type audio --voices     # voices per model
 polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint
 polli docs --open            # open in browser
-polli quests                 # public quest catalog
+polli quests                 # your quests with claim state (requires login)
 polli quests --claimed       # already-completed and earned quest status
 ```
 
@@ -190,19 +192,20 @@ See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CO
 
 ## Sandboxes
 
-Linux VMs from E2B, paid from your wallet (alpha).
+Linux VMs on E2B or Azure, paid from your wallet (alpha).
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh
 polli sandbox create --timeout 0  # runs until you pause or kill it
 polli sandbox create pollinations-large  # 4 vCPU, 8 GB
+polli sandbox create pollinations-azure  # on Azure; pollinations-azure-large and pollinations-azure-xl (8 vCPU, 16 GB) too
 ssh <id>.polli                    # scp and rsync work too
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
 polli sandbox pause <id>
 polli sandbox kill <id>
 ```
 
-The default template, and `pollinations-large`, come logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
+The `pollinations` templates, on E2B or Azure, come logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

@@ -16,16 +16,14 @@
               : "light";
           }
           if (mode === "dark") document.documentElement.classList.add("dark");
-          // theme-color (browser chrome) is derived from the --polli-color-app-bg
-          // token by @pollinations/ui ColorModeToggle once styles load — no
-          // hardcoded color here.
+          // theme-color set dynamically by ColorModeToggle from --polli-color-app-bg
         } catch {
           /* ignore storage / matchMedia failures */
         }
       })();
     </script>
 
-    <meta name="description" content="Real-time health monitoring for Pollinations AI models" />
+    <meta name="description" content="Health, trust checks and latency for every Pollinations model, official and community." />
 
     <!-- Favicons & touch icons — committed brand assets (source: @pollinations/ui/brand) -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -47,8 +45,9 @@
     <meta name="apple-mobile-web-app-title" content="Model Monitor" />
 
     <!-- Open Graph / Social Media -->
+    <meta property="og:site_name" content="pollinations.ai" />
     <meta property="og:title" content="Model Monitor" />
-    <meta property="og:description" content="Real-time health monitoring for Pollinations AI models" />
+    <meta property="og:description" content="Health, trust checks and latency for every Pollinations model, official and community." />
     <meta property="og:image" content="https://model-monitor.pollinations.ai/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -57,8 +56,55 @@
     <meta property="og:url" content="https://model-monitor.pollinations.ai" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Model Monitor" />
-    <meta name="twitter:description" content="Real-time health monitoring for Pollinations AI models" />
+    <meta name="twitter:description" content="Health, trust checks and latency for every Pollinations model, official and community." />
     <meta name="twitter:image" content="https://model-monitor.pollinations.ai/og-image.png" />
+
+    <!-- Discord component embed (16766829 = #ffd76d brand accent) -->
+    <script id="discord:component-embed" type="application/json">
+    {
+      "component": {
+        "type": 17,
+        "accent_color": 16766829,
+        "components": [
+          {
+            "type": 9,
+            "components": [
+              {
+                "type": 10,
+                "content": "# **[Model Monitor](https://model-monitor.pollinations.ai)**\nHealth, trust checks and latency for every Pollinations model, official and community."
+              }
+            ],
+            "accessory": {
+              "type": 11,
+              "media": {
+                "url": "https://model-monitor.pollinations.ai/icon-maskable-512.png"
+              }
+            }
+          },
+          {
+            "type": 14
+          },
+          {
+            "type": 1,
+            "components": [
+              {
+                "type": 2,
+                "style": 5,
+                "label": "Health",
+                "url": "https://model-monitor.pollinations.ai"
+              },
+              {
+                "type": 2,
+                "style": 5,
+                "label": "Trust",
+                "url": "https://model-monitor.pollinations.ai/#trust"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    </script>
 
     <title>Model Monitor</title>
   </head>

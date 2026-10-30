@@ -22,6 +22,13 @@ export default defineConfig(async () => {
                     bindings: {
                         TEST_MIGRATIONS: migrations,
                     },
+                    // Each test answers Enter's key check itself; see mockAuth.
+                    serviceBindings: {
+                        ENTER: () =>
+                            new Response("Enter is not mocked", {
+                                status: 500,
+                            }),
+                    },
                 },
             }),
         ],
@@ -31,6 +38,9 @@ export default defineConfig(async () => {
             },
         },
         test: {
+            // Vitest's console interception can deadlock the Workers pool when a
+            // handler logs during a file's last RPC (cloudflare/workers-sdk#15719).
+            disableConsoleIntercept: true,
             setupFiles: ["./test/setup/apply-migrations.ts"],
         },
     };

@@ -90,6 +90,12 @@ export {
 } from "./compositions/MultiSelect.tsx";
 export { NavItem, type NavItemProps } from "./compositions/NavItem.tsx";
 export {
+    OUTAGE_MESSAGE,
+    OutageNotice,
+    type OutageNoticeProps,
+    useOnline,
+} from "./compositions/OutageNotice.tsx";
+export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./compositions/PeriodPicker.tsx";
@@ -166,6 +172,11 @@ export * from "./primitives/icons/index.tsx";
 export { LiveDot } from "./primitives/LiveDot.tsx";
 export { LoadingStatus } from "./primitives/LoadingStatus.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
+export {
+    SegmentedControl,
+    type SegmentedControlOption,
+    type SegmentedControlProps,
+} from "./primitives/SegmentedControl.tsx";
 export { Skeleton, type SkeletonProps } from "./primitives/Skeleton.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
 export {

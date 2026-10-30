@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import { accountClient } from "../api.ts";
+import { CliHint } from "../components/cli-hint.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
 import {
     type ApiKey,
@@ -26,7 +27,7 @@ import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/keys")({
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -131,7 +132,7 @@ function KeysContent({
             <>
                 {["Secrets", "Apps"].map((title) => (
                     <Section key={title} title={title}>
-                        <LoadError onRetry={onRetry}>
+                        <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                             Couldn’t load keys.
                         </LoadError>
                     </Section>
@@ -143,11 +144,12 @@ function KeysContent({
     return (
         <>
             {apiKeys === null && (
-                <LoadError onRetry={onRetry}>
+                <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                     Couldn’t refresh keys. Showing the last loaded list.
                 </LoadError>
             )}
             <ApiKeyList apiKeys={keys} {...actions} />
+            <CliHint command="keys create --name my-app" />
         </>
     );
 }

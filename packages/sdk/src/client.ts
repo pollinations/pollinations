@@ -48,6 +48,9 @@ import type {
     ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    Site,
+    SiteFile,
+    SitesResponse,
     SpeechWordTiming,
     TextGenerateOptions,
     TranscribeOptions,
@@ -184,13 +187,6 @@ async function fetchWithTimeout<T>(
             externalSignal.removeEventListener("abort", abortHandler);
         }
     }
-}
-
-// Strip API key from URL for safe sharing
-function stripKeyFromUrl(url: string): string {
-    const urlObj = new URL(url);
-    urlObj.searchParams.delete("key");
-    return urlObj.toString();
 }
 
 function chatStreamError(chunk: unknown): PollinationsError | null {
@@ -351,10 +347,7 @@ export class Pollinations {
         );
     }
 
-    private buildQueryParams(
-        params: Record<string, unknown>,
-        includeKey: boolean = true,
-    ): string {
+    private buildQueryParams(params: Record<string, unknown>): string {
         const searchParams = new URLSearchParams();
 
         for (const [key, value] of Object.entries(params)) {
@@ -375,11 +368,6 @@ export class Pollinations {
             } else {
                 searchParams.set(key, String(value));
             }
-        }
-
-        // Add API key to query params if set and requested
-        if (includeKey && this.apiKey) {
-            searchParams.set("key", this.apiKey);
         }
 
         return searchParams.toString();
@@ -426,7 +414,8 @@ export class Pollinations {
 
     /**
      * Generate an image URL from a text prompt.
-     * Hits the API first to authenticate, then returns a keyless URL that can be shared.
+     * Returns the stored media enclosure URL for sharing.
+     * Throws NO_IMAGE_URL if the response has no enclosure URL.
      *
      * @example
      * ```ts
@@ -439,7 +428,14 @@ export class Pollinations {
         options: ImageGenerateOptions = {},
     ): Promise<string> {
         const response = await this.image(prompt, options);
-        return response.url; // Already has key stripped
+        if (!response.url) {
+            throw new PollinationsError(
+                'Image response did not include a stored media URL (rel="enclosure" Link header)',
+                "NO_IMAGE_URL",
+                502,
+            );
+        }
+        return response.url;
     }
 
     /**
@@ -477,8 +473,11 @@ export class Pollinations {
                 const buffer = await response.arrayBuffer();
                 const contentType =
                     response.headers.get("content-type") || "image/jpeg";
+                const storedUrl = response.headers
+                    .get("link")
+                    ?.match(/<([^>]+)>;\s*rel="enclosure"/)?.[1];
 
-                return { buffer, contentType, url: stripKeyFromUrl(url) };
+                return { buffer, contentType, url: storedUrl ?? "" };
             },
         );
     }
@@ -495,7 +494,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'black-forest-labs/flux.1-schnell',
+     *   model: 'black-forest-labs/flux.1-kontext-pro',
      * });
      * ```
      */
@@ -708,7 +707,8 @@ export class Pollinations {
 
     /**
      * Generate a video URL from a text prompt.
-     * Hits the API first to authenticate, then returns a keyless URL that can be shared.
+     * Returns the stored media enclosure URL for sharing.
+     * Throws NO_VIDEO_URL if the response has no enclosure URL.
      *
      * @example
      * ```ts
@@ -720,7 +720,14 @@ export class Pollinations {
         options: VideoGenerateOptions = {},
     ): Promise<string> {
         const response = await this.video(prompt, options);
-        return response.url; // Already has key stripped
+        if (response.url === undefined) {
+            throw new PollinationsError(
+                'Video response did not include a stored media URL (rel="enclosure" Link header)',
+                "NO_VIDEO_URL",
+                502,
+            );
+        }
+        return response.url;
     }
 
     /**
@@ -759,7 +766,11 @@ export class Pollinations {
                 const contentType =
                     response.headers.get("content-type") || "video/mp4";
 
-                return { buffer, contentType, url: stripKeyFromUrl(url) };
+                const storedUrl = response.headers
+                    .get("link")
+                    ?.match(/<([^>]+)>;\s*rel="enclosure"/)?.[1];
+
+                return { buffer, contentType, url: storedUrl };
             },
         );
     }
@@ -775,16 +786,13 @@ export class Pollinations {
                 400,
             );
         }
-        const query = this.buildQueryParams(
-            {
-                model: options.model,
-                image: options.referenceImage,
-                resolution: options.resolution,
-                seed: options.seed,
-                safe: options.safe,
-            },
-            false,
-        );
+        const query = this.buildQueryParams({
+            model: options.model,
+            image: options.referenceImage,
+            resolution: options.resolution,
+            seed: options.seed,
+            safe: options.safe,
+        });
         const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`;
         return fetchWithTimeout(
             url,
@@ -865,7 +873,7 @@ export class Pollinations {
                 400,
             );
         return this.submitMedia(
-            stripKeyFromUrl(this.buildImageUrl(prompt, options)),
+            this.buildImageUrl(prompt, options),
             options.signal,
         );
     }
@@ -881,7 +889,7 @@ export class Pollinations {
                 400,
             );
         return this.submitMedia(
-            stripKeyFromUrl(this.buildVideoUrl(prompt, options)),
+            this.buildVideoUrl(prompt, options),
             options.signal,
         );
     }
@@ -896,15 +904,12 @@ export class Pollinations {
                 "INVALID_INPUT",
                 400,
             );
-        const query = this.buildQueryParams(
-            {
-                voice: options.voice,
-                model: options.model,
-                duration: options.duration,
-                seed: options.seed,
-            },
-            false,
-        );
+        const query = this.buildQueryParams({
+            voice: options.voice,
+            model: options.model,
+            duration: options.duration,
+            seed: options.seed,
+        });
         return this.submitMedia(
             `${this.baseUrl}/audio/${encodeURIComponent(text)}${query ? `?${query}` : ""}`,
             options.signal,
@@ -921,16 +926,13 @@ export class Pollinations {
                 "INVALID_INPUT",
                 400,
             );
-        const query = this.buildQueryParams(
-            {
-                model: options.model,
-                image: options.referenceImage,
-                resolution: options.resolution,
-                seed: options.seed,
-                safe: options.safe,
-            },
-            false,
-        );
+        const query = this.buildQueryParams({
+            model: options.model,
+            image: options.referenceImage,
+            resolution: options.resolution,
+            seed: options.seed,
+            safe: options.safe,
+        });
         return this.submitMedia(
             `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`,
             options.signal,
@@ -997,7 +999,8 @@ export class Pollinations {
     ): Promise<string> {
         const request = buildTextRequest(prompt, options);
         const response = await this.chat(request.messages, request.options);
-        return response.choices[0]?.message?.content || "";
+        const message = response.choices[0]?.message;
+        return message?.content || message?.refusal || "";
     }
 
     /**
@@ -1017,8 +1020,9 @@ export class Pollinations {
         const request = buildTextRequest(prompt, options);
         const chunks = this.chatStream(request.messages, request.options);
         for await (const chunk of chunks) {
-            const content = chunk.choices[0]?.delta?.content;
-            if (content) yield content;
+            const delta = chunk.choices[0]?.delta;
+            if (delta?.content) yield delta.content;
+            if (delta?.refusal) yield delta.refusal;
         }
     }
 
@@ -1461,10 +1465,10 @@ export class Pollinations {
     async modelStatus(
         options: ModelStatusOptions = {},
     ): Promise<ModelStatusResponse> {
-        const query = this.buildQueryParams(
-            { traffic: options.traffic, minutes: options.minutes },
-            false,
-        );
+        const query = this.buildQueryParams({
+            traffic: options.traffic,
+            minutes: options.minutes,
+        });
         return this.getJson<ModelStatusResponse>(
             `${this.baseUrl}/models/status${query ? `?${query}` : ""}`,
             options.signal,
@@ -1822,16 +1826,16 @@ export class Pollinations {
         const expiresAt = new Date(Date.now() + code.expires_in * 1000);
         let pollMs = Math.max(code.interval, 5) * 1000;
 
+        const cancelled = () =>
+            new PollinationsError(
+                "Device authorization cancelled",
+                "CANCELLED",
+                499,
+            );
         const poll = async (): Promise<string> => {
             while (Date.now() < expiresAt.getTime()) {
                 await sleep(pollMs);
-                if (options.signal?.aborted) {
-                    throw new PollinationsError(
-                        "Device authorization cancelled",
-                        "CANCELLED",
-                        499,
-                    );
-                }
+                if (options.signal?.aborted) throw cancelled();
 
                 const tokenRes = await fetch(
                     `${AUTH_BASE_URL}/api/oauth/token`,
@@ -1846,12 +1850,16 @@ export class Pollinations {
                             device_code: code.device_code,
                             client_id: clientId,
                         }).toString(),
+                        signal: options.signal,
                     },
-                );
+                ).catch((error) => {
+                    throw options.signal?.aborted ? cancelled() : error;
+                });
 
                 const body = (await tokenRes
                     .json()
                     .catch(() => ({}))) as DeviceTokenResponse;
+                if (options.signal?.aborted) throw cancelled();
 
                 if (tokenRes.ok && body.access_token) {
                     return body.access_token;
@@ -1973,6 +1981,8 @@ export class Pollinations {
         if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);
+        if (options.before_event_id)
+            params.set("before_event_id", options.before_event_id);
         if (options.granularity) params.set("granularity", options.granularity);
         if (options.period) params.set("period", options.period);
 
@@ -2047,6 +2057,8 @@ export class Pollinations {
         if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);
+        if (options.before_event_id)
+            params.set("before_event_id", options.before_event_id);
         if (options.granularity) params.set("granularity", options.granularity);
         if (options.period) params.set("period", options.period);
 
@@ -2155,6 +2167,81 @@ export class Pollinations {
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
                 return response.json() as Promise<CreatedKey>;
+            },
+        );
+    }
+
+    /**
+     * List your static sites and the account's site limits.
+     * Needs a key with the `machines` account permission.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.listSites();
+     * data.forEach(site => console.log(site.url));
+     * ```
+     */
+    async listSites(options: RequestOptions = {}): Promise<SitesResponse> {
+        return this.getJson<SitesResponse>(
+            `${this.baseUrl}/account/sites`,
+            options.signal,
+        );
+    }
+
+    /**
+     * Publish a static site at `https://<name>.pollinations.app`, replacing
+     * what was there. Files are sent inline (up to 5 MB per request);
+     * `index.html` is required. The first deploy claims the name.
+     *
+     * @example
+     * ```ts
+     * const site = await pollinations.deploySite('my-app', [
+     *   { file: 'index.html', data: '<h1>Hello</h1>' },
+     *   { file: 'logo.png', data: pngBase64, encoding: 'base64' },
+     * ]);
+     * console.log(site.url); // https://my-app.pollinations.app
+     * ```
+     */
+    async deploySite(
+        name: string,
+        files: SiteFile[],
+        options: RequestOptions = {},
+    ): Promise<Site> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/account/sites/${encodeURIComponent(name)}`,
+            {
+                method: "PUT",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({ files }),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return response.json() as Promise<Site>;
+            },
+        );
+    }
+
+    /**
+     * Take a site offline and free its name.
+     *
+     * @example
+     * ```ts
+     * await pollinations.deleteSite('my-app');
+     * ```
+     */
+    async deleteSite(
+        name: string,
+        options: RequestOptions = {},
+    ): Promise<void> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/account/sites/${encodeURIComponent(name)}`,
+            { method: "DELETE", headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
             },
         );
     }

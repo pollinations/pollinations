@@ -28,6 +28,9 @@ function envWithEnter(
     fetch: Fetcher["fetch"] = async () => new Response("enter"),
 ): CloudflareBindings {
     return {
+        ASSETS: {
+            fetch: async () => new Response("Not Found", { status: 404 }),
+        } as unknown as Fetcher,
         ENTER: { fetch } as unknown as Fetcher,
         ENVIRONMENT: "test",
         LOG_LEVEL: "debug",
@@ -120,6 +123,34 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("lists registered GPU workers only with the GPU token", async () => {
+        const gpuAuth = { authorization: `Bearer ${env.PLN_GPU_TOKEN}` };
+        const registered = await fetchWorker("/register", env, {
+            method: "POST",
+            headers: { ...gpuAuth, "content-type": "application/json" },
+            body: JSON.stringify({ url: "https://worker.test", type: "flux" }),
+        });
+        expect(registered.status).toBe(200);
+
+        const anonymous = await fetchWorker("/register", env);
+        expect(anonymous.status).toBe(401);
+        await expect(anonymous.json()).resolves.toEqual({
+            success: false,
+            message: "Unauthorized",
+        });
+
+        const listed = await fetchWorker("/register", env, {
+            headers: gpuAuth,
+        });
+        expect(listed.status).toBe(200);
+        await expect(listed.json()).resolves.toContainEqual(
+            expect.objectContaining({
+                type: "flux",
+                url: "https://worker.test",
+            }),
+        );
+    });
+
     it("accepts a 28 MiB inline-image chat body before authentication", async () => {
         const body = JSON.stringify({
             model: "openai/gpt-5-nano",
@@ -180,6 +211,45 @@ describe("gen worker routing", () => {
             'property="og:image" content="https://staging.gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+    });
+
+    it.each(["/", "/docs", "/docs/llm.txt", "/llms.txt", "/sitemap.xml"])(
+        "excludes staging %s from indexing while keeping production indexable",
+        async (path) => {
+            for (const environment of ["staging", "production"] as const) {
+                const response = await fetchWorker(path, {
+                    ...envWithEnter(),
+                    ENVIRONMENT: environment,
+                });
+
+                expect(response.status).toBe(200);
+                expect(response.headers.get("X-Robots-Tag")).toBe(
+                    environment === "staging" ? "noindex, nofollow" : null,
+                );
+            }
+        },
+    );
+
+    it("serves gen's icons after the routes", async () => {
+        // Like Cloudflare's asset server: 405 for methods other than GET/HEAD.
+        const ASSETS = {
+            fetch: async (request: Request) =>
+                request.method !== "GET" && request.method !== "HEAD"
+                    ? new Response("Method Not Allowed", { status: 405 })
+                    : new URL(request.url).pathname === "/favicon.ico"
+                      ? new Response("icon")
+                      : new Response("missing", { status: 404 }),
+        } as unknown as Fetcher;
+        const env = { ...envWithEnter(), ASSETS };
+
+        expect(await (await fetchWorker("/favicon.ico", env)).text()).toBe(
+            "icon",
+        );
+        expect((await fetchWorker("/missing.png", env)).status).toBe(404);
+        const post = await fetchWorker("/v1/chat/completion", env, {
+            method: "POST",
+        });
+        expect(post.status).toBe(404);
     });
 
     it("serves the docs web app manifest", async () => {
@@ -290,10 +360,7 @@ describe("gen worker routing", () => {
         const locs = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
             (match) => match[1],
         );
-        expect(locs).toEqual([
-            "https://staging.gen.pollinations.ai/",
-            "https://staging.gen.pollinations.ai/docs",
-        ]);
+        expect(locs).toEqual(["https://staging.gen.pollinations.ai/docs"]);
     });
 
     it("serves llms-full.txt with the full guide and CLI skill in one file", async () => {
@@ -329,6 +396,7 @@ describe("gen worker routing", () => {
             "/docs/llm.txt?section=publish-an-agent",
             "/docs/llm.txt?section=publish-a-model",
             "/docs/llm.txt?section=sandboxes",
+            "/docs/llm.txt?section=sites",
             "/docs/llm.txt?section=coding-harnesses",
             "/docs/llm.txt?section=mcp",
             "/docs/llm.txt?section=cli",
@@ -840,7 +908,7 @@ describe("gen worker routing", () => {
         expect(
             models.find((model) => model.name === "perplexity/sonar"),
         ).toMatchObject({
-            title: "Perplexity Sonar Fast Search",
+            title: "Sonar Fast Search",
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });

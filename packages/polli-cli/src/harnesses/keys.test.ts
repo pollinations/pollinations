@@ -18,6 +18,8 @@ beforeAll(async () => {
                     data: [
                         {
                             id: "chat",
+                            // Collides with the next model's exact ID.
+                            aliases: ["publisher/chat"],
                             input_modalities: ["text"],
                             output_modalities: ["text"],
                             supported_endpoints: ["/v1/chat/completions"],
@@ -26,6 +28,7 @@ beforeAll(async () => {
                         },
                         {
                             id: "publisher/chat",
+                            aliases: ["chat-alias"],
                             input_modalities: ["text"],
                             output_modalities: ["text"],
                             supported_endpoints: ["/v1/chat/completions"],
@@ -55,10 +58,11 @@ beforeAll(async () => {
             return;
         }
         // The polli login on a Mac can create keys; the one gen writes into a
-        // sandbox can't.
+        // sandbox can't, and one with a budget would have to split it.
         const login = {
             "Bearer sk_mac_login": ["profile", "usage", "keys", "machines"],
             "Bearer sk_sandbox_login": ["profile", "usage", "machines"],
+            "Bearer sk_budget_login": ["profile", "usage", "keys", "machines"],
         }[request.headers.authorization ?? ""];
         if (request.url === "/account/key" && login) {
             response.writeHead(200, { "Content-Type": "application/json" });
@@ -66,6 +70,11 @@ beforeAll(async () => {
                 JSON.stringify({
                     valid: true,
                     permissions: { account: login },
+                    pollenBudget:
+                        request.headers.authorization ===
+                        "Bearer sk_budget_login"
+                            ? 5
+                            : null,
                 }),
             );
             return;
@@ -120,6 +129,7 @@ describe("harness keys", () => {
             ["GET /account/key", "POST /account/keys"],
         ],
         ["sk_sandbox_login", "sk_sandbox_login", ["GET /account/key"]],
+        ["sk_budget_login", "sk_budget_login", ["GET /account/key"]],
     ])("with the login %s, the harness uses %s", async (login, key, calls) => {
         requests.length = 0;
         setKeyOverride(login);
@@ -139,14 +149,29 @@ describe("harness keys", () => {
 
 describe("harness models", () => {
     it("only includes models supporting chat completions", async () => {
-        await expect(fetchHarnessModels("chat")).resolves.toEqual([
-            { id: "chat", contextWindow: 100, input: ["text"] },
-            {
-                id: "publisher/chat",
-                contextWindow: 200,
-                input: ["text"],
-            },
-        ]);
+        await expect(fetchHarnessModels("chat")).resolves.toEqual({
+            model: "chat",
+            models: [
+                { id: "chat", contextWindow: 100, input: ["text"] },
+                {
+                    id: "publisher/chat",
+                    contextWindow: 200,
+                    input: ["text"],
+                },
+            ],
+        });
+    });
+
+    it("resolves an alias to the canonical model ID", async () => {
+        await expect(fetchHarnessModels("chat-alias")).resolves.toMatchObject({
+            model: "publisher/chat",
+        });
+    });
+
+    it("prefers an exact ID over another model's alias", async () => {
+        await expect(
+            fetchHarnessModels("publisher/chat"),
+        ).resolves.toMatchObject({ model: "publisher/chat" });
     });
 
     it.each(["missing", "realtime", "owner/community-chat"])(

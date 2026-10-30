@@ -30,6 +30,7 @@ import {
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterQwenImage3API,
+    callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
@@ -41,12 +42,15 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callRecraftFlashFalAPI } from "./models/recraftFalModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
+import { callSeedream5ProVercelAPI } from "./models/seedreamVercelModel.ts";
+import { callVercelGeminiImageAPI } from "./models/vercelGeminiImageModel.ts";
 import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
@@ -815,6 +819,8 @@ const generateImage = async (
             }
         }
 
+        case "google/gemini-nano-banana-2.1":
+        case "google/gemini-nano-banana-2.1:vercel":
         case "google/gemini-2.5-flash-image":
         case "google/gemini-3.1-flash-image":
         case "google/gemini-3.1-flash-lite-image":
@@ -829,7 +835,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callVertexAIGeminiImageAPI(prompt, safeParams);
+                return safeParams.model ===
+                    "google/gemini-nano-banana-2.1:vercel"
+                    ? await callVercelGeminiImageAPI(prompt, safeParams)
+                    : await callVertexAIGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
                     "Vertex Gemini image generation or safety check failed:",
@@ -842,7 +851,6 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image:openrouter:vertex-global":
         case "google/gemini-3.1-flash-image:openrouter:vertex-global":
-        case "google/gemini-nano-banana-2.1":
         case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
         case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(
@@ -958,6 +966,8 @@ const generateImage = async (
             return await callOpenRouterSeedreamFlashAPI(prompt, safeParams);
 
         case "bytedance/seedream-5.0-pro":
+            return await callSeedream5ProVercelAPI(prompt, safeParams);
+        case "bytedance/seedream-5.0-pro:replicate":
             return await callSeedream5ProAPI(prompt, safeParams);
 
         case "bytedance/seedream-4.0":
@@ -995,12 +1005,22 @@ const generateImage = async (
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image-2.0":
+            return await callXaiImageAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-image-2.0",
+            );
+
+        case "x-ai/grok-imagine-image-2.0:openrouter":
             return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
         case "recraft/recraft-v4.1-flash":
+            return await callRecraftFlashFalAPI(prompt, safeParams);
+
+        case "recraft/recraft-v4.1-flash:openrouter":
             return await callOpenRouterRecraftFlashAPI(prompt, safeParams);
 
         case "prunaai/p-image-edit":
@@ -1039,11 +1059,23 @@ const generateImage = async (
                 "qwen-image-2.1-turbo",
             );
 
+        case "qwen/qwen-image-2.1-pro":
+            return await callAlibabaImage(
+                prompt,
+                safeParams,
+                "qwen-image-2.1-pro",
+            );
+
         case "qwen/qwen-image-3:openrouter":
             return await callOpenRouterQwenImage3API(prompt, safeParams);
 
+        case "qwen/qwen-image-2.1-pro:openrouter":
+            return await callOpenRouterQwenImage21ProAPI(prompt, safeParams);
+
         case "black-forest-labs/flux.1-kontext-pro:replicate":
+        case "black-forest-labs/flux.1.1-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":
+        case "prunaai/p-image:replicate":
         case "prunaai/p-image-edit:replicate":
         case "krea/krea-2-medium:replicate":
             return await callReplicateFallbackImage(prompt, safeParams);

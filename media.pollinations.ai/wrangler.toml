@@ -21,6 +21,11 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
+# Enter's local `npm run dev` Worker.
+[[env.development.services]]
+binding = "ENTER"
+service = "pollinations-enter"
+
 # Private staging Worker used through service bindings.
 [env.staging]
 name = "pollinations-media-staging"
@@ -39,6 +44,10 @@ database_name = "staging-pollinations-enter-db"
 database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
+[[env.staging.services]]
+binding = "ENTER"
+service = "pollinations-enter-staging"
+
 # Production environment
 # Single-request 400 MiB uploads require the pollinations.ai zone's maximum
 # upload setting to be at least 425 MB.
@@ -47,6 +56,16 @@ name = "pollinations-media-prod"
 
 [env.production.vars]
 MAX_FILE_SIZE = "419430400"  # 400 MiB in bytes
+
+# Keeps media's own log lines, such as upload attribution, for 7 days.
+# Invocation logs stay off: they record request URLs, which can carry ?key=,
+# and a bad-key flood would bill one log event per request.
+[env.production.observability]
+enabled = true
+head_sampling_rate = 1
+
+[env.production.observability.logs]
+invocation_logs = false
 
 [[env.production.routes]]
 pattern = "media.myceli.ai"
@@ -69,6 +88,24 @@ database_name = "production-pollinations-enter-db"
 database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
+# API keys are checked by Enter over this binding; see KEY_VERIFY_URL.
+[[env.production.services]]
+binding = "ENTER"
+service = "pollinations-enter-production"
+
+# Caps key checks before they reach Enter's D1; see shared/rate-limit.ts.
+# Media's own namespaces, far below gen's: the busiest normal uploader peaks
+# near 50 a minute, while bad-key floods from one IP reached 3,500 a second.
+[[env.production.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1004"
+simple = { limit = 50, period = 10 }
+
+[[env.production.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1005"
+simple = { limit = 100, period = 10 }
+
 [vars]
 MAX_FILE_SIZE = "419430400"  # 400 MiB in bytes
 
@@ -81,6 +118,10 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "../enter.pollinations.ai/drizzle"
+
+[[services]]
+binding = "ENTER"
+service = "pollinations-enter"
 
 # Dev server settings
 [dev]

@@ -85,7 +85,7 @@ async function main() {
     if (!STRIPE_SECRET_KEY)
         throw new FraudCheckError("STRIPE_SECRET_KEY is required");
     const stripe = new Stripe(STRIPE_SECRET_KEY, {
-        apiVersion: "2025-12-15.clover",
+        apiVersion: "2026-08-26.dahlia",
         maxNetworkRetries: 3,
         timeout: 30000,
     });

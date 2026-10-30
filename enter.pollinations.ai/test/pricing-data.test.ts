@@ -365,7 +365,7 @@ test("Trellis 2 prices selectable resolution tiers", () => {
 test("NVIDIA Asset Harvester flat rate pricing", () => {
     const usage = { completionImageTokens: 1 };
 
-    expect(calculateCost("nvidia/asset-harvester", usage).totalCost).toBe(0.25);
+    expect(calculateCost("nvidia/asset-harvester", usage).totalCost).toBe(0.07);
 });
 
 test("catalog models resolve brand logo SVG assets", () => {
@@ -737,23 +737,20 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     );
 });
 
-test("Claude Fable 5.1 is paid-only with a 25% promo on standard rates", () => {
+test("Claude Fable 5.1 is paid-only and billed at standard rates", () => {
     const definition = getRegistryModelDefinition("anthropic/claude-fable-5.1");
 
     expect(definition.paidOnly).toBe(true);
-    expect(definition.priceMultiplier).toBe(0.75);
+    expect(definition.priceMultiplier).toBe(1);
     expect(getCostDefinition("anthropic/claude-fable-5.1")).toEqual({
         promptTextTokens: 0.00001,
         promptCachedTokens: 0.00000025,
         promptCacheWriteTokens: 0.0000125,
         completionTextTokens: 0.00005,
     });
-    expect(getPriceDefinition("anthropic/claude-fable-5.1")).toEqual({
-        promptTextTokens: 0.00001 * 0.75,
-        promptCachedTokens: 0.00000025 * 0.75,
-        promptCacheWriteTokens: 0.0000125 * 0.75,
-        completionTextTokens: 0.00005 * 0.75,
-    });
+    expect(getPriceDefinition("anthropic/claude-fable-5.1")).toEqual(
+        getCostDefinition("anthropic/claude-fable-5.1"),
+    );
 });
 
 test("Qwen Image 3 uses DashScope's output tier and reference-image rates", () => {
@@ -833,20 +830,20 @@ test("updated provider prices are reflected for xAI media and text routes", () =
                 undefined,
                 { quality, resolution },
             ).totalPrice,
-        ).toBeCloseTo(expected * 1.055, 8);
+        ).toBeCloseTo(expected, 8);
     }
     expect(
         calculateCost("x-ai/grok-imagine-video", {
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
-    ).toBeCloseTo(0.352, 8);
+    ).toBeCloseTo(0.25, 8);
     expect(
         calculateCost("x-ai/grok-imagine-video-1.5", {
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
-    ).toBeCloseTo(0.71 * 1.055, 8);
+    ).toBeCloseTo(0.71, 8);
 });
 
 test("Gemini search cost follows each route's provider metadata", () => {
@@ -1288,10 +1285,10 @@ test("MiniMax M2.7 uses the pinned Novita OpenRouter rates", () => {
     });
 });
 
-test("Step Flash uses DeepInfra's standard and cached token rates", () => {
+test("Step Flash uses Novita's standard and cached token rates", () => {
     const definition = getRegistryModelDefinition("stepfun/step-3.7-flash");
 
-    expect(definition.provider).toBe("deepinfra");
+    expect(definition.provider).toBe("novita");
     expect(definition.priceMultiplier).toBe(1);
     expect(definition.paidOnly).toBe(true);
     expect(definition.cost).toMatchObject({
@@ -1929,12 +1926,14 @@ test("FLUX megapixel prices and flat reference-image prices retain their units",
         ]);
     }
     const grok = models.find(({ name }) => name === "x-ai/grok-imagine-video");
-    expect(grok?.prices).toContainEqual({
-        direction: "input",
-        kind: "image",
-        price: "0.002",
-        unit: "image",
-    });
+    expect(grok?.prices).toEqual([
+        {
+            direction: "output",
+            kind: "video",
+            price: "0.05",
+            unit: "second",
+        },
+    ]);
 });
 
 test("audio cards distinguish clips, audio tokens, characters, and UTF-8 bytes", () => {
@@ -1957,7 +1956,7 @@ test("audio cards distinguish clips, audio tokens, characters, and UTF-8 bytes",
         {
             direction: "output",
             kind: "audioOut",
-            price: "0.1",
+            price: "0.08",
             unit: "character",
         },
     ]);

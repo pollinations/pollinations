@@ -1,6 +1,7 @@
 import {
     Chip,
     InlineLink,
+    Surface,
     Table,
     TableBody,
     TableCell,
@@ -152,35 +153,40 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             </ActivityToolbar>
 
             <SectionContent loading={loading}>
-                {error && (
-                    <LoadError onRetry={() => fetchEarnings()}>
-                        {error}
-                    </LoadError>
-                )}
-                {(!error || hasData) &&
-                    (hasData ? (
-                        <Chart
-                            key={`${period.granularity}:${period.period}`}
-                            period={period}
-                            label="Earnings"
-                            onSelect={(point) =>
-                                onPeriodChange(
-                                    toggleActivityBucket(
-                                        period,
-                                        point.timestamp,
-                                    ),
-                                )
-                            }
-                            data={chartData}
-                            metric={metric}
-                        />
-                    ) : (
-                        <EarningsEmptyState />
-                    ))}
+                <Surface>
+                    {error && (
+                        <LoadError
+                            onRetry={() => fetchEarnings()}
+                            paths={["/account/earnings"]}
+                        >
+                            {error}
+                        </LoadError>
+                    )}
+                    {(!error || hasData) &&
+                        (hasData ? (
+                            <Chart
+                                key={`${period.granularity}:${period.period}`}
+                                period={period}
+                                label="Earnings"
+                                onSelect={(point) =>
+                                    onPeriodChange(
+                                        toggleActivityBucket(
+                                            period,
+                                            point.timestamp,
+                                        ),
+                                    )
+                                }
+                                data={chartData}
+                                metric={metric}
+                            />
+                        ) : (
+                            <EarningsEmptyState />
+                        ))}
+                </Surface>
             </SectionContent>
 
             {!loading && hasData && (
-                <div className="min-w-0 max-w-full overflow-x-auto">
+                <Surface className="max-w-full overflow-x-auto">
                     <Table
                         aria-label="Earnings by source"
                         className="min-w-[440px] [&_tr:hover]:bg-transparent"
@@ -217,7 +223,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody divider="neutral">
+                        <TableBody>
                             {stats.entityBreakdowns.map((entity) => (
                                 <TableRow key={entity.id}>
                                     <TableCell className="max-w-64 break-words text-xs">
@@ -277,7 +283,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             </TableRow>
                         </tfoot>
                     </Table>
-                </div>
+                </Surface>
             )}
         </div>
     );

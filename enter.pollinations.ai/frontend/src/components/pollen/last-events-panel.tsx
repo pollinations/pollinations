@@ -4,6 +4,7 @@ import {
     CardIcon,
     Chip,
     SproutIcon,
+    Surface,
     Table,
     TableBody,
     TableCell,
@@ -12,7 +13,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useState } from "react";
 import { accountClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
 import { LoadError, PageStatus } from "../layout/dashboard-loading.tsx";
@@ -173,6 +174,8 @@ function sortLastEvents(events: LastEvent[]): LastEvent[] {
     });
 }
 
+const LAST_EVENTS_PATHS = ["/account/usage", "/account/earnings/transactions"];
+
 async function fetchLastEvents(
     limit: number,
 ): Promise<{ rows: LastEvent[]; hasMore: boolean }> {
@@ -206,20 +209,24 @@ export const LastEventsPanel: FC = () => {
         error: null,
     });
 
+    const load = useCallback(
+        () =>
+            fetchLastEvents(visibleCount).then(({ rows, hasMore }) =>
+                setState({ rows, hasMore, loading: false, error: null }),
+            ),
+        [visibleCount],
+    );
+
     useEffect(() => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
-        fetchLastEvents(visibleCount)
-            .then(({ rows, hasMore }) =>
-                setState({ rows, hasMore, loading: false, error: null }),
-            )
-            .catch(() =>
-                setState((prev) => ({
-                    ...prev,
-                    loading: false,
-                    error: "Failed to load last events",
-                })),
-            );
-    }, [visibleCount]);
+        load().catch(() =>
+            setState((prev) => ({
+                ...prev,
+                loading: false,
+                error: "Failed to load last events",
+            })),
+        );
+    }, [load]);
 
     const loadingMore = state.loading && state.rows.length > 0;
 
@@ -228,20 +235,30 @@ export const LastEventsPanel: FC = () => {
     }
 
     if (state.error && state.rows.length === 0) {
-        return <LoadError>{state.error}</LoadError>;
+        return (
+            <LoadError onRetry={load} paths={LAST_EVENTS_PATHS}>
+                {state.error}
+            </LoadError>
+        );
     }
 
     if (state.rows.length === 0) {
         return (
-            <p className="text-sm text-ink-600">
-                No events yet. API usage and earnings will appear here.
-            </p>
+            <Surface>
+                <p className="text-sm text-ink-600">
+                    No events yet. API usage and earnings will appear here.
+                </p>
+            </Surface>
         );
     }
 
     return (
         <div className="flex flex-col gap-3">
-            {state.error && <LoadError>{state.error}</LoadError>}
+            {state.error && (
+                <LoadError onRetry={load} paths={LAST_EVENTS_PATHS}>
+                    {state.error}
+                </LoadError>
+            )}
             <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2 sm:hidden">
                     {state.rows.map((event) => (
@@ -270,7 +287,7 @@ export const LastEventsPanel: FC = () => {
                     ))}
                 </ul>
 
-                <div className="hidden overflow-x-auto sm:block">
+                <Surface className="hidden overflow-x-auto sm:block">
                     <Table
                         aria-label="Last events"
                         className="text-left text-xs"
@@ -299,7 +316,7 @@ export const LastEventsPanel: FC = () => {
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody divider="neutral">
+                        <TableBody>
                             {state.rows.map((event) => (
                                 <TableRow key={`${event.kind}-${event.id}`}>
                                     <TableCell
@@ -333,7 +350,7 @@ export const LastEventsPanel: FC = () => {
                             ))}
                         </TableBody>
                     </Table>
-                </div>
+                </Surface>
 
                 <div className="mt-4 flex justify-end text-[13px] leading-snug text-theme-text-muted">
                     {state.hasMore && (

@@ -48,8 +48,9 @@ type Announcement = {
 };
 
 /**
- * Newest first. Cards share a row, so keep them even: a title of a few
- * words, one sentence of about 80 characters and a two- or three-word button.
+ * Newest first; only the first four current ones show. Cards share a row, so
+ * keep them even: a title of a few words, one sentence of about 80 characters
+ * and a two- or three-word button.
  */
 const ANNOUNCEMENTS: Announcement[] = [
     {
@@ -65,11 +66,23 @@ const ANNOUNCEMENTS: Announcement[] = [
         },
     },
     {
+        date: "2026-10-22",
+        until: "2026-11-05",
+        label: "New",
+        title: "Free site hosting",
+        text: "Publish a static site at your-name.pollinations.app from the CLI, SDK or an agent.",
+        icon: GlobeIcon,
+        cta: {
+            label: "Visit pollinations.app",
+            href: "https://pollinations.app",
+        },
+    },
+    {
         date: "2026-10-17",
         until: "2026-10-31",
         label: "Updated",
         title: "25% off selected Claude models",
-        text: "Haiku 5.5, Sonnet 5.5, Opus 5.5 and Fable 5.1: 25% off standard API prices.",
+        text: "Sonnet 5.5 and Haiku 5.5: 25% off standard API prices.",
         icon: WalletIcon,
         cta: { label: "View models", href: "/models?q=anthropic" },
     },
@@ -97,7 +110,7 @@ const ANNOUNCEMENTS: Announcement[] = [
 ];
 
 export const currentAnnouncements = (today: string) =>
-    ANNOUNCEMENTS.filter(({ until }) => until >= today);
+    ANNOUNCEMENTS.filter(({ until }) => until >= today).slice(0, 4);
 
 function changeChip(
     { action, date, changes, status }: ModelNews,

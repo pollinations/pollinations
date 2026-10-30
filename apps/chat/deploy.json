@@ -2,7 +2,6 @@
   "target": "pages",
   "credentials": "apps",
   "subdomain": "chat",
-  "install": "npm install --silent",
-  "build": "npm run build",
-  "output": "dist"
+  "output": "redirect",
+  "verify_redirect": "https://openwebui.pollinations.ai/"
 }

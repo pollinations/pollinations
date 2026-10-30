@@ -6,6 +6,7 @@ export const MODEL_CATEGORIES = [
     "audio",
     "realtime",
     "text",
+    "decision",
     "embedding",
     "agent",
     "mcp",

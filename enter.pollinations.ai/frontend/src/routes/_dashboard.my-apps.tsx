@@ -1,10 +1,12 @@
-import { createFileRoute, Navigate, redirect } from "@tanstack/react-router";
+import { Await, createFileRoute, redirect } from "@tanstack/react-router";
+import { useDeferredValue } from "react";
+import type { ListedApp } from "../backend-types.ts";
 import { MyApps } from "../components/my-apps.tsx";
-import { useDashboardApps, useDashboardRetry } from "./_dashboard.tsx";
+import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/my-apps")({
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -15,9 +17,18 @@ export const Route = createFileRoute("/_dashboard/my-apps")({
 });
 
 function MyAppsPage() {
-    const apps = useDashboardApps();
     const retry = useDashboardRetry("apps");
-    // Keep MyApps' empty state available for a later launch to all users.
-    if (apps?.length === 0) return <Navigate to="/news" replace />;
-    return <MyApps apps={apps} onRetry={retry} />;
+    const { apps, user } = useDeferredValue(DashboardRoute.useLoaderData());
+    const page = (listed?: ListedApp[] | null) => (
+        <MyApps
+            apps={listed}
+            githubConnected={Boolean(user?.githubId)}
+            onRetry={retry}
+        />
+    );
+    return (
+        <Await promise={apps} fallback={page()}>
+            {page}
+        </Await>
+    );
 }

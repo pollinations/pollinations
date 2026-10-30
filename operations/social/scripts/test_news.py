@@ -176,6 +176,22 @@ class NotesAndIndexTest(unittest.TestCase):
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
         self.assertNotIn("pr", entries[0])  # a record change has no PR
 
+    def test_index_follows_models_into_a_category_split_off_a_recorded_one(self):
+        decider = {"name": "decider", "title": "Decider", "category": "text", "pricing": {"a": "1"}}
+        renamed = {"name": "decider-v1", "title": "Decider V1", "category": "text"}
+        snapshots = [
+            ("2026-10-01", {"text": [{"name": "chat"}, decider, renamed], "image": []}),
+            ("2026-10-02", {"text": [{"name": "chat"}], "image": [],
+                            "decision": [{**decider, "category": "decision"},
+                                         {**renamed, "name": "decider-v2", "aliases": ["decider-v1"],
+                                          "category": "decision"},
+                                         {"name": "d3", "title": "D3", "category": "decision"}]}),
+        ]
+        entries = model_entries(snapshots, [], "2026-09-08", "2026-10-08")
+        # A moved model is not retired, a renamed one keeps its old ID, and the category's new model is news.
+        self.assertEqual([(e["model_id"], e["action"]) for e in entries],
+                         [("d3", "NEW"), ("decider-v2", "UPDATE")])
+
     def test_api_changes_mark_what_breaks_existing_clients(self):
         field = lambda type_, required=False: {"type": type_, "required": required}
         before = {
@@ -358,7 +374,8 @@ class NotesAndIndexTest(unittest.TestCase):
         self.assertNotIn("Merged PRs:", month)
 
 
-EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings": [], "3d": [], "realtime": []}
+EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings": [], "3d": [], "realtime": [],
+                 "decision": []}
 
 # One reply carrying every field any post reads.
 REPLY = {
@@ -409,13 +426,33 @@ class ReadmeTest(unittest.TestCase):
 
 
 class TextCallTest(unittest.TestCase):
-    def test_a_failed_or_empty_answer_is_asked_once_and_stops_the_caller(self):
+    def test_a_success_or_non_empty_response_error_is_asked_once(self):
         answer = lambda content: reply(200, {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]})
-        for response, expected in ((answer("Hello"), "Hello"), (answer(""), None), (answer(None), None),
-                                   (reply(503), None)):
+        for response, expected in ((answer("Hello"), "Hello"), (reply(503), None)):
             with self.subTest(response=response.status_code), \
                  patch("common.requests.post", return_value=response) as post:
                 self.assertEqual(call_pollinations_api("system", "user", "token"), expected)
+                self.assertEqual(post.call_count, 1)
+
+    def test_empty_answers_retry_once_with_a_fresh_key_and_preserve_the_request(self):
+        answer = lambda content: reply(200, {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]})
+        for empty in (answer(""), answer(None), answer(" \n"), reply(502, {"error": {"code": "empty_response"}})):
+            for following, expected in ((answer("Recovered"), "Recovered"), (empty, None)):
+                with self.subTest(empty=empty.status_code, expected=expected), \
+                     patch("common.requests.post", side_effect=[empty, following]) as post:
+                    self.assertEqual(call_pollinations_api("system", "user", "token", 0.2, {"type": "json_object"}), expected)
+                    self.assertEqual(post.call_count, 2)
+                    first, second = [call.kwargs["json"] for call in post.call_args_list]
+                    self.assertNotIn("seed", first)
+                    self.assertGreaterEqual(second["seed"], 0)
+                    self.assertLessEqual(second["seed"], 2147483647)
+                    self.assertEqual({key: value for key, value in second.items() if key != "seed"}, first)
+
+    def test_a_refusal_is_not_retried(self):
+        for choice in ({"message": {"content": None, "refusal": "Cannot help"}},
+                       {"message": {"content": ""}, "finish_reason": "content_filter"}):
+            with self.subTest(choice=choice), patch("common.requests.post", return_value=reply(200, {"choices": [choice]})) as post:
+                self.assertIsNone(call_pollinations_api("system", "user", "token"))
                 self.assertEqual(post.call_count, 1)
 
 
@@ -685,15 +722,21 @@ class PostsTest(unittest.TestCase):
             # A person who checked /models records it anyway.
             self.assertEqual(list(self.new("catalog", today, overwrite=True)[2]),
                              [f"{NEWS_REL_DIR}/data/models/{today}.json"])
+        # Community owners list and remove many models at once: only official models count.
+        self.checkout("community")
+        self.put(f"data/models/{day_before}.json",
+                 {**recorded, "image": [{"name": f"community/a/m{n}", "community": True} for n in range(9)]})
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(recorded)):
+            self.assertEqual(list(self.new("catalog", today)[2]), [f"{NEWS_REL_DIR}/data/models/{today}.json"])
 
-    def test_the_catalog_keeps_3d_and_realtime_models(self):
+    def test_the_catalog_keeps_3d_realtime_and_decision_models(self):
         models = [{"name": "a", "category": "3d"}, {"name": "b", "category": "realtime"},
-                  {"name": "c", "category": "embedding"}]
+                  {"name": "c", "category": "embedding"}, {"name": "d", "category": "decision"}]
         with patch("common.requests.get", return_value=SimpleNamespace(json=lambda: models,
                                                                        raise_for_status=lambda: None)):
             snapshot = fetch_all_snapshots()
-        self.assertEqual((snapshot["3d"], snapshot["realtime"], snapshot["embeddings"]),
-                         ([models[0]], [models[1]], [models[2]]))
+        self.assertEqual((snapshot["3d"], snapshot["realtime"], snapshot["embeddings"], snapshot["decision"]),
+                         ([models[0]], [models[1]], [models[2]], [models[3]]))
 
     def test_catalog_records_a_new_category_even_without_model_changes(self):
         today = str(datetime.now(UTC).date())
@@ -722,6 +765,14 @@ class PostsTest(unittest.TestCase):
         self.assertIn('"text": "<@&42> Model updates"', saved[posts.model_post_path("models", "2026-10-14")].decode())
         # A week without recorded changes makes no call and saves nothing.
         self.assertEqual(self.new("models", "2026-10-28")[::2], ([], {}))
+        # A category split off a recorded one: its moved model changed, and only its new one was added.
+        self.put("data/models/2026-10-22.json", {k: v for k, v in this_week.items() if k != "decision"})
+        self.put("data/models/2026-10-29.json", {**this_week, "text": [{"name": "kept", "paid_only": True}],
+                                                 "decision": [{"name": "new", "category": "decision"}, {"name": "d3"}]})
+        diff = json.loads(self.new("models", "2026-10-29")[0][0][1])["diff"]
+        self.assertEqual([m["name"] for m in diff["added"]["decision"]], ["d3"])
+        self.assertEqual([c["after"]["name"] for c in diff["changed"]["decision"]], ["new"])
+        self.assertEqual(diff["removed"]["text"], [])
         # A saved model post is never replaced.
         with self.assertRaisesRegex(SystemExit, "has a saved model post"):
             self.new("models", "2026-10-14", overwrite=True)

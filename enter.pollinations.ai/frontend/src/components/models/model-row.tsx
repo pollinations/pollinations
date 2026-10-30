@@ -333,7 +333,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <PerUserRateLimit value={model.perUserRpm} />
                         </div>
                     )}
-                    {(model.health || showNew || showAlpha) && (
+                    {(model.health ||
+                        showNew ||
+                        showAlpha ||
+                        (model.agent && model.verified)) && (
                         <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                             <ModelStatusChips
                                 health={model.health}
@@ -342,6 +345,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 )}
                                 showNew={showNew}
                                 showAlpha={showAlpha}
+                                verified={Boolean(
+                                    model.agent && model.verified,
+                                )}
                             />
                         </div>
                     )}

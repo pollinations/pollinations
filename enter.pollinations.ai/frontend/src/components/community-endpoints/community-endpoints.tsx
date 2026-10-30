@@ -10,7 +10,6 @@ import {
     InfoTip,
     InlineLink,
     Input,
-    PlusIcon,
     Section,
     Surface,
     TokensIcon,
@@ -110,7 +109,12 @@ export function DeploymentsPlaceholder({
         <>
             {titles.map((title) => (
                 <Section key={title} title={title}>
-                    <LoadError onRetry={onRetry}>{error}</LoadError>
+                    <LoadError
+                        onRetry={onRetry}
+                        paths={["/account/my-models", "/account/agents"]}
+                    >
+                        {error}
+                    </LoadError>
                 </Section>
             ))}
         </>
@@ -348,12 +352,12 @@ export function CommunityEndpoints({
 
     const privateModelGuidance = (
         <>
-            Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your key. Public
-            publishing is allowlist-only. To request publishing access for
-            models, agents, or both, submit a {publisherAccessRequestLink}. You
-            can register, probe, and test private models without approval. For
-            questions, ask in{" "}
+            Your models are private. Only you can call them, and they appear in{" "}
+            <strong>/models</strong> only when you authenticate with your key.
+            Public publishing is allowlist-only. To request publishing access
+            for models, agents, or both, submit a {publisherAccessRequestLink}.
+            You can register, probe, and test private models without approval.
+            For questions, ask in{" "}
             <InlineLink href="https://discord.gg/k9F7SyTgqn">
                 Discord
             </InlineLink>
@@ -407,27 +411,21 @@ export function CommunityEndpoints({
     const agentAction = (
         <Button
             type="button"
-            className="dashboard-add-button"
-            aria-label="Create agent"
-            title="Create agent"
+            icon={<BotIcon />}
             aria-haspopup="dialog"
             onClick={() => setAgentCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <BotIcon className="h-5 w-5" />
+            Create
         </Button>
     );
     const modelAction = (
         <Button
             type="button"
-            className="dashboard-add-button"
-            aria-label="Create model"
-            title="Create model"
+            icon={<BeakerIcon />}
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <BeakerIcon className="h-5 w-5" />
+            Create
         </Button>
     );
 

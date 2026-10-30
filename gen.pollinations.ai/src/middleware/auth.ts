@@ -7,6 +7,7 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { permissionRequired } from "@shared/http/permission-required-error.ts";
 import {
     isModelCategory,
     keyAllowsModel,
@@ -15,7 +16,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { appOrigin, permissionRequired } from "../utils/refusals.ts";
+import { appOrigin } from "../utils/refusals.ts";
 import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {
@@ -24,6 +25,7 @@ type ModelVariables = {
         resolved: string;
         definition: Pick<ModelDefinition, "category" | "aliases">;
         communityEndpoint?: CommunityEndpointRuntime;
+        endpoint?: string;
     };
 };
 
@@ -79,7 +81,14 @@ function installAuth(
         if (!apiKey) return;
 
         const models = apiKey.permissions?.models;
-        if (!keyAllowsModel(models, model.resolved, model.definition)) {
+        if (
+            !keyAllowsModel(
+                models,
+                model.resolved,
+                model.definition,
+                model.endpoint,
+            )
+        ) {
             // A key limited to specific models asks for this one model; a key
             // limited to categories asks for the model's category.
             const grant = models?.some((value) => !isModelCategory(value))

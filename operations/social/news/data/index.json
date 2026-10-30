@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-30T06:08:20.357600+00:00",
+  "generated_at": "2026-10-30T21:14:18.745487+00:00",
   "models": [
     {
       "id": "2026-10-06:elevenlabs/eleven-v4",
@@ -6589,6 +6589,16 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-10-28",
+      "emoji": "🔗",
+      "title": "Grant missing key permissions",
+      "text": "Owners can use the grant link in Enter's 403 error, also returned as JSON `fixUrl`, to add missing `keys`, `machines`, or `usage` permission to an existing key. For keys obtained through a website redirect, add `keys` permission on the Keys page instead.",
+      "prs": [
+        18615
+      ],
+      "kind": "api"
+    },
     {
       "date": "2026-10-26",
       "emoji": "🎯",

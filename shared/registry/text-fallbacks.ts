@@ -275,8 +275,8 @@ export const TEXT_FALLBACKS = {
         "openai/gpt-6-sol:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "openai/gpt-5.4": {
-        "openai/gpt-5.4:openai": {
-            provider: "openai",
+        "openai/gpt-5.4:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },

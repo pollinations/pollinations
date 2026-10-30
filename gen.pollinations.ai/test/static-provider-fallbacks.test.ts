@@ -14,6 +14,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
+import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
 import { createBedrockNativeConfig } from "../src/text/configs/providerConfigs.ts";
@@ -1326,13 +1327,11 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
-    it("keeps the Azure gpt-5.4 quote when OpenAI serves it", () => {
+    it("keeps the Azure gpt-5.4 quote when global AWS serves it", () => {
         const model = "openai/gpt-5.4";
-        expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            "openai/gpt-5.4:openai",
-        ]);
-        expect(TEXT_SERVICES["openai/gpt-5.4:openai"]).toMatchObject({
-            provider: "openai",
+        expect(TEXT_SERVICES[model].fallbacks).toEqual(["openai/gpt-5.4:aws"]);
+        expect(TEXT_SERVICES["openai/gpt-5.4:aws"]).toMatchObject({
+            provider: "aws",
             priceMultiplier: 1,
             hidden: true,
         });
@@ -1343,7 +1342,7 @@ describe("static provider fallbacks", () => {
                 "promptCachedTokens": 200,
                 "completionTextTokens": 100,
             },
-            servedBy: TEXT_SERVICES["openai/gpt-5.4:openai"],
+            servedBy: TEXT_SERVICES["openai/gpt-5.4:aws"],
             quotedBy: TEXT_SERVICES[model],
         });
         expect(billed.cost.totalCost).toBeCloseTo(0.00405, 12);
@@ -1482,29 +1481,61 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBe(0.00091125);
     });
 
-    it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
-        const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
-        const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];
-        const billing = calculateUsageBilling({
-            model: "moonshotai/kimi-k3",
-            usage: {
-                promptTextTokens: 1000,
-                promptCachedTokens: 1000,
-                completionTextTokens: 100,
-                completionReasoningTokens: 100,
+    it("bills Kimi explicit cache writes once at the approved AWS rate", () => {
+        const model = "moonshotai/kimi-k3";
+        const usage = openaiUsageToUsage({
+            prompt_tokens: 2000,
+            prompt_tokens_details: {
+                cached_tokens: 500,
+                cache_write_tokens: 1000,
             },
-            servedBy: fallback,
-            quotedBy: primary,
+            completion_tokens: 100,
+            completion_tokens_details: { reasoning_tokens: 20 },
+            total_tokens: 2100,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.005985, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.0063, 8);
-        expect(
-            findModelByName("moonshotai/kimi-k3:deepinfra")?.config(),
-        ).toMatchObject({
-            "custom-host": "https://api.deepinfra.com/v1/openai",
-            model: "moonshotai/Kimi-K3",
+        expect(usage).toMatchObject({
+            promptTextTokens: 500,
+            promptCachedTokens: 500,
+            promptCacheWriteTokens: 1000,
+            completionTextTokens: 80,
+            completionReasoningTokens: 20,
         });
+        const billed = calculateUsageBilling({
+            model,
+            usage,
+            servedBy: TEXT_SERVICES[model],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0069, 12);
+        expect(billed.price.totalPrice).toBe(0.0069);
     });
+
+    it.each([
+        { provider: "fireworks", cost: 0.0063 },
+        { provider: "deepinfra", cost: 0.005985 },
+    ])(
+        "keeps the Kimi K3 quote when $provider serves cached and reasoning tokens",
+        ({ provider, cost }) => {
+            const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
+            const fallback =
+                TEXT_SERVICES[
+                    `moonshotai/kimi-k3:${provider}` as keyof typeof TEXT_SERVICES
+                ];
+            const billing = calculateUsageBilling({
+                model: "moonshotai/kimi-k3",
+                usage: {
+                    promptTextTokens: 1000,
+                    promptCachedTokens: 1000,
+                    completionTextTokens: 100,
+                    completionReasoningTokens: 100,
+                },
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
+            expect(billing.price.totalPrice).toBeCloseTo(0.0063, 8);
+        },
+    );
 
     it("keeps the Azure gpt-5.6-terra quote when AWS serves it", () => {
         const model = "openai/gpt-5.6-terra";
@@ -1707,9 +1738,9 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.6 / 1_000_000) * 1.055,
         });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
-            "x-ai/grok-4.6:xai",
+            "x-ai/grok-4.6:aws",
         ]);
-        expect(TEXT_SERVICES["x-ai/grok-4.6:xai"].priceMultiplier).toBe(1);
+        expect(TEXT_SERVICES["x-ai/grok-4.6:aws"].priceMultiplier).toBe(1);
 
         expect(
             TEXT_SERVICES["deepseek/deepseek-v4-flash:deepinfra"].cost,
@@ -2247,10 +2278,11 @@ describe("static provider fallbacks", () => {
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {
-        expect(findModelByName("x-ai/grok-4.6:xai")?.config()).toMatchObject({
-            provider: "openai",
-            directEndpoint: "https://api.x.ai/v1/chat/completions",
-            model: "grok-4.6",
+        expect(findModelByName("x-ai/grok-4.6:aws")?.config()).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            model: "global.xai.grok-4.6",
         });
         expect(
             findModelByName("deepseek/deepseek-v4-flash:deepinfra")?.config(),

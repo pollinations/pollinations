@@ -605,6 +605,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         sandbox("capped", capped.userId),
         sandbox("revoked", revoked.userId),
         sandbox("banned", banned.userId),
+        sandbox("banned-key", banned.userId),
     );
     const until = new Date(Date.now() + 450_000);
     const month = new Date(Date.now() + 30 * 86_400_000);
@@ -621,6 +622,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         { sandboxId: "revoked", apiKeyId: revoked.id, until: month },
         { sandboxId: "dashboard", apiKeyId: null, until: month },
         { sandboxId: "banned", apiKeyId: null, until: month },
+        { sandboxId: "banned-key", apiKeyId: banned.id, until: month },
     ]);
     const untouched = structuredClone(e2b.sandboxes.slice(6));
     untouched.unshift(structuredClone(e2b.sandboxes[2]));
@@ -681,6 +683,51 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     expect(await questPollen(broke.userId)).toBe(0);
     expect(await questPollen(capped.userId)).toBe(10);
     expect(await questPollen(banned.userId)).toBe(10);
+});
+
+test("the cron keeps a keep whose key D1 fails to read, and renews it next time", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    e2b.sandboxes.push({
+        sandboxID: "due",
+        startedAt: inSeconds(0),
+        endAt: inSeconds(300),
+        cpuCount: 2,
+        memoryMB: 512,
+        state: "running",
+        metadata: { pollinations_user: owner.userId },
+    });
+    await drizzle(env.DB)
+        .insert(sandboxKeep)
+        .values({
+            sandboxId: "due",
+            apiKeyId: owner.id,
+            until: new Date(Date.now() + 86_400_000),
+        });
+    const cron = async (bindings: typeof env) => {
+        const ctx = createExecutionContext();
+        await worker.scheduled(createScheduledController(), bindings, ctx);
+        await waitOnExecutionContext(ctx);
+    };
+
+    // D1 fails the key's read, the one query that joins its BYOP client key.
+    const DB = {
+        prepare: (sql: string) => {
+            if (sql.includes("byop_client_key")) {
+                throw new Error("D1_ERROR: Network connection lost.");
+            }
+            return env.DB.prepare(sql);
+        },
+    } as D1Database;
+    await cron({ ...env, DB });
+    expect(await keeps()).toHaveLength(1);
+    expect(e2b.leases()).toEqual([]);
+
+    await cron(env);
+    expect(Date.parse(e2b.sandboxes[0].endAt) - Date.now()).toBeGreaterThan(
+        590_000,
+    );
+    expect(await keeps()).toHaveLength(1);
 });
 
 test("the account owner's session token runs sandboxes without a key scope", async () => {

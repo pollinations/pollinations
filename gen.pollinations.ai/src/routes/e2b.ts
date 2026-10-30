@@ -1,8 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import {
+    BannedAccountError,
     extractApiKey,
     loadActiveApiKeyAuthResult,
+    StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import { isUserBanned } from "@shared/auth/ban.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
@@ -706,7 +708,8 @@ export const e2bRoutes = new Hono<Env>()
 
 // Read again for every renewal, so deleting the key, letting it expire,
 // removing its machines permission or banning the account ends them. A keep
-// set from the dashboard has no key: its owner pays, until banned.
+// set from the dashboard has no key: its owner pays, until banned. A failed
+// read throws, so the keep is tried again next time.
 async function loadPayer(
     env: CloudflareBindings,
     apiKeyId: string | null,
@@ -725,7 +728,15 @@ async function loadPayer(
         apiKeyId,
         rawApiKey: "",
         env,
-    }).catch(() => null);
+    }).catch((error) => {
+        if (
+            error instanceof BannedAccountError ||
+            error instanceof StagingAccessDeniedError
+        ) {
+            return null;
+        }
+        throw error;
+    });
     if (!result?.user) return null;
     const { rawKey: _rawKey, ...apiKey } = result.apiKey;
     return { user: { id: result.user.id, tier: result.user.tier }, apiKey };

@@ -147,9 +147,9 @@ export type BillingRules = {
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
-// The model's single priceMultiplier applies uniformly to tokens and
+// The model's effective priceMultiplier applies uniformly to tokens and
 // adjustments alike (there is no per-rule multiplier), so adjustment prices
-// are always derivable from costs: price = cost × svc.priceMultiplier.
+// are always derivable from costs: price = cost × effective multiplier.
 export type BillingAdjustment = {
     ruleId: string;
     kind: string;
@@ -197,6 +197,9 @@ export type ModelDefinition = {
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
+    // Override the multiplier for a named cost variant when customer tiers
+    // differ from the provider's tiers (e.g. flat-cost long-context inference).
+    priceMultiplierVariants?: Record<string, number>;
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
@@ -364,6 +367,7 @@ export function calculateBillingAdjustments(
     output: unknown,
     model: string,
     input?: PricingInput,
+    priceMultiplier = svc.priceMultiplier,
 ): BillingAdjustment[] {
     const adjustments: BillingAdjustment[] = [];
     for (const rule of svc.billing?.adjustments ?? []) {
@@ -379,7 +383,7 @@ export function calculateBillingAdjustments(
             units,
             unitCost,
             cost,
-            price: cost * svc.priceMultiplier,
+            price: cost * priceMultiplier,
         });
     }
     return adjustments;
@@ -445,15 +449,22 @@ function rateAgainst(
     output?: unknown,
     input?: PricingInput,
 ): Omit<UsageBilling, "servedPrice"> {
-    const adjustments = calculateBillingAdjustments(svc, output, model, input);
+    const selection = selectCostVariant(model, usage, svc, input);
+    const costVariant = selection.name;
+    const priceMultiplier = getPriceMultiplier(svc, costVariant);
+    const adjustments = calculateBillingAdjustments(
+        svc,
+        output,
+        model,
+        input,
+        priceMultiplier,
+    );
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
     const adjustmentPrice = adjustments.reduce(
         (total, a) => total + a.price,
         0,
     );
 
-    const selection = selectCostVariant(model, usage, svc, input);
-    const costVariant = selection.name;
     const effectiveCost = costVariant
         ? { ...svc.cost, ...svc.costVariants?.[costVariant] }
         : svc.cost;
@@ -471,7 +482,7 @@ function rateAgainst(
             .filter(([usageType]) => usageType !== "totalCost")
             .map(([usageType, usageTypeCost]) => [
                 usageType,
-                (usageTypeCost as number) * svc.priceMultiplier,
+                (usageTypeCost as number) * priceMultiplier,
             ]),
     ) as Usage;
     const tokenTotalPrice = Object.values(usagePrice).reduce(
@@ -493,11 +504,11 @@ function rateAgainst(
                 ? price
                 : {
                       totalPrice: roundPollenLedgerAmount(
-                          reportedCost * svc.priceMultiplier,
+                          reportedCost * priceMultiplier,
                       ),
                   },
         adjustments,
-        priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
+        priceDefinition: derivePrice(effectiveCost, priceMultiplier),
         costVariant,
         costVariantStatus: selection.status,
     };
@@ -527,7 +538,7 @@ export function calculateUsageBilling({
         served.cost = { totalCost };
         served.price = {
             totalPrice: roundPollenLedgerAmount(
-                totalCost * servedBy.priceMultiplier,
+                totalCost * getPriceMultiplier(servedBy, served.costVariant),
             ),
         };
     }
@@ -666,8 +677,19 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
 
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
+    variant?: string,
 ): PriceDefinition {
-    return derivePrice(svc.cost, svc.priceMultiplier);
+    return derivePrice(
+        variant ? { ...svc.cost, ...svc.costVariants?.[variant] } : svc.cost,
+        getPriceMultiplier(svc, variant),
+    );
+}
+
+function getPriceMultiplier(svc: ModelDefinition, variant?: string): number {
+    return (
+        (variant ? svc.priceMultiplierVariants?.[variant] : undefined) ??
+        svc.priceMultiplier
+    );
 }
 
 /** Every cost sheet a model can bill at: its base cost and each variant over it. */

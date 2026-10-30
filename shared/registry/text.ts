@@ -1913,6 +1913,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "inferenceport-ai/ltra2-research": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-10-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-10-30): $5 per million
+            // input tokens and $20 per million output tokens. Cached input at
+            // $0.50 per million is from issue #18048; the list shows no cache rate.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            completionTextTokens: perMillion(20),
+        },
+        billing: { resolveTotalCost: reportedInferencePortCost },
+        title: "LTRA2 Research",
+        description:
+            "Long-horizon analysis over a 500K-token context, with image input and tools for multi-step workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 500000,
+        isSpecialized: false,
+    },
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],

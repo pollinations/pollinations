@@ -881,6 +881,7 @@ describe("resolveModelConfig", () => {
     it.each([
         ["inferenceport-ai/lightning-text-v2", "lightning"],
         ["inferenceport-ai/lightning-text-v2.1", "lightning-text-v2.1"],
+        ["inferenceport-ai/ltra2-research", "LTRA2-Research"],
     ])(
         "routes %s directly to InferencePort without fallback",
         (model, upstream) => {

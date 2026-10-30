@@ -1952,8 +1952,8 @@ test("audio cards distinguish clips, audio tokens, characters, and UTF-8 bytes",
         },
     ]);
     expect(get("google/gemini-3.8-flash-tts")).toEqual([
-        { direction: "input", kind: "text", price: "0.5", unit: "token" },
-        { direction: "output", kind: "audioOut", price: "9.0", unit: "token" },
+        { direction: "input", kind: "text", price: "1.0", unit: "token" },
+        { direction: "output", kind: "audioOut", price: "18.0", unit: "token" },
     ]);
     expect(get("elevenlabs/eleven-v3")).toEqual([
         {

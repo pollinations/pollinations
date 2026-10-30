@@ -643,15 +643,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "x-ai/grok-4.7",
+        config: portkeyConfig["grok-4.7-bedrock"],
+    },
+    {
+        name: "x-ai/grok-4.7:xai",
         config: portkeyConfig["grok-4.7-xai"],
     },
     {
-        name: "x-ai/grok-4.7:openrouter",
-        config: portkeyConfig["grok-4.7-openrouter"],
-    },
-    {
-        name: "x-ai/grok-4.6:xai",
-        config: portkeyConfig["grok-4.6-xai"],
+        name: "x-ai/grok-4.6:aws",
+        config: portkeyConfig["grok-4.6-bedrock"],
     },
     {
         name: "openai/gpt-audio-mini",

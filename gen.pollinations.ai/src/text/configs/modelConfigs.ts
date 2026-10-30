@@ -6,6 +6,7 @@ import {
     createAnthropicConfig,
     createAzureModelConfig,
     createAzureResponsesModelConfig,
+    createBedrockChatConfig,
     createBedrockNativeConfig,
     createBedrockResponsesConfig,
     createDeepInfraModelConfig,
@@ -462,18 +463,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesStreamUpstream: true,
     }),
 
-    // -- xAI direct -----------------------------------------------------------
-    "grok-4.6-xai": () => ({
-        provider: "openai",
-        directEndpoint: "https://api.x.ai/v1/chat/completions",
-        authKey: textEnvironmentValue("XAI_API_KEY"),
-        model: "grok-4.6",
-    }),
+    // -- Grok: AWS global and direct xAI --------------------------------------
+    "grok-4.6-bedrock": () => createBedrockChatConfig("global.xai.grok-4.6"),
+    "grok-4.7-bedrock": () => createBedrockChatConfig("global.xai.grok-4.7"),
     "grok-4.7-xai": () => ({
         provider: "openai",
         directEndpoint: "https://api.x.ai/v1/chat/completions",
         authKey: textEnvironmentValue("XAI_API_KEY"),
         model: "grok-4.7",
+        serviceTier: "default",
     }),
 
     // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
@@ -843,19 +841,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             directEndpoint:
                 "https://api.deepinfra.com/v1/openai/chat/completions",
             defaultOptions: { max_tokens: 16384, service_tier: "priority" },
-        }),
-    // The base slug "xai" also matches xai/zdr/us and the priority tiers,
-    // which bill above the quoted rate, so they are excluded explicitly.
-    "grok-4.7-openrouter": () =>
-        createOpenRouterModelConfig({
-            model: "x-ai/grok-4.7",
-            defaultOptions: {
-                provider: {
-                    only: ["xai"],
-                    ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
-                    allow_fallbacks: false,
-                },
-            },
         }),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",

@@ -1576,37 +1576,31 @@ const TEXT_BASE_SERVICES = {
     "x-ai/grok-4.7": {
         supportedParameters: CHAT_PARAMETERS.openRouterGrok47,
         aliases: [],
-        provider: "xai",
+        provider: "aws",
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-09-21").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // xAI /v1/language-models/grok-4.7 rates (2026-10-12). Image tokens
-        // bill at the text input rate; reasoning bills as output. Excludes the
-        // $0.005-per-call web search charge (not exposed on this model).
+        // Preserve the existing customer tier while AWS's published cost is flat.
+        priceMultiplierVariants: { long_context: 2 },
+        // AWS global Standard card and price catalog, checked 2026-10-30.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.5),
             promptImageTokens: perMillion(2),
             completionTextTokens: perMillion(6),
         },
-        // xAI reprices the whole request from 200K prompt tokens.
         ...defineCostVariants(
             {
-                long_context: {
-                    promptTextTokens: perMillion(4),
-                    promptCachedTokens: perMillion(1),
-                    promptImageTokens: perMillion(4),
-                    completionTextTokens: perMillion(12),
-                },
+                long_context: {},
             },
             longContextAtLeast(200_000),
             {
                 long_context: {
                     label: "Long context (200K+)",
                     description:
-                        "At least 200,000 prompt tokens; text, cached, and output rates double.",
+                        "At least 200,000 prompt tokens; all token prices double for the full request.",
                 },
             },
             "<200K context",

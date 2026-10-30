@@ -4609,20 +4609,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
-  "x-ai/grok-4.6:xai": {
+  "x-ai/grok-4.6:aws": {
     "cost": {
       "completionTextTokens": 0.000006,
       "promptCachedTokens": 0.0000005,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
-    },
-    "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.000012,
-        "promptCachedTokens": 0.000001,
-        "promptImageTokens": 0.000004,
-        "promptTextTokens": 0.000004,
-      },
     },
     "price": {
       "completionTextTokens": 0.000006,
@@ -4639,6 +4631,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
     "costVariants": {
+      "long_context": {},
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.0000005,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+    "priceMultiplierVariants": {
+      "long_context": 2,
+    },
+  },
+  "x-ai/grok-4.7:xai": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.0000005,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+    "costVariants": {
       "long_context": {
         "completionTextTokens": 0.000012,
         "promptCachedTokens": 0.000001,
@@ -4651,25 +4663,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000005,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
-    },
-  },
-  "x-ai/grok-4.7:openrouter": {
-    "cost": {
-      "completionTextTokens": 0.00000633,
-      "promptCachedTokens": 0.0000005275,
-      "promptTextTokens": 0.00000211,
-    },
-    "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.00001266,
-        "promptCachedTokens": 0.000001055,
-        "promptTextTokens": 0.00000422,
-      },
-    },
-    "price": {
-      "completionTextTokens": 0.00000633,
-      "promptCachedTokens": 0.0000005275,
-      "promptTextTokens": 0.00000211,
     },
   },
   "x-ai/grok-imagine-image": {

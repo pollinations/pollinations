@@ -243,14 +243,22 @@ describe("generateTextPortkey", () => {
         expect(billing.price.totalPrice).toBe(0.0013155);
     });
 
-    it("falls back from Azure Grok to xAI direct at the primary price", async () => {
+    it("falls back from Azure Grok to signed global AWS Chat at the primary price", async () => {
+        syncTextEnvironment({
+            ...env,
+            AWS_ACCESS_KEY_ID: "test-access-key",
+            AWS_SECRET_ACCESS_KEY: "test-secret-key",
+        });
         const hosts: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const url = new URL(String(input));
                 hosts.push(url.hostname);
-                expect(JSON.parse(String(init?.body)).model).toBe("grok-4.6");
-                if (url.hostname !== "api.x.ai") {
+                const body = JSON.parse(String(init?.body));
+                if (
+                    url.hostname !== "bedrock-runtime.us-east-1.amazonaws.com"
+                ) {
+                    expect(body.model).toBe("grok-4.6");
                     return Response.json(
                         { error: { message: "Capacity exhausted" } },
                         { status: 429 },
@@ -258,9 +266,13 @@ describe("generateTextPortkey", () => {
                 }
                 const headers = new Headers(init?.headers);
                 expect(headers.has("api-key")).toBe(false);
-                expect(headers.get("authorization")).toBe(
-                    `Bearer ${env.XAI_API_KEY}`,
+                expect(headers.has("x-portkey-provider")).toBe(false);
+                expect(headers.get("authorization")).toMatch(
+                    /^AWS4-HMAC-SHA256 Credential=test-access-key\//,
                 );
+                expect(body.model).toBe("global.xai.grok-4.6");
+                expect(body.service_tier).toBe("default");
+                expect(url.pathname).toBe("/openai/v1/chat/completions");
                 return Response.json({
                     model: "grok-4.6",
                     choices: [
@@ -270,11 +282,10 @@ describe("generateTextPortkey", () => {
                             finish_reason: "stop",
                         },
                     ],
-                    // Observed xAI usage (2026-09-24): reasoning is additive
-                    // and cost_in_usd_ticks reported $0.001296.
+                    // AWS includes reasoning in completion_tokens.
                     usage: {
                         prompt_tokens: 648,
-                        completion_tokens: 1,
+                        completion_tokens: 128,
                         total_tokens: 776,
                         prompt_tokens_details: {
                             text_tokens: 648,
@@ -301,14 +312,14 @@ describe("generateTextPortkey", () => {
         expect(index).toBe(1);
         expect(hosts).toEqual([
             "myceli-prod-eastus.cognitiveservices.azure.com",
-            "api.x.ai",
+            "bedrock-runtime.us-east-1.amazonaws.com",
         ]);
         const billing = calculateUsageBilling({
             model: "x-ai/grok-4.6",
             usage: openaiUsageToUsage(
                 result.usage as Parameters<typeof openaiUsageToUsage>[0],
             ),
-            servedBy: TEXT_SERVICES["x-ai/grok-4.6:xai"],
+            servedBy: TEXT_SERVICES["x-ai/grok-4.6:aws"],
             quotedBy: TEXT_SERVICES["x-ai/grok-4.6"],
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.001296, 12);

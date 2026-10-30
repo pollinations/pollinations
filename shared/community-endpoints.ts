@@ -570,7 +570,11 @@ export function staticFallbackRejection(
         primary.imagePricing,
     );
     // Neither below what Pollinations pays nor below the model's own price.
-    const multiplier = Math.max(target.priceMultiplier, 1);
+    const multiplier = Math.max(
+        target.priceMultiplier,
+        ...Object.values(target.priceMultiplierVariants ?? {}),
+        1,
+    );
     return getCostSheetsForModel(target).every((cost) =>
         isFallbackPricingAllowed(quoted, derivePrice(cost, multiplier)),
     )

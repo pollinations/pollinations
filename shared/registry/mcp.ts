@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "WEATHER_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "weather",
+        name: "Weather",
+        description:
+            "Look up places by name and get current conditions and a 7-day forecast.",
+        binding: "WEATHER_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Weather lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

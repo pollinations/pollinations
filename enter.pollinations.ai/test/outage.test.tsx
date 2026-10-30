@@ -39,6 +39,7 @@ function respond(status: number) {
 describe("dashboard outage state", () => {
     beforeEach(() => {
         vi.stubGlobal("window", new EventTarget());
+        vi.stubGlobal("navigator", { onLine: true });
     });
 
     afterEach(async () => {
@@ -138,7 +139,7 @@ describe("dashboard outage state", () => {
         expect(topUp()).not.toContain("Couldn’t load your wallet.");
     });
 
-    it("counts a request that timed out", async () => {
+    it("shows a timeout without declaring an outage when a request times out", async () => {
         vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
             new DOMException("Timed out", "TimeoutError"),
         );
@@ -149,7 +150,20 @@ describe("dashboard outage state", () => {
                 ),
             }),
         ).rejects.toThrow();
-        expect(render()).toContain(OUTAGE_TEXT);
+        expect(render()).toContain("This data took too long to load.");
+        expect(render()).not.toContain(OUTAGE_TEXT);
+    });
+
+    it("keeps gateway timeouts retryable without claiming an outage", async () => {
+        respond(504);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).toContain("This data took too long to load.");
+        expect(render()).toContain("Retrying automatically");
+        expect(render()).toContain("Try again");
+        expect(render()).not.toContain(OUTAGE_TEXT);
+        respond(200);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).not.toContain("This data took too long to load.");
     });
 
     it("waits out a long offline spell, then retries on reconnect", async () => {

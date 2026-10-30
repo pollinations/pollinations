@@ -610,11 +610,15 @@ const earningsQuerySchema = usageDailyQuerySchema
 const earningsTransactionsQuerySchema = usageQuerySchema
     .pick({
         limit: true,
+        before: true,
+        before_event_id: true,
         granularity: true,
         period: true,
         timezone: true,
     })
     .extend({
+        before_source: z.string().optional(),
+        before_entity_id: z.string().optional(),
         days: z.coerce
             .number()
             .int()
@@ -622,7 +626,25 @@ const earningsTransactionsQuerySchema = usageQuerySchema
             .max(MAX_EARNINGS_DAYS)
             .optional()
             .default(DEFAULT_USAGE_DAYS),
-    });
+    })
+    .refine(
+        ({ before, before_event_id, before_source, before_entity_id }) => {
+            const cursor = [
+                before,
+                before_event_id,
+                before_source,
+                before_entity_id,
+            ];
+            return (
+                cursor.every((value) => value === undefined) ||
+                cursor.every((value) => value !== undefined)
+            );
+        },
+        {
+            message:
+                "Earnings pagination requires before, before_event_id, before_source, and before_entity_id together",
+        },
+    );
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
@@ -759,6 +781,10 @@ const developerEarningsTransactionSchema = z.object({
         .string()
         .describe("Request timestamp in UTC (YYYY-MM-DD HH:mm:ss format)"),
     cursor_event_id: z.string().describe("Stable event id"),
+    cursor_source: z.string().describe("Earning source used for pagination"),
+    cursor_entity_id: z
+        .string()
+        .describe("Earning entity id used for pagination"),
     entity_name: z.string().describe("Earning entity display name"),
     model: z.string().nullable().describe("Model used for generation"),
     meter_source: z
@@ -880,6 +906,7 @@ async function respondDetailedUsage(
         return c.json({ usage, count: usage.length });
     } catch (error) {
         log.error("Error fetching usage: {error}", { error });
+        if (error instanceof HTTPException) throw error;
         return c.json({ error: "Failed to fetch usage data" }, 500);
     }
 }
@@ -1629,6 +1656,7 @@ export const accountRoutes = new Hono<Env>()
                 });
             } catch (error) {
                 log.error("Error fetching daily usage: {error}", { error });
+                if (error instanceof HTTPException) throw error;
                 return c.json({ error: "Failed to fetch usage data" }, 500);
             }
         },
@@ -1639,7 +1667,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Earnings Transactions",
             description:
-                "Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.",
+                "Returns recent per-request earnings transactions, newest first. Pass the last row's timestamp and cursor fields as `before`, `before_event_id`, `before_source`, and `before_entity_id` together to fetch the next page. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Earnings transaction records",
@@ -1671,8 +1699,17 @@ export const accountRoutes = new Hono<Env>()
 
             requireAccountPermission(c, "usage");
 
-            const { limit, days, granularity, period, timezone } =
-                c.req.valid("query");
+            const {
+                limit,
+                days,
+                granularity,
+                period,
+                timezone,
+                before,
+                before_event_id,
+                before_source,
+                before_entity_id,
+            } = c.req.valid("query");
             const { userId: devUserId } = resolveUsageTargetUserId(
                 c.env,
                 user.id,
@@ -1695,6 +1732,10 @@ export const accountRoutes = new Hono<Env>()
                         {
                             dev_user_id: devUserId,
                             limit: limit.toString(),
+                            before,
+                            before_event_id,
+                            before_source,
+                            before_entity_id,
                             since: window.since,
                             until: window.until,
                             timezone,
@@ -1706,6 +1747,7 @@ export const accountRoutes = new Hono<Env>()
                 log.error("Error fetching earnings transactions: {error}", {
                     error,
                 });
+                if (error instanceof HTTPException) throw error;
                 return c.json(
                     { error: "Failed to fetch earnings transactions" },
                     500,
@@ -1803,6 +1845,7 @@ export const accountRoutes = new Hono<Env>()
                 return c.json({ daily, perEntity });
             } catch (error) {
                 log.error("Error fetching earnings: {error}", { error });
+                if (error instanceof HTTPException) throw error;
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
         },

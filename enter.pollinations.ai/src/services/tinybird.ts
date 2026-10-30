@@ -54,17 +54,26 @@ export async function fetchTinybirdRows<T>(
         const errorText = await response.text();
         const message = `Tinybird error: ${response.status} ${errorText || "(empty response)"}`;
         log.error(
-            "TINYBIRD_ERROR: pipe={pipe} status={status} durationMs={durationMs} body={body}",
+            "TINYBIRD_ERROR: pipe={pipe} status={status} durationMs={durationMs} requestId={requestId} params={params} body={body}",
             {
                 pipe: path,
                 status: response.status,
                 durationMs,
+                requestId: response.headers.get("x-request-id"),
+                params: Object.fromEntries(url.searchParams.entries()),
                 // Truncate the upstream body so a verbose error page can't flood logs.
                 body: (errorText || "(empty response)").slice(0, 500),
             },
         );
         if (response.status === 429) {
             throw new TinybirdRateLimitError(message);
+        }
+        if (response.status === 408 || response.status === 504) {
+            throw new HTTPException(504, {
+                message:
+                    "Analytics query timed out. Try a shorter period or try again.",
+                cause: new Error(message),
+            });
         }
         throw new Error(message);
     }

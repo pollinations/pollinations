@@ -1692,7 +1692,7 @@ describe("static provider fallbacks", () => {
             TEXT_SERVICES["google/gemini-3.7-flash:openrouter:vertex-global"]
                 .cost,
         ).toMatchObject({
-            promptCacheWriteTokens: (0.75 / 1_000_000) * 1.055,
+            promptCacheWriteTokens: (1.5 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES[

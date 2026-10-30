@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { exclusive, send, settle, withTimeout } from "./delivery.js";
+import { exclusive, send, serial, settle, withTimeout } from "./delivery.js";
 
 const reply = (status, retryAfter) => ({
     ok: status >= 200 && status < 300,
@@ -73,6 +73,25 @@ test("overlapping checks: second is skipped until the first finishes", async () 
     release("first");
     assert.equal(await first, "first");
     assert.equal(await once(async () => "third"), "third");
+});
+
+test("background tasks never block the caller and run one at a time", async () => {
+    const run = serial();
+    const order = [];
+    let release;
+    const gate = new Promise((r) => {
+        release = r;
+    });
+    run(() => gate.then(() => order.push("slow")));
+    run(async () => {
+        throw new Error("failed task");
+    });
+    const last = run(async () => order.push("next"));
+    // The caller got here while the slow task is still pending.
+    assert.deepEqual(order, []);
+    release();
+    await last;
+    assert.deepEqual(order, ["slow", "next"]);
 });
 
 test("withTimeout clears its timer once the work finishes", async () => {

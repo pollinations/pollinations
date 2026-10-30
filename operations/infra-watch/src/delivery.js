@@ -72,6 +72,20 @@ export function settle(prev, next, posts, delivered) {
     return { ...next, active };
 }
 
+// Runs tasks one after another in the background: the caller never waits,
+// and a failed task is logged without stopping the ones queued after it.
+export function serial() {
+    let tail = Promise.resolve();
+    return (task) => {
+        tail = tail
+            .then(task)
+            .catch((error) =>
+                console.error(`background task failed: ${error.message}`),
+            );
+        return tail;
+    };
+}
+
 // Runs `fn` unless a previous run is still in flight; returns null when
 // skipped. The lease never expires early: every network call in a run has a
 // timeout, so a run always finishes, and an expired lease would let two runs

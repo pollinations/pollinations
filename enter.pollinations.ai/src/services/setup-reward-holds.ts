@@ -46,6 +46,40 @@ const PUBLIC_MAIL_DOMAINS = new Set([
     "zoho.com",
 ]);
 
+// Second levels that countries share between registrants (co.uk, ac.uk,
+// com.br, my.id): under these, the registrable domain has three labels.
+const SHARED_SECOND_LEVELS = new Set([
+    "ac",
+    "co",
+    "com",
+    "edu",
+    "go",
+    "gov",
+    "my",
+    "ne",
+    "net",
+    "or",
+    "org",
+    "sch",
+]);
+
+/**
+ * The domain a registrant controls, so subdomains (a1.farm.com, a2.farm.com)
+ * count as one. Without a public-suffix list it may merge more than needed,
+ * which only makes the limit stricter.
+ */
+export function registrableDomain(email: string): string {
+    const labels = email
+        .slice(email.lastIndexOf("@") + 1)
+        .toLowerCase()
+        .split(".");
+    const shared =
+        labels.length > 2 &&
+        labels.at(-1)?.length === 2 &&
+        SHARED_SECOND_LEVELS.has(labels.at(-2) ?? "");
+    return labels.slice(shared ? -3 : -2).join(".");
+}
+
 /** A domain that a sign-up just flagged. */
 export type FlaggedDomain = { domain: string; accounts: number };
 
@@ -63,7 +97,7 @@ export async function recordSetupRewardSignup(
     { userId, email }: { userId: string; email: string },
 ): Promise<FlaggedDomain | null> {
     const now = Math.floor(Date.now() / 1000);
-    const domain = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
+    const domain = registrableDomain(email);
     const cleanup = d1
         .prepare(
             `DELETE FROM setup_reward_signup WHERE user_id IN (

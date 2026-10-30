@@ -19,6 +19,7 @@ import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
+import { registrableDomain } from "../src/services/setup-reward-holds.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
@@ -2832,6 +2833,22 @@ test("setup rewards: the 31st sign-up flags a private domain and holds all its a
         completedQuestGroup("later_setup"),
     ]);
     expect(await claimSetupReward(ids[0], "later_setup")).toBe(false);
+});
+
+test("setup rewards: subdomains count as the domain a registrant controls", async () => {
+    const db = drizzle(env.DB, { schema });
+    const ids = await seedSetupAccounts("sub", 31, "sub.test");
+    for (const [index, id] of ids.entries()) {
+        await db
+            .update(schema.user)
+            .set({ email: `${id}@a${index}.sub.test` })
+            .where(eq(schema.user.id, id));
+    }
+    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
+
+    expect(await flaggedDomains()).toMatchObject([{ domain: "sub.test" }]);
+    expect(await tierBalanceOf(ids[30])).toBe(0);
+    expect(registrableDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
 });
 
 test("setup rewards: public mail domains are never recorded or flagged", async () => {

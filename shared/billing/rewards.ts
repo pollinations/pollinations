@@ -72,15 +72,18 @@ export interface ClaimRewardResult {
 type AuthDb = DrizzleD1Database<typeof schema>;
 
 /**
- * True while the account's email domain is flagged and not allowed, and the
- * account isn't verified: no purchase and no linked GitHub account.
+ * True while the account's email domain, or a domain it is a subdomain of, is
+ * flagged and not allowed, and the account isn't verified: no purchase and no
+ * linked GitHub account.
  */
 export const setupRewardHeld = (userId: string) => sql`EXISTS (
-    SELECT 1 FROM ${userTable} u
-    JOIN ${flaggedEmailDomain} f
-        ON f.domain = lower(substr(u.email, instr(u.email, '@') + 1))
+    SELECT 1 FROM ${userTable} u, ${flaggedEmailDomain} f
     WHERE u.id = ${userId}
         AND f.allowed_at IS NULL
+        AND (
+            lower(substr(u.email, instr(u.email, '@') + 1)) = f.domain
+            OR lower(substr(u.email, -length(f.domain) - 1)) = '.' || f.domain
+        )
         AND u.github_id IS NULL
         AND NOT EXISTS (
             SELECT 1 FROM ${stripeCheckoutCredits} c WHERE c.user_id = u.id

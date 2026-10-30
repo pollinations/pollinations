@@ -395,10 +395,16 @@ test("model listings carry billing units so agents can price a call", async () =
         );
     }
 
-    const retrieved = (await (
-        await fetchWorker(`/v1/models/${encodeURIComponent(list.data[0].id)}`)
-    ).json()) as ListedModel;
-    expect(retrieved.pricing_units).toEqual(list.data[0].pricing_units);
+    const withUnits = list.data.filter((model) => model.pricing_units);
+    expect(withUnits.length).toBeGreaterThan(0);
+    for (const model of withUnits) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.pricing_units, model.id).toEqual(model.pricing_units);
+    }
 });
 
 test("retrieves a model by canonical ID", async () => {

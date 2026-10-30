@@ -1965,6 +1965,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `data[].paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `data[].pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
+| `data[].pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
 | `data[].capabilities` | `string`[] | — |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
@@ -2072,6 +2073,7 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
+| `pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
 | `capabilities` | `string`[] | — |
 | `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `tools` | `boolean` | — |
@@ -2486,7 +2488,7 @@ Register a private or public community text, image, video, transcription, speech
 | `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
 | `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. · default: `"private"` |
-| `bearerToken` * | `string` | — |
+| `bearerToken` * | `string` | length: `1…4096` |
 | `upstreamModel` | `string` | length: `1…253` |
 | `imagePricing` | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. · default: `"request"` |
 | `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately. |
@@ -2517,7 +2519,7 @@ Register a private or public community text, image, video, transcription, speech
 |---|---|---|
 | `modality` | `"text"` | default: `"text"` |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
-| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 
 <sub>`*` = required field</sub>
 
@@ -2526,7 +2528,7 @@ Register a private or public community text, image, video, transcription, speech
 | Field | Type | Description |
 |---|---|---|
 | `modality` * | `"image"` \| `"video"` \| `"transcription"` \| `"speech"` \| `"embedding"` | — |
-| `baseUrl` * | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. |
+| `baseUrl` * | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. · max length: `2048` |
 
 <sub>`*` = required field</sub>
 
@@ -2686,7 +2688,7 @@ Test an upstream model before registering it. Text tests call the selected Chat 
 
 | Field | Type | Description |
 |---|---|---|
-| `bearerToken` * | `string` | — |
+| `bearerToken` * | `string` | length: `1…4096` |
 
 <sub>`*` = required field</sub>
 
@@ -2695,7 +2697,7 @@ Test an upstream model before registering it. Text tests call the selected Chat 
 | Field | Type | Description |
 |---|---|---|
 | `api` * | `"chat_completions"` \| `"responses"` | — |
-| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 | `model` * | `string` | length: `1…253` |
 | `modality` | `"text"` | default: `"text"` |
 
@@ -2705,7 +2707,7 @@ Test an upstream model before registering it. Text tests call the selected Chat 
 
 | Field | Type | Description |
 |---|---|---|
-| `baseUrl` * | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. |
+| `baseUrl` * | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. · max length: `2048` |
 | `model` | `string` | length: `1…253` |
 | `modality` * | `"image"` \| `"video"` \| `"transcription"` \| `"speech"` \| `"embedding"` | — |
 
@@ -2875,11 +2877,11 @@ Update a community model owned by the authenticated account. Code-agent names, t
 | `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
-| `baseUrl` | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. |
+| `baseUrl` | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. · max length: `2048` |
 | `api` | `"chat_completions"` \| `"responses"` | — |
-| `url` | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 | `upstreamModel` | `string` | length: `1…253` |
-| `bearerToken` | `string` | — |
+| `bearerToken` | `string` | length: `1…4096` |
 | `perUserRpm` | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. |
 | `paidOnly` | `boolean` | Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost. |
 | `imagePricing` | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -3254,7 +3256,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. · default: `"private"` |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
-| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 | `upstreamModel` | `string` | length: `1…253` |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. · default: `[]` |
 | `perUserRpm` | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. · default: `null` |
@@ -3280,7 +3282,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `capabilities` | `"tool_calling"` \| `"reasoning"` \| `"web_search"` \| `"code_execution"` \| `"pollinations_models"`[] | Traits the agent supports through its public endpoint, such as tools it runs itself. Defaults to none. |
 | `type` * | `"endpoint_agent"` | — |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
-| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 | `upstreamModel` * | `string` | — |
 | `perUserRpm` * | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. |
 

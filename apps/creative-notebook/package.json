@@ -1,0 +1,14 @@
+{
+  "name": "pollinations-creative-notebook",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "source-copy": "node --input-type=module -e \"import fs from 'node:fs'; fs.mkdirSync('source', {recursive:true}); for (const f of ['notebook.html', 'study.js', 'package.json', 'study.test.js']) fs.copyFileSync(f, 'source/' + f + '.txt');\"",
+    "dev": "npm run source-copy && notebooks preview --root .",
+    "build": "npm run source-copy && notebooks build --root . -- notebook.html",
+    "test": "node --test study.test.js"
+  },
+  "dependencies": {
+    "@observablehq/notebook-kit": "2.8.0"
+  }
+}

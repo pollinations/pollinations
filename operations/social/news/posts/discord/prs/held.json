@@ -18,8 +18,7 @@
       "merge_sha": "a69766cd1052803cdde4c3a8b2e16fc724f8ecca",
       "merged_at": "2026-10-30T23:53:02Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-portkey-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "18816": {

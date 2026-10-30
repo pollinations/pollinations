@@ -227,7 +227,7 @@ describe("static provider fallbacks", () => {
         ["anthropic/claude-haiku-5.5", "claude-haiku-5-5", "anthropic"],
         ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", "anthropic"],
         ["anthropic/claude-opus-5.5", "claude-opus-5-5", "aws"],
-        ["anthropic/claude-fable-5.1", "claude-fable-5-1", "anthropic"],
+        ["anthropic/claude-fable-5.1", "claude-fable-5-1", "aws"],
     ] as const)(
         "keeps the configured primary and fallback for %s",
         (model, upstream, provider) => {

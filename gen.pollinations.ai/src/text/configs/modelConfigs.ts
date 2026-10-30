@@ -1209,13 +1209,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1": () =>
-        createAnthropicConfig({
-            model: "claude-fable-5-1",
-            defaultOptions: { max_tokens: 128000 },
-        }),
-    "anthropic/claude-fable-5.1:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-fable-5-1",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.1:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>

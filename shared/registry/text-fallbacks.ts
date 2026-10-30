@@ -744,8 +744,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-fable-5.1": {
-        "anthropic/claude-fable-5.1:aws": {
-            provider: "aws",
+        "anthropic/claude-fable-5.1:anthropic": {
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },

@@ -645,7 +645,7 @@ describe("resolveModelConfig", () => {
         ["anthropic/claude-haiku-5.5", "claude-haiku-5-5", "anthropic"],
         ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", "anthropic"],
         ["anthropic/claude-opus-5.5", "claude-opus-5-5", "bedrock"],
-        ["anthropic/claude-fable-5.1", "claude-fable-5-1", "anthropic"],
+        ["anthropic/claude-fable-5.1", "claude-fable-5-1", "bedrock"],
     ])(
         "resolves the configured primary and fallback for %s",
         (model, upstream, provider) => {

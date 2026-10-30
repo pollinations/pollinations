@@ -20,6 +20,8 @@ import io
 import base64
 from contextlib import asynccontextmanager
 
+from dimensions import nearest_valid_dimensions
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -163,52 +165,6 @@ async def lifespan(app: FastAPI):
             except asyncio.CancelledError:
                 pass
 
-def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
-    """Find the nearest dimensions that are multiples of 8 and their product is divisible by 65536.
-    Also enforces a maximum total pixel count to prevent CUDA OOM errors."""
-    # Validate input dimensions to prevent CUDA kernel crashes from malformed requests
-    # Max reasonable dimension is 8192 (8K resolution)
-    MAX_DIMENSION = 8192
-    MIN_DIMENSION = 64
-    
-    if width > MAX_DIMENSION or height > MAX_DIMENSION:
-        raise ValueError(f"Dimensions too large: {width}x{height}. Maximum allowed is {MAX_DIMENSION}x{MAX_DIMENSION}")
-    if width < MIN_DIMENSION or height < MIN_DIMENSION:
-        raise ValueError(f"Dimensions too small: {width}x{height}. Minimum allowed is {MIN_DIMENSION}x{MIN_DIMENSION}")
-    
-    start_w = round(width)
-    start_h = round(height)
-    
-    # Scale down proportionally if total pixels exceed limit
-    current_pixels = start_w * start_h
-    if current_pixels > MAX_PIXELS:
-        scale = (MAX_PIXELS / current_pixels) ** 0.5
-        start_w = round(start_w * scale)
-        start_h = round(start_h * scale)
-    
-    def is_valid(w: int, h: int) -> bool:
-        return w % 8 == 0 and h % 8 == 0 and (w * h) % 65536 == 0
-    
-    # Find nearest multiple of 8 for each dimension
-    nearest_w = round(start_w / 8) * 8
-    nearest_h = round(start_h / 8) * 8
-    
-    # Search in a spiral pattern from the nearest multiples of 8
-    offset = 0
-    while offset < 100:  # Limit search to reasonable range
-        for w in range(nearest_w - offset * 8, nearest_w + offset * 8 + 1, 8):
-            if w <= 0:
-                continue
-            for h in range(nearest_h - offset * 8, nearest_h + offset * 8 + 1, 8):
-                if h <= 0:
-                    continue
-                if is_valid(w, h):
-                    return w, h
-        offset += 1
-    
-    # If no valid dimensions found, return the nearest multiples of 8
-    return nearest_w, nearest_h
-
 app = FastAPI(title="FLUX Image Generation API", lifespan=lifespan)
 
 # Auth verification
@@ -248,7 +204,9 @@ async def _generate(request: ImageRequest):
     
     # Find nearest valid dimensions (with input validation)
     try:
-        width, height = find_nearest_valid_dimensions(request.width, request.height)
+        width, height = nearest_valid_dimensions(
+            request.width, request.height, MAX_PIXELS
+        )
     except ValueError as e:
         logger.error(f"Invalid dimensions: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))

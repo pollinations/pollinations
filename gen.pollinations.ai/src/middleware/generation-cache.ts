@@ -4,6 +4,10 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
+import {
+    AUTHENTICATION_REQUIRED_MESSAGE,
+    type AuthVariables,
+} from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 
 export type GenerationCacheStorage = "media" | "text";
@@ -44,7 +48,10 @@ export type GenerationCacheVariables = {
 
 export type GenerationCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables &
+        GenerationCacheVariables &
+        Partial<AuthVariables>;
 };
 
 export type GenerationCacheAdapter = {
@@ -61,6 +68,15 @@ export type GenerationCacheAdapter = {
         key: string,
         response: Response,
     ) => { response: Response; write: Promise<void> };
+    /**
+     * Whether a caller must be authorised before receiving a cache hit.
+     *
+     * A hit is free to serve, but it is still the output of a generation the
+     * model's permissions govern. A paid-only model must not answer an
+     * anonymous caller just because another caller paid for the generation
+     * first. Unset (the default) keeps a cache hit a public read.
+     */
+    requiresAuthorisedHit?: (c: Context<GenerationCacheEnv>) => boolean;
 };
 
 /** One stable identity per JSON body: key order and the `key` credential do not matter. */
@@ -229,9 +245,9 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         ).track;
         const coordinate = track?.streamRequested !== true;
 
+        let cached: Response | null = null;
         try {
-            const cached = await lookup(c, adapter, cacheKey);
-            if (cached) return cached;
+            cached = await lookup(c, adapter, cacheKey);
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });
             if (coordinate) {
@@ -240,6 +256,20 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
                     cause: error,
                 });
             }
+        }
+        if (cached) {
+            // Outside the try above: an unauthorised hit must surface as 401,
+            // never as a cache failure.
+            if (adapter.requiresAuthorisedHit?.(c)) {
+                const auth = c.var.auth;
+                if (!auth) {
+                    throw new HTTPException(401, {
+                        message: AUTHENTICATION_REQUIRED_MESSAGE,
+                    });
+                }
+                auth.requireUser();
+            }
+            return cached;
         }
 
         if (coordinate) {

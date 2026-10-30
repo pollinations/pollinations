@@ -6,11 +6,17 @@ import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import {
+    AUTHENTICATION_REQUIRED_MESSAGE,
+    type AuthVariables,
+} from "@/middleware/auth.ts";
 import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
 import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 
@@ -24,7 +30,10 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables &
+        GenerationCacheVariables &
+        Partial<AuthVariables & ModelVariables>;
 };
 
 type MediaCache = typeof imageCache;
@@ -35,11 +44,72 @@ function createMediaCacheApp(cache: MediaCache, contentType: string) {
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "test-request");
+            // Public model: anonymous cache hits stay allowed.
+            c.set("model", {
+                requested: "test-model",
+                resolved: "test-model",
+                definition: { paidOnly: false },
+            } as unknown as ModelVariables["model"]);
             await next();
         })
         .get(
             "/media/:prompt",
             cache,
+            async (c, next) => {
+                if (c.req.header("authorization") !== "Bearer test-key") {
+                    return new Response("Authentication required", {
+                        status: 401,
+                    });
+                }
+                await next();
+            },
+            async () => {
+                originHits += 1;
+                return new Response(`origin:${originHits}`, {
+                    headers: { "Content-Type": contentType },
+                });
+            },
+        );
+
+    return {
+        app,
+        get originHits() {
+            return originHits;
+        },
+    };
+}
+
+/**
+ * Media cache app whose model is paid-only or public. The route after the cache
+ * insists on a key, so only a cache hit could answer anonymously.
+ */
+function createGatedMediaCacheApp(chargesPollen: boolean, contentType: string) {
+    let originHits = 0;
+    const definition = {
+        paidOnly: chargesPollen,
+    } as unknown as ModelVariables["model"]["definition"];
+    const app = new Hono<TestEnv>()
+        .use("*", async (c, next) => {
+            c.set("log", testLog);
+            c.set("requestId", "test-request");
+            c.set("model", {
+                requested: "test-model",
+                resolved: "test-model",
+                definition,
+            } as unknown as ModelVariables["model"]);
+            c.set("auth", {
+                requireUser() {
+                    throw new HTTPException(401, {
+                        message: AUTHENTICATION_REQUIRED_MESSAGE,
+                    });
+                },
+                requireModelAccess() {},
+            } as unknown as AuthVariables["auth"]);
+            await next();
+        })
+        .get(
+            "/media/:prompt",
+            imageCache,
             async (c, next) => {
                 if (c.req.header("authorization") !== "Bearer test-key") {
                     return new Response("Authentication required", {
@@ -183,6 +253,7 @@ describe("media cache", () => {
     ])(
         "serves cached $label responses before auth while misses still require auth",
         async ({ cache, contentType }) => {
+            // Public cache hits are the documented behaviour for free models.
             const media = createMediaCacheApp(cache, contentType);
             const env = createMediaCacheEnv();
 
@@ -221,6 +292,48 @@ describe("media cache", () => {
             );
             expect(missNoAuth.response.status).toBe(401);
             expect(media.originHits).toBe(1);
+        },
+    );
+
+    it.each([
+        { chargesPollen: true, label: "paid-only" },
+        { chargesPollen: false, label: "public" },
+    ])(
+        "requires auth for cached $label media hits only",
+        async ({ chargesPollen }) => {
+            const contentType = "image/png";
+            const bucket = createTestR2Bucket();
+            const env = createMediaCacheEnv(bucket);
+            const app = createGatedMediaCacheApp(chargesPollen, contentType);
+
+            const warm = await dispatch(app.app, "/media/gated", {
+                headers: { Authorization: "Bearer test-key" },
+            });
+            expect(await consumeAndWait(warm)).toBe("origin:1");
+
+            const anonHit = await dispatch(
+                app.app,
+                "/media/gated",
+                undefined,
+                env,
+            );
+            const anonBody = await consumeAndWait(anonHit);
+            if (chargesPollen) {
+                expect(anonHit.response.status).toBe(401);
+                expect(anonBody).toContain("A valid API key is required");
+                expect(app.originHits).toBe(1);
+            } else {
+                expect(anonHit.response.status).toBe(200);
+                expect(anonBody).toBe("origin:1");
+                expect(anonHit.response.headers.get("X-Cache")).toBe("HIT");
+            }
+
+            // The entry still serves an authorised caller in both cases.
+            const paidHit = await dispatch(app.app, "/media/gated", {
+                headers: { Authorization: "Bearer test-key" },
+            });
+            expect(await consumeAndWait(paidHit)).toBe("origin:1");
+            expect(paidHit.response.headers.get("X-Cache")).toBe("HIT");
         },
     );
 

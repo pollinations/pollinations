@@ -3086,6 +3086,7 @@ test("setup rewards: a failed decision write records no setup reward until the n
             FARM_NETWORK,
         );
         expect(failed.recorded).toBe(1);
+        expect(failed.success).toBe(false);
     } finally {
         await env.DB.exec(
             "ALTER TABLE setup_reward_decision_offline RENAME TO setup_reward_decision",
@@ -3101,6 +3102,7 @@ test("setup rewards: a failed decision write records no setup reward until the n
         FARM_NETWORK,
     );
     expect(retried.recorded).toBe(1);
+    expect(retried.success).toBe(true);
     expect(await setupDecision(id)).toMatchObject({ network: FARM_NETWORK });
     expect((await questReward(id, "first_api_key")).claimedAt).not.toBeNull();
 });

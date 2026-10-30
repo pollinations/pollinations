@@ -78,6 +78,7 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
+    let setupDecisionFailed = false;
     if (proposals.some(({ quest }) => quest.category === "setup")) {
         try {
             await recordSetupRewardDecision(env.DB, {
@@ -90,6 +91,7 @@ export async function checkQuestsForUser(
             // Without a decision row, no setup reward is recorded; the next
             // quest check retries.
             log.error("QUEST_CHECK_SETUP_DECISION_FAILED: {error}", { error });
+            setupDecisionFailed = true;
             proposals = proposals.filter(
                 ({ quest }) => quest.category !== "setup",
             );
@@ -133,7 +135,9 @@ export async function checkQuestsForUser(
     }
 
     const result = {
-        success: sourceResults.every((entry) => !entry.error),
+        success:
+            !setupDecisionFailed &&
+            sourceResults.every((entry) => !entry.error),
         recorded: recorded.recorded,
         rewardIds: recorded.rewardIds,
         progress: sourceResults.flatMap((entry) => entry.progress ?? []),

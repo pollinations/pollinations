@@ -6,8 +6,11 @@ import {
     DAILY_LIMIT,
     evidence,
     investigates,
+    MAX_REPORT,
+    MAX_TOOL_CALLS,
     MODEL,
     reply,
+    toolsFor,
 } from "./investigate.js";
 
 const row = (model, extra = {}) => ({
@@ -71,29 +74,40 @@ test("platform-drop evidence lists official models that lost the most traffic", 
     assert.ok(!JSON.stringify(e).includes(owned));
 });
 
-test("reply keeps a WHY line and one sentence, and rejects anything else", () => {
-    assert.deepEqual(reply("WHY vercel 5xx (20)\nProvider issue.\nextra"), [
-        "WHY vercel 5xx (20)",
-        "Provider issue.",
-    ]);
+test("reply keeps WHY, a sentence and up to 12 evidence lines, within Discord's limit", () => {
+    const evidenceLines = Array.from({ length: 20 }, (_, i) => `- line ${i}`);
+    const lines = reply(
+        ["WHY vercel 5xx (20)", "Provider issue.", ...evidenceLines].join("\n"),
+    );
+    assert.equal(lines[0], "WHY vercel 5xx (20)");
+    assert.equal(lines.length, 14);
     assert.equal(reply("The model is fine."), null);
     assert.equal(reply(""), null);
-    const [why] = reply(`WHY ${"x".repeat(500)}\nok`);
-    assert.ok(why.length <= 200);
+    const long = reply(
+        [`WHY ${"x".repeat(500)}`, ...Array(14).fill("y".repeat(300))].join(
+            "\n",
+        ),
+    );
+    assert.ok(long.join("\n").length <= MAX_REPORT);
+});
+
+const answer = (message) => ({
+    ok: true,
+    json: async () => ({ choices: [{ message }] }),
+});
+const toolCall = (name, args, id = "call_1") => ({
+    id,
+    type: "function",
+    function: { name, arguments: JSON.stringify(args) },
 });
 
 test("ask sends the key only as a header and parses the answer", async () => {
     let sent;
     const fetchImpl = async (url, init) => {
         sent = { url, init, body: JSON.parse(init.body) };
-        return {
-            ok: true,
-            json: async () => ({
-                choices: [{ message: { content: "WHY x\nSentence." } }],
-            }),
-        };
+        return answer({ content: "WHY x\nSentence." });
     };
-    const lines = await ask("sk_test", { alert: {} }, { fetchImpl });
+    const lines = await ask("sk_test", { alert: {} }, {}, { fetchImpl });
     assert.deepEqual(lines, ["WHY x", "Sentence."]);
     assert.equal(sent.init.headers.authorization, "Bearer sk_test");
     assert.equal(sent.body.model, MODEL);
@@ -101,12 +115,119 @@ test("ask sends the key only as a header and parses the answer", async () => {
 });
 
 test("ask fails loudly on an error response", async () => {
-    const fetchImpl = async () => ({
-        ok: false,
-        status: 402,
-        text: async () => "",
+    const fetchImpl = async () => ({ ok: false, status: 402 });
+    await assert.rejects(ask("sk_test", {}, {}, { fetchImpl }), /402/);
+});
+
+test("ask runs the tools the model calls and returns its final answer", async () => {
+    const bodies = [];
+    const replies = [
+        answer({
+            content: null,
+            tool_calls: [toolCall("model_status", { model: "a/model" })],
+        }),
+        answer({ content: "WHY x\nSentence." }),
+    ];
+    const fetchImpl = async (_url, init) => {
+        bodies.push(JSON.parse(init.body));
+        return replies.shift();
+    };
+    const tools = { model_status: ({ model }) => ({ model, rows: [] }) };
+    const lines = await ask("sk_test", {}, tools, { fetchImpl });
+    assert.deepEqual(lines, ["WHY x", "Sentence."]);
+    const result = bodies[1].messages.at(-1);
+    assert.equal(result.role, "tool");
+    assert.equal(result.tool_call_id, "call_1");
+    assert.deepEqual(JSON.parse(result.content), {
+        model: "a/model",
+        rows: [],
     });
-    await assert.rejects(ask("sk_test", {}, { fetchImpl }), /402/);
+});
+
+test("ask stops offering tools after MAX_TOOL_CALLS", async () => {
+    const bodies = [];
+    const fetchImpl = async (_url, init) => {
+        const body = JSON.parse(init.body);
+        bodies.push(body);
+        return body.tool_choice === "none"
+            ? answer({ content: "WHY x\nSentence." })
+            : answer({
+                  content: null,
+                  tool_calls: [toolCall("model_status", { model: "a/model" })],
+              });
+    };
+    const tools = { model_status: () => ({ rows: [] }) };
+    await ask("sk_test", {}, tools, { fetchImpl });
+    const toolResults = bodies.at(-1).messages.filter((m) => m.role === "tool");
+    assert.equal(toolResults.length, MAX_TOOL_CALLS);
+});
+
+test("a batch of tool calls cannot run past MAX_TOOL_CALLS", async () => {
+    let executed = 0;
+    const batch = Array.from({ length: MAX_TOOL_CALLS + 1 }, (_, i) =>
+        toolCall("model_status", { model: "a/model" }, `call_${i}`),
+    );
+    const replies = [
+        answer({ content: null, tool_calls: batch }),
+        answer({ content: "WHY x\nSentence." }),
+    ];
+    const bodies = [];
+    const fetchImpl = async (_url, init) => {
+        bodies.push(JSON.parse(init.body));
+        return replies.shift();
+    };
+    const tools = {
+        model_status: () => {
+            executed++;
+            return { rows: [] };
+        },
+    };
+    await ask("sk_test", {}, tools, { fetchImpl });
+    assert.equal(executed, MAX_TOOL_CALLS);
+    // Every call still gets an answer, as the chat protocol requires.
+    const results = bodies[1].messages.filter((m) => m.role === "tool");
+    assert.equal(results.length, MAX_TOOL_CALLS + 1);
+    assert.ok("error" in JSON.parse(results.at(-1).content));
+});
+
+test("unknown tools and bad arguments come back as errors, not crashes", async () => {
+    const bodies = [];
+    const replies = [
+        answer({
+            content: null,
+            tool_calls: [
+                toolCall("shell", { cmd: "ls" }, "call_1"),
+                {
+                    id: "call_2",
+                    type: "function",
+                    function: { name: "model_status", arguments: "{oops" },
+                },
+            ],
+        }),
+        answer({ content: "WHY x\nSentence." }),
+    ];
+    const fetchImpl = async (_url, init) => {
+        bodies.push(JSON.parse(init.body));
+        return replies.shift();
+    };
+    const tools = { model_status: () => ({ rows: [] }) };
+    await ask("sk_test", {}, tools, { fetchImpl });
+    const results = bodies[1].messages.filter((m) => m.role === "tool");
+    assert.ok(results.every((m) => "error" in JSON.parse(m.content)));
+});
+
+test("model_status returns allowlisted rows for official models only", () => {
+    const data = {
+        recent: [row("a/model")],
+        last60: [row("a/model"), row("a/model", { is_rollup: 0 })],
+        official: new Set(["a/model"]),
+    };
+    const { model_status } = toolsFor(data);
+    const hour = model_status({ model: "a/model", minutes: 60 });
+    assert.equal(hour.rows.length, 2);
+    assert.equal(hour.rows[0].tokens_per_second, undefined);
+    assert.equal(model_status({ model: "a/model" }).rows.length, 1);
+    assert.ok("error" in model_status({ model: "community/x/y" }));
 });
 
 test("at most DAILY_LIMIT investigations per UTC day", () => {

@@ -37,7 +37,7 @@ class ClassificationTest(unittest.TestCase):
         with patch.object(manager, "IS_PULL_REQUEST", True), \
              patch.object(manager, "fetch_pr_files", return_value=[{"filename": "shared/registry/text.ts", "patch": "-old\n+fixed"}]), \
              patch.object(manager, "closing_issues", return_value=linked), \
-             patch.object(manager, "ask_ai", return_value={"area": "Models", "type": "Bug", "reward": 3, "reward_reason": "Fixes a model."}) as ask:
+             patch.object(manager, "ask_ai", return_value={"area": "Models", "type": "Bug"}) as ask:
             answer = manager.classify("brief", ["Models"])
         self.assertEqual(answer["type"], "Bug")
         prompt = ask.call_args.args[1]
@@ -57,51 +57,24 @@ class ClassificationTest(unittest.TestCase):
              patch.object(manager, "dev_fields", return_value=fields), \
              patch.object(manager, "fetch_pr_files", return_value=[]), \
              patch.object(manager, "closing_issues", return_value=[]), \
-             patch.object(manager, "ask_ai", return_value={"area": None, "reward": 0, "reward_reason": "Promotion only."}), \
+             patch.object(manager, "ask_ai", return_value={"area": None}), \
              patch.object(manager, "add_to_dev", return_value="item"), \
              patch.object(manager, "set_field") as write, \
-             patch.object(manager, "set_issue_type") as native_type, \
-             patch.object(manager, "write_reward_comment") as quote:
+             patch.object(manager, "set_issue_type") as native_type:
             manager.main()
             result = json.loads((Path(directory) / "classification.json").read_text())
             self.assertEqual(result, {"area": None, "type": None, "source": "Community"})
         write.assert_any_call("item", fields["Work type"], None)
         native_type.assert_not_called()
-        self.assertEqual(quote.call_args.args[0]["reward"], 0)
 
     def test_missing_linked_issue_node_fails_and_is_not_cached(self):
         manager.closing_issues.cache_clear()
-        linked = {"node": {"closingIssuesReferences": {"nodes": [], "pageInfo": {"hasNextPage": False, "endCursor": None}}}}
+        linked = {"node": {"closingIssuesReferences": {"nodes": []}}}
         with patch.object(manager, "graphql_request", side_effect=[{}, linked]):
             with self.assertRaises(SystemExit):
                 manager.closing_issues()
             self.assertEqual(manager.closing_issues(), [])
         manager.closing_issues.cache_clear()
-
-    def test_linked_issues_are_paginated_before_bounty_sum(self):
-        manager.closing_issues.cache_clear()
-        def page(number, cursor, repo="pollinations/pollinations"):
-            return {"node": {"closingIssuesReferences": {"nodes": [{"number": number, "repository": {"nameWithOwner": repo}}],
-                            "pageInfo": {"hasNextPage": cursor is not None, "endCursor": cursor}}}}
-        with patch.object(manager, "graphql_request", side_effect=[page(1, "next"), page(2, "last", "someone/else"), page(3, None)]) as read:
-            self.assertEqual([issue["number"] for issue in manager.closing_issues()], [1, 3])
-            self.assertEqual(read.call_args_list[1].args[1]["after"], "next")
-        manager.closing_issues.cache_clear()
-
-    def test_full_dry_run_keeps_github_unchanged(self):
-        fields = {name: {"id": name, "options": {}} for name in ("Area", "Source", "Priority")}
-        with patch.multiple(manager, IS_PULL_REQUEST=False, ISSUE_NUMBER=42, ISSUE_NODE_ID="issue",
-                            GITHUB_TOKEN="test", POLLINATIONS_TOKEN="test", GITHUB_EVENT={},
-                            ITEM_DATA={"state": "open", "labels": []}, DRY_RUN=True), \
-             patch.object(manager, "dev_fields", return_value=fields), \
-             patch.object(manager, "current_priority", return_value=None), \
-             patch.object(manager, "ask_ai", return_value={"area": "Models", "type": "Bug", "priority": "High", "reward": 1, "reward_reason": "Useful report."}), \
-             patch.object(manager, "graphql_request") as graphql, \
-             patch.object(manager.requests, "post") as create, patch.object(manager.requests, "patch") as edit:
-            manager.main()
-        graphql.assert_not_called()
-        create.assert_not_called()
-        edit.assert_not_called()
 
 
 class RewardTest(unittest.TestCase):
@@ -116,101 +89,90 @@ class RewardTest(unittest.TestCase):
             with self.subTest(reason=reason), self.assertRaises(ValueError):
                 manager.reward_answer({"reward": 3, "reward_reason": reason})
 
-    def test_diff_input_is_bounded_and_bot_amount_is_zero(self):
+    def test_diff_input_is_bounded(self):
         with patch.object(manager, "IS_PULL_REQUEST", True), \
-             patch.object(manager, "ITEM_DATA", {"user": {"type": "Bot"}}), \
              patch.object(manager, "fetch_pr_files", return_value=[{"filename": "large.ts", "patch": "+code\n" * 10_000}]), \
              patch.object(manager, "closing_issues", return_value=[]), \
-             patch.object(manager, "ask_ai", return_value={"area": "Models", "type": "Bug", "reward": 100, "reward_reason": "Expensive."}) as ask:
-            answer = manager.classify("brief", ["Models"])
-        self.assertEqual(answer["reward"], 0)
+             patch.object(manager, "ask_ai", return_value={"area": "Models", "type": "Bug", "reward": 3, "reward_reason": "Fix."}) as ask:
+            manager.classify("brief", ["Models"])
         excerpts = ask.call_args.args[1].split("Untrusted diff excerpts (may be incomplete):\n", 1)[1].rstrip()
         self.assertLessEqual(len(excerpts), manager.MAX_PATCH_CHARS)
 
-    def test_exact_quest_promises_replace_ai_amount(self):
-        def issue(number, body):
-            return {"number": number, "body": body, "labels": {"nodes": [{"name": "POLLEN-QUEST"}]}}
-        with patch.object(manager, "closing_issues", return_value=[issue(1, "### Reward\n2.5 Pollen\n"), issue(2, "### Reward\n3.5\n")]):
-            self.assertEqual(manager.closing_bounty_reward()["reward"], 6)
-        with patch.object(manager, "closing_issues", return_value=[issue(17689, "### Reward\n\n10 Pollen per merged server\n")]):
-            self.assertEqual(manager.closing_bounty_reward()["reward"], 10)
-        for body in ("### Reward\n101", "### Reward\n0", "### Reward\n-3", "### Reward\n3oops", "no reward"):
-            with self.subTest(body=body), patch.object(manager, "closing_issues", return_value=[issue(1, body)]):
-                self.assertEqual(manager.closing_bounty_reward()["reward"], 0)
-        with patch.object(manager, "closing_issues", return_value=[issue(1, "### Reward\n70"), issue(2, "### Reward\n40")]):
-            self.assertEqual(manager.closing_bounty_reward()["reward"], 0)
+    def test_app_submissions_and_census_responses_get_no_model_call_or_quote(self):
+        fields = {name: {"id": name, "options": {}} for name in ("Area", "Source", "Priority")}
+        for label in ("APP-SUBMISSION", "HONEY-CENSUS"):
+            item = {"state": "open", "created_at": "2026-11-03T00:00:00Z", "user": {"type": "User"}, "labels": [{"name": label}]}
+            with self.subTest(label=label), \
+                 patch.multiple(manager, IS_PULL_REQUEST=False, ISSUE_NUMBER=42, ISSUE_NODE_ID="issue", GITHUB_TOKEN="test",
+                                POLLINATIONS_TOKEN="test", GITHUB_EVENT={}, ITEM_DATA=item, DRY_RUN=True), \
+                 patch.object(manager, "dev_fields", return_value=fields), \
+                 patch.object(manager, "ask_ai") as ask, \
+                 patch.object(manager, "write_reward_comment") as quote:
+                manager.main()
+            ask.assert_not_called()
+            quote.assert_not_called()
 
 
 class RewardCommentTest(unittest.TestCase):
     def setUp(self):
-        self.head = "a" * 40
-        self.item = {"state": "open", "title": "Useful fix", "body": "Details", "head": {"sha": self.head}, "user": {"type": "User"}}
-        self.context = patch.multiple(manager, IS_PULL_REQUEST=True, ISSUE_NUMBER=42,
-                                      ISSUE_TITLE=self.item["title"], ISSUE_BODY=self.item["body"],
-                                      ITEM_DATA=self.item, DRY_RUN=False)
+        self.item = {"state": "open", "created_at": "2026-11-03T00:00:00Z", "user": {"type": "User"}}
+        self.context = patch.multiple(manager, IS_PULL_REQUEST=True, ISSUE_NUMBER=42, ITEM_DATA=self.item,
+                                      DRY_RUN=False, CONTRIBUTION_REWARD_KEY="test-contribution-reward-key")
         self.context.start()
         self.addCleanup(self.context.stop)
         self.answer = {"reward": 2.5, "reward_reason": "Corrects a reproducible bug."}
 
-    def response(self, data):
-        return Mock(json=Mock(return_value=data))
+    def comments(self, *pages):
+        return [Mock(json=Mock(return_value=page)) for page in pages]
 
-    def comment(self, comment_id, user=None, body=None):
-        return {"id": comment_id,
-                "body": body or manager.REWARD_COMMENT_MARKER + "\nReward: 1 quest",
-                "user": user or {"id": manager.REWARD_BOT_ID, "type": "Bot", "login": "pollinations-ai[bot]"}}
-
-    def test_creates_one_quote_without_editing_human_or_impersonated_comments(self):
-        comments = [self.comment(1, {"id": 5099901, "type": "User", "login": "voodoohop"}),
-                    self.comment(2, {"id": 123, "type": "Bot", "login": "pollinations-ai[bot]"})]
-        with patch.object(manager.requests, "get", side_effect=[self.response(comments), self.response(self.item)]), \
+    def test_posts_one_signed_quote(self):
+        # Same vector as the Enter test "quote signatures match the project manager's".
+        signature = "dab6089f5883a110b3d8d0533410801a48c26f6b6dc128d37dbb4ceece40033f"
+        others = [{"user": {"id": 123}, "body": manager.REWARD_COMMENT_MARKER + "\nReward: 100 quest"}]
+        with patch.object(manager.requests, "get", side_effect=self.comments(others)), \
              patch.object(manager.requests, "post") as create, patch.object(manager.requests, "patch") as edit:
             manager.write_reward_comment(self.answer)
-        create.assert_called_once()
         edit.assert_not_called()
         body = create.call_args.kwargs["json"]["body"]
-        self.assertTrue(body.startswith(manager.REWARD_COMMENT_MARKER + "\nReward: 2.5 quest\n"))
-        self.assertIn(f"<!-- head: {self.head} -->", body)
+        self.assertTrue(body.startswith(f"{manager.REWARD_COMMENT_MARKER}\nReward: 2.5 quest\n<!-- signature: {signature} -->\n"))
+        self.assertIn("POLLEN-QUEST", body)
         self.assertIn("https://enter.pollinations.ai/quests", body)
 
-    def test_updates_own_quote_beyond_first_comment_page(self):
-        others = [self.comment(i, {"id": 123, "type": "User"}) for i in range(100)]
-        with patch.object(manager.requests, "get", side_effect=[self.response(others), self.response([self.comment(200)]), self.response(self.item)]) as read, \
-             patch.object(manager.requests, "post") as create, patch.object(manager.requests, "patch") as edit:
+    def test_an_existing_quote_is_never_repriced(self):
+        page = [{"user": {"id": 123}, "body": "discussion"}] * 100
+        quote = {"user": {"id": manager.REWARD_BOT_ID}, "body": manager.REWARD_COMMENT_MARKER + "\nReward: 1 quest"}
+        with patch.object(manager.requests, "get", side_effect=self.comments(page, [quote])) as read, \
+             patch.object(manager.requests, "post") as create:
             manager.write_reward_comment(self.answer)
         self.assertEqual(read.call_args_list[1].kwargs["params"]["page"], 2)
         create.assert_not_called()
-        edit.assert_called_once()
-        self.assertTrue(edit.call_args.args[0].endswith("/issues/comments/200"))
 
-    def test_dry_run_and_closed_items_do_not_write(self):
-        for changes in ({"DRY_RUN": True}, {"ITEM_DATA": {**self.item, "state": "closed"}},
-                        {"ITEM_DATA": {**self.item, "merged_at": "2026-10-30T00:00:00Z"}}):
+    def test_skips_bots_closed_and_pre_rollout_items_and_dry_runs(self):
+        for changes in ({"ITEM_DATA": {**self.item, "user": {"type": "Bot"}}},
+                        {"ITEM_DATA": {**self.item, "state": "closed"}},
+                        {"ITEM_DATA": {**self.item, "created_at": "2026-11-01T23:59:59Z"}},
+                        {"DRY_RUN": True}):
             with self.subTest(changes=changes), patch.multiple(manager, **changes), \
-                 patch.object(manager.requests, "get") as read, patch.object(manager.requests, "post") as create, \
-                 patch.object(manager.requests, "patch") as edit:
+                 patch.object(manager.requests, "get") as read, patch.object(manager.requests, "post") as create:
                 manager.write_reward_comment(self.answer)
                 read.assert_not_called()
                 create.assert_not_called()
-                edit.assert_not_called()
 
-    def test_changed_or_closed_live_item_does_not_get_a_stale_quote(self):
-        for changes in ({"state": "closed"}, {"head": {"sha": "b" * 40}}, {"body": "new scope"}):
-            with self.subTest(changes=changes), \
-                 patch.object(manager.requests, "get", side_effect=[self.response([]), self.response({**self.item, **changes})]), \
-                 patch.object(manager.requests, "post") as create, patch.object(manager.requests, "patch") as edit:
-                manager.write_reward_comment(self.answer)
-                create.assert_not_called()
-                edit.assert_not_called()
+    def test_invalid_reward_or_missing_key_fails_without_posting(self):
+        for answer, key in (({"reward": 101, "reward_reason": "Too much."}, "key"), (self.answer, None)):
+            with self.subTest(answer=answer, key=key), patch.object(manager, "CONTRIBUTION_REWARD_KEY", key), \
+                 patch.object(manager.requests, "post") as create, self.assertRaises(SystemExit):
+                manager.write_reward_comment(answer)
+            create.assert_not_called()
 
-    def test_issue_quote_has_no_pr_head(self):
+    def test_issue_quote_names_the_issue_author(self):
         with patch.object(manager, "IS_PULL_REQUEST", False), \
-             patch.object(manager.requests, "get", side_effect=[self.response([]), self.response(self.item)]), \
+             patch.object(manager.requests, "get", side_effect=self.comments([])), \
              patch.object(manager.requests, "post") as create:
             manager.write_reward_comment(self.answer)
         body = create.call_args.kwargs["json"]["body"]
-        self.assertNotIn("<!-- head:", body)
         self.assertIn("The issue author", body)
+        self.assertNotIn("POLLEN-QUEST", body)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@ project-manager.md is the brief: the only definition of areas, types and priorit
 import sys
 import os
 import json
+import hashlib
+import hmac
 import math
 import re
 import requests
@@ -65,6 +67,9 @@ NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
 REWARD_COMMENT_MARKER = "<!-- pollinations-reward -->"
 REWARD_BOT_ID = 247793354
+CONTRIBUTION_REWARD_KEY = os.getenv("CONTRIBUTION_REWARD_KEY")
+# Same date as REWARDS_START in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
+REWARDS_START = "2026-11-02T00:00:00Z"
 MAX_REWARD = 100
 MAX_PATCH_CHARS = 20_000
 
@@ -205,25 +210,16 @@ def author_source() -> str:
 @cache
 def closing_issues() -> list:
     """Linked issues provide Source labels and work-type hints."""
-    issues = []
-    after = None
-    while True:
-        data = graphql_request(
-            """query($id: ID!, $after: String) { node(id: $id) { ... on PullRequest { closingIssuesReferences(first: 100, after: $after) {
-                nodes { number body repository { nameWithOwner } issueType { name } labels(first: 100) { nodes { name } } }
-                pageInfo { hasNextPage endCursor }
-            } } } }""",
-            {"id": ISSUE_NODE_ID, "after": after},
-        )
-        node = data.get("node")
-        if node is None:
-            fail(f"Failed to fetch linked issues for PR #{ISSUE_NUMBER}")
-        connection = node["closingIssuesReferences"]
-        issues.extend(issue for issue in connection["nodes"]
-                      if issue["repository"]["nameWithOwner"] == f"{REPO_OWNER}/{REPO_NAME}")
-        if not connection["pageInfo"]["hasNextPage"]:
-            return issues
-        after = connection["pageInfo"]["endCursor"]
+    data = graphql_request(
+        """query($id: ID!) { node(id: $id) { ... on PullRequest { closingIssuesReferences(first: 30) { nodes {
+            number issueType { name } labels(first: 20) { nodes { name } }
+        } } } } }""",
+        {"id": ISSUE_NODE_ID},
+    )
+    node = data.get("node")
+    if node is None:
+        fail(f"Failed to fetch linked issues for PR #{ISSUE_NUMBER}")
+    return node["closingIssuesReferences"]["nodes"]
 
 
 def item_source(labels: set) -> str:
@@ -335,7 +331,7 @@ def fetch_pr_files() -> list:
 
 
 def classify(brief: str, areas: list) -> dict:
-    """Classify and assess the same item with one model call."""
+    """Classify and quote the same item with one model call; the quote is validated when it is written."""
     if IS_PULL_REQUEST:
         files = fetch_pr_files()
         facts = f"Changed files ({len(files)}):\n" + "\n".join(file["filename"] for file in files[:300])
@@ -361,14 +357,8 @@ Labels: {json.dumps([label.get('name') for label in ITEM_DATA.get('labels', [])]
     if raw is None:
         fail(f"AI classification failed for #{ISSUE_NUMBER}")
     try:
-        answer = {**classification_answer(raw, areas, IS_PULL_REQUEST), **reward_answer(raw)}
-        if ITEM_DATA.get("user", {}).get("type") == "Bot":
-            answer.update(reward=0, reward_reason="Bot accounts do not earn contribution rewards.")
-        elif IS_PULL_REQUEST:
-            bounty = closing_bounty_reward()
-            if bounty is not None:
-                answer.update(bounty)
-        return answer
+        return {**classification_answer(raw, areas, IS_PULL_REQUEST),
+                "reward": raw.get("reward"), "reward_reason": raw.get("reward_reason")}
     except ValueError as error:
         fail(f"Invalid classification for #{ISSUE_NUMBER}: {error}")
 
@@ -398,76 +388,52 @@ def reward_answer(raw: dict) -> dict:
     return {"reward": amount, "reward_reason": " ".join(reason.split())}
 
 
-def closing_bounty_reward() -> Optional[dict]:
-    """A declared quest reward is the solver's promise, not an extra AI bonus."""
-    bounties = [issue for issue in closing_issues()
-                if any(label["name"] == "POLLEN-QUEST" for label in issue["labels"]["nodes"])]
-    if not bounties:
-        return None
-    total = Decimal(0)
-    for issue in bounties:
-        match = re.search(r"(?:^|\n)###\s*Reward\s*\n+\s*(\d+(?:\.\d+)?)(?=\s|$)", issue.get("body") or "", re.IGNORECASE)
-        if not match:
-            return {"reward": 0, "reward_reason": "A linked quest has an invalid reward. Elliot or Thomas must correct the advertised amount before merge."}
-        total += Decimal(match[1])
-    if not 0 < total <= MAX_REWARD:
-        return {"reward": 0, "reward_reason": "The linked quest rewards are outside the 0–100 Pollen limit. Elliot or Thomas must resolve the advertised amount before merge."}
-    return {"reward": float(total), "reward_reason": "This is the advertised solver reward for the linked quest(s), replacing the ordinary contribution reward."}
+def sign_reward(line: str) -> str:
+    """Enter pays a bot quote only with this signature, so other bot comments can't pose as one."""
+    message = f"{REPO_OWNER}/{REPO_NAME}#{ISSUE_NUMBER}\n{line}"
+    return hmac.new(CONTRIBUTION_REWARD_KEY.encode(), message.encode(), hashlib.sha256).hexdigest()
 
 
 def write_reward_comment(answer: dict):
-    """Maintain one bot-owned quote; this job never grants or claims Pollen."""
-    if ITEM_DATA.get("state") == "closed" or ITEM_DATA.get("merged_at"):
+    """Post the item's one signed quote. This job never grants or claims pollen, and never re-prices."""
+    # Bots earn nothing, and items opened before REWARDS_START keep the old fixed quest rewards.
+    if (ITEM_DATA.get("user", {}).get("type") == "Bot" or ITEM_DATA.get("state") != "open"
+            or ITEM_DATA.get("created_at", "") < REWARDS_START):
         return
-    lines = [REWARD_COMMENT_MARKER, f"Reward: {Decimal(str(answer['reward'])):f} quest"]
-    if IS_PULL_REQUEST:
-        head = ITEM_DATA.get("head", {}).get("sha", "")
-        if not re.fullmatch(r"[0-9a-f]{40}", head):
-            fail("Cannot quote a PR reward without its exact head SHA")
-        lines.append(f"<!-- head: {head} -->")
-    eligibility = "No contribution reward is offered by this assessment." if answer["reward"] == 0 else (
-        "The PR author can claim this reward after merge." if IS_PULL_REQUEST
-        else "The issue author can claim this reward after a merged PR closes this issue.")
-    lines.extend(["", f"Reason: {answer['reward_reason']}", "", eligibility,
-                  "Claim at https://enter.pollinations.ai/quests. Elliot or Thomas can override with a separate comment containing only `Reward: 3` (Quest) or `Reward: 3 paid`, from 0 to 100 Pollen."])
-    body = "\n".join(lines)
+    try:
+        reward = reward_answer(answer)
+    except ValueError as error:
+        fail(f"Invalid reward for #{ISSUE_NUMBER}: {error}")
+    if not CONTRIBUTION_REWARD_KEY:
+        fail("CONTRIBUTION_REWARD_KEY is required to sign reward quotes")
+    line = f"Reward: {Decimal(str(reward['reward'])):f} quest"
+    eligibility = "This assessment offers no contribution reward." if reward["reward"] == 0 else (
+        "The PR author can claim this after merge. If the PR closes a POLLEN-QUEST issue, that quest's bounty is paid instead." if IS_PULL_REQUEST
+        else "The issue author can claim this after a merged PR closes this issue.")
+    body = "\n".join([REWARD_COMMENT_MARKER, line, f"<!-- signature: {sign_reward(line)} -->", "",
+                      f"Reason: {reward['reward_reason']}", "", eligibility,
+                      "Claim at https://enter.pollinations.ai/quests. Elliot or Thomas can change it with a separate comment containing only `Reward: 3` (Quest) or `Reward: 3 paid`, from 0 to 100 pollen."])
     if DRY_RUN:
         print(f"DRY-RUN reward comment for #{ISSUE_NUMBER}:\n{body}")
         return
 
+    # One quote per item: a re-run, such as the manual dispatch, leaves it as it is.
     base = f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}"
-    existing = None
     page = 1
     while True:
         response = requests.get(f"{base}/issues/{ISSUE_NUMBER}/comments", headers=GITHUB_HEADERS,
                                 params={"per_page": 100, "page": page}, timeout=30)
         response.raise_for_status()
         comments = response.json()
-        existing = next((comment for comment in comments
-                         if comment.get("user", {}).get("id") == REWARD_BOT_ID
-                         and comment["user"].get("type") == "Bot"
-                         and comment["user"].get("login") == "pollinations-ai[bot]"
-                         and (comment.get("body") or "").startswith(REWARD_COMMENT_MARKER + "\n")), None)
-        if existing or len(comments) < 100:
+        if any(comment.get("user", {}).get("id") == REWARD_BOT_ID
+               and (comment.get("body") or "").startswith(REWARD_COMMENT_MARKER + "\n") for comment in comments):
+            log_debug(f"#{ISSUE_NUMBER} already has a reward quote; leaving it unchanged")
+            return
+        if len(comments) < 100:
             break
         page += 1
-
-    # The event can be stale while the model is running. Never publish a quote
-    # for a different revision or overwrite it after the item has closed.
-    resource = "pulls" if IS_PULL_REQUEST else "issues"
-    response = requests.get(f"{base}/{resource}/{ISSUE_NUMBER}", headers=GITHUB_HEADERS, timeout=30)
-    response.raise_for_status()
-    current = response.json()
-    if (current.get("state") != "open" or current.get("merged_at")
-            or current.get("title") != ISSUE_TITLE or (current.get("body") or "") != ISSUE_BODY
-            or (IS_PULL_REQUEST and current.get("head", {}).get("sha") != head)):
-        log_debug(f"#{ISSUE_NUMBER} changed or closed during assessment; leaving reward comment unchanged")
-        return
-    if existing and existing.get("body") == body:
-        return
-    url = f"{base}/issues/comments/{existing['id']}" if existing else f"{base}/issues/{ISSUE_NUMBER}/comments"
-    response = (requests.patch if existing else requests.post)(url, headers=GITHUB_HEADERS, json={"body": body}, timeout=30)
-    response.raise_for_status()
+    requests.post(f"{base}/issues/{ISSUE_NUMBER}/comments", headers=GITHUB_HEADERS,
+                  json={"body": body}, timeout=30).raise_for_status()
 
 
 def main():
@@ -479,7 +445,6 @@ def main():
     labels = {l.get("name", "").upper() for l in ITEM_DATA.get("labels", []) if isinstance(l, dict)}
     if not IS_PULL_REQUEST and labels & NOT_WORK_LABELS:
         log_debug(f"#{ISSUE_NUMBER} is a survey response; skipping")
-        write_reward_comment({"reward": 0, "reward_reason": "Census responses have their own survey reward."})
         return
 
     brief = read_brief()
@@ -493,13 +458,14 @@ def main():
         set_field(add_to_dev(), fields["Source"], source)
         return
 
-    answer = classify(brief, areas)
     if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
-        answer.update(area=APP_SUBMISSION_AREA, type=None, priority=None)
-    elif not IS_PULL_REQUEST and answer["area"] is None:
-        write_reward_comment(answer)
-        log_debug(f"#{ISSUE_NUMBER} is not work; skipping project classification")
-        return
+        # App listings have their own fixed reward, so they get no model call and no quote.
+        answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
+    else:
+        answer = classify(brief, areas)
+        if not IS_PULL_REQUEST and answer["area"] is None:
+            log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
+            return
 
     source = item_source(labels)
     # A priority that is already set (by a person, an earlier run or the Express job) is kept.
@@ -517,12 +483,14 @@ def main():
     elif answer["type"]:
         set_issue_type(answer["type"])
 
-    write_reward_comment(answer)
-
     # The gist pipeline consumes the same classification after the project update.
     if output := os.getenv("CLASSIFICATION_OUTPUT"):
         with open(output, "w") as stream:
             json.dump({"area": answer["area"], "type": answer["type"], "source": source}, stream)
+
+    # The quote comes last, so a reward problem never blocks the classification.
+    if "reward" in answer:
+        write_reward_comment(answer)
 
 
 if __name__ == "__main__":

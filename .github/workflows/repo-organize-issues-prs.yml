@@ -2,9 +2,9 @@ name: Repo / Organize issues and PRs
 
 on:
   issues:
-    types: [opened, edited, labeled]
+    types: [opened, labeled]
   pull_request_target:
-    types: [opened, edited, synchronize]
+    types: [opened]
   # Re-classify existing items: overwrites Area, Source and type; fills Priority only when empty (defaults to every open PR).
   workflow_dispatch:
     inputs:
@@ -63,6 +63,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          CONTRIBUTION_REWARD_KEY: ${{ secrets.CONTRIBUTION_REWARD_KEY }}
         run: python operations/github/project_manager.py
 
       - name: Organize existing issues and PRs
@@ -71,6 +72,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          CONTRIBUTION_REWARD_KEY: ${{ secrets.CONTRIBUTION_REWARD_KEY }}
           PR_NUMBERS: ${{ inputs.pr_numbers }}
           ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}

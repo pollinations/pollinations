@@ -18,6 +18,7 @@ import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { StartBuilding } from "../ui/home/StartBuilding";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
+import { PolliFlight } from "../ui/site/PolliFlight";
 
 export const Route = createFileRoute("/")({
     head: () => routeHead("/"),
@@ -64,6 +65,7 @@ function HelloPage() {
             <LiveApps />
             <StartBuilding />
             <BottomScene page="home" />
+            <PolliFlight />
         </>
     );
 }

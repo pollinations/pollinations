@@ -33,6 +33,7 @@ import { PaidChip } from "@pollinations/ui/wallet";
 import type { ComponentType, ReactNode } from "react";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useMcpServers, usePlatformStats } from "../../data/publicStats";
+import { POLLI_PERCH } from "../site/PolliFlight";
 
 type Feature = {
     title: string;
@@ -306,7 +307,7 @@ function FeatureCard({
     return (
         <Surface
             variant="card"
-            className="flex h-full flex-col gap-5 p-5 sm:p-6"
+            className={cn("flex h-full flex-col gap-5 p-5 sm:p-6", POLLI_PERCH)}
         >
             <div className="flex items-center gap-3">
                 <IconTile
@@ -420,7 +421,10 @@ function Models() {
                         <li key={label}>
                             <LinkCard
                                 href={href}
-                                surfaceClassName="gap-0 p-3.5 sm:p-5"
+                                surfaceClassName={cn(
+                                    "gap-0 p-3.5 sm:p-5",
+                                    POLLI_PERCH,
+                                )}
                                 tint={background}
                             >
                                 <span

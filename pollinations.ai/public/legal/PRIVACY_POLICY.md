@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 2026-10-20**
+**Last updated: 2026-10-30**
 
 ## 1) Scope & Roles
 
@@ -81,6 +81,7 @@ Community providers may process data in other countries. Before sending personal
 
 * **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
 * **Reward-protection records:** an immutable linked GitHub or Google user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
+* **Onboarding reward checks:** when an account earns its first onboarding quest reward, we record the network prefix of the request's IP address (IPv4 /24, IPv6 /48) and the account's email domain to detect bulk account creation and hold its onboarding rewards for review. The network prefix and email domain are cleared after 30 days. The hold decision stays with the account until it is released or the account is deleted.
 * **Billing, wallet, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Website and dashboard usage measurement (§7):** 24 months.

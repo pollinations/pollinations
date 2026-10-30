@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { exclusive, send, settle, withTimeout } from "./delivery.js";
+import { allow, ask, evidence, followUp, investigates } from "./investigate.js";
 import { conditions, render, step } from "./rules.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
@@ -55,7 +56,7 @@ export class Watch extends DurableObject {
     async run() {
         const now = Date.now();
         let found;
-        let recent = [];
+        let data = { recent: [], last10: [], last60: [] };
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -69,25 +70,19 @@ export class Watch extends DurableObject {
                     statusRows(gen, 60),
                     getJson(`${gen}/models?reliability=all`),
                 ]);
-                recent = r15;
+                data = { recent: r15, last10: r10, last60: r60 };
                 const models = Array.isArray(catalog) ? catalog : catalog.data;
                 const official = new Set(
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
-                found = conditions({
-                    recent,
-                    last10: r10,
-                    last60: r60,
-                    official,
-                    hosts,
-                });
+                found = conditions({ ...data, official, hosts });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
 
         const state = (await this.ctx.storage.get("state")) ?? {};
-        const next = step(state, found, now, recent);
+        const next = step(state, found, now, data.recent);
         const delivered = [];
         for (const p of next.posts)
             delivered.push(await post(this.env, render(p)));
@@ -95,6 +90,9 @@ export class Watch extends DurableObject {
             "state",
             settle(state, next.state, next.posts, delivered),
         );
+        for (const [i, p] of next.posts.entries())
+            if (delivered[i] && investigates(p))
+                await this.investigate(p, data, now);
         const failed = delivered.filter((ok) => !ok).length;
         if (failed)
             console.error(
@@ -105,6 +103,28 @@ export class Watch extends DurableObject {
             posted: delivered.filter(Boolean).length,
             failed,
         };
+    }
+
+    // One AI follow-up per delivered alert, within a daily limit. A failure
+    // only logs: the alert itself is already posted.
+    async investigate(p, data, now) {
+        const budget = allow(await this.ctx.storage.get("ai"), now);
+        if (!budget) {
+            console.error("investigator: daily limit reached");
+            return;
+        }
+        await this.ctx.storage.put("ai", budget);
+        try {
+            const key = this.env.POLLINATIONS_API_KEY;
+            if (!key) throw new Error("POLLINATIONS_API_KEY missing");
+            const lines = await ask(key, evidence(p, data));
+            if (!lines) throw new Error("off-format answer");
+            const text = followUp(p, lines);
+            if (!(await post(this.env, { text, ping: false })))
+                throw new Error("follow-up not delivered");
+        } catch (error) {
+            console.error(`investigator: ${error.message}`);
+        }
     }
 }
 

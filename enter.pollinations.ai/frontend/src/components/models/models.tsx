@@ -729,8 +729,8 @@ export const Models: FC = () => {
                         <p className="flex items-start gap-1.5">
                             <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/sec:</strong> per second of video or
-                                audio.
+                                <strong>/sec · /hr:</strong> per second of video
+                                or audio; sub-cent audio rates use per hour.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">

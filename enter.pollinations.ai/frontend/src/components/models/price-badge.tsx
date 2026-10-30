@@ -45,18 +45,6 @@ const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     audioOut: "audio",
 };
 
-const PRICE_UNIT_SUFFIX: Record<
-    Exclude<ModelPriceLine["unit"], "token">,
-    string
-> = {
-    second: "/sec",
-    request: "/gen",
-    megapixel: "/MP",
-    character: "/K chars",
-    byte: "/K bytes",
-    image: "/image",
-};
-
 const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     text: { input: "Text in", output: "Text out" },
     image: { input: "Image in", output: "Image out" },
@@ -76,9 +64,11 @@ export const formatPriceLine = ({
     price,
     unit,
 }: ModelPriceLine): { label: string; value: string } => {
-    const { value, tokenScale } = formatDisplayPrice(price, unit === "token");
-    const suffix =
-        unit === "token" ? `/${tokenScale}` : PRICE_UNIT_SUFFIX[unit];
+    const { value, suffix } = formatDisplayPrice(
+        price,
+        unit,
+        kind === "audioIn" || kind === "audioOut",
+    );
     return {
         label: PRICE_LINE_LABELS[kind][direction],
         value: `$${value}${suffix}`,
@@ -116,7 +106,11 @@ export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
 };
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
-    const displayedPrice = formatDisplayPrice(price, unit === "token");
+    const displayedPrice = formatDisplayPrice(
+        price,
+        unit,
+        subKinds.every((kind) => kind === "audioIn" || kind === "audioOut"),
+    );
     const tokenTypes = [
         ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
@@ -139,9 +133,7 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
             </span>
             <span>
                 ${displayedPrice.value}
-                {unit === "token"
-                    ? `/${displayedPrice.tokenScale}`
-                    : PRICE_UNIT_SUFFIX[unit]}
+                {displayedPrice.suffix}
             </span>
         </Chip>
     );
@@ -667,7 +659,8 @@ export const ModelPricingLedger: FC<{
             price === cacheWritePrice && combinedCacheWriteValue
                 ? combinedCacheWriteValue
                 : price.price,
-            price.unit === "token",
+            price.unit,
+            price.kind === "audioIn" || price.kind === "audioOut",
         );
         const rows = [
             {
@@ -676,8 +669,8 @@ export const ModelPricingLedger: FC<{
                 value: displayedPrice.value,
                 unit:
                     price.unit === "token"
-                        ? `/${displayedPrice.tokenScale} tokens`
-                        : PRICE_UNIT_SUFFIX[price.unit],
+                        ? `${displayedPrice.suffix} tokens`
+                        : displayedPrice.suffix,
                 Icon: PRICE_ICON[price.kind],
                 kind: price.kind,
                 section:

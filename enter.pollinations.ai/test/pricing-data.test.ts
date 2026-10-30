@@ -44,8 +44,10 @@ import {
 import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
 import { ModelHealthIndicator } from "../frontend/src/components/models/model-status-chips.tsx";
 import {
+    formatPriceLine,
     getPricingVariantControls,
     ModelPricingLedger,
+    PriceBadge,
 } from "../frontend/src/components/models/price-badge.tsx";
 
 const getCatalogModelPrices = () =>
@@ -163,27 +165,82 @@ test("formatPricePer1M preserves token rates across decimal scales", () => {
     expect(formatPricePer1M(1.5825e-8)).toBe("0.015825");
 });
 
-test("display prices stay compact and use a readable token scale", () => {
-    expect(formatDisplayPrice("2.0", true)).toEqual({
+test("display prices stay compact and use a readable unit scale", () => {
+    expect(formatDisplayPrice("2.0", "token")).toEqual({
         value: "2",
-        tokenScale: "M",
+        suffix: "/M",
     });
-    expect(formatDisplayPrice("120.0", true)).toEqual({
+    expect(formatDisplayPrice("120.0", "token")).toEqual({
         value: "0.12",
-        tokenScale: "K",
+        suffix: "/K",
     });
     expect(formatDisplayPrice("0.083333333333")).toEqual({
         value: "0.0833",
-        tokenScale: "M",
+        suffix: "/gen",
     });
     expect(formatDisplayPrice("0.00001")).toEqual({
         value: "0.00001",
-        tokenScale: "M",
+        suffix: "/gen",
     });
     expect(formatDisplayPrice("0.00000778")).toEqual({
         value: "0.00000778",
-        tokenScale: "M",
+        suffix: "/gen",
     });
+    expect(formatDisplayPrice(String(0.163 / 3600), "second", true)).toEqual({
+        value: "0.163",
+        suffix: "/hr",
+    });
+    expect(formatDisplayPrice("0.0015", "second", true)).toEqual({
+        value: "5.4",
+        suffix: "/hr",
+    });
+    expect(formatDisplayPrice("0.01", "second", true)).toEqual({
+        value: "0.01",
+        suffix: "/sec",
+    });
+    expect(formatDisplayPrice("0.0015", "second")).toEqual({
+        value: "0.0015",
+        suffix: "/sec",
+    });
+});
+
+test("audio hour rates agree across price lines, badges and the ledger", () => {
+    const audio = {
+        direction: "input",
+        kind: "audioIn",
+        price: String(0.163 / 3600),
+        unit: "second",
+    } as const;
+    expect(formatPriceLine(audio)).toEqual({
+        label: "Audio in",
+        value: "$0.163/hr",
+    });
+    const badge = renderToStaticMarkup(
+        createElement(PriceBadge, {
+            price: audio.price,
+            unit: audio.unit,
+            subKinds: ["audioIn"],
+        }),
+    );
+    const ledger = renderToStaticMarkup(
+        createElement(ModelPricingLedger, {
+            pricing: { prices: [audio], adjustments: [], dropdowns: [] },
+        }),
+    );
+    for (const markup of [badge, ledger]) {
+        expect(markup).toContain("0.163");
+        expect(markup).toContain("/hr");
+        expect(markup).not.toContain("/sec");
+    }
+    expect(formatPriceLine({ ...audio, kind: "video" }).value).toMatch(
+        /\/sec$/,
+    );
+    expect(formatPriceLine({ ...audio, unit: "character" }).value).toMatch(
+        /\/K chars$/,
+    );
+    expect(formatPriceLine({ ...audio, unit: "byte" }).value).toMatch(
+        /\/K bytes$/,
+    );
 });
 
 test("catalog prices format token rates through formatPricePer1M", () => {
@@ -2005,7 +2062,8 @@ test("every positive catalog rate survives conversion for every category and var
                     Number(
                         formatDisplayPrice(
                             row.price,
-                            row.unit === "token",
+                            row.unit,
+                            row.kind === "audioIn" || row.kind === "audioOut",
                         ).value.replaceAll(",", ""),
                     ),
                     source.name,

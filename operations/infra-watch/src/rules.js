@@ -38,12 +38,19 @@ export function conditions({
     last10,
     last60,
     official,
-    genDown,
+    hosts = { public: true, upstream: true },
     analyticsDown,
 }) {
+    // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
+    // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
+    if (!hosts.public && !hosts.upstream) return { gen: { kind: "GEN_DOWN" } };
     const found = {};
-    if (genDown) return { gen: { kind: "GEN_DOWN" } };
-    if (analyticsDown) return { analytics: { kind: "ANALYTICS_DOWN" } };
+    if (!hosts.public) found.public = { kind: "PUBLIC_DOWN" };
+    if (!hosts.upstream) found.upstream = { kind: "UPSTREAM_DOWN" };
+    if (analyticsDown) {
+        found.analytics = { kind: "ANALYTICS_DOWN" };
+        return found;
+    }
     for (const [model, h] of Object.entries(modelHealth(recent))) {
         if (!official.has(model) || h.nonClient < MIN_REQUESTS) continue;
         if (h.success < MIN_SUCCESS) {
@@ -60,7 +67,14 @@ export function conditions({
     return found;
 }
 
-const CONFIRMED = new Set(["gen", "analytics", "platform"]);
+const CONFIRMED = new Set([
+    "gen",
+    "public",
+    "upstream",
+    "analytics",
+    "platform",
+]);
+const HOSTS = { gen: true, public: true, upstream: true };
 
 // Keys whose recovery we announce. Spillover just expires.
 const RECOVERS = (key) => !key.startsWith("spillover:");
@@ -88,7 +102,7 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, prev] of Object.entries(active)) {
         if (found[key]) continue;
-        if (blind && key !== "gen") continue;
+        if (blind && !HOSTS[key]) continue;
         if (!RECOVERS(key)) {
             if (now - prev.postedAt >= COOLDOWN_MS) delete active[key];
             continue;
@@ -125,9 +139,12 @@ export function render(post) {
     if (post.type === "recovered") {
         const what =
             info.model ??
-            { gen: "gen.pollinations.ai", analytics: "model status analytics" }[
-                post.key
-            ] ??
+            {
+                gen: "gen Worker (both gen.pollinations.ai and gen.myceli.ai)",
+                public: "gen.pollinations.ai (public domain)",
+                upstream: "gen.myceli.ai (Myceli upstream domain)",
+                analytics: "model status analytics",
+            }[post.key] ??
             "platform traffic";
         const rate =
             info.success != null
@@ -139,11 +156,34 @@ export function render(post) {
         return {
             text: panel([
                 ["STATUS", "DOWN"],
-                ["MODEL", "gen.pollinations.ai"],
-                ["WHY", `gen.pollinations.ai/ failed ${CONFIRM_CHECKS}x`],
+                ["MODEL", "gen Worker"],
+                ["WHY", "both hostnames failing:"],
+                ["", "gen.pollinations.ai  DOWN"],
+                ["", "gen.myceli.ai        DOWN"],
+                ["", "-> the Worker itself, not DNS"],
                 ["BY", "infra-watch"],
             ]),
             ping: true,
+        };
+    }
+    if (info.kind === "PUBLIC_DOWN" || info.kind === "UPSTREAM_DOWN") {
+        const pub = info.kind === "PUBLIC_DOWN";
+        return {
+            text: panel([
+                ["STATUS", "DOWN"],
+                ["MODEL", pub ? "gen.pollinations.ai" : "gen.myceli.ai"],
+                ["WHY", "one hostname failing:"],
+                ["", `gen.pollinations.ai  ${pub ? "DOWN" : "up"}`],
+                ["", `gen.myceli.ai        ${pub ? "up" : "DOWN"}`],
+                [
+                    "",
+                    pub
+                        ? "-> domain/DNS/route; Worker OK"
+                        : "-> Myceli domain/route; users OK",
+                ],
+                ["BY", "infra-watch"],
+            ]),
+            ping: pub,
         };
     }
     if (info.kind === "ANALYTICS_DOWN") {

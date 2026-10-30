@@ -1,7 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 import { conditions, render, step } from "./rules.js";
 
-const GEN = "https://gen.pollinations.ai";
+const PUBLIC = "https://gen.pollinations.ai";
+const UPSTREAM = "https://gen.myceli.ai";
 // thomash, elliot
 const MAINTAINERS = ["304378879705874432", "884468469452656732"];
 
@@ -11,8 +12,13 @@ async function getJson(url) {
     return res.json();
 }
 
-const statusRows = async (minutes) =>
-    (await getJson(`${GEN}/models/status?minutes=${minutes}`)).data;
+const statusRows = async (gen, minutes) =>
+    (await getJson(`${gen}/models/status?minutes=${minutes}`)).data;
+
+const isUp = (gen) =>
+    fetch(`${gen}/`, { signal: AbortSignal.timeout(20_000) })
+        .then((res) => res.ok)
+        .catch(() => false);
 
 async function post(env, { text, ping }) {
     const content = ping
@@ -39,19 +45,18 @@ export class Watch extends DurableObject {
         const now = Date.now();
         let found;
         let recent = [];
-        const genUp = await fetch(`${GEN}/`, {
-            signal: AbortSignal.timeout(20_000),
-        })
-            .then((res) => res.ok)
-            .catch(() => false);
-        if (!genUp) found = conditions({ genDown: true });
+        const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
+        const hosts = { public: pub, upstream: up };
+        // Read data through whichever hostname answers, public first.
+        const gen = pub ? PUBLIC : UPSTREAM;
+        if (!pub && !up) found = conditions({ hosts });
         else
             try {
                 const [r15, r10, r60, catalog] = await Promise.all([
-                    statusRows(15),
-                    statusRows(10),
-                    statusRows(60),
-                    getJson(`${GEN}/models?reliability=all`),
+                    statusRows(gen, 15),
+                    statusRows(gen, 10),
+                    statusRows(gen, 60),
+                    getJson(`${gen}/models?reliability=all`),
                 ]);
                 recent = r15;
                 const models = Array.isArray(catalog) ? catalog : catalog.data;
@@ -63,10 +68,11 @@ export class Watch extends DurableObject {
                     last10: r10,
                     last60: r60,
                     official,
+                    hosts,
                 });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
-                found = conditions({ analyticsDown: true });
+                found = conditions({ hosts, analyticsDown: true });
             }
 
         const state = (await this.ctx.storage.get("state")) ?? {};

@@ -156,3 +156,37 @@ test("degraded alerts are labelled unconfirmed", () => {
     });
     assert.match(text, /unconfirmed: callers unknown/);
 });
+
+test("hostname split tells Worker down from domain down", () => {
+    const none = { public: false, upstream: false };
+    assert.deepEqual(Object.keys(conditions({ hosts: none })), ["gen"]);
+    const pubDown = conditions({
+        ...quiet([]),
+        hosts: { public: false, upstream: true },
+    });
+    assert.equal(pubDown.public.kind, "PUBLIC_DOWN");
+    const { text, ping } = render({
+        type: "alert",
+        key: "public",
+        info: pubDown.public,
+    });
+    assert.match(text, /gen\.pollinations\.ai\s+DOWN/);
+    assert.match(text, /gen\.myceli\.ai\s+up/);
+    assert.equal(ping, true);
+    const upDown = conditions({
+        ...quiet([]),
+        hosts: { public: true, upstream: false },
+    });
+    assert.equal(
+        render({ type: "alert", key: "upstream", info: upDown.upstream }).ping,
+        false,
+    );
+});
+
+test("model alerts keep working when only one hostname is down", () => {
+    const found = conditions({
+        ...quiet([row("a/model", 50, 100)]),
+        hosts: { public: false, upstream: true },
+    });
+    assert.deepEqual(Object.keys(found).sort(), ["degraded:a/model", "public"]);
+});

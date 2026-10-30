@@ -293,6 +293,12 @@ export function useRequestsLastHour() {
     return useAsync<number | null>(loadRequestsLastHour, null);
 }
 
+/** Requests expected in `elapsedMs` at the measured hourly rate: an estimate,
+ * not a per-request count. */
+export function requestsSince(elapsedMs: number, perHour: number): number {
+    return Math.max(0, Math.floor((elapsedMs / 3_600_000) * perHour));
+}
+
 /**
  * 984868 → "985K", 1204000 → "1.2M".
  *

@@ -6,10 +6,11 @@ import {
     LiveDot,
     RocketIcon,
     StatCard,
+    Text,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useRequestsLastHour } from "../data/publicStats";
+import { requestsSince, useRequestsLastHour } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { DevKit } from "../ui/home/DevKit";
 import { LiveApps } from "../ui/home/LiveApps";
@@ -77,7 +78,7 @@ function RequestsLastHour() {
     const shown = useCountUp(requests);
 
     return (
-        <div className="min-h-[3.875rem]">
+        <div className="flex min-h-[5.5rem] flex-col gap-2">
             {requests ? (
                 <StatCard
                     variant="display"
@@ -99,7 +100,38 @@ function RequestsLastHour() {
                     }
                 />
             ) : null}
+            {requests ? <SinceArrival perHour={requests} /> : null}
         </div>
+    );
+}
+
+/**
+ * The measured hour's rate, run forward from when the number landed. It is an
+ * estimate, so it reads "since you arrived" rather than claiming a count. The
+ * number comes last on its line so growing digits move nothing.
+ */
+function SinceArrival({ perHour }: { perHour: number }) {
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+        const start = performance.now();
+        const reduce = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+        const timer = setInterval(
+            () => setElapsed(performance.now() - start),
+            reduce ? 1000 : 250,
+        );
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <Text as="div" size="sm" tone="soft" className="leading-tight">
+            Since you arrived:{" "}
+            <span className="tabular-nums">
+                +{requestsSince(elapsed, perHour).toLocaleString()}
+            </span>
+        </Text>
     );
 }
 

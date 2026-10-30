@@ -5,6 +5,7 @@ import {
     compareAppUsage,
     type DirectoryApp,
     isBuzz,
+    requestsSince,
     selectWeeklyApps,
     type WeeklyAppUsage,
 } from "./publicStats";
@@ -404,5 +405,17 @@ describe("requests in the last hour", () => {
         );
 
         await expect(loadRequestsLastHour()).resolves.toBe(15);
+    });
+});
+
+describe("requests since arrival", () => {
+    it("spreads the measured hour evenly over the time on the page", () => {
+        expect(requestsSince(60_000, 3_600)).toBe(60);
+        expect(requestsSince(1_500, 3_600)).toBe(1);
+    });
+
+    it("starts at zero", () => {
+        expect(requestsSince(0, 66_993)).toBe(0);
+        expect(requestsSince(-5, 3_600)).toBe(0);
     });
 });

@@ -385,6 +385,75 @@ const chatProtocolCases = [
     },
 ];
 
+it("keeps a stop-truncated empty answer as a 200 completion", async () => {
+    const model = "openai/gpt-5-nano";
+    const host = ["myceli-prod-eastus.openai.azure.com", "api.openai.com"];
+    const wire = JSON.stringify({
+        id: "stop-truncated",
+        object: "chat.completion",
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "" },
+                finish_reason: "stop",
+            },
+        ],
+        usage: { prompt_tokens: 12, completion_tokens: 1, total_tokens: 13 },
+    });
+    const prompt = `Stop truncation ${crypto.randomUUID()}`;
+
+    const stopped = await chatThroughHandler(
+        model,
+        host,
+        async () =>
+            new Response(wire, {
+                headers: { "content-type": "application/json" },
+            }),
+        false,
+        prompt,
+        {
+            path: "/v1/chat/completions",
+            body: {
+                model,
+                stream: false,
+                max_tokens: 40,
+                stop: ["1"],
+                messages: [{ role: "user", content: prompt }],
+            },
+        },
+    );
+    expect(stopped.response.status, stopped.text).toBe(200);
+    const stoppedBody = JSON.parse(stopped.text);
+    expect(stoppedBody.choices[0].message.content).toBe("");
+    expect(stoppedBody.choices[0].finish_reason).toBe("stop");
+
+    // Without a configured stop sequence the empty answer is still an error.
+    const bare = await chatThroughHandler(
+        model,
+        host,
+        async () =>
+            new Response(wire, {
+                headers: { "content-type": "application/json" },
+            }),
+        false,
+        `${prompt} bare`,
+        {
+            path: "/v1/chat/completions",
+            body: {
+                model,
+                stream: false,
+                max_tokens: 40,
+                messages: [{ role: "user", content: `${prompt} bare` }],
+            },
+        },
+    );
+    expect(bare.response.status, bare.text).toBe(502);
+    expect(JSON.parse(bare.text).error).toMatchObject({
+        code: "empty_response",
+    });
+});
+
 it.each([
     ...chatProtocolCases,
     { ...chatProtocolCases[0], limitField: "max_completion_tokens" },

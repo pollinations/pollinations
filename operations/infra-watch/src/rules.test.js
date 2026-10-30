@@ -92,6 +92,19 @@ test("alerts once, respects cooldown, then announces recovery", () => {
     assert.deepEqual(r.state.active, {});
 });
 
+test("a recovery retried after a failed post still needs a fresh sample", () => {
+    // 15 clean checks reached, but the recovery post failed (kept active).
+    const state = {
+        active: { "degraded:a/model": { postedAt: 0, kind: "DEGRADED" } },
+        clears: { "degraded:a/model": RECOVER_CHECKS },
+    };
+    assert.equal(step(state, {}, 1, [row("a/model", 0, 9)]).posts.length, 0);
+    assert.deepEqual(
+        step(state, {}, 1, [row("a/model", 20, 20)]).posts.map((p) => p.type),
+        ["recovered"],
+    );
+});
+
 test("a model hovering at the threshold alerts once, without flapping", () => {
     const bad = {
         "degraded:a/model": {

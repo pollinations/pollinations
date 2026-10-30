@@ -113,12 +113,13 @@ export function step(state, found, now, recent = []) {
             continue;
         }
         // A model needs RECOVER_CHECKS clean checks in a row to count as
-        // recovered; a thin sample neither counts nor resets the run.
+        // recovered; a thin sample neither counts nor resets the run, and
+        // never announces (not even a retry after a failed post).
         const model = key.startsWith("degraded:") ? key.slice(9) : null;
         if (model) {
             const fresh = (health[model]?.nonClient ?? 0) >= MIN_REQUESTS;
             clears[key] = (state.clears?.[key] ?? 0) + (fresh ? 1 : 0);
-            if (clears[key] < RECOVER_CHECKS) continue;
+            if (!fresh || clears[key] < RECOVER_CHECKS) continue;
         }
         delete active[key];
         posts.push({

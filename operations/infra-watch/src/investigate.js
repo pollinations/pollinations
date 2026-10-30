@@ -9,12 +9,9 @@ const GEN = "https://gen.pollinations.ai/v1/chat/completions";
 export const MODEL = "openai/gpt-6.1-sol";
 export const DAILY_LIMIT = 10;
 export const MAX_TOOL_CALLS = 8;
-// One Discord message holds 2,000 characters; leave room for the frame.
-export const MAX_REPORT = 1800;
 const TIMEOUT_MS = 90_000;
-const MAX_LINE = 300;
-// WHY, one sentence, then up to 12 evidence lines.
-const MAX_LINES = 14;
+// The answer is one line under the alert panel.
+export const MAX_LINE = 300;
 
 // Status fields the model may read; everything else is dropped.
 const FIELDS = [
@@ -86,12 +83,12 @@ How to read a status row:
 - A PRIMARY_WEAK alert means callers are fine thanks to a fallback, but the model's primary route fails often: explain why the primary fails and whether the fallback keeps up.
 - A platform-drop alert lists the models whose traffic fell the most: now10 is the last 10 minutes, baseline10 the average 10 minutes before.
 
-Reply in plain text, without headings or code blocks:
-WHY <the most likely cause, at most 80 characters, naming providers and counts>
-<one plain sentence: what callers experience, and whether it looks like a provider fault, our fault, or a single caller>
-Then up to 12 short lines starting with "- ": the evidence (numbers and times), which component is involved, and what a maintainer should check next.
+Your answer is shown as the last line of the alert, under a panel that already gives the success rate, the callers and each route. Reply with one line of plain text, at most two short sentences and under 250 characters:
+1. The verdict: an outage, a provider fault, our fault, a single caller, or unclear.
+2. The cause, naming the provider and the kind of error.
+Do not repeat the panel's numbers, request ids or caveats, and no markdown.
 
-Use only facts from the data and tool results, and quote example request ids so a maintainer can look them up. If the facts cannot explain the alert, say so on the WHY line.`;
+Use only facts from the data and tool results. If they cannot explain the alert, say it is unclear.`;
 
 const TOOL_SPECS = [
     {
@@ -284,17 +281,13 @@ export const toolsFor = (data, tinybird = {}) => {
     };
 };
 
-// The model's report as lines (WHY, a sentence, evidence), cut to fit one
-// Discord message, or null if it is off-format.
+// The model's answer as one line, or null if it gave none.
 export function reply(text) {
-    const lines = (text ?? "")
+    const line = (text ?? "")
         .split("\n")
-        .map((l) => l.trim().slice(0, MAX_LINE))
-        .filter(Boolean)
-        .slice(0, MAX_LINES);
-    if (lines.length < 2 || !lines[0].startsWith("WHY")) return null;
-    while (lines.join("\n").length > MAX_REPORT) lines.pop();
-    return lines;
+        .map((l) => l.trim())
+        .find(Boolean);
+    return line ? line.slice(0, MAX_LINE) : null;
 }
 
 async function chat(key, messages, offerTools, signal, fetchImpl) {
@@ -369,10 +362,3 @@ export function allow(budget, now) {
     const count = budget?.day === day ? budget.count : 0;
     return count < DAILY_LIMIT ? { day, count: count + 1 } : null;
 }
-
-export const followUp = (post, [why, ...rest]) =>
-    [
-        `↳ \`${post.info.model ?? "platform"}\` ${why}`,
-        ...rest,
-        `-# AI follow-up (${MODEL}) from status and error data`,
-    ].join("\n");

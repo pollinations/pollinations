@@ -11,6 +11,9 @@ export const RECOVER_CHECKS = 15;
 
 const MIN_REQUESTS = 10;
 const MIN_SUCCESS = 0.9;
+// DEGRADED also needs this many failed requests: 2 failures out of 13 is
+// under 90% but not worth an alert.
+const MIN_FAILURES = 5;
 // A primary route below this, while callers stay above MIN_SUCCESS thanks
 // to a fallback, is "primary weak".
 const PRIMARY_MIN_SUCCESS = 0.8;
@@ -87,7 +90,8 @@ export function conditions({
         const info = { model, ...h, routes: routes[model] ?? [] };
         const primary = primaryOf(info.routes);
         if (h.success < MIN_SUCCESS) {
-            found[`degraded:${model}`] = { kind: "DEGRADED", ...info };
+            if (h.nonClient - h.ok >= MIN_FAILURES)
+                found[`degraded:${model}`] = { kind: "DEGRADED", ...info };
         } else if (
             primary.attempts >= MIN_REQUESTS &&
             primary.success < PRIMARY_MIN_SUCCESS
@@ -166,10 +170,11 @@ export function step(state, found, now, recent = []) {
 }
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
-const fit = (s) => (s.length > 34 ? `${s.slice(0, 33)}…` : s);
+// Values up to 38 characters, the longest official model id, show whole.
+const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
 
 function panel(lines) {
-    const width = 44;
+    const width = 48;
     const top = `┌─ MONITOR ${"─".repeat(width - 10)}┐`;
     const body = lines.map(([field, value]) => {
         const text = `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`;
@@ -177,6 +182,27 @@ function panel(lines) {
     });
     return ["```", top, ...body, `└${"─".repeat(width)}┘`, "```"].join("\n");
 }
+
+// The plain sentence above each alert panel, one per kind.
+const DESCRIBE = {
+    GEN_DOWN: () => "gen is down on both hostnames",
+    PUBLIC_DOWN: () =>
+        "gen.pollinations.ai is unreachable; gen.myceli.ai still works",
+    UPSTREAM_DOWN: () => "gen.myceli.ai is unreachable; users are not affected",
+    ANALYTICS_DOWN: () =>
+        "Model status data is unreachable; model alerts are paused",
+    PLATFORM_DROP: () => "Platform traffic fell by more than half",
+    DEGRADED: (info) => `\`${info.model}\` is failing for some callers`,
+    PRIMARY_WEAK: (info) =>
+        `\`${info.model}\`: the primary provider is failing, the fallback is covering`,
+};
+const framed = (info, lines) => `${DESCRIBE[info.kind](info)}\n${panel(lines)}`;
+
+// Last line of an alert while the AI looks into it. The same message is
+// then edited: the AI's line replaces it, or it simply goes.
+export const CHECKING = "-# checking why…";
+export const complete = (text, line) =>
+    text.replace(`\n${CHECKING}`, line ? `\n↳ ${line}` : "");
 
 export function render(post) {
     const { info } = post;
@@ -198,7 +224,7 @@ export function render(post) {
     }
     if (info.kind === "GEN_DOWN") {
         return {
-            text: panel([
+            text: framed(info, [
                 ["STATUS", "DOWN"],
                 ["MODEL", "gen Worker"],
                 ["WHY", "both hostnames failing:"],
@@ -212,7 +238,7 @@ export function render(post) {
     if (info.kind === "PUBLIC_DOWN" || info.kind === "UPSTREAM_DOWN") {
         const pub = info.kind === "PUBLIC_DOWN";
         return {
-            text: panel([
+            text: framed(info, [
                 ["STATUS", "DOWN"],
                 ["MODEL", pub ? "gen.pollinations.ai" : "gen.myceli.ai"],
                 ["WHY", "one hostname failing:"],
@@ -230,7 +256,7 @@ export function render(post) {
     }
     if (info.kind === "ANALYTICS_DOWN") {
         return {
-            text: panel([
+            text: framed(info, [
                 ["STATUS", "BLIND"],
                 ["MODEL", "/models/status (analytics)"],
                 ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
@@ -241,7 +267,7 @@ export function render(post) {
     }
     if (info.kind === "PLATFORM_DROP") {
         return {
-            text: panel([
+            text: framed(info, [
                 ["STATUS", "DEGRADED"],
                 ["MODEL", "platform-wide"],
                 ["REQS", `${info.now10} last 10m`],
@@ -255,10 +281,14 @@ export function render(post) {
         ["MODEL", info.model],
         ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
     ];
-    if (info.kind === "DEGRADED") {
-        // Public data has no caller split: one bad caller can trip this.
-        lines.push(["CHECK", "unconfirmed: callers unknown"]);
-    }
+    // Accounts behind the failures, from Tinybird; unknown if it couldn't say.
+    const { callers } = info;
+    lines.push([
+        "CALLERS",
+        callers
+            ? `${callers.failing_callers} of ${callers.callers} failing`
+            : "unknown",
+    ]);
     for (const r of (info.routes ?? []).slice(0, MAX_ROUTE_LINES)) {
         const rate = r.attempts > 0 ? r.ok / r.attempts : 1;
         lines.push([
@@ -267,5 +297,9 @@ export function render(post) {
         ]);
     }
     // A weak primary is posted quietly: the fallback keeps callers whole.
-    return { text: panel(lines), ping: info.kind === "DEGRADED" };
+    // So is a model failing for a single caller: that's not an outage.
+    return {
+        text: framed(info, lines),
+        ping: info.kind === "DEGRADED" && callers?.failing_callers !== 1,
+    };
 }

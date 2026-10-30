@@ -6,7 +6,7 @@ import {
     DAILY_LIMIT,
     evidence,
     investigates,
-    MAX_REPORT,
+    MAX_LINE,
     MAX_TOOL_CALLS,
     MODEL,
     reply,
@@ -74,21 +74,14 @@ test("platform-drop evidence lists official models that lost the most traffic", 
     assert.ok(!JSON.stringify(e).includes(owned));
 });
 
-test("reply keeps WHY, a sentence and up to 12 evidence lines, within Discord's limit", () => {
-    const evidenceLines = Array.from({ length: 20 }, (_, i) => `- line ${i}`);
-    const lines = reply(
-        ["WHY vercel 5xx (20)", "Provider issue.", ...evidenceLines].join("\n"),
+test("reply keeps one short line: the verdict and the cause", () => {
+    assert.equal(
+        reply("One caller, not an outage. Fireworks 502s.\n- extra detail"),
+        "One caller, not an outage. Fireworks 502s.",
     );
-    assert.equal(lines[0], "WHY vercel 5xx (20)");
-    assert.equal(lines.length, 14);
-    assert.equal(reply("The model is fine."), null);
+    assert.equal(reply("\n  \n"), null);
     assert.equal(reply(""), null);
-    const long = reply(
-        [`WHY ${"x".repeat(500)}`, ...Array(14).fill("y".repeat(300))].join(
-            "\n",
-        ),
-    );
-    assert.ok(long.join("\n").length <= MAX_REPORT);
+    assert.ok(reply("x".repeat(900)).length <= MAX_LINE);
 });
 
 const answer = (message) => ({
@@ -105,10 +98,10 @@ test("ask sends the key only as a header and parses the answer", async () => {
     let sent;
     const fetchImpl = async (url, init) => {
         sent = { url, init, body: JSON.parse(init.body) };
-        return answer({ content: "WHY x\nSentence." });
+        return answer({ content: "Verdict." });
     };
     const lines = await ask("sk_test", { alert: {} }, {}, { fetchImpl });
-    assert.deepEqual(lines, ["WHY x", "Sentence."]);
+    assert.equal(lines, "Verdict.");
     assert.equal(sent.init.headers.authorization, "Bearer sk_test");
     assert.equal(sent.body.model, MODEL);
     assert.ok(!sent.init.body.includes("sk_test"));
@@ -126,7 +119,7 @@ test("ask runs the tools the model calls and returns its final answer", async ()
             content: null,
             tool_calls: [toolCall("model_status", { model: "a/model" })],
         }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const fetchImpl = async (_url, init) => {
         bodies.push(JSON.parse(init.body));
@@ -134,7 +127,7 @@ test("ask runs the tools the model calls and returns its final answer", async ()
     };
     const tools = { model_status: ({ model }) => ({ model, rows: [] }) };
     const lines = await ask("sk_test", {}, tools, { fetchImpl });
-    assert.deepEqual(lines, ["WHY x", "Sentence."]);
+    assert.equal(lines, "Verdict.");
     const result = bodies[1].messages.at(-1);
     assert.equal(result.role, "tool");
     assert.equal(result.tool_call_id, "call_1");
@@ -150,7 +143,7 @@ test("ask stops offering tools after MAX_TOOL_CALLS", async () => {
         const body = JSON.parse(init.body);
         bodies.push(body);
         return body.tool_choice === "none"
-            ? answer({ content: "WHY x\nSentence." })
+            ? answer({ content: "Verdict." })
             : answer({
                   content: null,
                   tool_calls: [toolCall("model_status", { model: "a/model" })],
@@ -169,7 +162,7 @@ test("a batch of tool calls cannot run past MAX_TOOL_CALLS", async () => {
     );
     const replies = [
         answer({ content: null, tool_calls: batch }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const bodies = [];
     const fetchImpl = async (_url, init) => {
@@ -204,7 +197,7 @@ test("unknown tools and bad arguments come back as errors, not crashes", async (
                 },
             ],
         }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const fetchImpl = async (_url, init) => {
         bodies.push(JSON.parse(init.body));

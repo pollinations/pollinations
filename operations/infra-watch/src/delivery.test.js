@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { exclusive, send, serial, settle, withTimeout } from "./delivery.js";
+import {
+    edit,
+    exclusive,
+    send,
+    serial,
+    settle,
+    withTimeout,
+} from "./delivery.js";
 
 const reply = (status, retryAfter) => ({
     ok: status >= 200 && status < 300,
@@ -120,4 +127,41 @@ test("send asks Discord to confirm the saved message (wait=true)", async () => {
         { fetchImpl, sleep: noSleep },
     );
     assert.equal(new URL(seen).searchParams.get("wait"), "true");
+});
+
+test("send returns the message id Discord saved, so it can be edited", async () => {
+    const fetchImpl = async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: "123" }),
+    });
+    assert.equal(
+        await send("https://x.test/h", {}, { fetchImpl, sleep: noSleep }),
+        "123",
+    );
+});
+
+test("edit patches the webhook's own message", async () => {
+    let seen;
+    const fetchImpl = async (url, init) => {
+        seen = {
+            url: String(url),
+            method: init.method,
+            body: JSON.parse(init.body),
+        };
+        return reply(200);
+    };
+    const ok = await edit(
+        "https://discord.com/api/webhooks/1/abc",
+        "123",
+        { content: "done" },
+        { fetchImpl },
+    );
+    assert.equal(ok, true);
+    assert.equal(
+        seen.url,
+        "https://discord.com/api/webhooks/1/abc/messages/123",
+    );
+    assert.equal(seen.method, "PATCH");
+    assert.equal(seen.body.content, "done");
 });

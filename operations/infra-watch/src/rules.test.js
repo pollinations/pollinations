@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+    CHECKING,
     COOLDOWN_MS,
+    complete,
     conditions,
     RECOVER_CHECKS,
     render,
@@ -208,20 +210,17 @@ test("gen down and platform drop need 3 checks in a row", () => {
     assert.equal(step(reset.state, found, 2).posts.length, 0);
 });
 
-test("panel stays 44 chars wide", () => {
+test("panel stays 48 chars wide and shows a 38-char model id whole", () => {
+    const longest = "inferenceport-ai/lightning-image-turbo";
     const { text, ping } = render({
         type: "alert",
-        key: "degraded:x",
-        info: {
-            kind: "DEGRADED",
-            model: "a-very-long-provider/a-very-long-model-name-x",
-            success: 0.5,
-            nonClient: 20,
-        },
+        key: `degraded:${longest}`,
+        info: { kind: "DEGRADED", model: longest, success: 0.5, nonClient: 20 },
     });
     assert.equal(ping, true);
+    assert.match(text, new RegExp(`MODEL\\s+${longest}`));
     for (const line of text.split("\n").filter((l) => /^[│┌└]/.test(l))) {
-        assert.equal([...line].length, 46);
+        assert.equal([...line].length, 50);
     }
 });
 
@@ -245,18 +244,73 @@ test("analytics outage pauses recovery but is not gen down", () => {
     assert.ok(r.state.active["degraded:a/model"]);
 });
 
-test("degraded alerts are labelled unconfirmed", () => {
+const degradedInfo = (callers) => ({
+    kind: "DEGRADED",
+    model: "a/model",
+    success: 0.5,
+    nonClient: 20,
+    callers,
+});
+
+test("alerts open with a plain description naming the full model id", () => {
     const { text } = render({
         type: "alert",
         key: "degraded:a/model",
-        info: {
-            kind: "DEGRADED",
-            model: "a/model",
-            success: 0.5,
-            nonClient: 20,
-        },
+        info: degradedInfo(),
     });
-    assert.match(text, /unconfirmed: callers unknown/);
+    assert.equal(text.split("\n")[0], "`a/model` is failing for some callers");
+});
+
+test("CALLERS shows how many accounts fail, or unknown", () => {
+    const known = render({
+        type: "alert",
+        key: "degraded:a/model",
+        info: degradedInfo({ callers: 6, failing_callers: 2 }),
+    });
+    assert.match(known.text, /CALLERS\s+2 of 6 failing/);
+    const unknown = render({
+        type: "alert",
+        key: "degraded:a/model",
+        info: degradedInfo(),
+    });
+    assert.match(unknown.text, /CALLERS\s+unknown/);
+    assert.doesNotMatch(unknown.text, /unconfirmed/);
+});
+
+test("a degraded model with one failing caller is posted without a ping", () => {
+    const one = { type: "alert", key: "degraded:a/model" };
+    assert.equal(
+        render({
+            ...one,
+            info: degradedInfo({ callers: 6, failing_callers: 1 }),
+        }).ping,
+        false,
+    );
+    assert.equal(
+        render({
+            ...one,
+            info: degradedInfo({ callers: 6, failing_callers: 3 }),
+        }).ping,
+        true,
+    );
+    assert.equal(render({ ...one, info: degradedInfo() }).ping, true);
+});
+
+test("degraded needs at least 5 failed requests", () => {
+    // Live case: deepseek 11/13 is 84.6%, but only 2 requests failed.
+    assert.deepEqual(conditions(quiet([row("a/model", 11, 13)])), {});
+    assert.deepEqual(Object.keys(conditions(quiet([row("a/model", 25, 30)]))), [
+        "degraded:a/model",
+    ]);
+});
+
+test("the AI line completes the alert, or the waiting line just goes", () => {
+    const alert = `top\npanel\n${CHECKING}`;
+    assert.equal(
+        complete(alert, "One caller, not an outage."),
+        "top\npanel\n↳ One caller, not an outage.",
+    );
+    assert.equal(complete(alert, null), "top\npanel");
 });
 
 test("hostname split tells Worker down from domain down", () => {

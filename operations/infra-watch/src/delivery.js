@@ -23,8 +23,9 @@ const withWait = (url) => {
 };
 const MAX_TRIES = 3;
 
-// True only once Discord accepted the message. Retries 429 (honouring
-// retry_after, capped) and 5xx/network errors.
+// Truthy only once Discord accepted the message: the saved message's id
+// (wait=true returns it), so the alert can be edited later. Retries 429
+// (honouring retry_after, capped) and 5xx/network errors.
 export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     const wait = sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
@@ -42,7 +43,10 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
         } catch {
             res = null;
         }
-        if (res?.ok) return true;
+        if (res?.ok) {
+            const saved = await res.json?.().catch(() => null);
+            return saved?.id ?? true;
+        }
         if (res && res.status < 500 && res.status !== 429) return false;
         if (attempt === MAX_TRIES) break;
         const header = res?.headers?.get?.("retry-after");
@@ -57,6 +61,28 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
         );
     }
     return false;
+}
+
+// Replaces the content of a message this webhook posted. One try: if the
+// edit fails, the alert simply stays as it was.
+export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
+    const u = new URL(url);
+    u.search = "";
+    u.pathname += `/messages/${id}`;
+    try {
+        const res = await withTimeout(TIMEOUT_MS, (signal) =>
+            fetchImpl(u, {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify(body),
+                signal,
+            }),
+        );
+        res.body?.cancel();
+        return res.ok;
+    } catch {
+        return false;
+    }
 }
 
 // Keep a post's state change only if it was delivered: an undelivered alert

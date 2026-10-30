@@ -400,12 +400,15 @@ main > * {
     }
 }
 
+/* Hidden for the whole duration, then shown. The last keyframe sets the end
+   state, so a stepped timing function can't leave a layer hidden. */
 @keyframes site-px-appear {
-    from {
+    0%,
+    99% {
         opacity: 0;
     }
 
-    to {
+    100% {
         opacity: 1;
     }
 }

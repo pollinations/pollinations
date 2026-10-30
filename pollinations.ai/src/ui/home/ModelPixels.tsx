@@ -15,7 +15,7 @@ type Motion = Record<`--${string}`, string>;
 type Layer = { rows: string[]; motion?: Motion };
 
 const appear = (delay: number): Motion => ({
-    "--px-anim": "site-px-appear 160ms steps(1)",
+    "--px-anim": "site-px-appear 160ms linear",
     "--px-delay": `${delay}ms`,
 });
 const type = (length: number, delay: number): Motion => ({

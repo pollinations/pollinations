@@ -113,8 +113,7 @@ export function createImageGenerationPrompt(
 }
 
 export function generateImageURL(prompt, model, imageUrl = null) {
-    const key = getStoredApiKey();
-    let url = `${API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(key)}`;
+    let url = `${API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}`;
 
     if (imageUrl) {
         url += `&enhance=false&image=${encodeURIComponent(`${imageUrl},${SELFIE_CATGPT}`)}`;
@@ -122,6 +121,14 @@ export function generateImageURL(prompt, model, imageUrl = null) {
         url += `&enhance=true&image=${encodeURIComponent(ORIGINAL_CATGPT)}`;
     }
     return url;
+}
+
+// The key goes in the Authorization header, never the URL, so it stays out of
+// the page, saved memes and access logs.
+export function fetchImage(url) {
+    return fetch(url, {
+        headers: { Authorization: `Bearer ${getStoredApiKey()}` },
+    });
 }
 
 // ── Models ──────────────────────────────────────────────────────────────────
@@ -193,15 +200,12 @@ export async function handleImageUpload(file, notify) {
     }
 }
 
-export async function publishMemeToGallery(imageUrl) {
+export async function publishMemeToGallery(image) {
     const apiKey = getStoredApiKey();
     if (!apiKey) throw new Error("Log in before publishing a meme");
 
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) throw new Error("Could not read the generated meme");
-
     const form = new FormData();
-    form.append("file", await imageResponse.blob(), "catgpt-meme");
+    form.append("file", image, "catgpt-meme");
     form.append("tags", COMMUNITY_TAG);
 
     const response = await fetch(`${MEDIA}/upload`, {

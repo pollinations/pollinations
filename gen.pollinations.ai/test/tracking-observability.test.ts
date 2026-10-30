@@ -2867,6 +2867,146 @@ describe("tracking observability", () => {
         expect(fallback.isBilledUsage).toBe(true);
     });
 
+    it.each([false, true])(
+        "handles an opening Mistral stream error through fallback (fallback also fails: %s)",
+        async (fallbackFails) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 0, packBalance: 10 },
+            });
+            const db = drizzle(env.DB);
+            const before = await getUserBalance(db, caller.userId);
+            const calls: string[] = [];
+            const events: Record<string, unknown>[] = [];
+            const errors: Record<string, unknown>[] = [];
+            const failed =
+                'data: {"model":"unknown","choices":[],"error":{"code":503,"message":"Service temporarily unavailable due to high load, please retry.","metadata":{"error_type":"provider_overloaded"}}}\n\n' +
+                "data: [DONE]\n\n";
+            const succeeded =
+                'data: {"choices":[{"index":0,"delta":{"content":"fallback answer"},"finish_reason":null}]}\n\n' +
+                'data: {"choices":[],"usage":{"prompt_tokens":1000,"completion_tokens":500,"total_tokens":1500}}\n\n' +
+                "data: [DONE]\n\n";
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const request = new Request(input, init);
+                    const url = new URL(request.url);
+                    if (
+                        url.hostname === "portkey.test" ||
+                        url.hostname === "openrouter.ai"
+                    ) {
+                        calls.push(url.hostname);
+                        const body = (await request.json()) as Record<
+                            string,
+                            unknown
+                        >;
+                        expect(body.stream).toBe(true);
+                        return new Response(
+                            url.hostname === "portkey.test" || fallbackFails
+                                ? failed
+                                : succeeded,
+                            {
+                                headers: {
+                                    "content-type": "text/event-stream",
+                                },
+                            },
+                        );
+                    }
+                    if (url.pathname === "/v0/events") {
+                        const rows = (await request.text())
+                            .split("\n")
+                            .filter(Boolean)
+                            .map((line) => JSON.parse(line));
+                        if (url.searchParams.get("name") === "error_event")
+                            errors.push(...rows);
+                        else if (
+                            url.searchParams.get("name") ===
+                            "generation_event_v2"
+                        )
+                            events.push(...rows);
+                    }
+                    return Response.json({ data: [] });
+                },
+            );
+            const bindings = withInlineGenerationCoordinator({
+                ...env,
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                OPENROUTER_API_KEY: "test-openrouter-key",
+            });
+            const ctx = createExecutionContext();
+            const prompt = `opening error ${crypto.randomUUID()}`;
+            const request = () =>
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "mistralai/mistral-small-4",
+                        stream: true,
+                        messages: [
+                            {
+                                role: "user",
+                                content: prompt,
+                            },
+                        ],
+                    }),
+                });
+            const response = await worker.fetch(request(), bindings, ctx);
+            const body = await response.text();
+            await waitOnExecutionContext(ctx);
+
+            expect(calls).toEqual(["portkey.test", "openrouter.ai"]);
+            expect(response.status, body).toBe(fallbackFails ? 503 : 200);
+            expect(events).toHaveLength(2);
+            expect(events[0]).toMatchObject({
+                responseStatus: 503,
+                isFinal: false,
+                isBilledUsage: false,
+            });
+            expect(events[1]).toMatchObject({
+                modelUsed: "mistralai/mistral-small-4:openrouter",
+                responseStatus: fallbackFails ? 503 : 200,
+                isFinal: true,
+                isBilledUsage: !fallbackFails,
+            });
+            const after = await getUserBalance(db, caller.userId);
+            if (fallbackFails) {
+                expect(after).toEqual(before);
+                expect(errors).toEqual(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            upstream_host: "openrouter.ai",
+                            upstream_status: 503,
+                            status: 503,
+                        }),
+                    ]),
+                );
+            } else {
+                expect(body).toBe(succeeded);
+                expect(
+                    events.filter((event) => event.isBilledUsage),
+                ).toHaveLength(1);
+                expect(before.packBalance - after.packBalance).toBeCloseTo(
+                    Number(events[1].totalPrice),
+                    10,
+                );
+                expect(after.tierBalance).toBe(before.tierBalance);
+                const cachedCtx = createExecutionContext();
+                const cached = await worker.fetch(
+                    request(),
+                    bindings,
+                    cachedCtx,
+                );
+                expect(cached.headers.get("x-cache")).toBe("HIT");
+                await expect(cached.text()).resolves.toBe(succeeded);
+                await waitOnExecutionContext(cachedCtx);
+                expect(calls).toHaveLength(2);
+                expect(events).toHaveLength(2);
+                expect(await getUserBalance(db, caller.userId)).toEqual(after);
+            }
+        },
+    );
+
     it.each(["valid", "missing", "malformed", "recovered"])(
         "settles community Chat with %s usage/delivery and no model metadata",
         async (usageKind) => {

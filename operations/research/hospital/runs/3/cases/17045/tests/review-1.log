@@ -1,0 +1,100 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && env TEST_VCR_MODE=replay-only npx vitest run test/image/inferencePortImageModel.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+ ❯ test/image/inferencePortImageModel.test.ts (16 tests | 3 failed) 195ms
+   ✓ callInferencePortImage > generates through the generations endpoint with Bearer auth 18ms
+   ✓ callInferencePortImage > conditions generation on a safety-checked reference image 12ms
+   ✓ callInferencePortImage > sends both reference images 10ms
+   ✓ callInferencePortImage > rejects transparent backgrounds before calling upstream 10ms
+   × callInferencePortImage > rejects explicit 768x1024 output before calling upstream 12ms
+     → promise resolved "{ …(2) }" instead of rejecting
+   × callInferencePortImage > rejects explicit 1024x768 output before calling upstream 3ms
+     → promise resolved "{ …(2) }" instead of rejecting
+   × callInferencePortImage > rejects explicit 1536x1536 output before calling upstream 3ms
+     → promise resolved "{ …(2) }" instead of rejecting
+   ✓ callInferencePortImage > fails clearly when upstream returns no image 12ms
+   ✓ callInferencePortImage > rejects invalid reported image usage undefined 14ms
+   ✓ callInferencePortImage > rejects invalid reported image usage 0 9ms
+   ✓ callInferencePortImage > rejects invalid reported image usage -1 9ms
+   ✓ callInferencePortImage > rejects invalid reported image usage 1.5 8ms
+   ✓ callInferencePortImage > bills the image count reported by the provider 9ms
+   ✓ callInferencePortImage > preserves upstream 4xx errors 10ms
+   ✓ callInferencePortImage > preserves upstream 5xx errors 10ms
+   ✓ callInferencePortImage > downloads and uses image from URL when b64_json is absent 10ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/image/inferencePortImageModel.test.ts > callInferencePortImage > rejects explicit 768x1024 output before calling upstream
+ FAIL  test/image/inferencePortImageModel.test.ts > callInferencePortImage > rejects explicit 1024x768 output before calling upstream
+ FAIL  test/image/inferencePortImageModel.test.ts > callInferencePortImage > rejects explicit 1536x1536 output before calling upstream
+AssertionError: promise resolved "{ …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "buffer": {
++     "data": [
++       105,
++       110,
++       102,
++       101,
++       114,
++       101,
++       110,
++       99,
++       101,
++       112,
++       111,
++       114,
++       116,
++       45,
++       111,
++       117,
++       116,
++       112,
++       117,
++       116,
++     ],
++     "type": "Buffer",
++   },
++   "trackingData": {
++     "actualModel": "inferenceport-ai/lightning-image-turbo",
++     "usage": {
++       "completionImageTokens": 1,
++       "totalTokenCount": 1,
++     },
++   },
+  }
+
+ ❯ Assertion.propertyGetter home/user/pollinations/gen.pollinations.ai/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/deps_ssr/vitest___@vitest_expect___chai.js:1482:27
+ ❯ Object.proxyGetter [as get] home/user/pollinations/gen.pollinations.ai/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/deps_ssr/vitest___@vitest_expect___chai.js:1564:22
+ ❯ test/image/inferencePortImageModel.test.ts:189:9
+    187|                 USER_INFO,
+    188|             ),
+    189|         ).rejects.toMatchObject({
+       |         ^
+    190|             status: 400,
+    191|             message: expect.stringContaining("only 1024x1024"),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 13 passed (16)
+   Start at  22:05:32
+   Duration  5.98s (transform 1.89s, setup 4.90s, collect 19ms, tests 195ms, environment 0ms, prepare 106ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 1

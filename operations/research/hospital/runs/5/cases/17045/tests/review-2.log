@@ -1,0 +1,75 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && unshare -rn python3 -c 'import os,subprocess; subprocess.run(["ip","link","set","lo","up"],check=True); os.execvp("env",["env","TEST_VCR_MODE=replay-only","npx","vitest","run",'"'"'test/image/inferencePortImageModel.test.ts'"'"'])'
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+workerd/io/io-context.c++:433: error: e = kj/async-io-unix.c++:1298: failed: DNS lookup failed.; params.host = api.inferenceport.ai; params.service = ; gai_strerror(status) = Temporary failure in name resolution
+stack: /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f3a3e2 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f3ad70 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33125f0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@35206a0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3521d20 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@35222c0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f2cfa0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f2d300 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f19280 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f08c10 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f1f270 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2aa5d30 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f24c70 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2aa5d30 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f2e6b0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2d78ab4 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2d78b58; sentryErrorContext = jsgInternalError
+workerd/io/io-context.c++:433: error: e = kj/async-io-unix.c++:1298: failed: DNS lookup failed.; params.host = api.inferenceport.ai; params.service = ; gai_strerror(status) = Temporary failure in name resolution
+stack: /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f3a3e2 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f3ad70 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33125f0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@35206a0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3521d20 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@35222c0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f2cfa0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f2d300 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f19280 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f08c10 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f1f270 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2f19090 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2f0fe10 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@25bc4c0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2d78ab4 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2d78b58; sentryErrorContext = jsgInternalError
+workerd/jsg/util.c++:405: error: e = kj/async-io-unix.c++:1298: failed: DNS lookup failed.; params.host = api.inferenceport.ai; params.service = ; gai_strerror(status) = Temporary failure in name resolution
+stack: /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f3a3e2 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f3ad70 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33125f0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@35206a0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3521d20 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@35222c0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f2cfa0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f2d300 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f19280 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f24c70 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f2e6b0 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f12620 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2d54e00 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2a76660; sentryErrorContext = jsgInternalError; wdErrId = i9jcv22m1jnf7cc69nbkitb6
+workerd/io/worker.c++:2441: info: uncaught exception; source = Uncaught (in promise); stack = Error: internal error; reference = i9jcv22m1jnf7cc69nbkitb6
+workerd/io/io-context.c++:435: info: uncaught exception; exception = workerd/jsg/_virtual_includes/iterator/workerd/jsg/value.h:1480: failed: jsg.Error: internal error; reference = i9jcv22m1jnf7cc69nbkitb6
+stack: /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2cfbe50 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2cfca8e /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@4f03c2a /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2b0c760 /home/user/pollinations/node_modules/@cloudflare/vitest-pool-workers/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2b0cd90
+ ❯ test/image/inferencePortImageModel.test.ts (14 tests | 1 failed) 148ms
+   ✓ callInferencePortImage > generates through the generations endpoint with Bearer auth 16ms
+   ✓ callInferencePortImage > conditions generation on a safety-checked reference image 10ms
+   ✓ callInferencePortImage > sends both reference images 10ms
+   ✓ callInferencePortImage > rejects transparent backgrounds before calling upstream 11ms
+   × callInferencePortImage > rejects explicit non-1024 dimensions before calling upstream 12ms
+     → expected Error: internal error; reference = i9jcv2… { remote: true } to match object { status: 400, …(1) }
+(1 matching property omitted from actual)
+   ✓ callInferencePortImage > fails clearly when upstream returns no image 8ms
+   ✓ callInferencePortImage > rejects invalid reported image usage undefined 9ms
+   ✓ callInferencePortImage > rejects invalid reported image usage 0 7ms
+   ✓ callInferencePortImage > rejects invalid reported image usage -1 9ms
+   ✓ callInferencePortImage > rejects invalid reported image usage 1.5 9ms
+   ✓ callInferencePortImage > bills the image count reported by the provider 8ms
+   ✓ callInferencePortImage > preserves upstream 4xx errors 8ms
+   ✓ callInferencePortImage > preserves upstream 5xx errors 7ms
+   ✓ callInferencePortImage > downloads and uses image from URL when b64_json is absent 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/image/inferencePortImageModel.test.ts > callInferencePortImage > rejects explicit non-1024 dimensions before calling upstream
+AssertionError: expected Error: internal error; reference = i9jcv2… { remote: true } to match object { status: 400, …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "message": StringContaining "1024x1024",
+-   "status": 400,
++ Error {
++   "message": "internal error; reference = i9jcv22m1jnf7cc69nbkitb6",
++   "remote": true,
+  }
+
+ ❯ Assertion.methodWrapper home/user/pollinations/gen.pollinations.ai/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/deps_ssr/vitest___@vitest_expect___chai.js:1603:25
+ ❯ test/image/inferencePortImageModel.test.ts:174:9
+    172|         const fetchSpy = vi.spyOn(globalThis, "fetch");
+    173| 
+    174|         await expect(
+       |         ^
+    175|             callInferencePortImage(
+    176|                 "a poster",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  01:29:42
+   Duration  5.08s (transform 1.47s, setup 4.18s, collect 20ms, tests 148ms, environment 0ms, prepare 93ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 1

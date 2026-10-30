@@ -1,0 +1,108 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && npx vitest run test/image/gptImageRouting.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+ ❯ test/image/gptImageRouting.test.ts (29 tests | 7 failed) 318ms
+   ✓ openai/gpt-image-2 Azure routing > round robins across all Azure endpoints 18ms
+   ✓ openai/gpt-image-2 Azure routing > fails a 400 to the caller instead of trying another region 12ms
+   ✓ openai/gpt-image-2 Azure routing > fails a 408 to the caller instead of trying another region 9ms
+   ✓ openai/gpt-image-2 Azure routing > fails a 500 to the caller instead of trying another region 9ms
+   ✓ openai/gpt-image-2 Azure routing > fails a 524 to the caller instead of trying another region 8ms
+   × openai/gpt-image-2 Azure routing > tries the other region after a 401 9ms
+     → refused
+   × openai/gpt-image-2 Azure routing > fails a 401 to the caller once every region refused 4ms
+     → expected "spy" to be called 2 times, but got 1 times
+   × openai/gpt-image-2 Azure routing > tries the other region after a 402 3ms
+     → refused
+   × openai/gpt-image-2 Azure routing > fails a 402 to the caller once every region refused 3ms
+     → expected "spy" to be called 2 times, but got 1 times
+   × openai/gpt-image-2 Azure routing > tries the other region after a 403 5ms
+     → refused
+   × openai/gpt-image-2 Azure routing > fails a 403 to the caller once every region refused 3ms
+     → expected "spy" to be called 2 times, but got 1 times
+   ✓ openai/gpt-image-2 Azure routing > tries the other region after a 404 9ms
+   ✓ openai/gpt-image-2 Azure routing > fails a 404 to the caller once every region refused 9ms
+   ✓ openai/gpt-image-2 Azure routing > tries the other region after a 429 9ms
+   ✓ openai/gpt-image-2 Azure routing > fails a 429 to the caller once every region refused 9ms
+   × openai/gpt-image-2 Azure routing > tries the other region when Azure blocks one resource 3ms
+     → Your resource has been temporarily blocked because we detected behavior that may violate our content policy.
+   ✓ openai/gpt-image-2 Azure routing > fails a content-policy refusal without trying another region 8ms
+   ✓ GPT Image OpenAI fallback routing > routes openai/gpt-image-1-mini:openai directly to gpt-image-1-mini 9ms
+   ✓ GPT Image OpenAI fallback routing > routes openai/gpt-image-1.5:openai directly to gpt-image-1.5 10ms
+   ✓ GPT Image OpenAI fallback routing > routes openai/gpt-image-2:openai directly to gpt-image-2 11ms
+   ✓ GPT Image OpenAI fallback routing > routes openai/gpt-image-2.5-flare:openai directly to gpt-image-2.5-flare 9ms
+   ✓ GPT Image OpenAI fallback routing > routes openai/gpt-image-2.5-sunburst:openai directly to gpt-image-2.5-sunburst 9ms
+   ✓ GPT Image OpenAI fallback routing > keeps Azure rotation independent from direct OpenAI calls 9ms
+   ✓ GPT Image 2.5 > openai/gpt-image-2.5-flare routes to its dedicated Sweden Central resource 9ms
+   ✓ GPT Image 2.5 > openai/gpt-image-2.5-flare preserves custom dimensions and transparency 10ms
+   ✓ GPT Image 2.5 > openai/gpt-image-2.5-flare charges paid balance at 0.75x provider cost 9ms
+   ✓ GPT Image 2.5 > openai/gpt-image-2.5-sunburst routes to its dedicated Sweden Central resource 9ms
+   ✓ GPT Image 2.5 > openai/gpt-image-2.5-sunburst preserves custom dimensions and transparency 10ms
+   ✓ GPT Image 2.5 > openai/gpt-image-2.5-sunburst charges paid balance at 0.75x provider cost 10ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/image/gptImageRouting.test.ts > openai/gpt-image-2 Azure routing > tries the other region after a 401
+ FAIL  test/image/gptImageRouting.test.ts > openai/gpt-image-2 Azure routing > tries the other region after a 402
+ FAIL  test/image/gptImageRouting.test.ts > openai/gpt-image-2 Azure routing > tries the other region after a 403
+UpstreamError: refused
+ ❯ UpstreamError.fromProvider ../shared/error.ts:84:16
+     82|     /** Keep the provider status for diagnostics and retries; expose g…
+     83|     static fromProvider(status: number, options: UpstreamErrorOptions)…
+     84|         return new UpstreamError(remapUpstreamStatus(status), {
+       |                ^
+     85|             ...options,
+     86|             upstreamStatus: status,
+ ❯ ensureUpstreamOk ../shared/error.ts:124:25
+ ❯ callGPTImageWithEndpoint src/image/createAndReturnImages.ts:699:5
+ ❯ callGPTImage src/image/createAndReturnImages.ts:743:20
+ ❯ test/image/gptImageRouting.test.ts:128:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  test/image/gptImageRouting.test.ts > openai/gpt-image-2 Azure routing > fails a 401 to the caller once every region refused
+ FAIL  test/image/gptImageRouting.test.ts > openai/gpt-image-2 Azure routing > fails a 402 to the caller once every region refused
+ FAIL  test/image/gptImageRouting.test.ts > openai/gpt-image-2 Azure routing > fails a 403 to the caller once every region refused
+AssertionError: expected "spy" to be called 2 times, but got 1 times
+ ❯ test/image/gptImageRouting.test.ts:143:31
+    141|                 callGPTImage("test", params, userInfo, "openai/gpt-ima…
+    142|             ).rejects.toMatchObject({ upstreamStatus: status });
+    143|             expect(fetchMock).toHaveBeenCalledTimes(EXPECTED_HOSTS.siz…
+       |                               ^
+    144|         });
+    145|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  test/image/gptImageRouting.test.ts > openai/gpt-image-2 Azure routing > tries the other region when Azure blocks one resource
+UpstreamError: Your resource has been temporarily blocked because we detected behavior that may violate our content policy.
+ ❯ UpstreamError.fromProvider ../shared/error.ts:84:16
+     82|     /** Keep the provider status for diagnostics and retries; expose g…
+     83|     static fromProvider(status: number, options: UpstreamErrorOptions)…
+     84|         return new UpstreamError(remapUpstreamStatus(status), {
+       |                ^
+     85|             ...options,
+     86|             upstreamStatus: status,
+ ❯ ensureUpstreamOk ../shared/error.ts:124:25
+ ❯ callGPTImageWithEndpoint src/image/createAndReturnImages.ts:699:5
+ ❯ callGPTImage src/image/createAndReturnImages.ts:743:20
+ ❯ test/image/gptImageRouting.test.ts:156:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 22 passed (29)
+   Start at  22:41:01
+   Duration  6.42s (transform 1.99s, setup 5.18s, collect 21ms, tests 318ms, environment 0ms, prepare 119ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 1

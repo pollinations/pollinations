@@ -4389,6 +4389,7 @@ Returns every reward the account has earned, newest first, including claim state
 | `rewards[].earnedAt` * | `string` | — |
 | `rewards[].claimedAt` * | `any` | — |
 | `rewards[].url` * | `any` | — |
+| `setupHold` * | `object` \| `null` | Set while the account's Setup quest rewards are on hold and can't be claimed. Buying a pollen pack unlocks them, as does a maintainer approving a review. |
 
 <sub>`*` = required field</sub>
 
@@ -4397,6 +4398,25 @@ Returns every reward the account has earned, newest first, including claim state
 ```bash
 curl "https://gen.pollinations.ai/account/quests/rewards" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+{
+  "rewards": [
+    {
+      "id": "string",
+      "questId": "string",
+      "title": "string",
+      "balanceBucket": "string",
+      "earnedAt": "string",
+      "claimedAt": "string",
+      "url": "string"
+    }
+  ],
+  "setupHold": {
+    "review": "pending"
+  }
+}
 ```
 
 ---

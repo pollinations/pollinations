@@ -21,9 +21,10 @@ import {
 import {
     brokenStreams,
     dueProbes,
-    PROBE_MINUTES,
+    GEN,
     pool,
     probe,
+    QUIET_MS,
     recordProbe,
     streamKey,
 } from "./probes.js";
@@ -45,6 +46,7 @@ import {
     listingsCard,
     noteworthy,
     pings,
+    refusedCard,
     renderCard,
     snapshot,
     step,
@@ -95,8 +97,13 @@ const getJson = (url) =>
         return res.json();
     });
 
-const statusRows = async (gen, minutes) =>
-    (await getJson(`${gen}/models/status?minutes=${minutes}`)).data;
+// `traffic`: "regular" leaves out legacy-API and internal traffic.
+const statusRows = async (gen, minutes, traffic) =>
+    (
+        await getJson(
+            `${gen}/models/status?minutes=${minutes}${traffic ? `&traffic=${traffic}` : ""}`,
+        )
+    ).data;
 
 // Only the status matters; cancel the unread body to free it.
 const isUp = (gen) =>
@@ -500,8 +507,8 @@ export class Watch extends DurableObject {
 
     // Community models leaning on a fallback, looked for hourly over the
     // last 4 hours and told to the community channel: one post per model
-    // and fallback a week, no ping, no AI. A post Discord refused is tried
-    // again the next hour.
+    // and fallback a week, pinging the model's owner, no AI. A post Discord
+    // refused is tried again the next hour.
     async fallbacks(gen, catalog, now) {
         const saved = (await this.ctx.storage.get("fallback")) ?? {};
         if (now - (saved.checkedAt ?? 0) < FALLBACK_EVERY_MS) return;
@@ -522,45 +529,59 @@ export class Watch extends DurableObject {
     }
 
     // Every half hour: the community models due a probe, probed with
-    // COMMUNITY_PROBE_KEY, each result's backoff saved as it comes. Broken
-    // streams are told in one card to the community channel once all are
-    // in; one the card had no room for, or Discord refused, is told after
-    // the next probe that finds it. A failure ends the batch, logged where
-    // the batch starts.
+    // COMMUNITY_PROBE_KEY, each result's backoff saved as it comes; a probe
+    // gen turned away leaves it as it was. Once all are in:
+    // - broken streams go to their owners in one card in the community
+    //   channel; a model the card had no room for, or one Discord refused,
+    //   is told after its next probe;
+    // - one broken stream for many owners, or every probe turned away, goes
+    //   to the maintainers in the infra-watch channel, once a day.
+    // A failure ends the batch, logged where the batch starts.
     async probes(gen, catalog, now) {
         const state = (await this.ctx.storage.get("probes")) ?? {};
         if (now - (state.at ?? 0) < PROBE_EVERY_MS) return;
-        // Models no longer in the catalog are forgotten.
-        const listed = new Set(catalog.map((m) => m.name));
-        const schedule = Object.fromEntries(
-            Object.entries(state.schedule ?? {}).filter(([name]) =>
-                listed.has(name),
-            ),
-        );
-        const save = () =>
-            this.ctx.storage.put("probes", { ...state, at: now, schedule });
+        state.at = now;
+        state.schedule ??= {};
+        const { schedule } = state;
+        const save = () => this.ctx.storage.put("probes", state);
         await save();
         const key = this.env.COMMUNITY_PROBE_KEY;
         if (!key) throw new Error("COMMUNITY_PROBE_KEY missing");
-        const { data: rows } = await getJson(
-            `${gen}/models/status?minutes=${PROBE_MINUTES}&traffic=regular`,
-        );
+        const rows = await statusRows(gen, FALLBACK_MINUTES, "regular");
         const due = dueProbes(catalog, rows, schedule, now);
         const results = await pool(due, PROBE_POOL, async (model) => {
             const result = await probe(gen, key, model, schedule[model.name]);
-            schedule[model.name] = recordProbe(schedule[model.name], result);
-            await save();
+            if (!result.refused) {
+                schedule[model.name] = recordProbe(
+                    schedule[model.name],
+                    result,
+                );
+                await save();
+            }
             if (!result.ok)
                 console.log(
                     `probe ${result.model}: ${result.status} ${result.requestId ?? ""}`,
                 );
             return result;
         });
-        const streams = brokenStreams(state.streams, results, Date.now());
-        const card = streams.due.length && brokenStreamCard(streams.due);
-        if (card && (await post(this.env, card, "COMMUNITY_WEBHOOK_URL")))
-            for (const { model, error } of card.shown)
-                streams.told[streamKey(model, error)] = Date.now();
+        const at = Date.now();
+        if (
+            results.length &&
+            results.every((r) => r.refused) &&
+            at - (state.refusedAt ?? 0) >= QUIET_MS &&
+            (await post(this.env, refusedCard(results.length)))
+        )
+            state.refusedAt = at;
+        const streams = brokenStreams(state.streams, results, at);
+        const tell = async (models, shared, webhook) => {
+            if (!models.length) return;
+            const card = brokenStreamCard(models, shared);
+            if (await post(this.env, card, webhook))
+                for (const { model, error } of card.shown)
+                    streams.told[streamKey(shared ? GEN : model, error)] = at;
+        };
+        await tell(streams.due, false, "COMMUNITY_WEBHOOK_URL");
+        await tell(streams.shared, true, "DISCORD_WEBHOOK_URL");
         state.streams = { streaks: streams.streaks, told: streams.told };
         await save();
     }

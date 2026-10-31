@@ -1002,6 +1002,19 @@ test("a broken-stream card names each model and error, and its owners once", () 
     assert.equal(card.shown.length, 4);
 });
 
+test("a broken stream shared by many owners pings the maintainers, and no owner", () => {
+    const card = brokenStreamCard(
+        [
+            { model: "community/a/x", error: "stream is missing [DONE]" },
+            { model: "community/b/y", error: "stream is missing [DONE]" },
+        ],
+        true,
+    );
+    assert.equal(card.ping, true);
+    assert.deepEqual(card.owners, []);
+    assert.match(card.text, /no owner was pinged/);
+});
+
 test("a large broken-stream card fits Discord's 4,096 characters, models whole, the rest counted", () => {
     const due = Array.from({ length: 60 }, (_, i) => ({
         model: `community/owner${i}/model-${i}`,

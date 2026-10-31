@@ -747,6 +747,16 @@ it("probes due community models half-hourly and tells a broken stream once a day
     // None reached the infra-watch channel.
     const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
     expect(infra.some((w) => w.text.includes("BROKEN"))).toBe(false);
+
+    // A model gone from the catalog keeps its backoff for when it is back.
+    const [broken] = world.catalog.filter(
+        (m) => m.name === "community/o/broken",
+    );
+    world.catalog = world.catalog.filter((m) => m !== broken);
+    await later(stub, 0);
+    await probed(stub);
+    const { schedule } = await stored(stub, "probes");
+    expect(schedule["community/o/broken"].failures).toBe(3);
 });
 
 it("names as many broken streams as a card fits, and the rest after their next probe", async () => {
@@ -769,4 +779,73 @@ it("names as many broken streams as a card fits, and the rest after their next p
     const [, second] = communityPosts();
     expect(second.text).toContain(`${names.at(-1).slice(10)} `);
     for (const n of named) expect(second.text).not.toContain(`${n.slice(10)} `);
+});
+
+// Posts Discord accepted in the infra-watch channel that contain `text`.
+const infraPosts = (text) =>
+    world.writes.filter(
+        (w) =>
+            w.ok &&
+            w.path === "/api/webhooks/1/x" &&
+            w.method === "POST" &&
+            w.text.includes(text),
+    );
+const MAINTAINER_PING = "<@304378879705874432> <@884468469452656732>";
+
+it("tells the maintainers, not the owners, when one stream breaks for three owners", async () => {
+    const stub = watch();
+    world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
+        (name) => community(name),
+    );
+    world.probe = answers(() => true);
+    await probed(stub);
+    const [card] = infraPosts("BROKEN STREAM");
+    expect(card.content).toBe(MAINTAINER_PING);
+    expect(card.text).toContain("no owner was pinged");
+    // Their second in a row, within the day: no owner is told either.
+    await later(stub, 8 * 60 * 60_000);
+    await probed(stub);
+    expect(infraPosts("BROKEN STREAM")).toHaveLength(1);
+    expect(communityPosts()).toHaveLength(0);
+});
+
+it("tells the maintainers once a day when gen turns every probe away, leaving the backoff", async () => {
+    const stub = watch();
+    world.catalog = [
+        community("community/o/text"),
+        community("community/o/image", { category: "image" }),
+    ];
+    // Gen's balance notice for chat, a 402 for images.
+    const notice = () =>
+        new Response(
+            `data: ${JSON.stringify({ choices: [{ delta: { content: "Please top up.\n\nIf this isn’t your Pollinations account, contact whoever runs the app or service you’re using." } }] })}\n\ndata: [DONE]\n\n`,
+        );
+    // First only the text model's own upstream answers with a notice: not
+    // the probe key, so no card.
+    world.probe = (path, body) =>
+        path === "/v1/chat/completions"
+            ? notice()
+            : answers(() => false)(path, body);
+    await probed(stub);
+    expect(infraPosts("PROBES REFUSED")).toHaveLength(0);
+    world.probe = (path) =>
+        path === "/v1/chat/completions"
+            ? notice()
+            : Response.json({ error: {} }, { status: 402 });
+    await later(stub, 4 * 60 * 60_000);
+    await probed(stub);
+    const [card] = infraPosts("PROBES REFUSED");
+    expect(card.content).toBe(MAINTAINER_PING);
+    expect(card.text).toContain("2 of 2 turned away");
+    // Only the image model's working probe is in its backoff.
+    expect(Object.keys((await stored(stub, "probes")).schedule)).toEqual([
+        "community/o/image",
+    ]);
+    // Half an hour on both are probed again, but told only once a day.
+    world.probes = [];
+    await later(stub, 0);
+    await probed(stub);
+    expect(world.probes).toHaveLength(2);
+    expect(infraPosts("PROBES REFUSED")).toHaveLength(1);
+    expect(communityPosts()).toHaveLength(0);
 });

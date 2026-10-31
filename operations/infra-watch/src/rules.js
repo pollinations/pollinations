@@ -829,12 +829,14 @@ export function fallbackCard({ model, via, rescued, successes }) {
 // whole models while it stays within this; the rest are counted.
 const STREAMS_BUDGET = 3800;
 
-// Community models whose probes got the same broken stream twice in a row,
-// in one card pinging their owners. It names the protocol error, with the
-// error event's code when that is a plain word: never stream content,
-// hosts or payloads. `shown` are the models it names; the others are named
-// after their next probe.
-export function brokenStreamCard(due) {
+// Community models whose probes got a broken stream, in one card. It names
+// the protocol error, with the error event's code when that is a plain
+// word: never stream content, hosts or payloads. `shown` are the models it
+// names; an owner's model left out is named after its next probe.
+// - For owners: each model's second in a row, pinging their owners.
+// - `shared`: one error on many owners' models at once, likely gen's own,
+//   pinging the maintainers instead.
+export function brokenStreamCard(due, shared = false) {
     const color = COLOR.PRIMARY_WEAK;
     const render = (shown) =>
         [
@@ -853,11 +855,11 @@ export function brokenStreamCard(due) {
                 Infinity,
             ),
             ...(shown.length < due.length
-                ? [
-                      `…and ${due.length - shown.length} more, named after their next probe`,
-                  ]
+                ? [`…and ${due.length - shown.length} more`]
                 : []),
-            "Two probes in a row got a broken stream: callers may get failed or cut-off answers.",
+            shared
+                ? "The same broken stream on several owners' models at once: likely gen's own, so no owner was pinged."
+                : "Two probes in a row got a broken stream: callers may get failed or cut-off answers.",
         ].join("\n");
     // ponytail: renders once per model left out, fine for a few hundred.
     let shown = due;
@@ -865,10 +867,28 @@ export function brokenStreamCard(due) {
         shown = shown.slice(0, -1);
     return {
         text: render(shown),
-        ping: false,
+        ping: shared,
         color,
-        owners: [...new Set(shown.map((d) => ownerOf(d.model)))],
+        owners: shared ? [] : [...new Set(shown.map((d) => ownerOf(d.model)))],
         shown,
+    };
+}
+
+// Every probe of a batch turned away by gen: the probe key is out of pollen
+// or not allowed, so nothing was checked. For the maintainers only.
+export function refusedCard(count) {
+    const color = COLOR.PRIMARY_WEAK;
+    return {
+        text: [
+            panel(
+                "PROBES REFUSED",
+                [["PROBES", `${count} of ${count} turned away by gen`]],
+                color,
+            ),
+            "COMMUNITY_PROBE_KEY is out of pollen or not allowed: community models aren't probed until it is fixed.",
+        ].join("\n"),
+        ping: true,
+        color,
     };
 }
 

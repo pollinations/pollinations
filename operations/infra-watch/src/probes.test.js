@@ -4,13 +4,13 @@ import { inflateSync } from "node:zlib";
 import {
     brokenStreams,
     dueProbes,
+    GEN,
     hasChatProbeMarker,
     imageProbeRequest,
     imageProbeResult,
     nextImageOperation,
     nextProbeAt,
     parseChatStream,
-    probeErrorDetails,
     recordProbe,
     streamKey,
     textProbeResult,
@@ -161,88 +161,11 @@ test("reports missing usage even after a successful-looking answer", () => {
             ),
             {
                 content: "ok-marker",
-                usage,
                 protocolError:
                     "stream returned usage_missing: missing or invalid token usage",
                 errorCode: "usage_missing",
-                errorMessage: "internal diagnostic",
-                upstreamStatus: null,
             },
         );
-    }
-});
-
-test("preserves safe terminal error details without raw upstream bodies", () => {
-    const error = {
-        code: "DEPLOYMENT_DISABLED",
-        message:
-            "Deployment disabled at https://private.example/test?key=secret Bearer hidden-token sk-probe-secret",
-        details: { upstreamStatus: 402, upstreamBody: "private upstream body" },
-    };
-    const result = parseChatStream(
-        `${content}data: ${JSON.stringify({ error })}\n\n${done}`,
-    );
-    assert.equal(result.protocolError, "stream returned an error event");
-    assert.equal(result.errorCode, "DEPLOYMENT_DISABLED");
-    assert.equal(
-        result.errorMessage,
-        "Deployment disabled at [URL] Bearer [redacted] [redacted]",
-    );
-    assert.equal(result.upstreamStatus, 402);
-    for (const secret of [
-        "private.example",
-        "hidden-token",
-        "sk-probe-secret",
-        "private upstream body",
-    ]) {
-        assert.equal(JSON.stringify(result).includes(secret), false);
-    }
-});
-
-test("keeps caller and provider HTTP error metadata without attributing arbitrary 400s", () => {
-    for (const [error, expected] of [
-        [
-            { code: "PAYMENT_REQUIRED", message: "Insufficient pollen" },
-            {
-                errorCode: "PAYMENT_REQUIRED",
-                errorMessage: "Insufficient pollen",
-                upstreamStatus: null,
-            },
-        ],
-        [
-            {
-                code: "BAD_GATEWAY",
-                message: "DEPLOYMENT_DISABLED",
-                details: { upstreamStatus: 402 },
-            },
-            {
-                errorCode: "BAD_GATEWAY",
-                errorMessage: "DEPLOYMENT_DISABLED",
-                upstreamStatus: 402,
-            },
-        ],
-        [
-            {
-                code: "BAD_REQUEST",
-                message: "UnsupportedModel",
-                details: { upstreamStatus: 400 },
-            },
-            {
-                errorCode: "BAD_REQUEST",
-                errorMessage: "UnsupportedModel",
-                upstreamStatus: 400,
-            },
-        ],
-        [
-            { code: "BAD_REQUEST", message: "Invalid input" },
-            {
-                errorCode: "BAD_REQUEST",
-                errorMessage: "Invalid input",
-                upstreamStatus: null,
-            },
-        ],
-    ]) {
-        assert.deepEqual(probeErrorDetails(error), expected);
     }
 });
 
@@ -252,7 +175,6 @@ test("rejects finish_reason error and preserves its diagnostic even after text",
     );
     assert.equal(result.protocolError, "stream ended with finish_reason=error");
     assert.equal(result.errorCode, "429");
-    assert.equal(result.errorMessage, "Provider quota exhausted");
 });
 
 test("accepts marker case changes but still requires the nonce in final content", () => {
@@ -280,7 +202,6 @@ test("accepts marker case changes but still requires the nonce in final content"
 test("preserves healthy streams and existing non-error validation", () => {
     assert.deepEqual(parseChatStream(content + counts + done), {
         content: "ok-marker",
-        usage,
     });
     for (const [body, error] of [
         [`data: {}\n\n${done}`, "stream event is missing a choices array"],
@@ -306,6 +227,7 @@ test("a text probe passes only with the marker in a valid stream", () => {
     const answer = (body, init) =>
         textProbeResult(new Response(body, init), body, "ok-marker");
     assert.deepEqual(answer(content + counts + done), {
+        refused: false,
         ok: true,
         status: 200,
         protocolError: undefined,
@@ -327,6 +249,24 @@ test("a text probe passes only with the marker in a valid stream", () => {
     const refused = answer('{"error":{"code":"BAD_GATEWAY"}}', { status: 502 });
     assert.equal(refused.status, 502);
     assert.equal(refused.protocolError, undefined);
+    assert.equal(refused.refused, false);
+});
+
+test("gen turning the probe key away is a refusal, not the model's answer", () => {
+    // Gen's balance notice: a chat reply ending in its own sentence.
+    const notice = `data: ${JSON.stringify({ choices: [{ delta: { content: "Please top up, then try again.\n\nIf this isn’t your Pollinations account, contact whoever runs the app or service you’re using." } }] })}\n\n`;
+    const body = notice + counts + done;
+    const result = textProbeResult(new Response(body), body, "ok-marker");
+    assert.equal(result.refused, true);
+    assert.equal(result.status, "INVALID");
+    for (const status of [402, 403]) {
+        const refused = textProbeResult(
+            new Response("{}", { status }),
+            "{}",
+            "x",
+        );
+        assert.equal(refused.refused, true);
+    }
 });
 
 // Ported from operations/community-monitor/image-probe.test.mjs.
@@ -380,7 +320,7 @@ test("edits use a complete 512px RGB PNG and a cache-busted edit instruction", (
     assert.equal(png.subarray(-8, -4).toString(), "IEND");
 });
 
-test("attributes a successful edit to the served model, not the requested one", () => {
+test("a fallback's image is still a success", () => {
     const image = imageProbeRequest(model, "marker", "edit").body.image.split(
         ",",
     )[1];
@@ -392,12 +332,11 @@ test("attributes a successful edit to the served model, not the requested one", 
             }),
             body,
         );
-        assert.equal(result.ok, true); // A fallback rescue is still success.
-        assert.equal(result.modelUsed, served);
+        assert.equal(result.ok, true);
     }
 });
 
-test("keeps the error code without classifying all 4xx as outages or keeping upstream bodies", () => {
+test("an image error is its status; only 402 and 403 are gen turning the key away", () => {
     for (const [status, error] of [
         [
             400,
@@ -416,13 +355,14 @@ test("keeps the error code without classifying all 4xx as outages or keeping ups
             { message: "Image edit failed", details: { upstreamStatus: 500 } },
         ],
         [402, { message: "Insufficient pollen", code: "PAYMENT_REQUIRED" }],
+        [403, { message: "Not allowed", code: "FORBIDDEN" }],
         [400, { message: "Invalid image", code: "invalid_image_url" }],
     ]) {
         const body = JSON.stringify({ error });
         const result = imageProbeResult(new Response(body, { status }), body);
         assert.equal(result.ok, false);
         assert.equal(result.status, status);
-        assert.equal(result.errorCode, error.code ?? null);
+        assert.equal(result.refused, status === 402 || status === 403);
         assert.equal(
             JSON.stringify(result).includes("private upstream body"),
             false,
@@ -482,7 +422,7 @@ test("a broken stream is due a warning on its second fresh probe in a row", () =
     assert.deepEqual(state.streaks[A], { error: MISSING_DONE, streak: 1 });
     state = brokenStreams(state, [result(A)], T0 + 8 * HOUR);
     assert.deepEqual(state.due, [
-        { model: A, error: MISSING_DONE, code: null },
+        { model: A, error: MISSING_DONE, code: null, streak: 2 },
     ]);
 });
 
@@ -526,39 +466,36 @@ test("a model and error told stay quiet for a day; a new error is told", () => {
     );
 });
 
-test("caller-side failures are never a provider's broken stream", () => {
+test("any code inside a broken stream is the provider's", () => {
+    // Gen answers the probe key's own auth, balance and input failures
+    // before the stream: an error event's code came from the provider.
     for (const errorCode of [
         "UNAUTHORIZED",
-        "FORBIDDEN",
         "PAYMENT_REQUIRED",
-        "INSUFFICIENT_BALANCE",
         "BAD_REQUEST",
-        "UNPROCESSABLE_ENTITY",
-        "content_policy_violation",
     ]) {
-        const caller = result(A, {
+        const broken = result(A, {
             protocolError: "stream returned an error event",
             errorCode,
         });
-        let state = brokenStreams({}, [caller], T0);
-        state = brokenStreams(state, [caller], T0);
-        assert.deepEqual(state.due, [], errorCode);
+        let state = brokenStreams({}, [broken], T0);
+        state = brokenStreams(state, [broken], T0);
+        assert.equal(state.due[0]?.code, errorCode);
     }
-    // A provider's own error event is.
-    const provider = result(A, {
-        protocolError: "stream returned an error event",
-        errorCode: "BAD_GATEWAY",
-    });
-    let state = brokenStreams({}, [provider], T0);
-    state = brokenStreams(state, [provider], T0);
-    assert.equal(state.due[0].code, "BAD_GATEWAY");
 });
 
-test("an image probe leaves the streak alone", () => {
+test("an image probe or a refused one leaves the streak alone", () => {
     let state = brokenStreams({}, [result(A)], T0);
     state = brokenStreams(
         state,
-        [result(A, { category: "image", status: 502 })],
+        [
+            result(A, { category: "image", status: 502 }),
+            result(A, {
+                refused: true,
+                status: "INVALID",
+                protocolError: undefined,
+            }),
+        ],
         T0,
     );
     assert.deepEqual(state.streaks[A], { error: MISSING_DONE, streak: 1 });
@@ -601,5 +538,62 @@ test("a fallback's success resets the backoff, like a direct one", () => {
     assert.equal(
         recordProbe(previous, { ...answer, timestamp: HOUR }).failures,
         0,
+    );
+});
+
+test("one broken stream on three owners' models at once goes to the maintainers, not the owners", () => {
+    const models = ["community/a/x", "community/b/y", "community/c/z"];
+    let state = brokenStreams(
+        {},
+        models.map((m) => result(m)),
+        T0,
+    );
+    assert.deepEqual(
+        state.shared.map((f) => f.model),
+        models,
+    );
+    assert.deepEqual(state.due, []);
+    state.told[streamKey(GEN, MISSING_DONE)] = T0;
+    // Their second in a row, within the day, even with only two of them
+    // probed: still not the owners'.
+    const two = brokenStreams(
+        state,
+        models.slice(0, 2).map((m) => result(m)),
+        T0 + 8 * HOUR,
+    );
+    assert.deepEqual(two.due, []);
+    assert.deepEqual(two.shared, []);
+    state = brokenStreams(
+        state,
+        models.map((m) => result(m)),
+        T0 + 8 * HOUR,
+    );
+    assert.deepEqual(state.due, []);
+    assert.deepEqual(state.shared, []);
+    // A day on, still broken for three owners: the maintainers again.
+    state = brokenStreams(
+        state,
+        models.map((m) => result(m)),
+        T0 + DAY,
+    );
+    assert.equal(state.shared.length, 3);
+});
+
+test("one broken stream on two owners' models goes to the owners", () => {
+    const models = ["community/a/x", "community/a/w", "community/b/y"];
+    let state = brokenStreams(
+        {},
+        models.map((m) => result(m)),
+        T0,
+    );
+    assert.deepEqual(state.shared, []);
+    state = brokenStreams(
+        state,
+        models.map((m) => result(m)),
+        T0,
+    );
+    assert.deepEqual(
+        state.due.map((f) => f.model),
+        models,
     );
 });

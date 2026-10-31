@@ -78,9 +78,11 @@ async function fake(input, init = {}) {
         await world.aiGate;
         await sleep(world.aiDelay);
         world.answers++;
-        return Response.json({
-            choices: [{ message: { content: `Line ${world.answers}.` } }],
-        });
+        // A review answers as a verdict; any other alert with a plain line.
+        const { messages } = JSON.parse(init.body);
+        const review = messages[0].content.startsWith("You review");
+        const content = `${review ? "APPROVE: " : ""}Line ${world.answers}.`;
+        return Response.json({ choices: [{ message: { content } }] });
     }
     throw new Error(`unexpected fetch ${url}`);
 }
@@ -344,7 +346,7 @@ it("posts a sign-up card Discord refused, even after its burst ended", async () 
     expect((await stored(stub, "state")).unposted).toEqual({});
 });
 
-it("posts one review per domain with the next five requests, then waits", async () => {
+it("a review card lists the oldest requests, follows decisions and closes", async () => {
     const stub = watch();
     world.rows = OK;
     const now = Date.now();
@@ -352,7 +354,7 @@ it("posts one review per domain with the next five requests, then waits", async 
         await env.SETUP_HOLDS.put(`review:u${i}`, "pending", {
             metadata: {
                 domain: "farm.com",
-                requestedAt: now,
+                requestedAt: now + i,
                 createdAt: now,
                 rewards: 1,
                 rewardPollen: 0.25,
@@ -361,18 +363,27 @@ it("posts one review per domain with the next five requests, then waits", async 
     await env.SETUP_HOLDS.put("decision:u6", "declined");
     await stub.check();
     await settle(stub);
+
+    const opened = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(opened.text).toContain("REVIEW: domain farm.com");
+    expect(opened.text).toContain("6 accounts");
+    expect(opened.text).not.toContain("decision:u6");
+    // The AI's verdict lands on the card.
+    expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
+
+    await env.SETUP_HOLDS.put("decision:u0", "approved");
+    await stub.check();
+    expect(edits("m1").at(-1).text).toContain("'decision:u5' approved");
+
+    for (let i = 1; i < 6; i++)
+        await env.SETUP_HOLDS.put(`decision:u${i}`, "declined");
     await stub.check();
     await settle(stub);
-
-    const reviews = world.writes.filter(
-        (w) => w.ok && w.text.includes("REVIEW: domain farm.com"),
-    );
-    expect(reviews).toHaveLength(1);
-    expect(reviews[0].text).toContain("6 pending, 5 listed here");
-    expect(reviews[0].text).toContain("1 more waiting");
-    expect(reviews[0].text).not.toContain("decision:u6");
+    const last = edits("m1").at(-1);
+    expect(last.color).toBe(GREEN);
+    expect(last.text).toContain("DECIDED: domain farm.com");
+    expect(world.writes.filter((w) => w.method === "POST")).toHaveLength(1);
 });
-
 it("serves only /health, which reports the last check and never runs one", async () => {
     const get = (path) =>
         exports.default.fetch(`https://infra-watch.test${path}`);

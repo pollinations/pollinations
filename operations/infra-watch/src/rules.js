@@ -79,6 +79,7 @@ export function conditions({
     hosts = { public: true, upstream: true },
     analyticsDown,
     signups = [],
+    reviews = new Map(),
 }) {
     // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
     // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
@@ -114,6 +115,15 @@ export function conditions({
     // while over the limit in the last 24 hours.
     for (const signup of signups)
         found[`signup:${signup.domain}`] = { kind: "SIGNUP_BURST", ...signup };
+    // Held accounts asking for a review, per email domain, oldest first:
+    // open while any waits for a maintainer's decision.
+    for (const [domain, accounts] of reviews)
+        found[`review:${domain}`] = {
+            kind: "REVIEW",
+            domain,
+            pending: accounts.length,
+            accounts: accounts.slice(0, REVIEW_LISTED),
+        };
     return found;
 }
 
@@ -233,6 +243,10 @@ export function snapshot(incident) {
         errorKind: info.errorKind ?? null,
         success: info.success ?? null,
         failingCallers: info.callers?.failing_callers ?? null,
+        asking:
+            incident.kind === "REVIEW"
+                ? info.accounts.map((a) => a.userId).join(",")
+                : null,
     };
 }
 
@@ -253,6 +267,8 @@ export function noteworthy(before, now) {
         return `final success moved from ${pct(before.success)} to ${pct(now.success)}`;
     if ((before.failingCallers ?? 0) <= 1 && (now.failingCallers ?? 0) > 1)
         return `failing callers went from ${before.failingCallers ?? 0} to ${now.failingCallers}`;
+    if (now.asking != null && now.asking !== before.asking)
+        return "the accounts listed for review changed";
     return null;
 }
 
@@ -292,6 +308,34 @@ export function panel(title, lines) {
     ].join("\n");
 }
 
+// "2026-10-31 00:00 UTC".
+const utc = (ms) =>
+    `${new Date(ms).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+
+// The Setup hold commands under an open card: release a held domain, and
+// approve or decline each listed review.
+function commands({ kind, info }) {
+    const block = (intro, lines) =>
+        `${intro}\n\`\`\`\n${lines.join("\n")}\n\`\`\``;
+    const release = kvPut(`release:${info.domain}`, "released");
+    if (kind === "SIGNUP_BURST" && info.hold === "held")
+        return [block("Release the domain:", [release])];
+    if (kind !== "REVIEW") return [];
+    return [
+        block("Approve or decline each account, or release the domain:", [
+            ...info.accounts.flatMap((a) => [
+                kvPut(`decision:${a.userId}`, "approved"),
+                kvPut(`decision:${a.userId}`, "declined"),
+            ]),
+            release,
+        ]),
+    ];
+}
+
+// Accounts a review card lists, each with its commands; the card moves on
+// to the next ones as a maintainer decides.
+export const REVIEW_LISTED = 5;
+
 // A maintainer's command on the SETUP_HOLDS store, run from
 // enter.pollinations.ai/ with a Cloudflare login on the account. Keys hold
 // only ids and plain domain names; anything else gets no command.
@@ -309,6 +353,7 @@ const LABEL = {
     DEGRADED: "DEGRADED",
     PRIMARY_WEAK: "PRIMARY WEAK",
     SIGNUP_BURST: "FLAGGED",
+    REVIEW: "REVIEW",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -317,11 +362,13 @@ const SUBJECT = {
     analytics: "model status data",
     platform: "platform-wide",
 };
+// Sign-up and review cards are about an email domain.
+const DOMAIN_KEY = /^(signup|review):/;
 export const subjectOf = (key) =>
     key.startsWith("model:")
         ? key.slice(6)
-        : key.startsWith("signup:")
-          ? `domain ${key.slice(7)}`
+        : DOMAIN_KEY.test(key)
+          ? `domain ${key.replace(DOMAIN_KEY, "")}`
           : SUBJECT[key];
 
 // Embed side-bar colour by severity: red down, orange degraded, yellow weak
@@ -336,6 +383,7 @@ export const COLOR = {
     DEGRADED: 0xd85a30,
     PRIMARY_WEAK: 0xef9f27,
     SIGNUP_BURST: 0xef9f27,
+    REVIEW: 0xef9f27,
 };
 const GREEN = 0x639922;
 
@@ -355,7 +403,11 @@ export const waiting = (record, now) =>
 // hostname neither (users are fine); every other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
-    if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
+    if (
+        ["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST", "REVIEW"].includes(
+            kind,
+        )
+    )
         return false;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
@@ -410,11 +462,19 @@ function openRows(incident, now) {
             ["REQS", `${info.now10} last 10m`],
             ["", `baseline ${Math.round(info.baseline10)}`],
         ];
+    if (kind === "REVIEW")
+        return [
+            [
+                "ASKING",
+                `${info.pending} account${info.pending === 1 ? "" : "s"}`,
+            ],
+            ["OLDEST", utc(info.accounts[0].requestedAt)],
+            ["LISTED", `${info.accounts.length} oldest, below`],
+        ];
     if (kind === "SIGNUP_BURST") {
-        const since = new Date(info.since * 1000).toISOString();
         return [
             ["ACCOUNTS", `${info.accounts} in 24h`],
-            ["SINCE", `${since.slice(0, 16).replace("T", " ")} UTC`],
+            ["SINCE", utc(info.since * 1000)],
             [
                 "REWARDS",
                 {
@@ -446,7 +506,7 @@ function openRows(incident, now) {
 function closedRows(key, incident) {
     const rows = [
         [
-            key.startsWith("signup:") ? "LASTED" : "DOWN",
+            DOMAIN_KEY.test(key) ? "LASTED" : "DOWN",
             duration(incident.closedAt - incident.openedAt),
         ],
     ];
@@ -480,7 +540,9 @@ export function renderCard(
     { lines = [], checking = false, now } = {},
 ) {
     const closed = incident.closedAt != null;
-    const ended = key.startsWith("signup:") ? "ENDED" : "RECOVERED";
+    const ended =
+        { SIGNUP_BURST: "ENDED", REVIEW: "DECIDED" }[incident.kind] ??
+        "RECOVERED";
     const title = `${closed ? ended : LABEL[incident.kind]}: ${subjectOf(key)}`;
     const parts = [
         panel(
@@ -489,13 +551,10 @@ export function renderCard(
         ),
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
-    if (!closed && incident.info.hold === "held")
-        parts.push(
-            `Release the domain:\n\`\`\`\n${kvPut(`release:${incident.info.domain}`, "released")}\n\`\`\``,
-        );
     for (const line of lines)
         parts.push(`↳ <t:${unix(line.at)}:t> ${line.text}`);
     if (checking) parts.push(CHECKING);
+    if (!closed) parts.push(...commands(incident));
     return {
         text: parts.join("\n"),
         ping: incident.pinged ?? pings(incident),

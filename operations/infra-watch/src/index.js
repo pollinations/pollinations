@@ -30,14 +30,11 @@ import {
     waiting,
 } from "./rules.js";
 import {
-    due,
     holdDomains,
     listAll,
-    mark,
     pending,
     REVIEW_PROMPT,
     reviewEvidence,
-    reviewMessage,
     verdict,
 } from "./setup-holds.js";
 
@@ -139,9 +136,10 @@ export class Watch extends DurableObject {
     async run() {
         const now = Date.now();
         let found;
-        // Sign-up bursts per email domain, from Enter; null when the read
-        // failed, so open sign-up cards are left as they are.
+        // Sign-up bursts and review requests per email domain; null when
+        // the read failed, so their open cards are left as they are.
         let signups = [];
+        let reviews = new Map();
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
@@ -161,8 +159,16 @@ export class Watch extends DurableObject {
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
-                signups = await this.signups();
-                found = conditions({ ...data, hosts, signups: signups ?? [] });
+                [signups, reviews] = await Promise.all([
+                    this.signups(),
+                    this.reviews(),
+                ]);
+                found = conditions({
+                    ...data,
+                    hosts,
+                    signups: signups ?? [],
+                    reviews: reviews ?? new Map(),
+                });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
@@ -182,12 +188,16 @@ export class Watch extends DurableObject {
                 closed[key] = record.closed.incident.closedAt;
             }
         }
-        // Unknown sign-ups keep their open cards. A sign-up card Discord
-        // hasn't taken yet is retried until it has: its 24-hour window can
-        // end first.
-        if (signups === null)
-            for (const [key, incident] of Object.entries(open))
-                if (key.startsWith("signup:")) found[key] ??= incident.info;
+        // Unknown sign-ups or reviews keep their open cards. A sign-up card
+        // Discord hasn't taken yet is retried until it has: its 24-hour
+        // window can end first.
+        const unknown = [
+            signups === null && "signup:",
+            reviews === null && "review:",
+        ].filter(Boolean);
+        for (const [key, incident] of Object.entries(open))
+            if (unknown.some((prefix) => key.startsWith(prefix)))
+                found[key] ??= incident.info;
         const unposted = { ...saved.unposted };
         for (const [key, info] of Object.entries(unposted)) found[key] ??= info;
         const next = step({ ...saved, open, closed }, found, now, data.recent);
@@ -338,7 +348,6 @@ export class Watch extends DurableObject {
         // A completed check: what /health reports to the outside heartbeat.
         await this.ctx.storage.put("checkedAt", now);
         for (const note of notes) this.background(() => this.note(note, data));
-        this.background(() => this.reviews());
         if (failed)
             console.error(`${failed} Discord write(s) failed; retrying`);
         return {
@@ -367,69 +376,36 @@ export class Watch extends DurableObject {
         }
     }
 
-    // Held accounts asking for a review: one post per domain with the AI's
-    // recommendation, within the daily budget. Runs in the background queue.
+    // What the AI reads for a review: the domain's sign-ups and the listed
+    // accounts' API use from Tinybird, numbers only. A failed read comes
+    // through as { error }.
+    async reviewFacts(info) {
+        const read = (name, params) =>
+            pipe(name, params, {
+                tinybirdToken: this.env.TINYBIRD_TOKEN,
+                fetchImpl: fetch,
+            }).catch((error) => ({ error: error.message }));
+        const [signups, usage] = await Promise.all([
+            read("infra_watch_review_signups", { domain: info.domain }),
+            read("infra_watch_review_usage", {
+                user_ids: info.accounts.map((a) => a.userId).join(","),
+            }),
+        ]);
+        return reviewEvidence(info, signups, usage, Date.now());
+    }
+
+    // Review requests still waiting for a decision, per domain; null if
+    // they couldn't be read.
     async reviews() {
         try {
             const kv = this.env.SETUP_HOLDS;
-            const groups = pending(
+            return pending(
                 await listAll(kv, "review:"),
                 await listAll(kv, "decision:"),
             );
-            if (!groups.size) return;
-            const stored = (await this.ctx.storage.get("reviews")) ?? {};
-            let { picked, state } = due(groups, stored, Date.now());
-            if (!picked.length) return;
-            await this.ctx.storage.put("reviews", state);
-            const tb = {
-                tinybirdToken: this.env.TINYBIRD_TOKEN,
-                fetchImpl: fetch,
-            };
-            const read = (name, params) =>
-                pipe(name, params, tb).catch((error) => ({
-                    error: error.message,
-                }));
-            for (const review of picked) {
-                const [signups, usage] = await Promise.all([
-                    read("infra_watch_review_signups", {
-                        domain: review.domain,
-                    }),
-                    read("infra_watch_review_usage", {
-                        user_ids: review.listed.map((a) => a.userId).join(","),
-                    }),
-                ]);
-                const facts = reviewEvidence(
-                    review,
-                    signups,
-                    usage,
-                    Date.now(),
-                );
-                let line = null;
-                try {
-                    const key = this.env.POLLINATIONS_API_KEY;
-                    if (!key) throw new Error("POLLINATIONS_API_KEY missing");
-                    line = verdict(
-                        await ask(
-                            key,
-                            facts,
-                            {},
-                            {
-                                system: REVIEW_PROMPT,
-                                specs: [],
-                            },
-                        ),
-                    );
-                } catch (error) {
-                    console.error(`review: ${error.message}`);
-                }
-                const message = reviewMessage(review, facts, line);
-                if (await this.writes(() => post(this.env, message)))
-                    state = mark(state, review, Date.now());
-                else console.error(`review: post failed for ${review.domain}`);
-            }
-            await this.ctx.storage.put("reviews", state);
         } catch (error) {
             console.error(`reviews: ${error.message}`);
+            return null;
         }
     }
 
@@ -486,17 +462,34 @@ export class Watch extends DurableObject {
                 down: duration(incident.closedAt - incident.openedAt),
                 lost: incident.lost,
             };
-            text = await ask(
-                apiKey,
-                {
-                    moment,
-                    reason,
-                    footprint,
-                    previous: record.lines.map((l) => l.text),
-                    ...evidence({ info: incident.info }, data),
-                },
-                toolsFor(data, { tinybirdToken: this.env.TINYBIRD_TOKEN }),
-            );
+            const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };
+            const previous = record.lines.map((l) => l.text);
+            text =
+                incident.kind === "REVIEW"
+                    ? verdict(
+                          await ask(
+                              apiKey,
+                              {
+                                  moment,
+                                  reason,
+                                  previous,
+                                  ...(await this.reviewFacts(incident.info)),
+                              },
+                              {},
+                              { system: REVIEW_PROMPT, specs: [] },
+                          ),
+                      )
+                    : await ask(
+                          apiKey,
+                          {
+                              moment,
+                              reason,
+                              footprint,
+                              previous,
+                              ...evidence({ info: incident.info }, data),
+                          },
+                          toolsFor(data, tinybird),
+                      );
             if (!text) console.error("investigator: no answer");
         } catch (error) {
             console.error(`investigator: ${error.message}`);

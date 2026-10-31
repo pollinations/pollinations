@@ -154,7 +154,7 @@ const TOOL_SPECS = [
 ];
 
 export const investigates = (kind) =>
-    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP"].includes(kind);
+    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP", "REVIEW"].includes(kind);
 
 const only = (fields, row) =>
     Object.fromEntries(fields.map((f) => [f, row[f]]));

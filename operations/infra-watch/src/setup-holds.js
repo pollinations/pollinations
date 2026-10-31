@@ -5,22 +5,15 @@
 //   review:<userId>     "pending", with the account's evidence as metadata:
 //                       Enter, when a held account asks
 //   decision:<userId>   "approved" or "declined": a maintainer
-// Each review covers a domain's pending requests not posted before, oldest
-// first, at most MAX_LISTED per post: the AI recommends, a maintainer decides
-// by running one of the posted commands.
-import { kvPut, panel } from "./rules.js";
-
-export const REVIEW_DAILY_LIMIT = 10;
-const DAY_MS = 24 * 60 * 60 * 1000;
-// Accounts with a command line each; the post names how many more wait.
-const MAX_LISTED = 5;
-const ORANGE = 0xef9f27;
+// Pending requests open one review card per domain (see rules.js): the AI
+// recommends, a maintainer decides by running one of the card's commands.
 
 export const REVIEW_PROMPT = `You review requests to unlock onboarding (Setup) quest rewards on Pollinations, for the maintainers in a private Discord channel.
 Accounts on an email domain are held after many new accounts on it earn their first onboarding reward within a day: the pattern of reward farms that create accounts in bulk. A real group, such as a school class or a company team, can sign up together too.
 You get the domain's first onboarding rewards per day over 30 days and, for each account asking, its age, the quest rewards it earned and its API use over 30 days.
 - Farm signs: hundreds of sign-ups in a day or two, accounts that only collect rewards and make few or no API requests, accounts alike in every number.
 - Real-group signs: small or steady numbers, varied and continued API use, older accounts.
+moment is "open" for a new review card or "change" when the accounts listed changed; previous holds your earlier lines.
 Answer in one line: APPROVE or DECLINE, then the main reason in at most 25 words. Your line is advice: a maintainer decides.`;
 
 /** Holds each burst domain not held yet; rows gain the domain's state. */
@@ -72,67 +65,21 @@ export function pending(requests, decisions) {
     return groups;
 }
 
-/**
- * Domains to review now: with requests not posted before, at most once a
- * day each and REVIEW_DAILY_LIMIT a day in all. Each review lists the next
- * MAX_LISTED of them; the rest wait for the next one. Posted requests are
- * tracked by id, so one KV shows late is still listed. The returned state
- * counts the runs; mark() records what a post listed once it is out.
- */
-export function due(groups, state = {}, now) {
-    const day = new Date(now).toISOString().slice(0, 10);
-    let runs = state.day === day ? state.runs : 0;
-    const picked = [];
-    for (const [domain, accounts] of groups) {
-        const last = state.domains?.[domain];
-        const posted = new Set(last?.posted);
-        const waiting = accounts.filter((a) => !posted.has(a.userId));
-        if (!waiting.length || (last && now - last.at < DAY_MS)) continue;
-        if (runs >= REVIEW_DAILY_LIMIT) break;
-        runs++;
-        picked.push({
-            domain,
-            ids: accounts.map((a) => a.userId),
-            pending: accounts.length,
-            waiting: waiting.length,
-            listed: waiting.slice(0, MAX_LISTED),
-        });
-    }
-    return { picked, state: { ...state, day, runs } };
-}
-
-// Keeps only ids still pending, so the list never outgrows the requests.
-export function mark(state, { domain, ids, listed }, now) {
-    const pendingIds = new Set(ids);
-    const posted = (state.domains?.[domain]?.posted ?? []).filter((id) =>
-        pendingIds.has(id),
-    );
-    return {
-        ...state,
-        domains: {
-            ...state.domains,
-            [domain]: {
-                at: now,
-                posted: [...posted, ...listed.map((a) => a.userId)],
-            },
-        },
-    };
-}
-
+const DAY_MS = 24 * 60 * 60 * 1000;
 const days = (from, now) => Math.floor((now - from) / DAY_MS);
 
 /**
  * What the model reads: numbers only, accounts by position, never their ids.
  * A failed Tinybird read comes through as { error }.
  */
-export function reviewEvidence({ domain, listed }, signups, usage, now) {
+export function reviewEvidence({ domain, accounts }, signups, usage, now) {
     const used = new Map(
         Array.isArray(usage) ? usage.map((u) => [u.user_id, u]) : [],
     );
     return {
         domain,
         signupsPerDay: signups,
-        accounts: listed.map((a, i) => {
+        accounts: accounts.map((a, i) => {
             const u = used.get(a.userId);
             return {
                 account: i + 1,
@@ -162,44 +109,4 @@ export function verdict(line) {
         .replace(/\s+/g, " ")
         .trim();
     return reason ? `${match[1].toUpperCase()}: ${reason.slice(0, 200)}` : null;
-}
-
-/** The review post: evidence box, the AI's line, then the commands. */
-export function reviewMessage(review, facts, line) {
-    const { domain, listed } = review;
-    const total = Array.isArray(facts.signupsPerDay)
-        ? facts.signupsPerDay.reduce((sum, d) => sum + d.accounts, 0)
-        : "unknown";
-    const peak = Array.isArray(facts.signupsPerDay)
-        ? facts.signupsPerDay.reduce(
-              (top, d) => (d.accounts > (top?.accounts ?? 0) ? d : top),
-              null,
-          )
-        : null;
-    const usage = facts.accounts.some((a) => a.requests30d === "unknown")
-        ? "unknown"
-        : `${facts.accounts.filter((a) => a.requests30d > 0).length} of ${listed.length} in 30d`;
-    const box = panel(`REVIEW: domain ${domain}`, [
-        ["ASKING", `${review.pending} pending, ${listed.length} listed here`],
-        [
-            "SIGNUPS",
-            `${total} in 30d${peak ? `, ${peak.accounts} on ${peak.day}` : ""}`,
-        ],
-        ["API USE", usage],
-    ]);
-    const commands = [
-        ...listed.flatMap((a) => [
-            kvPut(`decision:${a.userId}`, "approved"),
-            kvPut(`decision:${a.userId}`, "declined"),
-        ]),
-        kvPut(`release:${domain}`, "released"),
-    ];
-    const left = review.waiting - listed.length;
-    const more =
-        left > 0 ? `\n${left} more waiting: the next review lists them.` : "";
-    return {
-        text: `${box}\n↳ ${line ?? "no AI recommendation"}${more}\nApprove or decline each account, or release the whole domain:\n\`\`\`\n${commands.join("\n")}\n\`\`\``,
-        ping: false,
-        color: ORANGE,
-    };
 }

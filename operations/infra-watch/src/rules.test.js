@@ -508,6 +508,69 @@ test("a held burst says so and shows how to release the domain", () => {
     assert.match(card(undefined), /still paid, review the domain/);
 });
 
+const asking = (n) =>
+    new Map([
+        [
+            "farm.com",
+            Array.from({ length: n }, (_, i) => ({
+                userId: `u${i}`,
+                domain: "farm.com",
+                requestedAt: Date.UTC(2026, 9, 31) + i,
+            })),
+        ],
+    ]);
+
+test("a review card lists the five oldest requests, moves on as they're decided, and closes", () => {
+    const found = conditions({ ...quiet(busy), reviews: asking(7) });
+    const info = found["review:farm.com"];
+    assert.equal(info.kind, "REVIEW");
+    assert.equal(info.pending, 7);
+    assert.deepEqual(
+        info.accounts.map((a) => a.userId),
+        ["u0", "u1", "u2", "u3", "u4"],
+    );
+    let r = step({}, found, 0);
+    assert.deepEqual(
+        r.actions.map((a) => a.type),
+        ["open"],
+    );
+    const open = renderCard(
+        "review:farm.com",
+        r.state.open["review:farm.com"],
+        {
+            now: 0,
+        },
+    );
+    assert.equal(open.ping, false);
+    assert.equal(open.color, 0xef9f27);
+    assert.match(open.text, /REVIEW: domain farm\.com/);
+    assert.match(open.text, /ASKING +7 accounts/);
+    assert.match(open.text, /OLDEST +2026-10-31 00:00 UTC/);
+    assert.equal(open.text.match(/'decision:u\d' approved/g).length, 5);
+    assert.equal(open.text.match(/'decision:u\d' declined/g).length, 5);
+    assert.match(open.text, /'release:farm\.com' released/);
+
+    // Two decided: the card shows the next ones, and the AI may look again.
+    const later = new Map([["farm.com", asking(7).get("farm.com").slice(2)]]);
+    const next = conditions({ ...quiet(busy), reviews: later });
+    r = step(r.state, next, MIN);
+    const card = r.state.open["review:farm.com"];
+    assert.match(
+        renderCard("review:farm.com", card, { now: MIN }).text,
+        /'decision:u6' approved/,
+    );
+    assert.equal(
+        noteworthy(snapshot({ ...card, info: info }), snapshot(card)),
+        "the accounts listed for review changed",
+    );
+
+    r = step(r.state, {}, 2 * MIN);
+    const closed = renderCard("review:farm.com", r.actions[0].incident);
+    assert.match(closed.text, /DECIDED: domain farm\.com/);
+    assert.doesNotMatch(closed.text, /kv key put/);
+    assert.equal(closed.color, 0x639922);
+});
+
 test("a command is built only for keys of ids and plain domain names", () => {
     assert.match(
         kvPut("decision:AbC_1-2", "approved"),

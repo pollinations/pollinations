@@ -47,7 +47,11 @@ differences, and a `legibility` field the model uses to flag when it isn't
 confident in its own read (e.g. images too small or too similar to judge
 reliably).
 
-Each image reference (if a `data:` URI) is capped at 8 MB.
+Each image reference (if a `data:` URI) is capped at 1 MB of decoded image
+data (the string length cap accounts for base64's ~4/3 size overhead).
+This is deliberately well below the MCP transport's own 4 MB total
+request-body ceiling, since both images share that budget in a single
+JSON-RPC call. `http(s)` URLs are capped at 8 KB of URL text.
 
 ## Local development
 

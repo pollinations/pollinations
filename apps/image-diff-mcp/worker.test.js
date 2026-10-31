@@ -248,7 +248,7 @@ test("keeps bearer tokens scoped to concurrent requests", async (t) => {
     );
 });
 
-test("maps upstream errors through the shared gateway error mapping", async (t) => {
+test("maps upstream 402 errors through the shared gateway error mapping", async (t) => {
     t.mock.method(globalThis, "fetch", async (input) => {
         assert.equal(
             String(input),
@@ -267,6 +267,115 @@ test("maps upstream errors through the shared gateway error mapping", async (t) 
     });
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /Insufficient balance/);
+});
+
+test("maps upstream 429 errors through the shared gateway error mapping", async (t) => {
+    t.mock.method(globalThis, "fetch", async () =>
+        Response.json({ error: { message: "slow down" } }, { status: 429 }),
+    );
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "compare_images",
+        arguments: { image_a: IMAGE_A, image_b: IMAGE_B },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /slow down/);
+});
+
+test("maps upstream 500 errors through the shared gateway error mapping", async (t) => {
+    t.mock.method(globalThis, "fetch", async () =>
+        Response.json({ error: { message: "boom" } }, { status: 500 }),
+    );
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "compare_images",
+        arguments: { image_a: IMAGE_A, image_b: IMAGE_B },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Server error/);
+});
+
+test("rejects a syntactically valid response that doesn't match the result schema", async (t) => {
+    t.mock.method(globalThis, "fetch", async () =>
+        visionResponse({ foo: "bar" }),
+    );
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "compare_images",
+        arguments: { image_a: IMAGE_A, image_b: IMAGE_B },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /did not match the expected schema/);
+});
+
+test("rejects unexpected upstream response shapes", async (t) => {
+    t.mock.method(globalThis, "fetch", async () =>
+        Response.json({ id: "chatcmpl-empty", choices: [] }),
+    );
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "compare_images",
+        arguments: { image_a: IMAGE_A, image_b: IMAGE_B },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /returned no comparison result/);
+});
+
+test("rejects an image data URI over the decoded-byte size cap", async (t) => {
+    const fetchMock = t.mock.method(globalThis, "fetch", async () => {
+        throw new Error("Unexpected fetch for oversized input");
+    });
+    const client = await connectClient();
+    t.after(() => client.close());
+    // Just over the 1 MiB decoded cap, but well under the MCP transport's
+    // own 4 MiB total request body ceiling, so this exercises our schema
+    // rejection rather than a raw transport-level 413.
+    const oversized = `data:image/png;base64,${"A".repeat(1.5 * 1024 * 1024)}`;
+    const result = await client.callTool({
+        name: "compare_images",
+        arguments: { image_a: oversized, image_b: IMAGE_B },
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetchMock.mock.callCount(), 0);
+});
+
+test("rejects an http(s) URL over the URL length cap", async (t) => {
+    const client = await connectClient();
+    t.after(() => client.close());
+    const longUrl = `https://example.com/${"a".repeat(9 * 1024)}.png`;
+    const result = await client.callTool({
+        name: "compare_images",
+        arguments: { image_a: longUrl, image_b: IMAGE_B },
+    });
+    assert.equal(result.isError, true);
+});
+
+test("forwards a custom model override to upstream", async (t) => {
+    let seenModel;
+    t.mock.method(globalThis, "fetch", async (_input, init) => {
+        seenModel = JSON.parse(init.body).model;
+        return visionResponse({
+            identical: true,
+            similarity: "identical",
+            differences: [],
+            legibility: "high",
+        });
+    });
+    const client = await connectClient();
+    t.after(() => client.close());
+    await client.callTool({
+        name: "compare_images",
+        arguments: {
+            image_a: IMAGE_A,
+            image_b: IMAGE_B,
+            model: "openai-large",
+        },
+    });
+    assert.equal(seenModel, "openai-large");
 });
 
 test("rejects malformed JSON content from the vision model", async (t) => {

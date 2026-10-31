@@ -7,7 +7,15 @@ import {
     fetchJsonWithAuth,
 } from "../../packages/mcp/src/utils/coreUtils.js";
 
-const MAX_IMAGE_REF_LENGTH = 8 * 1024 * 1024; // 8 MB, applies to data: URIs
+// createMcpHandler enforces a hard 4 MiB *total* JSON-RPC request body cap
+// by default (see @modelcontextprotocol/server's maxRequestBodySize), the
+// same limit ask-jev-mcp inherits unchanged. Two images share that budget,
+// so each is capped well below it to leave room for the JSON-RPC envelope
+// and the second image. 1 MiB decoded per image, base64-encoded (~4/3 size),
+// keeps two images comfortably under the 4 MiB transport ceiling.
+const MAX_IMAGE_BYTES = 1 * 1024 * 1024;
+const MAX_DATA_URI_LENGTH = Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 64;
+const MAX_HTTP_URL_LENGTH = 8 * 1024;
 const DEFAULT_MODEL = "openai";
 
 const CompareImagesInputSchema = z.object({
@@ -15,21 +23,25 @@ const CompareImagesInputSchema = z.object({
         .string()
         .min(1, "image_a is required")
         .max(
-            MAX_IMAGE_REF_LENGTH,
-            "image_a exceeds the 8 MB size cap for data URIs",
+            MAX_DATA_URI_LENGTH,
+            "image_a exceeds the 1 MB (decoded) size cap",
         ),
     image_b: z
         .string()
         .min(1, "image_b is required")
         .max(
-            MAX_IMAGE_REF_LENGTH,
-            "image_b exceeds the 8 MB size cap for data URIs",
+            MAX_DATA_URI_LENGTH,
+            "image_b exceeds the 1 MB (decoded) size cap",
         ),
     focus: z
         .string()
         .max(200, "focus must be 200 characters or fewer")
         .optional(),
-    model: z.string().min(1).optional(),
+    model: z
+        .string()
+        .min(1)
+        .max(100, "model must be 100 characters or fewer")
+        .optional(),
 });
 
 const CompareResultSchema = {
@@ -52,10 +64,25 @@ const CompareResultSchema = {
     additionalProperties: false,
 };
 
+const CompareResultOutputSchema = z.object({
+    identical: z.boolean(),
+    similarity: z.enum([
+        "identical",
+        "minor_differences",
+        "major_differences",
+        "unrelated",
+    ]),
+    differences: z.array(z.string()),
+    legibility: z.enum(["high", "medium", "low"]),
+});
+
 function isValidImageRef(value) {
     if (value.startsWith("data:")) {
-        return /^data:[a-zA-Z0-9.+/-]+;base64,.+/.test(value);
+        return /^data:[a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+(;[a-zA-Z0-9.+-]+=[a-zA-Z0-9.+-]+)*;base64,[A-Za-z0-9+/]+=*$/.test(
+            value,
+        );
     }
+    if (value.length > MAX_HTTP_URL_LENGTH) return false;
     try {
         const url = new URL(value);
         return url.protocol === "http:" || url.protocol === "https:";
@@ -148,16 +175,23 @@ function buildServer() {
                 throw new Error("Vision model returned no comparison result");
             }
 
-            let result;
+            let parsed;
             try {
-                result = JSON.parse(content);
+                parsed = JSON.parse(content);
             } catch {
                 throw new Error(
                     "Vision model returned malformed comparison JSON",
                 );
             }
 
-            return createMCPResponse([createTextContent(result, true)]);
+            const validated = CompareResultOutputSchema.safeParse(parsed);
+            if (!validated.success) {
+                throw new Error(
+                    "Vision model returned a comparison result that did not match the expected schema",
+                );
+            }
+
+            return createMCPResponse([createTextContent(validated.data, true)]);
         },
     );
 

@@ -30,9 +30,6 @@ SQL >
     WHERE calls.start_time >= now() - INTERVAL 7 DAY
     AND calls.is_final  -- one row per request; attempts counted separately
     AND calls.resolved_model_requested != 'undefined'
-    -- Catches a model made private within the window, which the two-caller
-    -- rule below cannot.
-    AND NOT calls.private_model
 
 NODE public_model_stats_node
 SQL >

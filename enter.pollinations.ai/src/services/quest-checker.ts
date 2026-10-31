@@ -13,10 +13,7 @@ import {
     type QuestUser,
     toReward,
 } from "./quests/types.ts";
-import {
-    recordSetupRewardSignup,
-    reportFlaggedDomain,
-} from "./setup-reward-signups.ts";
+import { recordSetupRewardSignup } from "./setup-reward-signups.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
@@ -79,26 +76,20 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
-    // An account's first setup reward is a sign-up: count it per email domain
-    // and report a domain that passes the limit. Detection only, so a failure
-    // is logged and never blocks rewards.
+    // An account's first setup reward is a sign-up, counted per email domain
+    // by the scheduled detector. Detection only: a failure never blocks
+    // rewards.
     const setupQuestIds = await listSetupQuestIds(ctx);
     if (
         proposals.some(({ quest }) => quest.category === "setup") &&
         ![...earned].some((id) => id !== null && setupQuestIds.has(id))
     ) {
-        const flagged = await recordSetupRewardSignup(env.DB, {
+        await recordSetupRewardSignup(env.KV, {
             userId: user.id,
             email: user.email,
-        }).catch((error) => {
-            log.warn("SETUP_REWARD_SIGNUP_FAILED: {error}", { error });
-            return null;
-        });
-        if (flagged) {
-            await reportFlaggedDomain(env, flagged).catch((error) =>
-                log.warn("SETUP_REWARD_REPORT_FAILED: {error}", { error }),
-            );
-        }
+        }).catch((error) =>
+            log.warn("SETUP_REWARD_SIGNUP_FAILED: {error}", { error }),
+        );
     }
     const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(

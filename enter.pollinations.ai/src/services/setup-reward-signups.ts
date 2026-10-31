@@ -7,8 +7,10 @@ const log = getLogger(["enter", "setup-reward-signups"]);
 /** Accounts on one private email domain in 24 hours before it is flagged. */
 const SETUP_REWARD_LIMIT = 30;
 const DAY_SECONDS = 24 * 60 * 60;
-const RETENTION_SECONDS = 30 * DAY_SECONDS;
-const CLEANUP_BATCH_SIZE = 100;
+// A flagged domain is reported again if it is still busy after 30 days.
+const FLAG_SECONDS = 30 * DAY_SECONDS;
+const SIGNUP_PREFIX = "signup:";
+const FLAG_PREFIX = "signup-flagged:";
 // Discord embed side bar, as in infra-watch's warnings.
 const FLAGGED_COLOR = 0xef9f27;
 
@@ -141,58 +143,66 @@ export function registrableDomain(email: string): string | null {
     return getDomain(host, { validateHostname: false });
 }
 
-/** A domain that a sign-up just flagged. */
-export type FlaggedDomain = { domain: string; accounts: number };
-
 /**
- * Records an account on a private email domain at its first setup reward and
- * flags the domain once more than 30 accounts on it did so in 24 hours. A D1
- * batch is one transaction, so concurrent sign-ups flag a domain once and
- * retries count once. The batch also deletes sign-ups older than 30 days.
+ * Records an account on a private email domain at its first setup reward, as
+ * a KV key that expires after 24 hours: the expiry is the counting window.
  */
 export async function recordSetupRewardSignup(
-    d1: D1Database,
+    kv: KVNamespace,
     { userId, email }: { userId: string; email: string },
-): Promise<FlaggedDomain | null> {
-    const now = Math.floor(Date.now() / 1000);
+): Promise<void> {
     const domain = registrableDomain(email);
-    const cleanup = d1
-        .prepare(
-            `DELETE FROM setup_reward_signup WHERE user_id IN (
-                SELECT user_id FROM setup_reward_signup
-                WHERE first_reward_at < ?1
-                ORDER BY first_reward_at
-                LIMIT ${CLEANUP_BATCH_SIZE}
-            )`,
-        )
-        .bind(now - RETENTION_SECONDS);
-    if (!domain || PUBLIC_MAIL_DOMAINS.has(domain)) {
-        await cleanup.run();
-        return null;
+    if (!domain || PUBLIC_MAIL_DOMAINS.has(domain)) return;
+    await kv.put(`${SIGNUP_PREFIX}${domain}:${userId}`, "", {
+        expirationTtl: DAY_SECONDS,
+        metadata: { at: Math.floor(Date.now() / 1000) },
+    });
+}
+
+type Activity = { accounts: number; since: number };
+
+/**
+ * Runs on a schedule: counts the last 24 hours of sign-ups per domain and
+ * reports each domain past the limit once. KV is eventually consistent, so a
+ * schedule (not the sign-up itself) makes sure a burst is seen once visible.
+ */
+export async function detectFlaggedDomains(
+    env: Env["Bindings"],
+): Promise<string[]> {
+    const activity = new Map<string, Activity>();
+    let cursor: string | undefined;
+    do {
+        const page = await env.KV.list<{ at: number }>({
+            prefix: SIGNUP_PREFIX,
+            cursor,
+        });
+        for (const key of page.keys) {
+            const domain = key.name.slice(
+                SIGNUP_PREFIX.length,
+                key.name.lastIndexOf(":"),
+            );
+            const at = key.metadata?.at ?? 0;
+            const seen = activity.get(domain);
+            activity.set(domain, {
+                accounts: (seen?.accounts ?? 0) + 1,
+                since: Math.min(seen?.since ?? at, at),
+            });
+        }
+        cursor = page.list_complete ? undefined : page.cursor;
+    } while (cursor);
+
+    const flagged: string[] = [];
+    for (const [domain, { accounts, since }] of activity) {
+        if (accounts <= SETUP_REWARD_LIMIT) continue;
+        if (await env.KV.get(`${FLAG_PREFIX}${domain}`)) continue;
+        // Report first: a failed post is retried on the next run.
+        await reportFlaggedDomain(env, { domain, accounts, since });
+        await env.KV.put(`${FLAG_PREFIX}${domain}`, String(accounts), {
+            expirationTtl: FLAG_SECONDS,
+        });
+        flagged.push(domain);
     }
-    const [, flagged] = await d1.batch<FlaggedDomain>([
-        d1
-            .prepare(
-                `INSERT INTO setup_reward_signup (user_id, email_domain, first_reward_at)
-                VALUES (?1, ?2, ?3)
-                ON CONFLICT (user_id) DO NOTHING`,
-            )
-            .bind(userId, domain, now),
-        d1
-            .prepare(
-                `INSERT INTO flagged_email_domain (domain, flagged_at, accounts)
-                SELECT ?1, ?2, accounts FROM (
-                    SELECT COUNT(*) AS accounts FROM setup_reward_signup
-                    WHERE email_domain = ?1 AND first_reward_at > ?2 - ${DAY_SECONDS}
-                )
-                WHERE accounts > ${SETUP_REWARD_LIMIT}
-                ON CONFLICT (domain) DO NOTHING
-                RETURNING domain, accounts`,
-            )
-            .bind(domain, now),
-        cleanup,
-    ]);
-    return flagged?.results[0] ?? null;
+    return flagged;
 }
 
 /** A box titled with what happened, in infra-watch's alert style. */
@@ -209,27 +219,20 @@ function panel(title: string, rows: [string, string][]): string {
 }
 
 /**
- * Posts to Discord when a domain is flagged: what happened and the numbers
- * for a review. Without a webhook (local, tests) the message is only logged.
+ * Posts a flagged domain to Discord: what happened and the numbers for a
+ * review. Without a webhook (local, tests) the message is only logged.
  */
-export async function reportFlaggedDomain(
+async function reportFlaggedDomain(
     env: Env["Bindings"],
-    { domain, accounts }: FlaggedDomain,
+    { domain, accounts, since }: Activity & { domain: string },
 ): Promise<void> {
-    const row = await env.DB.prepare(
-        `SELECT MIN(first_reward_at) AS since FROM setup_reward_signup
-        WHERE email_domain = ?1 AND first_reward_at > ?2`,
-    )
-        .bind(domain, Math.floor(Date.now() / 1000) - DAY_SECONDS)
-        .first<{ since: number }>();
-    const since = new Date((row?.since ?? 0) * 1000)
-        .toISOString()
-        .slice(0, 16)
-        .replace("T", " ");
     const staging = env.ENVIRONMENT === "staging" ? "[staging] " : "";
     const description = panel(`${staging}FLAGGED: domain ${domain}`, [
         ["ACCOUNTS", `${accounts} in 24h (limit ${SETUP_REWARD_LIMIT})`],
-        ["SINCE", `${since} UTC`],
+        [
+            "SINCE",
+            `${new Date(since * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC`,
+        ],
         ["REWARDS", "still paid, review the domain"],
     ]);
     const webhook = env.SETUP_REWARD_DISCORD_WEBHOOK_URL;

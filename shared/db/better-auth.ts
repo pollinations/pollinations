@@ -507,26 +507,3 @@ export const rewards = sqliteTable("rewards", {
 }, (table) => [
   index("idx_rewards_user_id").on(table.userId),
 ]);
-
-// Accounts on private email domains, recorded at their first setup
-// (onboarding) reward and deleted after 30 days. Counts sign-ups per domain;
-// no foreign key, so deleting accounts can't lower the count.
-export const setupRewardSignup = sqliteTable("setup_reward_signup", {
-  userId: text("user_id").primaryKey(),
-  emailDomain: text("email_domain").notNull(),
-  firstRewardAt: integer("first_reward_at", { mode: "timestamp" }).notNull(),
-}, (table) => [
-  index("idx_setup_reward_signup_domain").on(
-    table.emailDomain,
-    table.firstRewardAt,
-  ),
-  index("idx_setup_reward_signup_time").on(table.firstRewardAt),
-]);
-
-// Private email domains that passed 30 accounts in 24 hours, reported once to
-// Discord for review.
-export const flaggedEmailDomain = sqliteTable("flagged_email_domain", {
-  domain: text("domain").primaryKey(),
-  flaggedAt: integer("flagged_at", { mode: "timestamp" }).notNull(),
-  accounts: integer("accounts").notNull(),
-});

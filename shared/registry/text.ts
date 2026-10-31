@@ -3210,7 +3210,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-27").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // Fireworks standard serverless rates (2026-10-12).
         cost: {

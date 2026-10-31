@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "color",
+                name: "Color MCP",
+                description: "Parse colors and build accessible palettes.",
+                url: "https://gen.pollinations.ai/mcp/color",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

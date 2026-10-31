@@ -2016,11 +2016,9 @@ export const accountRoutes = new Hono<Env>()
                 createdByApiKeyId: c.var.auth.apiKey?.id,
                 originAppKeyId:
                     c.var.auth.apiKey?.byopClientKeyId ??
-                    (c.var.auth.apiKey?.metadata?.keyType === "publishable"
-                        ? c.var.auth.apiKey.id
-                        : (c.var.auth.apiKey?.metadata?.originAppKeyId as
-                              | string
-                              | undefined)),
+                    (c.var.auth.apiKey?.metadata?.originAppKeyId as
+                        | string
+                        | undefined),
             }).catch(async (error) => {
                 // Give back the budget taken for a key that wasn't created.
                 if (callerKey && budgetTaken) {

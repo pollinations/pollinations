@@ -9,6 +9,7 @@ import {
     escalation,
     heartbeat,
     kvPut,
+    legacyDown,
     noteworthy,
     RECOVER_CHECKS,
     renderCard,
@@ -740,4 +741,63 @@ test("heartbeat closes the same card when checks resume", () => {
     assert.equal(r.edit.card.text.split("\n").at(-1), "### ⏱️ 47 min");
     assert.doesNotMatch(r.edit.card.text, /open since/);
     assert.deepEqual(r.state, {});
+});
+
+// --- legacy bridges ----------------------------------------------------------
+
+// A pipe row, as live on 2026-10-31: the text bridge's last hour and medians.
+const bridge = (extra = {}) => ({
+    bridge: "text",
+    last_hour_requests: 10515,
+    last_hour_success: 90.3,
+    median_requests: 10790,
+    median_success: 97.4,
+    last_hour_top_error: [400],
+    degraded: 0,
+    ...extra,
+});
+
+test("a legacy bridge is down when the pipe says so, then judged by its old medians", () => {
+    assert.deepEqual(legacyDown([bridge()]), {});
+    const down = bridge({ last_hour_requests: 40, degraded: 1 });
+    const found = legacyDown([down]);
+    assert.equal(found["legacy:text"].kind, "LEGACY_DOWN");
+    const { state } = step({}, found, 1000 * MIN);
+    // Days later the outage is its own median, so the pipe no longer says
+    // degraded: against the medians it started with, it still is.
+    const later = bridge({
+        last_hour_requests: 40,
+        median_requests: 60,
+        degraded: 0,
+    });
+    const still = legacyDown([later], state.open)["legacy:text"];
+    assert.equal(still.median_requests, 10790);
+    // Back above half of those medians: recovered.
+    const back = bridge({ last_hour_requests: 5400, median_requests: 60 });
+    assert.deepEqual(legacyDown([back], state.open), {});
+});
+
+test("a legacy bridge card gives the last hour against its medians and pings", () => {
+    const found = legacyDown([
+        bridge({
+            last_hour_success: 12.5,
+            last_hour_top_error: [402],
+            degraded: 1,
+        }),
+    ]);
+    const { state } = step({}, found, 1000 * MIN);
+    const card = renderCard("legacy:text", state.open["legacy:text"], {
+        now: 1000 * MIN,
+    });
+    assert.equal(card.ping, true);
+    assert.equal(card.color, 0xd85a30);
+    const text = plain(card.text);
+    assert.match(text, /DEGRADED: legacy text bridge/);
+    assert.match(text, /REQS {4}10515 last hour, median 10790/);
+    assert.match(text, /FINAL {3}12\.5% last hour, median 97\.4%/);
+    assert.match(text, /WHY {5}top error 402/);
+    // Requests down, success fine: no top error to blame.
+    const quiet = legacyDown([bridge({ last_hour_requests: 40, degraded: 1 })]);
+    const opened = step({}, quiet, 1000 * MIN).state.open["legacy:text"];
+    assert.doesNotMatch(renderCard("legacy:text", opened).text, /WHY/);
 });

@@ -68,6 +68,10 @@ async function fake(input, init = {}) {
             ],
         });
     }
+    if (url.pathname.endsWith("/infra_watch_legacy.json")) {
+        world.legacyReads++;
+        return Response.json({ data: world.legacy });
+    }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
     if (url.pathname.includes("/infra_watch_review_"))
@@ -92,6 +96,8 @@ async function fake(input, init = {}) {
 beforeEach(() => {
     world = {
         rows: [],
+        legacy: [],
+        legacyReads: 0,
         signups: [],
         aiGate: null,
         aiDelay: 0,
@@ -445,4 +451,39 @@ it("a review the daily budget skipped is investigated once the budget resets", a
     await stub.check();
     await settle(stub);
     expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
+});
+
+it("a legacy bridge that drops gets a card, read from Tinybird once an hour", async () => {
+    const stub = watch();
+    world.rows = OK;
+    const text = {
+        bridge: "text",
+        last_hour_requests: 40,
+        last_hour_success: 90,
+        median_requests: 10790,
+        median_success: 97.4,
+        last_hour_top_error: [],
+        degraded: 1,
+    };
+    world.legacy = [text];
+    await checks(stub, 3);
+    await settle(stub);
+    expect(world.legacyReads).toBe(1);
+    const card = world.writes.find(
+        (w) => w.ok && w.method === "POST" && w.text.includes("legacy"),
+    );
+    expect(card.text).toContain("DEGRADED: legacy text bridge");
+    const id = (await stored(stub, "state")).open["legacy:text"].messageId;
+
+    // The next hour it is back: the card closes.
+    world.legacy = [{ ...text, last_hour_requests: 10500, degraded: 0 }];
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("legacy");
+        await state.storage.put("legacy", { ...saved, hour: 0 });
+    });
+    await stub.check();
+    await settle(stub);
+    expect(world.legacyReads).toBe(2);
+    expect(over(edits(id).at(-1))).toBe(true);
+    expect(edits(id).at(-1).text).toContain("DEGRADED: legacy text bridge");
 });

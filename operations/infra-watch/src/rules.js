@@ -127,6 +127,31 @@ export function conditions({
     return found;
 }
 
+// A legacy bridge is down when its last full UTC hour fell below half the
+// median of the same hour on the previous 7 days, in requests or success,
+// with a median of at least 10 requests (the pipe's `degraded`). Once down,
+// it is judged against the medians it started with, so a long outage never
+// becomes its own baseline.
+export function legacyDown(rows, open = {}) {
+    const found = {};
+    for (const row of rows) {
+        const key = `legacy:${row.bridge}`;
+        const start = open[key]?.start;
+        const info = { kind: "LEGACY_DOWN", ...row };
+        if (!start) {
+            if (row.degraded) found[key] = info;
+            continue;
+        }
+        const { median_requests, median_success } = start;
+        if (
+            row.last_hour_requests < median_requests / 2 ||
+            row.last_hour_success < median_success / 2
+        )
+            found[key] = { ...info, median_requests, median_success };
+    }
+    return found;
+}
+
 const CONFIRMED = new Set([
     "gen",
     "public",
@@ -364,6 +389,7 @@ const LABEL = {
     WATCH_DOWN: "DOWN",
     SIGNUP_BURST: "SETUP QUESTS LIMITED",
     REVIEW: "REVIEW",
+    LEGACY_DOWN: "DEGRADED",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -380,7 +406,9 @@ const subjectOf = (key) =>
         ? key.slice(6)
         : DOMAIN_KEY.test(key)
           ? `domain ${key.replace(DOMAIN_KEY, "")}`
-          : SUBJECT[key];
+          : key.startsWith("legacy:")
+            ? `legacy ${key.slice(7)} bridge`
+            : SUBJECT[key];
 
 // An open card's colour by severity: red down, orange degraded, amber weak
 // primary. A closed card's colour is set by cardColor.
@@ -397,6 +425,7 @@ const COLOR = {
     // A farm signing up stands out like an outage, without the ping.
     SIGNUP_BURST: RED,
     REVIEW: 0xef9f27,
+    LEGACY_DOWN: 0xd85a30,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -519,6 +548,24 @@ function openRows(incident, now) {
             ],
             ["", "model and outage alerts paused"],
         ];
+    if (kind === "LEGACY_DOWN") {
+        const rows = [
+            [
+                "REQS",
+                `${info.last_hour_requests} last hour, median ${info.median_requests}`,
+            ],
+            [
+                "FINAL",
+                `${info.last_hour_success ?? 0}% last hour, median ${info.median_success}%`,
+            ],
+        ];
+        if (
+            info.last_hour_success < info.median_success / 2 &&
+            info.last_hour_top_error?.length
+        )
+            rows.push(["WHY", `top error ${info.last_hour_top_error[0]}`]);
+        return rows;
+    }
     if (kind === "PLATFORM_DROP")
         return [
             ["REQS", `${info.now10} last 10m`],

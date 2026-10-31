@@ -17,6 +17,7 @@ import {
     toolsFor,
 } from "./investigate.js";
 import {
+    cardColor,
     conditions,
     duration,
     escalates,
@@ -389,7 +390,12 @@ export class Watch extends DurableObject {
         } catch (error) {
             console.error(`investigator: ${error.message}`);
         }
-        const line = text && { at: Date.now(), text };
+        // The line keeps the card's colour from when the AI looked.
+        const line = text && {
+            at: Date.now(),
+            text,
+            color: cardColor(incident),
+        };
         const done = await this.writes(async () => {
             const current = await this.record(id);
             const lines = line ? [...current.lines, line] : current.lines;

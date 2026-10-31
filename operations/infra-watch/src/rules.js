@@ -271,16 +271,19 @@ export function duration(ms) {
 }
 
 // A box titled with the alert and what it is about. It is as wide as its
-// title or its longest row needs, so a full model id is never cut.
-function panel(title, lines) {
+// title or its longest row needs, so a full model id is never cut. The
+// title is drawn in the card's colour (an ansi block): Discord on desktop
+// shows it, the phone shows plain text.
+function panel(title, lines, color) {
     const body = lines.map(
         ([field, value]) =>
             `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
+    const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
     return [
-        "```",
-        `┌─ ${title} ${"─".repeat(inner - title.length - 1)}┐`,
+        "```ansi",
+        `┌─ \u001b[38;2;${rgb}m${title}\u001b[0m ${"─".repeat(inner - title.length - 1)}┐`,
         ...body.map((t) => `│ ${t.padEnd(inner)} │`),
         `└${"─".repeat(inner + 2)}┘`,
         "```",
@@ -322,6 +325,20 @@ export const COLOR = {
     WATCH_DOWN: RED,
 };
 const GREEN = 0x639922;
+
+// A card's colour: its status while open, green once closed.
+export const cardColor = (incident) =>
+    incident.closedAt != null ? GREEN : COLOR[incident.kind];
+
+// Each AI line's badge: the card's colour when the line was written, so the
+// lines show how the incident moved. Emoji circles, since the lines sit
+// outside the box, where Discord shows local times but no coloured text.
+const BADGE = {
+    [RED]: "🔴",
+    [COLOR.DEGRADED]: "🟠",
+    [COLOR.PRIMARY_WEAK]: "🟡",
+    [GREEN]: "🟢",
+};
 
 // While the AI is writing a line, the card ends with this.
 export const CHECKING = "*checking why…*";
@@ -446,7 +463,8 @@ function closedRows(key, incident) {
 }
 
 // The incident's card, in any state: the box, then while open "open since",
-// then the AI's lines in order, then "checking why…" while one is coming.
+// then the AI's lines in order, each with its badge, then "checking why…"
+// while one is coming.
 // Mentions stay those of the opening post, so edits never change them.
 export function renderCard(
     key,
@@ -455,20 +473,26 @@ export function renderCard(
 ) {
     const closed = incident.closedAt != null;
     const title = `${closed ? "RECOVERED" : LABEL[incident.kind]}: ${subjectOf(key)}`;
+    const color = cardColor(incident);
     const parts = [
         panel(
             title,
             closed ? closedRows(key, incident) : openRows(incident, now),
+            color,
         ),
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
     for (const line of lines)
-        parts.push(`↳ <t:${unix(line.at)}:t> ${line.text}`);
+        parts.push(
+            ["↳", BADGE[line.color], `<t:${unix(line.at)}:t>`, line.text]
+                .filter(Boolean)
+                .join(" "),
+        );
     if (checking) parts.push(CHECKING);
     return {
         text: parts.join("\n"),
         ping: incident.pinged ?? pings(incident),
-        color: closed ? GREEN : COLOR[incident.kind],
+        color,
     };
 }
 

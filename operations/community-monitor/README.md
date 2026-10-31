@@ -52,7 +52,7 @@ Every new instance gets a persisted swapfile at least the size of RAM.
 
 Use a monitor-specific SSH key and the infrastructure secret manager; do not
 commit private keys or host credentials to this repository, even encrypted.
-Install Node and Claude Code 2.1.280 or newer (required for Opus 5.5),
+Install Node 22.21 or newer and Claude Code 2.1.280 or newer (required for Opus 5.5),
 clone/copy this directory, populate `.env` (see `.env.example`),
 install `community-monitor.service`, then run
 `systemctl enable --now community-monitor`.
@@ -74,7 +74,9 @@ Bash sandbox from `.claude/settings.json`. Shell commands then:
 - can't read `.env`, other bots' files under `~/discord-bots`, Claude's
   credentials, `~/.ssh` or the `gh` login;
 - can't change `.env` or the runtime files the updater installs;
-- reach only Tinybird, `gen.pollinations.ai` and `media.pollinations.ai`;
+- reach only Tinybird, `gen.pollinations.ai` and `media.pollinations.ai`,
+  through the sandbox proxy (`settings.json` sets `NODE_USE_ENV_PROXY=1` so
+  Node's `fetch` in the probe and leaderboard scripts uses it; Node 22.21+);
 - run without `DISCORD_TOKEN` (the Discord MCP server runs outside the sandbox
   and still gets it).
 
@@ -92,7 +94,8 @@ start):
 2. On Ubuntu 24.04 or later, if `sysctl kernel.apparmor_restrict_unprivileged_userns`
    prints `1`, add the `bwrap` AppArmor profile from
    https://code.claude.com/docs/en/sandboxing#set-up-linux-and-wsl2 and reload AppArmor.
-3. Update Claude Code (`sudo npm i -g @anthropic-ai/claude-code`).
+3. Update Claude Code (`sudo npm i -g @anthropic-ai/claude-code`) and check
+   that `node --version` is 22.21 or newer.
 4. In `/home/ubuntu/monitor`, start `claude`, run `/sandbox` and check that no
    dependency is missing and the Config tab lists the denied paths.
 5. Run one cycle (`sudo systemctl restart community-monitor`), then check

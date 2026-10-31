@@ -17,9 +17,7 @@
     "18834": {
       "merge_sha": "21b757018ccaafb255ee9d4299fc53d40e8f004d",
       "merged_at": "2026-10-31T02:57:04Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/infra-watch"
-      ]
+      "required": []
     }
   },
   "production": "5652f427d1a41372f9a3a9aab9f3aa029c192413",

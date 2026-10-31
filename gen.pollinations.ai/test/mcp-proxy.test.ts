@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "crypto-tokens",
+                name: "Crypto Tokens MCP",
+                description:
+                    "Token info and search across major crypto assets.",
+                url: "https://gen.pollinations.ai/mcp/crypto-tokens",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

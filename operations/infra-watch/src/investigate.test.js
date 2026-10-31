@@ -396,7 +396,9 @@ test("lost counts an incident's failed requests over up to 24 hours", async () =
     ]);
     const tb = { tinybirdToken: "tb_test", fetchImpl };
     assert.deepEqual(await lost("a/model", 135, tb), {
+        requests: 900,
         failures: 37,
+        callers: 40,
         failing_callers: 5,
     });
     assert.equal(seen[0].url.pathname, "/v0/pipes/infra_watch_callers.json");

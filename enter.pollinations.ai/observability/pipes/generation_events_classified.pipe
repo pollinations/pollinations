@@ -18,7 +18,7 @@ SQL >
                 '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps' -- legacy text
             ), 'legacy',
             api_key_id IN (
-                'OHD2QWIGKWUHr1GVM403RKgUIWl2nLQS', -- quixotic-hare: community model monitor
+                'OHD2QWIGKWUHr1GVM403RKgUIWl2nLQS', -- community-probes (infra-watch probes; was the EC2 monitor key quixotic-hare)
                 'I5jnMf7tp5HrkWnjHgexYya1SI6UthK4', -- POLLI VECTOR DB
                 'uzCJ8RSt0ZLYr3WCmuv5sniTRDinO5GM', -- POLLI CODE: GitHub bot
                 '620Mnys8GuzzcCdH58S6sSEdC8IoHzH7', -- PLN_GITHUB_NEWS_KEY

@@ -1401,12 +1401,30 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
-    // -- InferencePort (Lightning routers) ------------------------------------
+    // -- InferencePort ---------------------------------------------------------
     // "lightning" is the router id that `lightning-text-v2` aliases.
     "inferenceport-lightning-text-v2": () =>
         createInferencePortModelConfig({ model: "lightning" }),
     "inferenceport-lightning-text-v2.1": () =>
         createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
+    "inferenceport-ai/elorian-glimpse": () =>
+        createInferencePortModelConfig({ model: "elorian-glimpse" }),
+    "inferenceport-ai/glm-5.3-prime": () =>
+        createInferencePortModelConfig({ model: "glm-5.3-prime" }),
+    "inferenceport-ai/solar-mini4": () =>
+        createInferencePortModelConfig({ model: "solar-mini4" }),
+    "inferenceport-ai/solar-pro4": () =>
+        createInferencePortModelConfig({ model: "solar-pro4" }),
+    "inferenceport-ai/solar-decide": () =>
+        createInferencePortModelConfig({
+            model: "solar-decide",
+            directEndpoint: "https://api.inferenceport.ai/v1/systemone",
+        }),
+    "inferenceport-ai/solar-decide-flash": () =>
+        createInferencePortModelConfig({
+            model: "solar-decide-flash",
+            directEndpoint: "https://api.inferenceport.ai/v1/systemone",
+        }),
 
     // -- OVHcloud -------------------------------------------------------------
     "gpt-oss-20b": () =>

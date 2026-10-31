@@ -94,8 +94,8 @@ function ProviderProfileField({
 }
 
 const LISTING_TABS = [
-    { value: "agents", label: "Agents", Icon: BotIcon },
-    { value: "models", label: "Models", Icon: BeakerIcon },
+    { value: "agents", label: "Agents" },
+    { value: "models", label: "Models" },
 ] as const;
 
 export function DeploymentsPlaceholder({
@@ -541,11 +541,10 @@ export function CommunityEndpoints({
                     </form>
                 )}
                 <div className="flex flex-wrap gap-1.5">
-                    {LISTING_TABS.map(({ value, label, Icon }) => (
+                    {LISTING_TABS.map(({ value, label }) => (
                         <TabButton
                             key={value}
                             size="lg"
-                            icon={<Icon />}
                             active={listingTab === value}
                             onClick={() => setListingTab(value)}
                             ariaLabel={label}

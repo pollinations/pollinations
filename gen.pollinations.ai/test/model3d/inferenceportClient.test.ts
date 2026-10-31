@@ -25,12 +25,12 @@ const submitResponse = () =>
     Response.json({ job_id: "job_123", status: "pending" }, { status: 202 });
 
 const jobResponse = (
-    status: "pending" | "processing" | "completed" | "failed",
+    status: "pending" | "queued" | "running" | "processing" | "completed" | "failed" | "refunded",
     data?: Record<string, unknown>,
 ) => Response.json({ job_id: "job_123", status, ...data });
 
 describe("runInferenceport", () => {
-    it("retains the full provider body through the public error adapter", async () => {
+    it("does not expose provider response bodies that may contain images or credentials", async () => {
         const body = JSON.stringify({
             detail: "x".repeat(20000),
             token: "test-only",
@@ -45,9 +45,48 @@ describe("runInferenceport", () => {
         expect(error).toMatchObject({
             status: 502,
             upstreamStatus: 429,
-            responseBody: body,
+            responseBody: undefined,
         });
-        expect(error).toHaveProperty("message", expect.stringContaining(body));
+        expect(error.message).not.toContain("test-only");
+        expect(error.message).not.toContain("xxxxx");
+    });
+
+    it("accepts queued and running states before completion", async () => {
+        vi.useFakeTimers();
+        try {
+            const fetchSpy = vi.spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(submitResponse())
+                .mockResolvedValueOnce(jobResponse("queued"))
+                .mockResolvedValueOnce(jobResponse("running"))
+                .mockResolvedValueOnce(jobResponse("completed", {
+                    data: [{ model_glb_b64_bytes: "Zm9v" }],
+                }));
+            const job = runInferenceport({
+                model: "tripoSR",
+                imageUrls: ["https://example.com/a.png"],
+            });
+            await vi.runAllTimersAsync();
+            expect((await job).glbBase64).toBe("Zm9v");
+            expect(fetchSpy).toHaveBeenCalledTimes(4);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("rejects refunded jobs without treating them as generated output", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(submitResponse())
+            .mockResolvedValueOnce(jobResponse("refunded", {
+                error: "private-provider-payload",
+            }));
+        await expect(runInferenceport({
+            model: "tripoSR",
+            imageUrls: ["https://example.com/a.png"],
+        })).rejects.toMatchObject({
+            status: 502,
+            message: "InferencePort generation was refunded",
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
     });
 
     it("submits an async job and polls for the GLB", async () => {

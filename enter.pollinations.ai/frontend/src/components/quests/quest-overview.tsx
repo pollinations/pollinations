@@ -44,7 +44,10 @@ import {
     PageStatus,
     SectionContent,
 } from "../layout/dashboard-loading.tsx";
-import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
+import {
+    lockedQuestIds,
+    QUEST_STATUS_UPDATED_EVENT,
+} from "./quest-nav-status.ts";
 import { QuestStandings } from "./quest-standings.tsx";
 import { RedeemCode } from "./redeem-code.tsx";
 
@@ -976,13 +979,7 @@ function QuestOverviewContent({
     // Keep pending rewards separate from the claimed totals above them. A
     // held account's Setup rewards are locked, so they aren't claimable.
     const claimable = useMemo(() => {
-        const locked = new Set(
-            state.held
-                ? state.catalog
-                      .filter((quest) => quest.category === "setup")
-                      .map((quest) => quest.id)
-                : [],
-        );
+        const locked = lockedQuestIds(state.catalog, state.held);
         const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
         for (const reward of state.rewards) {

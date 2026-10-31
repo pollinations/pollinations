@@ -991,11 +991,6 @@ const accountQuestSchema = z.object({
     balanceBucket: z.enum(["tier", "pack"]),
     url: z.string().nullable(),
     reward: accountQuestRewardSchema.nullable(),
-    held: z
-        .boolean()
-        .describe(
-            "True when this onboarding quest's reward is on hold for review and can't be claimed. Contact hello@pollinations.ai.",
-        ),
 });
 
 const accountQuestsResponseSchema = z.object({
@@ -1280,14 +1275,13 @@ export const accountRoutes = new Hono<Env>()
             requireAccountPermission(c, "usage");
 
             const db = drizzle(c.env.DB, { schema });
-            const [cards, rewardRows, held] = await Promise.all([
+            const [cards, rewardRows] = await Promise.all([
                 listQuestCards({ db, env: c.env }),
                 db
                     .select()
                     .from(rewardsTable)
                     .where(eq(rewardsTable.userId, user.id))
                     .orderBy(desc(rewardsTable.earnedAt)),
-                isSetupRewardHeld(c.env, db, user.id),
             ]);
 
             const rewardsByQuestId = new Map<
@@ -1313,8 +1307,6 @@ export const accountRoutes = new Hono<Env>()
                     ...card,
                     status,
                     reward: reward ? formatReward(reward) : null,
-                    held:
-                        held && card.category === "setup" && !reward?.claimedAt,
                 };
             });
 

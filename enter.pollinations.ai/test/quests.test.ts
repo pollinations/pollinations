@@ -3019,12 +3019,6 @@ test("setup rewards: a held account creates keys and sees held in the API, while
         return ((await response.json()) as { claimed: boolean }).claimed;
     };
 
-    const { quests } = (await get("quests")) as {
-        quests: { id: string; held: boolean }[];
-    };
-    const questHeld = new Map(quests.map((quest) => [quest.id, quest.held]));
-    expect(questHeld.get("first_api_key")).toBe(true);
-    expect(questHeld.get("merged_pr")).toBe(false);
     expect(await get("quests/rewards")).toMatchObject({
         held: true,
         rewards: [{ questId: "first_api_key" }],

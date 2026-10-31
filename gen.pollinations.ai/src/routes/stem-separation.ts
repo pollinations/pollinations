@@ -15,7 +15,6 @@ import { prepareGenerationRequest } from "../middleware/generation-cache.ts";
 import { deduplicateGeneration } from "../middleware/generation-deduplication.ts";
 import { audioCache } from "../middleware/media-cache.ts";
 import { resolveModel } from "../middleware/model.ts";
-import { frontendKeyRateLimit } from "../middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "../middleware/rate-limit-edge.ts";
 import { track } from "../middleware/track.ts";
 import {
@@ -25,7 +24,7 @@ import {
 
 export const stemSeparationRoutes = new Hono<Env>()
     .use("/alpha/audio/stem-separation", edgeRateLimit)
-    .use("/alpha/audio/stem-separation", auth(), frontendKeyRateLimit, balance)
+    .use("/alpha/audio/stem-separation", auth(), balance)
     .post(
         "/alpha/audio/stem-separation",
         describeRoute({

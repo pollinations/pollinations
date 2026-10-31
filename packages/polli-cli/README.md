@@ -98,12 +98,11 @@ polli quests --claimed       # already-completed and earned quest status
 Two kinds of keys:
 
 - **Secret (`sk_`)** — backend use, full access. Default.
-- **Publishable (`pk_`)** — safe to ship in frontend code.
+- **App Key (`pk_`)** — identifies your app in Connect User Wallets sign-in; never authenticates requests.
 
 ```bash
 polli keys list
 polli keys create --name mybot --budget 100                    # secret (default)
-polli keys create --name myapp --type publishable              # API publishable
 polli keys create --name myapp --type publishable \
   --redirect-uri https://myapp.com/callback --earnings          # 3rd-party app key
 polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models

@@ -634,6 +634,5 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
             account: ["usage"],
         },
         pollenBudget: null,
-        rateLimitEnabled: false,
     },
 };

@@ -133,13 +133,11 @@ test("fraud ban revokes sessions, stops automatic payments, and rejects existing
             packAmountUsd: 10,
         }),
     ).toMatchObject({ ok: false, status: 403 });
-    for (const key of [apiKey, pubApiKey]) {
-        const result = await SELF.fetch(
-            "http://localhost:3000/api/account/profile",
-            { headers: { Authorization: `Bearer ${key}` } },
-        );
-        expect(result.status).toBe(403);
-    }
+    const result = await SELF.fetch(
+        "http://localhost:3000/api/account/profile",
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    expect(result.status).toBe(403);
     const lookup = await SELF.fetch(
         `http://localhost:3000/api/app-lookup?app_key=${encodeURIComponent(pubApiKey)}`,
     );

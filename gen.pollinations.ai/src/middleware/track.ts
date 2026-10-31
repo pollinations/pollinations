@@ -95,7 +95,6 @@ import {
 } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { apiErrorStatus } from "@/text/errors.ts";
 import {
     getResponsesEventUsage,
@@ -187,7 +186,6 @@ export type TrackEnv = {
         LoggerVariables &
         AuthVariables &
         BalanceVariables &
-        FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables &
         GenerationCacheVariables;
@@ -399,7 +397,6 @@ export const track = (eventType: EventType) =>
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
-                    await c.var.frontendKeyRateLimit?.consumePollen(0);
                     return;
                 }
                 // trackResponse consumes SSE text and JSON bodies, so for
@@ -491,12 +488,6 @@ export const track = (eventType: EventType) =>
                           ...payerBucketToMeter(payerBucket),
                       }
                     : balanceTracking();
-
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.isBilledUsage
-                        ? responseTracking.price?.totalPrice || 0
-                        : 0,
-                );
 
                 const finalEvent = await emitRow({
                     startTime,

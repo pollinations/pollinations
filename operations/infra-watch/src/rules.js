@@ -286,7 +286,7 @@ export const escalates = (before, now) =>
     (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1);
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
-const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
+const fit = (s, width) => (s.length > width ? `${s.slice(0, width - 1)}…` : s);
 const unix = (ms) => Math.round(ms / 1000);
 
 // "2 h 01 min", "47 min", "under 1 min".
@@ -302,9 +302,11 @@ export function duration(ms) {
 // title is drawn in the card's colour (an ansi block): Discord on desktop
 // shows it, the phone shows plain text.
 function panel(title, lines, color) {
+    // A value may be as long as the title, which sets the box's width anyway.
+    const width = Math.max(38, title.length);
     const body = lines.map(
         ([field, value]) =>
-            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
+            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value), width)}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
     const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
@@ -653,6 +655,80 @@ export const escalation = (key, incident, link) => ({
     ping: true,
     color: COLOR[incident.kind],
 });
+
+// A listed community model whose fallback answered at least this many and
+// this share of its successful requests in the window leans on its
+// fallback: callers get answers, but its own upstream fails often.
+export const FALLBACK_MINUTES = 240;
+const MIN_RESCUED = 10;
+const MIN_RESCUED_SHARE = 0.25;
+// Each model and fallback pair is told at most this often.
+const FALLBACK_QUIET_MS = 7 * 24 * 60 * 60 * 1000;
+
+// The listed models leaning on a fallback, each with the fallback that
+// rescued the most.
+export function fallbackShares(rows, listed) {
+    const shares = [];
+    for (const row of rows) {
+        if (!row.is_rollup || !listed.has(row.model)) continue;
+        const rescued = row.fallback_rescues;
+        if (
+            rescued < MIN_RESCUED ||
+            rescued < MIN_RESCUED_SHARE * row.status_2xx
+        )
+            continue;
+        const [top] = rows
+            .filter(
+                (r) => r.model === row.model && !r.is_rollup && r.fallback_used,
+            )
+            .sort((a, b) => b.fallback_rescues - a.fallback_rescues);
+        shares.push({
+            model: row.model,
+            servedBy: top?.model_used || "unknown",
+            rescued,
+            successes: row.status_2xx,
+        });
+    }
+    return shares;
+}
+
+// The shares to tell now: a model and fallback pair not told in the last
+// week. `told` keeps each model's last notice; older ones are dropped.
+export function dueFallbacks(shares, told = {}, now) {
+    const recent = Object.fromEntries(
+        Object.entries(told).filter(([, t]) => now - t.at < FALLBACK_QUIET_MS),
+    );
+    return {
+        due: shares.filter((s) => recent[s.model]?.servedBy !== s.servedBy),
+        told: recent,
+    };
+}
+
+const community = (id) => id.replace(/^community\//, "");
+
+// A fallback notice for the community channel: no ping, the owner reads
+// their model's id.
+export function fallbackCard({ model, servedBy, rescued, successes }) {
+    const color = COLOR.PRIMARY_WEAK;
+    return {
+        text: [
+            panel(
+                `FALLBACK: ${community(model)}`,
+                [
+                    ["VIA", community(servedBy)],
+                    [
+                        "RESCUED",
+                        `${rescued} of ${successes} successes (${percent(rescued / successes)}), 4h`,
+                    ],
+                ],
+                color,
+            ),
+            "Callers still get answers, but often from this fallback: the model's own upstream is failing.",
+        ].join("\n"),
+        ping: false,
+        color,
+    };
+}
 
 // Heartbeat: infra-watch's own liveness, judged from outside Cloudflare by
 // heartbeat.mjs (GitHub Actions). A last completed check this old means the

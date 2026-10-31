@@ -4,9 +4,12 @@ import {
     CHECKING,
     CONFIRM_CHECKS,
     conditions,
+    dueFallbacks,
     duration,
     escalates,
     escalation,
+    fallbackCard,
+    fallbackShares,
     heartbeat,
     kvPut,
     noteworthy,
@@ -740,4 +743,83 @@ test("heartbeat closes the same card when checks resume", () => {
     assert.equal(r.edit.card.text.split("\n").at(-1), "### ⏱️ 47 min");
     assert.doesNotMatch(r.edit.card.text, /open since/);
     assert.deepEqual(r.state, {});
+});
+
+// --- community fallback notices --------------------------------------------
+
+// Live case: laguna's fallback answered all 73 of its successes in 4 hours.
+const LAGUNA = "community/YoannDev90/poolside-laguna-s-2.1:free";
+const leaning = [
+    row(LAGUNA, 73, 160, { fallback_rescues: 73 }),
+    route(LAGUNA, "community", 0, 80, {
+        model_used: "community/YoannDev90/vercel-laguna-s-2.1:free",
+        fallback_used: true,
+    }),
+    route(LAGUNA, "community", 73, 153, {
+        model_used: "community/YoannDev90/kilocode-laguna-s-2.1:free",
+        fallback_used: true,
+        fallback_rescues: 73,
+    }),
+];
+
+test("a listed model leans on its fallback from 10 rescues and 25% of successes", () => {
+    const listed = new Set([LAGUNA, "community/x/a", "community/x/b"]);
+    const [share] = fallbackShares(leaning, listed);
+    assert.deepEqual(share, {
+        model: LAGUNA,
+        servedBy: "community/YoannDev90/kilocode-laguna-s-2.1:free",
+        rescued: 73,
+        successes: 73,
+    });
+    const shares = (rows) => fallbackShares(rows, listed);
+    assert.equal(
+        shares([row("community/x/a", 40, 40, { fallback_rescues: 10 })]).length,
+        1,
+    );
+    // Too few rescues, or too small a share of the successes.
+    assert.deepEqual(
+        shares([row("community/x/a", 12, 12, { fallback_rescues: 9 })]),
+        [],
+    );
+    assert.deepEqual(
+        shares([row("community/x/b", 41, 41, { fallback_rescues: 10 })]),
+        [],
+    );
+    // Not listed: an official model, an agent or a private model.
+    assert.deepEqual(fallbackShares(leaning, new Set()), []);
+});
+
+test("each model and fallback pair is told once a week", () => {
+    const [share] = fallbackShares(leaning, new Set([LAGUNA]));
+    const now = 10_000 * MIN;
+    assert.deepEqual(dueFallbacks([share], {}, now).due, [share]);
+    const told = {
+        [LAGUNA]: { servedBy: share.servedBy, at: now - 6 * 24 * 60 * MIN },
+    };
+    assert.deepEqual(dueFallbacks([share], told, now), { due: [], told });
+    // Another fallback is news; a week later the same one is too.
+    const other = { ...share, servedBy: "community/x/b" };
+    assert.deepEqual(dueFallbacks([other], told, now).due, [other]);
+    const old = { [LAGUNA]: { ...told[LAGUNA], at: now - 7 * 24 * 60 * MIN } };
+    assert.deepEqual(dueFallbacks([share], old, now), {
+        due: [share],
+        told: {},
+    });
+});
+
+test("a fallback notice names both models in full and pings no one", () => {
+    const card = fallbackCard({
+        model: "community/scriptsnsenses-sys/deepseek-v4-flash-0731",
+        servedBy: "community/scriptsnsenses-sys/diffusiongema-26B-free",
+        rescued: 19,
+        successes: 19,
+    });
+    assert.equal(card.ping, false);
+    assert.equal(card.color, 0xef9f27);
+    const text = plain(card.text);
+    assert.match(text, /FALLBACK: scriptsnsenses-sys\/deepseek-v4-flash-0731/);
+    assert.match(text, /VIA {5}scriptsnsenses-sys\/diffusiongema-26B-free /);
+    assert.match(text, /RESCUED 19 of 19 successes \(100%\), 4h/);
+    assert.doesNotMatch(text, /community\//);
+    assert.match(text.split("\n").at(-1), /^Callers still get answers/);
 });

@@ -19,9 +19,13 @@ import {
 } from "./investigate.js";
 import {
     conditions,
+    dueFallbacks,
     duration,
     escalates,
     escalation,
+    FALLBACK_MINUTES,
+    fallbackCard,
+    fallbackShares,
     lineColor,
     noteworthy,
     pings,
@@ -54,6 +58,8 @@ const MAX_LINES = 4;
 // A closed card's last edit is retried each check for this long; after that
 // its message is likely gone.
 const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
+// Community models leaning on a fallback are looked for this often.
+const FALLBACK_EVERY_MS = 60 * 60 * 1000;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -79,16 +85,16 @@ const show = (label, body) =>
     );
 
 // Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an
-// error, never a silent dry run. Returns the saved message.
-async function post(env, message) {
+// error, never a silent dry run. Posts to the infra-watch channel, or the
+// community channel with COMMUNITY_WEBHOOK_URL. Returns the saved message.
+async function post(env, message, webhook = "DISCORD_WEBHOOK_URL") {
     const body = payload(message, MAINTAINERS);
     if (env.DRY_RUN === "1") {
-        show("dry-run", body);
+        show(`dry-run ${webhook}`, body);
         return { id: "dry-run", channel_id: "dry-run" };
     }
-    if (!env.DISCORD_WEBHOOK_URL)
-        throw new Error("DISCORD_WEBHOOK_URL missing");
-    return send(env.DISCORD_WEBHOOK_URL, body);
+    if (!env[webhook]) throw new Error(`${webhook} missing`);
+    return send(env[webhook], body);
 }
 
 async function update(env, id, message) {
@@ -143,6 +149,9 @@ export class Watch extends DurableObject {
         let signups = [];
         let reviews = new Map();
         let data = { recent: [], last10: [], last60: [], official: new Set() };
+        // Public community models, agents aside; null when the catalog
+        // couldn't be read.
+        let listed = null;
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -159,6 +168,11 @@ export class Watch extends DurableObject {
                 const models = Array.isArray(catalog) ? catalog : catalog.data;
                 const official = new Set(
                     models.filter((m) => !m.community).map((m) => m.name),
+                );
+                listed = new Set(
+                    models
+                        .filter((m) => m.community && !m.agent)
+                        .map((m) => m.name),
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
                 [signups, reviews] = await Promise.all([
@@ -365,6 +379,7 @@ export class Watch extends DurableObject {
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", { ...next.state, unposted });
+        if (listed) await this.fallbacks(gen, listed, now);
         // A completed check: what /health reports to the outside heartbeat.
         await this.ctx.storage.put("checkedAt", now);
         for (const note of notes) this.background(() => this.note(note, data));
@@ -376,6 +391,29 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Community models leaning on a fallback, looked for hourly over the
+    // last 4 hours and told to the community channel: one post per model
+    // and fallback a week, no ping, no AI. A post Discord refused is tried
+    // again the next hour.
+    async fallbacks(gen, listed, now) {
+        const saved = (await this.ctx.storage.get("fallback")) ?? {};
+        if (now - (saved.checkedAt ?? 0) < FALLBACK_EVERY_MS) return;
+        let told = saved.told;
+        try {
+            const rows = await statusRows(gen, FALLBACK_MINUTES);
+            const next = dueFallbacks(fallbackShares(rows, listed), told, now);
+            told = next.told;
+            for (const share of next.due) {
+                const card = fallbackCard(share);
+                if (await post(this.env, card, "COMMUNITY_WEBHOOK_URL"))
+                    told[share.model] = { servedBy: share.servedBy, at: now };
+            }
+        } catch (error) {
+            console.error(`fallbacks: ${error.message}`);
+        }
+        await this.ctx.storage.put("fallback", { checkedAt: now, told });
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be

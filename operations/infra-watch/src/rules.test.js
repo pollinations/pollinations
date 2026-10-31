@@ -956,11 +956,28 @@ test("the listings post names each change with its rate, and pings no one", () =
             "*Filtered models are left out of /models but stay callable by their exact ID.*",
         ].join("\n"),
     );
-    // Only models back: green. A long list is cut, the rest counted.
-    const many = Array.from({ length: 23 }, (_, i) =>
-        listing(`community/a/m${i}`, 90),
+    // Only models back: green.
+    const back = listingsCard(
+        { newly: [], back: [listing("community/a/b", 90)] },
+        3,
     );
-    const back = listingsCard({ newly: [], back: many }, 3);
     assert.equal(back.color, 0x639922);
-    assert.match(back.text, /`a\/m19` 90%\n…and 3 more\n/);
+});
+
+test("a long listings post fits Discord's 4,096 characters, ids whole, the rest counted", () => {
+    // 40 of the longest ids: a 39-character owner and a long model name.
+    const long = (i) =>
+        listing(`community/${"o".repeat(39)}/${"m".repeat(100)}-${i}`, 50);
+    const many = Array.from({ length: 40 }, (_, i) => long(i));
+    const { text } = listingsCard(
+        { newly: many.slice(0, 20), back: many.slice(20) },
+        40,
+    );
+    assert.ok(text.length <= 4096, `${text.length} characters`);
+    const shown = text.match(/^`[^`]+` 50%$/gm);
+    for (const line of shown) assert.match(line, /^`o{39}\/m{100}-\d+` 50%$/);
+    const counted = [...text.matchAll(/^…and (\d+) more$/gm)].map((m) =>
+        Number(m[1]),
+    );
+    assert.equal(shown.length + counted.reduce((a, b) => a + b, 0), 40);
 });

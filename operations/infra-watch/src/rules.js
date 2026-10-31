@@ -790,8 +790,10 @@ export function listingChanges(before, filtered, shown) {
     };
 }
 
-// Models named per section; the rest are counted.
-const LISTINGS_SHOWN = 20;
+// Discord cuts an embed at 4,096 characters. Model lines stop at this
+// many, leaving room for the headings, the counts and the footer; the rest
+// are counted.
+const LISTINGS_BUDGET = 3800;
 
 // The daily listings post for the community channel: the filtered total,
 // then each change with its success rate. No ping.
@@ -800,16 +802,18 @@ export function listingsCard({ newly, back }, total) {
         m.health?.success_rate == null
             ? "no recent sample"
             : `${Math.round(m.health.success_rate)}%`;
+    let size = 0;
     const section = (heading, models) => {
         if (!models.length) return [];
-        const more = models.length - LISTINGS_SHOWN;
-        return [
-            `**${heading}**`,
-            ...models
-                .slice(0, LISTINGS_SHOWN)
-                .map((m) => `\`${community(m.name)}\` ${rate(m)}`),
-            ...(more > 0 ? [`…and ${more} more`] : []),
-        ];
+        const lines = [`**${heading}**`];
+        for (const [i, m] of models.entries()) {
+            const line = `\`${community(m.name)}\` ${rate(m)}`;
+            size += line.length + 1;
+            if (size > LISTINGS_BUDGET)
+                return [...lines, `…and ${models.length - i} more`];
+            lines.push(line);
+        }
+        return lines;
     };
     return {
         text: [

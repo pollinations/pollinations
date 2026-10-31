@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+    brokenStreamCard,
     CHECKING,
     CONFIRM_CHECKS,
     conditions,
@@ -955,6 +956,49 @@ test("a fallback notice gives the total, then each fallback's own part", () => {
     assert.match(lines[4], /│ VIA {5}o\/b \(14\) +│/);
     assert.doesNotMatch(card.text, /community\//);
     assert.match(lines.at(-1), /^Callers still get answers/);
+    // Its owner is pinged, outside the embed.
+    assert.deepEqual(card.owners, ["o"]);
+});
+
+test("a broken-stream card names each model and error, and its owners once", () => {
+    const card = brokenStreamCard([
+        {
+            model: "community/o/a",
+            error: "stream is missing [DONE]",
+            code: null,
+        },
+        {
+            model: "community/o/b",
+            error: "stream returned an error event",
+            code: "BAD_GATEWAY",
+        },
+        {
+            model: "community/p/c",
+            error: "stream returned usage_missing: missing or invalid token usage",
+            code: "usage_missing",
+        },
+        // A code that isn't a plain word, like a host, is left out.
+        {
+            model: "community/p/d",
+            error: "stream returned an error event",
+            code: "api.private-host.example",
+        },
+    ]);
+    const lines = plain(card.text).split("\n");
+    assert.match(lines[1], /BROKEN STREAM/);
+    assert.match(lines[2], /│ MODEL {3}o\/a +│/);
+    assert.match(lines[3], /│ ERROR {3}stream is missing \[DONE\] +│/);
+    assert.match(
+        lines[5],
+        /ERROR {3}stream returned an error event \(BAD_GATEWAY\)/,
+    );
+    assert.match(
+        lines[7],
+        /ERROR {3}stream returned usage_missing: missing or invalid token usage +│/,
+    );
+    assert.doesNotMatch(card.text, /private-host/);
+    assert.equal(card.ping, false);
+    assert.deepEqual(card.owners, ["o", "p"]);
 });
 
 // --- community listings ------------------------------------------------------

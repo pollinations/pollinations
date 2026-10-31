@@ -790,9 +790,12 @@ export function dueFallbacks(shares, told = {}, now) {
 }
 
 const community = (id) => id.replace(/^community\//, "");
+// A community model's owner: the GitHub username in its id. Cards for the
+// community channel list them in `owners`, which delivery pings.
+export const ownerOf = (id) => community(id).split("/")[0];
 
-// A fallback notice for the community channel: no ping, the owner reads
-// their model's id. The total rescued, then each fallback's part.
+// A fallback notice for the community channel, pinging the model's owner.
+// The total rescued, then each fallback's part.
 export function fallbackCard({ model, via, rescued, successes }) {
     const color = COLOR.PRIMARY_WEAK;
     return {
@@ -818,6 +821,37 @@ export function fallbackCard({ model, via, rescued, successes }) {
         ].join("\n"),
         ping: false,
         color,
+        owners: [ownerOf(model)],
+    };
+}
+
+// Community models whose probes got the same broken stream twice in a row,
+// in one card pinging their owners. It names the protocol error, with the
+// error event's code when that is a plain word: never stream content,
+// hosts or payloads.
+export function brokenStreamCard(due) {
+    const color = COLOR.PRIMARY_WEAK;
+    return {
+        text: [
+            panel(
+                "BROKEN STREAM",
+                due.flatMap(({ model, error, code }) => [
+                    ["MODEL", community(model)],
+                    [
+                        "ERROR",
+                        /^\w{1,40}$/.test(code ?? "") && !error.includes(code)
+                            ? `${error} (${code})`
+                            : error,
+                    ],
+                ]),
+                color,
+                Infinity,
+            ),
+            "Two probes in a row got a broken stream: callers may get failed or cut-off answers.",
+        ].join("\n"),
+        ping: false,
+        color,
+        owners: [...new Set(due.map((d) => ownerOf(d.model)))],
     };
 }
 

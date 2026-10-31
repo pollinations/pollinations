@@ -28,12 +28,14 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let world;
 
 async function discord(url, init) {
-    const { embeds } = JSON.parse(init.body);
+    const { content, embeds, allowed_mentions } = JSON.parse(init.body);
     const write = {
         method: init.method,
         path: url.pathname,
         color: embeds[0].color,
         text: embeds[0].description,
+        content,
+        users: allowed_mentions.users,
     };
     await sleep(world.delay(write));
     write.ok = !world.fails(write);
@@ -50,8 +52,11 @@ async function fake(input, init = {}) {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.hostname === "discord.test") return discord(url, init);
     if (url.pathname === "/") return new Response("ok");
-    if (url.pathname === "/models/status")
-        return Response.json({ data: world.rows });
+    if (url.pathname === "/models/status") {
+        const regular = url.searchParams.get("traffic") === "regular";
+        if (regular) world.regularReads++;
+        return Response.json({ data: regular ? world.regular : world.rows });
+    }
     // The full catalog, or the default listing without filtered models.
     if (url.pathname === "/models")
         return Response.json(
@@ -87,6 +92,16 @@ async function fake(input, init = {}) {
         return world.signups
             ? Response.json({ data: world.signups })
             : new Response("unavailable", { status: 503 });
+    // A probe: streamed chat, or an image.
+    if (
+        url.pathname.startsWith("/v1/images/") ||
+        (url.pathname === "/v1/chat/completions" &&
+            JSON.parse(init.body).stream)
+    ) {
+        const body = JSON.parse(init.body);
+        world.probes.push(`${url.pathname} ${body.model}`);
+        return world.probe(url.pathname, body);
+    }
     if (url.pathname === "/v1/chat/completions") {
         await world.aiGate;
         await sleep(world.aiDelay);
@@ -103,6 +118,9 @@ async function fake(input, init = {}) {
 beforeEach(() => {
     world = {
         rows: [],
+        regular: [],
+        regularReads: 0,
+        probes: [],
         legacy: [],
         legacyReads: 0,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
@@ -564,6 +582,9 @@ it("tells the community channel once a week about a model leaning on its fallbac
     expect(told()).toHaveLength(1);
     expect(told()[0].text).toContain("FALLBACK: o/leaning");
     expect(told()[0].text).toContain("VIA     o/fallback (30)");
+    // Its owner is pinged.
+    expect(told()[0].content).toBe("<@123456789012345678>");
+    expect(told()[0].users).toEqual(["123456789012345678"]);
 
     const back = (ms) =>
         runInDurableObject(stub, async (_, state) => {
@@ -617,4 +638,107 @@ it("tells the community channel once a day what the listing filter changed", asy
     expect(told()[0].text).toContain(
         "**Newly filtered**\n`o/b` 30%\n**Back in listings**\n`o/a` 90%",
     );
+    // Listing changes ping no one.
+    expect(told()[0].content).toBe("");
+    expect(told()[0].users).toEqual([]);
+});
+
+it("probes due community models half-hourly and tells a broken stream once a day, pinging its owner", async () => {
+    const stub = watch();
+    const model = (name, extra) => ({
+        name,
+        community: true,
+        category: "text",
+        ...extra,
+    });
+    world.catalog = [
+        { name: "a/model", category: "text" },
+        model("community/o/broken", { health: { success_rate: 40 } }),
+        model("community/o/quiet"),
+        model("community/o/busy", { health: { success_rate: 100 } }),
+        model("community/o/agent", { agent: true }),
+        model("community/p/image", {
+            category: "image",
+            input_modalities: ["text", "image"],
+        }),
+    ];
+    world.regular = ["community/o/broken", "community/o/busy"].map((m) => ({
+        model: m,
+        is_rollup: 1,
+        status_2xx: 30,
+        errors_5xx: 0,
+    }));
+    // Each text model answers its marker; o/broken's stream never ends.
+    world.probe = (path, body) => {
+        if (path !== "/v1/chat/completions")
+            return Response.json({
+                data: [{ b64_json: btoa("x".repeat(200)) }],
+            });
+        const marker = body.messages[0].content.split(": ")[1];
+        const answer = `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }] })}\n\n`;
+        const done =
+            body.model === "community/o/broken" ? "" : "data: [DONE]\n\n";
+        return new Response(answer + done, {
+            headers: { "x-model-used": body.model },
+        });
+    };
+    const probed = async () => {
+        await stub.check();
+        await runInDurableObject(stub, (instance) => instance.probing);
+    };
+    // Half an hour on, with each model's backoff `ms` further along.
+    const later = (ms) =>
+        runInDurableObject(stub, async (_, state) => {
+            const saved = await state.storage.get("probes");
+            saved.at -= 30 * 60_000;
+            for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
+            await state.storage.put("probes", saved);
+        });
+    const told = () =>
+        world.writes.filter(
+            (w) =>
+                w.ok && w.path === "/api/webhooks/2/y" && w.method === "POST",
+        );
+
+    await probed();
+    // The weak model, the one without real traffic, and the image model,
+    // with an edit first.
+    expect(world.probes.sort()).toEqual([
+        "/v1/chat/completions community/o/broken",
+        "/v1/chat/completions community/o/quiet",
+        "/v1/images/edits community/p/image",
+    ]);
+    expect(told()).toHaveLength(0);
+    // Checked again within the half hour: not even looked for.
+    await probed();
+    expect(world.probes).toHaveLength(3);
+    expect(world.regularReads).toBe(1);
+
+    // 8 hours on: all are due, the image model generates, and the second
+    // broken stream in a row is told, pinging its owner.
+    world.probes = [];
+    await later(8 * 60 * 60_000);
+    await probed();
+    expect(world.probes.sort()).toEqual([
+        "/v1/chat/completions community/o/broken",
+        "/v1/chat/completions community/o/quiet",
+        "/v1/images/generations community/p/image",
+    ]);
+    expect(told()).toHaveLength(1);
+    expect(told()[0].text).toContain("BROKEN STREAM");
+    expect(told()[0].text).toContain("o/broken");
+    expect(told()[0].text).toContain("stream is missing [DONE]");
+    expect(told()[0].text).not.toContain("o/quiet");
+    expect(told()[0].content).toBe("<@123456789012345678>");
+    expect(told()[0].users).toEqual(["123456789012345678"]);
+
+    // Still broken on its next probe, within the day: quiet.
+    world.probes = [];
+    await later(16 * 60 * 60_000);
+    await probed();
+    expect(world.probes).toContain("/v1/chat/completions community/o/broken");
+    expect(told()).toHaveLength(1);
+    // None reached the infra-watch channel.
+    const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
+    expect(infra.some((w) => w.text.includes("BROKEN"))).toBe(false);
 });

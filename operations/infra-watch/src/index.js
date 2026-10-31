@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import {
+    discordIds,
     edit,
     exclusive,
     MAINTAINERS,
@@ -18,6 +19,16 @@ import {
     toolsFor,
 } from "./investigate.js";
 import {
+    brokenStreams,
+    dueProbes,
+    PROBE_MINUTES,
+    pool,
+    probe,
+    recordProbe,
+    streamKey,
+} from "./probes.js";
+import {
+    brokenStreamCard,
     conditions,
     dueFallbacks,
     duration,
@@ -72,6 +83,10 @@ const FALLBACK_EVERY_MS = 60 * 60 * 1000;
 // Community listing changes are told once a day, from 12:00 UTC: a check's
 // listings day is its UTC date 12 hours earlier.
 const LISTINGS_DAY_STARTS_MS = 12 * 60 * 60 * 1000;
+// Community models due a probe are looked for this often, like the retired
+// monitor's half-hourly cycle, and probed at most this many at a time.
+const PROBE_EVERY_MS = 30 * 60 * 1000;
+const PROBE_POOL = 4;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -100,7 +115,11 @@ const show = (label, body) =>
 // error, never a silent dry run. Posts to the infra-watch channel, or the
 // community channel with COMMUNITY_WEBHOOK_URL. Returns the saved message.
 async function post(env, message, webhook = "DISCORD_WEBHOOK_URL") {
-    const body = payload(message, MAINTAINERS);
+    const body = payload(
+        message,
+        MAINTAINERS,
+        discordIds(env.OWNER_DISCORD_IDS),
+    );
     if (env.DRY_RUN === "1") {
         show(`dry-run ${webhook}`, body);
         return { id: "dry-run", channel_id: "dry-run" };
@@ -130,6 +149,8 @@ export class Watch extends DurableObject {
     // Every card write goes through one queue, in order, so a slow AI edit
     // can never land after a card's closing edit.
     writes = serial();
+    // The probe batch in flight, if any: a check never waits for it.
+    probing = null;
 
     async lastCheck() {
         return (await this.ctx.storage.get("checkedAt")) ?? null;
@@ -396,6 +417,9 @@ export class Watch extends DurableObject {
         if (publicModels) {
             await this.fallbacks(gen, publicModels, now);
             await this.listings(gen, now);
+            this.probing ??= this.probes(gen, publicModels, now).finally(() => {
+                this.probing = null;
+            });
         }
         // A completed check: what /health reports to the outside heartbeat.
         await this.ctx.storage.put("checkedAt", now);
@@ -493,6 +517,66 @@ export class Watch extends DurableObject {
             console.error(`fallbacks: ${error.message}`);
         }
         await this.ctx.storage.put("fallback", { checkedAt: now, told });
+    }
+
+    // Every half hour: the community models due a probe, probed with
+    // COMMUNITY_PROBE_KEY, each result's backoff saved as it comes. Broken
+    // streams are told in one card to the community channel once all are
+    // in; one Discord refused is told after the next probe that finds it.
+    async probes(gen, catalog, now) {
+        const state = (await this.ctx.storage.get("probes")) ?? {};
+        if (now - (state.at ?? 0) < PROBE_EVERY_MS) return;
+        // Models no longer in the catalog are forgotten.
+        const listed = new Set(catalog.map((m) => m.name));
+        const schedule = Object.fromEntries(
+            Object.entries(state.schedule ?? {}).filter(([name]) =>
+                listed.has(name),
+            ),
+        );
+        const save = () =>
+            this.ctx.storage.put("probes", { ...state, at: now, schedule });
+        await save();
+        try {
+            const key = this.env.COMMUNITY_PROBE_KEY;
+            if (!key) throw new Error("COMMUNITY_PROBE_KEY missing");
+            const { data: rows } = await getJson(
+                `${gen}/models/status?minutes=${PROBE_MINUTES}&traffic=regular`,
+            );
+            const due = dueProbes(catalog, rows, schedule, now);
+            const results = await pool(due, PROBE_POOL, async (model) => {
+                const result = await probe(
+                    gen,
+                    key,
+                    model,
+                    schedule[model.name],
+                );
+                schedule[model.name] = recordProbe(
+                    schedule[model.name],
+                    result,
+                );
+                await save();
+                if (!result.ok)
+                    console.log(
+                        `probe ${result.model}: ${result.status} ${result.requestId ?? ""}`,
+                    );
+                return result;
+            });
+            const streams = brokenStreams(state.streams, results, Date.now());
+            if (
+                streams.due.length &&
+                (await post(
+                    this.env,
+                    brokenStreamCard(streams.due),
+                    "COMMUNITY_WEBHOOK_URL",
+                ))
+            )
+                for (const { model, error } of streams.due)
+                    streams.told[streamKey(model, error)] = Date.now();
+            state.streams = { streaks: streams.streaks, told: streams.told };
+            await save();
+        } catch (error) {
+            console.error(`probes: ${error.message}`);
+        }
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be

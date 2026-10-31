@@ -15,6 +15,10 @@ export default defineConfig({
                         "https://discord.test/api/webhooks/2/y",
                     POLLINATIONS_API_KEY: "test",
                     TINYBIRD_TOKEN: "test",
+                    COMMUNITY_PROBE_KEY: "probe-test",
+                    OWNER_DISCORD_IDS: JSON.stringify({
+                        o: "123456789012345678",
+                    }),
                 },
             },
         }),

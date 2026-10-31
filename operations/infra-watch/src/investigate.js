@@ -7,8 +7,8 @@ import { withTimeout } from "./delivery.js";
 
 const GEN = "https://gen.pollinations.ai/v1/chat/completions";
 export const MODEL = "openai/gpt-6.1-sol";
-// AI lines per UTC day, across all incidents.
-export const DAILY_LIMIT = 20;
+// AI lines per UTC day, across all incident and review cards.
+export const DAILY_LIMIT = 60;
 export const MAX_TOOL_CALLS = 8;
 const TIMEOUT_MS = 90_000;
 // The answer is one line under the alert panel.
@@ -91,7 +91,7 @@ How to read a status row:
 Your answer is added as one line to the incident's card, under a panel that already gives the success rate, the callers and each route, and under your previous lines. Reply with one line of plain text, at most two short sentences and under 250 characters:
 - open: the verdict (an outage, a provider fault, our fault, a single caller, or unclear), then the cause, naming the provider and the kind of error.
 - change: what changed and what it means now, without repeating your previous lines.
-- closed: a closing summary: the cause, and what it cost.
+- closed: what caused it and what ended it. The card's summary already says how long it lasted and how many users and requests it cost: do not repeat those numbers.
 Do not repeat the panel's numbers, request ids or caveats, and no markdown.
 
 Use only facts from the data and tool results. If they cannot explain the alert, say it is unclear.`;
@@ -376,8 +376,9 @@ export async function ask(
     });
 }
 
-// A closed incident's footprint: requests that ended in a server error, and
-// the accounts they came from, over up to 24 hours. Null if Tinybird can't say.
+// A closed incident's footprint over up to 24 hours: its requests and those
+// that ended in a server error, its callers (accounts) and those that got
+// one. Null if Tinybird can't say.
 export async function lost(model, minutes, tinybird) {
     try {
         const [row] = await pipe(
@@ -385,9 +386,9 @@ export async function lost(model, minutes, tinybird) {
             { model, minutes: Math.min(Math.max(Math.ceil(minutes), 1), 1440) },
             { fetchImpl: fetch, ...tinybird },
         );
-        return row
-            ? { failures: row.failures, failing_callers: row.failing_callers }
-            : null;
+        if (!row) return null;
+        const { requests, failures, callers, failing_callers } = row;
+        return { requests, failures, callers, failing_callers };
     } catch (error) {
         console.error(`lost: ${error.message}`);
         return null;

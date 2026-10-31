@@ -295,6 +295,159 @@ main > * {
     }
 }
 
+/* ── Hero pollen ──────────────────────────────────────────────────────
+   Drifting pixels over the hero art (HeroMotes); fireflies at night. Only
+   transform and opacity move, and the layer pauses off screen. */
+.site-motes {
+    pointer-events: none;
+}
+
+.site-mote {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--polli-color-brand-accent);
+    /* Outlined like the art's pixels, so pollen reads on the pale day sky. */
+    box-shadow: 0 0 0 1px
+        color-mix(in oklab, var(--polli-color-paid-deep) 45%, transparent);
+    animation:
+        site-mote-drift var(--mote-duration) ease-in-out var(--mote-delay)
+            infinite alternate,
+        site-mote-twinkle calc(var(--mote-duration) / 3) ease-in-out
+            var(--mote-delay) infinite alternate;
+}
+
+.dark .site-mote {
+    box-shadow: 0 0 8px 2px
+        color-mix(in oklab, var(--polli-color-brand-accent) 70%, transparent);
+}
+
+.site-motes[data-paused] .site-mote {
+    animation-play-state: paused;
+}
+
+@media (min-width: 40rem) {
+    .site-mote {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-motes {
+        display: none;
+    }
+}
+
+@keyframes site-mote-drift {
+    to {
+        transform: translate(var(--mote-drift), -24px);
+    }
+}
+
+@keyframes site-mote-twinkle {
+    from {
+        opacity: 0.2;
+    }
+
+    to {
+        opacity: 0.9;
+    }
+}
+
+/* ── Model card pixels ───────────────────────────────────────────────
+   Each card's drawing (ModelPixels) plays once, staggered, when the grid
+   first comes into view, and again on hover or focus. Layers set their own
+   motion through --px-* properties; the two triggers below apply it. */
+.site-model-pixels {
+    position: absolute;
+    top: 2.5rem;
+    right: 0.875rem;
+    width: 48px;
+    height: 36px;
+    fill: currentColor;
+    pointer-events: none;
+}
+
+@media (min-width: 40rem) {
+    .site-model-pixels {
+        top: 3rem;
+        right: 1.25rem;
+        width: 60px;
+        height: 45px;
+    }
+}
+
+.site-px-seen,
+.site-px-hover {
+    transform-box: fill-box;
+    transform-origin: var(--px-origin, center);
+}
+
+[data-seen] .site-px-seen {
+    animation: var(--px-anim)
+        calc(var(--card-delay, 0ms) + var(--px-delay, 0ms)) 1 both;
+}
+
+.site-model-card:is(:hover, :focus-within) .site-px-hover {
+    animation: var(--px-anim) var(--px-delay, 0ms) 2 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-px-seen,
+    .site-px-hover {
+        animation: none !important;
+    }
+}
+
+/* Hidden for the whole duration, then shown. The last keyframe sets the end
+   state, so a stepped timing function can't leave a layer hidden. */
+@keyframes site-px-appear {
+    0%,
+    99% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes site-px-type {
+    from {
+        transform: scaleX(0);
+    }
+}
+
+@keyframes site-px-blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+@keyframes site-px-bounce {
+    50% {
+        transform: scaleY(var(--px-low));
+    }
+}
+
+@keyframes site-px-gather {
+    50% {
+        transform: translate(var(--px-dx), var(--px-dy));
+    }
+}
+
+@keyframes site-px-run {
+    25%,
+    75% {
+        transform: translateX(1px);
+    }
+
+    50% {
+        transform: none;
+    }
+}
+
 /* ── /play ───────────────────────────────────────────────────────────── */
 /* The native audio player, rounded to sit inside its result card. */
 .play-audio {
@@ -326,4 +479,56 @@ main > * {
 
 .play-media-lightbox {
     background: transparent;
+}
+
+/* ── Polli on Hello ──────────────────────────────────────────────────────
+   The brand bee flies to the card the pointer rests on (PolliFlight). She
+   sits above page content and below the header, and never takes a click. */
+.site-polli {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 20;
+    width: 70px;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.site-polli[data-state="away"] {
+    visibility: hidden;
+}
+
+.site-polli svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.site-polli-wings {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+}
+
+.site-polli[data-state="flying"] .site-polli-wings {
+    animation: site-polli-flap 120ms steps(1) infinite;
+}
+
+.site-polli[data-state="perched"] .site-polli-wings {
+    animation: site-polli-flap 480ms steps(1) infinite;
+}
+
+.site-polli[data-state="perched"] svg {
+    animation: site-polli-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes site-polli-flap {
+    50% {
+        transform: scaleY(0.7);
+    }
+}
+
+@keyframes site-polli-bob {
+    50% {
+        transform: translateY(-3px);
+    }
 }

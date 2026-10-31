@@ -78,6 +78,7 @@ export function conditions({
     official,
     hosts = { public: true, upstream: true },
     analyticsDown,
+    signups = [],
 }) {
     // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
     // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
@@ -109,6 +110,10 @@ export function conditions({
     if (baseline10 >= PLATFORM_MIN_BASELINE && now10 < baseline10 / 2) {
         found.platform = { kind: "PLATFORM_DROP", now10, baseline10 };
     }
+    // Private email domains with bulk onboarding sign-ups, from Enter: open
+    // while over the limit in the last 24 hours.
+    for (const signup of signups)
+        found[`signup:${signup.domain}`] = { kind: "SIGNUP_BURST", ...signup };
     return found;
 }
 
@@ -271,16 +276,19 @@ export function duration(ms) {
 }
 
 // A box titled with the alert and what it is about. It is as wide as its
-// title or its longest row needs, so a full model id is never cut.
-function panel(title, lines) {
+// title or its longest row needs, so a full model id is never cut. The
+// title is drawn in the card's colour (an ansi block): Discord on desktop
+// shows it, the phone shows plain text.
+function panel(title, lines, color) {
     const body = lines.map(
         ([field, value]) =>
             `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
+    const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
     return [
-        "```",
-        `┌─ ${title} ${"─".repeat(inner - title.length - 1)}┐`,
+        "```ansi",
+        `┌─ \u001b[38;2;${rgb}m${title}\u001b[0m ${"─".repeat(inner - title.length - 1)}┐`,
         ...body.map((t) => `│ ${t.padEnd(inner)} │`),
         `└${"─".repeat(inner + 2)}┘`,
         "```",
@@ -296,6 +304,7 @@ const LABEL = {
     DEGRADED: "DEGRADED",
     PRIMARY_WEAK: "PRIMARY WEAK",
     WATCH_DOWN: "DOWN",
+    SIGNUP_BURST: "FLAGGED",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -306,7 +315,11 @@ const SUBJECT = {
     watch: "infra-watch",
 };
 export const subjectOf = (key) =>
-    key.startsWith("model:") ? key.slice(6) : SUBJECT[key];
+    key.startsWith("model:")
+        ? key.slice(6)
+        : key.startsWith("signup:")
+          ? `domain ${key.slice(7)}`
+          : SUBJECT[key];
 
 // Embed side-bar colour by severity: red down, orange degraded, yellow weak
 // primary, green closed.
@@ -320,8 +333,23 @@ export const COLOR = {
     DEGRADED: 0xd85a30,
     PRIMARY_WEAK: 0xef9f27,
     WATCH_DOWN: RED,
+    SIGNUP_BURST: 0xef9f27,
 };
 const GREEN = 0x639922;
+
+// A card's colour: its status while open, green once closed.
+export const cardColor = (incident) =>
+    incident.closedAt != null ? GREEN : COLOR[incident.kind];
+
+// Each AI line's badge: the card's colour when the line was written, so the
+// lines show how the incident moved. Emoji circles, since the lines sit
+// outside the box, where Discord shows local times but no coloured text.
+const BADGE = {
+    [RED]: "🔴",
+    [COLOR.DEGRADED]: "🟠",
+    [COLOR.PRIMARY_WEAK]: "🟡",
+    [GREEN]: "🟢",
+};
 
 // While the AI is writing a line, the card ends with this.
 export const CHECKING = "*checking why…*";
@@ -339,7 +367,8 @@ export const waiting = (record, now) =>
 // hostname neither (users are fine); every other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
-    if (kind === "PRIMARY_WEAK" || kind === "UPSTREAM_DOWN") return false;
+    if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
+        return false;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
     return true;
@@ -403,6 +432,14 @@ function openRows(incident, now) {
             ["REQS", `${info.now10} last 10m`],
             ["", `baseline ${Math.round(info.baseline10)}`],
         ];
+    if (kind === "SIGNUP_BURST") {
+        const since = new Date(info.since * 1000).toISOString();
+        return [
+            ["ACCOUNTS", `${info.accounts} in 24h`],
+            ["SINCE", `${since.slice(0, 16).replace("T", " ")} UTC`],
+            ["REWARDS", "still paid, review the domain"],
+        ];
+    }
     const rows = [
         ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
         ["CALLERS", callersText(info.callers)],
@@ -423,7 +460,12 @@ function openRows(incident, now) {
 
 // Rows of a closed card: how long, what it cost, how it started, now.
 function closedRows(key, incident) {
-    const rows = [["DOWN", duration(incident.closedAt - incident.openedAt)]];
+    const rows = [
+        [
+            key.startsWith("signup:") ? "LASTED" : "DOWN",
+            duration(incident.closedAt - incident.openedAt),
+        ],
+    ];
     if (!key.startsWith("model:")) return rows;
     const { start, lost, latest } = incident;
     rows.push([
@@ -446,7 +488,8 @@ function closedRows(key, incident) {
 }
 
 // The incident's card, in any state: the box, then while open "open since",
-// then the AI's lines in order, then "checking why…" while one is coming.
+// then the AI's lines in order, each with its badge, then "checking why…"
+// while one is coming.
 // Mentions stay those of the opening post, so edits never change them.
 export function renderCard(
     key,
@@ -454,21 +497,28 @@ export function renderCard(
     { lines = [], checking = false, now } = {},
 ) {
     const closed = incident.closedAt != null;
-    const title = `${closed ? "RECOVERED" : LABEL[incident.kind]}: ${subjectOf(key)}`;
+    const ended = key.startsWith("signup:") ? "ENDED" : "RECOVERED";
+    const title = `${closed ? ended : LABEL[incident.kind]}: ${subjectOf(key)}`;
+    const color = cardColor(incident);
     const parts = [
         panel(
             title,
             closed ? closedRows(key, incident) : openRows(incident, now),
+            color,
         ),
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
     for (const line of lines)
-        parts.push(`↳ <t:${unix(line.at)}:t> ${line.text}`);
+        parts.push(
+            ["↳", BADGE[line.color], `<t:${unix(line.at)}:t>`, line.text]
+                .filter(Boolean)
+                .join(" "),
+        );
     if (checking) parts.push(CHECKING);
     return {
         text: parts.join("\n"),
         ping: incident.pinged ?? pings(incident),
-        color: closed ? GREEN : COLOR[incident.kind],
+        color,
     };
 }
 

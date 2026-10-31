@@ -1,0 +1,25 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: private email domains with more than `limit` new
+    accounts in the last 24 hours, from signup_completed product events, as
+    counts only (no user ids). Read by the infra-watch Worker, which reports
+    each domain to Discord.
+
+NODE infra_watch_signups_node
+SQL >
+    %
+    SELECT
+        email_domain AS domain,
+        uniq(user_id) AS accounts,
+        toUnixTimestamp(min(timestamp)) AS since
+    FROM product_event
+    WHERE environment = 'production'
+        AND timestamp >= now() - interval 24 hour
+        AND event = 'signup_completed'
+        AND email_domain != ''
+    GROUP BY email_domain
+    HAVING accounts > {{Int32(limit, 30)}}
+    ORDER BY accounts DESC
+
+TYPE endpoint

@@ -14,9 +14,11 @@ import {
     evidence,
     investigates,
     lost,
+    pipe,
     toolsFor,
 } from "./investigate.js";
 import {
+    cardColor,
     conditions,
     duration,
     escalates,
@@ -127,6 +129,9 @@ export class Watch extends DurableObject {
     async run() {
         const now = Date.now();
         let found;
+        // Sign-up bursts per email domain, from Enter; null when the read
+        // failed, so open sign-up cards are left as they are.
+        let signups = [];
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
@@ -146,7 +151,18 @@ export class Watch extends DurableObject {
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
-                found = conditions({ ...data, hosts });
+                signups = await pipe(
+                    "infra_watch_signups",
+                    {},
+                    {
+                        tinybirdToken: this.env.TINYBIRD_TOKEN,
+                        fetchImpl: fetch,
+                    },
+                ).catch((error) => {
+                    console.error(`signups: ${error.message}`);
+                    return null;
+                });
+                found = conditions({ ...data, hosts, signups: signups ?? [] });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
@@ -166,6 +182,14 @@ export class Watch extends DurableObject {
                 closed[key] = record.closed.incident.closedAt;
             }
         }
+        // Unknown sign-ups keep their open cards. A sign-up card Discord
+        // hasn't taken yet is retried until it has: its 24-hour window can
+        // end first.
+        if (signups === null)
+            for (const [key, incident] of Object.entries(open))
+                if (key.startsWith("signup:")) found[key] ??= incident.info;
+        const unposted = { ...saved.unposted };
+        for (const [key, info] of Object.entries(unposted)) found[key] ??= info;
         const next = step({ ...saved, open, closed }, found, now, data.recent);
         const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };
         const tools = toolsFor(data, tinybird);
@@ -246,8 +270,11 @@ export class Watch extends DurableObject {
                     // incident opens again next check.
                     failed++;
                     delete next.state.open[key];
+                    if (key.startsWith("signup:"))
+                        unposted[key] = incident.info;
                     continue;
                 }
+                delete unposted[key];
                 Object.assign(incident, {
                     messageId: saved.id,
                     channelId: saved.channel_id,
@@ -307,7 +334,7 @@ export class Watch extends DurableObject {
         }
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
-        await this.ctx.storage.put("state", next.state);
+        await this.ctx.storage.put("state", { ...next.state, unposted });
         // A completed check: what /health reports to the outside heartbeat.
         await this.ctx.storage.put("checkedAt", now);
         for (const note of notes) this.background(() => this.note(note, data));
@@ -389,7 +416,12 @@ export class Watch extends DurableObject {
         } catch (error) {
             console.error(`investigator: ${error.message}`);
         }
-        const line = text && { at: Date.now(), text };
+        // The line keeps the card's colour from when the AI looked.
+        const line = text && {
+            at: Date.now(),
+            text,
+            color: cardColor(incident),
+        };
         const done = await this.writes(async () => {
             const current = await this.record(id);
             const lines = line ? [...current.lines, line] : current.lines;

@@ -1119,8 +1119,9 @@ function QuestOverviewContent({
                 // The progress chip counts only real (grantable) quests —
                 // coming_soon rows are excluded from both done and total.
                 const liveCards = cards.filter((card) => !card.comingSoon);
+                // Locked quests aren't done: their rewards can't be claimed.
                 const done = liveCards.filter(
-                    (card) => card.status !== "open",
+                    (card) => card.status !== "open" && !card.locked,
                 ).length;
                 return (
                     <Section

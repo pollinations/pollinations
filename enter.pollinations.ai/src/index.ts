@@ -12,6 +12,7 @@ import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { getCurrentGenOrigin, wellKnownRoutes } from "./routes/well-known.ts";
 import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
+import { detectFlaggedDomains } from "./services/setup-reward-signups.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -86,5 +87,9 @@ export default {
             return handleCodeAgentOutbound(request, env.CODE_AGENT_CONTEXT);
         }
         return app.fetch(request, env, ctx);
+    },
+    // Reports email domains with bulk onboarding sign-ups to Discord.
+    scheduled(_controller, env, ctx) {
+        ctx.waitUntil(detectFlaggedDomains(env));
     },
 } satisfies ExportedHandler<Env["Bindings"]>;

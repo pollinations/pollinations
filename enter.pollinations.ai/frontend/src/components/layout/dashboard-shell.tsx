@@ -30,14 +30,7 @@ import type {
     RefObject,
     SetStateAction,
 } from "react";
-import {
-    createContext,
-    Fragment,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { pageMeta } from "../../page-meta.ts";
@@ -69,11 +62,10 @@ type DashboardNavItem = {
     group: DashboardNavGroup;
 };
 
-// Thin lines split the drawer into its parts: the logo, Pollinations'
-// resources (News & FAQ, models, agents & MCP), your tools, Docs, then two
-// buttons at the bottom: your balance and your name. Signed out only
-// resources and Docs show.
-const NAV_GROUP_ORDER: readonly DashboardNavGroup[] = ["resources", "yours"];
+// Two parts: the platform at the top (News & FAQ, models, agents, MCP,
+// sandboxes, Docs), and everything about you as one block at the bottom (your
+// pages, then your balance and your name). A thin line opens each part.
+// Signed out, the bottom holds the sign-in buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
@@ -363,29 +355,18 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
-            <nav className="flex flex-col gap-2">
-                {NAV_GROUP_ORDER.map((group) => {
-                    const items = navItems.filter(
-                        (item) => item.group === group,
-                    );
-                    if (items.length === 0) return null;
-                    return (
-                        <Fragment key={group}>
-                            <div className="flex flex-col gap-0.5">
-                                {items.map((item) => (
-                                    <NavRow
-                                        key={item.id}
-                                        item={item}
-                                        active={activePage === item.id}
-                                        questStatus={questStatus}
-                                        onNavigate={onNavigate}
-                                    />
-                                ))}
-                            </div>
-                            <hr className={NAV_LINE_CLASS} />
-                        </Fragment>
-                    );
-                })}
+            <nav aria-label="Pollinations" className="flex flex-col gap-0.5">
+                {navItems
+                    .filter((item) => item.group === "resources")
+                    .map((item) => (
+                        <NavRow
+                            key={item.id}
+                            item={item}
+                            active={activePage === item.id}
+                            questStatus={questStatus}
+                            onNavigate={onNavigate}
+                        />
+                    ))}
                 <DocsRow />
             </nav>
         </ScrollArea>
@@ -395,6 +376,21 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 NAV_LINE_CLASS,
             )}
         >
+            {navItems.some((item) => item.group === "yours") && (
+                <nav aria-label="Yours" className="flex flex-col gap-0.5">
+                    {navItems
+                        .filter((item) => item.group === "yours")
+                        .map((item) => (
+                            <NavRow
+                                key={item.id}
+                                item={item}
+                                active={activePage === item.id}
+                                questStatus={questStatus}
+                                onNavigate={onNavigate}
+                            />
+                        ))}
+                </nav>
+            )}
             {walletArea && (
                 <BalanceLink
                     active={activePage === "balance"}

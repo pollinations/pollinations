@@ -4,7 +4,12 @@
 // come from its Tinybird pipe, the board is screenshotted in Chrome, and
 // both go out in one webhook message with the images attached.
 //
-//   node post.mjs [text] [image] [--dry-run <dir>]
+// Run from operations/infra-watch, with the secrets from its SOPS file:
+//
+//   sops exec-env secrets.vars.json 'node leaderboard/post.mjs [text] [image]'
+//
+// `--dry-run <dir>` writes the boards and the post there instead. CHROME_PATH
+// points at Chrome when it isn't where GitHub's Ubuntu runners have it.
 //
 // A board with no model busy enough is skipped. A board that fails is left
 // out and fails the run once the others are posted; rerun it by name.
@@ -28,6 +33,11 @@ const dryRun = args.includes("--dry-run")
 const named = Object.keys(BOARDS).filter((name) => args.includes(name));
 const wanted = named.length ? named : Object.keys(BOARDS);
 const date = new Date().toISOString().slice(0, 10);
+
+// In GitHub Actions, the secrets this reads are hidden from the job's log.
+if (process.env.GITHUB_ACTIONS)
+    for (const name of ["TINYBIRD_TOKEN", "COMMUNITY_WEBHOOK_URL"])
+        console.log(`::add-mask::${process.env[name]}`);
 
 async function rows(pipe) {
     const res = await fetch(`${TINYBIRD}/${pipe}.json`, {
@@ -72,7 +82,7 @@ async function post(boards) {
 }
 
 const browser = await puppeteer.launch({
-    executablePath: process.env.CHROME_PATH,
+    executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome",
     // GitHub's Ubuntu 24.04 runners block Chrome's user-namespace sandbox;
     // the page is our own HTML with scripts off.
     args: ["--no-sandbox"],

@@ -28,6 +28,9 @@ jobs:
     if: github.repository == 'pollinations/pollinations'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: operations/infra-watch
     steps:
       # The script and secrets that match the deployed Worker.
       - uses: actions/checkout@v5
@@ -39,18 +42,9 @@ jobs:
           node-version: '24'
       - uses: nhedger/setup-sops@v3
       - run: npm ci
-        working-directory: operations/infra-watch
+      # The decrypted secrets reach the script as environment variables.
       - name: Post the leaderboards
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           BOARDS: ${{ inputs.boards || 'text image' }}
-        run: |
-          secret() { sops decrypt --extract "[\"$1\"]" operations/infra-watch/secrets.vars.json; }
-          TINYBIRD_TOKEN="$(secret TINYBIRD_TOKEN)"
-          COMMUNITY_WEBHOOK_URL="$(secret COMMUNITY_WEBHOOK_URL)"
-          echo "::add-mask::$TINYBIRD_TOKEN"
-          echo "::add-mask::$COMMUNITY_WEBHOOK_URL"
-          CHROME_PATH="$(command -v google-chrome)"
-          "$CHROME_PATH" --version
-          export TINYBIRD_TOKEN COMMUNITY_WEBHOOK_URL CHROME_PATH
-          node operations/infra-watch/leaderboard/post.mjs $BOARDS
+        run: sops exec-env secrets.vars.json "node leaderboard/post.mjs $BOARDS"

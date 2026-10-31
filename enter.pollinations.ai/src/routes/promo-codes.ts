@@ -156,7 +156,12 @@ export const promoCodeRedeemRoutes = new Hono<Env>()
                 });
             }
 
-            const result = await claimReward(db, { rewardId, userId: user.id });
+            // Promo rewards are never Setup quests: no hold applies.
+            const result = await claimReward(db, {
+                rewardId,
+                userId: user.id,
+                lockedQuestIds: undefined,
+            });
             return c.json({
                 eventId: promo.eventId,
                 pollenAmount: promo.pollenAmount,

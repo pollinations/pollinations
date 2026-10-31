@@ -36,7 +36,7 @@ Complete quests from the Quests dashboard at enter.pollinations.ai/quests → re
 
 ## Auth & Keys
 
-pk_ (publishable, 16ch): client-side, rate-limited 1 pollen/IP/hour | sk_ (secret, 32ch): server-only, unlimited
+pk_ (App Key, 16ch): OAuth client_id only, never authenticates (401) | sk_ (secret, 32ch): server-only, unlimited
 Usage: `Authorization: Bearer <key>` or `?key=<key>` | Get keys: enter.pollinations.ai/keys
 Per-key features: model restrictions, pollen budget cap, expiry (0-365 days)
 Balances (spent in order): Quest Pollen → Paid Pollen

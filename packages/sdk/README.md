@@ -890,10 +890,6 @@ const client = new Pollinations({
 });
 ```
 
-### Rate Limiting
-
-Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimited requests.
-
 ### Network Errors
 
 The SDK returns network and API errors directly and does not retry requests

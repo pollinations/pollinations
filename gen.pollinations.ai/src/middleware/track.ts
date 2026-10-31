@@ -95,7 +95,6 @@ import {
 } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { apiErrorStatus } from "@/text/errors.ts";
 import {
     getResponsesEventUsage,
@@ -182,7 +181,6 @@ export type TrackEnv = {
         LoggerVariables &
         AuthVariables &
         BalanceVariables &
-        FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables &
         GenerationCacheVariables;
@@ -368,6 +366,13 @@ export const track = (eventType: EventType) =>
                         attemptStartTime: attempt.startedAt,
                         balanceTracking: balanceTracking(),
                         responseTracking: {
+                            ...trackJsonErrorUsage(
+                                eventType,
+                                requestTracking,
+                                attempt.candidate,
+                                attempt.error,
+                                pricingInput,
+                            ),
                             responseStatus: status,
                             cacheHit: false,
                             isBilledUsage: false,
@@ -398,7 +403,6 @@ export const track = (eventType: EventType) =>
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
-                    await c.var.frontendKeyRateLimit?.consumePollen(0);
                     return;
                 }
                 // trackResponse consumes SSE text and JSON bodies, so for
@@ -490,12 +494,6 @@ export const track = (eventType: EventType) =>
                           ...payerBucketToMeter(payerBucket),
                       }
                     : balanceTracking();
-
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.isBilledUsage
-                        ? responseTracking.price?.totalPrice || 0
-                        : 0,
-                );
 
                 const finalEvent = await emitRow({
                     startTime,
@@ -707,6 +705,46 @@ function responseForTracking(response: Response): Response {
     return readsBody ? response.clone() : new Response(null, response);
 }
 
+function trackJsonErrorUsage(
+    eventType: EventType,
+    request: RequestTrackingData,
+    candidate: FallbackCandidate,
+    error: unknown,
+    input?: PricingInput,
+): Partial<ResponseTrackingData> {
+    if (
+        eventType !== "generate.text" ||
+        !(error instanceof Error) ||
+        !("responseBody" in error) ||
+        typeof error.responseBody !== "string"
+    ) {
+        return {};
+    }
+    let output: { usage?: unknown };
+    try {
+        output = JSON.parse(error.responseBody);
+    } catch {
+        return {};
+    }
+    const parsed = CompletionUsageSchema.safeParse(output?.usage);
+    if (!parsed.success) return {};
+    const usage = openaiUsageToUsage(parsed.data);
+    return {
+        usage,
+        ...calculateUsageBilling({
+            model: request.resolvedModelRequested,
+            usage,
+            servedBy: candidate.definition ?? request.modelDefinition,
+            quotedBy: request.modelDefinition,
+            output,
+            input: {
+                ...input,
+                hasExplicitCacheHit: hasExplicitPromptCacheHit(parsed.data),
+            },
+        }),
+    };
+}
+
 export async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
@@ -747,6 +785,13 @@ export async function trackResponse(
         if (!usage) {
             return notBilled({
                 modelUsed,
+                ...trackJsonErrorUsage(
+                    eventType,
+                    requestTracking,
+                    candidate,
+                    error,
+                    pricingInput,
+                ),
             });
         }
         return {

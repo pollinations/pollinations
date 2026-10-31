@@ -183,7 +183,10 @@ export function parseApiError(status, errorText) {
             }
             return `Bad request: ${errorMessage}`;
         case 401:
-            return `Authentication failed. Send a valid API key as an Authorization bearer token. Get your key at https://enter.pollinations.ai/keys`;
+            return (
+                errorMessage ||
+                "Authentication failed. Send a valid API key as an Authorization bearer token. Get your key at https://enter.pollinations.ai/keys"
+            );
         case 403:
             return (
                 errorMessage ||
@@ -193,9 +196,7 @@ export function parseApiError(status, errorText) {
             return `Resource not found. The requested endpoint or model may not exist.`;
         case 429:
             return (
-                errorMessage ||
-                `Rate limited. You're making too many requests. ` +
-                    `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`
+                errorMessage || "Rate limited. You're making too many requests."
             );
         case 500:
             return `Server error: ${errorMessage}. Please try again later.`;

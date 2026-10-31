@@ -1,0 +1,19 @@
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "infra-watch",
+    "account_id": "b6ec751c0862027ba269faf7029b2501",
+    "main": "src/index.js",
+    "workers_dev": true,
+    "compatibility_date": "2026-08-26",
+    "observability": { "enabled": true },
+    "triggers": { "crons": ["* * * * *"] },
+    // production-pollinations-setup-holds, shared with Enter: sign-up bursts
+    // write domain holds here, and held accounts' review requests are read.
+    "kv_namespaces": [
+        { "binding": "SETUP_HOLDS", "id": "957b3d13dc2c4142ab22fdf889f27bec" }
+    ],
+    "durable_objects": {
+        "bindings": [{ "name": "WATCH", "class_name": "Watch" }]
+    },
+    "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Watch"] }]
+}

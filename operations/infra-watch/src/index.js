@@ -110,7 +110,8 @@ export class Watch extends DurableObject {
     // A card's AI lines, kept apart from the incident so the check and a
     // background AI call never overwrite each other, and keyed by the card so
     // a late line can never reach a newer incident's card. A closed card's
-    // record also holds its closed incident until its last edit lands.
+    // record also holds its closed incident, which marks the card closed,
+    // until its last edit lands and the check that closed it is saved.
     async record(id) {
         return (
             (await this.ctx.storage.get(`lines:${id}`)) ?? {
@@ -163,14 +164,19 @@ export class Watch extends DurableObject {
         let failed = 0;
 
         // A closed card whose last edit failed, or whose closing line a
-        // restart lost, is written again.
+        // restart lost, is written again. Once written, its record goes when
+        // the saved state no longer holds the card open: until then a late
+        // AI line would take the card for open and edit it back.
         const records = await this.ctx.storage.list({ prefix: "lines:" });
         for (const [name, record] of records) {
-            if (!record.closed || waiting(record, now)) continue;
-            if (now - record.closed.incident.closedAt > FINAL_RETRY_MS)
+            if (!record.closed) continue;
+            const id = name.slice("lines:".length);
+            if (record.done) {
+                if (state.open?.[record.closed.key]?.messageId !== id)
+                    await this.ctx.storage.delete(name);
+            } else if (now - record.closed.incident.closedAt > FINAL_RETRY_MS) {
                 await this.ctx.storage.delete(name);
-            else {
-                const id = name.slice("lines:".length);
+            } else if (!waiting(record, now)) {
                 if (!(await this.writes(() => this.finish(id)))) failed++;
             }
         }
@@ -320,15 +326,15 @@ export class Watch extends DurableObject {
         if (opening) incident.start = incident.info;
     }
 
-    // A closed card's last edit, run inside the write queue. Its record goes
-    // only once Discord has the edit.
+    // A closed card's last edit, run inside the write queue. Once Discord has
+    // it, the record is marked done; a later check deletes it.
     async finish(id) {
         const record = await this.record(id);
         if (!record.closed) return true;
         const { key, incident } = record.closed;
         const card = renderCard(key, incident, { lines: record.lines });
         if (!(await update(this.env, id, card))) return false;
-        await this.ctx.storage.delete(`lines:${id}`);
+        await this.ctx.storage.put(`lines:${id}`, { ...record, done: true });
         return true;
     }
 

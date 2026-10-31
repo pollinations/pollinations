@@ -1,11 +1,12 @@
 import { env, evictDurableObject, runInDurableObject } from "cloudflare:test";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { DAILY_LIMIT } from "./investigate.js";
 import { CHECKING, RECOVER_CHECKS } from "./rules.js";
 
 const GREEN = 0x639922;
 const KEY = "model:a/model";
-const row = (ok, total) => ({
-    model: "a/model",
+const row = (ok, total, model = "a/model") => ({
+    model,
     is_rollup: 1,
     total_requests: total,
     status_2xx: ok,
@@ -19,7 +20,8 @@ const OK = [row(40, 40)];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // The outside world as each test sets it: gen's status rows, how long the AI
-// takes, and how Discord answers. Every Discord write is recorded.
+// and Tinybird take, and how Discord answers. Every Discord write is
+// recorded, and `seen` hears each one Discord accepts.
 let world;
 
 async function discord(url, init) {
@@ -34,6 +36,7 @@ async function discord(url, init) {
     write.ok = !world.fails(write);
     world.writes.push(write);
     if (!write.ok) return new Response("unavailable", { status: 503 });
+    world.seen(write);
     if (init.method === "PATCH") return Response.json({});
     world.posts++;
     if (!world.receipt) return new Response("saved");
@@ -46,8 +49,10 @@ async function fake(input, init = {}) {
     if (url.pathname === "/") return new Response("ok");
     if (url.pathname === "/models/status")
         return Response.json({ data: world.rows });
-    if (url.pathname === "/models") return Response.json([{ name: "a/model" }]);
-    if (url.pathname.endsWith("/infra_watch_callers.json"))
+    if (url.pathname === "/models")
+        return Response.json([{ name: "a/model" }, { name: "b/model" }]);
+    if (url.pathname.endsWith("/infra_watch_callers.json")) {
+        await sleep(world.tinybirdDelay);
         return Response.json({
             data: [
                 {
@@ -59,9 +64,11 @@ async function fake(input, init = {}) {
                 },
             ],
         });
+    }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
     if (url.pathname === "/v1/chat/completions") {
+        await world.aiGate;
         await sleep(world.aiDelay);
         world.answers++;
         return Response.json({
@@ -74,10 +81,13 @@ async function fake(input, init = {}) {
 beforeEach(() => {
     world = {
         rows: [],
+        aiGate: null,
         aiDelay: 0,
+        tinybirdDelay: 0,
         receipt: true,
         fails: () => false,
         delay: () => 0,
+        seen: () => {},
         writes: [],
         posts: 0,
         answers: 0,
@@ -127,6 +137,40 @@ it("never edits a closed card back to open", async () => {
     expect(card.slice(green).every((w) => w.color === GREEN)).toBe(true);
     expect(card.at(-1).text).toContain("RECOVERED");
     expect(card.at(-1).text).toContain("Line 1.");
+});
+
+it("keeps a card green when a late line lands while another closes", async () => {
+    const stub = watch();
+    world.rows = [row(10, 40), row(10, 40, "b/model")];
+    // The opening lines stay on their way until the first card turns green.
+    let release;
+    world.aiGate = new Promise((resolve) => {
+        release = resolve;
+    });
+    world.seen = (w) =>
+        w.path.endsWith("/m1") && w.color === GREEN && release();
+    await stub.check();
+    // No budget left for closing lines, so each close is the card's last
+    // edit; the second close's slow Tinybird read lets the first card's late
+    // line land before the check saves its state.
+    await runInDurableObject(stub, (_, state) =>
+        state.storage.put("ai", {
+            day: new Date().toISOString().slice(0, 10),
+            count: DAILY_LIMIT,
+        }),
+    );
+    world.tinybirdDelay = 100;
+    world.rows = [row(40, 40), row(40, 40, "b/model")];
+    await checks(stub, RECOVER_CHECKS);
+    await settle(stub);
+    await checks(stub, 2);
+
+    for (const id of ["m1", "m2"]) {
+        const card = edits(id);
+        const green = card.findIndex((w) => w.color === GREEN);
+        expect(green).toBeGreaterThan(-1);
+        expect(card.slice(green).every((w) => w.color === GREEN)).toBe(true);
+    }
 });
 
 it("drops a line lost in a restart instead of checking forever", async () => {
@@ -193,12 +237,12 @@ it("retries a closed card's last edit until Discord takes it", async () => {
     expect(last.color).toBe(GREEN);
     expect(last.text).not.toContain(CHECKING);
     expect(last.text).toContain("Line 2.");
-    expect(await stored(stub, "lines:m1")).toBeUndefined();
 
-    // Delivered: later checks leave the card alone.
+    // Delivered: later checks leave the card alone and forget it.
     const count = edits("m1").length;
     await checks(stub, 2);
     expect(edits("m1").length).toBe(count);
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
 });
 
 it("gives up on a closed card's last edit after a day", async () => {

@@ -1,0 +1,23 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: private email domains with more than `limit` first
+    onboarding rewards in the last 24 hours, as counts only (no user ids).
+    Read by the infra-watch Worker, which reports each domain to Discord.
+
+NODE infra_watch_signups_node
+SQL >
+    %
+    SELECT
+        email_domain AS domain,
+        uniq(user_id) AS accounts,
+        toUnixTimestamp(min(timestamp)) AS since
+    FROM setup_reward_signup
+    WHERE environment = 'production'
+        AND timestamp >= now() - interval 24 hour
+    GROUP BY email_domain
+    HAVING accounts > {{Int32(limit, 30)}}
+    ORDER BY accounts DESC
+    LIMIT 20
+
+TYPE endpoint

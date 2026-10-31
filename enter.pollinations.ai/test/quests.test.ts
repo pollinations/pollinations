@@ -18,11 +18,7 @@ import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
-import {
-    detectFlaggedDomains,
-    recordSetupRewardSignup,
-    registrableDomain,
-} from "../src/services/setup-reward-signups.ts";
+import { registrableDomain } from "../src/services/setup-reward-signups.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
@@ -2739,8 +2735,7 @@ test("account quest history accepts account usage permission", async ({
 });
 
 // Sign-up flags: an account's first onboarding reward on a private email
-// domain is a 24-hour KV key; a scheduled detector reports domains past 30.
-const REPORT_WEBHOOK = "https://discord.test/api/webhooks/setup-rewards";
+// domain is one Tinybird event; infra-watch reports domains past 30 a day.
 
 /** Google-only accounts with an API key: their next check earns first_api_key. */
 async function seedSetupAccounts(
@@ -2813,43 +2808,12 @@ function completedQuestGroup(
     };
 }
 
-async function signupKeys() {
-    return (await env.KV.list({ prefix: "signup:" })).keys.map(
-        (key) => key.name,
-    );
-}
-
 async function tierBalanceOf(userId: string) {
     const [row] = await drizzle(env.DB, { schema })
         .select({ value: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, userId));
     return row?.value ?? 0;
-}
-
-/** Records Discord webhook posts; any other fetch fails the test. */
-function stubDiscord(status: number) {
-    const posts: { embeds: { description: string; color: number }[] }[] = [];
-    vi.stubGlobal(
-        "fetch",
-        async (input: RequestInfo | URL, init?: RequestInit) => {
-            if (String(input) !== REPORT_WEBHOOK) {
-                throw new Error(`Unexpected fetch: ${String(input)}`);
-            }
-            posts.push(JSON.parse(String(init?.body)));
-            return new Response(null, { status });
-        },
-    );
-    return posts;
-}
-
-async function seedSignups(domain: string, count: number) {
-    for (let index = 0; index < count; index++) {
-        await recordSetupRewardSignup(env.KV, {
-            userId: `${domain}-${index}`,
-            email: `user${index}@${domain}`,
-        });
-    }
 }
 
 test("sign-up flags: the setup quest list covers every setup quest in the catalog", async ({
@@ -2866,7 +2830,17 @@ test("sign-up flags: the setup quest list covers every setup quest in the catalo
     );
 });
 
-test("sign-up flags: a first setup reward records the registrable domain; rewards still pay", async () => {
+function signups(state: { signupEvents: Record<string, unknown>[] }) {
+    return state.signupEvents.map(({ user_id, email_domain }) => ({
+        user_id,
+        email_domain,
+    }));
+}
+
+test("sign-up flags: a first setup reward records the registrable domain; rewards still pay", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
     const db = drizzle(env.DB, { schema });
     const [farm] = await seedSetupAccounts("farm", 1, "farm.test");
     const [sub] = await seedSetupAccounts("sub", 1, "sub.test");
@@ -2877,9 +2851,11 @@ test("sign-up flags: a first setup reward records the registrable domain; reward
     const [mail] = await seedSetupAccounts("mail", 1, "fastmail.com");
     for (const id of [farm, sub, mail]) await earnFirstKey(env, id);
 
-    expect((await signupKeys()).sort()).toEqual(
-        [`signup:farm.test:${farm}`, `signup:sub.test:${sub}`].sort(),
-    );
+    expect(signups(mocks.tinybird.state)).toEqual([
+        { user_id: farm, email_domain: "farm.test" },
+        { user_id: sub, email_domain: "sub.test" },
+    ]);
+    expect(mocks.tinybird.state.signupEvents[0]?.environment).toBe("test");
     expect(await tierBalanceOf(farm)).toBeCloseTo(0.25);
     expect(registrableDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
     expect(registrableDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
@@ -2887,75 +2863,29 @@ test("sign-up flags: a first setup reward records the registrable domain; reward
     expect(registrableDomain("x@co.uk")).toBeNull();
 });
 
-test("sign-up flags: returning accounts don't count as new sign-ups", async () => {
+test("sign-up flags: returning accounts don't count as new sign-ups", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
     const [back] = await seedSetupAccounts("back", 1, "back.test");
     await earnFirstKey(env, back);
-    // The 24-hour key expired; another setup quest is not a new sign-up.
-    await env.KV.delete(`signup:back.test:${back}`);
     await checkQuestsForUser(env, back, [completedQuestGroup("later_setup")]);
 
-    expect(await signupKeys()).toEqual([]);
-});
-
-test("sign-up flags: the detector reports a domain past 30 sign-ups once", async () => {
-    const posts = stubDiscord(204);
-    try {
-        const reporting = {
-            ...env,
-            SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
-        };
-        await seedSignups("farm.test", 31);
-        await seedSignups("quiet.test", 30);
-
-        expect(await detectFlaggedDomains(reporting)).toEqual(["farm.test"]);
-        expect(posts).toHaveLength(1);
-        expect(posts[0].embeds[0].color).toBe(0xef9f27);
-        expect(posts[0].embeds[0].description).toContain(
-            "FLAGGED: domain farm.test",
-        );
-        expect(posts[0].embeds[0].description).toContain(
-            "ACCOUNTS 31 in 24h (limit 30)",
-        );
-
-        expect(await detectFlaggedDomains(reporting)).toEqual([]);
-        expect(posts).toHaveLength(1);
-    } finally {
-        vi.unstubAllGlobals();
-    }
-});
-
-test("sign-up flags: a failed Discord post is retried on the next run", async () => {
-    await seedSignups("retry.test", 31);
-    const reporting = {
-        ...env,
-        ENVIRONMENT: "staging",
-        SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
-    };
-    try {
-        stubDiscord(500);
-        await expect(detectFlaggedDomains(reporting)).rejects.toThrow();
-        const posts = stubDiscord(204);
-        expect(await detectFlaggedDomains(reporting)).toEqual(["retry.test"]);
-        expect(posts[0].embeds[0].description).toContain(
-            "[staging] FLAGGED: domain retry.test",
-        );
-    } finally {
-        vi.unstubAllGlobals();
-    }
+    expect(signups(mocks.tinybird.state)).toEqual([
+        { user_id: back, email_domain: "back.test" },
+    ]);
 });
 
 test("sign-up flags: a failed sign-up write never blocks rewards", async () => {
     const [offline] = await seedSetupAccounts("offline", 1, "offline.test");
-    const failingKv = {
-        get: env.KV.get.bind(env.KV),
-        list: env.KV.list.bind(env.KV),
-        delete: env.KV.delete.bind(env.KV),
-        put: async () => {
-            throw new Error("KV unavailable");
-        },
-    } as unknown as KVNamespace;
-
-    const result = await earnFirstKey({ ...env, KV: failingKv }, offline);
-    expect(result.recorded).toBe(1);
-    expect(await tierBalanceOf(offline)).toBeCloseTo(0.25);
+    vi.stubGlobal("fetch", async () => {
+        throw new Error("Tinybird unavailable");
+    });
+    try {
+        const result = await earnFirstKey(env, offline);
+        expect(result.recorded).toBe(1);
+        expect(await tierBalanceOf(offline)).toBeCloseTo(0.25);
+    } finally {
+        vi.unstubAllGlobals();
+    }
 });

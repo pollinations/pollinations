@@ -3,7 +3,6 @@ import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import type { Env } from "../env.ts";
 import { listSetupQuestIds, QUEST_GROUPS } from "./quests/index.ts";
 import {
     type QuestEvaluation,
@@ -30,7 +29,7 @@ export type QuestCheckResult = {
 };
 
 export async function checkQuestsForUser(
-    env: Env["Bindings"],
+    env: CloudflareBindings,
     userId: string,
     groups: QuestGroup[] = QUEST_GROUPS,
 ): Promise<QuestCheckResult> {
@@ -76,20 +75,17 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
-    // An account's first setup reward is a sign-up, counted per email domain
-    // by the scheduled detector. Detection only: a failure never blocks
-    // rewards.
+    // An account's first setup reward is a sign-up; infra-watch counts them
+    // per email domain and reports a burst.
     const setupQuestIds = await listSetupQuestIds(ctx);
     if (
         proposals.some(({ quest }) => quest.category === "setup") &&
         ![...earned].some((id) => id !== null && setupQuestIds.has(id))
     ) {
-        await recordSetupRewardSignup(env.KV, {
+        await recordSetupRewardSignup(env, {
             userId: user.id,
             email: user.email,
-        }).catch((error) =>
-            log.warn("SETUP_REWARD_SIGNUP_FAILED: {error}", { error }),
-        );
+        });
     }
     const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(

@@ -31,6 +31,7 @@ export type MockTinybirdState = {
     referralEvents: Record<string, unknown>[];
     productEvents: Record<string, unknown>[];
     stripeEvents: Record<string, unknown>[];
+    signupEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
     earningsResponse: UsageRow[];
@@ -51,6 +52,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         referralEvents: [],
         productEvents: [],
         stripeEvents: [],
+        signupEvents: [],
         dailyResponse: [],
         usageResponse: [],
         earningsResponse: [],
@@ -97,6 +99,8 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 state.stripeEvents.push(...rows);
             } else if (eventName === "product_event") {
                 state.productEvents.push(...rows);
+            } else if (eventName === "setup_reward_signup") {
+                state.signupEvents.push(...rows);
             }
 
             return c.json(
@@ -161,6 +165,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.referralEvents = [];
         state.productEvents = [];
         state.stripeEvents = [];
+        state.signupEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];
         state.earningsResponse = [];

@@ -102,9 +102,12 @@ describe("callTripoSR", () => {
         ).toMatchObject({ image_urls: [dataUri] });
     });
 
-    it.each([[], [reference, "https://example.com/second.png"]])(
-        "requires exactly one reference image: %j",
-        async (images) => {
+    it.each([
+        { images: [] },
+        { images: [reference, "https://example.com/second.png"] },
+    ])(
+        "requires exactly one reference image: $images",
+        async ({ images }) => {
             const fetchSpy = vi.spyOn(globalThis, "fetch");
             await expect(callTripoSR(params(images))).rejects.toMatchObject({
                 status: 400,

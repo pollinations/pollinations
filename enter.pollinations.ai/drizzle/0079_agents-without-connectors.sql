@@ -1,7 +1,8 @@
 -- Gen refuses agent run tokens on Connectors (composio), and a prompt agent
 -- fails its whole run when one of its MCP servers refuses it. Drop Connectors
 -- from saved prompt agents so they keep running with their other servers.
--- Prompt agents are the only listings that store MCP servers. Six of them
+-- Prompt agents are the only listings that store MCP servers. This changes
+-- every saved prompt agent that lists Connectors, active or not; six of them
 -- called Connectors in the 30 days before 2026-10-31 (production Tinybird).
 --
 -- Prefilter with instr() inside CASE so JSON functions only inspect rows that

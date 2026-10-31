@@ -193,17 +193,6 @@ export const mcpRoutes = new Hono<Env>()
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
-        // User-scoped servers act on the owner's files and connected
-        // accounts. Publishable keys ship inside public clients, so anyone
-        // holding one could use them.
-        if (
-            server.userScoped &&
-            c.var.auth.apiKey?.metadata?.keyType === "publishable"
-        ) {
-            throw new HTTPException(403, {
-                message: `${server.name} requires a secret (sk_) API key`,
-            });
-        }
         if (server.agents === false && c.var.auth.agentRun) {
             throw new HTTPException(403, {
                 message: `Agents can't use ${server.name}`,

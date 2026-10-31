@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+    heldDomains,
     holdDomains,
     listAll,
     pending,
@@ -89,8 +90,12 @@ test("pending requests have no decision and a held domain, grouped by domain, ol
     const groups = pending(
         await listAll(kv, "review:"),
         await listAll(kv, "decision:"),
-        await listAll(kv, "hold:"),
-        await listAll(kv, "release:"),
+        await heldDomains(kv, [
+            "farm.com",
+            "school.edu",
+            "kept.com",
+            "gone.com",
+        ]),
     );
     assert.deepEqual(
         [...groups].map(([domain, accounts]) => [
@@ -110,8 +115,7 @@ const listed = () => ({
     accounts: pending(
         Array.from({ length: 7 }, (_, i) => request(`u${i}`, "farm.com")),
         [],
-        [{ name: "hold:farm.com" }],
-        [],
+        new Set(["farm.com"]),
     )
         .get("farm.com")
         .slice(0, 5),

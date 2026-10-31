@@ -329,6 +329,19 @@ test("a sign-up records only a private registrable email domain", () => {
     expect(signupEmailDomain("x@mail.bücher.de")).toBe("xn--bcher-kva.de");
     expect(signupEmailDomain("x@gmail.com")).toBeUndefined();
     expect(signupEmailDomain("x@fastmail.com")).toBeUndefined();
+    // Relays many people share never count as one domain's sign-ups.
+    expect(
+        signupEmailDomain("1234+octo@users.noreply.github.com"),
+    ).toBeUndefined();
+    expect(signupEmailDomain("x@privaterelay.appleid.com")).toBeUndefined();
+    for (const relay of [
+        "mozmail.com",
+        "simplelogin.fr",
+        "passmail.com",
+        "passinbox.com",
+        "passfwd.com",
+    ])
+        expect(signupEmailDomain(`x@${relay}`)).toBeUndefined();
     expect(signupEmailDomain("x@co.uk")).toBeUndefined();
     expect(signupEmailDomain('x@a.b"c.com')).toBeUndefined();
 });

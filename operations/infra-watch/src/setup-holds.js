@@ -45,24 +45,37 @@ const byAge = (a, b) =>
     a.requestedAt - b.requestedAt ||
     (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0);
 
-const names = (keys, prefix) =>
-    new Set(keys.map(({ name }) => name.slice(prefix.length)));
+/**
+ * Of the domains asked about, those held and not released. Point reads:
+ * the store holds thousands of domains, requests name only a few.
+ */
+export async function heldDomains(kv, domains) {
+    const held = await Promise.all(
+        domains.map(async (domain) => {
+            const [hold, release] = await Promise.all([
+                kv.get(`hold:${domain}`),
+                kv.get(`release:${domain}`),
+            ]);
+            return hold !== null && release === null ? domain : null;
+        }),
+    );
+    return new Set(held.filter(Boolean));
+}
 
 /**
  * Pending requests (no decision yet, on a domain still held), grouped by
- * domain, oldest first. Takes KV listings of review:, decision:, hold: and
- * release:.
+ * domain, oldest first. Takes KV listings of review: and decision:, and the
+ * held domains.
  */
-export function pending(requests, decisions, holds, releases) {
-    const decided = names(decisions, "decision:");
-    const released = names(releases, "release:");
-    const held = names(holds, "hold:");
+export function pending(requests, decisions, held) {
+    const decided = new Set(
+        decisions.map(({ name }) => name.slice("decision:".length)),
+    );
     const groups = new Map();
     for (const { name, metadata } of requests) {
         const userId = name.slice("review:".length);
         const domain = metadata?.domain;
-        if (!held.has(domain) || released.has(domain) || decided.has(userId))
-            continue;
+        if (!held.has(domain) || decided.has(userId)) continue;
         const accounts = groups.get(domain) ?? [];
         accounts.push({ userId, ...metadata });
         groups.set(domain, accounts);

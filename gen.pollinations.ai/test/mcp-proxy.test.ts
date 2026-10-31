@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "ip",
+                name: "IP Geolocation MCP",
+                description: "IP geolocation lookup and caller IP detection.",
+                url: "https://gen.pollinations.ai/mcp/ip",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

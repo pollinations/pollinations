@@ -27,7 +27,7 @@ An agent combines catalog fields with its runtime configuration:
 | `visibility` | No | `private` by default, or `public` with publisher access. |
 | `systemPrompt` | Yes | Instructions for the agent, from 1 to 8,000 characters. |
 | `baseModel` | Yes | A text model ID from [`GET /v1/models`](https://gen.pollinations.ai/v1/models). |
-| `mcpServers` | No | Any of `pollinations`, `ffmpeg`, `exa`, `composio`, `computer`. Details: [`GET /mcp`](https://gen.pollinations.ai/mcp). |
+| `mcpServers` | No | Array of server `id` values from the live [`GET /mcp`](https://gen.pollinations.ai/mcp) catalog. Read each server's description and pricing before enabling it. |
 
 Example `agent.json`:
 
@@ -38,6 +38,18 @@ Example `agent.json`:
   "mcpServers": ["pollinations"]
 }
 ```
+
+Discover tools before constructing an agent configuration:
+
+```bash
+curl --fail --silent --show-error https://gen.pollinations.ai/mcp
+```
+
+The public response has a `data` array. Select its `id` values for `mcpServers`,
+not the display `name` or endpoint `url`. For example, the sandbox server's ID
+is `machines`; enabling it lets an agent start and use Linux sandboxes. Discovery
+does not require an API key or call a model. Tool usage can incur the rates in
+the catalog. Re-read the catalog instead of copying a fixed server list.
 
 Send only the fields to change; omitted fields keep their current values. You can also change the name, title, description, or visibility.
 

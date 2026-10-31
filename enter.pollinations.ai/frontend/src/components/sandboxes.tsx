@@ -519,6 +519,7 @@ export function Sandboxes() {
 
     const createAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<TerminalIcon />}
             aria-busy={creating}

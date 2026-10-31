@@ -203,6 +203,7 @@ function AppCard({ app }: { app: ListedApp }) {
 export function SubmitAppButton() {
     return (
         <Button
+            intent="commit"
             as="a"
             href={SUBMIT_APP_URL}
             target="_blank"

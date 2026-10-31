@@ -418,6 +418,7 @@ export function CommunityEndpoints({
 
     const agentAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<BotIcon />}
             aria-haspopup="dialog"
@@ -428,6 +429,7 @@ export function CommunityEndpoints({
     );
     const modelAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<BeakerIcon />}
             aria-haspopup="dialog"

@@ -8,8 +8,25 @@ import {
     settle,
     withTimeout,
 } from "./delivery.js";
-import { allow, ask, evidence, investigates, toolsFor } from "./investigate.js";
+import {
+    allow,
+    ask,
+    evidence,
+    investigates,
+    pipe,
+    toolsFor,
+} from "./investigate.js";
 import { CHECKING, complete, conditions, render, step } from "./rules.js";
+import {
+    due,
+    holdDomains,
+    listAll,
+    mark,
+    pending,
+    REVIEW_PROMPT,
+    reviewEvidence,
+    reviewMessage,
+} from "./setup-holds.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
@@ -95,7 +112,9 @@ export class Watch extends DurableObject {
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
-                found = conditions({ ...data, hosts });
+                // Bulk onboarding sign-ups per email domain, from Enter.
+                const signups = await this.signups();
+                found = conditions({ ...data, hosts, signups });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
@@ -147,11 +166,93 @@ export class Watch extends DurableObject {
             console.error(
                 `${failed} webhook post(s) failed; retrying next check`,
             );
+        this.background(() => this.reviews());
         return {
             found: Object.keys(found),
             posted: delivered.filter(Boolean).length,
             failed,
         };
+    }
+
+    // Sign-up bursts, each domain held while holds are on. A failure only
+    // costs this check its sign-up alerts.
+    async signups() {
+        try {
+            const rows = await pipe(
+                "infra_watch_signups",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+            return this.env.SETUP_REWARD_HOLDS === "on"
+                ? await holdDomains(this.env.SETUP_HOLDS, rows)
+                : rows;
+        } catch (error) {
+            console.error(`signups: ${error.message}`);
+            return [];
+        }
+    }
+
+    // Held accounts asking for a review: one post per domain with the AI's
+    // recommendation, within the daily budget. Runs in the background queue.
+    async reviews() {
+        try {
+            const groups = pending(
+                await listAll(this.env.SETUP_HOLDS, "review:"),
+            );
+            if (!groups.size) return;
+            const stored = (await this.ctx.storage.get("reviews")) ?? {};
+            let { picked, state } = due(groups, stored, Date.now());
+            if (!picked.length) return;
+            await this.ctx.storage.put("reviews", state);
+            const tb = {
+                tinybirdToken: this.env.TINYBIRD_TOKEN,
+                fetchImpl: fetch,
+            };
+            const read = (name, params) =>
+                pipe(name, params, tb).catch((error) => ({
+                    error: error.message,
+                }));
+            for (const review of picked) {
+                const [signups, usage] = await Promise.all([
+                    read("infra_watch_review_signups", {
+                        domain: review.domain,
+                    }),
+                    read("infra_watch_review_usage", {
+                        user_ids: review.accounts
+                            .map((a) => a.userId)
+                            .join(","),
+                    }),
+                ]);
+                const facts = reviewEvidence(
+                    review,
+                    signups,
+                    usage,
+                    Date.now(),
+                );
+                let line = null;
+                try {
+                    const key = this.env.POLLINATIONS_API_KEY;
+                    if (!key) throw new Error("POLLINATIONS_API_KEY missing");
+                    line = await ask(
+                        key,
+                        facts,
+                        {},
+                        {
+                            system: REVIEW_PROMPT,
+                            specs: [],
+                        },
+                    );
+                } catch (error) {
+                    console.error(`review: ${error.message}`);
+                }
+                if (await post(this.env, reviewMessage(review, facts, line)))
+                    state = mark(state, review, Date.now());
+                else console.error(`review: post failed for ${review.domain}`);
+            }
+            await this.ctx.storage.put("reviews", state);
+        } catch (error) {
+            console.error(`reviews: ${error.message}`);
+        }
     }
 
     // The AI completes the alert it was posted with: its line replaces

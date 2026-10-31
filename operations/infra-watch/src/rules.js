@@ -74,6 +74,7 @@ export function conditions({
     official,
     hosts = { public: true, upstream: true },
     analyticsDown,
+    signups = [],
 }) {
     // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
     // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
@@ -105,6 +106,9 @@ export function conditions({
     if (baseline10 >= PLATFORM_MIN_BASELINE && now10 < baseline10 / 2) {
         found.platform = { kind: "PLATFORM_DROP", now10, baseline10 };
     }
+    // Private email domains with bulk onboarding sign-ups, from Enter.
+    for (const signup of signups)
+        found[`signup:${signup.domain}`] = { kind: "SIGNUP_BURST", ...signup };
     return found;
 }
 
@@ -118,8 +122,12 @@ const CONFIRMED = new Set([
 const HOSTS = { gen: true, public: true, upstream: true };
 
 // Keys whose recovery we announce. A weak primary just expires: callers
-// were never affected.
-const RECOVERS = (key) => !key.startsWith("primary:");
+// were never affected. So does a sign-up burst once its 24 hours pass.
+const RECOVERS = (key) =>
+    !key.startsWith("primary:") && !key.startsWith("signup:");
+// A sign-up burst is posted once a day while it lasts.
+const cooldownOf = (key) =>
+    key.startsWith("signup:") ? 24 * 60 * 60 * 1000 : COOLDOWN_MS;
 
 // Pure state transition: which messages to post, and the next state.
 export function step(state, found, now, recent = []) {
@@ -137,7 +145,7 @@ export function step(state, found, now, recent = []) {
         const needs = CONFIRMED.has(key) ? CONFIRM_CHECKS : 1;
         if (streak < needs) continue;
         const prev = active[key];
-        if (prev && now - prev.postedAt < COOLDOWN_MS) continue;
+        if (prev && now - prev.postedAt < cooldownOf(key)) continue;
         active[key] = { postedAt: now, kind: info.kind };
         posts.push({ type: "alert", key, info });
     }
@@ -147,7 +155,7 @@ export function step(state, found, now, recent = []) {
         if (found.gen && key !== "gen") continue;
         if (found.analytics && !HOSTS[key]) continue;
         if (!RECOVERS(key)) {
-            if (now - prev.postedAt >= COOLDOWN_MS) delete active[key];
+            if (now - prev.postedAt >= cooldownOf(key)) delete active[key];
             continue;
         }
         // A model needs RECOVER_CHECKS clean checks in a row to count as
@@ -175,7 +183,7 @@ const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
 
 // A box titled with the alert and what it is about. It is as wide as its
 // title or its longest row needs, so a full model id is never cut.
-function panel(title, lines) {
+export function panel(title, lines) {
     const body = lines.map(
         ([field, value]) =>
             `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
@@ -199,8 +207,14 @@ const TITLE = {
     PLATFORM_DROP: () => "DEGRADED: platform-wide",
     DEGRADED: (info) => `DEGRADED: ${info.model}`,
     PRIMARY_WEAK: (info) => `PRIMARY WEAK: ${info.model}`,
+    SIGNUP_BURST: (info) => `FLAGGED: domain ${info.domain}`,
 };
 const framed = (info, lines) => panel(TITLE[info.kind](info), lines);
+
+// A maintainer's command on the SETUP_HOLDS store, run from
+// enter.pollinations.ai/ with a Cloudflare login on the account.
+export const kvPut = (key, value) =>
+    `npx wrangler kv key put --binding SETUP_HOLDS --env production --remote "${key}" ${value}`;
 
 // Last line of an alert while the AI looks into it. The same message is
 // then edited: the AI's line replaces it, or it simply goes.
@@ -219,6 +233,7 @@ const COLOR = {
     PLATFORM_DROP: RED,
     DEGRADED: 0xd85a30,
     PRIMARY_WEAK: 0xef9f27,
+    SIGNUP_BURST: 0xef9f27,
 };
 const GREEN = 0x639922;
 
@@ -281,6 +296,26 @@ function draw(post) {
             ]),
             ping: true,
         };
+    }
+    if (info.kind === "SIGNUP_BURST") {
+        const since = new Date(info.since * 1000).toISOString();
+        const message = {
+            text: framed(info, [
+                ["ACCOUNTS", `${info.accounts} in 24h`],
+                ["SINCE", `${since.slice(0, 16).replace("T", " ")} UTC`],
+                [
+                    "REWARDS",
+                    {
+                        held: "Setup quests held",
+                        released: "released by a maintainer",
+                    }[info.hold] ?? "still paid, review the domain",
+                ],
+            ]),
+            ping: false,
+        };
+        if (info.hold === "held")
+            message.text += `\nRelease the domain:\n\`\`\`\n${kvPut(`hold:${info.domain}`, "released")}\n\`\`\``;
+        return message;
     }
     if (info.kind === "PLATFORM_DROP") {
         return {

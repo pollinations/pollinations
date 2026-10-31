@@ -395,3 +395,57 @@ test("each alert carries its colour: red down, orange degraded, yellow weak, gre
         0x639922,
     );
 });
+
+test("a sign-up burst is posted once a day without a ping, and never recovers", () => {
+    const signup = { domain: "farm.com", accounts: 31, since: 1_793_404_800 };
+    const found = conditions({ ...quiet(busy), signups: [signup] });
+    assert.deepEqual(found, {
+        "signup:farm.com": { kind: "SIGNUP_BURST", ...signup },
+    });
+    const day = 24 * 60 * 60 * 1000;
+    let r = step({}, found, 0);
+    assert.equal(r.posts.length, 1);
+    r = step(r.state, found, COOLDOWN_MS + 1);
+    assert.equal(r.posts.length, 0);
+    r = step(r.state, {}, day - 1);
+    assert.equal(r.posts.length, 0);
+    assert.ok(r.state.active["signup:farm.com"]);
+    r = step(r.state, {}, day);
+    assert.equal(r.posts.length, 0);
+    assert.deepEqual(r.state.active, {});
+
+    const { text, ping, color } = render({
+        type: "alert",
+        key: "signup:farm.com",
+        info: found["signup:farm.com"],
+    });
+    assert.equal(ping, false);
+    assert.equal(color, 0xef9f27);
+    assert.match(text, /FLAGGED: domain farm\.com/);
+    assert.match(text, /31 in 24h/);
+    assert.match(text, /2026-10-31 00:00 UTC/);
+    assert.match(text, /still paid, review the domain/);
+});
+
+test("a held burst says so and shows how to release the domain", () => {
+    const info = {
+        kind: "SIGNUP_BURST",
+        domain: "farm.com",
+        accounts: 31,
+        since: 1_793_404_800,
+    };
+    const post = (hold) =>
+        render({
+            type: "alert",
+            key: "signup:farm.com",
+            info: { ...info, hold },
+        }).text;
+    assert.match(post("held"), /Setup quests held/);
+    assert.match(
+        post("held"),
+        /kv key put --binding SETUP_HOLDS --env production --remote "hold:farm\.com" released/,
+    );
+    assert.match(post("released"), /released by a maintainer/);
+    assert.doesNotMatch(post("released"), /kv key put/);
+    assert.match(post(undefined), /still paid, review the domain/);
+});

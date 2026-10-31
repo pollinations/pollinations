@@ -158,7 +158,7 @@ const pick = (row) => only(FIELDS, row);
 // Minutes the Tinybird tools may look back: 1 to 60, 15 by default.
 const lookback = (minutes) => Math.min(Math.max(Number(minutes) || 15, 1), 60);
 
-async function pipe(name, params, { tinybirdToken, fetchImpl }) {
+export async function pipe(name, params, { tinybirdToken, fetchImpl }) {
     if (!tinybirdToken) throw new Error("Tinybird is not configured");
     const url = new URL(`${TINYBIRD}/${name}.json`);
     for (const [key, value] of Object.entries(params))
@@ -290,7 +290,7 @@ export function reply(text) {
     return line ? line.slice(0, MAX_LINE) : null;
 }
 
-async function chat(key, messages, offerTools, signal, fetchImpl) {
+async function chat(key, messages, specs, offerTools, signal, fetchImpl) {
     const res = await fetchImpl(GEN, {
         method: "POST",
         headers: {
@@ -302,8 +302,10 @@ async function chat(key, messages, offerTools, signal, fetchImpl) {
             reasoning_effort: "low",
             max_completion_tokens: 1500,
             messages,
-            tools: TOOL_SPECS,
-            tool_choice: offerTools ? "auto" : "none",
+            ...(specs.length && {
+                tools: specs,
+                tool_choice: offerTools ? "auto" : "none",
+            }),
         }),
         signal,
     });
@@ -325,17 +327,30 @@ async function runTool(tools, call) {
 }
 
 // Runs the model until it answers. It may call tools for at most
-// MAX_TOOL_CALLS calls; the whole investigation shares one timeout.
-export async function ask(key, payload, tools, { fetchImpl = fetch } = {}) {
+// MAX_TOOL_CALLS calls; the whole investigation shares one timeout. Without
+// specs the model just answers.
+export async function ask(
+    key,
+    payload,
+    tools,
+    { fetchImpl = fetch, system = SYSTEM_PROMPT, specs = TOOL_SPECS } = {},
+) {
     return withTimeout(TIMEOUT_MS, async (signal) => {
         const messages = [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: system },
             { role: "user", content: JSON.stringify(payload) },
         ];
         let calls = 0;
         for (;;) {
             const offer = calls < MAX_TOOL_CALLS;
-            const message = await chat(key, messages, offer, signal, fetchImpl);
+            const message = await chat(
+                key,
+                messages,
+                specs,
+                offer,
+                signal,
+                fetchImpl,
+            );
             if (!offer || !message.tool_calls?.length)
                 return reply(message.content);
             messages.push(message);

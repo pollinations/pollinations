@@ -7,6 +7,8 @@
     "compatibility_date": "2026-08-26",
     "observability": { "enabled": true },
     "triggers": { "crons": ["* * * * *"] },
+    // "on": a sign-up burst holds its domain's Setup rewards in SETUP_HOLDS.
+    "vars": { "SETUP_REWARD_HOLDS": "off" },
     "durable_objects": {
         "bindings": [{ "name": "WATCH", "class_name": "Watch" }]
     },

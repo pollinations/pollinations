@@ -4,7 +4,7 @@
     "type": "module",
     "scripts": {
         "dev": "wrangler dev --test-scheduled --var DRY_RUN:1",
-        "test": "node --test src/rules.test.js src/delivery.test.js src/investigate.test.js",
+        "test": "node --test src/rules.test.js src/delivery.test.js src/investigate.test.js src/setup-holds.test.js",
         "deploy": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --secrets-file {}'"
     },
     "devDependencies": {

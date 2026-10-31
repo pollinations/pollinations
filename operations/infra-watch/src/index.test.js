@@ -168,3 +168,49 @@ it("opens a card only with a readable receipt", async () => {
     expect((await stored(stub, "state")).open[KEY].messageId).toBe("m2");
     expect(world.writes.some((w) => w.path.endsWith("/undefined"))).toBe(false);
 });
+
+// Opens and closes a card; Discord takes the green card with "checking why…"
+// but not the last edit, with the closing line.
+async function closeWithFailedEdit(stub) {
+    world.rows = BAD;
+    await stub.check();
+    await settle(stub);
+    world.rows = OK;
+    world.fails = (w) => w.color === GREEN && !w.text.includes(CHECKING);
+    await checks(stub, RECOVER_CHECKS);
+    await settle(stub);
+}
+
+it("retries a closed card's last edit until Discord takes it", async () => {
+    const stub = watch();
+    await closeWithFailedEdit(stub);
+    expect(edits("m1").at(-1).text).toContain(CHECKING);
+
+    world.fails = () => false;
+    await stub.check();
+    await settle(stub);
+    const last = edits("m1").at(-1);
+    expect(last.color).toBe(GREEN);
+    expect(last.text).not.toContain(CHECKING);
+    expect(last.text).toContain("Line 2.");
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+
+    // Delivered: later checks leave the card alone.
+    const count = edits("m1").length;
+    await checks(stub, 2);
+    expect(edits("m1").length).toBe(count);
+});
+
+it("gives up on a closed card's last edit after a day", async () => {
+    const stub = watch();
+    await closeWithFailedEdit(stub);
+    await runInDurableObject(stub, async (_, state) => {
+        const record = await state.storage.get("lines:m1");
+        record.closed.incident.closedAt -= 25 * 60 * 60_000;
+        await state.storage.put("lines:m1", record);
+    });
+    const tries = world.writes.length;
+    await stub.check();
+    expect(world.writes.length).toBe(tries);
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+});

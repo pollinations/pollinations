@@ -72,8 +72,8 @@ export const payload = ({ text, ping, color }, maintainers) => ({
     allowed_mentions: { parse: [], users: ping ? maintainers : [] },
 });
 
-// Replaces the content of a message this webhook posted. One try: if the
-// edit fails, the alert simply stays as it was.
+// Replaces the content of a message this webhook posted. One try: a failed
+// edit is written again on a later check.
 export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
     const u = new URL(url);
     u.search = "";

@@ -41,6 +41,9 @@ const ENRICH_EVERY_MS = 5 * 60 * 1000;
 // many lines: the opening one, a few changes, and the closing one.
 const NOTE_EVERY_MS = 30 * 60 * 1000;
 const MAX_LINES = 4;
+// A closed card's last edit is retried each check for this long; after that
+// its message is likely gone.
+const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -99,9 +102,6 @@ export class Watch extends DurableObject {
     // Every card write goes through one queue, in order, so a slow AI edit
     // can never land after a card's closing edit.
     writes = serial();
-    // Cards closed (or closing) since this object started: no open-card edit
-    // may touch them again.
-    closedCards = new Set();
 
     async check() {
         return (await this.once(() => this.run())) ?? { skipped: true };
@@ -109,7 +109,8 @@ export class Watch extends DurableObject {
 
     // A card's AI lines, kept apart from the incident so the check and a
     // background AI call never overwrite each other, and keyed by the card so
-    // a late line can never reach a newer incident's card.
+    // a late line can never reach a newer incident's card. A closed card's
+    // record also holds its closed incident until its last edit lands.
     async record(id) {
         return (
             (await this.ctx.storage.get(`lines:${id}`)) ?? {
@@ -161,6 +162,19 @@ export class Watch extends DurableObject {
         const notes = [];
         let failed = 0;
 
+        // A closed card whose last edit failed, or whose closing line a
+        // restart lost, is written again.
+        const records = await this.ctx.storage.list({ prefix: "lines:" });
+        for (const [name, record] of records) {
+            if (!record.closed || waiting(record, now)) continue;
+            if (now - record.closed.incident.closedAt > FINAL_RETRY_MS)
+                await this.ctx.storage.delete(name);
+            else {
+                const id = name.slice("lines:".length);
+                if (!(await this.writes(() => this.finish(id)))) failed++;
+            }
+        }
+
         for (const action of next.actions) {
             const { key } = action;
             const model = modelOf(key);
@@ -173,31 +187,27 @@ export class Watch extends DurableObject {
                         tinybird,
                     );
                 const id = incident.messageId;
-                const { lines } = await this.record(id);
                 const closing =
                     Boolean(model) && investigates(incident.kind) && reserve();
-                const card = renderCard(key, incident, {
-                    lines,
-                    checking: closing,
-                });
-                this.closedCards.add(id);
-                if (!(await this.writes(() => update(this.env, id, card)))) {
-                    // Still on the card as open: try closing again next check.
-                    failed++;
-                    this.closedCards.delete(id);
-                    const { closedAt, latest, lost: _, ...open } = incident;
-                    next.state.open[key] = open;
-                    delete next.state.closed[key];
-                    continue;
-                }
-                if (closing) {
+                // With a closing line to come, the card turns green with
+                // "checking why…" now and gets its last edit from the note.
+                const delivered = await this.writes(async () => {
+                    const { lines } = await this.record(id);
                     await this.ctx.storage.put(`lines:${id}`, {
                         lines,
-                        pending: true,
+                        pending: closing,
                         pendingAt: now,
+                        closed: { key, incident },
                     });
-                    notes.push({ key, id, incident, moment: "closed" });
-                } else await this.ctx.storage.delete(`lines:${id}`);
+                    if (!closing) return this.finish(id);
+                    const card = renderCard(key, incident, {
+                        lines,
+                        checking: true,
+                    });
+                    return update(this.env, id, card);
+                });
+                if (!delivered) failed++;
+                if (closing) notes.push({ key, id, moment: "closed" });
                 continue;
             }
 
@@ -310,21 +320,36 @@ export class Watch extends DurableObject {
         if (opening) incident.start = incident.info;
     }
 
+    // A closed card's last edit, run inside the write queue. Its record goes
+    // only once Discord has the edit.
+    async finish(id) {
+        const record = await this.record(id);
+        if (!record.closed) return true;
+        const { key, incident } = record.closed;
+        const card = renderCard(key, incident, { lines: record.lines });
+        if (!(await update(this.env, id, card))) return false;
+        await this.ctx.storage.delete(`lines:${id}`);
+        return true;
+    }
+
     // Writes one AI line for a moment of an incident, then edits its card.
     // Without a line, "checking why…" just goes. The edit goes through the
-    // write queue and only touches the card it was asked for, while open.
-    async note({ key, id, moment, reason, incident: closed }, data) {
+    // write queue and only touches the card it was asked for: while open, or
+    // by the closing line's last edit.
+    async note({ key, id, moment, reason }, data) {
+        const closing = moment === "closed";
         const record = await this.record(id);
-        const incident =
-            closed ?? (await this.ctx.storage.get("state"))?.open?.[key];
+        const incident = closing
+            ? record.closed?.incident
+            : (await this.ctx.storage.get("state"))?.open?.[key];
         if (incident?.messageId !== id) return;
         let text = null;
         try {
             const apiKey = this.env.POLLINATIONS_API_KEY;
             if (!apiKey) throw new Error("POLLINATIONS_API_KEY missing");
-            const footprint = closed && {
-                down: duration(closed.closedAt - closed.openedAt),
-                lost: closed.lost,
+            const footprint = closing && {
+                down: duration(incident.closedAt - incident.openedAt),
+                lost: incident.lost,
             };
             text = await ask(
                 apiKey,
@@ -341,23 +366,19 @@ export class Watch extends DurableObject {
         } catch (error) {
             console.error(`investigator: ${error.message}`);
         }
-        const lines = text
-            ? [...record.lines, { at: Date.now(), text }]
-            : record.lines;
+        const line = text && { at: Date.now(), text };
         const done = await this.writes(async () => {
-            if (closed) {
-                await this.ctx.storage.delete(`lines:${id}`);
-                return update(this.env, id, renderCard(key, closed, { lines }));
-            }
-            if (this.closedCards.has(id)) {
-                // Closed while the AI was writing: keep the line for the
-                // closing card, which is written next.
-                const current = await this.record(id);
+            const current = await this.record(id);
+            const lines = line ? [...current.lines, line] : current.lines;
+            if (current.closed) {
+                // A closed card's lines wait for its last edit: written now
+                // by the closing line, or by a later check if that fails.
                 await this.ctx.storage.put(`lines:${id}`, {
                     ...current,
                     lines,
+                    pending: closing ? false : current.pending,
                 });
-                return true;
+                return closing ? this.finish(id) : true;
             }
             const latest = (await this.ctx.storage.get("state"))?.open?.[key];
             if (latest?.messageId !== id) return true;

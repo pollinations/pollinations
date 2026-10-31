@@ -339,7 +339,6 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
             <Surface
                 as="li"
                 key={item.title}
-                variant="card-themed"
                 className="flex grow basis-72 flex-col gap-3 p-5 sm:p-6"
             >
                 <div className="flex items-center gap-3">
@@ -353,7 +352,7 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
                 </Heading>
                 <Text size="sm">{item.text}</Text>
                 <div className="mt-auto pt-1">
-                    <ExternalLinkButton href={item.cta.href}>
+                    <ExternalLinkButton href={item.cta.href} size="sm">
                         {item.cta.label}
                     </ExternalLinkButton>
                 </div>

@@ -17,10 +17,14 @@ import {
     legacyDown,
     listingChanges,
     listingsCard,
+    mismatchCard,
+    mismatchKey,
     noteworthy,
     RECOVER_CHECKS,
     renderCard,
     STALE_MS,
+    servedMismatches,
+    servedName,
     snapshot,
     step,
     waiting,
@@ -955,6 +959,92 @@ test("a fallback notice gives the total, then each fallback's own part", () => {
     assert.match(lines[4], /│ VIA {5}o\/b \(14\) +│/);
     assert.doesNotMatch(card.text, /community\//);
     assert.match(lines.at(-1), /^Callers still get answers/);
+});
+
+// --- served-model mismatches ------------------------------------------------
+
+test("names compare as the old monitor compared them", () => {
+    const agree = (declared, served) =>
+        servedMismatches(
+            [{ model: "community/o/m", declared, served }],
+            catalog("community/o/m"),
+            {},
+            0,
+        ).seen["community/o/m"] === undefined;
+    assert.equal(
+        servedName("Google/Gemini-3-Flash-Preview:free"),
+        "gemini-3-flash",
+    );
+    assert.equal(servedName("claude-3-5-sonnet-20241022"), "claude-3-5-sonnet");
+    assert.equal(servedName("gpt-4o-2024-08-06-latest"), "gpt-4o");
+    assert.ok(agree("gemini-3-flash-preview", "models/gemini-3-flash"));
+    // One contains the other: a thinking variant of the same model agrees.
+    assert.ok(agree("poe/DeepSeek-V4.1-Flash-T", "deepseek-v4.1-flash"));
+    assert.ok(!agree("gemini-3-flash-preview", "llama-3.1-8b"));
+});
+
+test("the same different answer twice in a row is told, once a week", () => {
+    const M = "community/o/flash";
+    const listed = [
+        ...catalog(M),
+        listing("community/o/agent", 100, { agent: true }),
+    ];
+    const reading = (served, model = M) => [
+        { model, declared: "gemini-3-flash-preview", served },
+    ];
+    const hour = (state, rows, now) =>
+        servedMismatches(rows, listed, state, now);
+    const now = 10_000 * MIN;
+    const day = 24 * 60 * MIN;
+    // Once is not news; an hour without answers keeps the count.
+    let state = hour({}, reading("llama-3.1-8b"), now);
+    assert.deepEqual(state.due, []);
+    state = hour(state, [], now);
+    assert.equal(state.seen[M].streak, 1);
+    state = hour(state, reading("llama-3.1-8b"), now);
+    assert.deepEqual(state.due, [
+        {
+            model: M,
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+            streak: 2,
+        },
+    ]);
+    // Told: quiet for the week, then due again.
+    const told = { [mismatchKey(state.due[0])]: now };
+    state = hour({ ...state, told }, reading("llama-3.1-8b"), now + day);
+    assert.deepEqual(state.due, []);
+    state = hour(state, reading("llama-3.1-8b"), now + 7 * day);
+    assert.equal(state.due.length, 1);
+    assert.deepEqual(state.told, {});
+    // A different answer starts again; an agreeing one clears it.
+    state = hour(state, reading("qwen-3-4b"), now);
+    assert.equal(state.seen[M].streak, 1);
+    state = hour(state, reading("gemini-3-flash-preview"), now);
+    assert.deepEqual(state.seen, {});
+    // Agents, private and official models are never tracked.
+    for (const model of ["community/o/agent", "community/o/private"]) {
+        let other = hour({}, reading("llama-3.1-8b", model), now);
+        other = hour(other, reading("llama-3.1-8b", model), now);
+        assert.deepEqual(other, { due: [], seen: {}, told: {} });
+    }
+});
+
+test("a mismatch notice cannot be broken by the names owners choose", () => {
+    const card = mismatchCard([
+        {
+            model: "community/o/flash",
+            declared: "gemini-3-flash-preview",
+            served: "x```\n@everyone",
+        },
+    ]);
+    assert.equal(card.ping, false);
+    const text = plain(card.text);
+    assert.match(text, /MODEL {3}o\/flash/);
+    assert.match(text, /DECLARED gemini-3-flash-preview/);
+    assert.match(text, /SERVED {2}x@everyone/);
+    // One code block: the name's backticks and newline are gone.
+    assert.equal(text.match(/```/g).length, 2);
 });
 
 // --- community listings ------------------------------------------------------

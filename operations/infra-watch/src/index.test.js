@@ -79,6 +79,10 @@ async function fake(input, init = {}) {
             ? Response.json({ data: world.legacy })
             : new Response("unavailable", { status: 503 });
     }
+    if (url.pathname.endsWith("/infra_watch_served_model.json")) {
+        world.servedReads++;
+        return Response.json({ data: world.served });
+    }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
     if (url.pathname.includes("/infra_watch_review_"))
@@ -105,6 +109,8 @@ beforeEach(() => {
         rows: [],
         legacy: [],
         legacyReads: 0,
+        served: [],
+        servedReads: 0,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
         aiGate: null,
@@ -583,6 +589,45 @@ it("tells the community channel once a week about a model leaning on its fallbac
     // None reached the infra-watch channel.
     const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
     expect(infra.some((w) => w.text.includes("FALLBACK"))).toBe(false);
+});
+
+it("tells the community channel when a model answers as another, twice in a row", async () => {
+    const stub = watch();
+    const model = "community/o/flash";
+    const catalog = [{ name: model, community: true }];
+    world.served = [
+        {
+            model,
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+            answers: 12,
+        },
+    ];
+    const at = (h, m) => Date.UTC(2026, 9, 31, h, m);
+    const read = (now) =>
+        runInDurableObject(stub, (instance) =>
+            instance.mismatches(catalog, now),
+        );
+    const told = () =>
+        world.writes.filter(
+            (w) =>
+                w.ok && w.path === "/api/webhooks/2/y" && w.method === "POST",
+        );
+    // Read once an hour from 5 past: once is not yet news.
+    await read(at(12, 1));
+    expect(world.servedReads).toBe(0);
+    await read(at(12, 5));
+    await read(at(12, 30));
+    expect(world.servedReads).toBe(1);
+    expect(told()).toHaveLength(0);
+    // The same answer the next hour is told, once.
+    await read(at(13, 5));
+    expect(told()).toHaveLength(1);
+    expect(told()[0].text).toContain("MISMATCH");
+    expect(told()[0].text).toContain("SERVED  llama-3.1-8b");
+    await read(at(14, 5));
+    expect(told()).toHaveLength(1);
+    expect(world.servedReads).toBe(3);
 });
 
 it("tells the community channel once a day what the listing filter changed", async () => {

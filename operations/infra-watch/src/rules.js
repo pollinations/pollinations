@@ -821,6 +821,89 @@ export function fallbackCard({ model, via, rescued, successes }) {
     };
 }
 
+// The old monitor's duty 2d, on real requests: a listed community model
+// whose upstream answers with a different model than the one gen asks it
+// for. Names compare as the monitor compared them: lowercase, without a
+// provider prefix or a trailing :free, :paid, -latest, -preview or date;
+// they agree when one contains the other.
+const NAME_SUFFIX = /(:free|:paid|-latest|-preview|-\d{8}|-\d{4}-\d{2}-\d{2})$/;
+export function servedName(name) {
+    let base = String(name).toLowerCase().split("/").pop();
+    while (NAME_SUFFIX.test(base)) base = base.replace(NAME_SUFFIX, "");
+    return base;
+}
+const agree = (a, b) => {
+    const [x, y] = [servedName(a), servedName(b)];
+    return x.includes(y) || y.includes(x);
+};
+// A notice's key in `told`: the model with the name that answered.
+export const mismatchKey = (m) => `${m.model} ${m.served}`;
+// Models one notice names; the rest are due again the next hour.
+const MISMATCHES_SHOWN = 10;
+
+// Folds one hour's readings into `seen` (model → declared, served and how
+// many readings in a row it answered that way). A model without answers
+// this hour keeps its count; one that agrees is dropped; a new answer
+// starts again at 1. Due: the same different answer twice in a row, its
+// model and answer not told in the last week. Private models are never
+// tracked or named.
+export function servedMismatches(rows, catalog, { seen = {}, told = {} }, now) {
+    const listed = new Set(
+        catalog.filter((m) => m.community && !m.agent).map((m) => m.name),
+    );
+    const next = Object.fromEntries(
+        Object.entries(seen).filter(([model]) => listed.has(model)),
+    );
+    for (const { model, declared, served } of rows) {
+        if (!listed.has(model)) continue;
+        if (agree(declared, served)) {
+            delete next[model];
+            continue;
+        }
+        const streak =
+            next[model]?.served === served ? next[model].streak + 1 : 1;
+        next[model] = { declared, served, streak };
+    }
+    const recent = Object.fromEntries(
+        Object.entries(told).filter(([, at]) => now - at < FALLBACK_QUIET_MS),
+    );
+    return {
+        due: Object.entries(next)
+            .map(([model, m]) => ({ model, ...m }))
+            .filter((m) => m.streak >= 2 && !(mismatchKey(m) in recent))
+            .slice(0, MISMATCHES_SHOWN),
+        seen: next,
+        told: recent,
+    };
+}
+
+// Both names come from owners' servers: backticks and control characters are
+// dropped so a name cannot break out of the panel.
+const printable = (name) => String(name).replace(/[`\p{Cc}]/gu, "");
+
+// One grouped notice for the community channel, as the monitor posted it:
+// each model with the model it asks for and the name that answered. No ping.
+export function mismatchCard(due) {
+    const color = COLOR.PRIMARY_WEAK;
+    return {
+        text: [
+            panel(
+                "MISMATCH",
+                due.flatMap((m) => [
+                    ["MODEL", community(m.model)],
+                    ["DECLARED", printable(m.declared)],
+                    ["SERVED", printable(m.served)],
+                ]),
+                color,
+                60,
+            ),
+            "Requests to each model are currently answered by its SERVED model, as its upstream names it.",
+        ].join("\n"),
+        ping: false,
+        color,
+    };
+}
+
 // The public community models gen's reliability filter leaves out of the
 // default listing: in the `reliability=all` list but not the default one,
 // with a success rate of 80% or less. Agents aside. Null while no community

@@ -32,9 +32,12 @@ import {
     lineColor,
     listingChanges,
     listingsCard,
+    mismatchCard,
+    mismatchKey,
     noteworthy,
     pings,
     renderCard,
+    servedMismatches,
     snapshot,
     step,
     waiting,
@@ -63,10 +66,11 @@ const MAX_LINES = 4;
 // A closed card's last edit is retried each check for this long; after that
 // its message is likely gone.
 const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
-// The legacy bridges' last full UTC hour changes on the hour; it is read
-// once an hour, this long after it, when Tinybird has that hour in full.
+// The last full UTC hour (legacy bridges, served models) changes on the
+// hour; it is read once an hour, this long after it, when Tinybird has that
+// hour in full.
 const HOUR_MS = 60 * 60 * 1000;
-const LEGACY_READ_DELAY_MS = 5 * 60 * 1000;
+const LAST_HOUR_READ_DELAY_MS = 5 * 60 * 1000;
 // Community models leaning on a fallback are looked for this often.
 const FALLBACK_EVERY_MS = 60 * 60 * 1000;
 // Community listing changes are told once a day, from 12:00 UTC: a check's
@@ -395,6 +399,7 @@ export class Watch extends DurableObject {
         await this.ctx.storage.put("state", { ...next.state, unposted });
         if (publicModels) {
             await this.fallbacks(gen, publicModels, now);
+            await this.mismatches(publicModels, now);
             await this.listings(gen, now);
         }
         // A completed check: what /health reports to the outside heartbeat.
@@ -416,7 +421,7 @@ export class Watch extends DurableObject {
     async legacy(now) {
         const hour = Math.floor(now / HOUR_MS);
         const saved = await this.ctx.storage.get("legacy");
-        if (saved?.hour === hour || now % HOUR_MS < LEGACY_READ_DELAY_MS)
+        if (saved?.hour === hour || now % HOUR_MS < LAST_HOUR_READ_DELAY_MS)
             return saved?.rows ?? null;
         try {
             const rows = await pipe(
@@ -493,6 +498,40 @@ export class Watch extends DurableObject {
             console.error(`fallbacks: ${error.message}`);
         }
         await this.ctx.storage.put("fallback", { checkedAt: now, told });
+    }
+
+    // Community models whose upstream answers with a different model than
+    // the one asked for, read from Tinybird once an hour from 5 minutes past,
+    // over the last full UTC hour. One post to the community channel, no
+    // ping, no AI. An hour that could not be read counts as no reading; a
+    // post Discord refused is tried again the next hour.
+    async mismatches(catalog, now) {
+        const hour = Math.floor(now / HOUR_MS);
+        const saved = (await this.ctx.storage.get("mismatch")) ?? {};
+        if (saved.hour === hour || now % HOUR_MS < LAST_HOUR_READ_DELAY_MS)
+            return;
+        let { seen, told } = saved;
+        try {
+            const rows = await pipe(
+                "infra_watch_served_model",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+            const next = servedMismatches(rows, catalog, saved, now);
+            ({ seen, told } = next);
+            if (
+                next.due.length &&
+                (await post(
+                    this.env,
+                    mismatchCard(next.due),
+                    "COMMUNITY_WEBHOOK_URL",
+                ))
+            )
+                for (const m of next.due) told[mismatchKey(m)] = now;
+        } catch (error) {
+            console.error(`mismatches: ${error.message}`);
+        }
+        await this.ctx.storage.put("mismatch", { hour, seen, told });
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be

@@ -388,7 +388,7 @@ test("each AI line keeps the colour its card had when it was written", () => {
     });
     assert.match(
         text,
-        /↳ 🟨 <t:3600:t> Primary weak\.\n↳ 🟧 <t:5400:t> Worse\.\n↳ 🟩 <t:10860:t> Closed\./,
+        /↳ 🟡 <t:3600:t> Primary weak\.\n↳ 🟠 <t:5400:t> Worse\.\n↳ 🟢 <t:10860:t> Closed\./,
     );
 });
 

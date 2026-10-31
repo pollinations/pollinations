@@ -279,7 +279,7 @@ it("retries a closed card's last edit until Discord takes it", async () => {
     expect(last.text).toContain("Line 2.");
     // The opening line was written while degraded, the closing one closed.
     expect(last.text).toMatch(
-        /↳ 🟧 <t:\d+:t> Line 1\.\n↳ 🟩 <t:\d+:t> Line 2\./,
+        /↳ 🟠 <t:\d+:t> Line 1\.\n↳ 🟢 <t:\d+:t> Line 2\./,
     );
 
     // Delivered: later checks leave the card alone and forget it.

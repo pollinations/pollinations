@@ -331,13 +331,13 @@ export const cardColor = (incident) =>
     incident.closedAt != null ? GREEN : COLOR[incident.kind];
 
 // Each AI line's badge: the card's colour when the line was written, so the
-// lines show how the incident moved. Squares, since the lines sit outside the
-// box, where Discord shows local times but no coloured text.
+// lines show how the incident moved. Emoji circles, since the lines sit
+// outside the box, where Discord shows local times but no coloured text.
 const BADGE = {
-    [RED]: "🟥",
-    [COLOR.DEGRADED]: "🟧",
-    [COLOR.PRIMARY_WEAK]: "🟨",
-    [GREEN]: "🟩",
+    [RED]: "🔴",
+    [COLOR.DEGRADED]: "🟠",
+    [COLOR.PRIMARY_WEAK]: "🟡",
+    [GREEN]: "🟢",
 };
 
 // While the AI is writing a line, the card ends with this.

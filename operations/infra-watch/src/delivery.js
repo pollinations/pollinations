@@ -23,9 +23,9 @@ const withWait = (url) => {
 };
 const MAX_TRIES = 3;
 
-// Truthy only once Discord accepted the message: the saved message's id
-// (wait=true returns it), so the alert can be edited later. Retries 429
-// (honouring retry_after, capped) and 5xx/network errors.
+// Truthy only once Discord accepted the message: the saved message (wait=true
+// returns it, with its id and channel), so the card can be edited and linked
+// later. Retries 429 (honouring retry_after, capped) and 5xx/network errors.
 export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     const wait = sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
@@ -45,7 +45,7 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
         }
         if (res?.ok) {
             const saved = await res.json?.().catch(() => null);
-            return saved?.id ?? true;
+            return saved ?? true;
         }
         if (res && res.status < 500 && res.status !== 429) return false;
         if (attempt === MAX_TRIES) break;
@@ -75,8 +75,8 @@ export const payload = ({ text, ping, color }, maintainers) => ({
     allowed_mentions: { parse: [], users: ping ? maintainers : [] },
 });
 
-// Replaces the content of a message this webhook posted. One try: if the
-// edit fails, the alert simply stays as it was.
+// Replaces the content of a message this webhook posted. One try: a failed
+// edit is written again on a later check.
 export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
     const u = new URL(url);
     u.search = "";
@@ -95,19 +95,6 @@ export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
     } catch {
         return false;
     }
-}
-
-// Keep a post's state change only if it was delivered: an undelivered alert
-// stays eligible next check, an undelivered recovery stays active.
-export function settle(prev, next, posts, delivered) {
-    const active = { ...next.active };
-    posts.forEach((post, i) => {
-        if (delivered[i]) return;
-        const before = prev.active?.[post.key];
-        if (before) active[post.key] = before;
-        else delete active[post.key];
-    });
-    return { ...next, active };
 }
 
 // Runs tasks one after another in the background: the caller never waits,

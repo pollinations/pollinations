@@ -29,7 +29,14 @@ import type {
     RefObject,
     SetStateAction,
 } from "react";
-import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import {
+    createContext,
+    Fragment,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { pageMeta } from "../../page-meta.ts";
@@ -59,13 +66,12 @@ type DashboardNavItem = {
     group: DashboardNavGroup;
 };
 
-// One card per group: Pollinations' resources (News & FAQ, models, agents &
-// MCP), then your pages (Balance first). Docs follows on its own, without a
-// card: it leaves the dashboard. Your balances and name sit at the bottom.
-// Signed out only resources and Docs show.
-const NAV_CARD_ORDER: readonly DashboardNavGroup[] = ["resources", "yours"];
-const NAV_CARD_CLASS =
-    "flex flex-col gap-0.5 rounded-card bg-surface-opaque p-1.5";
+// Thin lines split the drawer into its parts: the logo, Pollinations'
+// resources (News & FAQ, models, agents & MCP), your pages (Balance first),
+// Docs, then your balances and name at the bottom. Signed out only resources
+// and Docs show.
+const NAV_GROUP_ORDER: readonly DashboardNavGroup[] = ["resources", "yours"];
+const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
@@ -353,47 +359,55 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
-            <nav className="flex flex-col gap-2">
-                {NAV_CARD_ORDER.map((group) => {
+            <nav className="flex flex-col gap-3">
+                {NAV_GROUP_ORDER.map((group) => {
                     const items = navItems.filter(
                         (item) => item.group === group,
                     );
                     if (items.length === 0) return null;
                     return (
-                        <div key={group} className={NAV_CARD_CLASS}>
-                            {items.map((item) => (
-                                <NavItem
-                                    as={Link}
-                                    key={item.id}
-                                    to={item.to}
-                                    data-theme="accent"
-                                    icon={item.icon}
-                                    active={activePage === item.id}
-                                    onClick={onNavigate}
-                                >
-                                    {item.label}
-                                    {(item.id === "sandboxes" ||
-                                        (item.id === "quests" &&
-                                            questStatus)) && (
-                                        <Chip
-                                            intent="neutral"
-                                            size="sm"
-                                            className="ml-auto bg-transparent text-theme-text-soft"
-                                        >
-                                            {item.id === "quests"
-                                                ? questStatus
-                                                : "New!"}
-                                        </Chip>
-                                    )}
-                                </NavItem>
-                            ))}
-                        </div>
+                        <Fragment key={group}>
+                            <div className="flex flex-col gap-0.5">
+                                {items.map((item) => (
+                                    <NavItem
+                                        as={Link}
+                                        key={item.id}
+                                        to={item.to}
+                                        data-theme="accent"
+                                        icon={item.icon}
+                                        active={activePage === item.id}
+                                        onClick={onNavigate}
+                                    >
+                                        {item.label}
+                                        {(item.id === "sandboxes" ||
+                                            (item.id === "quests" &&
+                                                questStatus)) && (
+                                            <Chip
+                                                intent="neutral"
+                                                size="sm"
+                                                className="ml-auto bg-transparent text-theme-text-soft"
+                                            >
+                                                {item.id === "quests"
+                                                    ? questStatus
+                                                    : "New!"}
+                                            </Chip>
+                                        )}
+                                    </NavItem>
+                                ))}
+                            </div>
+                            <hr className={NAV_LINE_CLASS} />
+                        </Fragment>
                     );
                 })}
                 <DocsRow />
             </nav>
         </ScrollArea>
-        <div className="flex shrink-0 flex-col gap-2 pt-3">
+        <div
+            className={cn(
+                "flex shrink-0 flex-col gap-2 border-t pt-3",
+                NAV_LINE_CLASS,
+            )}
+        >
             {walletArea}
             {accountName && (
                 <AccountLink
@@ -424,10 +438,15 @@ const MobileMenuButton: FC<{
     </button>
 );
 
-// The lotus above the cards; on phones the row also holds the drawer's close
+// The lotus above a line; on phones the row also holds the drawer's close
 // button.
 const BrandHeader: FC<{ onClose: () => void }> = ({ onClose }) => (
-    <div className="flex shrink-0 items-center justify-between gap-2 pb-1 pl-1">
+    <div
+        className={cn(
+            "flex shrink-0 items-center justify-between gap-2 border-b pb-3 pl-1",
+            NAV_LINE_CLASS,
+        )}
+    >
         <a
             href="https://pollinations.ai"
             target="_blank"
@@ -449,11 +468,10 @@ const BrandHeader: FC<{ onClose: () => void }> = ({ onClose }) => (
     </div>
 );
 
-// Docs looks like the other rows and is inset like them, so the icons line up;
-// ↗ marks that it opens the API reference, and the quiet icon copies all of it
-// as plain text for an AI chat.
+// Docs looks like the other rows; ↗ marks that it opens the API reference, and
+// the quiet icon copies all of it as plain text for an AI chat.
 const DocsRow: FC = () => (
-    <div className="flex items-center px-1.5">
+    <div className="flex items-center">
         <NavItem
             as="a"
             href={genDocsUrl()}

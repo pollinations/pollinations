@@ -24,10 +24,11 @@ or the [CLI](./polli-cli) for terminal use.
 
 ## OAuth protocol examples
 
-For integrations without the SDK, Enter keeps two dependency-free examples:
+For integrations without the SDK, [examples/](./examples) contains two
+dependency-free OAuth recipes:
 
-- [Browser-only OAuth + PKCE](../enter.pollinations.ai/examples/oauth-client-demo): direct token exchange and generation, with no backend.
-- [Connect an existing user database](../enter.pollinations.ai/examples/oauth-account-linking-demo): optional server-side account linking and encrypted delegated-key storage.
+- [Browser-only OAuth + PKCE](./examples/oauth-client-demo): direct token exchange and generation, with no backend.
+- [Connect an existing user database](./examples/oauth-account-linking-demo): optional server-side account linking and encrypted delegated-key storage.
 
 See the [BYOP guide](../BRING_YOUR_OWN_POLLEN.md) for the protocol and SDK/UI
 integration options.

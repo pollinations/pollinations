@@ -1,5 +1,5 @@
-import { Buffer } from "node:buffer";
 import { env } from "cloudflare:test";
+import { Buffer } from "node:buffer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
 import { mediaHeaders } from "../../src/model3d/handler.ts";
@@ -44,7 +44,9 @@ describe("callTripoSR", () => {
             .mockResolvedValueOnce(
                 Response.json({
                     status: "completed",
-                    data: [{ model_glb_b64_bytes: validGlb().toString("base64") }],
+                    data: [
+                        { model_glb_b64_bytes: validGlb().toString("base64") },
+                    ],
                     usage: { payg_credits_charged: 0.07 },
                 }),
             );
@@ -54,14 +56,18 @@ describe("callTripoSR", () => {
         expect(result.buffer).toEqual(validGlb());
 
         const submit = fetchSpy.mock.calls[0];
-        expect(submit[0]).toBe("https://api.inferenceport.ai/v1/3d/generations");
+        expect(submit[0]).toBe(
+            "https://api.inferenceport.ai/v1/3d/generations",
+        );
         expect(JSON.parse((submit[1] as RequestInit).body as string)).toEqual({
             model: "tripoSR",
             image_urls: [reference],
         });
-        expect(new Headers((submit[1] as RequestInit).headers).get("Authorization")).toBe(
-            "Bearer ip_test_token",
-        );
+        expect(
+            new Headers((submit[1] as RequestInit).headers).get(
+                "Authorization",
+            ),
+        ).toBe("Bearer ip_test_token");
         expect(fetchSpy.mock.calls[1][0]).toBe(
             "https://api.inferenceport.ai/v1/3d/jobs/job_trip",
         );
@@ -77,14 +83,23 @@ describe("callTripoSR", () => {
         const dataUri = "data:image/png;base64,aGVsbG8=";
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(Response.json({ job_id: "job_uri" }, { status: 202 }))
-            .mockResolvedValueOnce(Response.json({
-                status: "completed",
-                data: [{ model_glb_b64_bytes: validGlb().toString("base64") }],
-            }));
+            .mockResolvedValueOnce(
+                Response.json({ job_id: "job_uri" }, { status: 202 }),
+            )
+            .mockResolvedValueOnce(
+                Response.json({
+                    status: "completed",
+                    data: [
+                        { model_glb_b64_bytes: validGlb().toString("base64") },
+                    ],
+                }),
+            );
         await callTripoSR(params([dataUri]));
-        expect(JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string))
-            .toMatchObject({ image_urls: [dataUri] });
+        expect(
+            JSON.parse(
+                (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
+            ),
+        ).toMatchObject({ image_urls: [dataUri] });
     });
 
     it.each([[], [reference, "https://example.com/second.png"]])(
@@ -100,11 +115,20 @@ describe("callTripoSR", () => {
 
     it("rejects malformed GLB output instead of returning corrupt assets", async () => {
         vi.spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(Response.json({ job_id: "job_bad" }, { status: 202 }))
-            .mockResolvedValueOnce(Response.json({
-                status: "completed",
-                data: [{ model_glb_b64_bytes: Buffer.from("bad").toString("base64") }],
-            }));
+            .mockResolvedValueOnce(
+                Response.json({ job_id: "job_bad" }, { status: 202 }),
+            )
+            .mockResolvedValueOnce(
+                Response.json({
+                    status: "completed",
+                    data: [
+                        {
+                            model_glb_b64_bytes:
+                                Buffer.from("bad").toString("base64"),
+                        },
+                    ],
+                }),
+            );
         await expect(callTripoSR(params())).rejects.toThrow("invalid GLB");
     });
 });

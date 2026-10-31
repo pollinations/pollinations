@@ -56,29 +56,22 @@ function IssueIcon() {
 }
 
 /**
- * Screenshots are 16:9 or the older 2:1. A fixed 16:9 frame shows each one
- * whole, over a blurred copy that fills the leftover bands.
+ * Screenshots are 16:9 or the older 2:1. A 2:1 frame filled from the top
+ * shows 2:1 ones whole and trims only the bottom of 16:9 ones, never the
+ * sides where logos and headlines sit.
  */
 function Screenshot({ src }: { src: string | null }) {
     return (
-        <div className="relative aspect-video overflow-hidden bg-theme-bg-subtle">
+        <div className="relative aspect-[2/1] overflow-hidden bg-theme-bg-subtle">
             {src ? (
-                <>
-                    <img
-                        src={src}
-                        alt=""
-                        loading="lazy"
-                        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-xl"
-                    />
-                    <img
-                        src={src}
-                        alt=""
-                        loading="lazy"
-                        width={1280}
-                        height={720}
-                        className="absolute inset-0 h-full w-full object-contain"
-                    />
-                </>
+                <img
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    width={1280}
+                    height={720}
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                />
             ) : (
                 <ImageIcon className="absolute inset-0 m-auto h-6 w-6 text-theme-text-muted" />
             )}

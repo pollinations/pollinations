@@ -149,8 +149,21 @@ export class Watch extends DurableObject {
                 found = conditions({ hosts, analyticsDown: true });
             }
 
-        const state = (await this.ctx.storage.get("state")) ?? {};
-        const next = step(state, found, now, data.recent);
+        const saved = (await this.ctx.storage.get("state")) ?? {};
+        // A card closed by a check whose state save then failed: its record
+        // says closed while the saved state still has it open. The record
+        // wins, so a new failure opens a new card instead of editing this one.
+        const records = await this.ctx.storage.list({ prefix: "lines:" });
+        const open = { ...saved.open };
+        const closed = { ...saved.closed };
+        for (const [name, record] of records) {
+            const key = record.closed?.key;
+            if (key && open[key]?.messageId === name.slice("lines:".length)) {
+                delete open[key];
+                closed[key] = record.closed.incident.closedAt;
+            }
+        }
+        const next = step({ ...saved, open, closed }, found, now, data.recent);
         const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };
         const tools = toolsFor(data, tinybird);
         let ai = await this.ctx.storage.get("ai");
@@ -167,12 +180,11 @@ export class Watch extends DurableObject {
         // restart lost, is written again. Once written, its record goes when
         // the saved state no longer holds the card open: until then a late
         // AI line would take the card for open and edit it back.
-        const records = await this.ctx.storage.list({ prefix: "lines:" });
         for (const [name, record] of records) {
             if (!record.closed) continue;
             const id = name.slice("lines:".length);
             if (record.done) {
-                if (state.open?.[record.closed.key]?.messageId !== id)
+                if (saved.open?.[record.closed.key]?.messageId !== id)
                     await this.ctx.storage.delete(name);
             } else if (now - record.closed.incident.closedAt > FINAL_RETRY_MS) {
                 await this.ctx.storage.delete(name);

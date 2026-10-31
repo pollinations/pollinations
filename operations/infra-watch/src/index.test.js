@@ -173,6 +173,45 @@ it("keeps a card green when a late line lands while another closes", async () =>
     }
 });
 
+it("opens a new card when a close was edited but never saved", async () => {
+    const stub = watch();
+    world.rows = BAD;
+    await stub.check();
+    await settle(stub);
+    await runInDurableObject(stub, (_, state) =>
+        state.storage.put("ai", {
+            day: new Date().toISOString().slice(0, 10),
+            count: DAILY_LIMIT,
+        }),
+    );
+    world.rows = OK;
+    await checks(stub, RECOVER_CHECKS - 1);
+    // The closing check turns the card green, then fails to save its state.
+    await runInDurableObject(stub, (_, state) => {
+        const put = state.storage.put.bind(state.storage);
+        state.storage.put = async (key, value) => {
+            if (key === "state") throw new Error("storage unavailable");
+            return put(key, value);
+        };
+    });
+    const failure = await stub.check().catch((error) => error);
+    expect(failure.message).toContain("storage unavailable");
+    expect(edits("m1").at(-1).color).toBe(GREEN);
+
+    await evictDurableObject(stub);
+    world.rows = BAD;
+    await stub.check();
+    await settle(stub);
+    const card = edits("m1");
+    const green = card.findIndex((w) => w.color === GREEN);
+    expect(card.slice(green).every((w) => w.color === GREEN)).toBe(true);
+    // The new failure got its own card, which says it broke again.
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m2");
+    const posts = world.writes.filter((w) => w.ok && w.method === "POST");
+    expect(posts).toHaveLength(2);
+    expect(posts[1].text).toContain("AGAIN");
+});
+
 it("drops a line lost in a restart instead of checking forever", async () => {
     const stub = watch();
     world.rows = BAD;

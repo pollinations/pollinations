@@ -18,9 +18,8 @@ import {
 import type { ComponentType } from "react";
 
 /**
- * Groups of drawer rows: Pollinations' resources (with Docs) and your pages
- * each get a card. "account" is your name and picture, shown with your
- * balances under the cards.
+ * Groups of drawer rows: Pollinations' resources and your pages. "account"
+ * rows are pinned at the bottom as buttons: your balance and your name.
  */
 export type DashboardNavGroup = "account" | "yours" | "resources";
 
@@ -37,7 +36,7 @@ export const DASHBOARD_NAV_ITEMS = [
         to: "/balance",
         label: "Balance",
         icon: WalletIcon,
-        group: "yours",
+        group: "account",
     },
     {
         id: "quests",

@@ -218,11 +218,12 @@ type SidebarWalletProps = {
 };
 
 /**
- * Both balances under the drawer's cards, above your name, full width: the
- * number sits on the right edge and what it earned in the last 7 days follows
- * the label, so nothing moves when earnings load. Only the icons carry the
+ * Both balances inside the drawer's Balance button: the number sits on the
+ * right edge and what it earned in the last 7 days follows the label, so
+ * nothing moves when earnings load. Only the icons carry the
  * paid/Quest colour: green would read as Quest, so earnings stay muted and the
- * "+" marks them.
+ * "+" marks them. Text keeps the button's full colour (weight sets the
+ * numbers apart): faded text fails contrast on the selected gold.
  */
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
@@ -241,7 +242,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     ] as const;
 
     return (
-        <div className="grid grid-cols-[1rem_auto_1fr_auto] items-center gap-x-2 gap-y-1 px-3 py-1 text-xs">
+        <div className="grid grid-cols-[1rem_auto_1fr_auto] items-center gap-x-2 gap-y-1 text-xs font-normal">
             {lines.map(({ kind, label, balance, earned }) => {
                 const displayEarned = normalizeDisplayBalance(earned);
                 return (
@@ -249,14 +250,14 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                         <span className="flex justify-center">
                             <WalletKindIcon kind={kind} />
                         </span>
-                        <span className="text-theme-text-muted">{label}</span>
+                        <span>{label}</span>
                         <span
                             title={
                                 displayEarned > 0
                                     ? "Earned in the last 7 days"
                                     : undefined
                             }
-                            className="tabular-nums text-theme-text-muted"
+                            className="tabular-nums"
                         >
                             {displayEarned > 0 && (
                                 <>
@@ -268,7 +269,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                                 </>
                             )}
                         </span>
-                        <span className="justify-self-end font-medium tabular-nums text-theme-text-strong">
+                        <span className="justify-self-end font-medium tabular-nums">
                             {formatPollen(normalizeDisplayBalance(balance))}
                         </span>
                     </Fragment>

@@ -16,6 +16,7 @@ import {
     NavItem,
     ScrollArea,
     useScrollLock,
+    WalletIcon,
     XIcon,
 } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -67,9 +68,9 @@ type DashboardNavItem = {
 };
 
 // Thin lines split the drawer into its parts: the logo, Pollinations'
-// resources (News & FAQ, models, agents & MCP), your pages (Balance first),
-// Docs, then your balances and name at the bottom. Signed out only resources
-// and Docs show.
+// resources (News & FAQ, models, agents & MCP), your tools, Docs, then two
+// buttons at the bottom: your balance and your name. Signed out only
+// resources and Docs show.
 const NAV_GROUP_ORDER: readonly DashboardNavGroup[] = ["resources", "yours"];
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
@@ -408,7 +409,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 NAV_LINE_CLASS,
             )}
         >
-            {walletArea}
+            {walletArea && (
+                <BalanceLink
+                    active={activePage === "balance"}
+                    onNavigate={onNavigate}
+                >
+                    {walletArea}
+                </BalanceLink>
+            )}
             {accountName && (
                 <AccountLink
                     name={accountName}
@@ -532,6 +540,29 @@ const DashboardFooter: FC<{
     </div>
 );
 
+// Your balances as one button to the Balance page, where top-up and billing
+// live. Styled like the account button below it, so both read as clickable.
+const BalanceLink: FC<
+    PropsWithChildren<{ active: boolean; onNavigate: () => void }>
+> = ({ active, onNavigate, children }) => (
+    <Button
+        as={Link}
+        to="/balance"
+        data-theme="accent"
+        intent={active ? undefined : "surface"}
+        aria-current={active ? "page" : undefined}
+        onClick={onNavigate}
+        className="w-full self-stretch flex-col items-stretch gap-1 rounded-3xl px-3 py-2"
+    >
+        <span className="flex items-center gap-2">
+            <WalletIcon className="h-4 w-4 shrink-0" />
+            Balance
+            <ChevronIcon className="ml-auto -rotate-90 opacity-60" />
+        </span>
+        {children}
+    </Button>
+);
+
 // Who is signed in, under the cards, and the way to Account (profile, sign
 // out). A button rather than a row: the quiet surface pill when Account isn't
 // open, the accent fill when it is.
@@ -561,9 +592,7 @@ const AccountLink: FC<{
         )}
         <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate">{name}</span>
-            <span className="text-xs font-normal opacity-70">
-                Account settings
-            </span>
+            <span className="text-xs font-normal">Account settings</span>
         </span>
         <ChevronIcon className="ml-auto -rotate-90 opacity-60" />
     </Button>

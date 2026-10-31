@@ -267,14 +267,15 @@ export const track = (eventType: EventType) =>
             communityModelReward?: CommunityModelRewardResolution | null;
             billedPrice?: number;
         }): Promise<InsertGenerationEvent> => {
-            // Owner-only models stay out of public stats, whether a row names
-            // one as the model asked for or as the route that served it.
-            const privateModel = fallbackCandidates(modelInfo).some(
-                (candidate) =>
-                    candidate.communityEndpoint?.visibility === "private" &&
-                    (candidate.id === requestTracking.resolvedModelRequested ||
-                        candidate.id === row.responseTracking.modelUsed),
-            );
+            // Owner-only models stay out of public stats. A private model asked
+            // for drops the row; a private fallback that served a public model
+            // keeps the row in that model's totals, with its route unnamed.
+            const isPrivate = (id: string | undefined) =>
+                fallbackCandidates(modelInfo).some(
+                    (candidate) =>
+                        candidate.communityEndpoint?.visibility === "private" &&
+                        candidate.id === id,
+                );
             const event = createTrackingEvent({
                 id: generateRandomId(),
                 requestId: c.get("requestId"),
@@ -296,7 +297,8 @@ export const track = (eventType: EventType) =>
                 markup: row.markup ?? null,
                 communityModelReward: row.communityModelReward ?? null,
                 billedPrice: row.billedPrice ?? 0,
-                privateModel,
+                privateModel: isPrivate(requestTracking.resolvedModelRequested),
+                privateRoute: isPrivate(row.responseTracking.modelUsed),
             });
             await sendToTinybird(
                 event,
@@ -1249,6 +1251,7 @@ type TrackingEventInput = {
     billedPrice: number;
     errorTracking?: ErrorData;
     privateModel: boolean;
+    privateRoute: boolean;
 };
 
 // Reduce the per-rule adjustment breakdown into the two Map columns the event
@@ -1293,6 +1296,7 @@ function createTrackingEvent({
     billedPrice,
     errorTracking,
     privateModel,
+    privateRoute,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id,
@@ -1324,6 +1328,7 @@ function createTrackingEvent({
         modelUsed: responseTracking.modelUsed,
         communityEndpointType: requestTracking.communityEndpointType,
         privateModel,
+        privateRoute,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

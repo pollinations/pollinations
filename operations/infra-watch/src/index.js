@@ -156,9 +156,8 @@ export class Watch extends DurableObject {
         let signups = [];
         let reviews = new Map();
         let data = { recent: [], last10: [], last60: [], official: new Set() };
-        // Public community models, agents aside; null when the catalog
-        // couldn't be read.
-        let listed = null;
+        // gen's public catalog; null when it couldn't be read.
+        let publicModels = null;
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -176,11 +175,7 @@ export class Watch extends DurableObject {
                 const official = new Set(
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
-                listed = new Set(
-                    models
-                        .filter((m) => m.community && !m.agent)
-                        .map((m) => m.name),
-                );
+                publicModels = models;
                 data = { recent: r15, last10: r10, last60: r60, official };
                 [signups, reviews] = await Promise.all([
                     this.signups(),
@@ -386,8 +381,8 @@ export class Watch extends DurableObject {
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", { ...next.state, unposted });
-        if (listed) {
-            await this.fallbacks(gen, listed, now);
+        if (publicModels) {
+            await this.fallbacks(gen, publicModels, now);
             await this.listings(gen, now);
         }
         // A completed check: what /health reports to the outside heartbeat.
@@ -447,13 +442,13 @@ export class Watch extends DurableObject {
     // last 4 hours and told to the community channel: one post per model
     // and fallback a week, no ping, no AI. A post Discord refused is tried
     // again the next hour.
-    async fallbacks(gen, listed, now) {
+    async fallbacks(gen, catalog, now) {
         const saved = (await this.ctx.storage.get("fallback")) ?? {};
         if (now - (saved.checkedAt ?? 0) < FALLBACK_EVERY_MS) return;
         let told = saved.told;
         try {
             const rows = await statusRows(gen, FALLBACK_MINUTES);
-            const next = dueFallbacks(fallbackShares(rows, listed), told, now);
+            const next = dueFallbacks(fallbackShares(rows, catalog), told, now);
             told = next.told;
             for (const share of next.due) {
                 const card = fallbackCard(share);

@@ -459,6 +459,7 @@ it("tells the community channel once a week about a model leaning on its fallbac
     world.catalog = [
         { name: "a/model" },
         { name: model, community: true },
+        { name: "community/o/fallback", community: true },
         { name: "community/o/agent", community: true, agent: true },
     ];
     // Each leans on its fallback: 30 of 40 successes rescued.

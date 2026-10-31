@@ -667,8 +667,13 @@ const MIN_RESCUED_SHARE = 0.25;
 const FALLBACK_QUIET_MS = 7 * 24 * 60 * 60 * 1000;
 
 // The listed models leaning on a fallback, each with the fallbacks that
-// rescued its requests, most first.
-export function fallbackShares(rows, listed) {
+// rescued its requests, most first. `catalog` is gen's public catalog: a
+// fallback missing from it is private, so it is never named.
+export function fallbackShares(rows, catalog) {
+    const listed = new Set(
+        catalog.filter((m) => m.community && !m.agent).map((m) => m.name),
+    );
+    const named = new Set(catalog.map((m) => m.name));
     const shares = [];
     for (const row of rows) {
         if (!row.is_rollup || !listed.has(row.model)) continue;
@@ -687,7 +692,10 @@ export function fallbackShares(rows, listed) {
                     r.fallback_rescues > 0,
             )
             .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
-            .map((r) => ({ model: r.model_used, rescued: r.fallback_rescues }));
+            .map((r) => ({
+                model: named.has(r.model_used) ? r.model_used : null,
+                rescued: r.fallback_rescues,
+            }));
         shares.push({
             model: row.model,
             via,
@@ -737,7 +745,7 @@ export function fallbackCard({ model, via, rescued, successes }) {
                         .slice(0, VIA_SHOWN)
                         .map((v) => [
                             "VIA",
-                            `${community(v.model)} (${v.rescued})`,
+                            `${v.model ? community(v.model) : "a private model"} (${v.rescued})`,
                         ]),
                 ],
                 color,

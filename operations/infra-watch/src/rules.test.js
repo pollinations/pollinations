@@ -766,8 +766,23 @@ const leaning = [
     }),
 ];
 
+// gen's public catalog: listed community models and the fallbacks it names.
+const listing = (name, success_rate, extra = {}) => ({
+    name,
+    community: true,
+    health: success_rate == null ? null : { success_rate },
+    ...extra,
+});
+const catalog = (...names) => names.map((name) => listing(name, 100));
+const LAGUNA_FALLBACK = "community/YoannDev90/kilocode-laguna-s-2.1:free";
+
 test("a listed model leans on its fallback from 10 rescues and 25% of successes", () => {
-    const listed = new Set([LAGUNA, "community/x/a", "community/x/b"]);
+    const listed = catalog(
+        LAGUNA,
+        LAGUNA_FALLBACK,
+        "community/x/a",
+        "community/x/b",
+    );
     const [share] = fallbackShares(leaning, listed);
     // The fallback that rescued nothing isn't named.
     assert.deepEqual(share, {
@@ -796,7 +811,15 @@ test("a listed model leans on its fallback from 10 rescues and 25% of successes"
         [],
     );
     // Not listed: an official model, an agent or a private model.
-    assert.deepEqual(fallbackShares(leaning, new Set()), []);
+    assert.deepEqual(fallbackShares(leaning, []), []);
+    const agent = listing(LAGUNA, 100, { agent: true });
+    assert.deepEqual(fallbackShares(leaning, [agent]), []);
+    // A fallback missing from the public catalog is private: never named.
+    const [hidden] = fallbackShares(leaning, catalog(LAGUNA));
+    assert.deepEqual(hidden.via, [{ model: null, rescued: 73 }]);
+    const card = plain(fallbackCard(hidden).text);
+    assert.match(card, /VIA {5}a private model \(73\)/);
+    assert.doesNotMatch(card, /kilocode/);
 });
 
 test("each model and fallback pair is told once a week, even when they alternate", () => {
@@ -849,13 +872,6 @@ test("a fallback notice gives the total, then each fallback's own part", () => {
 });
 
 // --- community listings ------------------------------------------------------
-
-const listing = (name, success_rate, extra = {}) => ({
-    name,
-    community: true,
-    health: success_rate == null ? null : { success_rate },
-    ...extra,
-});
 
 test("filtered: in the full list, not the default one, at 80% or less", () => {
     const all = [

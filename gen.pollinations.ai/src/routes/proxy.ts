@@ -208,8 +208,9 @@ const imageVideoHandlers = factory.createHandlers(
 const model3dHandlers = factory.createHandlers(
     resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
     track("generate.image"),
-    model3dCache,
+    // Paid-only checks must run even when a shared model result is cached.
     generationAccess,
+    model3dCache,
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateModel3d,
@@ -1140,8 +1141,8 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", Generate3dRequestBodySchema),
         resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
         track("generate.image"),
-        every(prepareGenerationRequest, model3dCache),
-        generationAccess,
+        every(prepareGenerationRequest, generationAccess),
+        model3dCache,
         deduplicateGeneration,
         every(apiKeyBudgetReservation, generateModel3d),
     )
@@ -1193,8 +1194,8 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", Generate3dRequestBodySchema),
         resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
         track("generate.image"),
-        every(prepareGenerationRequest, model3dCache),
-        generationAccess,
+        every(prepareGenerationRequest, generationAccess),
+        model3dCache,
         deduplicateGeneration,
         every(apiKeyBudgetReservation, generateModel3d),
     )

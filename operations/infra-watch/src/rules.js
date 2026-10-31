@@ -186,6 +186,10 @@ export function step(state, found, now, recent = []) {
         if (model) {
             const fresh = (health[model]?.nonClient ?? 0) >= MIN_REQUESTS;
             clears[key] = (state.clears?.[key] ?? 0) + (fresh ? 1 : 0);
+            // A clean check also ends a status change in progress: it must
+            // hold on consecutive checks.
+            if (fresh && incident.pending)
+                open[key] = { ...incident, pending: null };
             if (!fresh || clears[key] < RECOVER_CHECKS) continue;
         }
         delete open[key];
@@ -318,6 +322,14 @@ const GREEN = 0x639922;
 
 // While the AI is writing a line, the card ends with this.
 export const CHECKING = "*checking why…*";
+
+// An AI line counts as on its way for at most this long: a restart drops the
+// in-memory task, and its saved pending flag must not block the card forever.
+const PENDING_MS = 10 * 60 * 1000;
+export const waiting = (record, now) =>
+    Boolean(record.pending) &&
+    record.pendingAt != null &&
+    now - record.pendingAt < PENDING_MS;
 
 // Who an opening card pings: a weak primary never (the fallback keeps
 // callers whole), a model failing for a single caller neither, a Myceli-only

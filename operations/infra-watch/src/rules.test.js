@@ -12,6 +12,7 @@ import {
     renderCard,
     snapshot,
     step,
+    waiting,
 } from "./rules.js";
 
 const row = (model, ok, total, extra = {}) => ({
@@ -418,4 +419,25 @@ test("durations read plainly", () => {
     assert.equal(duration(20 * 1000), "under 1 min");
     assert.equal(duration(47 * MIN), "47 min");
     assert.equal(duration(121 * MIN), "2 h 01 min");
+});
+
+test("a status change must hold on consecutive checks; a clean check resets it", () => {
+    const weak = degraded(1, { kind: "PRIMARY_WEAK" });
+    let r = step({}, weak, 0);
+    // bad, healthy, bad, healthy, bad: never 3 bad checks in a row.
+    const pattern = [true, false, true, false, true];
+    pattern.forEach((bad, i) => {
+        r = bad
+            ? step(r.state, degraded(), (i + 1) * MIN)
+            : step(r.state, {}, (i + 1) * MIN, healthy);
+    });
+    assert.equal(r.state.open["model:a/model"].kind, "PRIMARY_WEAK");
+});
+
+test("an AI line pending for too long counts as abandoned", () => {
+    // A restart drops the in-memory AI task, but its pending flag was saved.
+    assert.equal(waiting({ pending: true, pendingAt: 0 }, 2 * MIN), true);
+    assert.equal(waiting({ pending: true, pendingAt: 0 }, 11 * MIN), false);
+    assert.equal(waiting({ pending: true }, 0), false);
+    assert.equal(waiting({ pending: false, pendingAt: 0 }, 1), false);
 });

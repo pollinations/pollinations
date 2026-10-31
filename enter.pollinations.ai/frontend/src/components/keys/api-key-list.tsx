@@ -16,7 +16,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { formatDistanceToNowStrict } from "date-fns";
-import type { FC, ReactNode } from "react";
+import type { FC } from "react";
 import { useState } from "react";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
@@ -37,8 +37,8 @@ const accountPermissionLabels: Record<string, string> = {
 
 /** One kind of key: secrets on the Keys page, app keys on the Apps page. */
 export const ApiKeyList: FC<
-    ApiKeyManagerProps & { kind: "secret" | "app"; title?: ReactNode }
-> = ({ apiKeys, onCreate, onUpdate, onDelete, onRefresh, kind, title }) => {
+    ApiKeyManagerProps & { kind: "secret" | "app" }
+> = ({ apiKeys, onCreate, onUpdate, onDelete, onRefresh, kind }) => {
     const [keyCreateOpen, setKeyCreateOpen] = useState(false);
     const [appCreateOpen, setAppCreateOpen] = useState(false);
     const [deletingKey, setDeletingKey] = useState<ApiKey | null>(null);
@@ -349,7 +349,7 @@ export const ApiKeyList: FC<
             )}
             {kind === "app" && (
                 <Section
-                    title={title ?? "Apps"}
+                    title="App keys"
                     id="app-keys"
                     action={sortedAppKeys.length > 0 && appAction}
                 >

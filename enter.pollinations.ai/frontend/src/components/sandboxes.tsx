@@ -39,7 +39,6 @@ import { ResourceConfirmationContent } from "./community-endpoints/resource-conf
 import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
-import { CREATE_VIEWS, TitleSwitch } from "./layout/title-switch.tsx";
 
 // Gen serves E2B's API here and keeps the sandbox rules and billing.
 const E2B_PATH = "/alpha/e2b";
@@ -534,7 +533,7 @@ export function Sandboxes() {
 
     return (
         <Section
-            title={<TitleSwitch views={CREATE_VIEWS} active="Sandboxes" />}
+            title="Sandboxes"
             intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
                 <ButtonGroup>
@@ -565,7 +564,9 @@ export function Sandboxes() {
                     {actionError === NO_POLLEN && (
                         <>
                             {" "}
-                            <InlineLink href="/pollen">Go to Pollen</InlineLink>
+                            <InlineLink href="/balance">
+                                Go to Balance
+                            </InlineLink>
                         </>
                     )}
                 </Alert>

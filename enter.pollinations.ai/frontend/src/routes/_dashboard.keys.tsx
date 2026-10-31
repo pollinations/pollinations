@@ -5,7 +5,7 @@ import {
     redirect,
     useRouter,
 } from "@tanstack/react-router";
-import { type ReactNode, useDeferredValue, useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { accountClient } from "../api.ts";
 import { CliHint } from "../components/cli-hint.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
@@ -45,13 +45,7 @@ function KeysPage() {
  * Your keys of one kind, with their actions: secret keys on this page, app
  * keys on the Apps page (with your catalog listings).
  */
-export function ApiKeys({
-    kind,
-    title,
-}: {
-    kind: "secret" | "app";
-    title?: ReactNode;
-}) {
+export function ApiKeys({ kind }: { kind: "secret" | "app" }) {
     const router = useRouter();
     const { apiKeys, user } = useDeferredValue(DashboardRoute.useLoaderData());
 
@@ -117,7 +111,6 @@ export function ApiKeys({
                 <KeysContent
                     key={user?.id}
                     kind={kind}
-                    title={title}
                     apiKeys={keys}
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
@@ -130,19 +123,17 @@ export function ApiKeys({
     );
 }
 
-const KEY_TITLES = { secret: "Keys", app: "Apps" } as const;
+const KEY_TITLES = { secret: "Keys", app: "App keys" } as const;
 
 function KeysContent({
     apiKeys,
     onRetry,
     kind,
-    title,
     ...actions
 }: Omit<ApiKeyManagerProps, "apiKeys"> & {
     apiKeys: ApiKey[] | null;
     onRetry: () => Promise<unknown>;
     kind: "secret" | "app";
-    title?: ReactNode;
 }) {
     const [lastKeys, setLastKeys] = useState(apiKeys);
     // A failed refresh must not unmount the dialog holding a newly created secret.
@@ -151,7 +142,7 @@ function KeysContent({
 
     if (keys === null) {
         return (
-            <Section title={title ?? KEY_TITLES[kind]}>
+            <Section title={KEY_TITLES[kind]}>
                 <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                     Couldn’t load keys.
                 </LoadError>
@@ -166,7 +157,7 @@ function KeysContent({
                     Couldn’t refresh keys. Showing the last loaded list.
                 </LoadError>
             )}
-            <ApiKeyList apiKeys={keys} kind={kind} title={title} {...actions} />
+            <ApiKeyList apiKeys={keys} kind={kind} {...actions} />
             {kind === "secret" && (
                 <CliHint command="keys create --name my-app" />
             )}

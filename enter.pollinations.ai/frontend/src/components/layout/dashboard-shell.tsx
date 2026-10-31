@@ -11,6 +11,7 @@ import {
     CopyButton,
     cn,
     ExternalLinkIcon,
+    Eyebrow,
     LoadingStatus,
     MenuIcon,
     NavItem,
@@ -51,7 +52,6 @@ import {
     type DashboardPath,
     navItemFor,
 } from "./dashboard-theme.ts";
-import { CREATE_VIEWS, type TitleSwitchView } from "./title-switch.tsx";
 
 /** Counts what the page still waits for; the shell shows one status while > 0. */
 export const PendingCount = createContext<Dispatch<SetStateAction<number>>>(
@@ -67,14 +67,14 @@ type DashboardNavItem = {
     label: string;
     icon: ComponentType<{ className?: string }>;
     group: DashboardNavGroup;
-    views?: readonly string[];
 };
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
-// Docs), and everything about you as one block at the bottom: Create (your
-// models, agents, apps and sandboxes) and Keys, then your pollen (Quests,
-// Activity, Pollen with its numbers indented under it), then your name. A
-// thin line opens each part. Signed out, the bottom holds the sign-in buttons.
+// Docs), and everything about you as one block at the bottom: what you create
+// (models, agents, apps, sandboxes, under a "Create" label), Keys, then your
+// pollen (Quests, Activity, Pollen with its numbers indented under it), then
+// your name. A thin line opens each part. Signed out, the bottom holds the
+// sign-in buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
@@ -387,6 +387,20 @@ const DashboardRail: FC<DashboardRailProps> = ({
         >
             {navItems.some((item) => item.group === "yours") && (
                 <nav aria-label="Yours" className="flex flex-col gap-0.5">
+                    <Eyebrow size="chrome" className="px-3 pt-1 pb-0.5">
+                        Create
+                    </Eyebrow>
+                    {navItems
+                        .filter((item) => item.group === "create")
+                        .map((item) => (
+                            <NavRow
+                                key={item.id}
+                                item={item}
+                                active={activePage === item.id}
+                                questStatus={questStatus}
+                                onNavigate={onNavigate}
+                            />
+                        ))}
                     {navItems
                         .filter((item) => item.group === "yours")
                         .map((item) => (
@@ -399,12 +413,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 />
                                 {item.id === "pollen" && walletArea && (
                                     <SubLines>{walletArea}</SubLines>
-                                )}
-                                {item.id === "create" && (
-                                    <SubLinks
-                                        views={CREATE_VIEWS}
-                                        onNavigate={onNavigate}
-                                    />
                                 )}
                             </Fragment>
                         ))}
@@ -456,9 +464,6 @@ const NavRow: FC<{
         data-theme="accent"
         icon={item.icon}
         active={active}
-        // A row for several pages is filled on all of them, but only the link
-        // to the page you're on is announced as current.
-        aria-current={active && !item.views ? "page" : undefined}
         onClick={onNavigate}
     >
         {item.label}
@@ -568,39 +573,14 @@ const DashboardFooter: FC<{
     </div>
 );
 
-// What a row holds, indented under it and lined up with its label: Pollen's
-// Paid and Quest numbers, Create's pages.
+// Your Paid and Quest numbers indented under the Pollen row, lined up with
+// its label: a readout, not a link (the row above opens the page).
 const SubLines: FC<PropsWithChildren> = ({ children }) => (
     <div
         className={cn("mb-1 ml-5 border-l py-1 pr-3 pl-[15px]", NAV_LINE_CLASS)}
     >
         {children}
     </div>
-);
-
-// Create's pages, so you see what it holds; the one you're on is stronger.
-const SubLinks: FC<{
-    views: readonly TitleSwitchView[];
-    onNavigate: () => void;
-}> = ({ views, onNavigate }) => (
-    <SubLines>
-        <div className="flex flex-col gap-1 text-xs">
-            {views.map(({ label, link }) => (
-                <Link
-                    key={label}
-                    {...link}
-                    onClick={onNavigate}
-                    className="py-0.5 transition-colors hover:text-theme-text-strong"
-                    inactiveProps={{ className: "text-theme-text-muted" }}
-                    activeProps={{
-                        className: "font-medium text-theme-text-strong",
-                    }}
-                >
-                    {label}
-                </Link>
-            ))}
-        </div>
-    </SubLines>
 );
 
 // Who is signed in, under the cards, and the way to Account (profile, sign

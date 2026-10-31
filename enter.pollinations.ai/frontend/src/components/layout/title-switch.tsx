@@ -7,15 +7,6 @@ export type TitleSwitchView = {
     link: LinkProps;
 };
 
-// The pages behind the drawer's Create row. Each keeps its own address; their
-// headings switch between them.
-export const CREATE_VIEWS = [
-    { label: "Models", link: { to: "/my-models" } },
-    { label: "Agents", link: { to: "/my-agents" } },
-    { label: "Apps", link: { to: "/my-apps" } },
-    { label: "Sandboxes", link: { to: "/sandboxes" } },
-] as const satisfies readonly TitleSwitchView[];
-
 /**
  * A page heading made of the page's views, e.g. "News / FAQ": the current
  * view reads as the title, the others are links that switch to them.

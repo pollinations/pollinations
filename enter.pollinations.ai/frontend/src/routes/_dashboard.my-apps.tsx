@@ -1,10 +1,6 @@
 import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue } from "react";
 import type { ListedApp } from "../backend-types.ts";
-import {
-    CREATE_VIEWS,
-    TitleSwitch,
-} from "../components/layout/title-switch.tsx";
 import { MyApps } from "../components/my-apps.tsx";
 import { ApiKeys } from "./_dashboard.keys.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
@@ -33,10 +29,7 @@ function MyAppsPage() {
     );
     return (
         <>
-            <ApiKeys
-                kind="app"
-                title={<TitleSwitch views={CREATE_VIEWS} active="Apps" />}
-            />
+            <ApiKeys kind="app" />
             <Await promise={apps} fallback={page()}>
                 {page}
             </Await>

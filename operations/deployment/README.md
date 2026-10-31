@@ -17,6 +17,10 @@ Application deployment is discovered from each app's `deploy.json`. All
 applications deploy from `production`; `main` never deploys. Manual dispatch
 accepts an application name or path and is also restricted to `production`.
 
+Legacy redirects live in `operations/chat` (Open WebUI) and `operations/react`
+(UI package documentation). Their existing Pages projects (`apps-chat` and
+`apps-react`), domains and manual deployment names (`chat` and `react`) are unchanged.
+
 Health checks expect HTTP 200 by default. Redirect-only apps set `verify_redirect`
 to their destination URL; every checked URL must return HTTP 301 with that exact
 destination before deployment succeeds.

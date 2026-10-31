@@ -319,9 +319,12 @@ const SHARED_OWNERS = 3;
 // its provider's protocol error and how many fresh text probes in a row
 // got it: a model not probed or refused keeps its streak, any other result
 // ends it, an answer from a fallback too. `told` keeps when each warning
-// was told; older than a day, it is dropped.
+// was told; older than a day, it is dropped, unless the model's stream is
+// still broken that way.
 // - `due`: models at their second broken stream in a row, for their
-//   owners, unless that model and error were told in the last day.
+//   owners, unless that model and error were told in the last day; told
+//   longest ago first, so a card with no room for all leaves none out for
+//   good.
 // - `shared`: models whose error this batch found for 3 or more owners,
 //   for the maintainers, unless that error was told to them in the last
 //   day. The models they were told about are then quiet for their owners
@@ -350,15 +353,25 @@ export function brokenStreams({ streaks = {}, told = {} } = {}, results, now) {
             fresh.filter((f) => f.error === error).map((f) => ownerOf(f.model)),
         ).size;
     const shared = (f) => owners(f.error) >= SHARED_OWNERS;
+    const broken = new Set(
+        Object.entries(next).map(([model, s]) => streamKey(model, s.error)),
+    );
+    const toldAt = (f) => told[streamKey(f.model, f.error)] ?? 0;
     return {
         streaks: next,
-        told: recent,
-        due: fresh.filter(
-            (f) =>
-                f.streak >= 2 &&
-                !shared(f) &&
-                !(streamKey(f.model, f.error) in recent),
+        told: Object.fromEntries(
+            Object.entries(told).filter(
+                ([key]) => key in recent || broken.has(key),
+            ),
         ),
+        due: fresh
+            .filter(
+                (f) =>
+                    f.streak >= 2 &&
+                    !shared(f) &&
+                    !(streamKey(f.model, f.error) in recent),
+            )
+            .sort((a, b) => toldAt(a) - toldAt(b)),
         shared: fresh.filter(
             (f) => shared(f) && !(streamKey(GEN, f.error) in recent),
         ),

@@ -220,3 +220,9 @@ key and cannot spend beyond that key's budget. Configure both in
 [API key settings](https://enter.pollinations.ai/keys). See
 [Authentication](https://gen.pollinations.ai/docs#tag/authentication) for key
 types and security guidance.
+
+### Crypto Tokens MCP
+
+`gen.pollinations.ai/mcp/crypto-tokens` — Token info and search across major crypto assets.
+
+Tools: `token_info`, `search_tokens`.

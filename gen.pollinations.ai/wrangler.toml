@@ -23,6 +23,7 @@ services = [
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
+    { binding = "CRYPTO_TOKENS_MCP", service = "pollinations-crypto-tokens-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -148,6 +149,10 @@ service = "pollinations-computer-mcp"
 [[env.production.services]]
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp"
+
+[[env.production.services]]
+binding = "CRYPTO_TOKENS_MCP"
+service = "pollinations-crypto-tokens-mcp"
 
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
@@ -302,6 +307,10 @@ service = "pollinations-computer-mcp-staging"
 [[env.staging.services]]
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp-staging"
+
+[[env.staging.services]]
+binding = "CRYPTO_TOKENS_MCP"
+service = "pollinations-crypto-tokens-mcp-staging"
 
 [[env.staging.dispatch_namespaces]]
 binding = "CODE_AGENTS"

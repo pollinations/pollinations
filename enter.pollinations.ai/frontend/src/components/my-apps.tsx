@@ -17,7 +17,6 @@ import {
 } from "../../../../shared/app-catalog.ts";
 import type { ListedApp } from "../backend-types.ts";
 import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
-import { CREATE_VIEWS, TitleSwitch } from "./layout/title-switch.tsx";
 
 /** The submission form every listed app started as (issue template). */
 const SUBMIT_APP_URL =
@@ -224,7 +223,7 @@ export function MyApps({
 
     return (
         <Section
-            title={<TitleSwitch views={CREATE_VIEWS} active="Apps" />}
+            title="Catalog"
             intro="Your published apps in the community catalog."
             action={apps && apps.length > 0 ? submitAction : undefined}
         >

@@ -8,7 +8,7 @@ Users stay in control of their balance, budgets, and revocation; your app never 
 
 An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
-To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Apps** → **Create**:
+To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/my-apps) → **Create** → **Apps** and select **Create**:
 
 <p align="left"><img src="https://media.pollinations.ai/80a72314-b119-4017-a98d-17cd177802aa" alt="Create app key dialog with a name and redirect URL" width="560"></p>
 
@@ -324,7 +324,7 @@ def use_pollinations(api_key: str):
     return resp.json()
 
 if __name__ == '__main__':
-    # Replace with your App Key (pk_...) from enter.pollinations.ai/keys
+    # Replace with your App Key (pk_...) from enter.pollinations.ai/my-apps
     APP_KEY = os.environ.get('POLLINATIONS_APP_KEY', 'pk_your_app_key_here')
     
     # Get user-authorized key (device flow)

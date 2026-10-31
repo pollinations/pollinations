@@ -5,7 +5,7 @@ import {
     redirect,
     useRouter,
 } from "@tanstack/react-router";
-import { useDeferredValue, useState } from "react";
+import { type ReactNode, useDeferredValue, useState } from "react";
 import { accountClient } from "../api.ts";
 import { CliHint } from "../components/cli-hint.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
@@ -38,6 +38,20 @@ export const Route = createFileRoute("/_dashboard/keys")({
 });
 
 function KeysPage() {
+    return <ApiKeys kind="secret" />;
+}
+
+/**
+ * Your keys of one kind, with their actions: secret keys on this page, app
+ * keys on the Apps page (with your catalog listings).
+ */
+export function ApiKeys({
+    kind,
+    title,
+}: {
+    kind: "secret" | "app";
+    title?: ReactNode;
+}) {
     const router = useRouter();
     const { apiKeys, user } = useDeferredValue(DashboardRoute.useLoaderData());
 
@@ -97,11 +111,13 @@ function KeysPage() {
     return (
         <Await
             promise={apiKeys}
-            fallback={<PageLoading titles={["Secrets", "Apps"]} />}
+            fallback={<PageLoading titles={[KEY_TITLES[kind]]} />}
         >
             {(keys) => (
                 <KeysContent
                     key={user?.id}
+                    kind={kind}
+                    title={title}
                     apiKeys={keys}
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
@@ -114,13 +130,19 @@ function KeysPage() {
     );
 }
 
+const KEY_TITLES = { secret: "Keys", app: "Apps" } as const;
+
 function KeysContent({
     apiKeys,
     onRetry,
+    kind,
+    title,
     ...actions
 }: Omit<ApiKeyManagerProps, "apiKeys"> & {
     apiKeys: ApiKey[] | null;
     onRetry: () => Promise<unknown>;
+    kind: "secret" | "app";
+    title?: ReactNode;
 }) {
     const [lastKeys, setLastKeys] = useState(apiKeys);
     // A failed refresh must not unmount the dialog holding a newly created secret.
@@ -129,15 +151,11 @@ function KeysContent({
 
     if (keys === null) {
         return (
-            <>
-                {["Secrets", "Apps"].map((title) => (
-                    <Section key={title} title={title}>
-                        <LoadError onRetry={onRetry} paths={["/account/keys"]}>
-                            Couldn’t load keys.
-                        </LoadError>
-                    </Section>
-                ))}
-            </>
+            <Section title={title ?? KEY_TITLES[kind]}>
+                <LoadError onRetry={onRetry} paths={["/account/keys"]}>
+                    Couldn’t load keys.
+                </LoadError>
+            </Section>
         );
     }
 
@@ -148,8 +166,10 @@ function KeysContent({
                     Couldn’t refresh keys. Showing the last loaded list.
                 </LoadError>
             )}
-            <ApiKeyList apiKeys={keys} {...actions} />
-            <CliHint command="keys create --name my-app" />
+            <ApiKeyList apiKeys={keys} kind={kind} title={title} {...actions} />
+            {kind === "secret" && (
+                <CliHint command="keys create --name my-app" />
+            )}
         </>
     );
 }

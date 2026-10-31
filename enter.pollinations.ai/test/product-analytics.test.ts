@@ -337,6 +337,9 @@ test("a sign-up records only a private registrable email domain", () => {
     for (const relay of [
         "mozmail.com",
         "simplelogin.fr",
+        "simplelogin.io",
+        "8shield.net",
+        "pass2mail.com",
         "passmail.com",
         "passinbox.com",
         "passfwd.com",

@@ -1288,9 +1288,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
-    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+    "nvidia/NVIDIA-Nemotron-3.5-Lightning": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Lightning",
         }),
     "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
         createFireworksModelConfig({

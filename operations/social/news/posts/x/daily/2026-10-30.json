@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-10-30",
+  "period_start": "2026-10-30",
+  "period_end": "2026-10-30",
+  "generated_at": "2026-10-31T06:12:28.951967+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/c08fb6c393ea8ef7f83b052f8cf2f8356e85cee1adcd8087e5624c0deccd1c78"
+    }
+  ],
+  "text": "Added `polli sites deploy --verify`. It publishes your Site, fetches its public files, and compares their bytes with your local build. A mismatch exits nonzero; the Site stays published. Trust, then diff."
+}

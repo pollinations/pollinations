@@ -1,0 +1,213 @@
+{
+  "date": "2026-10-30",
+  "period_start": "2026-10-30",
+  "period_end": "2026-10-30",
+  "title": "More community apps, and new homes for two others",
+  "summary": "New community apps, verified Sites deployments, clearer model metadata, and a long day of reliability work.\n\nThe catalog added Reel Hook Generator, Prompt to Image, Screenshot to Bug Report, Image Remix, and Websim. CatGPT now reuses generated images for gallery uploads. CatGPT and the Sirius elevator game also have updated catalog entries pointing to their standalone sites.\n\n`polli sites deploy --verify` publishes a Site, then fetches its public files and compares their bytes with the local build. A failed check returns a nonzero exit code, though the Site remains published. The CLI documentation also clarifies that `polli quests` shows the signed-in user's quests and claim state.\n\nModel responses can now include `pricing_units`, so agents can distinguish units such as image tokens billed per megapixel. The catalog also advertises the native video and 3D routes for those models. Claude Opus 5.5, Fable 5.1, Kimi K3, Grok, GPT, Cohere Embed 4, and Gemini 2.5 Flash Lite received provider or fallback routing changes. Public model IDs stay the same where specified; the related documentation was updated.",
+  "pr_count": 32,
+  "prs": [
+    {
+      "number": 18540,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18584,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18591,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18593,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18715,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18734,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18738,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18739,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18741,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18742,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18743,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18744,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18746,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18754,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18756,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18758,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18759,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18763,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18767,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18771,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18775,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18778,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18784,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18786,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18787,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18790,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18793,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18797,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18800,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18811,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18812,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18816,
+      "date": "2026-10-30"
+    }
+  ],
+  "generated_at": "2026-10-31T06:12:28.951967+00:00",
+  "daily": [
+    {
+      "emoji": "🚀",
+      "title": "Verify a published Site",
+      "text": "Run `polli sites deploy --verify` to publish a Site, then check that every public file matches your local build. A failed check exits nonzero, but the Site remains published. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        18811
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Read model billing units",
+      "text": "`/v1/models` and `/v1/models/:model` can now return `pricing_units` when a model defines them. For some image and video models, this identifies `completionImageTokens` as priced per megapixel. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        18540
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": [
+    {
+      "pr_number": 18797,
+      "url": "https://github.com/pollinations/pollinations/pull/18797",
+      "merged_at": "2026-10-30T21:16:53Z",
+      "api_changes": [
+        {
+          "id": "pr-18797:GET /account/earnings/transactions",
+          "endpoint": "GET /account/earnings/transactions",
+          "summary": "Get Earnings Transactions",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:before",
+              "before": null,
+              "after": {
+                "type": "string|string · date-time",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:before_entity_id",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:before_event_id",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:before_source",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

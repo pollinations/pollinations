@@ -125,8 +125,11 @@ export const ApiKeyList: FC<
                         <>
                             <IconButton
                                 intent="info"
-                                title={`Edit ${keyLabel}`}
-                                tooltip={`Edit ${keyLabel}`}
+                                // An app key's settings are the app's settings.
+                                title={isApp ? "Edit app" : `Edit ${keyLabel}`}
+                                tooltip={
+                                    isApp ? "Edit app" : `Edit ${keyLabel}`
+                                }
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"

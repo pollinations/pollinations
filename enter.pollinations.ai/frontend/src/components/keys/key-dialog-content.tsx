@@ -83,7 +83,7 @@ export function KeyDialogContent({
         edit: accessContext
             ? `Edit ${accessContext} access`
             : app
-              ? "Edit app key"
+              ? "Edit app"
               : publishable
                 ? "Edit publishable key"
                 : "Edit secret key",

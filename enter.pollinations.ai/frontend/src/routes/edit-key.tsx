@@ -61,7 +61,7 @@ function EditKeyPage() {
         : accessContext
           ? `Edit ${accessContext} access`
           : isAppKey(apiKey)
-            ? "Edit app key"
+            ? "Edit app"
             : isPublishableKey(apiKey)
               ? "Edit publishable key"
               : "Edit secret key";

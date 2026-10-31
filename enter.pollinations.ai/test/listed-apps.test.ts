@@ -82,7 +82,7 @@ describe("listedAppsFor", () => {
         expect(app.screenshotUrl).toBeNull();
     });
 
-    it("reports traffic only for Pollen Pay apps", () => {
+    it("reports traffic only for Pollinations Pay apps", () => {
         const [byop, plain] = listedAppsFor(
             [
                 row({ name: "Byop", byop: true, requests_24h: "7" }),

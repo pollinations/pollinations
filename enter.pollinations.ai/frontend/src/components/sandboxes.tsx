@@ -638,12 +638,20 @@ export function Sandboxes() {
                     <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
                         Pay with{" "}
-                        <span className="inline-flex items-center gap-1 align-middle whitespace-nowrap">
-                            <WalletKindIcon kind="tier" /> Quest Pollen
+                        <span className="whitespace-nowrap">
+                            <WalletKindIcon
+                                kind="tier"
+                                className="mr-1 inline align-[-2px]"
+                            />
+                            Quest Pollen
                         </span>{" "}
                         or{" "}
-                        <span className="inline-flex items-center gap-1 align-middle whitespace-nowrap">
-                            <WalletKindIcon kind="paid" /> Paid Pollen
+                        <span className="whitespace-nowrap">
+                            <WalletKindIcon
+                                kind="paid"
+                                className="mr-1 inline align-[-2px]"
+                            />
+                            Paid Pollen
                         </span>{" "}
                         in 10-minute steps
                         {pricing && (
@@ -655,7 +663,7 @@ export function Sandboxes() {
                     </span>
                 </p>
                 <p className="flex items-start gap-1.5">
-                    <PauseIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
                         A paused sandbox costs nothing and keeps its files.
                         Sandboxes pause when their time runs out

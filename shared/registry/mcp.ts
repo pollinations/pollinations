@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "TRANSLATE_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "translate",
+        name: "Translate MCP",
+        description: "Translate text between languages.",
+        binding: "TRANSLATE_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
             rates: [],
         },
     },

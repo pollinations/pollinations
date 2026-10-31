@@ -134,7 +134,10 @@ export const integrationsRoutes = new Hono<Env>()
         }),
         validator("json", ConnectSchema),
         async (c) => {
-            const callbackUrl = new URL("/connectors", getPublicOrigin(c));
+            const callbackUrl = new URL(
+                "/account#connectors",
+                getPublicOrigin(c),
+            );
             return forwardComposioResponse(
                 await composioRequest(c, "/connections", {
                     method: "POST",

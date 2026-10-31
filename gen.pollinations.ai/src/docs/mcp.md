@@ -169,7 +169,7 @@ which commits several files at once and can create the branch. `git` in the
 Computer shell can't use the connection.
 
 When an app is not connected, the agent can return a sign-in link. You can also
-[connect apps in your account](https://enter.pollinations.ai/connectors).
+[connect apps in your account](https://enter.pollinations.ai/account#connectors).
 Sign-in links expire after 10 minutes; select Connect again for a fresh link.
 Connecting an app does not automatically enable it in an agent.
 

@@ -41,7 +41,7 @@ Example `agent.json`:
 
 Send only the fields to change; omitted fields keep their current values. You can also change the name, title, description, or visibility.
 
-The `composio` server uses each caller's connections from [**Connectors**](https://enter.pollinations.ai/connectors). Public agents never receive or use the agent owner's app credentials.
+The `composio` server uses each caller's connections from [**Account → Connected apps**](https://enter.pollinations.ai/account#connectors). Public agents never receive or use the agent owner's app credentials.
 
 ### Tips
 

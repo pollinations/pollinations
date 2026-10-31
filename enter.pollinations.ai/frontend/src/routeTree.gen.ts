@@ -31,7 +31,6 @@ import { Route as DashboardMyAppsRouteImport } from './routes/_dashboard.my-apps
 import { Route as DashboardMyAgentsRouteImport } from './routes/_dashboard.my-agents'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
-import { Route as DashboardConnectorsRouteImport } from './routes/_dashboard.connectors'
 import { Route as DashboardBalanceRouteImport } from './routes/_dashboard.balance'
 import { Route as DashboardAgentsRouteImport } from './routes/_dashboard.agents'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
@@ -146,11 +145,6 @@ const DashboardKeysRoute = DashboardKeysRouteImport.update({
   path: '/keys',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardConnectorsRoute = DashboardConnectorsRouteImport.update({
-  id: '/connectors',
-  path: '/connectors',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardBalanceRoute = DashboardBalanceRouteImport.update({
   id: '/balance',
   path: '/balance',
@@ -187,7 +181,6 @@ export interface FileRoutesByFullPath {
   '/activity': typeof DashboardActivityRoute
   '/agents': typeof DashboardAgentsRoute
   '/balance': typeof DashboardBalanceRoute
-  '/connectors': typeof DashboardConnectorsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-agents': typeof DashboardMyAgentsRoute
@@ -215,7 +208,6 @@ export interface FileRoutesByTo {
   '/activity': typeof DashboardActivityRoute
   '/agents': typeof DashboardAgentsRoute
   '/balance': typeof DashboardBalanceRoute
-  '/connectors': typeof DashboardConnectorsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-agents': typeof DashboardMyAgentsRoute
@@ -245,7 +237,6 @@ export interface FileRoutesById {
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/agents': typeof DashboardAgentsRoute
   '/_dashboard/balance': typeof DashboardBalanceRoute
-  '/_dashboard/connectors': typeof DashboardConnectorsRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/my-agents': typeof DashboardMyAgentsRoute
@@ -275,7 +266,6 @@ export interface FileRouteTypes {
     | '/activity'
     | '/agents'
     | '/balance'
-    | '/connectors'
     | '/keys'
     | '/models'
     | '/my-agents'
@@ -303,7 +293,6 @@ export interface FileRouteTypes {
     | '/activity'
     | '/agents'
     | '/balance'
-    | '/connectors'
     | '/keys'
     | '/models'
     | '/my-agents'
@@ -332,7 +321,6 @@ export interface FileRouteTypes {
     | '/_dashboard/activity'
     | '/_dashboard/agents'
     | '/_dashboard/balance'
-    | '/_dashboard/connectors'
     | '/_dashboard/keys'
     | '/_dashboard/models'
     | '/_dashboard/my-agents'
@@ -517,13 +505,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardKeysRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/connectors': {
-      id: '/_dashboard/connectors'
-      path: '/connectors'
-      fullPath: '/connectors'
-      preLoaderRoute: typeof DashboardConnectorsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/_dashboard/balance': {
       id: '/_dashboard/balance'
       path: '/balance'
@@ -560,7 +541,6 @@ interface DashboardRouteChildren {
   DashboardActivityRoute: typeof DashboardActivityRoute
   DashboardAgentsRoute: typeof DashboardAgentsRoute
   DashboardBalanceRoute: typeof DashboardBalanceRoute
-  DashboardConnectorsRoute: typeof DashboardConnectorsRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardMyAgentsRoute: typeof DashboardMyAgentsRoute
@@ -578,7 +558,6 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardActivityRoute: DashboardActivityRoute,
   DashboardAgentsRoute: DashboardAgentsRoute,
   DashboardBalanceRoute: DashboardBalanceRoute,
-  DashboardConnectorsRoute: DashboardConnectorsRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardMyAgentsRoute: DashboardMyAgentsRoute,

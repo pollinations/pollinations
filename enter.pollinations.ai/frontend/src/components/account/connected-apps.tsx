@@ -239,7 +239,7 @@ export function ConnectedApps() {
     );
 
     return (
-        <Section title="Connectors">
+        <Section title="Connected apps">
             <div className="flex flex-wrap items-center gap-2">
                 <div className="catalog-search relative min-w-64 flex-1">
                     <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />

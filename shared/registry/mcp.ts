@@ -199,7 +199,7 @@ export const MCP_SERVERS = [
         billing: "usage_receipt",
         provider: "composio",
         userScoped: true,
-        accountPath: "/connectors",
+        accountPath: "/account#connectors",
         pricing: COMPOSIO_MCP_PRICING,
     },
     {

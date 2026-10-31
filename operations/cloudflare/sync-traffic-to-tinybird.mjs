@@ -99,7 +99,6 @@ const PAGES = {
         "/news",
         "/pollen",
         "/balance",
-        "/connectors",
         "/keys",
         "/models",
         "/agents",

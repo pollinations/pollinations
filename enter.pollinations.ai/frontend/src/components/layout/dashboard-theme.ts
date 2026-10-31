@@ -10,7 +10,6 @@ import {
     McpIcon,
     NewspaperIcon,
     SparkleIcon,
-    ToolIcon,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
@@ -59,13 +58,6 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: CubeIcon,
         group: "yours",
         views: ["/my-models", "/my-agents", "/my-apps", "/sandboxes"],
-    },
-    {
-        id: "connectors",
-        to: "/connectors",
-        label: "Connectors",
-        icon: ToolIcon,
-        group: "yours",
     },
     {
         id: "news-faq",

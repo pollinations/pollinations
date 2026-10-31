@@ -122,6 +122,42 @@ test("each review lists the next five unlisted requests, a day apart", () => {
     assert.equal(due(groups, done, NOW + 3 * DAY).picked.length, 0);
 });
 
+test("a request KV shows late, or tied with mixed-case ids, is still listed", () => {
+    const later = [
+        request("a", "farm.com", NOW + 10),
+        request("B", "farm.com", NOW + 10),
+    ];
+    const first = due(pending(later, []), {}, NOW);
+    const reviewed = mark(first.state, first.picked[0], NOW);
+    // An older request becomes visible only after that review.
+    const late = pending([request("old", "farm.com", NOW), ...later], []);
+    const next = due(late, reviewed, NOW + DAY);
+    assert.deepEqual(
+        next.picked[0].listed.map((a) => a.userId),
+        ["old"],
+    );
+    // A decided request drops out of what is tracked; a new one is listed.
+    const done = mark(next.state, next.picked[0], NOW + DAY);
+    const after = pending(
+        [
+            request("old", "farm.com", NOW),
+            later[0],
+            request("c", "farm.com", NOW + 20),
+        ],
+        [],
+    );
+    const third = due(after, done, NOW + 2 * DAY);
+    assert.deepEqual(
+        third.picked[0].listed.map((a) => a.userId),
+        ["c"],
+    );
+    assert.deepEqual(
+        mark(third.state, third.picked[0], NOW + 2 * DAY).domains["farm.com"]
+            .posted,
+        ["a", "old", "c"],
+    );
+});
+
 test("reviews stop at the daily limit and start again the next day", () => {
     const groups = pending(
         Array.from({ length: REVIEW_DAILY_LIMIT + 3 }, (_, i) =>

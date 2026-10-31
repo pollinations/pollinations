@@ -5,7 +5,7 @@
 //   review:<userId>     "pending", with the account's evidence as metadata:
 //                       Enter, when a held account asks
 //   decision:<userId>   "approved" or "declined": a maintainer
-// Each review covers a domain's pending requests not listed before, oldest
+// Each review covers a domain's pending requests not posted before, oldest
 // first, at most MAX_LISTED per post: the AI recommends, a maintainer decides
 // by running one of the posted commands.
 import { kvPut, panel } from "./rules.js";
@@ -48,7 +48,9 @@ export async function listAll(kv, prefix) {
 }
 
 // Requests in the order they came, ties broken by account.
-const order = (a) => `${String(a.requestedAt).padStart(15, "0")}:${a.userId}`;
+const byAge = (a, b) =>
+    a.requestedAt - b.requestedAt ||
+    (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0);
 
 /**
  * Pending requests (no decision yet), grouped by domain, oldest first.
@@ -66,15 +68,15 @@ export function pending(requests, decisions) {
         accounts.push({ userId, ...metadata });
         groups.set(metadata.domain, accounts);
     }
-    for (const accounts of groups.values())
-        accounts.sort((a, b) => order(a).localeCompare(order(b)));
+    for (const accounts of groups.values()) accounts.sort(byAge);
     return groups;
 }
 
 /**
- * Domains to review now: with requests not listed before, at most once a
+ * Domains to review now: with requests not posted before, at most once a
  * day each and REVIEW_DAILY_LIMIT a day in all. Each review lists the next
- * MAX_LISTED of them; the rest wait for the next one. The returned state
+ * MAX_LISTED of them; the rest wait for the next one. Posted requests are
+ * tracked by id, so one KV shows late is still listed. The returned state
  * counts the runs; mark() records what a post listed once it is out.
  */
 export function due(groups, state = {}, now) {
@@ -83,12 +85,14 @@ export function due(groups, state = {}, now) {
     const picked = [];
     for (const [domain, accounts] of groups) {
         const last = state.domains?.[domain];
-        const waiting = accounts.filter((a) => order(a) > (last?.until ?? ""));
+        const posted = new Set(last?.posted);
+        const waiting = accounts.filter((a) => !posted.has(a.userId));
         if (!waiting.length || (last && now - last.at < DAY_MS)) continue;
         if (runs >= REVIEW_DAILY_LIMIT) break;
         runs++;
         picked.push({
             domain,
+            ids: accounts.map((a) => a.userId),
             pending: accounts.length,
             waiting: waiting.length,
             listed: waiting.slice(0, MAX_LISTED),
@@ -97,13 +101,23 @@ export function due(groups, state = {}, now) {
     return { picked, state: { ...state, day, runs } };
 }
 
-export const mark = (state, { domain, listed }, now) => ({
-    ...state,
-    domains: {
-        ...state.domains,
-        [domain]: { at: now, until: order(listed.at(-1)) },
-    },
-});
+// Keeps only ids still pending, so the list never outgrows the requests.
+export function mark(state, { domain, ids, listed }, now) {
+    const pendingIds = new Set(ids);
+    const posted = (state.domains?.[domain]?.posted ?? []).filter((id) =>
+        pendingIds.has(id),
+    );
+    return {
+        ...state,
+        domains: {
+            ...state.domains,
+            [domain]: {
+                at: now,
+                posted: [...posted, ...listed.map((a) => a.userId)],
+            },
+        },
+    };
+}
 
 const days = (from, now) => Math.floor((now - from) / DAY_MS);
 

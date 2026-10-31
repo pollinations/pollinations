@@ -17,9 +17,7 @@
     "18860": {
       "merge_sha": "6a3a65dcadd75f3cbd9796a8b53a6d5b9d01afaf",
       "merged_at": "2026-10-31T13:14:10Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/infra-watch"
-      ]
+      "required": []
     }
   },
   "production": "ce953014dd31c8e4b54d411299804683135e1e3b",

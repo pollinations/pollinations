@@ -390,13 +390,14 @@ export class Watch extends DurableObject {
         };
     }
 
-    // Each legacy bridge's row from Tinybird, read once an hour. Between
-    // reads, and when a read fails, the last rows stand; null if none was
-    // ever read.
+    // Each legacy bridge's row from Tinybird, read once an hour from 5
+    // minutes past. Before then, between reads and when a read fails, the
+    // last rows stand; null if none was ever read.
     async legacy(now) {
-        const hour = Math.floor((now - LEGACY_READ_DELAY_MS) / HOUR_MS);
+        const hour = Math.floor(now / HOUR_MS);
         const saved = await this.ctx.storage.get("legacy");
-        if (saved?.hour === hour) return saved.rows;
+        if (saved?.hour === hour || now % HOUR_MS < LEGACY_READ_DELAY_MS)
+            return saved?.rows ?? null;
         try {
             const rows = await pipe(
                 "infra_watch_legacy",

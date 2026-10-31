@@ -149,6 +149,14 @@ export function legacyDown(rows, open = {}) {
         )
             found[key] = { ...info, median_requests, median_success };
     }
+    // An open bridge whose row is gone had no traffic in the whole window:
+    // still down until a reading shows it back.
+    for (const [key, incident] of Object.entries(open))
+        if (
+            key.startsWith("legacy:") &&
+            !rows.some((r) => key === `legacy:${r.bridge}`)
+        )
+            found[key] = incident.info;
     return found;
 }
 

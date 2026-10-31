@@ -772,6 +772,8 @@ test("a legacy bridge is down when the pipe says so, then judged by its old medi
     });
     const still = legacyDown([later], state.open)["legacy:text"];
     assert.equal(still.median_requests, 10790);
+    // No traffic in the whole window drops the row: still down.
+    assert.deepEqual(Object.keys(legacyDown([], state.open)), ["legacy:text"]);
     // Back above half of those medians: recovered.
     const back = bridge({ last_hour_requests: 5400, median_requests: 60 });
     assert.deepEqual(legacyDown([back], state.open), {});

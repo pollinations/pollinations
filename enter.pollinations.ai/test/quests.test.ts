@@ -2855,7 +2855,7 @@ test("setup rewards: subdomains count as the domain a registrant controls", asyn
 });
 
 test("setup rewards: public mail domains are never recorded or flagged", async () => {
-    const ids = await seedSetupAccounts("mail", 31, "gmail.com");
+    const ids = await seedSetupAccounts("mail", 31, "fastmail.com");
     for (const id of ids) await earnFirstKey(HOLDS_ON, id);
 
     expect(await flaggedDomains()).toEqual([]);
@@ -2919,6 +2919,59 @@ test("setup rewards: a flag outlasts the 24-hour window and 30-day cleanup", asy
     expect(signups.map((row) => row.userId)).toEqual([late]);
     expect(await flaggedDomains()).toHaveLength(1);
     expect(await tierBalanceOf(late)).toBe(0);
+});
+
+test("setup rewards: returning accounts don't count as new sign-ups", async () => {
+    const db = drizzle(env.DB, { schema });
+    const ids = await seedSetupAccounts("back", 30, "back.test");
+    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
+    await db.update(schema.setupRewardSignup).set({
+        firstRewardAt: sql`${schema.setupRewardSignup.firstRewardAt} - ${31 * DAY_SECONDS}`,
+    });
+    // Another domain's sign-up runs the cleanup of the 30 old rows.
+    const [other] = await seedSetupAccounts("back-other", 1, "elsewhere.test");
+    await earnFirstKey(HOLDS_ON, other);
+
+    for (const id of ids) {
+        await checkQuestsForUser(HOLDS_ON, id, [
+            completedQuestGroup("later_setup"),
+        ]);
+    }
+    const [newcomer] = await seedSetupAccounts("back-new", 1, "back.test");
+    await earnFirstKey(HOLDS_ON, newcomer);
+
+    expect(await flaggedDomains()).toEqual([]);
+    expect(await tierBalanceOf(newcomer)).toBeCloseTo(0.25);
+});
+
+test("setup rewards: one GitHub account unlocks each setup reward once, even across deleted accounts", async () => {
+    const db = drizzle(env.DB, { schema });
+    const ids = await seedSetupAccounts("gh", 32, "gh.test");
+    for (const id of ids.slice(0, 31)) await earnFirstKey(HOLDS_ON, id);
+    const [first, second] = [ids[30], ids[31]];
+    const githubId = hashGithubId("shared-github");
+    const linkGitHub = (userId: string) =>
+        db
+            .update(schema.user)
+            .set({
+                githubId,
+                githubUsername: "shared-github",
+                githubCreatedAt: new Date(Date.now() - 40 * DAY_SECONDS * 1000),
+            })
+            .where(eq(schema.user.id, userId));
+
+    await linkGitHub(first);
+    expect(await claimSetupReward(first, "first_api_key")).toBe(true);
+    expect((await questReward(first, "first_api_key")).idempotencyKey).toBe(
+        `quest:first_api_key:github:${githubId}`,
+    );
+
+    // The first account is deleted; its reward stays in the ledger.
+    await db.delete(schema.user).where(eq(schema.user.id, first));
+    await earnFirstKey(HOLDS_ON, second);
+    await linkGitHub(second);
+    expect(await claimSetupReward(second, "first_api_key")).toBe(false);
+    expect(await tierBalanceOf(second)).toBe(0);
 });
 
 test("setup rewards: deleted accounts still count toward the limit", async () => {

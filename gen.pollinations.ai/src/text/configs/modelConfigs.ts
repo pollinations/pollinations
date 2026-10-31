@@ -1407,6 +1407,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createInferencePortModelConfig({ model: "lightning" }),
     "inferenceport-lightning-text-v2.1": () =>
         createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
+    "inferenceport-ltra2-research": () =>
+        createInferencePortModelConfig({ model: "LTRA2-Research" }),
 
     // -- OVHcloud -------------------------------------------------------------
     "gpt-oss-20b": () =>

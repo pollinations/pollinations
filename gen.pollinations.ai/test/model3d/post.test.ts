@@ -18,6 +18,7 @@ import { withInlineGenerationCoordinator } from "../helpers/inline-generation-co
 
 type ProviderBody = Record<string, unknown>;
 let reportedFalUnits: number | undefined;
+let inferenceportJobStatus: "completed" | "failed" | "refunded" = "completed";
 
 function create3dMocks() {
     const inferenceportBodies: ProviderBody[] = [];
@@ -43,6 +44,26 @@ function create3dMocks() {
                     if (request.method === "POST") {
                         inferenceportBodies.push(await request.json());
                         return Response.json({ job_id: "job-1" });
+                    }
+                    if (inferenceportJobStatus !== "completed") {
+                        return Response.json({
+                            status: inferenceportJobStatus,
+                            error: "private-provider-data-must-not-leak",
+                        });
+                    }
+                    if (inferenceportBodies.at(-1)?.model === "tripoSR") {
+                        const glb = Buffer.alloc(24);
+                        glb.write("glTF");
+                        glb.writeUInt32LE(2, 4);
+                        glb.writeUInt32LE(24, 8);
+                        glb.writeUInt32LE(4, 12);
+                        glb.write("JSON", 16);
+                        glb.write("{}  ", 20);
+                        return Response.json({
+                            status: "completed",
+                            data: [{ model_glb_b64_bytes: glb.toString("base64") }],
+                            usage: { payg_credits_charged: 0.07 },
+                        });
                     }
                     return Response.json({
                         status: "completed",
@@ -116,6 +137,7 @@ let mocks: ReturnType<typeof create3dMocks>;
 
 beforeEach(() => {
     reportedFalUnits = undefined;
+    inferenceportJobStatus = "completed";
     mocks = create3dMocks();
 });
 
@@ -141,6 +163,124 @@ async function fetch3d(
     await waitOnExecutionContext(ctx);
     return response;
 }
+
+test("TripoSR requires Paid Pollen and meters a promptless GLB exactly once", async () => {
+    syncModel3dEnvironment({
+        ...env,
+        INFERENCEPORT_API_KEY: "ip_test_token",
+    } as CloudflareBindings);
+    await mocks.enable("tinybird", "inferenceport");
+    const { key, userId } = await createTestApiKey({
+        user: { packBalance: 1, tierBalance: 2 },
+        allowedModels: ["stability-ai/triposr"],
+    });
+    const init = {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "tripoSR",
+            image_urls: ["https://example.com/reference.png"],
+        }),
+    };
+    const first = await fetch3d("/3d", init);
+    expect(first.status).toBe(200);
+    expect(first.headers.get("Content-Type")).toBe("model/gltf-binary");
+    expect(first.headers.get("Content-Disposition")).toContain(".glb");
+    const file = Buffer.from(await first.arrayBuffer());
+    expect(file.toString("ascii", 0, 4)).toBe("glTF");
+
+    const cached = await fetch3d("/3d", init);
+    expect(cached.status).toBe(200);
+    expect(cached.headers.get("x-cache")).toBe("HIT");
+    expect(mocks.inferenceport.state.bodies).toEqual([{
+        model: "tripoSR",
+        image_urls: ["https://example.com/reference.png"],
+    }]);
+    const bills = mocks.tinybird.state.events.filter((event) => event.isBilledUsage);
+    expect(bills).toHaveLength(1);
+    expect(bills[0]).toMatchObject({
+        modelUsed: "stability-ai/triposr",
+        modelProviderUsed: "inferenceport",
+        totalPrice: 0.1,
+        totalCost: 0.07,
+    });
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    expect(balance.packBalance).toBeCloseTo(0.9);
+    expect(balance.tierBalance).toBe(2);
+
+    const { key: questKey } = await createTestApiKey({
+        user: { packBalance: 0, tierBalance: 5 },
+    });
+    const denied = await fetch3d("/3d", {
+        ...init,
+        headers: {
+            Authorization: `Bearer ${questKey}`,
+            "Content-Type": "application/json",
+        },
+    });
+    expect(denied.status).toBe(402);
+    expect(mocks.inferenceport.state.bodies).toHaveLength(1);
+}, 15000);
+
+test.each(["failed", "refunded"] as const)(
+    "TripoSR %s jobs do not charge Pollinations users",
+    async (status) => {
+        inferenceportJobStatus = status;
+        syncModel3dEnvironment({
+            ...env,
+            INFERENCEPORT_API_KEY: "ip_test_token",
+        } as CloudflareBindings);
+        await mocks.enable("tinybird", "inferenceport");
+        const { key, userId } = await createTestApiKey({
+            user: { packBalance: 1 },
+        });
+        const response = await fetch3d("/3d", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "tripoSR",
+                image_urls: ["https://example.com/reference.png"],
+            }),
+        });
+        expect(response.status).toBe(502);
+        expect(await response.text()).not.toContain("private-provider-data");
+        expect((await getUserBalance(drizzle(env.DB), userId)).packBalance)
+            .toBe(1);
+        expect(mocks.tinybird.state.events.filter((event) => event.isBilledUsage))
+            .toHaveLength(0);
+    },
+);
+
+test("TripoSR rejects zero or multiple images and conflicting POST aliases", async () => {
+    syncModel3dEnvironment({
+        ...env,
+        INFERENCEPORT_API_KEY: "ip_test_token",
+    } as CloudflareBindings);
+    await mocks.enable("tinybird", "inferenceport");
+    const { key } = await createTestApiKey({ user: { packBalance: 1 } });
+    for (const body of [
+        { model: "tripoSR" },
+        { model: "tripoSR", image_urls: ["https://example.com/a.png", "https://example.com/b.png"] },
+        { model: "tripoSR", image: "https://example.com/a.png", image_urls: ["https://example.com/b.png"] },
+    ]) {
+        const response = await fetch3d("/3d", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+        expect(response.status).toBe(400);
+    }
+    expect(mocks.inferenceport.state.bodies).toHaveLength(0);
+});
 
 test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
     syncModel3dEnvironment({

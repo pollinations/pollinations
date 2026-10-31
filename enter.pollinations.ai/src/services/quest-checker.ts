@@ -3,7 +3,7 @@ import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { listSetupQuestIds, QUEST_GROUPS } from "./quests/index.ts";
+import { QUEST_GROUPS } from "./quests/index.ts";
 import {
     type QuestEvaluation,
     type QuestEvaluationContext,
@@ -12,7 +12,6 @@ import {
     type QuestUser,
     toReward,
 } from "./quests/types.ts";
-import { recordSetupRewardSignup } from "./setup-reward-signups.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
@@ -75,18 +74,6 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
-    // An account's first setup reward is a sign-up; infra-watch counts them
-    // per email domain and reports a burst.
-    const setupQuestIds = await listSetupQuestIds(ctx);
-    if (
-        proposals.some(({ quest }) => quest.category === "setup") &&
-        ![...earned].some((id) => id !== null && setupQuestIds.has(id))
-    ) {
-        await recordSetupRewardSignup(env, {
-            userId: user.id,
-            email: user.email,
-        });
-    }
     const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",
@@ -136,14 +123,13 @@ export async function checkQuestsForUser(
 async function loadQuestUser(
     db: ReturnType<typeof drizzle<typeof schema>>,
     userId: string,
-): Promise<(QuestUser & { email: string }) | null> {
+): Promise<QuestUser | null> {
     const rows = await db
         .select({
             id: schema.user.id,
             githubId: schema.user.githubId,
             githubUsername: schema.user.githubUsername,
             googleId: schema.account.accountId,
-            email: schema.user.email,
         })
         .from(schema.user)
         .leftJoin(

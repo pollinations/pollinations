@@ -33,6 +33,7 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { signupEmailDomain } from "./services/signup-domains.ts";
 import { removeUserSites } from "./services/sites.ts";
 import {
     captureProductEvent,
@@ -307,6 +308,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                                 {
                                     ...visitorCountry(context?.headers),
                                     provider: callbackProvider(context),
+                                    email_domain: signupEmailDomain(user.email),
                                 },
                             ),
                         );

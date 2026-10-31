@@ -69,10 +69,11 @@ type DashboardNavItem = {
 };
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
-// sandboxes, Docs), and everything about you as one block at the bottom: the
-// Balance row with your numbers indented under it, your other pages
-// (Quests right under the Quest number), then your name. A thin line opens
-// each part. Signed out, the bottom holds the sign-in buttons.
+// Docs), and everything about you as one block at the bottom: the Balance row
+// with your numbers indented under it, your other pages (Quests right under
+// the Quest number; Create for your models, agents, apps and sandboxes), then
+// your name. A thin line opens each part. Signed out, the bottom holds the
+// sign-in buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{

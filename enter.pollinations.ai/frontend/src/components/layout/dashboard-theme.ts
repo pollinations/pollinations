@@ -3,15 +3,13 @@
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 import {
     AccountIcon,
-    AppIcon,
     BeakerIcon,
     BotIcon,
+    CubeIcon,
     LockIcon,
     McpIcon,
     NewspaperIcon,
-    RobotIcon,
     SparkleIcon,
-    TerminalIcon,
     ToolIcon,
     TrendUpIcon,
     WalletIcon,
@@ -55,25 +53,12 @@ export const DASHBOARD_NAV_ITEMS = [
     },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
     {
-        id: "my-models",
+        id: "create",
         to: "/my-models",
-        label: "My Models",
-        icon: BeakerIcon,
+        label: "Create",
+        icon: CubeIcon,
         group: "yours",
-    },
-    {
-        id: "my-agents",
-        to: "/my-agents",
-        label: "My Agents",
-        icon: RobotIcon,
-        group: "yours",
-    },
-    {
-        id: "my-apps",
-        to: "/my-apps",
-        label: "My Apps",
-        icon: AppIcon,
-        group: "yours",
+        views: ["/my-models", "/my-agents", "/my-apps", "/sandboxes"],
     },
     {
         id: "connectors",
@@ -112,13 +97,6 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: McpIcon,
         group: "resources",
     },
-    {
-        id: "sandboxes",
-        to: "/sandboxes",
-        label: "Sandboxes",
-        icon: TerminalIcon,
-        group: "resources",
-    },
 ] as const satisfies readonly {
     id: string;
     to: string;
@@ -126,17 +104,24 @@ export const DASHBOARD_NAV_ITEMS = [
     label: string;
     icon: ComponentType<{ className?: string }>;
     group: DashboardNavGroup;
+    // Pages a row stands for, which their headings switch between.
+    views?: readonly string[];
 }[];
 
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
 export type DashboardPath = (typeof DASHBOARD_NAV_ITEMS)[number]["to"];
+
+const pagesOf = (item: (typeof DASHBOARD_NAV_ITEMS)[number]) =>
+    "views" in item ? (item.views as readonly string[]) : [item.to];
 
 /**
  * The drawer row for a page. Agents and MCP share /agents; its `view` search
  * param tells them apart.
  */
 export function navItemFor(path: string, view?: unknown) {
-    const rows = DASHBOARD_NAV_ITEMS.filter((item) => item.to === path);
+    const rows = DASHBOARD_NAV_ITEMS.filter((item) =>
+        pagesOf(item).includes(path),
+    );
     if (rows.length < 2) return rows[0];
     return rows.find(
         (item) => ("search" in item ? item.search.view : undefined) === view,
@@ -144,7 +129,7 @@ export function navItemFor(path: string, view?: unknown) {
 }
 
 export function isDashboardPath(path: string): boolean {
-    return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
+    return DASHBOARD_NAV_ITEMS.some((item) => pagesOf(item).includes(path));
 }
 
 const RESOURCE_ITEMS = DASHBOARD_NAV_ITEMS.filter(

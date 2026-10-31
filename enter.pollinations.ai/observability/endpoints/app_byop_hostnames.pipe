@@ -1,46 +1,25 @@
 DESCRIPTION >
-    Get distinct BYOP app hostnames from the last 90 days.
-    Requests through an App Key use the hostnames of its redirect URIs, paired
-    with the key owner's GitHub ID so a listing only matches its owner's keys.
-    Requests without an App Key use the key name (hostname heuristic) with an
-    empty GitHub ID.
+    Get distinct BYOP apps from the last 90 days.
+    Requests through an App Key name the catalog listing credited by
+    app_key_listings: its URL and owner's GitHub ID. Requests without an App
+    Key name the key's hostname (key name heuristic) with an empty GitHub ID.
 
 TOKEN tinybird_read READ
-
-NODE latest_users
-SQL >
-    SELECT id AS user_id, toString(github_id) AS github_user_id
-    FROM d1_user
-    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
-      AND github_id IS NOT NULL
-
-NODE app_key_hostnames
-SQL >
-    SELECT
-        keys.id AS app_key_id,
-        users.github_user_id,
-        arrayJoin(arrayDistinct(arrayMap(
-            uri -> domainWithoutWWW(lower(uri)),
-            JSONExtract(coalesce(keys.metadata, '{}'), 'redirectUris', 'Array(String)')
-        ))) AS redirect_hostname
-    FROM d1_apikey keys
-    INNER JOIN latest_users users ON keys.user_id = users.user_id
-    WHERE keys.synced_at = (SELECT max(synced_at) FROM d1_apikey)
-      AND keys.prefix = 'pk'
 
 NODE app_byop_hostnames_node
 SQL >
     SELECT DISTINCT
-        if(ge.api_key_client_id IN ('', 'undefined'), ge.api_key_name, apps.redirect_hostname) AS hostname,
-        coalesce(apps.github_user_id, '') AS github_user_id
+        apps.app_url AS app_url,
+        if(ge.api_key_client_id IN ('', 'undefined'), ge.api_key_name, '') AS hostname,
+        apps.github_user_id AS github_user_id
     FROM generation_event_v2 ge
-    LEFT JOIN app_key_hostnames apps
+    LEFT JOIN app_key_listings apps
         ON ge.api_key_client_id = apps.app_key_id
     WHERE ge.start_time > now() - INTERVAL 90 DAY
       AND (
         ge.api_key_created_via = 'redirect-auth'
         OR (ge.api_key_type = 'secret' AND ge.api_key_name LIKE '%.%')
       )
-      AND hostname != ''
+      AND (app_url != '' OR hostname != '')
 
 TYPE endpoint

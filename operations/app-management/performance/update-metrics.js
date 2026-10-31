@@ -43,15 +43,9 @@ function extractHostname(url) {
     }
 }
 
-// BYOP pipe rows pair a hostname with the App Key owner's GitHub ID, which is
-// empty for keys without an App Key (named after their hostname).
-const byopId = (hostname, githubUserId) => `${hostname} ${githubUserId}`;
-const byopRowId = (row) => byopId(row.hostname, row.github_user_id);
-
 function loadApps() {
     const catalog = readApps();
     const apps = catalog.map((app) => {
-        const webUrlHostname = extractHostname(app.url);
         // GitHub info is optional — some apps don't have repos
         let owner = null;
         let repo = null;
@@ -67,11 +61,7 @@ function loadApps() {
             catalogApp: app,
             owner,
             repo,
-            webUrlHostname,
-            byopIds: [
-                byopId(webUrlHostname, app.githubUserId),
-                byopId(webUrlHostname, ""),
-            ],
+            webUrlHostname: extractHostname(app.url),
             githubUsername: app.githubUsername,
             githubUserId: app.githubUserId,
             currentStars: app.repositoryStars,
@@ -208,14 +198,37 @@ function fetchTinybirdPipe(pipeName) {
     });
 }
 
-async function fetchTinybirdValues(pipeName, keyOf) {
-    const rows = (await fetchTinybirdPipe(pipeName))?.data ?? [];
-    return new Set(rows.map(keyOf));
+async function fetchTinybirdRows(pipeName) {
+    return (await fetchTinybirdPipe(pipeName))?.data ?? [];
 }
 
-async function fetchTinybirdCounts(pipeName, keyOf) {
+/**
+ * Build a lookup from catalog app to its BYOP request count (null when the
+ * app is not BYOP). App Key rows name the credited catalog URL and its owner's
+ * GitHub ID; rows from keys without an App Key name a hostname and no owner.
+ */
+function byopLookup(byopRows, countRows) {
+    const rowId = (row) =>
+        `${row.app_url || row.hostname} ${row.github_user_id}`;
+    const byopIds = new Set(byopRows.map(rowId));
+    const counts = new Map(countRows.map((row) => [rowId(row), row.requests]));
+    return (app) => {
+        const ids = [
+            `${app.url} ${app.githubUserId}`,
+            `${extractHostname(app.url)} `,
+        ];
+        if (!ids.some((id) => byopIds.has(id))) return null;
+        return ids.reduce((sum, id) => sum + (counts.get(id) || 0), 0);
+    };
+}
+
+async function fetchTinybirdCounts(pipeName, keyField) {
     const rows = (await fetchTinybirdPipe(pipeName))?.data ?? [];
-    return new Map(rows.map((row) => [keyOf(row), row.requests]));
+    return new Map(
+        rows
+            .filter((row) => row[keyField])
+            .map((row) => [String(row[keyField]), row.requests]),
+    );
 }
 
 async function main() {
@@ -233,24 +246,22 @@ async function main() {
 
     // Fetch Tinybird metrics (bulk, no per-app calls)
     const hasTinybird = !!process.env.TINYBIRD_READ_TOKEN;
-    let byopHostnames = new Set();
+    let byopRequests = () => null;
     let requestCounts = new Map();
-    let byopRequestCounts = new Map();
 
     if (hasTinybird) {
         console.log(
             `${colors.cyan}Fetching Tinybird metrics...${colors.reset}`,
         );
-        [byopHostnames, requestCounts, byopRequestCounts] = await Promise.all([
-            fetchTinybirdValues("app_byop_hostnames", byopRowId),
-            fetchTinybirdCounts(
-                "app_request_counts",
-                (row) => row.github_user_id,
-            ),
-            fetchTinybirdCounts("app_byop_request_counts", byopRowId),
+        const [byopRows, counts, byopCountRows] = await Promise.all([
+            fetchTinybirdRows("app_byop_hostnames"),
+            fetchTinybirdCounts("app_request_counts", "github_user_id"),
+            fetchTinybirdRows("app_byop_request_counts"),
         ]);
+        byopRequests = byopLookup(byopRows, byopCountRows);
+        requestCounts = counts;
         console.log(
-            `  BYOP hostnames: ${byopHostnames.size}, GitHub users with requests: ${requestCounts.size}, BYOP hostnames with requests: ${byopRequestCounts.size}\n`,
+            `  BYOP apps: ${byopRows.length}, GitHub users with requests: ${requestCounts.size}, BYOP apps with requests: ${byopCountRows.length}\n`,
         );
     } else {
         console.log(
@@ -326,10 +337,10 @@ async function main() {
             await new Promise((r) => setTimeout(r, 100));
         }
 
-        // --- BYOP (match hostname and owner against Tinybird BYOP apps) ---
+        // --- BYOP (App Key traffic by catalog URL, other keys by hostname) ---
+        const byopCount = byopRequests(app.catalogApp);
         if (hasTinybird && app.webUrlHostname) {
-            const isBYOP = app.byopIds.some((id) => byopHostnames.has(id));
-            const newBYOP = isBYOP;
+            const newBYOP = byopCount !== null;
             if (newBYOP !== app.currentBYOP) {
                 if (verbose) {
                     console.log(
@@ -342,17 +353,13 @@ async function main() {
         }
 
         // --- Requests ---
-        // BYOP apps: count ALL requests through the app's API key (by hostname)
+        // BYOP apps: count ALL requests through the app's API keys
         // Non-BYOP apps: count requests by the developer's GitHub user ID
         if (hasTinybird) {
-            const isBYOP = app.byopIds.some((id) => byopHostnames.has(id));
             let count = 0;
             let label = "";
-            if (isBYOP && app.webUrlHostname) {
-                count = app.byopIds.reduce(
-                    (sum, id) => sum + (byopRequestCounts.get(id) || 0),
-                    0,
-                );
+            if (byopCount !== null && app.webUrlHostname) {
+                count = byopCount;
                 label = app.webUrlHostname;
             } else if (app.githubUserId) {
                 count = requestCounts.get(app.githubUserId) || 0;
@@ -435,11 +442,15 @@ async function main() {
     return 0;
 }
 
-main()
-    .then((code) => process.exit(code))
-    .catch((err) => {
-        console.error(
-            `${colors.red}Fatal error: ${err.message}${colors.reset}`,
-        );
-        process.exit(1);
-    });
+module.exports = { byopLookup };
+
+if (require.main === module) {
+    main()
+        .then((code) => process.exit(code))
+        .catch((err) => {
+            console.error(
+                `${colors.red}Fatal error: ${err.message}${colors.reset}`,
+            );
+            process.exit(1);
+        });
+}

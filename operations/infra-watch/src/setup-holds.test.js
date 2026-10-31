@@ -57,8 +57,8 @@ const request = (userId, domain, requestedAt = NOW) => ({
     },
 });
 
-test("a burst holds its domain once and never overrides a release", async () => {
-    const kv = store({ "hold:kept.com": "released" });
+test("a burst holds its domain, and a maintainer's release always wins", async () => {
+    const kv = store({ "release:kept.com": "released" });
     const rows = await holdDomains(kv, [
         { domain: "farm.com", accounts: 31 },
         { domain: "kept.com", accounts: 40 },
@@ -68,20 +68,24 @@ test("a burst holds its domain once and never overrides a release", async () => 
         ["held", "released"],
     );
     assert.equal(kv.values.get("hold:farm.com"), "held");
-    assert.equal(kv.values.get("hold:kept.com"), "released");
+    // The release stays: infra-watch writes only hold: keys.
+    assert.equal(kv.values.get("release:kept.com"), "released");
 });
 
-test("only pending requests are reviewed, grouped by domain, across list pages", async () => {
+test("pending requests have no decision, grouped by domain, oldest first, across list pages", async () => {
     const kv = store();
-    for (const [id, domain] of [
-        ["a", "farm.com"],
-        ["b", "farm.com"],
-        ["c", "school.edu"],
+    for (const [id, domain, at] of [
+        ["b", "farm.com", NOW + 1],
+        ["a", "farm.com", NOW],
+        ["c", "school.edu", NOW],
+        ["d", "farm.com", NOW],
     ])
-        await kv.put(`review:${id}`, "pending", request(id, domain));
-    // A maintainer's decision replaces the value and drops the metadata.
-    await kv.put("review:d", "approved");
-    const groups = pending(await listAll(kv, "review:"));
+        await kv.put(`review:${id}`, "pending", request(id, domain, at));
+    await kv.put("decision:d", "approved");
+    const groups = pending(
+        await listAll(kv, "review:"),
+        await listAll(kv, "decision:"),
+    );
     assert.deepEqual(
         [...groups].map(([domain, accounts]) => [
             domain,
@@ -94,23 +98,28 @@ test("only pending requests are reviewed, grouped by domain, across list pages",
     );
 });
 
-test("a domain is reviewed once a day, again only for newer requests", () => {
-    const groups = pending([request("a", "farm.com")]);
+test("each review lists the next five unlisted requests, a day apart", () => {
+    // Seven requests in the same millisecond: ties still come in turn.
+    const groups = pending(
+        Array.from({ length: 7 }, (_, i) => request(`u${i}`, "farm.com")),
+        [],
+    );
     const first = due(groups, {}, NOW);
     assert.deepEqual(
-        first.picked.map((r) => r.domain),
-        ["farm.com"],
+        first.picked[0].listed.map((a) => a.userId),
+        ["u0", "u1", "u2", "u3", "u4"],
     );
+    assert.equal(first.picked[0].waiting, 7);
     const reviewed = mark(first.state, first.picked[0], NOW);
-    // Same requests, a day later: nothing new to review.
-    assert.equal(due(groups, reviewed, NOW + 2 * DAY).picked.length, 0);
-    // A newer request, but within the day: waits.
-    const newer = pending([
-        request("a", "farm.com"),
-        request("b", "farm.com", NOW + 1000),
-    ]);
-    assert.equal(due(newer, reviewed, NOW + 1000).picked.length, 0);
-    assert.equal(due(newer, reviewed, NOW + DAY).picked.length, 1);
+    assert.equal(due(groups, reviewed, NOW + 1000).picked.length, 0);
+    const next = due(groups, reviewed, NOW + DAY);
+    assert.deepEqual(
+        next.picked[0].listed.map((a) => a.userId),
+        ["u5", "u6"],
+    );
+    // All listed and still undecided: nothing more to post.
+    const done = mark(next.state, next.picked[0], NOW + DAY);
+    assert.equal(due(groups, done, NOW + 3 * DAY).picked.length, 0);
 });
 
 test("reviews stop at the daily limit and start again the next day", () => {
@@ -118,6 +127,7 @@ test("reviews stop at the daily limit and start again the next day", () => {
         Array.from({ length: REVIEW_DAILY_LIMIT + 3 }, (_, i) =>
             request(`u${i}`, `d${i}.com`),
         ),
+        [],
     );
     const today = due(groups, {}, NOW);
     assert.equal(today.picked.length, REVIEW_DAILY_LIMIT);
@@ -128,20 +138,25 @@ test("reviews stop at the daily limit and start again the next day", () => {
     );
 });
 
-test("the model reads numbers by account position, never account ids", () => {
-    const review = {
-        domain: "farm.com",
-        accounts: pending([
-            request("secret-a", "farm.com"),
-            request("secret-b", "farm.com"),
-        ]).get("farm.com"),
-    };
+// A review as due() picks it: the first five of seven pending requests.
+const sevenAsking = () =>
+    due(
+        pending(
+            Array.from({ length: 7 }, (_, i) => request(`u${i}`, "farm.com")),
+            [],
+        ),
+        {},
+        NOW,
+    ).picked[0];
+
+test("the model reads numbers for the listed accounts only, never their ids", () => {
+    const review = sevenAsking();
     const facts = reviewEvidence(
         review,
         [{ day: "2026-10-30", accounts: 400 }],
         [
             {
-                user_id: "secret-a",
+                user_id: "u0",
                 requests: 12,
                 models: 2,
                 last_request: (NOW - DAY) / 1000,
@@ -149,7 +164,8 @@ test("the model reads numbers by account position, never account ids", () => {
         ],
         NOW,
     );
-    assert.doesNotMatch(JSON.stringify(facts), /secret/);
+    assert.doesNotMatch(JSON.stringify(facts), /u\d/);
+    assert.equal(facts.accounts.length, 5);
     assert.deepEqual(facts.accounts[0], {
         account: 1,
         ageDays: 2,
@@ -167,11 +183,8 @@ test("the model reads numbers by account position, never account ids", () => {
     );
 });
 
-test("the review post lists commands for at most five accounts and the domain", () => {
-    const accounts = pending(
-        Array.from({ length: 7 }, (_, i) => request(`u${i}`, "farm.com")),
-    ).get("farm.com");
-    const review = { domain: "farm.com", accounts };
+test("the review post has decision commands for the listed accounts and a release for the domain", () => {
+    const review = sevenAsking();
     const facts = reviewEvidence(
         review,
         [
@@ -189,13 +202,14 @@ test("the review post lists commands for at most five accounts and the domain", 
     assert.equal(ping, false);
     assert.equal(color, 0xef9f27);
     assert.match(text, /REVIEW: domain farm\.com/);
+    assert.match(text, /7 pending, 5 listed here/);
     assert.match(text, /430 in 30d, 400 on 2026-10-30/);
-    assert.match(text, /1 of 7 in 30d/);
+    assert.match(text, /1 of 5 in 30d/);
     assert.match(text, /↳ DECLINE: 400 sign-ups in a day\./);
-    assert.match(text, /2 more waiting\./);
-    assert.equal(text.match(/'review:u\d' approved/g).length, 5);
-    assert.equal(text.match(/'review:u\d' declined/g).length, 5);
-    assert.match(text, /'hold:farm\.com' released/);
+    assert.match(text, /2 more waiting: the next review lists them\./);
+    assert.equal(text.match(/'decision:u\d' approved/g).length, 5);
+    assert.equal(text.match(/'decision:u\d' declined/g).length, 5);
+    assert.match(text, /'release:farm\.com' released/);
     assert.match(
         reviewMessage(
             review,

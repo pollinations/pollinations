@@ -14,6 +14,7 @@ export default defineConfig({
                     POLLINATIONS_API_KEY: "test",
                     TINYBIRD_TOKEN: "test",
                 },
+                kvNamespaces: ["SETUP_HOLDS"],
             },
         }),
     ],

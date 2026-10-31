@@ -1,11 +1,13 @@
-// Setup reward holds, in the SETUP_HOLDS KV store shared with Enter.
-// While holds are on, a sign-up burst holds its domain: hold:<domain> =
-// "held", unless a maintainer "released" it. Enter writes review:<userId> =
-// "pending", with the account's evidence as metadata, when a held account
-// asks. Each request is reviewed with the other pending ones on its email
-// domain: the AI recommends, a maintainer decides by running one of the
-// posted commands. Replacing the value drops the metadata, so only pending
-// requests carry it.
+// Setup reward holds, in the SETUP_HOLDS KV store shared with Enter. Each
+// key has one writer, so an automatic write never undoes a maintainer's:
+//   hold:<domain>       "held": infra-watch, on a burst while holds are on
+//   release:<domain>    "released": a maintainer, which ends the hold
+//   review:<userId>     "pending", with the account's evidence as metadata:
+//                       Enter, when a held account asks
+//   decision:<userId>   "approved" or "declined": a maintainer
+// Each review covers a domain's pending requests not listed before, oldest
+// first, at most MAX_LISTED per post: the AI recommends, a maintainer decides
+// by running one of the posted commands.
 import { kvPut, panel } from "./rules.js";
 
 export const REVIEW_DAILY_LIMIT = 10;
@@ -21,17 +23,16 @@ You get the domain's first onboarding rewards per day over 30 days and, for each
 - Real-group signs: small or steady numbers, varied and continued API use, older accounts.
 Answer in one line: APPROVE or DECLINE, then the main reason in at most 25 words. Your line is advice: a maintainer decides.`;
 
-/** Holds each burst domain not yet held or released; rows gain its hold. */
+/** Holds each burst domain not held yet; rows gain the domain's state. */
 export const holdDomains = (kv, signups) =>
     Promise.all(
-        signups.map(async (row) => {
-            const key = `hold:${row.domain}`;
-            let hold = await kv.get(key);
-            if (hold === null) {
-                await kv.put(key, "held");
-                hold = "held";
-            }
-            return { ...row, hold };
+        signups.map(async ({ ...row }) => {
+            const [hold, release] = await Promise.all([
+                kv.get(`hold:${row.domain}`),
+                kv.get(`release:${row.domain}`),
+            ]);
+            if (hold === null) await kv.put(`hold:${row.domain}`, "held");
+            return { ...row, hold: release ? "released" : "held" };
         }),
     );
 
@@ -46,22 +47,35 @@ export async function listAll(kv, prefix) {
     return keys;
 }
 
-/** Pending requests, from a KV listing of review:, grouped by domain. */
-export function pending(keys) {
+// Requests in the order they came, ties broken by account.
+const order = (a) => `${String(a.requestedAt).padStart(15, "0")}:${a.userId}`;
+
+/**
+ * Pending requests (no decision yet), grouped by domain, oldest first.
+ * Takes KV listings of review: and decision:.
+ */
+export function pending(requests, decisions) {
+    const decided = new Set(
+        decisions.map(({ name }) => name.slice("decision:".length)),
+    );
     const groups = new Map();
-    for (const { name, metadata } of keys) {
-        if (!metadata?.domain) continue;
+    for (const { name, metadata } of requests) {
+        const userId = name.slice("review:".length);
+        if (!metadata?.domain || decided.has(userId)) continue;
         const accounts = groups.get(metadata.domain) ?? [];
-        accounts.push({ userId: name.slice("review:".length), ...metadata });
+        accounts.push({ userId, ...metadata });
         groups.set(metadata.domain, accounts);
     }
+    for (const accounts of groups.values())
+        accounts.sort((a, b) => order(a).localeCompare(order(b)));
     return groups;
 }
 
 /**
- * Domains to review now: with a request newer than their last review, at
- * most once a day each and REVIEW_DAILY_LIMIT a day in all. The returned
- * state counts the runs; mark() records a domain once its post is out.
+ * Domains to review now: with requests not listed before, at most once a
+ * day each and REVIEW_DAILY_LIMIT a day in all. Each review lists the next
+ * MAX_LISTED of them; the rest wait for the next one. The returned state
+ * counts the runs; mark() records what a post listed once it is out.
  */
 export function due(groups, state = {}, now) {
     const day = new Date(now).toISOString().slice(0, 10);
@@ -69,23 +83,25 @@ export function due(groups, state = {}, now) {
     const picked = [];
     for (const [domain, accounts] of groups) {
         const last = state.domains?.[domain];
-        const newest = Math.max(...accounts.map((a) => a.requestedAt));
-        if (last && (newest <= last.until || now - last.at < DAY_MS)) continue;
+        const waiting = accounts.filter((a) => order(a) > (last?.until ?? ""));
+        if (!waiting.length || (last && now - last.at < DAY_MS)) continue;
         if (runs >= REVIEW_DAILY_LIMIT) break;
         runs++;
-        picked.push({ domain, accounts });
+        picked.push({
+            domain,
+            pending: accounts.length,
+            waiting: waiting.length,
+            listed: waiting.slice(0, MAX_LISTED),
+        });
     }
     return { picked, state: { ...state, day, runs } };
 }
 
-export const mark = (state, { domain, accounts }, now) => ({
+export const mark = (state, { domain, listed }, now) => ({
     ...state,
     domains: {
         ...state.domains,
-        [domain]: {
-            at: now,
-            until: Math.max(...accounts.map((a) => a.requestedAt)),
-        },
+        [domain]: { at: now, until: order(listed.at(-1)) },
     },
 });
 
@@ -95,14 +111,14 @@ const days = (from, now) => Math.floor((now - from) / DAY_MS);
  * What the model reads: numbers only, accounts by position, never their ids.
  * A failed Tinybird read comes through as { error }.
  */
-export function reviewEvidence({ domain, accounts }, signups, usage, now) {
+export function reviewEvidence({ domain, listed }, signups, usage, now) {
     const used = new Map(
         Array.isArray(usage) ? usage.map((u) => [u.user_id, u]) : [],
     );
     return {
         domain,
         signupsPerDay: signups,
-        accounts: accounts.map((a, i) => {
+        accounts: listed.map((a, i) => {
             const u = used.get(a.userId);
             return {
                 account: i + 1,
@@ -136,7 +152,7 @@ export function verdict(line) {
 
 /** The review post: evidence box, the AI's line, then the commands. */
 export function reviewMessage(review, facts, line) {
-    const { domain, accounts } = review;
+    const { domain, listed } = review;
     const total = Array.isArray(facts.signupsPerDay)
         ? facts.signupsPerDay.reduce((sum, d) => sum + d.accounts, 0)
         : "unknown";
@@ -148,27 +164,25 @@ export function reviewMessage(review, facts, line) {
         : null;
     const usage = facts.accounts.some((a) => a.requests30d === "unknown")
         ? "unknown"
-        : `${facts.accounts.filter((a) => a.requests30d > 0).length} of ${accounts.length} in 30d`;
+        : `${facts.accounts.filter((a) => a.requests30d > 0).length} of ${listed.length} in 30d`;
     const box = panel(`REVIEW: domain ${domain}`, [
-        ["ASKING", `${accounts.length} account(s)`],
+        ["ASKING", `${review.pending} pending, ${listed.length} listed here`],
         [
             "SIGNUPS",
             `${total} in 30d${peak ? `, ${peak.accounts} on ${peak.day}` : ""}`,
         ],
         ["API USE", usage],
     ]);
-    const listed = accounts.slice(0, MAX_LISTED);
     const commands = [
         ...listed.flatMap((a) => [
-            kvPut(`review:${a.userId}`, "approved"),
-            kvPut(`review:${a.userId}`, "declined"),
+            kvPut(`decision:${a.userId}`, "approved"),
+            kvPut(`decision:${a.userId}`, "declined"),
         ]),
-        kvPut(`hold:${domain}`, "released"),
+        kvPut(`release:${domain}`, "released"),
     ];
+    const left = review.waiting - listed.length;
     const more =
-        accounts.length > MAX_LISTED
-            ? `\n${accounts.length - MAX_LISTED} more waiting.`
-            : "";
+        left > 0 ? `\n${left} more waiting: the next review lists them.` : "";
     return {
         text: `${box}\n↳ ${line ?? "no AI recommendation"}${more}\nApprove or decline each account, or release the whole domain:\n\`\`\`\n${commands.join("\n")}\n\`\`\``,
         ping: false,

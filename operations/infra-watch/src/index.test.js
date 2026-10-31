@@ -67,6 +67,8 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.includes("/infra_watch_review_"))
+        return Response.json({ data: [] });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
@@ -339,4 +341,33 @@ it("posts a sign-up card Discord refused, even after its burst ended", async () 
     expect(posts[0].text).toContain("FLAGGED: domain farm.com");
     expect(edits("m1").at(-1).text).toContain("ENDED: domain farm.com");
     expect((await stored(stub, "state")).unposted).toEqual({});
+});
+
+it("posts one review per domain with the next five requests, then waits", async () => {
+    const stub = watch();
+    world.rows = OK;
+    const now = Date.now();
+    for (let i = 0; i < 7; i++)
+        await env.SETUP_HOLDS.put(`review:u${i}`, "pending", {
+            metadata: {
+                domain: "farm.com",
+                requestedAt: now,
+                createdAt: now,
+                rewards: 1,
+                rewardPollen: 0.25,
+            },
+        });
+    await env.SETUP_HOLDS.put("decision:u6", "declined");
+    await stub.check();
+    await settle(stub);
+    await stub.check();
+    await settle(stub);
+
+    const reviews = world.writes.filter(
+        (w) => w.ok && w.text.includes("REVIEW: domain farm.com"),
+    );
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0].text).toContain("6 pending, 5 listed here");
+    expect(reviews[0].text).toContain("1 more waiting");
+    expect(reviews[0].text).not.toContain("decision:u6");
 });

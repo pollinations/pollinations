@@ -136,6 +136,9 @@ export class Watch extends DurableObject {
     async run() {
         const now = Date.now();
         let found;
+        // Sign-up bursts per email domain, from Enter; null when the read
+        // failed, so open sign-up cards are left as they are.
+        let signups = [];
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
@@ -155,9 +158,8 @@ export class Watch extends DurableObject {
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
-                // Bulk onboarding sign-ups per email domain, from Enter.
-                const signups = await this.signups();
-                found = conditions({ ...data, hosts, signups });
+                signups = await this.signups();
+                found = conditions({ ...data, hosts, signups: signups ?? [] });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
@@ -177,6 +179,14 @@ export class Watch extends DurableObject {
                 closed[key] = record.closed.incident.closedAt;
             }
         }
+        // Unknown sign-ups keep their open cards. A sign-up card Discord
+        // hasn't taken yet is retried until it has: its 24-hour window can
+        // end first.
+        if (signups === null)
+            for (const [key, incident] of Object.entries(open))
+                if (key.startsWith("signup:")) found[key] ??= incident.info;
+        const unposted = { ...saved.unposted };
+        for (const [key, info] of Object.entries(unposted)) found[key] ??= info;
         const next = step({ ...saved, open, closed }, found, now, data.recent);
         const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };
         const tools = toolsFor(data, tinybird);
@@ -257,8 +267,11 @@ export class Watch extends DurableObject {
                     // incident opens again next check.
                     failed++;
                     delete next.state.open[key];
+                    if (key.startsWith("signup:"))
+                        unposted[key] = incident.info;
                     continue;
                 }
+                delete unposted[key];
                 Object.assign(incident, {
                     messageId: saved.id,
                     channelId: saved.channel_id,
@@ -318,7 +331,7 @@ export class Watch extends DurableObject {
         }
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
-        await this.ctx.storage.put("state", next.state);
+        await this.ctx.storage.put("state", { ...next.state, unposted });
         for (const note of notes) this.background(() => this.note(note, data));
         this.background(() => this.reviews());
         if (failed)
@@ -331,8 +344,8 @@ export class Watch extends DurableObject {
         };
     }
 
-    // Sign-up bursts, each domain held while holds are on. A failure only
-    // costs this check its sign-up cards.
+    // Sign-up bursts, each domain held while holds are on; null if they
+    // couldn't be read.
     async signups() {
         try {
             const rows = await pipe(
@@ -345,7 +358,7 @@ export class Watch extends DurableObject {
                 : rows;
         } catch (error) {
             console.error(`signups: ${error.message}`);
-            return [];
+            return null;
         }
     }
 
@@ -353,8 +366,10 @@ export class Watch extends DurableObject {
     // recommendation, within the daily budget. Runs in the background queue.
     async reviews() {
         try {
+            const kv = this.env.SETUP_HOLDS;
             const groups = pending(
-                await listAll(this.env.SETUP_HOLDS, "review:"),
+                await listAll(kv, "review:"),
+                await listAll(kv, "decision:"),
             );
             if (!groups.size) return;
             const stored = (await this.ctx.storage.get("reviews")) ?? {};
@@ -375,9 +390,7 @@ export class Watch extends DurableObject {
                         domain: review.domain,
                     }),
                     read("infra_watch_review_usage", {
-                        user_ids: review.accounts
-                            .map((a) => a.userId)
-                            .join(","),
+                        user_ids: review.listed.map((a) => a.userId).join(","),
                     }),
                 ]);
                 const facts = reviewEvidence(

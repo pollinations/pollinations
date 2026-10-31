@@ -499,7 +499,7 @@ test("a held burst says so and shows how to release the domain", () => {
     assert.match(card("held"), /Setup quests held/);
     assert.match(
         card("held"),
-        /kv key put --binding SETUP_HOLDS --env production --remote 'hold:farm\.com' released/,
+        /kv key put --binding SETUP_HOLDS --env production --remote 'release:farm\.com' released/,
     );
     assert.match(card("released"), /released by a maintainer/);
     assert.doesNotMatch(card("released"), /kv key put/);
@@ -508,8 +508,8 @@ test("a held burst says so and shows how to release the domain", () => {
 
 test("a command is built only for keys of ids and plain domain names", () => {
     assert.match(
-        kvPut("review:AbC_1-2", "approved"),
-        /'review:AbC_1-2' approved$/,
+        kvPut("decision:AbC_1-2", "approved"),
+        /'decision:AbC_1-2' approved$/,
     );
-    assert.doesNotMatch(kvPut("hold:a';rm -rf ~;'.com", "released"), /rm -rf/);
+    assert.doesNotMatch(kvPut("release:a';rm -rf ~;'.com", "released"), /rm -rf/);
 });

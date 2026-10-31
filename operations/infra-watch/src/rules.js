@@ -296,7 +296,7 @@ export function panel(title, lines) {
 // enter.pollinations.ai/ with a Cloudflare login on the account. Keys hold
 // only ids and plain domain names; anything else gets no command.
 export const kvPut = (key, value) =>
-    /^(hold|review):[A-Za-z0-9._-]+$/.test(key)
+    /^(release|decision):[A-Za-z0-9._-]+$/.test(key)
         ? `npx wrangler kv key put --binding SETUP_HOLDS --env production --remote '${key}' ${value}`
         : "(no command: unexpected characters, check the key by hand)";
 
@@ -491,7 +491,7 @@ export function renderCard(
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
     if (!closed && incident.info.hold === "held")
         parts.push(
-            `Release the domain:\n\`\`\`\n${kvPut(`hold:${incident.info.domain}`, "released")}\n\`\`\``,
+            `Release the domain:\n\`\`\`\n${kvPut(`release:${incident.info.domain}`, "released")}\n\`\`\``,
         );
     for (const line of lines)
         parts.push(`↳ <t:${unix(line.at)}:t> ${line.text}`);

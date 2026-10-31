@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { extname, join, relative, resolve, sep } from "node:path";
+import { setTimeout } from "node:timers/promises";
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
@@ -78,6 +79,43 @@ export function assetType(file: string) {
     return type === "application/octet-stream" ? "application/null" : type;
 }
 
+/** Read public assets without the deployment credential, following index.html redirects. */
+export async function verifySiteFiles(
+    files: SiteFile[],
+    siteUrl: string,
+    retryDelayMs = 5_000,
+) {
+    for (const file of files) {
+        const path = file.path.split("/").map(encodeURIComponent).join("/");
+        for (let attempt = 0; ; attempt++) {
+            try {
+                const response = await fetch(new URL(path, siteUrl), {
+                    signal: AbortSignal.timeout(30_000),
+                    cache: "no-store",
+                });
+                if (!response.ok) {
+                    await response.body?.cancel();
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const actual = Buffer.from(await response.arrayBuffer());
+                if (!actual.equals(readFileSync(file.file))) {
+                    throw new Error(
+                        "deployed bytes differ from the local file",
+                    );
+                }
+                break;
+            } catch (error) {
+                if (attempt === 5) {
+                    throw new Error(
+                        `Verification failed for ${file.path}: ${errorMessage(error)}`,
+                    );
+                }
+                await setTimeout(retryDelayMs);
+            }
+        }
+    }
+}
+
 /** Uploads each bucket straight to Cloudflare and returns the completion JWT. */
 async function uploadBuckets(session: UploadSession, files: SiteFile[]) {
     const byHash = new Map(files.map((file) => [file.hash, file]));
@@ -131,7 +169,8 @@ const deploy = new Command("deploy")
         "--name <name>",
         "Site name: 3-32 lowercase letters, digits and hyphens",
     )
-    .action(async (dir: string, opts: { name: string }) => {
+    .option("--verify", "Check every published file against the local build")
+    .action(async (dir: string, opts: { name: string; verify?: boolean }) => {
         const key = requireKey();
         const files = collectSiteFiles(resolve(dir));
         const manifest = Object.fromEntries(
@@ -140,6 +179,7 @@ const deploy = new Command("deploy")
                 { hash: file.hash, size: file.size },
             ]),
         );
+        let site: Site | undefined;
         try {
             const path = `/account/sites/${encodeURIComponent(opts.name)}`;
             const session = await gen<UploadSession>(`${path}/upload`, {
@@ -148,22 +188,27 @@ const deploy = new Command("deploy")
                 apiKey: key,
             });
             const jwt = await uploadBuckets(session, files);
-            const site = await gen<Site>(path, {
+            site = await gen<Site>(path, {
                 method: "PUT",
                 body: { jwt },
                 apiKey: key,
             });
             if (getOutputMode() === "json") {
                 printResult(site);
-                return;
+            } else {
+                const uploaded = session.buckets.flat().length;
+                printSuccess(`Published ${site.url}`);
+                printInfo(
+                    `${files.length} files, ${uploaded} uploaded, ${files.length - uploaded} unchanged`,
+                );
             }
-            const uploaded = session.buckets.flat().length;
-            printSuccess(`Published ${site.url}`);
-            printInfo(
-                `${files.length} files, ${uploaded} uploaded, ${files.length - uploaded} unchanged`,
-            );
+            if (opts.verify) await verifySiteFiles(files, site.url);
         } catch (error) {
-            printError(`Failed to deploy site: ${errorMessage(error)}`);
+            printError(
+                site
+                    ? `Site published at ${site.url}, but verification failed: ${errorMessage(error)}`
+                    : `Failed to deploy site: ${errorMessage(error)}`,
+            );
             throw new ExitSignal(1);
         }
     });

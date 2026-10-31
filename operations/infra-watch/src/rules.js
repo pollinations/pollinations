@@ -11,7 +11,14 @@ export const RECOVER_CHECKS = 15;
 
 const MIN_REQUESTS = 10;
 const MIN_SUCCESS = 0.9;
+// DEGRADED also needs this many failed requests: 2 failures out of 13 is
+// under 90% but not worth an alert.
+const MIN_FAILURES = 5;
+// A primary route below this, while callers stay above MIN_SUCCESS thanks
+// to a fallback, is "primary weak".
+const PRIMARY_MIN_SUCCESS = 0.8;
 const PLATFORM_MIN_BASELINE = 1000;
+const MAX_ROUTE_LINES = 4;
 
 // Final user-visible outcome per model: the rollup rows.
 function modelHealth(rows) {
@@ -23,12 +30,35 @@ function modelHealth(rows) {
             nonClient,
             ok: row.status_2xx,
             success: nonClient > 0 ? row.status_2xx / nonClient : 1,
-            retried503s: row.retried_503s,
-            rescues: row.fallback_rescues,
         };
     }
     return health;
 }
+
+// Each model's backend routes (attempts per provider), primaries first.
+function modelRoutes(rows) {
+    const routes = {};
+    for (const row of rows) {
+        if (row.is_rollup) continue;
+        routes[row.model] ??= [];
+        routes[row.model].push({
+            provider: row.provider,
+            fallback: Boolean(row.fallback_used),
+            ok: row.status_2xx,
+            attempts: row.total_requests - row.errors_4xx,
+        });
+    }
+    for (const list of Object.values(routes))
+        list.sort((a, b) => a.fallback - b.fallback || b.attempts - a.attempts);
+    return routes;
+}
+
+const primaryOf = (routes = []) => {
+    const primaries = routes.filter((r) => !r.fallback);
+    const ok = primaries.reduce((sum, r) => sum + r.ok, 0);
+    const attempts = primaries.reduce((sum, r) => sum + r.attempts, 0);
+    return { attempts, success: attempts > 0 ? ok / attempts : 1 };
+};
 
 const totalRequests = (rows) =>
     rows
@@ -55,12 +85,19 @@ export function conditions({
         found.analytics = { kind: "ANALYTICS_DOWN" };
         return found;
     }
+    const routes = modelRoutes(recent);
     for (const [model, h] of Object.entries(modelHealth(recent))) {
         if (!official.has(model) || h.nonClient < MIN_REQUESTS) continue;
+        const info = { model, ...h, routes: routes[model] ?? [] };
+        const primary = primaryOf(info.routes);
         if (h.success < MIN_SUCCESS) {
-            found[`degraded:${model}`] = { kind: "DEGRADED", model, ...h };
-        } else if (h.retried503s >= 10 && h.retried503s >= 0.1 * h.ok) {
-            found[`spillover:${model}`] = { kind: "SPILLOVER", model, ...h };
+            if (h.nonClient - h.ok >= MIN_FAILURES)
+                found[`degraded:${model}`] = { kind: "DEGRADED", ...info };
+        } else if (
+            primary.attempts >= MIN_REQUESTS &&
+            primary.success < PRIMARY_MIN_SUCCESS
+        ) {
+            found[`primary:${model}`] = { kind: "PRIMARY_WEAK", ...info };
         }
     }
     const now10 = totalRequests(last10);
@@ -80,8 +117,9 @@ const CONFIRMED = new Set([
 ]);
 const HOSTS = { gen: true, public: true, upstream: true };
 
-// Keys whose recovery we announce. Spillover just expires.
-const RECOVERS = (key) => !key.startsWith("spillover:");
+// Keys whose recovery we announce. A weak primary just expires: callers
+// were never affected.
+const RECOVERS = (key) => !key.startsWith("primary:");
 
 // Pure state transition: which messages to post, and the next state.
 export function step(state, found, now, recent = []) {
@@ -133,19 +171,63 @@ export function step(state, found, now, recent = []) {
 }
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
-const fit = (s) => (s.length > 34 ? `${s.slice(0, 33)}…` : s);
+const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
 
-function panel(lines) {
-    const width = 44;
-    const top = `┌─ MONITOR ${"─".repeat(width - 10)}┐`;
-    const body = lines.map(([field, value]) => {
-        const text = `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`;
-        return `│ ${text.padEnd(width - 2)} │`;
-    });
-    return ["```", top, ...body, `└${"─".repeat(width)}┘`, "```"].join("\n");
+// A box titled with the alert and what it is about. It is as wide as its
+// title or its longest row needs, so a full model id is never cut.
+function panel(title, lines) {
+    const body = lines.map(
+        ([field, value]) =>
+            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
+    );
+    const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
+    return [
+        "```",
+        `┌─ ${title} ${"─".repeat(inner - title.length - 1)}┐`,
+        ...body.map((t) => `│ ${t.padEnd(inner)} │`),
+        `└${"─".repeat(inner + 2)}┘`,
+        "```",
+    ].join("\n");
 }
 
-export function render(post) {
+// Each alert's box title: what happened, and to what.
+const TITLE = {
+    GEN_DOWN: () => "DOWN: gen Worker",
+    PUBLIC_DOWN: () => "DOWN: gen.pollinations.ai",
+    UPSTREAM_DOWN: () => "DOWN: gen.myceli.ai",
+    ANALYTICS_DOWN: () => "BLIND: model status data",
+    PLATFORM_DROP: () => "DEGRADED: platform-wide",
+    DEGRADED: (info) => `DEGRADED: ${info.model}`,
+    PRIMARY_WEAK: (info) => `PRIMARY WEAK: ${info.model}`,
+};
+const framed = (info, lines) => panel(TITLE[info.kind](info), lines);
+
+// Last line of an alert while the AI looks into it. The same message is
+// then edited: the AI's line replaces it, or it simply goes.
+export const CHECKING = "*checking why…*";
+export const complete = (text, line) =>
+    text.replace(`\n${CHECKING}`, line ? `\n↳ ${line}` : "");
+
+// Embed side-bar colour by severity: red down, orange degraded, yellow weak
+// primary, green recovered.
+const RED = 0xe24b4a;
+const COLOR = {
+    GEN_DOWN: RED,
+    PUBLIC_DOWN: RED,
+    UPSTREAM_DOWN: RED,
+    ANALYTICS_DOWN: RED,
+    PLATFORM_DROP: RED,
+    DEGRADED: 0xd85a30,
+    PRIMARY_WEAK: 0xef9f27,
+};
+const GREEN = 0x639922;
+
+export const render = (post) => ({
+    ...draw(post),
+    color: post.type === "recovered" ? GREEN : COLOR[post.info.kind],
+});
+
+function draw(post) {
     const { info } = post;
     if (post.type === "recovered") {
         const what =
@@ -165,14 +247,11 @@ export function render(post) {
     }
     if (info.kind === "GEN_DOWN") {
         return {
-            text: panel([
-                ["STATUS", "DOWN"],
-                ["MODEL", "gen Worker"],
+            text: framed(info, [
                 ["WHY", "both hostnames failing:"],
                 ["", "gen.pollinations.ai  DOWN"],
                 ["", "gen.myceli.ai        DOWN"],
                 ["", "-> the Worker itself, not DNS"],
-                ["BY", "infra-watch"],
             ]),
             ping: true,
         };
@@ -180,9 +259,7 @@ export function render(post) {
     if (info.kind === "PUBLIC_DOWN" || info.kind === "UPSTREAM_DOWN") {
         const pub = info.kind === "PUBLIC_DOWN";
         return {
-            text: panel([
-                ["STATUS", "DOWN"],
-                ["MODEL", pub ? "gen.pollinations.ai" : "gen.myceli.ai"],
+            text: framed(info, [
                 ["WHY", "one hostname failing:"],
                 ["", `gen.pollinations.ai  ${pub ? "DOWN" : "up"}`],
                 ["", `gen.myceli.ai        ${pub ? "up" : "DOWN"}`],
@@ -192,48 +269,50 @@ export function render(post) {
                         ? "-> domain/DNS/route; Worker OK"
                         : "-> Myceli domain/route; users OK",
                 ],
-                ["BY", "infra-watch"],
             ]),
             ping: pub,
         };
     }
     if (info.kind === "ANALYTICS_DOWN") {
         return {
-            text: panel([
-                ["STATUS", "BLIND"],
-                ["MODEL", "/models/status (analytics)"],
+            text: framed(info, [
                 ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
                 ["", "model alerts paused"],
-                ["BY", "infra-watch"],
             ]),
             ping: true,
         };
     }
     if (info.kind === "PLATFORM_DROP") {
         return {
-            text: panel([
-                ["STATUS", "DEGRADED"],
-                ["MODEL", "platform-wide"],
+            text: framed(info, [
                 ["REQS", `${info.now10} last 10m`],
                 ["", `baseline ${Math.round(info.baseline10)}`],
-                ["BY", "infra-watch"],
             ]),
             ping: true,
         };
     }
     const lines = [
-        ["STATUS", info.kind],
-        ["MODEL", info.model],
         ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
     ];
-    if (info.kind === "DEGRADED") {
-        // Public data has no caller split: one bad caller can trip this.
-        lines.push(["CHECK", "unconfirmed: callers unknown"]);
+    // Accounts behind the failures, from Tinybird; unknown if it couldn't say.
+    const { callers } = info;
+    lines.push([
+        "CALLERS",
+        callers
+            ? `${callers.failing_callers} of ${callers.callers} failing`
+            : "unknown",
+    ]);
+    for (const r of (info.routes ?? []).slice(0, MAX_ROUTE_LINES)) {
+        const rate = r.attempts > 0 ? r.ok / r.attempts : 1;
+        lines.push([
+            r.fallback ? "FALLBACK" : "PRIMARY",
+            `${r.provider} ${r.ok}/${r.attempts} (${Math.round(rate * 100)}%)`,
+        ]);
     }
-    if (info.kind === "SPILLOVER") {
-        lines.push(["QUEUE", `${info.retried503s} retried`]);
-        lines.push(["FALLBACK", `${info.rescues} rescued`]);
-    }
-    lines.push(["BY", "infra-watch"]);
-    return { text: panel(lines), ping: true };
+    // A weak primary is posted quietly: the fallback keeps callers whole.
+    // So is a model failing for a single caller: that's not an outage.
+    return {
+        text: framed(info, lines),
+        ping: info.kind === "DEGRADED" && callers?.failing_callers !== 1,
+    };
 }

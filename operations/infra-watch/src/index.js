@@ -1,14 +1,15 @@
 import { DurableObject } from "cloudflare:workers";
-import { exclusive, send, serial, settle, withTimeout } from "./delivery.js";
 import {
-    allow,
-    ask,
-    evidence,
-    followUp,
-    investigates,
-    toolsFor,
-} from "./investigate.js";
-import { conditions, render, step } from "./rules.js";
+    edit,
+    exclusive,
+    payload,
+    send,
+    serial,
+    settle,
+    withTimeout,
+} from "./delivery.js";
+import { allow, ask, evidence, investigates, toolsFor } from "./investigate.js";
+import { CHECKING, complete, conditions, render, step } from "./rules.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
@@ -33,23 +34,31 @@ const isUp = (gen) =>
         return res.ok;
     }).catch(() => false);
 
+const show = (label, body) =>
+    console.log(
+        `[${label}] ${body.content} color=#${body.embeds[0].color?.toString(16)}\n${body.embeds[0].description}`,
+    );
+
 // Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an
-// error, never a silent dry run.
-async function post(env, { text, ping }) {
-    const content = ping
-        ? `${MAINTAINERS.map((id) => `<@${id}>`).join(" ")}\n${text}`
-        : text;
+// error, never a silent dry run. Returns the saved message's id.
+async function post(env, message) {
+    const body = payload(message, MAINTAINERS);
     if (env.DRY_RUN === "1") {
-        console.log(`[dry-run]\n${content}`);
-        return true;
+        show("dry-run", body);
+        return "dry-run";
     }
     if (!env.DISCORD_WEBHOOK_URL)
         throw new Error("DISCORD_WEBHOOK_URL missing");
-    return send(env.DISCORD_WEBHOOK_URL, {
-        content,
-        // parse: [] blocks @everyone, roles and any user not listed here.
-        allowed_mentions: { parse: [], users: ping ? MAINTAINERS : [] },
-    });
+    return send(env.DISCORD_WEBHOOK_URL, body);
+}
+
+async function update(env, id, message) {
+    const body = payload(message, MAINTAINERS);
+    if (env.DRY_RUN === "1") {
+        show("dry-run edit", body);
+        return true;
+    }
+    return edit(env.DISCORD_WEBHOOK_URL, id, body);
 }
 
 // One instance holds all alert state. A check awaits network calls, so the
@@ -94,16 +103,45 @@ export class Watch extends DurableObject {
 
         const state = (await this.ctx.storage.get("state")) ?? {};
         const next = step(state, found, now, data.recent);
+        const tools = toolsFor(data, {
+            tinybirdToken: this.env.TINYBIRD_TOKEN,
+        });
+        let ai = await this.ctx.storage.get("ai");
+        const messages = [];
+        for (const p of next.posts) {
+            // Who is failing, known before posting: it decides the ping.
+            if (p.type === "alert" && p.info.model) {
+                const spread = await tools.caller_spread({
+                    model: p.info.model,
+                });
+                if (spread.error) console.error(`callers: ${spread.error}`);
+                else p.info.callers = spread;
+            }
+            const message = render(p);
+            if (investigates(p)) {
+                const reserved = allow(ai, now);
+                if (reserved) {
+                    ai = reserved;
+                    message.text += `\n${CHECKING}`;
+                    message.investigate = true;
+                } else console.error("investigator: daily limit reached");
+            }
+            messages.push(message);
+        }
+        if (messages.some((m) => m.investigate))
+            await this.ctx.storage.put("ai", ai);
         const delivered = [];
-        for (const p of next.posts)
-            delivered.push(await post(this.env, render(p)));
+        for (const message of messages)
+            delivered.push(await post(this.env, message));
         await this.ctx.storage.put(
             "state",
             settle(state, next.state, next.posts, delivered),
         );
         for (const [i, p] of next.posts.entries())
-            if (delivered[i] && investigates(p))
-                this.background(() => this.investigate(p, data, now));
+            if (delivered[i] && messages[i].investigate)
+                this.background(() =>
+                    this.investigate(p, data, delivered[i], messages[i]),
+                );
         const failed = delivered.filter((ok) => !ok).length;
         if (failed)
             console.error(
@@ -116,26 +154,25 @@ export class Watch extends DurableObject {
         };
     }
 
-    // One AI follow-up per delivered alert, within a daily limit. A failure
-    // only logs: the alert itself is already posted.
-    async investigate(p, data, now) {
-        const budget = allow(await this.ctx.storage.get("ai"), now);
-        if (!budget) {
-            console.error("investigator: daily limit reached");
-            return;
-        }
-        await this.ctx.storage.put("ai", budget);
+    // The AI completes the alert it was posted with: its line replaces
+    // "checking why…", or that line just goes if it has nothing to say.
+    async investigate(p, data, id, message) {
+        let line = null;
         try {
             const key = this.env.POLLINATIONS_API_KEY;
             if (!key) throw new Error("POLLINATIONS_API_KEY missing");
-            const lines = await ask(key, evidence(p, data), toolsFor(data));
-            if (!lines) throw new Error("off-format answer");
-            const text = followUp(p, lines);
-            if (!(await post(this.env, { text, ping: false })))
-                throw new Error("follow-up not delivered");
+            line = await ask(
+                key,
+                evidence(p, data),
+                toolsFor(data, { tinybirdToken: this.env.TINYBIRD_TOKEN }),
+            );
+            if (!line) console.error("investigator: no answer");
         } catch (error) {
             console.error(`investigator: ${error.message}`);
         }
+        const done = { ...message, text: complete(message.text, line) };
+        if (!(await update(this.env, id, done)))
+            console.error("investigator: edit failed");
     }
 }
 

@@ -143,7 +143,8 @@ jobs:
       - name: Test polli CLI
         run: |
           if ! git diff --quiet HEAD^1 HEAD -- \
-            packages/polli-cli .github/workflows/ci-pull-request-checks.yml; then
+            packages/polli-cli .github/workflows/ci-pull-request-checks.yml \
+            .github/workflows/deploy-pollinations-site.yml; then
             npm ci --prefix packages/polli-cli
             npm test --prefix packages/polli-cli
           fi

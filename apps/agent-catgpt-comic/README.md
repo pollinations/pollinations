@@ -11,12 +11,14 @@ CatGPT answers any question with a short, sarcastic feline reply drawn into a si
 
 | Piece | Source |
 | --- | --- |
-| Persona | The aloof-cat system prompt from [`apps/catgpt/ai.js`](../catgpt/ai.js) |
-| Comic recipe | The single-panel prompt template from [`apps/catgpt/catgpt-prompt-guide.md`](../catgpt/catgpt-prompt-guide.md) |
-| Style reference | [`apps/catgpt/images/original-catgpt.png`](../catgpt/images/original-catgpt.png), passed to the image model on every generation |
+| Persona | The aloof-cat system prompt from [`pollinations/catgpt/ai.js`](https://github.com/pollinations/catgpt/blob/main/ai.js) |
+| Comic recipe | The single-panel prompt template from [CatGPT prompt guide](https://github.com/pollinations/catgpt/blob/main/catgpt-prompt-guide.md) |
+| Style reference | [original CatGPT artwork](https://catgpt.pollinations.app/images/original-catgpt.png), passed to the image model on every generation |
 | Credit | The `@missfitcomics` signature instruction is kept, crediting Tanika Godbole |
 
 The agent does not reimplement CatGPT behaviour: it wraps the existing persona plus the existing comic template in a managed agent, and the CatGPT website and Discord bot are untouched.
+
+The original artwork remains at its old monorepo path because the already-registered community agent still references it. New registrations use the standalone app URL from `agent.json`; update the live agent before removing the retained image.
 
 ## Configuration
 

@@ -357,6 +357,13 @@ export const track = (eventType: EventType) =>
                         attemptStartTime: attempt.startedAt,
                         balanceTracking: balanceTracking(),
                         responseTracking: {
+                            ...trackJsonErrorUsage(
+                                eventType,
+                                requestTracking,
+                                attempt.candidate,
+                                attempt.error,
+                                pricingInput,
+                            ),
                             responseStatus: status,
                             cacheHit: false,
                             isBilledUsage: false,
@@ -696,6 +703,46 @@ function responseForTracking(response: Response): Response {
     return readsBody ? response.clone() : new Response(null, response);
 }
 
+function trackJsonErrorUsage(
+    eventType: EventType,
+    request: RequestTrackingData,
+    candidate: FallbackCandidate,
+    error: unknown,
+    input?: PricingInput,
+): Partial<ResponseTrackingData> {
+    if (
+        eventType !== "generate.text" ||
+        !(error instanceof Error) ||
+        !("responseBody" in error) ||
+        typeof error.responseBody !== "string"
+    ) {
+        return {};
+    }
+    let output: { usage?: unknown };
+    try {
+        output = JSON.parse(error.responseBody);
+    } catch {
+        return {};
+    }
+    const parsed = CompletionUsageSchema.safeParse(output?.usage);
+    if (!parsed.success) return {};
+    const usage = openaiUsageToUsage(parsed.data);
+    return {
+        usage,
+        ...calculateUsageBilling({
+            model: request.resolvedModelRequested,
+            usage,
+            servedBy: candidate.definition ?? request.modelDefinition,
+            quotedBy: request.modelDefinition,
+            output,
+            input: {
+                ...input,
+                hasExplicitCacheHit: hasExplicitPromptCacheHit(parsed.data),
+            },
+        }),
+    };
+}
+
 export async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
@@ -736,6 +783,13 @@ export async function trackResponse(
         if (!usage) {
             return notBilled({
                 modelUsed,
+                ...trackJsonErrorUsage(
+                    eventType,
+                    requestTracking,
+                    candidate,
+                    error,
+                    pricingInput,
+                ),
             });
         }
         return {

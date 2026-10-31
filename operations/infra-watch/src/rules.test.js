@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+    CHECKING,
     COOLDOWN_MS,
+    complete,
     conditions,
     RECOVER_CHECKS,
     render,
@@ -43,16 +45,75 @@ test("degraded official model, ignoring 4xx and thin samples", () => {
     assert.equal(found["degraded:a/model"].success, 0.8);
 });
 
-test("spillover only when final success stays high", () => {
+// One backend route of a model: a provider's attempts, primary by default.
+const route = (model, provider, ok, total, extra = {}) =>
+    row(model, ok, total, {
+        is_rollup: 0,
+        provider,
+        fallback_used: false,
+        ...extra,
+    });
+// Live case: gemma-4-26b's primary fails 3 in 4, its fallback saves all.
+const weakPrimary = [
+    row("a/model", 64, 64),
+    route("a/model", "openrouter", 26, 102),
+    route("a/model", "deepinfra", 38, 38, { fallback_used: true }),
+];
+
+test("primary weak: the primary route fails but callers are fine", () => {
+    const found = conditions(quiet(weakPrimary));
+    assert.deepEqual(Object.keys(found), ["primary:a/model"]);
+    assert.equal(found["primary:a/model"].kind, "PRIMARY_WEAK");
+});
+
+test("a mostly healthy primary stays quiet, even with retried 503s", () => {
+    // Live case: flux's primary at 94%, plus a primary too thin to judge.
     const found = conditions(
         quiet([
-            row("a/model", 100, 100, {
-                retried_503s: 15,
-                fallback_rescues: 15,
+            row("a/model", 335, 335, {
+                retried_503s: 20,
+                fallback_rescues: 20,
             }),
+            route("a/model", "vast", 315, 335, { retried_503s: 20 }),
+            route("a/model", "deepinfra", 20, 20, { fallback_used: true }),
+            row("b/model", 4, 4),
+            route("b/model", "openrouter", 0, 4),
+            route("b/model", "deepinfra", 4, 4, { fallback_used: true }),
         ]),
     );
-    assert.deepEqual(Object.keys(found), ["spillover:a/model"]);
+    assert.deepEqual(found, {});
+});
+
+test("a weak primary is posted without a ping, naming each route", () => {
+    const info = conditions(quiet(weakPrimary))["primary:a/model"];
+    const { text, ping } = render({
+        type: "alert",
+        key: "primary:a/model",
+        info,
+    });
+    assert.equal(ping, false);
+    assert.match(text, /┌─ PRIMARY WEAK: a\/model ─/);
+    assert.match(text, /PRIMARY\s+openrouter 26\/102 \(25%\)/);
+    assert.match(text, /FALLBACK deepinfra 38\/38/);
+    assert.doesNotMatch(text, /\bBY\b/);
+});
+
+test("degraded panels name each route and still ping", () => {
+    const info = conditions(
+        quiet([
+            row("a/model", 50, 100),
+            route("a/model", "azure", 40, 90),
+            route("a/model", "openai", 10, 50, { fallback_used: true }),
+        ]),
+    )["degraded:a/model"];
+    const { text, ping } = render({
+        type: "alert",
+        key: "degraded:a/model",
+        info,
+    });
+    assert.equal(ping, true);
+    assert.match(text, /PRIMARY\s+azure 40\/90 \(44%\)/);
+    assert.match(text, /FALLBACK openai 10\/50 \(20%\)/);
 });
 
 test("platform drop against the previous 50 minutes", () => {
@@ -150,21 +211,22 @@ test("gen down and platform drop need 3 checks in a row", () => {
     assert.equal(step(reset.state, found, 2).posts.length, 0);
 });
 
-test("panel stays 44 chars wide", () => {
+test("the box title carries the status and the full model id", () => {
+    const longest = "inferenceport-ai/lightning-image-turbo";
     const { text, ping } = render({
         type: "alert",
-        key: "degraded:x",
-        info: {
-            kind: "DEGRADED",
-            model: "a-very-long-provider/a-very-long-model-name-x",
-            success: 0.5,
-            nonClient: 20,
-        },
+        key: `degraded:${longest}`,
+        info: { kind: "DEGRADED", model: longest, success: 0.5, nonClient: 20 },
     });
     assert.equal(ping, true);
-    for (const line of text.split("\n").filter((l) => /^[│┌└]/.test(l))) {
-        assert.equal([...line].length, 46);
-    }
+    const lines = text.split("\n");
+    // Nothing above the box: it opens the message.
+    assert.equal(lines[0], "```");
+    assert.ok(lines[1].startsWith(`┌─ DEGRADED: ${longest} ─`));
+    assert.doesNotMatch(text, /MONITOR|STATUS|MODEL /);
+    const box = lines.filter((l) => /^[│┌└]/.test(l));
+    const width = [...box[0]].length;
+    for (const line of box) assert.equal([...line].length, width);
 });
 
 test("analytics outage pauses recovery but is not gen down", () => {
@@ -187,18 +249,64 @@ test("analytics outage pauses recovery but is not gen down", () => {
     assert.ok(r.state.active["degraded:a/model"]);
 });
 
-test("degraded alerts are labelled unconfirmed", () => {
-    const { text } = render({
+const degradedInfo = (callers) => ({
+    kind: "DEGRADED",
+    model: "a/model",
+    success: 0.5,
+    nonClient: 20,
+    callers,
+});
+
+test("CALLERS shows how many accounts fail, or unknown", () => {
+    const known = render({
         type: "alert",
         key: "degraded:a/model",
-        info: {
-            kind: "DEGRADED",
-            model: "a/model",
-            success: 0.5,
-            nonClient: 20,
-        },
+        info: degradedInfo({ callers: 6, failing_callers: 2 }),
     });
-    assert.match(text, /unconfirmed: callers unknown/);
+    assert.match(known.text, /CALLERS\s+2 of 6 failing/);
+    const unknown = render({
+        type: "alert",
+        key: "degraded:a/model",
+        info: degradedInfo(),
+    });
+    assert.match(unknown.text, /CALLERS\s+unknown/);
+    assert.doesNotMatch(unknown.text, /unconfirmed/);
+});
+
+test("a degraded model with one failing caller is posted without a ping", () => {
+    const one = { type: "alert", key: "degraded:a/model" };
+    assert.equal(
+        render({
+            ...one,
+            info: degradedInfo({ callers: 6, failing_callers: 1 }),
+        }).ping,
+        false,
+    );
+    assert.equal(
+        render({
+            ...one,
+            info: degradedInfo({ callers: 6, failing_callers: 3 }),
+        }).ping,
+        true,
+    );
+    assert.equal(render({ ...one, info: degradedInfo() }).ping, true);
+});
+
+test("degraded needs at least 5 failed requests", () => {
+    // Live case: deepseek 11/13 is 84.6%, but only 2 requests failed.
+    assert.deepEqual(conditions(quiet([row("a/model", 11, 13)])), {});
+    assert.deepEqual(Object.keys(conditions(quiet([row("a/model", 25, 30)]))), [
+        "degraded:a/model",
+    ]);
+});
+
+test("the AI line completes the alert, or the waiting line just goes", () => {
+    const alert = `top\npanel\n${CHECKING}`;
+    assert.equal(
+        complete(alert, "One caller, not an outage."),
+        "top\npanel\n↳ One caller, not an outage.",
+    );
+    assert.equal(complete(alert, null), "top\npanel");
 });
 
 test("hostname split tells Worker down from domain down", () => {
@@ -251,18 +359,39 @@ test("one hostname down, then both down: no false recovery", () => {
     assert.ok(r.state.active.gen);
 });
 
-test("long field names keep a space before the value", () => {
-    const { text } = render({
-        type: "alert",
-        key: "spillover:x",
-        info: {
-            kind: "SPILLOVER",
-            model: "x",
-            success: 1,
-            nonClient: 50,
-            retried503s: 12,
-            rescues: 58,
-        },
-    });
-    assert.match(text, /FALLBACK 58 rescued/);
+test("each alert carries its colour: red down, orange degraded, yellow weak, green recovered", () => {
+    const colorOf = (post) => render(post).color;
+    assert.equal(
+        colorOf({ type: "alert", key: "gen", info: { kind: "GEN_DOWN" } }),
+        0xe24b4a,
+    );
+    assert.equal(
+        colorOf({
+            type: "alert",
+            key: "analytics",
+            info: { kind: "ANALYTICS_DOWN" },
+        }),
+        0xe24b4a,
+    );
+    assert.equal(
+        colorOf({
+            type: "alert",
+            key: "degraded:a/model",
+            info: degradedInfo(),
+        }),
+        0xd85a30,
+    );
+    const weak = conditions(quiet(weakPrimary))["primary:a/model"];
+    assert.equal(
+        colorOf({ type: "alert", key: "primary:a/model", info: weak }),
+        0xef9f27,
+    );
+    assert.equal(
+        colorOf({
+            type: "recovered",
+            key: "degraded:a/model",
+            info: { model: "a/model", success: 1, nonClient: 20 },
+        }),
+        0x639922,
+    );
 });

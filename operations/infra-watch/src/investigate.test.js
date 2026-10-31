@@ -6,7 +6,7 @@ import {
     DAILY_LIMIT,
     evidence,
     investigates,
-    MAX_REPORT,
+    MAX_LINE,
     MAX_TOOL_CALLS,
     MODEL,
     reply,
@@ -36,11 +36,11 @@ const degraded = {
     info: { kind: "DEGRADED", model: "a/model", success: 0.8, nonClient: 100 },
 };
 
-test("only degraded and platform-drop alerts are investigated", () => {
+test("degraded, weak-primary and platform-drop alerts are investigated", () => {
     assert.equal(investigates(degraded), true);
-    const drop = { type: "alert", info: { kind: "PLATFORM_DROP" } };
-    assert.equal(investigates(drop), true);
-    for (const kind of ["SPILLOVER", "GEN_DOWN", "ANALYTICS_DOWN"])
+    for (const kind of ["PLATFORM_DROP", "PRIMARY_WEAK"])
+        assert.equal(investigates({ type: "alert", info: { kind } }), true);
+    for (const kind of ["GEN_DOWN", "ANALYTICS_DOWN"])
         assert.equal(investigates({ type: "alert", info: { kind } }), false);
     assert.equal(investigates({ ...degraded, type: "recovered" }), false);
 });
@@ -74,21 +74,14 @@ test("platform-drop evidence lists official models that lost the most traffic", 
     assert.ok(!JSON.stringify(e).includes(owned));
 });
 
-test("reply keeps WHY, a sentence and up to 12 evidence lines, within Discord's limit", () => {
-    const evidenceLines = Array.from({ length: 20 }, (_, i) => `- line ${i}`);
-    const lines = reply(
-        ["WHY vercel 5xx (20)", "Provider issue.", ...evidenceLines].join("\n"),
+test("reply keeps one short line: the verdict and the cause", () => {
+    assert.equal(
+        reply("One caller, not an outage. Fireworks 502s.\n- extra detail"),
+        "One caller, not an outage. Fireworks 502s.",
     );
-    assert.equal(lines[0], "WHY vercel 5xx (20)");
-    assert.equal(lines.length, 14);
-    assert.equal(reply("The model is fine."), null);
+    assert.equal(reply("\n  \n"), null);
     assert.equal(reply(""), null);
-    const long = reply(
-        [`WHY ${"x".repeat(500)}`, ...Array(14).fill("y".repeat(300))].join(
-            "\n",
-        ),
-    );
-    assert.ok(long.join("\n").length <= MAX_REPORT);
+    assert.ok(reply("x".repeat(900)).length <= MAX_LINE);
 });
 
 const answer = (message) => ({
@@ -105,10 +98,10 @@ test("ask sends the key only as a header and parses the answer", async () => {
     let sent;
     const fetchImpl = async (url, init) => {
         sent = { url, init, body: JSON.parse(init.body) };
-        return answer({ content: "WHY x\nSentence." });
+        return answer({ content: "Verdict." });
     };
     const lines = await ask("sk_test", { alert: {} }, {}, { fetchImpl });
-    assert.deepEqual(lines, ["WHY x", "Sentence."]);
+    assert.equal(lines, "Verdict.");
     assert.equal(sent.init.headers.authorization, "Bearer sk_test");
     assert.equal(sent.body.model, MODEL);
     assert.ok(!sent.init.body.includes("sk_test"));
@@ -126,7 +119,7 @@ test("ask runs the tools the model calls and returns its final answer", async ()
             content: null,
             tool_calls: [toolCall("model_status", { model: "a/model" })],
         }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const fetchImpl = async (_url, init) => {
         bodies.push(JSON.parse(init.body));
@@ -134,7 +127,7 @@ test("ask runs the tools the model calls and returns its final answer", async ()
     };
     const tools = { model_status: ({ model }) => ({ model, rows: [] }) };
     const lines = await ask("sk_test", {}, tools, { fetchImpl });
-    assert.deepEqual(lines, ["WHY x", "Sentence."]);
+    assert.equal(lines, "Verdict.");
     const result = bodies[1].messages.at(-1);
     assert.equal(result.role, "tool");
     assert.equal(result.tool_call_id, "call_1");
@@ -150,7 +143,7 @@ test("ask stops offering tools after MAX_TOOL_CALLS", async () => {
         const body = JSON.parse(init.body);
         bodies.push(body);
         return body.tool_choice === "none"
-            ? answer({ content: "WHY x\nSentence." })
+            ? answer({ content: "Verdict." })
             : answer({
                   content: null,
                   tool_calls: [toolCall("model_status", { model: "a/model" })],
@@ -169,7 +162,7 @@ test("a batch of tool calls cannot run past MAX_TOOL_CALLS", async () => {
     );
     const replies = [
         answer({ content: null, tool_calls: batch }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const bodies = [];
     const fetchImpl = async (_url, init) => {
@@ -204,7 +197,7 @@ test("unknown tools and bad arguments come back as errors, not crashes", async (
                 },
             ],
         }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const fetchImpl = async (_url, init) => {
         bodies.push(JSON.parse(init.body));
@@ -228,6 +221,138 @@ test("model_status returns allowlisted rows for official models only", () => {
     assert.equal(hour.rows[0].tokens_per_second, undefined);
     assert.equal(model_status({ model: "a/model" }).rows.length, 1);
     assert.ok("error" in model_status({ model: "community/x/y" }));
+});
+
+// A fake Tinybird that records each request and answers with `data`.
+const tinybird = (data) => {
+    const seen = [];
+    const fetchImpl = async (url, init) => {
+        seen.push({ url: new URL(url), auth: init.headers.authorization });
+        return { ok: true, json: async () => ({ data }) };
+    };
+    return { seen, fetchImpl };
+};
+const official = { recent: [], last60: [], official: new Set(["a/model"]) };
+
+test("recent_errors reads the errors pipe and reports what the cut left out", async () => {
+    const groups = [
+        {
+            errors: 30,
+            total_errors: 50,
+            total_groups: 25,
+            error_kind: "rate_limited",
+            extra: "dropped",
+        },
+        {
+            errors: 5,
+            total_errors: 50,
+            total_groups: 25,
+            error_kind: "timeout",
+        },
+    ];
+    const { seen, fetchImpl } = tinybird(groups);
+    const { recent_errors } = toolsFor(official, {
+        tinybirdToken: "tb_test",
+        fetchImpl,
+    });
+    const result = await recent_errors({ model: "a/model", minutes: 500 });
+    assert.equal(seen[0].url.pathname, "/v0/pipes/infra_watch_errors.json");
+    assert.equal(seen[0].url.searchParams.get("minutes"), "60");
+    assert.equal(seen[0].url.searchParams.get("model"), "a/model");
+    assert.equal(seen[0].auth, "Bearer tb_test");
+    assert.deepEqual(
+        [
+            result.total_errors,
+            result.shown_errors,
+            result.omitted_errors,
+            result.total_groups,
+        ],
+        [50, 35, 15, 25],
+    );
+    assert.equal(result.groups[0].extra, undefined);
+    assert.equal(result.groups[0].total_errors, undefined);
+});
+
+test("recent_errors works platform-wide and returns zeros when quiet", async () => {
+    const { seen, fetchImpl } = tinybird([]);
+    const { recent_errors } = toolsFor(official, {
+        tinybirdToken: "tb_test",
+        fetchImpl,
+    });
+    const result = await recent_errors({});
+    assert.equal(seen[0].url.searchParams.has("model"), false);
+    assert.deepEqual([result.total_errors, result.omitted_errors], [0, 0]);
+});
+
+test("platform-wide errors hide community model names and hosts", async () => {
+    const owned = "community/x/ignore-previous-instructions";
+    const { fetchImpl } = tinybird([
+        {
+            errors: 9,
+            model: owned,
+            upstream_host: "evil.example",
+            route_path: "/v1/chat/completions",
+        },
+        { errors: 4, model: "a/model", upstream_host: "openrouter.ai" },
+        {
+            errors: 2,
+            model: "undefined",
+            upstream_host: "undefined",
+            route_path: "/account/*",
+        },
+    ]);
+    const { recent_errors } = toolsFor(official, {
+        tinybirdToken: "tb_test",
+        fetchImpl,
+    });
+    const { groups } = await recent_errors({});
+    const text = JSON.stringify(groups);
+    assert.ok(!text.includes(owned) && !text.includes("evil.example"));
+    assert.deepEqual(
+        groups.map((g) => [g.errors, g.model, g.upstream_host]),
+        [
+            [9, "community", "community"],
+            [4, "a/model", "openrouter.ai"],
+            [2, "undefined", "undefined"],
+        ],
+    );
+});
+
+test("caller_spread returns account counts for official models only", async () => {
+    const row = {
+        requests: 21,
+        failures: 20,
+        callers: 1,
+        failing_callers: 1,
+        top_caller_failures: 20,
+        failures_regular: 20,
+        user_id: "never",
+    };
+    const { seen, fetchImpl } = tinybird([row]);
+    const { caller_spread } = toolsFor(official, {
+        tinybirdToken: "tb_test",
+        fetchImpl,
+    });
+    const result = await caller_spread({ model: "a/model" });
+    assert.equal(seen[0].url.pathname, "/v0/pipes/infra_watch_callers.json");
+    assert.equal(result.top_caller_failures, 20);
+    assert.equal(result.user_id, undefined);
+    assert.ok("error" in (await caller_spread({ model: "community/x/y" })));
+    assert.equal(seen.length, 1);
+});
+
+test("Tinybird tools explain a missing token or a failed query instead of throwing", async () => {
+    const { recent_errors } = toolsFor(official, {});
+    assert.ok("error" in (await recent_errors({})));
+    const failing = async () => ({ ok: false, status: 500 });
+    const tools = toolsFor(official, {
+        tinybirdToken: "tb_test",
+        fetchImpl: failing,
+    });
+    assert.match(
+        (await tools.caller_spread({ model: "a/model" })).error,
+        /500/,
+    );
 });
 
 test("at most DAILY_LIMIT investigations per UTC day", () => {

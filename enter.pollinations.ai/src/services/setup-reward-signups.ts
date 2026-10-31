@@ -125,10 +125,15 @@ const PUBLIC_MAIL_DOMAINS = new Set([
  * (co.uk, an IP): such sign-ups are never recorded.
  */
 export function registrableDomain(email: string): string | null {
-    const host = email
-        .slice(email.lastIndexOf("@") + 1)
-        .toLowerCase()
-        .replace(/\.+$/, "");
+    let host: string;
+    try {
+        // ASCII (punycode) form, so a non-Latin domain is counted too.
+        host = new URL(
+            `http://${email.slice(email.lastIndexOf("@") + 1)}`,
+        ).hostname.replace(/\.+$/, "");
+    } catch {
+        return null;
+    }
     const domain = getDomain(host, { validateHostname: false });
     // Domains reach Discord and maintainers' commands: letters, digits,
     // dots and hyphens only.

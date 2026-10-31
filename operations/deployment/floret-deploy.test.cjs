@@ -40,7 +40,7 @@ test("Applications selects Floret on promotion and manual retry", () => {
     }
     assert.deepEqual(result, selected);
     assert.equal(result[0].credentials, "myceli");
-    assert.equal(result[0].docker, true);
+    assert.equal(result[0].docker, false);
     assert.ok(
         workflow.jobs.deploy.steps.some(
             (step) =>
@@ -80,7 +80,7 @@ test("Floret deploy has local locked Wrangler and verifies both existing domains
     }
 });
 
-test("Floret preserves account and domains while retiring the native shell", () => {
+test("Floret preserves account and domains while retiring Cloudflare containers", () => {
     const config = JSON.parse(
         read("apps/floret/wrangler.jsonc").replace(/^\s*\/\/.*$/gm, ""),
     );
@@ -90,13 +90,10 @@ test("Floret preserves account and domains while retiring the native shell", () 
     assert.equal(config.preview_urls, false);
     assert.equal(config.routes, undefined);
     assert.equal(config.route, undefined);
-    assert.deepEqual(
-        config.containers.map((item) => item.class_name),
-        ["FloretContainer"],
-    );
+    assert.equal(config.containers, undefined);
     assert.deepEqual(
         config.durable_objects.bindings.map((item) => item.name),
-        ["FLORET", "FLORET_CATALOG"],
+        ["FLORET_CATALOG"],
     );
     assert.deepEqual(config.migrations, [
         { tag: "v1", new_sqlite_classes: ["FloretContainer"] },
@@ -105,5 +102,6 @@ test("Floret preserves account and domains while retiring the native shell", () 
             new_sqlite_classes: ["FloretShellContainer", "FloretCatalog"],
         },
         { tag: "v3", deleted_classes: ["FloretShellContainer"] },
+        { tag: "v4", deleted_classes: ["FloretContainer"] },
     ]);
 });

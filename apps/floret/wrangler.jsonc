@@ -5,24 +5,18 @@
   "preview_urls": false,
   "main": "worker.js",
   "compatibility_date": "2026-01-01",
-  "containers": [
-    {
-      "class_name": "FloretContainer",
-      "image": "./Dockerfile",
-      "max_instances": 2,
-      "instance_type": "standard-1"
-    }
-  ],
+  "compatibility_flags": ["nodejs_compat"],
+  "build": { "command": "npm run build" },
   "durable_objects": {
     "bindings": [
-      { "name": "FLORET", "class_name": "FloretContainer" },
       { "name": "FLORET_CATALOG", "class_name": "FloretCatalog" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["FloretContainer"] },
     { "tag": "v2", "new_sqlite_classes": ["FloretShellContainer", "FloretCatalog"] },
-    { "tag": "v3", "deleted_classes": ["FloretShellContainer"] }
+    { "tag": "v3", "deleted_classes": ["FloretShellContainer"] },
+    { "tag": "v4", "deleted_classes": ["FloretContainer"] }
   ],
   // Existing custom domains are Dashboard-managed. Omit routes so deployments
   // preserve their bindings without requiring zone-edit permissions.

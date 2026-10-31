@@ -1,12 +1,15 @@
 name: Deploy / E2B templates
 
-# Rebuilds the live sandbox templates from operations/infrastructure/e2b.
+# Rebuilds the live sandbox templates from operations/infrastructure/e2b and,
+# for Floret's per-run VMs, apps/floret/e2b.Dockerfile.
 # Runs on production only: every new sandbox gets a template as soon as it's built.
 on:
   push:
     branches: [production]
     paths:
       - "operations/infrastructure/e2b/**"
+      - "apps/floret/e2b.Dockerfile"
+      - "apps/floret/pyproject.toml"
       - ".github/workflows/deploy-e2b-templates.yml"
   workflow_dispatch:
 
@@ -39,3 +42,6 @@ jobs:
       # 50 GiB free disk is our team's cap; without the flag a rebuild drops to the default 21.
       - name: Build pollinations-large
         run: npx -y @e2b/cli@2.21.2 template create pollinations-large --path operations/infrastructure/e2b --cpu-count 4 --memory-mb 8192 --min-free-disk-mb 51200
+
+      - name: Build floret
+        run: npx -y @e2b/cli@2.21.2 template create floret --path apps/floret --dockerfile e2b.Dockerfile --cpu-count 2 --memory-mb 2048

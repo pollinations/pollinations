@@ -71,7 +71,7 @@ type DashboardNavItem = {
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
 // Docs), and everything about you as one block at the bottom: Create (your
 // models, agents, apps and sandboxes) and Keys, then your pollen (Quests,
-// Activity, Balance with its numbers indented under it), then your name. A
+// Activity, Pollen with its numbers indented under it), then your name. A
 // thin line opens each part. Signed out, the bottom holds the sign-in buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
@@ -157,7 +157,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         const scrollElement = mainScrollRef.current;
         if (!scrollElement) return;
 
-        if (activePage === "balance" && location.hash === "buy-pollen") {
+        if (activePage === "pollen" && location.hash === "buy-pollen") {
             const target = scrollElement.querySelector("#buy-pollen");
             if (target instanceof HTMLElement) {
                 const scrollRect = scrollElement.getBoundingClientRect();
@@ -395,7 +395,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                     questStatus={questStatus}
                                     onNavigate={onNavigate}
                                 />
-                                {item.id === "balance" && walletArea && (
+                                {item.id === "pollen" && walletArea && (
                                     <WalletLines>{walletArea}</WalletLines>
                                 )}
                             </Fragment>
@@ -557,7 +557,7 @@ const DashboardFooter: FC<{
     </div>
 );
 
-// Your Paid and Quest numbers indented under the Balance row, lined up with
+// Your Paid and Quest numbers indented under the Pollen row, lined up with
 // its label: a readout, not a link (the row above opens the page).
 const WalletLines: FC<PropsWithChildren> = ({ children }) => (
     <div

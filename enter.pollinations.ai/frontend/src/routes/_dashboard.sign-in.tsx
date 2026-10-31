@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_dashboard/sign-in")({
         }
 
         if (search.next) throw redirect({ href: search.next });
-        throw redirect({ to: "/balance" });
+        throw redirect({ to: "/pollen" });
     },
     component: SignInPage,
 });

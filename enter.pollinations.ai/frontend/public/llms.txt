@@ -7,5 +7,5 @@
 - [Agent and CLI entry point](https://gen.pollinations.ai/llms.txt): Guides, task recipes, CLI skill, API reference, OpenAPI schema, and MCP server.
 - [Create a secret key](https://enter.pollinations.ai/keys): Sign in and manage keys.
 - [Buy a prepaid key with USDC (x402)](https://gen.pollinations.ai/docs/llm.txt?section=x402): No account or sign-in; pay from $0.01 on Base.
-- [Balance](https://enter.pollinations.ai/balance): Check your pollen balance.
+- [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
 - [API catalog](https://gen.pollinations.ai/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.

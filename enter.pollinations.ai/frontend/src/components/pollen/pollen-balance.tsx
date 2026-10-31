@@ -218,7 +218,7 @@ type SidebarWalletProps = {
 };
 
 /**
- * Both balances indented under the drawer's Balance row: the
+ * Both balances indented under the drawer's Pollen row: the
  * number sits on the right edge and what it earned in the last 7 days follows
  * the label, so nothing moves when earnings load. Only the icons carry the
  * paid/Quest colour: green would read as Quest, so earnings stay muted and the

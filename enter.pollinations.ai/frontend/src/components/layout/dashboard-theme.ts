@@ -53,9 +53,9 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "yours",
     },
     {
-        id: "balance",
-        to: "/balance",
-        label: "Balance",
+        id: "pollen",
+        to: "/pollen",
+        label: "Pollen",
         icon: WalletIcon,
         group: "yours",
     },

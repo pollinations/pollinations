@@ -98,7 +98,6 @@ const PAGES = {
         "/refunds",
         "/news",
         "/pollen",
-        "/balance",
         "/keys",
         "/models",
         "/agents",

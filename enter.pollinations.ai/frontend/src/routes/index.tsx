@@ -6,11 +6,11 @@ import { isOutageStatus } from "../lib/outage.ts";
 export const Route = createFileRoute("/")({
     beforeLoad: async () => {
         const result = await authClient.getSession().catch(() => null);
-        // During an outage, /balance shows it in place of the balance.
+        // During an outage, /pollen shows it in place of the balance.
         if (!result || (result.error && isOutageStatus(result.error.status))) {
-            throw redirect({ to: "/balance" });
+            throw redirect({ to: "/pollen" });
         }
         if (result.error) throw new Error(DASHBOARD_AUTH_FAILED_MESSAGE);
-        throw redirect({ to: result.data?.user ? "/balance" : "/news" });
+        throw redirect({ to: result.data?.user ? "/pollen" : "/news" });
     },
 });

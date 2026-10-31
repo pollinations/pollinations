@@ -253,7 +253,7 @@ function DashboardLayout() {
 /** The drawer's compact outage rows, or the usual error when it is not one. */
 function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
     const outage = useOutage([BALANCE_PATH]);
-    // The same resource as the Balance page's balance: one retry for both.
+    // The same resource as the Pollen page's balance: one retry for both.
     useOutageRetry(outage, BALANCE_PATH, onRetry);
     return outage ? (
         <SidebarOutage />

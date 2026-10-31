@@ -22,7 +22,7 @@ export function AuthAccountIdentity({
         <AccountIdentity
             name={user.name || user.githubUsername || user.email}
             avatarUrl={user.image}
-            dashboardHref="/balance"
+            dashboardHref="/pollen"
             className="polli:bg-transparent"
             secondaryContent={
                 balance ? (

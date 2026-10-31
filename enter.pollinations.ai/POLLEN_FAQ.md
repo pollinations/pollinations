@@ -19,7 +19,7 @@ You build and host the application. Pollinations provides model access, account 
 
 ## 🛒 How do I get Pollen?
 
-- **Buy Pollen** from the [Balance page](https://enter.pollinations.ai/balance) through Stripe Checkout.
+- **Buy Pollen** from the [Pollen dashboard](https://enter.pollinations.ai/pollen) through Stripe Checkout.
 - **Complete Quests** and claim eligible rewards from the [Quests dashboard](https://enter.pollinations.ai/quests).
 - **Earn from an app** by enabling Developer earnings on its App Key. Users pay a 25% markup on that app's model usage, which is credited to the developer.
 - **Publish a community model** with a price. The model owner receives 75% of the Pollen spent on it.

@@ -26,7 +26,6 @@ export const productPageViewSchema = z.strictObject({
         "/refunds",
         "/news",
         "/pollen",
-        "/balance",
         "/keys",
         "/models",
         "/agents",

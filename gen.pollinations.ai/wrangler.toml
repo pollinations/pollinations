@@ -388,8 +388,8 @@ AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscrip
 AZURE_SANDBOX_IMAGE = "fcab7587-ab59-46ce-932d-5c237c8ac747"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015,314960022"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid,polli@pollinations.ai"
 [env.test]
 
 [env.test.images]

@@ -83,7 +83,13 @@ export async function checkQuestsForUser(
         );
     let setupSignupFailed = false;
     let flagged: FlaggedDomain | null = null;
-    if (proposals.some(({ quest }) => quest.category === "setup")) {
+    const setupQuestIds = await listSetupQuestIds(ctx);
+    // Only an account's first setup reward is a sign-up: returning accounts
+    // completing another setup quest don't count again.
+    const firstSetupReward =
+        proposals.some(({ quest }) => quest.category === "setup") &&
+        ![...earned].some((id) => id !== null && setupQuestIds.has(id));
+    if (firstSetupReward) {
         try {
             flagged = await recordSetupRewardSignup(env.DB, {
                 userId: user.id,
@@ -132,14 +138,13 @@ export async function checkQuestsForUser(
                     eq(schema.rewards.questId, AUTO_CLAIM_QUEST_ID),
                 ),
             );
-        const setupQuestIds = setupRewardHoldsOn(env)
-            ? await listSetupQuestIds(ctx)
-            : undefined;
         for (const reward of pending) {
             await claimReward(ctx.db, {
                 rewardId: reward.id,
                 userId: user.id,
-                setupQuestIds,
+                setupQuestIds: setupRewardHoldsOn(env)
+                    ? setupQuestIds
+                    : undefined,
             });
         }
     }

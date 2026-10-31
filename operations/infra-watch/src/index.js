@@ -30,6 +30,14 @@ import {
     step,
     waiting,
 } from "./rules.js";
+import {
+    holdDomains,
+    listAll,
+    pending,
+    REVIEW_PROMPT,
+    reviewEvidence,
+    verdict,
+} from "./setup-holds.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
@@ -129,9 +137,10 @@ export class Watch extends DurableObject {
     async run() {
         const now = Date.now();
         let found;
-        // Sign-up bursts per email domain, from Enter; null when the read
-        // failed, so open sign-up cards are left as they are.
+        // Sign-up bursts and review requests per email domain; null when
+        // the read failed, so their open cards are left as they are.
         let signups = [];
+        let reviews = new Map();
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
@@ -151,18 +160,16 @@ export class Watch extends DurableObject {
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
-                signups = await pipe(
-                    "infra_watch_signups",
-                    {},
-                    {
-                        tinybirdToken: this.env.TINYBIRD_TOKEN,
-                        fetchImpl: fetch,
-                    },
-                ).catch((error) => {
-                    console.error(`signups: ${error.message}`);
-                    return null;
+                [signups, reviews] = await Promise.all([
+                    this.signups(),
+                    this.reviews(),
+                ]);
+                found = conditions({
+                    ...data,
+                    hosts,
+                    signups: signups ?? [],
+                    reviews: reviews ?? new Map(),
                 });
-                found = conditions({ ...data, hosts, signups: signups ?? [] });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
@@ -182,12 +189,16 @@ export class Watch extends DurableObject {
                 closed[key] = record.closed.incident.closedAt;
             }
         }
-        // Unknown sign-ups keep their open cards. A sign-up card Discord
-        // hasn't taken yet is retried until it has: its 24-hour window can
-        // end first.
-        if (signups === null)
-            for (const [key, incident] of Object.entries(open))
-                if (key.startsWith("signup:")) found[key] ??= incident.info;
+        // Unknown sign-ups or reviews keep their open cards. A sign-up card
+        // Discord hasn't taken yet is retried until it has: its 24-hour
+        // window can end first.
+        const unknown = [
+            signups === null && "signup:",
+            reviews === null && "review:",
+        ].filter(Boolean);
+        for (const [key, incident] of Object.entries(open))
+            if (unknown.some((prefix) => key.startsWith(prefix)))
+                found[key] ??= incident.info;
         const unposted = { ...saved.unposted };
         for (const [key, info] of Object.entries(unposted)) found[key] ??= info;
         const next = step({ ...saved, open, closed }, found, now, data.recent);
@@ -288,7 +299,13 @@ export class Watch extends DurableObject {
                     pending: checking,
                     pendingAt: now,
                 });
-                if (checking) notes.push({ key, id: saved.id, moment: "open" });
+                if (checking)
+                    notes.push({
+                        key,
+                        id: saved.id,
+                        moment: "open",
+                        info: incident.info,
+                    });
                 continue;
             }
 
@@ -304,14 +321,20 @@ export class Watch extends DurableObject {
             const id = incident.messageId;
             const record = await this.record(id);
             const pending = waiting(record, now);
-            const reason = noteworthy(incident.noted, current);
+            // A review card needs a verdict on exactly the accounts it lists
+            // now, whatever its history; one the budget skipped is tried
+            // again on the next check.
+            const review = incident.kind === "REVIEW";
+            const reason = review
+                ? "the accounts listed for review changed"
+                : noteworthy(incident.noted, current);
+            const wanted = review
+                ? !record.lines.some((l) => l.asking === current.asking)
+                : Boolean(reason) &&
+                  now - incident.notedAt >= NOTE_EVERY_MS &&
+                  record.lines.length < MAX_LINES - 1;
             const due =
-                Boolean(reason) &&
-                !pending &&
-                now - incident.notedAt >= NOTE_EVERY_MS &&
-                record.lines.length < MAX_LINES - 1 &&
-                investigates(incident.kind) &&
-                reserve();
+                wanted && !pending && investigates(incident.kind) && reserve();
             if (due) {
                 Object.assign(incident, { noted: current, notedAt: now });
                 await this.ctx.storage.put(`lines:${id}`, {
@@ -319,7 +342,13 @@ export class Watch extends DurableObject {
                     pending: true,
                     pendingAt: now,
                 });
-                notes.push({ key, id, moment: "change", reason });
+                notes.push({
+                    key,
+                    id,
+                    moment: "change",
+                    reason,
+                    info: incident.info,
+                });
             }
             const card = renderCard(key, incident, {
                 lines: record.lines,
@@ -346,6 +375,58 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Sign-up bursts, each domain held at once; null if they couldn't be
+    // read.
+    async signups() {
+        try {
+            const rows = await pipe(
+                "infra_watch_signups",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+            return await holdDomains(this.env.SETUP_HOLDS, rows);
+        } catch (error) {
+            console.error(`signups: ${error.message}`);
+            return null;
+        }
+    }
+
+    // What the AI reads for a review: the domain's sign-ups and the listed
+    // accounts' API use from Tinybird, numbers only. A failed read comes
+    // through as { error }.
+    async reviewFacts(info) {
+        const read = (name, params) =>
+            pipe(name, params, {
+                tinybirdToken: this.env.TINYBIRD_TOKEN,
+                fetchImpl: fetch,
+            }).catch((error) => ({ error: error.message }));
+        const [signups, usage] = await Promise.all([
+            read("infra_watch_review_signups", { domain: info.domain }),
+            read("infra_watch_review_usage", {
+                user_ids: info.accounts.map((a) => a.userId).join(","),
+            }),
+        ]);
+        return reviewEvidence(info, signups, usage, Date.now());
+    }
+
+    // Review requests still waiting for a decision, per domain; null if
+    // they couldn't be read.
+    async reviews() {
+        try {
+            const kv = this.env.SETUP_HOLDS;
+            return pending(
+                ...(await Promise.all(
+                    ["review:", "decision:", "hold:", "release:"].map(
+                        (prefix) => listAll(kv, prefix),
+                    ),
+                )),
+            );
+        } catch (error) {
+            console.error(`reviews: ${error.message}`);
+            return null;
+        }
     }
 
     // Who is failing and the main error, from Tinybird, refreshed at most
@@ -386,13 +467,15 @@ export class Watch extends DurableObject {
     // Without a line, "checking why…" just goes. The edit goes through the
     // write queue and only touches the card it was asked for: while open, or
     // by the closing line's last edit.
-    async note({ key, id, moment, reason }, data) {
+    async note({ key, id, moment, reason, info }, data) {
         const closing = moment === "closed";
         const record = await this.record(id);
         const incident = closing
             ? record.closed?.incident
             : (await this.ctx.storage.get("state"))?.open?.[key];
         if (incident?.messageId !== id) return;
+        // A review is about the accounts listed when it was asked for.
+        const review = incident.kind === "REVIEW" && (info ?? incident.info);
         let text = null;
         try {
             const apiKey = this.env.POLLINATIONS_API_KEY;
@@ -401,30 +484,55 @@ export class Watch extends DurableObject {
                 down: duration(incident.closedAt - incident.openedAt),
                 lost: incident.lost,
             };
-            text = await ask(
-                apiKey,
-                {
-                    moment,
-                    reason,
-                    footprint,
-                    previous: record.lines.map((l) => l.text),
-                    ...evidence({ info: incident.info }, data),
-                },
-                toolsFor(data, { tinybirdToken: this.env.TINYBIRD_TOKEN }),
-            );
+            const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };
+            const previous = record.lines.map((l) => l.text);
+            text = review
+                ? verdict(
+                      await ask(
+                          apiKey,
+                          {
+                              moment,
+                              reason,
+                              previous,
+                              ...(await this.reviewFacts(review)),
+                          },
+                          {},
+                          { system: REVIEW_PROMPT, specs: [] },
+                      ),
+                  )
+                : await ask(
+                      apiKey,
+                      {
+                          moment,
+                          reason,
+                          footprint,
+                          previous,
+                          ...evidence({ info: incident.info }, data),
+                      },
+                      toolsFor(data, tinybird),
+                  );
             if (!text) console.error("investigator: no answer");
         } catch (error) {
             console.error(`investigator: ${error.message}`);
         }
-        // The line keeps the card's colour from when the AI looked.
+        // The line keeps the card's colour from when the AI looked; a
+        // verdict, the accounts it examined.
         const line = text && {
             at: Date.now(),
             text,
             color: cardColor(incident),
+            ...(review && {
+                asking: review.accounts.map((a) => a.userId).join(","),
+            }),
         };
         const done = await this.writes(async () => {
             const current = await this.record(id);
-            const lines = line ? [...current.lines, line] : current.lines;
+            // A review card keeps only its latest verdict.
+            const lines = !line
+                ? current.lines
+                : review
+                  ? [line]
+                  : [...current.lines, line];
             if (current.closed) {
                 // A closed card's lines wait for its last edit: written now
                 // by the closing line, or by a later check if that fails.

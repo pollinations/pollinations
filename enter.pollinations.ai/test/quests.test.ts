@@ -1,11 +1,12 @@
 import { env, SELF } from "cloudflare:test";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import {
     claimReward,
     recordRewards,
     rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
@@ -14,6 +15,10 @@ import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
+import {
+    requestSetupReview,
+    setupHold,
+} from "../src/services/setup-reward-holds.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
@@ -2727,4 +2732,224 @@ test("account quest history accepts account usage permission", async ({
     await expect(response.json()).resolves.toMatchObject({
         rewards: [{ questId: "first_api_key" }],
     });
+});
+
+// Setup holds: accounts with a first onboarding reward, as the dashboard
+// sees them.
+
+/** Google-only accounts with an API key: their next check earns first_api_key. */
+async function seedSetupAccounts(
+    prefix: string,
+    count: number,
+    domain: string,
+): Promise<string[]> {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+    const ids = Array.from(
+        { length: count },
+        (_, index) => `${prefix}-${index}`,
+    );
+    for (const id of ids) {
+        await db.insert(schema.user).values({
+            id,
+            name: id,
+            email: `${id}@${domain}`,
+            emailVerified: true,
+            createdAt: now,
+            updatedAt: now,
+            tierBalance: 0,
+            packBalance: 0,
+        });
+        await db.insert(schema.account).values({
+            id: `${id}-google`,
+            accountId: `google-${id}`,
+            providerId: "google",
+            userId: id,
+        });
+        await db.insert(schema.apikey).values({
+            id: `${id}-key`,
+            name: "Key",
+            key: `sk_${id}`,
+            prefix: "sk",
+            referenceId: id,
+            createdAt: now,
+            updatedAt: now,
+        });
+    }
+    return ids;
+}
+
+function earnFirstKey(bindings: typeof env, userId: string) {
+    return checkQuestsForUser(bindings, userId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+}
+
+async function tierBalanceOf(userId: string) {
+    const [row] = await drizzle(env.DB, { schema })
+        .select({ value: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, userId));
+    return row?.value ?? 0;
+}
+
+test("setup holds: the setup quest list covers every setup quest in the catalog", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+    const ctx = { db: drizzle(env.DB, { schema }), env };
+    const catalogSetupIds = (await questIndex.listQuestCards(ctx))
+        .filter((card) => card.category === "setup")
+        .map((card) => card.id);
+    expect(catalogSetupIds).toContain("first_api_key");
+    expect([...(await questIndex.listSetupQuestIds(ctx))].sort()).toEqual(
+        catalogSetupIds.sort(),
+    );
+});
+
+// Setup holds: infra-watch (or a maintainer) holds a domain in the
+// SETUP_HOLDS KV store; a purchase, an approved review or a released domain
+// unlocks the account's Setup rewards.
+async function questReward(userId: string, questId: string) {
+    const [reward] = await drizzle(env.DB, { schema })
+        .select()
+        .from(schema.rewards)
+        .where(
+            and(
+                eq(schema.rewards.userId, userId),
+                eq(schema.rewards.questId, questId),
+            ),
+        );
+    if (!reward) throw new Error(`Expected ${questId} reward`);
+    return reward;
+}
+
+async function holdUser(id: string) {
+    const [row] = await drizzle(env.DB, { schema })
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, id));
+    if (!row) throw new Error(`Expected user ${id}`);
+    return row;
+}
+
+test("setup holds: a held account's Setup rewards stay locked, other rewards pay, and it can ask for one review", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const db = drizzle(env.DB, { schema });
+    const [held] = await seedSetupAccounts("held", 1, "held.test");
+    await env.SETUP_HOLDS.put("hold:held.test", "held");
+    await earnFirstKey(env, held);
+    // The key reward is claimed automatically, except on hold.
+    const firstKey = await questReward(held, "first_api_key");
+    expect(firstKey.claimedAt).toBeNull();
+
+    const token = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId: held,
+    });
+    const call = async (path: string, method = "GET") => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/${path}`,
+            { method, headers: { Authorization: `Bearer ${token}` } },
+        );
+        expect(response.status).toBe(200);
+        return response.json();
+    };
+
+    expect(await call("quests/rewards")).toMatchObject({
+        setupHold: { review: null },
+        rewards: [{ questId: "first_api_key" }],
+    });
+    expect(
+        await call(`quests/rewards/${firstKey.id}/claim`, "POST"),
+    ).toMatchObject({ claimed: false });
+
+    await recordRewards(db, [
+        {
+            idempotencyKey: "quest:merged_pr:held-account",
+            userId: held,
+            questId: "merged_pr",
+            title: "Contribute a pull request",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+    const merged = await questReward(held, "merged_pr");
+    expect(
+        await call(`quests/rewards/${merged.id}/claim`, "POST"),
+    ).toMatchObject({ claimed: true });
+    expect(await tierBalanceOf(held)).toBeCloseTo(5);
+
+    expect(await call("quests/review", "POST")).toEqual({
+        setupHold: { review: "pending" },
+    });
+    const first = await env.SETUP_HOLDS.getWithMetadata(`review:${held}`);
+    expect(first.value).toBe("pending");
+    expect(first.metadata).toMatchObject({
+        domain: "held.test",
+        rewards: 2,
+        rewardPollen: 5.25,
+    });
+    // Asking again changes nothing.
+    expect(await call("quests/review", "POST")).toEqual({
+        setupHold: { review: "pending" },
+    });
+    expect(
+        (await env.SETUP_HOLDS.getWithMetadata(`review:${held}`)).metadata,
+    ).toEqual(first.metadata);
+});
+
+test("setup holds: a purchase, an approved review or a released domain unlocks; a declined review stays held", async () => {
+    const db = drizzle(env.DB, { schema });
+    const ids = await seedSetupAccounts("lock", 4, "lock.test");
+    const [declined, approved, buyer, sub] = ids;
+    await db
+        .update(schema.user)
+        .set({ email: `${sub}@a1.lock.test` })
+        .where(eq(schema.user.id, sub));
+    await env.SETUP_HOLDS.put("hold:lock.test", "held");
+    await env.SETUP_HOLDS.put(`decision:${declined}`, "declined");
+    await env.SETUP_HOLDS.put(`decision:${approved}`, "approved");
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: "cs_lock",
+        eventId: "evt_lock",
+        eventType: "checkout.session.completed",
+        userId: buyer,
+        pollenCredited: 5,
+    });
+    await env.SETUP_HOLDS.put(`review:${buyer}`, "pending");
+    const holdOf = async (id: string) => setupHold(env, db, await holdUser(id));
+
+    expect(await holdOf(declined)).toEqual({ review: "declined" });
+    expect(await holdOf(approved)).toBeNull();
+    expect(await holdOf(buyer)).toBeNull();
+    // The purchase also takes the buyer's request off the review queue.
+    expect(await env.SETUP_HOLDS.get(`review:${buyer}`)).toBeNull();
+    // A subdomain is held with its registrable domain.
+    expect(await holdOf(sub)).toEqual({ review: null });
+    // A declined review isn't asked again.
+    expect(await requestSetupReview(env, db, await holdUser(declined))).toEqual(
+        { review: "declined" },
+    );
+
+    // A release outlasts infra-watch writing the hold again.
+    await env.SETUP_HOLDS.put("release:lock.test", "released");
+    await env.SETUP_HOLDS.put("hold:lock.test", "held");
+    expect(await holdOf(sub)).toBeNull();
+});
+
+test("setup holds: only a held account can ask for a review", async () => {
+    const [free] = await seedSetupAccounts("free", 1, "free.test");
+    const token = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId: free,
+    });
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/review",
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(response.status).toBe(409);
+    expect(await env.SETUP_HOLDS.get(`review:${free}`)).toBeNull();
 });

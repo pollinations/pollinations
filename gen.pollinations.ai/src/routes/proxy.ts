@@ -1077,7 +1077,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
                 "",
-                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`microsoft/trellis-2`, `nvidia/asset-harvester`). Separate multiple URLs with `|` or `,`. `hyper3d/rodin-2.5` accepts both images and a text prompt.",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`microsoft/trellis-2`, `nvidia/asset-harvester`, `stability-ai/triposr`). Separate multiple URLs with `|` or `,`. `hyper3d/rodin-2.5` accepts both images and a text prompt.",
                 "",
                 "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
             ].join("\n"),
@@ -1109,6 +1109,41 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", Generate3dRequestQueryParamsSchema),
         ...model3dHandlers,
+    )
+    .post(
+        "/3d",
+        describeRoute({
+            tags: ["🧊 3D"],
+            summary: "Generate 3D Model From Image (JSON)",
+            description:
+                "Submit an image-only 3D generation without a text prompt. Send model and image_urls (or image) in JSON; TripoSR returns a GLB and requires Paid Pollen.",
+            responses: {
+                200: {
+                    description: "Success - Returns a GLB or PLY 3D model",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "model/gltf-binary": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "model/ply": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "query",
+            z.object({ key: z.string().optional(), safe: SafeSchema }).strict(),
+        ),
+        validator("json", Generate3dRequestBodySchema),
+        resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
+        track("generate.image"),
+        every(prepareGenerationRequest, model3dCache),
+        generationAccess,
+        deduplicateGeneration,
+        every(apiKeyBudgetReservation, generateModel3d),
     )
     .post(
         "/3d/:prompt{[\\s\\S]+}",

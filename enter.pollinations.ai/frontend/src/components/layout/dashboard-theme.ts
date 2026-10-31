@@ -19,7 +19,7 @@ import type { ComponentType } from "react";
 
 /**
  * Groups of drawer rows: Pollinations' resources, then your section: what you
- * build (Publish, apps, sandboxes, keys) and your pollen. "account" is your
+ * build (Publish, sandboxes, apps, keys) and your pollen. "account" is your
  * name, the button that closes your section.
  */
 export type DashboardNavGroup = "account" | "build" | "yours" | "resources";
@@ -40,17 +40,17 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "build",
     },
     {
-        id: "my-apps",
-        to: "/my-apps",
-        label: "Apps",
-        icon: AppIcon,
-        group: "build",
-    },
-    {
         id: "sandboxes",
         to: "/sandboxes",
         label: "Sandboxes",
         icon: TerminalIcon,
+        group: "build",
+    },
+    {
+        id: "my-apps",
+        to: "/my-apps",
+        label: "Apps",
+        icon: AppIcon,
         group: "build",
     },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "build" },

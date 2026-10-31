@@ -70,7 +70,7 @@ type DashboardNavItem = {
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
 // Docs), and everything about you as one block at the bottom: what you build
-// (Publish for your agents and models, apps, sandboxes, keys), a gap, your
+// (Publish for your agents and models, sandboxes, apps, keys), a gap, your
 // pollen (Activity, Quests, Pollen with its numbers indented under it), then
 // your name. A thin line opens each part. Signed out, the bottom holds the
 // sign-in buttons.
@@ -233,6 +233,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 <div className="flex min-w-0 flex-1 flex-col lg:ml-68">
                     <MobileMenuButton
                         buttonRef={menuButtonRef}
+                        avatarUrl={githubAvatarUrl}
                         onOpen={() => setIsDrawerOpen(true)}
                     />
                     {/* One status for everything the page waits for, floating at
@@ -433,10 +434,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
     </aside>
 );
 
+// Signed in with a profile picture, the phone menu button shows it, so you
+// see whose dashboard this is; otherwise the menu icon.
 const MobileMenuButton: FC<{
     buttonRef: RefObject<HTMLButtonElement | null>;
+    avatarUrl?: string;
     onOpen: () => void;
-}> = ({ buttonRef, onOpen }) => (
+}> = ({ buttonRef, avatarUrl, onOpen }) => (
     <button
         ref={buttonRef}
         type="button"
@@ -444,7 +448,15 @@ const MobileMenuButton: FC<{
         onClick={onOpen}
         aria-label="Open navigation"
     >
-        <MenuIcon className="h-5 w-5" />
+        {avatarUrl ? (
+            <img
+                src={avatarUrl}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover"
+            />
+        ) : (
+            <MenuIcon className="h-5 w-5" />
+        )}
     </button>
 );
 

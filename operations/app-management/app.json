@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Polli Snap - Text to Image Meme Maker",
+    "url": "https://mhmdrizzzki.github.io/polli-snap",
+    "description": "A fast text-to-image meme generator. Type a prompt and instantly get a generated image with quick meme presets. Built directly on the Pollinations image API (flux). Live public app, no login required.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "mhmdrizzzki",
+    "githubUserId": "82577674",
+    "repositoryUrl": "https://github.com/mhmdrizzzki/polli-snap",
+    "repositoryStars": null,
+    "discordUsername": "(mhmdrizki803) --- ## Pollinations integration (evidence) The app calls the curr",
+    "other": null,
+    "submittedDate": "2026-09-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15110",
+    "approvedDate": "2026-10-31",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/2eb4dfbf-89ed-4955-8aac-1b6ce47b8ebf"
+  },
+  {
     "emoji": "🛠️",
     "name": "Websim",
     "url": "https://websim.pollinations.app",

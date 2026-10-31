@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "rfc",
+                name: "IETF RFCs",
+                description:
+                    "Search IETF RFCs, inspect RFC status and obsolescence metadata, and read canonical specification sections.",
+                url: "https://gen.pollinations.ai/mcp/rfc",
+                pricing: {
+                    description:
+                        "Public IETF Datatracker and RFC Editor lookups. No Pollen charge.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -262,7 +274,31 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test("routes IETF RFCs MCP with a zero balance and no Pollen debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 0 },
+    });
+    const payload = {
+        ...MCP_REQUEST,
+        params: { name: "rfc_metadata", arguments: { rfc: 9110 } },
+    };
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/rfc", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ payload });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "machines", "rfc"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

@@ -51,6 +51,9 @@ const weakPrimary = [
     route("a/model", "deepinfra", 38, 38, { fallback_used: true }),
 ];
 const MIN = 60 * 1000;
+// A card's text as the phone shows it: without the title's colour codes.
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI codes start with ESC
+const plain = (text) => text.replace(/\u001b\[[\d;]*m/g, "");
 
 // --- detection -------------------------------------------------------------
 
@@ -327,7 +330,7 @@ test("an open card: the box, then 'open since', then the AI lines", () => {
     });
     assert.equal(card.color, 0xd85a30);
     assert.equal(card.ping, true);
-    assert.match(card.text, /┌─ DEGRADED: a\/model ─/);
+    assert.match(plain(card.text), /┌─ DEGRADED: a\/model ─/);
     assert.match(card.text, /PRIMARY\s+fireworks 25\/40 \(63%\)/);
     assert.match(card.text, /\*open since <t:3600:R>\*/);
     assert.doesNotMatch(card.text, /START/);
@@ -366,7 +369,7 @@ test("a closed card turns green with how long, what it cost, start and now", () 
     assert.equal(card.color, 0x639922);
     // The mentions of the opening post stay as they were.
     assert.equal(card.ping, true);
-    assert.match(card.text, /┌─ RECOVERED: a\/model ─/);
+    assert.match(plain(card.text), /┌─ RECOVERED: a\/model ─/);
     assert.match(card.text, /DOWN\s+2 h 01 min/);
     assert.match(card.text, /LOST\s+37 requests, 5 callers/);
     assert.match(card.text, /START\s+62\.0% of 40 reqs/);
@@ -375,13 +378,28 @@ test("a closed card turns green with how long, what it cost, start and now", () 
     assert.match(card.text, /Provider fault\./);
 });
 
+test("each AI line keeps the colour its card had when it was written", () => {
+    const done = opened({ closedAt: 181 * MIN, pinged: true });
+    const { text } = renderCard("model:a/model", done, {
+        lines: [
+            { at: 60 * MIN, text: "Primary weak.", color: 0xef9f27 },
+            { at: 90 * MIN, text: "Worse.", color: 0xd85a30 },
+            { at: 181 * MIN, text: "Closed.", color: 0x639922 },
+        ],
+    });
+    assert.match(
+        text,
+        /↳ 🟡 <t:3600:t> Primary weak\.\n↳ 🟠 <t:5400:t> Worse\.\n↳ 🟢 <t:10860:t> Closed\./,
+    );
+});
+
 test("infrastructure cards follow the same life: red open, green closed", () => {
     const gen = { kind: "GEN_DOWN", openedAt: 0, info: { kind: "GEN_DOWN" } };
     const open = renderCard("gen", gen, { now: 0 });
     assert.equal(open.color, 0xe24b4a);
-    assert.match(open.text, /┌─ DOWN: gen Worker ─/);
+    assert.match(plain(open.text), /┌─ DOWN: gen Worker ─/);
     const closed = renderCard("gen", { ...gen, closedAt: 7 * MIN });
-    assert.match(closed.text, /┌─ RECOVERED: gen Worker ─/);
+    assert.match(plain(closed.text), /┌─ RECOVERED: gen Worker ─/);
     assert.match(closed.text, /DOWN\s+7 min/);
 });
 
@@ -397,16 +415,24 @@ test("who an opening card pings", () => {
     assert.equal(ping(host("UPSTREAM_DOWN")), false);
 });
 
-test("the box title carries the status and the full model id", () => {
+test("the box title carries the status and full model id, in the card's colour", () => {
     const longest = "inferenceport-ai/lightning-image-turbo";
-    const { text } = renderCard(`model:${longest}`, opened(), {
+    const { text, color } = renderCard(`model:${longest}`, opened(), {
         now: 60 * MIN,
     });
     const lines = text.split("\n");
-    assert.equal(lines[0], "```");
-    assert.ok(lines[1].startsWith(`┌─ DEGRADED: ${longest} ─`));
+    assert.equal(lines[0], "```ansi");
+    // The side-bar orange, 0xd85a30, as an RGB text colour around the title.
+    assert.equal(color, 0xd85a30);
+    assert.ok(
+        lines[1].startsWith(
+            `┌─ \u001b[38;2;216;90;48mDEGRADED: ${longest}\u001b[0m ─`,
+        ),
+    );
+    // The colour codes take no width: every visible line is as wide.
+    const visible = (l) => [...plain(l)].length;
     const box = lines.filter((l) => /^[│┌└]/.test(l));
-    for (const line of box) assert.equal([...line].length, [...box[0]].length);
+    for (const line of box) assert.equal(visible(line), visible(box[0]));
 });
 
 test("an escalation links to the card and pings", () => {

@@ -808,3 +808,23 @@ test("the pollinations templates come logged in with a key from enter's key API"
         largeID,
     ]);
 });
+
+// A key can only grant account permissions it has, so the login gets `sites`
+// only from a caller that has it.
+test("the sandbox login can publish sites when the caller can", async () => {
+    const e2b = stubE2b();
+    const owner = await createTestApiKey({
+        accountPermissions: ["machines", "keys", "sites"],
+        user: { tierBalance: 10 },
+    });
+
+    await createSandbox(owner.key, { templateID: "pollinations" });
+
+    const { apiKey } = JSON.parse(e2b.files[0].content);
+    expect(JSON.parse(apiKey).body.accountPermissions).toEqual([
+        "profile",
+        "usage",
+        "machines",
+        "sites",
+    ]);
+});

@@ -7,7 +7,6 @@ import {
     BeakerIcon,
     BotIcon,
     CloudUploadIcon,
-    CubeIcon,
     LockIcon,
     McpIcon,
     NewspaperIcon,
@@ -26,10 +25,9 @@ import type { ComponentType } from "react";
  */
 export type DashboardNavGroup = "account" | "yours" | "resources";
 
-// Rows with a `parent` sit indented under its label: Explore for what
-// Pollinations offers, Publish for what you put out.
+// Rows with a `parent` sit indented under its label: Publish for what you
+// put out (your apps, models and agents).
 export const NAV_PARENTS = {
-    explore: { label: "Explore", icon: CubeIcon },
     publish: { label: "Publish", icon: CloudUploadIcon },
 } as const;
 
@@ -107,7 +105,6 @@ export const DASHBOARD_NAV_ITEMS = [
         label: "Models",
         icon: BeakerIcon,
         group: "resources",
-        parent: "explore",
     },
     {
         id: "agents",
@@ -116,7 +113,6 @@ export const DASHBOARD_NAV_ITEMS = [
         label: "Agents",
         icon: BotIcon,
         group: "resources",
-        parent: "explore",
     },
     {
         id: "mcp",
@@ -125,7 +121,6 @@ export const DASHBOARD_NAV_ITEMS = [
         label: "MCP",
         icon: McpIcon,
         group: "resources",
-        parent: "explore",
     },
     {
         id: "sandboxes",
@@ -133,7 +128,6 @@ export const DASHBOARD_NAV_ITEMS = [
         label: "Sandboxes",
         icon: TerminalIcon,
         group: "resources",
-        parent: "explore",
     },
 ] as const satisfies readonly {
     id: string;

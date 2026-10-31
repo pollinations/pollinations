@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "ONCHAIN_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "onchain",
+        name: "Onchain MCP",
+        description:
+            "Balances, transaction status and latest block on EVM chains.",
+        binding: "ONCHAIN_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
             rates: [],
         },
     },

@@ -35,7 +35,7 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "my-models",
         to: "/my-models",
-        label: "Publish",
+        label: "Listings",
         icon: CloudUploadIcon,
         group: "yours",
     },

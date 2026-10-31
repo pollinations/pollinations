@@ -94,34 +94,27 @@ function ProviderProfileField({
 }
 
 const LISTING_TABS = [
-    { value: "agents", label: "Agents" },
-    { value: "models", label: "Models" },
+    { value: "agents", label: "Agents", Icon: BotIcon },
+    { value: "models", label: "Models", Icon: BeakerIcon },
 ] as const;
 
 export function DeploymentsPlaceholder({
-    canPublish = false,
     error,
     onRetry,
 }: {
-    canPublish?: boolean;
     error?: string | null;
     onRetry?: () => void;
 }) {
-    const titles = canPublish ? ["Publisher info", "Listings"] : ["Listings"];
-    if (!error) return <PageLoading titles={titles} />;
+    if (!error) return <PageLoading titles={["Listings"]} />;
     return (
-        <>
-            {titles.map((title) => (
-                <Section key={title} title={title}>
-                    <LoadError
-                        onRetry={onRetry}
-                        paths={["/account/my-models", "/account/agents"]}
-                    >
-                        {error}
-                    </LoadError>
-                </Section>
-            ))}
-        </>
+        <Section title="Listings">
+            <LoadError
+                onRetry={onRetry}
+                paths={["/account/my-models", "/account/agents"]}
+            >
+                {error}
+            </LoadError>
+        </Section>
     );
 }
 
@@ -438,7 +431,6 @@ export function CommunityEndpoints({
     if (isLoading || (error && !hasLoaded)) {
         return (
             <DeploymentsPlaceholder
-                canPublish={canPublish}
                 error={isLoading ? null : error}
                 onRetry={() => {
                     setIsLoading(true);
@@ -450,8 +442,19 @@ export function CommunityEndpoints({
 
     return (
         <>
-            {canPublish && (
-                <Section title="Publisher info">
+            {error && <Alert intent="danger">{error}</Alert>}
+            {/* One card: your publisher details (when you can publish
+                publicly), then agents and models behind tab buttons. */}
+            <Section
+                title="Listings"
+                id="listings"
+                action={
+                    listingTab === "agents"
+                        ? agentEndpoints.length > 0 && agentAction
+                        : modelEndpoints.length > 0 && modelAction
+                }
+            >
+                {canPublish && (
                     <form
                         className="flex flex-col gap-4"
                         onSubmit={(event) => void handleProviderSubmit(event)}
@@ -536,24 +539,13 @@ export function CommunityEndpoints({
                             </div>
                         )}
                     </form>
-                </Section>
-            )}
-            {error && <Alert intent="danger">{error}</Alert>}
-            {/* Agents and models share one card: normal tab buttons switch
-                between them. */}
-            <Section
-                title="Listings"
-                id="listings"
-                action={
-                    listingTab === "agents"
-                        ? agentEndpoints.length > 0 && agentAction
-                        : modelEndpoints.length > 0 && modelAction
-                }
-            >
+                )}
                 <div className="flex flex-wrap gap-1.5">
-                    {LISTING_TABS.map(({ value, label }) => (
+                    {LISTING_TABS.map(({ value, label, Icon }) => (
                         <TabButton
                             key={value}
+                            size="lg"
+                            icon={<Icon />}
                             active={listingTab === value}
                             onClick={() => setListingTab(value)}
                             ariaLabel={label}

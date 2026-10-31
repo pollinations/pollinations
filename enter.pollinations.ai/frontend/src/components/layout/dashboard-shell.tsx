@@ -70,7 +70,7 @@ type DashboardNavItem = {
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
 // Docs), and everything about you as one block at the bottom: what you build
-// (Publish for your agents and models, sandboxes, apps, keys), your pollen
+// (Listings for your agents and models, sandboxes, apps, keys), your pollen
 // (Activity, Quests, Pollen with its numbers indented under it), then your
 // name. A thin line opens each part. Signed out, the bottom holds the sign-in
 // buttons.

@@ -1,0 +1,29 @@
+{
+  "name": "json-schema-mcp",
+  "account_id": "b6ec751c0862027ba269faf7029b2501",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-14",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "routes": [
+    {
+      "pattern": "json-schema-mcp.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "staging": {
+      "name": "json-schema-mcp-staging",
+      // Keep direct staging access alongside the Gen service binding.
+      "workers_dev": true,
+      "routes": [],
+      "observability": { "enabled": true }
+    }
+  }
+}

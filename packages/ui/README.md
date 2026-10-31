@@ -55,7 +55,7 @@ the globals expected by the IIFE bundle, then load `@pollinations/ui`:
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/@pollinations/ui@alpha/styles.css"
+  href="https://cdn.jsdelivr.net/npm/@pollinations/ui@alpha/dist/styles.css"
 />
 <div id="root"></div>
 <script type="module">

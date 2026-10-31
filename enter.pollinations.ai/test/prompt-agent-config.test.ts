@@ -1,4 +1,7 @@
-import { PromptAgentConfigSchema } from "@shared/community-endpoints.ts";
+import {
+    PromptAgentConfigSchema,
+    parseListingPayload,
+} from "@shared/community-endpoints.ts";
 import { AGENT_MCP_SERVER_IDS } from "@shared/registry/mcp.ts";
 import { describe, expect, it } from "vitest";
 import { PromptAgentInputSchema } from "../src/services/prompt-agent.ts";
@@ -35,6 +38,27 @@ describe("prompt-agent config", () => {
                 mcpServers: ["composio"],
             }).success,
         ).toBe(false);
+    });
+
+    it("reads a saved agent that lists Connectors without it", () => {
+        expect(
+            parseListingPayload(
+                "prompt_agent",
+                JSON.stringify({
+                    ...config,
+                    mcpServers: ["computer", "composio", "exa"],
+                }),
+            ),
+        ).toEqual({ ...config, mcpServers: ["computer", "exa"] });
+    });
+
+    it("still rejects unknown MCP servers in a saved agent", () => {
+        expect(
+            parseListingPayload(
+                "prompt_agent",
+                JSON.stringify({ ...config, mcpServers: ["not-a-server"] }),
+            ),
+        ).toBeNull();
     });
 
     it("rejects duplicate built-in MCP servers", () => {

@@ -106,6 +106,28 @@ test("ask sends the key only as a header and parses the answer", async () => {
     assert.ok(!sent.init.body.includes("sk_test"));
 });
 
+test("ask with its own prompt and no specs offers no tools", async () => {
+    let body;
+    const fetchImpl = async (_url, init) => {
+        body = JSON.parse(init.body);
+        return answer({ content: "APPROVE: steady use." });
+    };
+    const line = await ask(
+        "sk_test",
+        {},
+        {},
+        {
+            fetchImpl,
+            system: "Review.",
+            specs: [],
+        },
+    );
+    assert.equal(line, "APPROVE: steady use.");
+    assert.equal(body.messages[0].content, "Review.");
+    assert.equal(body.tools, undefined);
+    assert.equal(body.tool_choice, undefined);
+});
+
 test("ask fails loudly on an error response", async () => {
     const fetchImpl = async () => ({ ok: false, status: 402 });
     await assert.rejects(ask("sk_test", {}, {}, { fetchImpl }), /402/);

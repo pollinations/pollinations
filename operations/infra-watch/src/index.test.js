@@ -68,6 +68,8 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.includes("/infra_watch_review_"))
+        return Response.json({ data: [] });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
@@ -76,9 +78,11 @@ async function fake(input, init = {}) {
         await world.aiGate;
         await sleep(world.aiDelay);
         world.answers++;
-        return Response.json({
-            choices: [{ message: { content: `Line ${world.answers}.` } }],
-        });
+        // A review answers as a verdict; any other alert with a plain line.
+        const { messages } = JSON.parse(init.body);
+        const review = messages[0].content.startsWith("You review");
+        const content = `${review ? "APPROVE: " : ""}Line ${world.answers}.`;
+        return Response.json({ choices: [{ message: { content } }] });
     }
     throw new Error(`unexpected fetch ${url}`);
 }
@@ -315,6 +319,8 @@ it("keeps a sign-up card open while sign-ups can't be read", async () => {
     world.rows = OK;
     world.signups = BURST;
     await stub.check();
+    // No switch: the burst holds its domain at once.
+    expect(await env.SETUP_HOLDS.get("hold:farm.com")).toBe("held");
     world.signups = null;
     await checks(stub, 3);
     expect(world.writes.some((w) => w.color === GREEN)).toBe(false);
@@ -341,11 +347,58 @@ it("posts a sign-up card Discord refused, even after its burst ended", async () 
 
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
     expect(posts).toHaveLength(1);
-    expect(posts[0].text).toContain("FLAGGED: domain farm.com");
+    expect(posts[0].text).toContain("SETUP QUESTS LIMITED: domain farm.com");
     expect(edits("m1").at(-1).text).toContain("ENDED: domain farm.com");
     expect((await stored(stub, "state")).unposted).toEqual({});
 });
 
+it("a review card lists the oldest requests, follows decisions and closes", async () => {
+    const stub = watch();
+    world.rows = OK;
+    const now = Date.now();
+    for (let i = 0; i < 7; i++)
+        await env.SETUP_HOLDS.put(`review:u${i}`, "pending", {
+            metadata: {
+                domain: "farm.com",
+                requestedAt: now + i,
+                createdAt: now,
+                rewards: 1,
+                rewardPollen: 0.25,
+            },
+        });
+    await env.SETUP_HOLDS.put("decision:u6", "declined");
+    await env.SETUP_HOLDS.put("hold:farm.com", "held");
+    await stub.check();
+    await settle(stub);
+
+    const opened = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(opened.text).toContain("REVIEW: domain farm.com");
+    expect(opened.text).toContain("6 accounts");
+    expect(opened.text).not.toContain("decision:u6");
+    // The AI's verdict lands on the card.
+    expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
+
+    // Each decision changes the accounts listed: the old verdict goes, and
+    // the AI looks again, however many rounds it takes.
+    for (let i = 0; i < 4; i++) {
+        await env.SETUP_HOLDS.put(`decision:u${i}`, "approved");
+        await stub.check();
+        await settle(stub);
+        const card = edits("m1").at(-1).text;
+        expect(card).not.toContain(`Line ${i + 1}.`);
+        expect(card).toContain(`APPROVE: Line ${i + 2}.`);
+    }
+    expect(edits("m1").at(-1).text).toContain("'decision:u5' approved");
+
+    for (let i = 4; i < 6; i++)
+        await env.SETUP_HOLDS.put(`decision:u${i}`, "declined");
+    await stub.check();
+    await settle(stub);
+    const last = edits("m1").at(-1);
+    expect(last.color).toBe(GREEN);
+    expect(last.text).toContain("DECIDED: domain farm.com");
+    expect(world.writes.filter((w) => w.method === "POST")).toHaveLength(1);
+});
 it("serves only /health, which reports the last check and never runs one", async () => {
     const get = (path) =>
         exports.default.fetch(`https://infra-watch.test${path}`);
@@ -359,4 +412,34 @@ it("serves only /health, which reports the last check and never runs one", async
     const before = Date.now();
     await env.WATCH.get(env.WATCH.idFromName("main")).check();
     expect(await checkedAt()).toBeGreaterThanOrEqual(before);
+});
+
+it("a review the daily budget skipped is investigated once the budget resets", async () => {
+    const stub = watch();
+    world.rows = OK;
+    await env.SETUP_HOLDS.put("hold:budget.com", "held");
+    await env.SETUP_HOLDS.put("review:b0", "pending", {
+        metadata: {
+            domain: "budget.com",
+            requestedAt: Date.now(),
+            createdAt: Date.now(),
+            rewards: 1,
+            rewardPollen: 0.25,
+        },
+    });
+    const budget = (day) =>
+        runInDurableObject(stub, (_, state) =>
+            state.storage.put("ai", { day, count: DAILY_LIMIT }),
+        );
+    await budget(new Date().toISOString().slice(0, 10));
+    await stub.check();
+    await settle(stub);
+    expect(world.answers).toBe(0);
+    expect(world.writes.some((w) => w.text.includes("APPROVE"))).toBe(false);
+
+    // A new day: the next check asks for the missing verdict.
+    await budget("2000-01-01");
+    await stub.check();
+    await settle(stub);
+    expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
 });

@@ -192,6 +192,11 @@ export const mcpRoutes = new Hono<Env>()
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
+        if (server.agents === false && c.var.auth.agentRun) {
+            throw new HTTPException(403, {
+                message: `Agents can't use ${server.name}`,
+            });
+        }
         // A tool's cost is known only from its receipt, so a tool call needs a
         // spendable balance up front. Initialization and discovery stay free.
         if (

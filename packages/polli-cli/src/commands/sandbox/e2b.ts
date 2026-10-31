@@ -43,18 +43,28 @@ export const createSandbox = (templateID: string, timeout = LEASE_SECONDS) =>
 // Running and paused ones.
 export const listSandboxes = () => gen<Sandbox[]>(`${E2B_PATH}/v2/sandboxes`);
 
-export const getSandbox = (id: string) =>
-    gen<Sandbox>(`${E2B_PATH}/sandboxes/${id}`);
+// E2B's IDs, or Azure's UUIDs. Anything else would reach other API paths when
+// interpolated into a URL.
+export const SANDBOX_ID_PATTERN = /^[a-z0-9-]+$/;
+
+const sandboxPath = (id: string) => {
+    if (!SANDBOX_ID_PATTERN.test(id)) {
+        throw new Error(`Invalid sandbox id "${id}"`);
+    }
+    return `${E2B_PATH}/sandboxes/${id}`;
+};
+
+export const getSandbox = (id: string) => gen<Sandbox>(sandboxPath(id));
 
 // E2B answers 204 with no body.
 export const killSandbox = (id: string) =>
-    genText(`${E2B_PATH}/sandboxes/${id}`, { method: "DELETE" });
+    genText(sandboxPath(id), { method: "DELETE" });
 
 // Resumes a paused sandbox and keeps it running for at least `timeout`
 // seconds, paying in advance for time not yet paid. A refusal reads as Gen's
 // sentence, not its JSON, since ssh shows it on one line.
 export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
-    gen<Connection>(`${E2B_PATH}/sandboxes/${id}/connect`, {
+    gen<Connection>(`${sandboxPath(id)}/connect`, {
         method: "POST",
         body: { timeout },
     }).catch((err) => {
@@ -72,8 +82,8 @@ export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
 // Paused sandboxes keep their files and memory and cost nothing. A pause ends
 // a timeout over 10 minutes.
 export const pauseSandbox = (id: string) =>
-    genText(`${E2B_PATH}/sandboxes/${id}/pause`, { method: "POST" });
+    genText(`${sandboxPath(id)}/pause`, { method: "POST" });
 
 // E2B's system log: sandbox start, and each process started through it.
 export const sandboxLogs = (id: string) =>
-    gen<{ logEntries: LogEntry[] }>(`${E2B_PATH}/sandboxes/${id}/logs`);
+    gen<{ logEntries: LogEntry[] }>(`${sandboxPath(id)}/logs`);

@@ -43,9 +43,15 @@ function extractHostname(url) {
     }
 }
 
+// BYOP pipe rows pair a hostname with the App Key owner's GitHub ID, which is
+// empty for keys without an App Key (named after their hostname).
+const byopId = (hostname, githubUserId) => `${hostname} ${githubUserId}`;
+const byopRowId = (row) => byopId(row.hostname, row.github_user_id);
+
 function loadApps() {
     const catalog = readApps();
     const apps = catalog.map((app) => {
+        const webUrlHostname = extractHostname(app.url);
         // GitHub info is optional — some apps don't have repos
         let owner = null;
         let repo = null;
@@ -61,7 +67,11 @@ function loadApps() {
             catalogApp: app,
             owner,
             repo,
-            webUrlHostname: extractHostname(app.url),
+            webUrlHostname,
+            byopIds: [
+                byopId(webUrlHostname, app.githubUserId),
+                byopId(webUrlHostname, ""),
+            ],
             githubUsername: app.githubUsername,
             githubUserId: app.githubUserId,
             currentStars: app.repositoryStars,
@@ -198,18 +208,14 @@ function fetchTinybirdPipe(pipeName) {
     });
 }
 
-async function fetchTinybirdValues(pipeName, field) {
+async function fetchTinybirdValues(pipeName, keyOf) {
     const rows = (await fetchTinybirdPipe(pipeName))?.data ?? [];
-    return new Set(rows.map((row) => row[field]).filter(Boolean));
+    return new Set(rows.map(keyOf));
 }
 
-async function fetchTinybirdCounts(pipeName, keyField) {
+async function fetchTinybirdCounts(pipeName, keyOf) {
     const rows = (await fetchTinybirdPipe(pipeName))?.data ?? [];
-    return new Map(
-        rows
-            .filter((row) => row[keyField])
-            .map((row) => [String(row[keyField]), row.requests]),
-    );
+    return new Map(rows.map((row) => [keyOf(row), row.requests]));
 }
 
 async function main() {
@@ -236,9 +242,12 @@ async function main() {
             `${colors.cyan}Fetching Tinybird metrics...${colors.reset}`,
         );
         [byopHostnames, requestCounts, byopRequestCounts] = await Promise.all([
-            fetchTinybirdValues("app_byop_hostnames", "hostname"),
-            fetchTinybirdCounts("app_request_counts", "github_user_id"),
-            fetchTinybirdCounts("app_byop_request_counts", "hostname"),
+            fetchTinybirdValues("app_byop_hostnames", byopRowId),
+            fetchTinybirdCounts(
+                "app_request_counts",
+                (row) => row.github_user_id,
+            ),
+            fetchTinybirdCounts("app_byop_request_counts", byopRowId),
         ]);
         console.log(
             `  BYOP hostnames: ${byopHostnames.size}, GitHub users with requests: ${requestCounts.size}, BYOP hostnames with requests: ${byopRequestCounts.size}\n`,
@@ -317,9 +326,9 @@ async function main() {
             await new Promise((r) => setTimeout(r, 100));
         }
 
-        // --- BYOP (match hostname against Tinybird secret key names) ---
+        // --- BYOP (match hostname and owner against Tinybird BYOP apps) ---
         if (hasTinybird && app.webUrlHostname) {
-            const isBYOP = byopHostnames.has(app.webUrlHostname);
+            const isBYOP = app.byopIds.some((id) => byopHostnames.has(id));
             const newBYOP = isBYOP;
             if (newBYOP !== app.currentBYOP) {
                 if (verbose) {
@@ -336,11 +345,14 @@ async function main() {
         // BYOP apps: count ALL requests through the app's API key (by hostname)
         // Non-BYOP apps: count requests by the developer's GitHub user ID
         if (hasTinybird) {
-            const isBYOP = byopHostnames.has(app.webUrlHostname);
+            const isBYOP = app.byopIds.some((id) => byopHostnames.has(id));
             let count = 0;
             let label = "";
             if (isBYOP && app.webUrlHostname) {
-                count = byopRequestCounts.get(app.webUrlHostname) || 0;
+                count = app.byopIds.reduce(
+                    (sum, id) => sum + (byopRequestCounts.get(id) || 0),
+                    0,
+                );
                 label = app.webUrlHostname;
             } else if (app.githubUserId) {
                 count = requestCounts.get(app.githubUserId) || 0;

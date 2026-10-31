@@ -1342,15 +1342,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-coder-next",
         "parasail/bf16",
     ),
+    // DeepInfra downloads image URLs itself and rejects any it cannot reach as
+    // a 400. Inline them so the provider only receives image bytes.
     "qwen/qwen3-vl-30b-a3b-instruct": () =>
         createDeepInfraModelConfig({
             model: "Qwen/Qwen3-VL-30B-A3B-Instruct",
             directEndpoint:
                 "https://api.deepinfra.com/v1/openai/chat/completions",
+            requiresBase64ImageUrls: true,
         }),
     "qwen3-vl-30b-openrouter": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3-vl-30b-a3b-instruct",
+            requiresBase64ImageUrls: true,
             defaultOptions: {
                 provider: {
                     only: ["deepinfra/fp8"],

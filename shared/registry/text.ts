@@ -4040,6 +4040,7 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: false,
         contextLength: 131072,
+        maxReferenceImages: 10,
         isSpecialized: false,
     },
     "qwen/qwen3-vl-235b-a22b-thinking": {

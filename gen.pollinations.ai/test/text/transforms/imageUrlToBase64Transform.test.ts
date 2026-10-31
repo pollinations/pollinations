@@ -195,6 +195,8 @@ describe("imageUrlToBase64Transform", () => {
     it.each([
         "moonshotai/kimi-k2.6",
         "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+        "qwen/qwen3-vl-30b-a3b-instruct",
+        "qwen/qwen3-vl-30b-a3b-instruct:openrouter:deepinfra",
     ] as const)(
         "converts as many image URLs as %s advertises, and no more",
         async (model) => {

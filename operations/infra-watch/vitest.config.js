@@ -11,6 +11,8 @@ export default defineConfig({
                 bindings: {
                     DISCORD_WEBHOOK_URL:
                         "https://discord.test/api/webhooks/1/x",
+                    COMMUNITY_WEBHOOK_URL:
+                        "https://discord.test/api/webhooks/2/y",
                     POLLINATIONS_API_KEY: "test",
                     TINYBIRD_TOKEN: "test",
                 },

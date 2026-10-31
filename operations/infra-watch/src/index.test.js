@@ -52,8 +52,13 @@ async function fake(input, init = {}) {
     if (url.pathname === "/") return new Response("ok");
     if (url.pathname === "/models/status")
         return Response.json({ data: world.rows });
+    // The full catalog, or the default listing without filtered models.
     if (url.pathname === "/models")
-        return Response.json([{ name: "a/model" }, { name: "b/model" }]);
+        return Response.json(
+            url.searchParams.has("reliability")
+                ? world.catalog
+                : (world.shown ?? world.catalog),
+        );
     if (url.pathname.endsWith("/infra_watch_callers.json")) {
         await sleep(world.tinybirdDelay);
         return Response.json({
@@ -100,6 +105,7 @@ beforeEach(() => {
         rows: [],
         legacy: [],
         legacyReads: 0,
+        catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
         aiGate: null,
         aiDelay: 0,
@@ -526,4 +532,89 @@ it("reads the legacy bridges once an hour, from 5 minutes past", async () => {
     world.legacy = fresh;
     expect(await read(at(13, 6))).toEqual(fresh);
     expect(world.legacyReads).toBe(3);
+});
+
+it("tells the community channel once a week about a model leaning on its fallback", async () => {
+    const stub = watch();
+    const model = "community/o/leaning";
+    world.catalog = [
+        { name: "a/model" },
+        { name: model, community: true },
+        { name: "community/o/fallback", community: true },
+        { name: "community/o/agent", community: true, agent: true },
+    ];
+    // Each leans on its fallback: 30 of 40 successes rescued.
+    world.rows = [model, "community/o/agent"].flatMap((m) => [
+        { ...row(40, 40, m), fallback_rescues: 30 },
+        {
+            ...row(30, 30, m),
+            is_rollup: 0,
+            fallback_used: true,
+            model_used: "community/o/fallback",
+            fallback_rescues: 30,
+        },
+    ]);
+    const told = () =>
+        world.writes.filter(
+            (w) =>
+                w.ok && w.path === "/api/webhooks/2/y" && w.method === "POST",
+        );
+    await checks(stub, 2);
+    // One notice, for the listed model only, checked once an hour.
+    expect(told()).toHaveLength(1);
+    expect(told()[0].text).toContain("FALLBACK: o/leaning");
+    expect(told()[0].text).toContain("VIA     o/fallback (30)");
+
+    const back = (ms) =>
+        runInDurableObject(stub, async (_, state) => {
+            const saved = await state.storage.get("fallback");
+            saved.checkedAt -= ms;
+            saved.told[`${model} community/o/fallback`] -= ms;
+            await state.storage.put("fallback", saved);
+        });
+    // An hour later it is still leaning, but was told this week.
+    await back(60 * 60_000);
+    await stub.check();
+    expect(told()).toHaveLength(1);
+    // A week on, it is told again.
+    await back(7 * 24 * 60 * 60_000);
+    await stub.check();
+    expect(told()).toHaveLength(2);
+    // None reached the infra-watch channel.
+    const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
+    expect(infra.some((w) => w.text.includes("FALLBACK"))).toBe(false);
+});
+
+it("tells the community channel once a day what the listing filter changed", async () => {
+    const stub = watch();
+    const model = (name, success_rate) => ({
+        name,
+        community: true,
+        health: { success_rate },
+    });
+    world.catalog = [model("community/o/a", 40), model("community/o/b", 95)];
+    world.shown = [model("community/o/b", 95)];
+    const told = () =>
+        world.writes.filter((w) => w.ok && w.path === "/api/webhooks/2/y");
+    await checks(stub, 2);
+    // The first day only keeps the filtered set.
+    expect(told()).toHaveLength(0);
+    expect((await stored(stub, "listings")).filtered).toEqual([
+        "community/o/a",
+    ]);
+
+    // a recovers and b gets filtered: told once, the next day.
+    world.catalog = [model("community/o/a", 90), model("community/o/b", 30)];
+    world.shown = [model("community/o/a", 90)];
+    await stub.check();
+    expect(told()).toHaveLength(0);
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("listings");
+        await state.storage.put("listings", { ...saved, day: "2000-01-01" });
+    });
+    await checks(stub, 2);
+    expect(told()).toHaveLength(1);
+    expect(told()[0].text).toContain(
+        "**Newly filtered**\n`o/b` 30%\n**Back in listings**\n`o/a` 90%",
+    );
 });

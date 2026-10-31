@@ -57,6 +57,8 @@ export async function captureProductEvent(
         amount_usd?: number;
         // github, google or discord on sign-in, signup and link events.
         provider?: string;
+        // signup_completed only: the private email domain (signup-domains).
+        email_domain?: string;
     } = {},
 ): Promise<void> {
     try {

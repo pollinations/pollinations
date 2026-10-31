@@ -68,6 +68,10 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.endsWith("/infra_watch_signups.json"))
+        return world.signups
+            ? Response.json({ data: world.signups })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname === "/v1/chat/completions") {
         await world.aiGate;
         await sleep(world.aiDelay);
@@ -82,6 +86,7 @@ async function fake(input, init = {}) {
 beforeEach(() => {
     world = {
         rows: [],
+        signups: [],
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
@@ -301,6 +306,44 @@ it("gives up on a closed card's last edit after a day", async () => {
     await stub.check();
     expect(world.writes.length).toBe(tries);
     expect(await stored(stub, "lines:m1")).toBeUndefined();
+});
+
+const BURST = [{ domain: "farm.com", accounts: 31, since: 1_793_404_800 }];
+
+it("keeps a sign-up card open while sign-ups can't be read", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.signups = BURST;
+    await stub.check();
+    world.signups = null;
+    await checks(stub, 3);
+    expect(world.writes.some((w) => w.color === GREEN)).toBe(false);
+    world.signups = [];
+    await stub.check();
+    await settle(stub);
+
+    const card = edits("m1");
+    expect(card.at(-1).color).toBe(GREEN);
+    expect(card.at(-1).text).toContain("ENDED: domain farm.com");
+});
+
+it("posts a sign-up card Discord refused, even after its burst ended", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.signups = BURST;
+    world.fails = (w) => w.method === "POST";
+    await stub.check();
+    world.signups = [];
+    world.fails = () => false;
+    await stub.check();
+    await stub.check();
+    await settle(stub);
+
+    const posts = world.writes.filter((w) => w.ok && w.method === "POST");
+    expect(posts).toHaveLength(1);
+    expect(posts[0].text).toContain("FLAGGED: domain farm.com");
+    expect(edits("m1").at(-1).text).toContain("ENDED: domain farm.com");
+    expect((await stored(stub, "state")).unposted).toEqual({});
 });
 
 it("serves only /health, which reports the last check and never runs one", async () => {

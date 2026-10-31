@@ -78,6 +78,7 @@ export function conditions({
     official,
     hosts = { public: true, upstream: true },
     analyticsDown,
+    signups = [],
 }) {
     // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
     // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
@@ -109,6 +110,10 @@ export function conditions({
     if (baseline10 >= PLATFORM_MIN_BASELINE && now10 < baseline10 / 2) {
         found.platform = { kind: "PLATFORM_DROP", now10, baseline10 };
     }
+    // Private email domains with bulk onboarding sign-ups, from Enter: open
+    // while over the limit in the last 24 hours.
+    for (const signup of signups)
+        found[`signup:${signup.domain}`] = { kind: "SIGNUP_BURST", ...signup };
     return found;
 }
 
@@ -299,6 +304,7 @@ const LABEL = {
     DEGRADED: "DEGRADED",
     PRIMARY_WEAK: "PRIMARY WEAK",
     WATCH_DOWN: "DOWN",
+    SIGNUP_BURST: "FLAGGED",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -309,7 +315,11 @@ const SUBJECT = {
     watch: "infra-watch",
 };
 export const subjectOf = (key) =>
-    key.startsWith("model:") ? key.slice(6) : SUBJECT[key];
+    key.startsWith("model:")
+        ? key.slice(6)
+        : key.startsWith("signup:")
+          ? `domain ${key.slice(7)}`
+          : SUBJECT[key];
 
 // Embed side-bar colour by severity: red down, orange degraded, yellow weak
 // primary, green closed.
@@ -323,6 +333,7 @@ export const COLOR = {
     DEGRADED: 0xd85a30,
     PRIMARY_WEAK: 0xef9f27,
     WATCH_DOWN: RED,
+    SIGNUP_BURST: 0xef9f27,
 };
 const GREEN = 0x639922;
 
@@ -356,7 +367,8 @@ export const waiting = (record, now) =>
 // hostname neither (users are fine); every other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
-    if (kind === "PRIMARY_WEAK" || kind === "UPSTREAM_DOWN") return false;
+    if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
+        return false;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
     return true;
@@ -420,6 +432,14 @@ function openRows(incident, now) {
             ["REQS", `${info.now10} last 10m`],
             ["", `baseline ${Math.round(info.baseline10)}`],
         ];
+    if (kind === "SIGNUP_BURST") {
+        const since = new Date(info.since * 1000).toISOString();
+        return [
+            ["ACCOUNTS", `${info.accounts} in 24h`],
+            ["SINCE", `${since.slice(0, 16).replace("T", " ")} UTC`],
+            ["REWARDS", "still paid, review the domain"],
+        ];
+    }
     const rows = [
         ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
         ["CALLERS", callersText(info.callers)],
@@ -440,7 +460,12 @@ function openRows(incident, now) {
 
 // Rows of a closed card: how long, what it cost, how it started, now.
 function closedRows(key, incident) {
-    const rows = [["DOWN", duration(incident.closedAt - incident.openedAt)]];
+    const rows = [
+        [
+            key.startsWith("signup:") ? "LASTED" : "DOWN",
+            duration(incident.closedAt - incident.openedAt),
+        ],
+    ];
     if (!key.startsWith("model:")) return rows;
     const { start, lost, latest } = incident;
     rows.push([
@@ -472,7 +497,8 @@ export function renderCard(
     { lines = [], checking = false, now } = {},
 ) {
     const closed = incident.closedAt != null;
-    const title = `${closed ? "RECOVERED" : LABEL[incident.kind]}: ${subjectOf(key)}`;
+    const ended = key.startsWith("signup:") ? "ENDED" : "RECOVERED";
+    const title = `${closed ? ended : LABEL[incident.kind]}: ${subjectOf(key)}`;
     const color = cardColor(incident);
     const parts = [
         panel(

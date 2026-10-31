@@ -470,6 +470,42 @@ test("an AI line pending for too long counts as abandoned", () => {
     assert.equal(waiting({ pending: false, pendingAt: 0 }, 1), false);
 });
 
+test("a sign-up burst opens a quiet card while the domain is over the limit, and ends", () => {
+    const signup = { domain: "farm.com", accounts: 31, since: 1_793_404_800 };
+    const found = conditions({ ...quiet(busy), signups: [signup] });
+    assert.deepEqual(found, {
+        "signup:farm.com": { kind: "SIGNUP_BURST", ...signup },
+    });
+    let r = step({}, found, 0);
+    assert.deepEqual(
+        r.actions.map((a) => a.type),
+        ["open"],
+    );
+    r = step(r.state, found, MIN);
+    assert.deepEqual(
+        r.actions.map((a) => a.type),
+        ["update"],
+    );
+    r = step(r.state, {}, 2 * MIN);
+    assert.deepEqual(
+        r.actions.map((a) => a.type),
+        ["close"],
+    );
+
+    const incident = { ...r.actions[0].incident, closedAt: undefined };
+    const open = renderCard("signup:farm.com", incident, { now: 2 * MIN });
+    assert.equal(open.ping, false);
+    assert.equal(open.color, 0xef9f27);
+    assert.match(open.text, /FLAGGED: domain farm\.com/);
+    assert.match(open.text, /31 in 24h/);
+    assert.match(open.text, /2026-10-31 00:00 UTC/);
+    assert.match(open.text, /still paid, review the domain/);
+    const ended = renderCard("signup:farm.com", r.actions[0].incident);
+    assert.match(ended.text, /ENDED: domain farm\.com/);
+    assert.match(ended.text, /LASTED +2 min/);
+    assert.equal(ended.color, 0x639922);
+});
+
 test("heartbeat stays quiet while infra-watch checks", () => {
     const r = heartbeat({}, 1000 * MIN, 1002 * MIN);
     assert.equal(r.post, undefined);

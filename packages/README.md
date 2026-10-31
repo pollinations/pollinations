@@ -1,50 +1,33 @@
 # Packages
 
-This folder is the home for the small, reusable pieces of Pollinations that live outside the main services.
+Reusable clients, UI components and shared service code. Each package can be
+understood independently of the rest of the repository.
 
-Everything here is meant to be picked up and used on its own. You shouldn't need to understand the rest of the repo to make sense of any single package.
+## Public developer tools
 
-## What's inside
+| Package | Purpose |
+| --- | --- |
+| [sdk/](./sdk) | JavaScript/TypeScript API client, device login and React BYOP hooks. |
+| [ui/](./ui) | UI components, account menu and drop-in sign-in button; SDK-backed components use `@pollinations/sdk/react`. |
+| [polli-cli/](./polli-cli) | The `polli` command for generation, authentication, account management and Sites deployment. |
+| [llm-pollinations/](./llm-pollinations) | Python provider connecting Pollinations models to Simon Willison's `llm` CLI and library. |
 
-### [sdk/](./sdk) — the official SDK
+External apps use the published packages. Start with the [SDK](./sdk) for code,
+or the [CLI](./polli-cli) for terminal use.
 
-A friendly toolkit for developers who want to add Pollinations to a website or app. Instead of figuring out the API by hand, you install the SDK and call simple functions like "generate an image" or "generate text." It works in browsers, in Node.js, and ships React hooks for the common cases.
+## Internal shared packages
 
-**Who it's for:** developers building apps, sites, or prototypes that need AI-generated media or text.
+| Package | Purpose |
+| --- | --- |
+| [auth/](./auth) | Private server/session and React helpers for Pollinations' internal dashboards. |
+| [mcp/](./mcp) | Private tool handlers for the hosted [Pollinations MCP Worker](../apps/mcp); clients connect to the hosted service. |
 
-### [mcp/](./mcp) — the MCP server
+## OAuth protocol examples
 
-A bridge that lets AI assistants (like Claude, Cursor, and other tools that speak the Model Context Protocol) use Pollinations directly. Once it's installed, the assistant can generate images, audio, video, or text on your behalf without you ever leaving the chat.
+For integrations without the SDK, Enter keeps two dependency-free examples:
 
-**Who it's for:** anyone using an MCP-compatible AI assistant who wants it to be able to create media.
+- [Browser-only OAuth + PKCE](../enter.pollinations.ai/examples/oauth-client-demo): direct token exchange and generation, with no backend.
+- [Connect an existing user database](../enter.pollinations.ai/examples/oauth-account-linking-demo): optional server-side account linking and encrypted delegated-key storage.
 
-### [polli-cli/](./polli-cli) — the `polli` command-line tool
-
-A terminal app for using Pollinations without writing any code. Type a prompt, get an image, audio clip, video, or text reply. Useful for quick experiments, scripting, demos, and for AI agents that prefer to work through the shell.
-
-**Who it's for:** people comfortable in a terminal — humans testing things quickly, and AI agents driving workflows.
-
-### [llm-pollinations/](./llm-pollinations) — plugin for Simon Willison's `llm`
-
-A native provider that loads Pollinations text models into the [`llm`](https://llm.datasette.io/) CLI and Python library as `pollinations/<model-id>`.
-
-**Who it's for:** developers already using `llm` who want Pollinations as another provider.
-
-### [n8n/](./n8n) — n8n tunnel setup
-
-A small set of helper scripts for exposing a self-hosted [n8n](https://n8n.io) automation instance through a Cloudflare tunnel. Not a Pollinations library — it's infrastructure used by the team to run automation workflows that talk to Pollinations.
-
-**Who it's for:** the Pollinations team and self-hosters running n8n alongside Pollinations.
-
-## How they relate
-
-- **SDK** and **CLI** are two different doorways into the same Pollinations API — one for code, one for terminals.
-- **MCP** is a third doorway, designed for AI assistants rather than people.
-- **llm-pollinations** connects the same API to Simon Willison's `llm` ecosystem.
-- **n8n** is operational tooling, not something end users install.
-
-If you're new and just want to try Pollinations, the fastest paths are the [CLI](./polli-cli) (no code) or the [SDK](./sdk) (a few lines of code).
-
-## Contributing
-
-Each package has its own README with setup, usage, and contribution notes. Start there. For the bigger picture of how Pollinations is built and how submissions/reviews work, see the repo-level [AGENTS.md](../AGENTS.md).
+See the [BYOP guide](../BRING_YOUR_OWN_POLLEN.md) for the protocol and SDK/UI
+integration options.

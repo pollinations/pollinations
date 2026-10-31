@@ -80,7 +80,9 @@ export const Generate3dRequestBodySchema = z
                         (url) =>
                             url.startsWith("http://") ||
                             url.startsWith("https://") ||
-                            /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(url),
+                            /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+                                url,
+                            ),
                     );
                 },
                 { message: "Invalid image URL." },
@@ -97,13 +99,17 @@ export const Generate3dRequestBodySchema = z
         // image so the existing cache, dispatcher, and providers share one path.
         image_urls: z
             .array(
-                z.string().refine(
-                    (url) =>
-                        url.startsWith("http://") ||
-                        url.startsWith("https://") ||
-                        /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(url),
-                    { message: "Invalid image URL or base64 data URI." },
-                ),
+                z
+                    .string()
+                    .refine(
+                        (url) =>
+                            url.startsWith("http://") ||
+                            url.startsWith("https://") ||
+                            /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+                                url,
+                            ),
+                        { message: "Invalid image URL or base64 data URI." },
+                    ),
             )
             .min(1)
             .optional(),
@@ -121,9 +127,12 @@ export const Generate3dRequestBodySchema = z
         }),
     })
     .strict()
-    .refine((body) => body.image === undefined || body.image_urls === undefined, {
-        message: "Pass either image or image_urls, not both.",
-    })
+    .refine(
+        (body) => body.image === undefined || body.image_urls === undefined,
+        {
+            message: "Pass either image or image_urls, not both.",
+        },
+    )
     .transform(({ image_urls, ...body }) => ({
         ...body,
         ...(image_urls === undefined ? {} : { image: image_urls }),

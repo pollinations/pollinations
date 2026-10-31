@@ -206,6 +206,10 @@ export const CHAT_PARAMETERS = {
     // InferencePort Lightning routers: /v1/models lists temperature, stop and
     // max_tokens as the sampling controls, plus tools and JSON mode.
     inferenceportLightning: [...TOOL_CHAT, "temperature", "stop"],
+    // InferencePort Glimpse and Solar models list the same sampling controls.
+    inferenceportSampled: [...TOOL_CHAT, "temperature", "stop"],
+    // GLM 5.3 Prime lists only max_tokens as a sampling control.
+    inferenceportMaxTokens: [...TOOL_CHAT],
     deepinfraReasoning: [...EXTENDED_CHAT, "reasoning_effort", "n"],
     openRouterGemma: [
         ...EXTENDED_CHAT,

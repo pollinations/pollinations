@@ -185,6 +185,7 @@ jobs:
         working-directory: enter.pollinations.ai
         run: npm run build:frontend
 
+      # Reuses packages/ui/dist built by Economics pretest:public above.
       - name: Test UI package exports
         run: node --test packages/ui/scripts/package-exports.test.mjs
 

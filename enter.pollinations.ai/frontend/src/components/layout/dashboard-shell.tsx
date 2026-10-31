@@ -70,10 +70,10 @@ type DashboardNavItem = {
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
 // Docs), and everything about you as one block at the bottom: what you build
-// (Publish for your agents and models, sandboxes, apps, keys), a gap, your
-// pollen (Activity, Quests, Pollen with its numbers indented under it), then
-// your name. A thin line opens each part. Signed out, the bottom holds the
-// sign-in buttons.
+// (Publish for your agents and models, sandboxes, apps, keys), your pollen
+// (Activity, Quests, Pollen with its numbers indented under it), then your
+// name. A thin line opens each part. Signed out, the bottom holds the sign-in
+// buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
@@ -386,38 +386,22 @@ const DashboardRail: FC<DashboardRailProps> = ({
             )}
         >
             {navItems.some((item) => item.group === "yours") && (
-                // Space, not a line, splits what you build from your pollen.
-                <nav aria-label="Yours" className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-0.5">
-                        {navItems
-                            .filter((item) => item.group === "build")
-                            .map((item) => (
+                <nav aria-label="Yours" className="flex flex-col gap-0.5">
+                    {navItems
+                        .filter((item) => item.group === "yours")
+                        .map((item) => (
+                            <Fragment key={item.id}>
                                 <NavRow
-                                    key={item.id}
                                     item={item}
                                     active={activePage === item.id}
                                     questStatus={questStatus}
                                     onNavigate={onNavigate}
                                 />
-                            ))}
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        {navItems
-                            .filter((item) => item.group === "yours")
-                            .map((item) => (
-                                <Fragment key={item.id}>
-                                    <NavRow
-                                        item={item}
-                                        active={activePage === item.id}
-                                        questStatus={questStatus}
-                                        onNavigate={onNavigate}
-                                    />
-                                    {item.id === "pollen" && walletArea && (
-                                        <SubLines>{walletArea}</SubLines>
-                                    )}
-                                </Fragment>
-                            ))}
-                    </div>
+                                {item.id === "pollen" && walletArea && (
+                                    <SubLines>{walletArea}</SubLines>
+                                )}
+                            </Fragment>
+                        ))}
                 </nav>
             )}
             {accountName && (

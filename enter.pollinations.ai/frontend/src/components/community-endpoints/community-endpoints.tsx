@@ -456,38 +456,36 @@ export function CommunityEndpoints({
             {error && <Alert intent="danger">{error}</Alert>}
             {/* One card: agents, models and apps behind tab buttons. Agents
                 and models also show your publisher details (when you can
-                publish publicly), then the tab's note. */}
-            <Section
-                title="Listings"
-                id="listings"
-                action={
-                    listingTab === "apps"
+                publish publicly), then the tab's note. The open tab's
+                Create sits on the tab row. */}
+            <Section title="Listings" id="listings">
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                        {LISTING_TABS.map(({ value, label }) => (
+                            <TabButton
+                                key={value}
+                                active={listingTab === value}
+                                onClick={() =>
+                                    void navigate({
+                                        search: {
+                                            tab:
+                                                value === "agents"
+                                                    ? undefined
+                                                    : value,
+                                        },
+                                    })
+                                }
+                                ariaLabel={label}
+                            >
+                                {label}
+                            </TabButton>
+                        ))}
+                    </div>
+                    {listingTab === "apps"
                         ? appsTab.action
                         : listingTab === "agents"
                           ? agentEndpoints.length > 0 && agentAction
-                          : modelEndpoints.length > 0 && modelAction
-                }
-            >
-                <div className="flex flex-wrap gap-1.5">
-                    {LISTING_TABS.map(({ value, label }) => (
-                        <TabButton
-                            key={value}
-                            active={listingTab === value}
-                            onClick={() =>
-                                void navigate({
-                                    search: {
-                                        tab:
-                                            value === "agents"
-                                                ? undefined
-                                                : value,
-                                    },
-                                })
-                            }
-                            ariaLabel={label}
-                        >
-                            {label}
-                        </TabButton>
-                    ))}
+                          : modelEndpoints.length > 0 && modelAction}
                 </div>
                 {listingTab === "apps" ? (
                     appsTab.content

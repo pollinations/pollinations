@@ -319,6 +319,8 @@ it("keeps a sign-up card open while sign-ups can't be read", async () => {
     world.rows = OK;
     world.signups = BURST;
     await stub.check();
+    // No switch: the burst holds its domain at once.
+    expect(await env.SETUP_HOLDS.get("hold:farm.com")).toBe("held");
     world.signups = null;
     await checks(stub, 3);
     expect(world.writes.some((w) => w.color === GREEN)).toBe(false);
@@ -345,7 +347,7 @@ it("posts a sign-up card Discord refused, even after its burst ended", async () 
 
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
     expect(posts).toHaveLength(1);
-    expect(posts[0].text).toContain("FLAGGED: domain farm.com");
+    expect(posts[0].text).toContain("SETUP QUESTS LIMITED: domain farm.com");
     expect(edits("m1").at(-1).text).toContain("ENDED: domain farm.com");
     expect((await stored(stub, "state")).unposted).toEqual({});
 });

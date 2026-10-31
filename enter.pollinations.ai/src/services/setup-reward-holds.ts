@@ -7,8 +7,7 @@ import { registrableDomain } from "./signup-domains.ts";
  * Setup reward holds live in the SETUP_HOLDS KV store, shared with
  * infra-watch. Each key has one writer, so an automatic write never undoes a
  * maintainer's:
- *   hold:<domain>      "held": infra-watch, on a sign-up burst while holds
- *                      are on
+ *   hold:<domain>      "held": infra-watch, on a sign-up burst
  *   release:<domain>   "released": a maintainer, which ends the hold
  *   review:<userId>    "pending", with the account's evidence as metadata:
  *                      here, when a held account asks

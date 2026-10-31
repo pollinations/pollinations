@@ -356,7 +356,7 @@ const LABEL = {
     DEGRADED: "DEGRADED",
     PRIMARY_WEAK: "PRIMARY WEAK",
     WATCH_DOWN: "DOWN",
-    SIGNUP_BURST: "FLAGGED",
+    SIGNUP_BURST: "SETUP QUESTS LIMITED",
     REVIEW: "REVIEW",
 };
 const SUBJECT = {
@@ -507,11 +507,10 @@ function openRows(incident, now) {
             ["ACCOUNTS", `${info.accounts} in 24h`],
             ["SINCE", utc(info.since * 1000)],
             [
-                "REWARDS",
-                {
-                    held: "Setup quests held",
-                    released: "released by a maintainer",
-                }[info.hold] ?? "still paid, review the domain",
+                "SETUP",
+                info.hold === "released"
+                    ? "released by a maintainer"
+                    : "held until a purchase or review",
             ],
         ];
     }
@@ -575,7 +574,10 @@ export function renderCard(
     const ended =
         { SIGNUP_BURST: "ENDED", REVIEW: "DECIDED" }[incident.kind] ??
         "RECOVERED";
-    const title = `${closed ? ended : LABEL[incident.kind]}: ${subjectOf(key)}`;
+    // A released domain's burst card says so in its title too.
+    const label =
+        incident.info.hold === "released" ? "RELEASED" : LABEL[incident.kind];
+    const title = `${closed ? ended : label}: ${subjectOf(key)}`;
     const color = cardColor(incident);
     const parts = [
         panel(

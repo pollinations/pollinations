@@ -359,8 +359,8 @@ export class Watch extends DurableObject {
         };
     }
 
-    // Sign-up bursts, each domain held while holds are on; null if they
-    // couldn't be read.
+    // Sign-up bursts, each domain held at once; null if they couldn't be
+    // read.
     async signups() {
         try {
             const rows = await pipe(
@@ -368,9 +368,7 @@ export class Watch extends DurableObject {
                 {},
                 { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
             );
-            return this.env.SETUP_REWARD_HOLDS === "on"
-                ? await holdDomains(this.env.SETUP_HOLDS, rows)
-                : rows;
+            return await holdDomains(this.env.SETUP_HOLDS, rows);
         } catch (error) {
             console.error(`signups: ${error.message}`);
             return null;

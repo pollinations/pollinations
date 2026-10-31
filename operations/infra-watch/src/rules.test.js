@@ -497,17 +497,17 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
     const open = renderCard("signup:farm.com", incident, { now: 2 * MIN });
     assert.equal(open.ping, false);
     assert.equal(open.color, 0xe24b4a);
-    assert.match(open.text, /FLAGGED: domain farm\.com/);
+    assert.match(open.text, /SETUP QUESTS LIMITED: domain farm\.com/);
     assert.match(open.text, /31 in 24h/);
     assert.match(open.text, /2026-10-31 00:00 UTC/);
-    assert.match(open.text, /still paid, review the domain/);
+    assert.match(open.text, /held until a purchase or review/);
     const ended = renderCard("signup:farm.com", r.actions[0].incident);
     assert.match(ended.text, /ENDED: domain farm\.com/);
     assert.match(ended.text, /LASTED +2 min/);
     assert.equal(ended.color, 0x639922);
 });
 
-test("a held burst says so and shows how to release the domain", () => {
+test("a burst card says the domain is held and shows how to release it", () => {
     const card = (hold) =>
         renderCard(
             "signup:farm.com",
@@ -524,14 +524,15 @@ test("a held burst says so and shows how to release the domain", () => {
             },
             { now: 0 },
         ).text;
-    assert.match(card("held"), /Setup quests held/);
+    assert.match(card("held"), /SETUP QUESTS LIMITED: domain farm\.com/);
+    assert.match(card("held"), /held until a purchase or review/);
     assert.match(
         card("held"),
         /kv key put --binding SETUP_HOLDS --env production --remote 'release:farm\.com' released/,
     );
+    assert.match(card("released"), /RELEASED: domain farm\.com/);
     assert.match(card("released"), /released by a maintainer/);
     assert.doesNotMatch(card("released"), /kv key put/);
-    assert.match(card(undefined), /still paid, review the domain/);
 });
 
 const asking = (n) =>

@@ -25,7 +25,14 @@ const submitResponse = () =>
     Response.json({ job_id: "job_123", status: "pending" }, { status: 202 });
 
 const jobResponse = (
-    status: "pending" | "queued" | "running" | "processing" | "completed" | "failed" | "refunded",
+    status:
+        | "pending"
+        | "queued"
+        | "running"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "refunded",
     data?: Record<string, unknown>,
 ) => Response.json({ job_id: "job_123", status, ...data });
 
@@ -54,13 +61,16 @@ describe("runInferenceport", () => {
     it("accepts queued and running states before completion", async () => {
         vi.useFakeTimers();
         try {
-            const fetchSpy = vi.spyOn(globalThis, "fetch")
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
                 .mockResolvedValueOnce(submitResponse())
                 .mockResolvedValueOnce(jobResponse("queued"))
                 .mockResolvedValueOnce(jobResponse("running"))
-                .mockResolvedValueOnce(jobResponse("completed", {
-                    data: [{ model_glb_b64_bytes: "Zm9v" }],
-                }));
+                .mockResolvedValueOnce(
+                    jobResponse("completed", {
+                        data: [{ model_glb_b64_bytes: "Zm9v" }],
+                    }),
+                );
             const job = runInferenceport({
                 model: "tripoSR",
                 imageUrls: ["https://example.com/a.png"],
@@ -74,15 +84,20 @@ describe("runInferenceport", () => {
     });
 
     it("rejects refunded jobs without treating them as generated output", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch")
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
             .mockResolvedValueOnce(submitResponse())
-            .mockResolvedValueOnce(jobResponse("refunded", {
-                error: "private-provider-payload",
-            }));
-        await expect(runInferenceport({
-            model: "tripoSR",
-            imageUrls: ["https://example.com/a.png"],
-        })).rejects.toMatchObject({
+            .mockResolvedValueOnce(
+                jobResponse("refunded", {
+                    error: "private-provider-payload",
+                }),
+            );
+        await expect(
+            runInferenceport({
+                model: "tripoSR",
+                imageUrls: ["https://example.com/a.png"],
+            }),
+        ).rejects.toMatchObject({
             status: 502,
             message: "InferencePort generation was refunded",
         });

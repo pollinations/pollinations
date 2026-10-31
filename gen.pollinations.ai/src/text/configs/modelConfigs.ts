@@ -1286,6 +1286,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
         }),
+    "accounts/fireworks/models/minimax-m3p1-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m3p1-flash",
+        }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>

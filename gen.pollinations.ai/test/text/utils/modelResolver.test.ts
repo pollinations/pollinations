@@ -1150,6 +1150,21 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes MiniMax M3.1 Flash directly to Fireworks", () => {
+        const result = resolveModelConfig(messages, {
+            model: "minimax/minimax-m3.1-flash",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/minimax-m3p1-flash",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes DeepSeek V4.1 Flash 1017 directly to Fireworks with a DeepInfra fallback", () => {
         const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash-1017",

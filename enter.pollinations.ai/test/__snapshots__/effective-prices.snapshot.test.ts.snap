@@ -2400,6 +2400,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "minimax/minimax-m3.1-flash": {
+    "cost": {
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000015,
+    },
+  },
   "minimax/minimax-m3:deepinfra": {
     "cost": {
       "completionTextTokens": 0.0000011,

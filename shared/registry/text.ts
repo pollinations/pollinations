@@ -3404,6 +3404,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
+    "minimax/minimax-m3.1-flash": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "MiniMax",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: false,
+        // Fireworks standard serverless rates (2026-10-23).
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.015),
+            completionTextTokens: perMillion(0.6),
+        },
+        title: "MiniMax M3.1 Flash",
+        description:
+            "Multimodal agent model with a 1M-token context for tool use and coding",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meta/muse-glimmer-30b": {
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: ["muse-glimmer"],

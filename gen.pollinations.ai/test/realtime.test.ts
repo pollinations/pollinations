@@ -697,27 +697,20 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
     expect(telemetry.totalPrice).toBeCloseTo(expectedPrice, 12);
 });
 
-test("accepts publishable keys through the query string for thin clients", async () => {
+test("refuses publishable keys, which only identify an app", async () => {
     const { key } = await createTestApiKey({
-        name: "paid-publishable-realtime-key",
+        name: "publishable-realtime-key",
         type: "publishable",
-        pollenBudget: 10,
         user: { packBalance: 10 },
     });
-    const upstream = mockRealtimeProvider();
 
     const { response, ctx } = await fetchWorkerWithContext(
         `/v1/realtime?model=gpt-realtime-2&key=${encodeURIComponent(key)}`,
         { headers: { Upgrade: "websocket" } },
     );
 
-    expect(response.status).toBe(101);
-    // One fetch for the model-stats balance check + one upstream WS connect.
-    expect(upstream.request.url).toContain("azure.com/openai/v1/realtime");
-    response.webSocket?.accept();
-    upstream.server.accept();
-    response.webSocket?.close();
-    upstream.server.close();
+    expect(response.status).toBe(401);
+    expect(await response.text()).toContain("only identify your app");
     await waitOnExecutionContext(ctx);
 });
 
@@ -1113,10 +1106,9 @@ test("enforces paid-only and model permissions for Scribe Realtime", async () =>
     );
 });
 
-test("accepts a publishable key without forwarding it to ElevenLabs", async () => {
+test("does not forward a query-string key to ElevenLabs", async () => {
     const { key } = await createTestApiKey({
-        name: "scribe-realtime-publishable-key",
-        type: "publishable",
+        name: "scribe-realtime-query-key",
         user: { packBalance: 1 },
     });
     const upstream = mockRealtimeProvider();

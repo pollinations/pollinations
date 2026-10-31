@@ -10,7 +10,6 @@ import type {
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
 import { logger } from "@/middleware/logger.ts";
-import { frontendKeyBilling } from "@/middleware/rate-limit-durable.ts";
 import { generationExecutorRoutes } from "@/routes/generation-executor.ts";
 
 async function drainResponse(response: Response): Promise<void> {
@@ -72,7 +71,6 @@ function generationExecutor(
             });
             await next();
         })
-        .use("*", frontendKeyBilling)
         .use("*", balance)
         .use("*", async (c, next) => {
             c.var.balance.balanceCheckResult = job.balanceCheckResult;

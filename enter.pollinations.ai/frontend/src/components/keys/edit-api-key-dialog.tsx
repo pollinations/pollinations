@@ -6,7 +6,7 @@ import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { initialKeyEditValues, keyEditUpdates } from "./key-edit-values.ts";
 import { useKeyPermissions } from "./key-permissions.tsx";
-import { isAppKey, isPublishableKey } from "./key-type.ts";
+import { isAppKey } from "./key-type.ts";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -38,7 +38,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const [name, setName] = useState(initialValues.name ?? "");
     const [error, setError] = useState<string | null>(null);
 
-    const isPublishable = isPublishableKey(apiKey);
     const appKey = isAppKey(apiKey);
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
@@ -56,7 +55,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         try {
             const updates = keyEditUpdates(initialValues, {
                 name,
-                ...(isPublishable
+                ...(appKey
                     ? {
                           redirectUris: cleanRedirectUris(redirectUris),
                           earningsEnabled,
@@ -96,7 +95,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 mode="edit"
                 accessContext={accessContext}
                 app={appKey}
-                publishable={isPublishable}
                 name={name}
                 onNameChange={setName}
                 permissions={keyPermissions}
@@ -106,7 +104,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 onEarningsEnabledChange={setEarningsEnabled}
                 existingKey={{
                     prefix: apiKey.start ?? "",
-                    value: isPublishable ? plaintextKey : undefined,
+                    value: appKey ? plaintextKey : undefined,
                 }}
                 error={error}
                 isSubmitting={isSubmitting}

@@ -1,12 +1,11 @@
 ## 🔐 Authentication
 
-Pollinations recognises two prefixes. Use the right *kind* of `pk_` for the surface you're building.
+Pollinations recognises two prefixes. Only `sk_` keys authenticate requests; a `pk_` key only identifies your app.
 
 | Key type | Prefix | Where it goes | What it can do |
 |---|---|---|---|
 | Secret key | `sk_` | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). | Secret keys have configurable model permissions, account permissions, and budgets. |
-| App key (BYOP) | `pk_` with redirect URIs | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user secret key (`sk_`). Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). This is the supported client path. |
-| Raw publishable key | `pk_` with no app / OAuth binding | Legacy only | Existing integrations only. Rate-limited to 1 pollen per IP per hour. **Do not mint new raw `pk_` keys, and do not embed them in new browser code.** |
+| App key (BYOP) | `pk_` | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user secret key (`sk_`). Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). A `pk_` sent as a key gets `401`. |
 
 Authenticate generation requests with a secret key:
 
@@ -247,7 +246,7 @@ Each upload gets its own unique id. Re-uploading the same bytes yields a new URL
 
 ## 💡 Tips
 
-- **Do not put raw `pk_` keys in browsers.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`. Raw `pk_` keys are legacy and rate-limited (1 pollen/IP/hour).
+- **`pk_` keys don't authenticate requests.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`.
 - **One key per app.** Child keys have independent budgets and permissions. You can audit and revoke them without touching production.
 - **Retry the same request after a timeout.** Keep the endpoint, body, query parameters, and seed unchanged. Your retry waits for the generation already in progress or receives the completed cached result instead of starting another generation.
 - **Watch `429` and `503`.** A `Retry-After` header tells you how long to back off. `502` indicates an upstream provider error, which is usually transient.

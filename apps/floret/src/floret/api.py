@@ -353,7 +353,7 @@ async def _sse_events(
 def _bearer_credential(http_request: Request) -> str | None:
     """Return the Authorization bearer as an opaque credential.
 
-    Accepts gateway `ag_` run tokens and direct `sk_`/`pk_` keys. Gen validates
+    Accepts gateway `ag_` run tokens and direct `sk_` keys. Gen validates
     the credential; Floret must not pre-judge the prefix.
     """
     header = http_request.headers.get("Authorization", "")

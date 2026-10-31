@@ -140,6 +140,11 @@ const HOSTS = { gen: true, public: true, upstream: true };
 // status data or the platform. It opens once confirmed, updates on every
 // check that still finds it, and closes once clean; a closed incident is
 // never touched again. Returns what happened to each, and the next state.
+// A model's statuses from mild to bad: a closed card's title names the worst
+// one its incident reached.
+const SEVERITY = ["PRIMARY_WEAK", "DEGRADED"];
+const worse = (a, b) => (SEVERITY.indexOf(b) > SEVERITY.indexOf(a) ? b : a);
+
 export function step(state, found, now, recent = []) {
     // With gen down, nothing else can be judged, not even a single hostname.
     // With analytics down, only the hostname checks still have data.
@@ -162,6 +167,7 @@ export function step(state, found, now, recent = []) {
             if (streak < (CONFIRMED.has(key) ? CONFIRM_CHECKS : 1)) continue;
             open[key] = {
                 kind: info.kind,
+                worst: info.kind,
                 openedAt: now,
                 again: closed[key] ?? null,
                 start: info,
@@ -182,9 +188,11 @@ export function step(state, found, now, recent = []) {
                               : 1,
                   };
         const moved = pending && pending.count >= CONFIRM_CHECKS;
+        const kind = moved ? info.kind : incident.kind;
         open[key] = {
             ...incident,
-            kind: moved ? info.kind : incident.kind,
+            kind,
+            worst: worse(incident.worst ?? incident.kind, kind),
             pending: moved ? null : pending,
             info,
         };
@@ -367,17 +375,17 @@ const SUBJECT = {
 };
 // Sign-up and review cards are about an email domain.
 const DOMAIN_KEY = /^(signup|review):/;
-export const subjectOf = (key) =>
+const subjectOf = (key) =>
     key.startsWith("model:")
         ? key.slice(6)
         : DOMAIN_KEY.test(key)
           ? `domain ${key.replace(DOMAIN_KEY, "")}`
           : SUBJECT[key];
 
-// Embed side-bar colour by severity: red down, orange degraded, yellow weak
-// primary, green closed.
+// An open card's colour by severity: red down, orange degraded, amber weak
+// primary. A closed card's colour is set by cardColor.
 const RED = 0xe24b4a;
-export const COLOR = {
+const COLOR = {
     GEN_DOWN: RED,
     PUBLIC_DOWN: RED,
     UPSTREAM_DOWN: RED,
@@ -391,14 +399,34 @@ export const COLOR = {
     REVIEW: 0xef9f27,
 };
 const GREEN = 0x639922;
+const GREY = 0x888780;
 
-// A card's colour: its status while open, green once closed.
-export const cardColor = (incident) =>
+// An AI line's colour: its card's status while open, green for the closing
+// line, so the last circle marks the end.
+export const lineColor = (incident) =>
     incident.closedAt != null ? GREEN : COLOR[incident.kind];
 
-// Each AI line's badge: the card's colour when the line was written, so the
-// lines show how the incident moved. Emoji circles, since the lines sit
-// outside the box, where Discord shows local times but no coloured text.
+// What a closed outage cost callers: green when no request failed, orange
+// under half, red from half, grey when Tinybird couldn't say. An outage with
+// no request counts (not a model) keeps its status colour.
+function impactColor(key, incident) {
+    if (!key.startsWith("model:")) return COLOR[incident.kind];
+    const { lost } = incident;
+    if (!lost) return GREY;
+    if (!lost.failures) return GREEN;
+    return lost.failures / lost.requests < 0.5 ? COLOR.DEGRADED : RED;
+}
+
+// A card's colour: its status while open; once closed, an outage's impact,
+// and green for a domain card.
+function cardColor(key, incident) {
+    if (incident.closedAt == null) return COLOR[incident.kind];
+    return DOMAIN_KEY.test(key) ? GREEN : impactColor(key, incident);
+}
+
+// Each AI line's circle, in its colour (lineColor), so the lines show how
+// the incident moved. Emoji, since the lines sit outside the box, where
+// Discord shows local times but no coloured text.
 const BADGE = {
     [RED]: "🔴",
     [COLOR.DEGRADED]: "🟠",
@@ -445,6 +473,11 @@ const callersText = (callers) =>
     callers
         ? `${callers.failing_callers} of ${callers.callers} failing`
         : "unknown";
+// How a model incident started, on its card open (once updated) and closed.
+const startRow = (start) => [
+    "START",
+    `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
+];
 
 // Rows of an open card: what is true now, plus the frozen start once the
 // card has been updated, so the history stays on the card.
@@ -517,11 +550,7 @@ function openRows(incident, now) {
         ["CALLERS", callersText(info.callers)],
         ...routeRows(info.routes),
     ];
-    if (now > incident.openedAt)
-        rows.push([
-            "START",
-            `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
-        ]);
+    if (now > incident.openedAt) rows.push(startRow(start));
     if (incident.again)
         rows.push([
             "AGAIN",
@@ -538,13 +567,7 @@ function closedRows(key, incident) {
         return [["LASTED", duration(incident.closedAt - incident.openedAt)]];
     if (!key.startsWith("model:")) return [];
     const { start, latest } = incident;
-    const rows = [
-        [
-            "START",
-            `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
-        ],
-        ...routeRows(start.routes),
-    ];
+    const rows = [startRow(start), ...routeRows(start.routes)];
     if (latest)
         rows.push([
             "NOW",
@@ -553,23 +576,21 @@ function closedRows(key, incident) {
     return rows;
 }
 
+// A share as a whole percentage; a share under 1% doesn't read as 0%.
+const percent = (x) => (x < 0.01 ? "<1%" : `${Math.round(x * 100)}%`);
+
 // A closed outage card's last line, in bigger letters: how long it lasted
-// and what it cost. A model's circle is the harm to callers: none of its
-// requests failed, under half, or half and more. Other outages have no
-// request counts. Domain cards have no summary.
+// and, for a model, what it cost callers. The card's colour already says how
+// bad it was. Domain cards have no summary.
 function summary(key, incident) {
     if (DOMAIN_KEY.test(key)) return null;
-    const took = duration(incident.closedAt - incident.openedAt);
-    if (!key.startsWith("model:"))
-        return `### ${BADGE[COLOR[incident.kind]]} ${took} ${LABEL[incident.kind].toLowerCase()}`;
+    const took = `### ⏱️ ${duration(incident.closedAt - incident.openedAt)}`;
+    if (!key.startsWith("model:")) return took;
     const { lost } = incident;
-    if (!lost) return `### ⚪ ${took} · impact unknown`;
-    if (!lost.failures) return `### 🟢 ${took} on fallback · no users affected`;
-    const share = lost.failures / lost.requests;
-    const hit = `${lost.failing_callers} of ${lost.callers} users hit · ${lost.failures} of ${lost.requests} requests failed (${pct(share)})`;
-    return share < 0.5
-        ? `### 🟠 ${took} · ${hit}`
-        : `### 🔴 ${took} down · ${hit}`;
+    if (!lost) return `${took} · impact unknown`;
+    const { requests, failures, callers, failing_callers } = lost;
+    const share = failures ? ` (${percent(failures / requests)})` : "";
+    return `${took} · 👥 ${failing_callers}/${callers} users hit · 📉 ${failures}/${requests} requests failed${share}`;
 }
 
 // The incident's card, in any state: the box, then while open "open since",
@@ -582,14 +603,17 @@ export function renderCard(
     { lines = [], checking = false, now } = {},
 ) {
     const closed = incident.closedAt != null;
-    const ended =
-        { SIGNUP_BURST: "ENDED", REVIEW: "DECIDED" }[incident.kind] ??
-        "RECOVERED";
     // A released domain's burst card says so in its title too.
     const label =
         incident.info.hold === "released" ? "RELEASED" : LABEL[incident.kind];
-    const title = `${closed ? ended : label}: ${subjectOf(key)}`;
-    const color = cardColor(incident);
+    // Closed, a domain card says how it ended; an outage keeps the worst
+    // status it reached.
+    const ended = { SIGNUP_BURST: "ENDED", REVIEW: "DECIDED" }[incident.kind];
+    const status = closed
+        ? (ended ?? LABEL[incident.worst ?? incident.kind])
+        : label;
+    const title = `${status}: ${subjectOf(key)}`;
+    const color = cardColor(key, incident);
     const parts = [
         panel(
             title,
@@ -637,7 +661,7 @@ export const STALE_MS = 10 * 60 * 1000;
 
 // One heartbeat run. The watcher being down is an incident with one card,
 // like any other: posted with a ping when checks stop, left alone while they
-// stay stopped, edited green when they resume. `checkedAt` is infra-watch's
+// stay stopped, closed when they resume. `checkedAt` is infra-watch's
 // last completed check, or null if /health didn't answer. `state.incident`
 // is the open incident with its card's message id. Returns the card to post
 // or the edit to make, and the state to keep once Discord has it.

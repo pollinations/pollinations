@@ -2,7 +2,7 @@
 // 5 minutes (.github/workflows/monitor-infra-watch-heartbeat.yml): it reads
 // infra-watch's last completed check from /health and, through the same
 // webhook, posts one card in the infra-watch channel when it is 10+ minutes
-// old, then edits that card green when checks resume. The open card lives in
+// old, then closes that card when checks resume. The open card lives in
 // a small state file the workflow caches.
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";

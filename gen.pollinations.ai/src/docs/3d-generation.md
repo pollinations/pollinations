@@ -24,7 +24,7 @@ viewers (e.g. SuperSplat, Three.js with Gaussian PLY loader).
 
 `stability-ai/triposr` (alias `tripoSR`) produces a downloadable GLB from one
 reference image, with no text prompt. It requires Paid Pollen and is priced
-at **0.10 Pollen per generation** (InferencePort upstream list cost: $0.07).
+at **0.07 Pollen per generation** (matching InferencePort upstream list cost, with no markup).
 
 ```bash
 curl -X POST 'https://gen.pollinations.ai/3d' \

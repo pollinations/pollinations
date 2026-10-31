@@ -352,6 +352,7 @@ const LABEL = {
     PLATFORM_DROP: "DEGRADED",
     DEGRADED: "DEGRADED",
     PRIMARY_WEAK: "PRIMARY WEAK",
+    WATCH_DOWN: "DOWN",
     SIGNUP_BURST: "FLAGGED",
     REVIEW: "REVIEW",
 };
@@ -361,6 +362,7 @@ const SUBJECT = {
     upstream: "gen.myceli.ai",
     analytics: "model status data",
     platform: "platform-wide",
+    watch: "infra-watch",
 };
 // Sign-up and review cards are about an email domain.
 const DOMAIN_KEY = /^(signup|review):/;
@@ -382,6 +384,7 @@ export const COLOR = {
     PLATFORM_DROP: RED,
     DEGRADED: 0xd85a30,
     PRIMARY_WEAK: 0xef9f27,
+    WATCH_DOWN: RED,
     SIGNUP_BURST: 0xef9f27,
     REVIEW: 0xef9f27,
 };
@@ -456,6 +459,16 @@ function openRows(incident, now) {
         return [
             ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
             ["", "model alerts paused"],
+        ];
+    if (kind === "WATCH_DOWN")
+        return [
+            [
+                "WHY",
+                info.reachable
+                    ? "no completed check for 10+ min"
+                    : "/health unreachable",
+            ],
+            ["", "model and outage alerts paused"],
         ];
     if (kind === "PLATFORM_DROP")
         return [
@@ -574,31 +587,33 @@ export const escalation = (key, incident, link) => ({
 // heartbeat.mjs (GitHub Actions). A last completed check this old means the
 // watcher is down.
 export const STALE_MS = 10 * 60 * 1000;
-const REMIND_MS = 60 * 60 * 1000;
 
-// One heartbeat run: what to post, and the state for the next run.
-// `checkedAt` is infra-watch's last completed check, or null if /health
-// didn't answer. The first alert pings; reminders come hourly, quietly.
+// One heartbeat run. The watcher being down is an incident with one card,
+// like any other: posted with a ping when checks stop, left alone while they
+// stay stopped, edited green when they resume. `checkedAt` is infra-watch's
+// last completed check, or null if /health didn't answer. `state.incident`
+// is the open incident with its card's message id. Returns the card to post
+// or the edit to make, and the state to keep once Discord has it.
 export function heartbeat(state, checkedAt, now) {
-    const age = checkedAt == null ? null : now - checkedAt;
-    if (age != null && age < STALE_MS) {
-        if (!state.down) return { post: null, state };
-        const post = { text: "`infra-watch` is checking again", ping: false };
-        return { post: { ...post, color: GREEN }, state: {} };
+    const fresh = checkedAt != null && now - checkedAt < STALE_MS;
+    const { incident } = state;
+    if (!incident) {
+        if (fresh) return { state };
+        const opened = {
+            kind: "WATCH_DOWN",
+            // Down since its last completed check, when known.
+            openedAt: checkedAt ?? now,
+            info: { reachable: checkedAt != null },
+        };
+        return {
+            post: renderCard("watch", opened),
+            state: { incident: opened },
+        };
     }
-    if (state.down && now - state.alertedAt < REMIND_MS)
-        return { post: null, state };
-    const last =
-        age == null
-            ? "unknown: /health unreachable"
-            : `check ${Math.round(age / 60_000)} min ago`;
-    const text = panel("DOWN: infra-watch", [
-        ["LAST", last],
-        ["WHY", "no completed check for 10+ min"],
-        ["", "model and outage alerts paused"],
-    ]);
+    if (!fresh) return { state };
+    const closed = { ...incident, closedAt: checkedAt };
     return {
-        post: { text, ping: !state.down, color: RED },
-        state: { down: true, alertedAt: now },
+        edit: { id: incident.messageId, card: renderCard("watch", closed) },
+        state: {},
     };
 }

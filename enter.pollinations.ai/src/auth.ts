@@ -33,6 +33,7 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { bindSetupRewardGithub } from "./services/setup-reward-holds.ts";
 import { removeUserSites } from "./services/sites.ts";
 import {
     captureProductEvent,
@@ -352,6 +353,18 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                                     : undefined,
                             })
                             .where(eq(userTable.id, account.userId));
+                        // The first account a GitHub account links to owns its
+                        // setup rewards; the quest check backfills a miss.
+                        await bindSetupRewardGithub(
+                            env.DB,
+                            githubId,
+                            account.userId,
+                        ).catch((error) =>
+                            console.error(
+                                `Failed to bind GitHub ${githubId} for setup rewards`,
+                                error,
+                            ),
+                        );
                     },
                 },
             },

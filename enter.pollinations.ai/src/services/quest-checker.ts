@@ -14,6 +14,7 @@ import {
     toReward,
 } from "./quests/types.ts";
 import {
+    bindSetupRewardGithub,
     type FlaggedDomain,
     recordSetupRewardSignup,
     reportFlaggedDomain,
@@ -81,6 +82,19 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
+    // A GitHub account earns setup rewards for the first account it was
+    // linked to only, so a new account can't earn them again with it.
+    if (
+        user.githubId !== null &&
+        proposals.some(({ quest }) => quest.category === "setup") &&
+        (await bindSetupRewardGithub(env.DB, user.githubId, user.id)) !==
+            user.id
+    ) {
+        log.info("QUEST_CHECK_GITHUB_ALREADY_REWARDED: userId={userId}", {
+            userId: user.id,
+        });
+        proposals = proposals.filter(({ quest }) => quest.category !== "setup");
+    }
     let setupSignupFailed = false;
     let flagged: FlaggedDomain | null = null;
     const setupQuestIds = await listSetupQuestIds(ctx);

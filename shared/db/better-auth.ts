@@ -11,7 +11,6 @@ import {
   integer,
   real,
   index,
-  primaryKey,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
@@ -528,14 +527,13 @@ export const setupRewardSignup = sqliteTable("setup_reward_signup", {
 
 // Private email domains that passed 30 accounts in 24 hours. While holds are
 // on, their accounts can't claim setup rewards until verified or allowed.
-// GitHub accounts bound to the setup reward they verified, one per quest.
-// Kept when accounts are deleted, so a GitHub account unlocks each setup
-// reward once while every reward keeps its original idempotency key.
-export const setupRewardGithubClaim = sqliteTable("setup_reward_github_claim", {
-  githubId: integer("github_id").notNull(),
-  questId: text("quest_id").notNull(),
-  rewardId: text("reward_id").notNull(),
-}, (table) => [primaryKey({ columns: [table.githubId, table.questId] })]);
+// The first Pollinations account each GitHub account was linked to. Kept when
+// accounts are deleted: a GitHub account verifies and earns setup rewards for
+// that one account only.
+export const setupRewardGithub = sqliteTable("setup_reward_github", {
+  githubId: integer("github_id").primaryKey(),
+  userId: text("user_id").notNull(),
+});
 
 export const flaggedEmailDomain = sqliteTable("flagged_email_domain", {
   domain: text("domain").primaryKey(),

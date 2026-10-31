@@ -20,14 +20,12 @@ CREATE TABLE `flagged_email_domain` (
     `allowed_at` integer
 );
 
--- GitHub accounts bound to the setup reward they verified, one per quest.
--- Kept when accounts are deleted, so a GitHub account unlocks each setup
--- reward once while every reward keeps its original idempotency key.
-CREATE TABLE `setup_reward_github_claim` (
-    `github_id` integer NOT NULL,
-    `quest_id` text NOT NULL,
-    `reward_id` text NOT NULL,
-    PRIMARY KEY (`github_id`, `quest_id`)
+-- The first Pollinations account each GitHub account was linked to. Kept when
+-- accounts are deleted: a GitHub account verifies and earns setup rewards for
+-- that one account only.
+CREATE TABLE `setup_reward_github` (
+    `github_id` integer PRIMARY KEY NOT NULL,
+    `user_id` text NOT NULL
 );
 
 -- When the linked GitHub account was created.

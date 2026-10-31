@@ -203,6 +203,27 @@ export async function recordSetupRewardSignup(
     return flagged?.results[0] ?? null;
 }
 
+/**
+ * Binds a GitHub account to the first Pollinations account it was linked to
+ * and returns that account's id. A GitHub account verifies and earns setup
+ * rewards for that account only, even after it is deleted.
+ */
+export async function bindSetupRewardGithub(
+    d1: D1Database,
+    githubId: number,
+    userId: string,
+): Promise<string> {
+    const row = await d1
+        .prepare(
+            `INSERT INTO setup_reward_github (github_id, user_id) VALUES (?1, ?2)
+            ON CONFLICT (github_id) DO UPDATE SET github_id = excluded.github_id
+            RETURNING user_id`,
+        )
+        .bind(githubId, userId)
+        .first<{ user_id: string }>();
+    return row?.user_id ?? userId;
+}
+
 /** Whether the account's setup rewards are held right now. */
 export async function isSetupRewardHeld(
     env: Env["Bindings"],

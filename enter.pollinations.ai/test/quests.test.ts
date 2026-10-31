@@ -2944,7 +2944,7 @@ test("setup rewards: returning accounts don't count as new sign-ups", async () =
     expect(await tierBalanceOf(newcomer)).toBeCloseTo(0.25);
 });
 
-test("setup rewards: one GitHub account unlocks each setup reward once, even across deleted accounts", async () => {
+test("setup rewards: a GitHub account verifies and earns for its first account only", async () => {
     const db = drizzle(env.DB, { schema });
     const ids = await seedSetupAccounts("gh", 32, "gh.test");
     for (const id of ids.slice(0, 31)) await earnFirstKey(HOLDS_ON, id);
@@ -2960,21 +2960,26 @@ test("setup rewards: one GitHub account unlocks each setup reward once, even acr
             })
             .where(eq(schema.user.id, userId));
 
+    // The first account's next quest check binds the GitHub account to it.
     await linkGitHub(first);
+    await checkQuestsForUser(HOLDS_ON, first, [
+        completedQuestGroup("later_setup"),
+    ]);
     expect(await claimSetupReward(first, "first_api_key")).toBe(true);
-    // The reward keeps its Google key; the GitHub binding is its own row.
     expect((await questReward(first, "first_api_key")).idempotencyKey).toBe(
         `quest:first_api_key:google:google-${first}`,
     );
-    expect(await db.select().from(schema.setupRewardGithubClaim)).toMatchObject(
-        [{ githubId, questId: "first_api_key" }],
-    );
 
-    // The first account is deleted; its reward stays in the ledger.
+    // After it is deleted, the same GitHub account neither verifies nor
+    // earns setup rewards for a new account.
     await db.delete(schema.user).where(eq(schema.user.id, first));
     await earnFirstKey(HOLDS_ON, second);
     await linkGitHub(second);
     expect(await claimSetupReward(second, "first_api_key")).toBe(false);
+    await checkQuestsForUser(HOLDS_ON, second, [
+        completedQuestGroup("later_setup"),
+    ]);
+    await expect(questReward(second, "later_setup")).rejects.toThrow();
     expect(await tierBalanceOf(second)).toBe(0);
 });
 

@@ -4,7 +4,7 @@ import type * as schema from "../db/better-auth.ts";
 import {
     flaggedEmailDomain,
     rewards,
-    setupRewardGithubClaim,
+    setupRewardGithub,
     stripeCheckoutCredits,
     user as userTable,
 } from "../db/better-auth.ts";
@@ -74,15 +74,10 @@ type AuthDb = DrizzleD1Database<typeof schema>;
 
 /**
  * True while the account's email domain, or a domain it is a subdomain of, is
- * flagged and not allowed, and the account isn't verified: no purchase and no
- * linked GitHub account at least 30 days old. With `rewardId`, GitHub verifies
- * only the reward that GitHub id is bound to, so one GitHub account unlocks
- * each setup reward once, even across deleted accounts.
+ * flagged and not allowed, and the account isn't verified: no purchase, and no
+ * GitHub account at least 30 days old that was first linked to this account.
  */
-export const setupRewardHeld = (
-    userId: string,
-    rewardId?: string,
-) => sql`EXISTS (
+export const setupRewardHeld = (userId: string) => sql`EXISTS (
     SELECT 1 FROM ${userTable} u, ${flaggedEmailDomain} f
     WHERE u.id = ${userId}
         AND f.allowed_at IS NULL
@@ -93,14 +88,10 @@ export const setupRewardHeld = (
         AND (
             u.github_created_at IS NULL
             OR u.github_created_at > unixepoch() - 30 * 24 * 60 * 60
-            ${
-                rewardId
-                    ? sql`OR NOT EXISTS (
-                SELECT 1 FROM ${setupRewardGithubClaim} g
-                WHERE g.github_id = u.github_id AND g.reward_id = ${rewardId}
-            )`
-                    : sql``
-            }
+            OR EXISTS (
+                SELECT 1 FROM ${setupRewardGithub} g
+                WHERE g.github_id = u.github_id AND g.user_id <> u.id
+            )
         )
         AND NOT EXISTS (
             SELECT 1 FROM ${stripeCheckoutCredits} c WHERE c.user_id = u.id
@@ -197,50 +188,28 @@ export async function claimReward(
         row.balanceBucket === "tier" ? sql`tier_balance` : sql`pack_balance`;
     const claimedAt = new Date();
 
-    const holdable = row.questId !== null && setupQuestIds?.has(row.questId);
-    const claim = db
-        .update(rewards)
-        .set({ claimedAt })
-        .where(
-            and(
-                eq(rewards.id, rewardId),
-                eq(rewards.userId, userId),
-                isNull(rewards.claimedAt),
-                holdable
-                    ? sql`NOT ${setupRewardHeld(userId, rewardId)}`
-                    : undefined,
+    const [, updateResult] = await db.batch([
+        db
+            .update(rewards)
+            .set({ claimedAt })
+            .where(
+                and(
+                    eq(rewards.id, rewardId),
+                    eq(rewards.userId, userId),
+                    isNull(rewards.claimedAt),
+                    row.questId !== null && setupQuestIds?.has(row.questId)
+                        ? sql`NOT ${setupRewardHeld(userId)}`
+                        : undefined,
+                ),
             ),
-        );
-    const credit = db
-        .update(userTable)
-        .set({
-            [`${row.balanceBucket}Balance`]: sql`ROUND(COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}, ${POLLEN_BILLING_PRECISION})`,
-        })
-        .where(sql`${userTable.id} = ${userId} AND changes() = 1`)
-        .returning({ newBalance: bucketColumn });
-    // A setup reward first binds the account's GitHub id to this reward, once
-    // per GitHub id and quest; the hold accepts GitHub only for its own reward.
-    const [account] = holdable
-        ? await db
-              .select({ githubId: userTable.githubId })
-              .from(userTable)
-              .where(eq(userTable.id, userId))
-        : [];
-    const results = account?.githubId
-        ? await db.batch([
-              db
-                  .insert(setupRewardGithubClaim)
-                  .values({
-                      githubId: account.githubId,
-                      questId: row.questId as string,
-                      rewardId,
-                  })
-                  .onConflictDoNothing(),
-              claim,
-              credit,
-          ])
-        : await db.batch([claim, credit]);
-    const updateResult = results[results.length - 1];
+        db
+            .update(userTable)
+            .set({
+                [`${row.balanceBucket}Balance`]: sql`ROUND(COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}, ${POLLEN_BILLING_PRECISION})`,
+            })
+            .where(sql`${userTable.id} = ${userId} AND changes() = 1`)
+            .returning({ newBalance: bucketColumn }),
+    ]);
 
     const updatedRows =
         (updateResult as Array<{ newBalance: number | null }>) ?? [];

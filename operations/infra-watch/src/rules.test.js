@@ -481,38 +481,47 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
 });
 
 test("heartbeat stays quiet while infra-watch checks", () => {
-    const r = heartbeat({}, 1000 * MIN, 1000 * MIN + 2 * MIN);
-    assert.equal(r.post, null);
+    const r = heartbeat({}, 1000 * MIN, 1002 * MIN);
+    assert.equal(r.post, undefined);
+    assert.equal(r.edit, undefined);
     assert.deepEqual(r.state, {});
 });
 
-test("heartbeat alerts once with a ping when checks stop, then hourly", () => {
+test("heartbeat opens one card with a ping when checks stop, then waits", () => {
     const last = 1000 * MIN;
-    let r = heartbeat({}, last, last + STALE_MS);
+    const r = heartbeat({}, last, last + STALE_MS);
     assert.equal(r.post.ping, true);
     assert.equal(r.post.color, 0xe24b4a);
     assert.match(r.post.text, /DOWN: infra-watch/);
-    assert.match(r.post.text, /10 min ago/);
-    // Later runs within the hour stay quiet.
-    r = heartbeat(r.state, last, last + STALE_MS + 30 * MIN);
-    assert.equal(r.post, null);
-    // An hourly reminder, without a ping.
-    r = heartbeat(r.state, last, last + STALE_MS + 60 * MIN);
-    assert.equal(r.post.ping, false);
-    assert.match(r.post.text, /70 min ago/);
+    assert.match(r.post.text, /no completed check for 10\+ min/);
+    // "open since" counts from the last completed check, live in Discord.
+    assert.match(r.post.text, new RegExp(`open since <t:${last / 1000}:R>`));
+    // No reminders: hours later, still nothing new while the card is open.
+    const open = { incident: { ...r.state.incident, messageId: "m1" } };
+    const later = heartbeat(open, last, last + 5 * 60 * MIN);
+    assert.equal(later.post, undefined);
+    assert.equal(later.edit, undefined);
+    assert.deepEqual(later.state, open);
 });
 
-test("heartbeat alerts when /health doesn't answer at all", () => {
+test("heartbeat says so when /health doesn't answer at all", () => {
     const r = heartbeat({}, null, 5000 * MIN);
     assert.equal(r.post.ping, true);
-    assert.match(r.post.text, /unreachable/);
+    assert.match(r.post.text, /\/health unreachable/);
+    assert.equal(r.state.incident.openedAt, 5000 * MIN);
 });
 
-test("heartbeat posts a green note when checks resume", () => {
-    const down = { down: true, alertedAt: 1000 * MIN };
-    const r = heartbeat(down, 1030 * MIN, 1031 * MIN);
-    assert.equal(r.post.color, 0x639922);
-    assert.equal(r.post.ping, false);
-    assert.match(r.post.text, /checking again/);
+test("heartbeat turns the same card green when checks resume", () => {
+    const last = 1000 * MIN;
+    const { state } = heartbeat({}, last, last + STALE_MS);
+    const open = { incident: { ...state.incident, messageId: "m1" } };
+    const r = heartbeat(open, last + 47 * MIN, last + 48 * MIN);
+    assert.equal(r.post, undefined);
+    assert.equal(r.edit.id, "m1");
+    assert.equal(r.edit.card.color, 0x639922);
+    assert.equal(r.edit.card.ping, true);
+    assert.match(r.edit.card.text, /RECOVERED: infra-watch/);
+    assert.match(r.edit.card.text, /DOWN\s+47 min/);
+    assert.doesNotMatch(r.edit.card.text, /open since/);
     assert.deepEqual(r.state, {});
 });

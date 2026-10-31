@@ -1,12 +1,19 @@
 // Watches the watcher from outside Cloudflare. GitHub Actions runs this every
 // 5 minutes (.github/workflows/monitor-infra-watch-heartbeat.yml): it reads
-// infra-watch's last completed check from /health and posts to the
-// infra-watch channel, through the same webhook, when it is 10+ minutes old.
-// Whether an alert is open lives in a small state file the workflow caches.
+// infra-watch's last completed check from /health and, through the same
+// webhook, posts one card in the infra-watch channel when it is 10+ minutes
+// old, then edits that card green when checks resume. The open card lives in
+// a small state file the workflow caches.
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { MAINTAINERS, payload, send, withTimeout } from "./src/delivery.js";
+import {
+    edit,
+    MAINTAINERS,
+    payload,
+    send,
+    withTimeout,
+} from "./src/delivery.js";
 import { heartbeat } from "./src/rules.js";
 
 const HEALTH =
@@ -28,12 +35,20 @@ const checkedAt = await withTimeout(20_000, async (signal) => {
 });
 
 const next = heartbeat(state, checkedAt, Date.now());
+const webhook = process.env.DISCORD_WEBHOOK_URL;
+if ((next.post || next.edit) && !webhook)
+    throw new Error("DISCORD_WEBHOOK_URL missing");
+// A write Discord didn't take keeps the old state, so the next run tries
+// again; a card counts as posted only with a message id to edit it by.
 if (next.post) {
-    const webhook = process.env.DISCORD_WEBHOOK_URL;
-    if (!webhook) throw new Error("DISCORD_WEBHOOK_URL missing");
-    // Unsent: keep the old state so the next run tries again.
-    if (!(await send(webhook, payload(next.post, MAINTAINERS))))
-        throw new Error("heartbeat post failed");
+    const saved = await send(webhook, payload(next.post, MAINTAINERS));
+    if (!saved?.id) throw new Error("heartbeat post failed");
+    next.state.incident.messageId = saved.id;
+}
+if (next.edit) {
+    const { id, card } = next.edit;
+    if (!(await edit(webhook, id, payload(card, MAINTAINERS))))
+        throw new Error("heartbeat edit failed");
 }
 
 await mkdir(dirname(STATE), { recursive: true });
@@ -44,5 +59,5 @@ if (process.env.GITHUB_OUTPUT)
         flag: "a",
     });
 console.log(
-    `checkedAt=${checkedAt} posted=${Boolean(next.post)} state=${JSON.stringify(next.state)}`,
+    `checkedAt=${checkedAt} posted=${Boolean(next.post)} edited=${Boolean(next.edit)} state=${JSON.stringify(next.state)}`,
 );

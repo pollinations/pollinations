@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "onchain",
+                name: "Onchain MCP",
+                description:
+                    "Balances, transaction status and latest block on EVM chains.",
+                url: "https://gen.pollinations.ai/mcp/onchain",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

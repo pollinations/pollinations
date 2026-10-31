@@ -220,3 +220,9 @@ key and cannot spend beyond that key's budget. Configure both in
 [API key settings](https://enter.pollinations.ai/keys). See
 [Authentication](https://gen.pollinations.ai/docs#tag/authentication) for key
 types and security guidance.
+
+### Onchain MCP
+
+`gen.pollinations.ai/mcp/onchain` — Balances, transaction status and latest block on EVM chains.
+
+Tools: `get_balance`, `get_tx_status`, `get_latest_block`.

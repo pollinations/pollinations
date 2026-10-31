@@ -5,6 +5,8 @@ import { DAILY_LIMIT } from "./investigate.js";
 import { CHECKING, RECOVER_CHECKS } from "./rules.js";
 
 const GREEN = 0x639922;
+// A closed outage card: it ends with its summary.
+const over = (w) => w.text.includes("Over after");
 const KEY = "model:a/model";
 const row = (ok, total, model = "a/model") => ({
     model,
@@ -142,23 +144,21 @@ it("never edits a closed card back to open", async () => {
     await settle(stub);
 
     const card = edits("m1");
-    const green = card.findIndex((w) => w.color === GREEN);
-    expect(green).toBeGreaterThan(-1);
-    expect(card.slice(green).every((w) => w.color === GREEN)).toBe(true);
-    expect(card.at(-1).text).toContain("RECOVERED");
+    const closed = card.findIndex(over);
+    expect(closed).toBeGreaterThan(-1);
+    expect(card.slice(closed).every(over)).toBe(true);
     expect(card.at(-1).text).toContain("Line 1.");
 });
 
 it("keeps a card green when a late line lands while another closes", async () => {
     const stub = watch();
     world.rows = [row(10, 40), row(10, 40, "b/model")];
-    // The opening lines stay on their way until the first card turns green.
+    // The opening lines stay on their way until the first card closes.
     let release;
     world.aiGate = new Promise((resolve) => {
         release = resolve;
     });
-    world.seen = (w) =>
-        w.path.endsWith("/m1") && w.color === GREEN && release();
+    world.seen = (w) => w.path.endsWith("/m1") && over(w) && release();
     await stub.check();
     // No budget left for closing lines, so each close is the card's last
     // edit; the second close's slow Tinybird read lets the first card's late
@@ -177,9 +177,9 @@ it("keeps a card green when a late line lands while another closes", async () =>
 
     for (const id of ["m1", "m2"]) {
         const card = edits(id);
-        const green = card.findIndex((w) => w.color === GREEN);
-        expect(green).toBeGreaterThan(-1);
-        expect(card.slice(green).every((w) => w.color === GREEN)).toBe(true);
+        const closed = card.findIndex(over);
+        expect(closed).toBeGreaterThan(-1);
+        expect(card.slice(closed).every(over)).toBe(true);
     }
 });
 
@@ -206,15 +206,14 @@ it("opens a new card when a close was edited but never saved", async () => {
     });
     const failure = await stub.check().catch((error) => error);
     expect(failure.message).toContain("storage unavailable");
-    expect(edits("m1").at(-1).color).toBe(GREEN);
+    expect(over(edits("m1").at(-1))).toBe(true);
 
     await evictDurableObject(stub);
     world.rows = BAD;
     await stub.check();
     await settle(stub);
     const card = edits("m1");
-    const green = card.findIndex((w) => w.color === GREEN);
-    expect(card.slice(green).every((w) => w.color === GREEN)).toBe(true);
+    expect(card.slice(card.findIndex(over)).every(over)).toBe(true);
     // The new failure got its own card, which says it broke again.
     expect((await stored(stub, "state")).open[KEY].messageId).toBe("m2");
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
@@ -269,7 +268,7 @@ async function closeWithFailedEdit(stub) {
     await stub.check();
     await settle(stub);
     world.rows = OK;
-    world.fails = (w) => w.color === GREEN && !w.text.includes(CHECKING);
+    world.fails = (w) => over(w) && !w.text.includes(CHECKING);
     await checks(stub, RECOVER_CHECKS);
     await settle(stub);
 }
@@ -283,7 +282,13 @@ it("retries a closed card's last edit until Discord takes it", async () => {
     await stub.check();
     await settle(stub);
     const last = edits("m1").at(-1);
-    expect(last.color).toBe(GREEN);
+    // Closed, it keeps its status, in the colour of what it cost: 30 of 40
+    // requests failed, red.
+    expect(last.color).toBe(0xe24b4a);
+    expect(last.text).toContain("DEGRADED: a/model");
+    expect(last.text.split("\n").at(-1)).toBe(
+        "### 🔴 Over after under 1 min · 3 of 3 users hit · 30 of 40 requests failed (75.0%)",
+    );
     expect(last.text).not.toContain(CHECKING);
     expect(last.text).toContain("Line 2.");
     // The opening line was written while degraded, the closing one closed.

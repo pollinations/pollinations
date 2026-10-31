@@ -18,11 +18,11 @@ import {
     toolsFor,
 } from "./investigate.js";
 import {
-    cardColor,
     conditions,
     duration,
     escalates,
     escalation,
+    lineColor,
     noteworthy,
     pings,
     renderCard,
@@ -527,7 +527,7 @@ export class Watch extends DurableObject {
         const line = text && {
             at: Date.now(),
             text,
-            color: cardColor(incident),
+            color: lineColor(incident),
             ...(review && {
                 asking: review.accounts.map((a) => a.userId).join(","),
             }),

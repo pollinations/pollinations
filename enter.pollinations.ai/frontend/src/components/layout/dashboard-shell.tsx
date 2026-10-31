@@ -11,7 +11,6 @@ import {
     CopyButton,
     cn,
     ExternalLinkIcon,
-    Eyebrow,
     LoadingStatus,
     MenuIcon,
     NavItem,
@@ -71,10 +70,10 @@ type DashboardNavItem = {
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
 // Docs), and everything about you as one block at the bottom: what you build
-// (models, agents, apps, sandboxes and keys, under a "Create" label), a gap,
-// your pollen (Quests, Activity, Pollen with its numbers indented under it),
-// then your name. A thin line opens each part. Signed out, the bottom holds
-// the sign-in buttons.
+// (Publish for your agents and models, apps, sandboxes, keys), a gap, your
+// pollen (Activity, Quests, Pollen with its numbers indented under it), then
+// your name. A thin line opens each part. Signed out, the bottom holds the
+// sign-in buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
@@ -389,11 +388,8 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 // Space, not a line, splits what you build from your pollen.
                 <nav aria-label="Yours" className="flex flex-col gap-3">
                     <div className="flex flex-col gap-0.5">
-                        <Eyebrow size="chrome" className="px-3 pt-1 pb-0.5">
-                            Create
-                        </Eyebrow>
                         {navItems
-                            .filter((item) => item.group === "create")
+                            .filter((item) => item.group === "build")
                             .map((item) => (
                                 <NavRow
                                     key={item.id}

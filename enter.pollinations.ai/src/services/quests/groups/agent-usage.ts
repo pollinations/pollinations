@@ -22,7 +22,7 @@ const createUsedAgentQuest: QuestDefinition = {
     id: "create_used_agent",
     title: "Create an agent that gets used",
     description:
-        "Create an [agent](https://enter.pollinations.ai/my-agents) that receives at least one successful request. Your own test request counts.",
+        "Create an [agent](https://enter.pollinations.ai/my-models) that receives at least one successful request. Your own test request counts.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 2,

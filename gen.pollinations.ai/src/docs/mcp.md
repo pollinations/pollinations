@@ -60,7 +60,7 @@ are left untouched.
 ### Use with hosted agents
 
 Add MCP servers to an agent in
-[My Agents](https://enter.pollinations.ai/my-agents).
+[My Models](https://enter.pollinations.ai/my-models).
 
 ### Connect a client
 

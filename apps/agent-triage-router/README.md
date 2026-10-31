@@ -116,7 +116,7 @@ one-line change.
 ## Deploy
 
 1. Fork the standalone [Triage Router repository](https://github.com/xiaotian1171/triage-router), which has `agent.ts` at its root.
-2. In [My Agents](https://enter.pollinations.ai/my-agents), choose **Add Agent → Code agent** and enter your fork's URL.
+2. In [My Models](https://enter.pollinations.ai/my-models), choose **Add Agent → Code agent** and enter your fork's URL.
 3. Edit `agent.ts`, push, then use **Sync** in the dashboard (or the workflow below).
 
 `npx @pollinations/cli agents sync <agent-id>` deploys the newest default-branch revision.

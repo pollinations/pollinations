@@ -5,22 +5,13 @@ import {
     getCatalogModelId,
     getModelPricesFromCatalog,
 } from "../models/model-catalog.ts";
-import {
-    CommunityEndpoints,
-    type DeploymentKind,
-} from "./community-endpoints.tsx";
+import { CommunityEndpoints } from "./community-endpoints.tsx";
 import {
     type FallbackModelOption,
     publicCommunityFallbackOptions,
 } from "./types.ts";
 
-export function Deployments({
-    kind,
-    canPublish,
-}: {
-    kind: DeploymentKind;
-    canPublish: boolean;
-}) {
+export function Deployments({ canPublish }: { canPublish: boolean }) {
     const [fallbackOptions, setFallbackOptions] = useState<
         FallbackModelOption[]
     >([]);
@@ -57,7 +48,6 @@ export function Deployments({
 
     return (
         <CommunityEndpoints
-            kind={kind}
             canPublish={canPublish}
             fallbackOptions={fallbackOptions}
             healthByModelId={healthByModelId}

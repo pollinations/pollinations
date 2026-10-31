@@ -285,7 +285,7 @@ const PUBLISH_FEATURES: Feature[] = [
         links: [
             {
                 label: "Create an agent",
-                href: "https://enter.pollinations.ai/my-agents",
+                href: "https://enter.pollinations.ai/my-models",
             },
         ],
         icon: RobotIcon,

@@ -102,7 +102,6 @@ const PAGES = {
         "/models",
         "/agents",
         "/my-models",
-        "/my-agents",
         "/my-apps",
         "/sandboxes",
         "/quests",

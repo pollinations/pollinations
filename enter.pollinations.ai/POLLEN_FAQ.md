@@ -87,7 +87,7 @@ Read the [Connect User Wallets guide](https://github.com/pollinations/pollinatio
 
 ## 🤖 Can I build my own agent?
 
-Yes. A managed agent combines a system prompt, a Pollinations base model, and optional built-in Pollinations tools. Create one in [My Agents](https://enter.pollinations.ai/my-agents), then call its registered `owner/name` ID through the normal text-generation API.
+Yes. A managed agent combines a system prompt, a Pollinations base model, and optional built-in Pollinations tools. Create one in [My Models](https://enter.pollinations.ai/my-models), then call its registered `owner/name` ID through the normal text-generation API.
 
 An agent listing has no owner-set price, but the caller pays for its base model and any generations performed by tools. A linked GitHub username is required to create an agent. Private agents are owner-only; publishing requires community publisher access. Read [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for setup details.
 

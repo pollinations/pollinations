@@ -57,7 +57,7 @@ times.
 ## Deploy and run
 
 Live as **`community/tomdacatto/gotcha-scout`**, configured from
-[`agent.json`](./agent.json) in [My Agents](https://enter.pollinations.ai/my-agents)
+[`agent.json`](./agent.json) in [My Models](https://enter.pollinations.ai/my-models)
 (**Add Agent → Prompt agent**, paste in its `systemPrompt`, `baseModel`, and
 `mcpServers`). Called with:
 

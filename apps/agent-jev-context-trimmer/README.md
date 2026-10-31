@@ -5,7 +5,7 @@ Scores archived tool outputs with Jev, keeps outputs with relevance probability 
 ## Deploy and call
 
 1. Fork [the public source repository](https://github.com/ale-rls/jev-context-trimmer), keeping `agent.ts` at its root.
-2. In [My Agents](https://enter.pollinations.ai/my-agents), choose Code agent and enter your public repository URL. Private visibility permits owner-only calls; public listing requires publisher access.
+2. In [My Models](https://enter.pollinations.ai/my-models), choose Code agent and enter your public repository URL. Private visibility permits owner-only calls; public listing requires publisher access.
 3. Call your deployed model through `POST /v1/responses` with a non-streaming request. The existing deployment is `community/ale-rls/jev-context-trimmer` (private, owner-callable). The caller needs generation access to the agent, Jev and Nano; requests spend the caller's Pollen.
 
 ```json

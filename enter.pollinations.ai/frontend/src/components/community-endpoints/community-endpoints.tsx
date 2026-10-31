@@ -47,16 +47,7 @@ import {
     toAgentUpdatePayload,
 } from "./types.ts";
 
-/** My Models and My Agents share this page; each shows its own section. */
-export type DeploymentKind = "models" | "agents";
-
-const DEPLOYMENT_TITLES: Record<DeploymentKind, string> = {
-    models: "My Models",
-    agents: "My Agents",
-};
-
 type CommunityEndpointsProps = {
-    kind: DeploymentKind;
     onChange?: () => void | Promise<void>;
     // Allowlisted owners can make models public (set prices, list in /models).
     // Everyone else can only create and edit private, owner-only models.
@@ -102,19 +93,17 @@ function ProviderProfileField({
 }
 
 export function DeploymentsPlaceholder({
-    kind,
     canPublish = false,
     error,
     onRetry,
 }: {
-    kind: DeploymentKind;
     canPublish?: boolean;
     error?: string | null;
     onRetry?: () => void;
 }) {
     const titles = canPublish
-        ? ["Publisher info", DEPLOYMENT_TITLES[kind]]
-        : [DEPLOYMENT_TITLES[kind]];
+        ? ["Publisher info", "Agents", "Models"]
+        : ["Agents", "Models"];
     if (!error) return <PageLoading titles={titles} />;
     return (
         <>
@@ -133,7 +122,6 @@ export function DeploymentsPlaceholder({
 }
 
 export function CommunityEndpoints({
-    kind,
     onChange,
     canPublish,
     fallbackOptions,
@@ -444,7 +432,6 @@ export function CommunityEndpoints({
     if (isLoading || (error && !hasLoaded)) {
         return (
             <DeploymentsPlaceholder
-                kind={kind}
                 canPublish={canPublish}
                 error={isLoading ? null : error}
                 onRetry={() => {
@@ -467,7 +454,7 @@ export function CommunityEndpoints({
                             <ProviderProfileField
                                 icon={<AccountIcon />}
                                 label="Publisher name"
-                                help="Shown as the publisher on all your public models and agents."
+                                help="Shown as the publisher on all your public models."
                             >
                                 <Input
                                     name="community-provider-name"
@@ -546,78 +533,74 @@ export function CommunityEndpoints({
                 </Section>
             )}
             {error && <Alert intent="danger">{error}</Alert>}
-            {kind === "agents" && (
-                <Section
-                    title={DEPLOYMENT_TITLES.agents}
-                    id="agents"
-                    action={agentEndpoints.length > 0 && agentAction}
-                >
-                    <div className="flex flex-col gap-3">
-                        {agentEndpoints.length === 0 ? (
-                            <Surface className="p-6 text-center">
-                                <div className="mb-2">{agentAction}</div>
-                                <p className="text-sm text-theme-text-muted">
-                                    Build from a prompt and model, or deploy
-                                    agent.ts from GitHub.
-                                </p>
-                            </Surface>
-                        ) : (
-                            agentEndpoints.map(renderEndpointCard)
-                        )}
-                    </div>
-                    {!canPublish && (
-                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                Private agents do not need approval. Public
-                                agents require publishing access. Request it
-                                through the {publisherAccessRequestLink}.
-                            </span>
-                        </p>
+            <Section
+                title="Agents"
+                id="agents"
+                action={agentEndpoints.length > 0 && agentAction}
+            >
+                <div className="flex flex-col gap-3">
+                    {agentEndpoints.length === 0 ? (
+                        <Surface className="p-6 text-center">
+                            <div className="mb-2">{agentAction}</div>
+                            <p className="text-sm text-theme-text-muted">
+                                Build from a prompt and model, or deploy
+                                agent.ts from GitHub.
+                            </p>
+                        </Surface>
+                    ) : (
+                        agentEndpoints.map(renderEndpointCard)
                     )}
-                </Section>
-            )}
+                </div>
+                {!canPublish && (
+                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                        <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Private agents do not need approval. Public agents
+                            require publishing access. Request it through the{" "}
+                            {publisherAccessRequestLink}.
+                        </span>
+                    </p>
+                )}
+            </Section>
 
-            {kind === "models" && (
-                <Section
-                    title={DEPLOYMENT_TITLES.models}
-                    id="models"
-                    action={modelEndpoints.length > 0 && modelAction}
-                >
-                    <div className="flex flex-col gap-3">
-                        {modelEndpoints.length === 0 ? (
-                            <Surface className="p-6 text-center">
-                                <div className="mb-2">{modelAction}</div>
-                                {canPublish && (
-                                    <p className="text-sm text-theme-text-muted">
-                                        Register an OpenAI-compatible endpoint.
-                                    </p>
-                                )}
-                            </Surface>
-                        ) : (
-                            modelEndpoints.map(renderEndpointCard)
-                        )}
-                    </div>
-                    {(modelEndpoints.length > 0 || !canPublish) && (
-                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                {canPublish ? (
-                                    <>
-                                        Private models are callable only by you
-                                        and shown only when model lists use your
-                                        key. Make one public to list it for
-                                        everyone in <strong>/models</strong> and
-                                        bill callers at your configured pricing.
-                                    </>
-                                ) : (
-                                    privateModelGuidance
-                                )}
-                            </span>
-                        </p>
+            <Section
+                title="Models"
+                id="models"
+                action={modelEndpoints.length > 0 && modelAction}
+            >
+                <div className="flex flex-col gap-3">
+                    {modelEndpoints.length === 0 ? (
+                        <Surface className="p-6 text-center">
+                            <div className="mb-2">{modelAction}</div>
+                            {canPublish && (
+                                <p className="text-sm text-theme-text-muted">
+                                    Register an OpenAI-compatible endpoint.
+                                </p>
+                            )}
+                        </Surface>
+                    ) : (
+                        modelEndpoints.map(renderEndpointCard)
                     )}
-                </Section>
-            )}
+                </div>
+                {(modelEndpoints.length > 0 || !canPublish) && (
+                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            {canPublish ? (
+                                <>
+                                    Private models are callable only by you and
+                                    shown only when model lists use your key.
+                                    Make one public to list it for everyone in{" "}
+                                    <strong>/models</strong> and bill callers at
+                                    your configured pricing.
+                                </>
+                            ) : (
+                                privateModelGuidance
+                            )}
+                        </span>
+                    </p>
+                )}
+            </Section>
 
             {editing && (
                 <CommunityEndpointDialog

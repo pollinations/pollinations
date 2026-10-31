@@ -28,7 +28,6 @@ import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-models'
 import { Route as DashboardMyAppsRouteImport } from './routes/_dashboard.my-apps'
-import { Route as DashboardMyAgentsRouteImport } from './routes/_dashboard.my-agents'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
 import { Route as DashboardAgentsRouteImport } from './routes/_dashboard.agents'
@@ -129,11 +128,6 @@ const DashboardMyAppsRoute = DashboardMyAppsRouteImport.update({
   path: '/my-apps',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardMyAgentsRoute = DashboardMyAgentsRouteImport.update({
-  id: '/my-agents',
-  path: '/my-agents',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardModelsRoute = DashboardModelsRouteImport.update({
   id: '/models',
   path: '/models',
@@ -176,7 +170,6 @@ export interface FileRoutesByFullPath {
   '/agents': typeof DashboardAgentsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
-  '/my-agents': typeof DashboardMyAgentsRoute
   '/my-apps': typeof DashboardMyAppsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
@@ -202,7 +195,6 @@ export interface FileRoutesByTo {
   '/agents': typeof DashboardAgentsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
-  '/my-agents': typeof DashboardMyAgentsRoute
   '/my-apps': typeof DashboardMyAppsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
@@ -230,7 +222,6 @@ export interface FileRoutesById {
   '/_dashboard/agents': typeof DashboardAgentsRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
-  '/_dashboard/my-agents': typeof DashboardMyAgentsRoute
   '/_dashboard/my-apps': typeof DashboardMyAppsRoute
   '/_dashboard/my-models': typeof DashboardMyModelsRoute
   '/_dashboard/news': typeof DashboardNewsRoute
@@ -258,7 +249,6 @@ export interface FileRouteTypes {
     | '/agents'
     | '/keys'
     | '/models'
-    | '/my-agents'
     | '/my-apps'
     | '/my-models'
     | '/news'
@@ -284,7 +274,6 @@ export interface FileRouteTypes {
     | '/agents'
     | '/keys'
     | '/models'
-    | '/my-agents'
     | '/my-apps'
     | '/my-models'
     | '/news'
@@ -311,7 +300,6 @@ export interface FileRouteTypes {
     | '/_dashboard/agents'
     | '/_dashboard/keys'
     | '/_dashboard/models'
-    | '/_dashboard/my-agents'
     | '/_dashboard/my-apps'
     | '/_dashboard/my-models'
     | '/_dashboard/news'
@@ -472,13 +460,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardMyAppsRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/my-agents': {
-      id: '/_dashboard/my-agents'
-      path: '/my-agents'
-      fullPath: '/my-agents'
-      preLoaderRoute: typeof DashboardMyAgentsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/_dashboard/models': {
       id: '/_dashboard/models'
       path: '/models'
@@ -523,7 +504,6 @@ interface DashboardRouteChildren {
   DashboardAgentsRoute: typeof DashboardAgentsRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
-  DashboardMyAgentsRoute: typeof DashboardMyAgentsRoute
   DashboardMyAppsRoute: typeof DashboardMyAppsRoute
   DashboardMyModelsRoute: typeof DashboardMyModelsRoute
   DashboardNewsRoute: typeof DashboardNewsRoute
@@ -539,7 +519,6 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAgentsRoute: DashboardAgentsRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
-  DashboardMyAgentsRoute: DashboardMyAgentsRoute,
   DashboardMyAppsRoute: DashboardMyAppsRoute,
   DashboardMyModelsRoute: DashboardMyModelsRoute,
   DashboardNewsRoute: DashboardNewsRoute,

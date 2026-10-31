@@ -63,7 +63,7 @@ Live at **`community/tomdacatto/tiered-health-router`**, deployed from
 
 1. Fork/copy this file to your own public GitHub repository (one file,
    `agent.ts`, at the root).
-2. In [My Agents](https://enter.pollinations.ai/my-agents), **Add Agent →
+2. In [My Models](https://enter.pollinations.ai/my-models), **Add Agent →
    Code agent**, and enter your repository's URL.
 3. Call it like any model: `model: "<your-github-username>/<repo-name>"`
    (this dashboard listed it as `community/<username>/<repo-name>`).

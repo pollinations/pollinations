@@ -6,7 +6,7 @@ This is different from hosting your own OpenAI-compatible model endpoint. It is 
 
 ## Create an agent in the dashboard
 
-1. Open [My Agents](https://enter.pollinations.ai/my-agents).
+1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Add an agent and choose **Prompt agent** or **Code agent**.
 3. Configure a prompt and base model, or enter a public GitHub repository.
 4. Save it. The dashboard creates the agent configuration and registers its callable model name.

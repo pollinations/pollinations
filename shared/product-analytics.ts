@@ -30,7 +30,6 @@ export const productPageViewSchema = z.strictObject({
         "/models",
         "/agents",
         "/my-models",
-        "/my-agents",
         "/quests",
         "/activity",
         "/account",

@@ -6,10 +6,10 @@ import {
     AppIcon,
     BeakerIcon,
     BotIcon,
+    CloudUploadIcon,
     LockIcon,
     McpIcon,
     NewspaperIcon,
-    RobotIcon,
     SparkleIcon,
     TerminalIcon,
     TrendUpIcon,
@@ -19,10 +19,10 @@ import type { ComponentType } from "react";
 
 /**
  * Groups of drawer rows: Pollinations' resources, then your section: what you
- * build (under a "Create" label, keys included) and your pollen. "account" is
- * your name, the button that closes your section.
+ * build (Publish, apps, sandboxes, keys) and your pollen. "account" is your
+ * name, the button that closes your section.
  */
-export type DashboardNavGroup = "account" | "create" | "yours" | "resources";
+export type DashboardNavGroup = "account" | "build" | "yours" | "resources";
 
 export const DASHBOARD_NAV_ITEMS = [
     {
@@ -35,44 +35,37 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "my-models",
         to: "/my-models",
-        label: "Models",
-        icon: BeakerIcon,
-        group: "create",
-    },
-    {
-        id: "my-agents",
-        to: "/my-agents",
-        label: "Agents",
-        icon: RobotIcon,
-        group: "create",
+        label: "Publish",
+        icon: CloudUploadIcon,
+        group: "build",
     },
     {
         id: "my-apps",
         to: "/my-apps",
         label: "Apps",
         icon: AppIcon,
-        group: "create",
+        group: "build",
     },
     {
         id: "sandboxes",
         to: "/sandboxes",
         label: "Sandboxes",
         icon: TerminalIcon,
-        group: "create",
+        group: "build",
     },
-    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "create" },
-    {
-        id: "quests",
-        to: "/quests",
-        label: "Quests",
-        icon: SparkleIcon,
-        group: "yours",
-    },
+    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "build" },
     {
         id: "activity",
         to: "/activity",
         label: "Activity",
         icon: TrendUpIcon,
+        group: "yours",
+    },
+    {
+        id: "quests",
+        to: "/quests",
+        label: "Quests",
+        icon: SparkleIcon,
         group: "yours",
     },
     {

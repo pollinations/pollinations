@@ -19,10 +19,9 @@ const MODEL3D_BASE_SERVICES = {
         publisher: "Stability AI",
         category: "3d",
         addedDate: new Date("2026-10-31").getTime(),
-        priceMultiplier: 10 / 7, // $0.07 provider list cost -> $0.10 paid retail
+        priceMultiplier: 1, // no markup on the $0.07 provider rate
         paidOnly: true,
         flatRate: true,
-        perUserRpm: 60,
         cost: { completionImageTokens: 0.07 },
         title: "TripoSR",
         description: "Single-image to textured 3D GLB reconstruction",

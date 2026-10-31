@@ -3,7 +3,8 @@ import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { QUEST_GROUPS } from "./quests/index.ts";
+import type { Env } from "../env.ts";
+import { listSetupQuestIds, QUEST_GROUPS } from "./quests/index.ts";
 import {
     type QuestEvaluation,
     type QuestEvaluationContext,
@@ -12,6 +13,10 @@ import {
     type QuestUser,
     toReward,
 } from "./quests/types.ts";
+import {
+    recordSetupRewardSignup,
+    reportFlaggedDomain,
+} from "./setup-reward-signups.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
@@ -28,7 +33,7 @@ export type QuestCheckResult = {
 };
 
 export async function checkQuestsForUser(
-    env: CloudflareBindings,
+    env: Env["Bindings"],
     userId: string,
     groups: QuestGroup[] = QUEST_GROUPS,
 ): Promise<QuestCheckResult> {
@@ -74,6 +79,27 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
+    // An account's first setup reward is a sign-up: count it per email domain
+    // and report a domain that passes the limit. Detection only, so a failure
+    // is logged and never blocks rewards.
+    const setupQuestIds = await listSetupQuestIds(ctx);
+    if (
+        proposals.some(({ quest }) => quest.category === "setup") &&
+        ![...earned].some((id) => id !== null && setupQuestIds.has(id))
+    ) {
+        const flagged = await recordSetupRewardSignup(env.DB, {
+            userId: user.id,
+            email: user.email,
+        }).catch((error) => {
+            log.warn("SETUP_REWARD_SIGNUP_FAILED: {error}", { error });
+            return null;
+        });
+        if (flagged) {
+            await reportFlaggedDomain(env, flagged).catch((error) =>
+                log.warn("SETUP_REWARD_REPORT_FAILED: {error}", { error }),
+            );
+        }
+    }
     const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",
@@ -123,13 +149,14 @@ export async function checkQuestsForUser(
 async function loadQuestUser(
     db: ReturnType<typeof drizzle<typeof schema>>,
     userId: string,
-): Promise<QuestUser | null> {
+): Promise<(QuestUser & { email: string }) | null> {
     const rows = await db
         .select({
             id: schema.user.id,
             githubId: schema.user.githubId,
             githubUsername: schema.user.githubUsername,
             googleId: schema.account.accountId,
+            email: schema.user.email,
         })
         .from(schema.user)
         .leftJoin(

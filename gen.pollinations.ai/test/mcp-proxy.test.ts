@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "whois",
+                name: "RDAP Whois MCP",
+                description: "Domain and IP registration data over RDAP.",
+                url: "https://gen.pollinations.ai/mcp/whois",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

@@ -87,7 +87,11 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
                         />
                     </Field.Input>
                 </FieldStack>
-                <Button type="submit" disabled={redeeming || !code.trim()}>
+                <Button
+                    type="submit"
+                    intent="commit"
+                    disabled={redeeming || !code.trim()}
+                >
                     {redeeming ? "Redeeming…" : "Redeem"}
                 </Button>
             </form>

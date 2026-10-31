@@ -365,6 +365,7 @@ it("a review card lists the oldest requests, follows decisions and closes", asyn
             },
         });
     await env.SETUP_HOLDS.put("decision:u6", "declined");
+    await env.SETUP_HOLDS.put("hold:farm.com", "held");
     await stub.check();
     await settle(stub);
 

@@ -68,19 +68,29 @@ test("a burst holds its domain, and a maintainer's release always wins", async (
     assert.equal(kv.values.get("release:kept.com"), "released");
 });
 
-test("pending requests have no decision, grouped by domain, oldest first, across list pages", async () => {
-    const kv = store();
+test("pending requests have no decision and a held domain, grouped by domain, oldest first, across list pages", async () => {
+    const kv = store({
+        "hold:farm.com": "held",
+        "hold:school.edu": "held",
+        "hold:kept.com": "held",
+        "release:kept.com": "released",
+    });
     for (const [id, domain, at] of [
         ["b", "farm.com", NOW + 1],
         ["a", "farm.com", NOW],
         ["c", "school.edu", NOW],
         ["d", "farm.com", NOW],
+        // Released, or never held: nobody needs to decide these.
+        ["e", "kept.com", NOW],
+        ["f", "gone.com", NOW],
     ])
         await kv.put(`review:${id}`, "pending", request(id, domain, at));
     await kv.put("decision:d", "approved");
     const groups = pending(
         await listAll(kv, "review:"),
         await listAll(kv, "decision:"),
+        await listAll(kv, "hold:"),
+        await listAll(kv, "release:"),
     );
     assert.deepEqual(
         [...groups].map(([domain, accounts]) => [
@@ -99,6 +109,8 @@ const listed = () => ({
     domain: "farm.com",
     accounts: pending(
         Array.from({ length: 7 }, (_, i) => request(`u${i}`, "farm.com")),
+        [],
+        [{ name: "hold:farm.com" }],
         [],
     )
         .get("farm.com")

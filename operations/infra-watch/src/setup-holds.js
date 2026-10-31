@@ -9,8 +9,8 @@
 // recommends, a maintainer decides by running one of the card's commands.
 
 export const REVIEW_PROMPT = `You review requests to unlock onboarding (Setup) quest rewards on Pollinations, for the maintainers in a private Discord channel.
-Accounts on an email domain are held after many new accounts on it earn their first onboarding reward within a day: the pattern of reward farms that create accounts in bulk. A real group, such as a school class or a company team, can sign up together too.
-You get the domain's first onboarding rewards per day over 30 days and, for each account asking, its age, the quest rewards it earned and its API use over 30 days.
+Accounts on an email domain are held after many new accounts are created on it within a day: the pattern of reward farms that create accounts in bulk. A real group, such as a school class or a company team, can sign up together too.
+You get the domain's new accounts per day over 30 days and, for each account asking, its age, the quest rewards it earned and its API use over 30 days.
 - Farm signs: hundreds of sign-ups in a day or two, accounts that only collect rewards and make few or no API requests, accounts alike in every number.
 - Real-group signs: small or steady numbers, varied and continued API use, older accounts.
 moment is "open" for a new review card or "change" when the accounts listed changed; previous holds your earlier lines.
@@ -45,21 +45,27 @@ const byAge = (a, b) =>
     a.requestedAt - b.requestedAt ||
     (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0);
 
+const names = (keys, prefix) =>
+    new Set(keys.map(({ name }) => name.slice(prefix.length)));
+
 /**
- * Pending requests (no decision yet), grouped by domain, oldest first.
- * Takes KV listings of review: and decision:.
+ * Pending requests (no decision yet, on a domain still held), grouped by
+ * domain, oldest first. Takes KV listings of review:, decision:, hold: and
+ * release:.
  */
-export function pending(requests, decisions) {
-    const decided = new Set(
-        decisions.map(({ name }) => name.slice("decision:".length)),
-    );
+export function pending(requests, decisions, holds, releases) {
+    const decided = names(decisions, "decision:");
+    const released = names(releases, "release:");
+    const held = names(holds, "hold:");
     const groups = new Map();
     for (const { name, metadata } of requests) {
         const userId = name.slice("review:".length);
-        if (!metadata?.domain || decided.has(userId)) continue;
-        const accounts = groups.get(metadata.domain) ?? [];
+        const domain = metadata?.domain;
+        if (!held.has(domain) || released.has(domain) || decided.has(userId))
+            continue;
+        const accounts = groups.get(domain) ?? [];
         accounts.push({ userId, ...metadata });
-        groups.set(metadata.domain, accounts);
+        groups.set(domain, accounts);
     }
     for (const accounts of groups.values()) accounts.sort(byAge);
     return groups;

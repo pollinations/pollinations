@@ -401,8 +401,11 @@ export class Watch extends DurableObject {
         try {
             const kv = this.env.SETUP_HOLDS;
             return pending(
-                await listAll(kv, "review:"),
-                await listAll(kv, "decision:"),
+                ...(await Promise.all(
+                    ["review:", "decision:", "hold:", "release:"].map(
+                        (prefix) => listAll(kv, prefix),
+                    ),
+                )),
             );
         } catch (error) {
             console.error(`reviews: ${error.message}`);

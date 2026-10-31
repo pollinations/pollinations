@@ -537,16 +537,52 @@ test("caller-side failures are never a provider's broken stream", () => {
     assert.equal(state.due[0].code, "BAD_GATEWAY");
 });
 
-test("an answer from a fallback or an image probe leaves the streak alone", () => {
+test("an image probe leaves the streak alone", () => {
     let state = brokenStreams({}, [result(A)], T0);
     state = brokenStreams(
         state,
-        [
-            result(A, { modelUsed: "community/o/fallback" }),
-            result(A, { category: "image", status: 502 }),
-        ],
+        [result(A, { category: "image", status: 502 })],
         T0,
     );
     assert.deepEqual(state.streaks[A], { error: MISSING_DONE, streak: 1 });
     assert.deepEqual(state.due, []);
+});
+
+test("an answer from a fallback ends the streak, keeping the day's quiet", () => {
+    for (const fallback of [
+        { ok: true, status: 200, protocolError: undefined },
+        // The fallback's own broken stream is not this model's.
+        {},
+    ]) {
+        let state = brokenStreams({}, [result(A)], T0);
+        state.told = { [streamKey("community/o/b", MISSING_DONE)]: T0 };
+        state = brokenStreams(
+            state,
+            [result(A, { ...fallback, modelUsed: "community/o/fallback" })],
+            T0,
+        );
+        assert.equal(state.streaks[A], undefined);
+        assert.deepEqual(Object.keys(state.told), [
+            streamKey("community/o/b", MISSING_DONE),
+        ]);
+        state = brokenStreams(state, [result(A)], T0);
+        assert.deepEqual(state.due, []);
+    }
+});
+
+test("a fallback's success resets the backoff, like a direct one", () => {
+    const body = `${content}${counts}${done}`;
+    const answer = textProbeResult(
+        new Response(body, {
+            headers: { "x-model-used": "community/o/fallback" },
+        }),
+        body,
+        "ok-marker",
+    );
+    assert.equal(answer.ok, true);
+    const previous = { lastAt: 0, failures: 3 };
+    assert.equal(
+        recordProbe(previous, { ...answer, timestamp: HOUR }).failures,
+        0,
+    );
 });

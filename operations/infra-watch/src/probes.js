@@ -353,10 +353,10 @@ const CALLER_SIDE = new Set([
 
 // Broken streams from a batch of probe results. `streaks` keeps, per model,
 // its provider's protocol error and how many fresh text probes in a row
-// got it: a model not probed keeps its streak, any other result ends it.
-// An answer from a fallback says nothing of the model's own stream. At two
-// in a row a model is due a warning, unless that model and error were told
-// in the last day; `told` keeps when, and older ones are dropped.
+// got it: a model not probed keeps its streak, any other result ends it,
+// an answer from a fallback too. At two in a row a model is due a warning,
+// unless that model and error were told in the last day; `told` keeps
+// when, and older ones are dropped.
 export function brokenStreams({ streaks = {}, told = {} } = {}, results, now) {
     const next = { ...streaks };
     const recent = Object.fromEntries(
@@ -364,10 +364,10 @@ export function brokenStreams({ streaks = {}, told = {} } = {}, results, now) {
     );
     const due = [];
     for (const r of results) {
-        if (r.category !== "text" || (r.modelUsed && r.modelUsed !== r.model))
-            continue;
+        if (r.category !== "text") continue;
+        const own = !r.modelUsed || r.modelUsed === r.model;
         const error =
-            r.status === "PROTOCOL" && !CALLER_SIDE.has(r.errorCode)
+            own && r.status === "PROTOCOL" && !CALLER_SIDE.has(r.errorCode)
                 ? r.protocolError
                 : null;
         if (!error) {

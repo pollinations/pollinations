@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "IMAGE_DIFF_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -124,6 +125,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "image-diff",
+        name: "Image Diff",
+        description:
+            "Compare two images and get a structured description of how they differ.",
+        binding: "IMAGE_DIFF_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Comparison tools use the selected vision model's listed rate. No additional MCP fee.",
             rates: [],
         },
     },

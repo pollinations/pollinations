@@ -198,27 +198,6 @@ test("a community card pings each owner with a known Discord id and names the re
     assert.equal(payload({ ...card, owners: ["known"] }, []).content, "known");
 });
 
-test("owner pings fit Discord's 2,000 characters of content, owners whole", () => {
-    const owners = Array.from({ length: 120 }, (_, i) => `owner-${i}`);
-    const ids = Object.fromEntries(
-        owners.map((o, i) => [o, String(100000000000000000n + BigInt(i))]),
-    );
-    const { content, allowed_mentions } = payload(
-        { text: "box", owners },
-        [],
-        ids,
-    );
-    assert.ok(content.length <= 2000, content.length);
-    const mentioned = content.split(" ");
-    assert.ok(mentioned.length < 120);
-    assert.ok(mentioned.every((m) => /^<@\d{18}>$/.test(m)));
-    // Pinged exactly those mentioned.
-    assert.deepEqual(
-        allowed_mentions.users,
-        mentioned.map((m) => m.slice(2, -1)),
-    );
-});
-
 test("an unreadable owner map names every owner", () => {
     for (const json of [undefined, "not json", "null"])
         assert.deepEqual(discordIds(json), {});

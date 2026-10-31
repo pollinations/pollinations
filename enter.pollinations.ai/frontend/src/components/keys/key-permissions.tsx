@@ -202,7 +202,8 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                         .
                     </p>
                     {(!visiblePermissions ||
-                        visiblePermissions.has("machines")) && (
+                        visiblePermissions.has("machines") ||
+                        visiblePermissions.has("sites")) && (
                         <ul className="text-sm">
                             <AccountPermissionsInput
                                 {...accountPermissionProps}

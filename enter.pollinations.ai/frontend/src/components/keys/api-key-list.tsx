@@ -33,6 +33,7 @@ const accountPermissionLabels: Record<string, string> = {
     usage: "Usage",
     keys: "Admin",
     machines: "Machines",
+    sites: "Sites",
 };
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({

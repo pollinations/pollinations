@@ -246,7 +246,16 @@ describe("key permissions layout", () => {
             <Editor visiblePermissions={new Set(["machines"])} />,
         );
         expect(html).toContain("Run hosted sandboxes");
+        expect(html).not.toContain("Publish sites on pollinations.app");
         expect(html).not.toContain("See your name and email");
         expect(html).not.toContain("Manage keys, agents and models");
+    });
+
+    it("shows requested site access on its own", () => {
+        const html = renderToStaticMarkup(
+            <Editor visiblePermissions={new Set(["sites"])} />,
+        );
+        expect(html).toContain("Publish sites on pollinations.app");
+        expect(html).not.toContain("Run hosted sandboxes");
     });
 });

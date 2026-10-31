@@ -22,6 +22,11 @@ export const accountPermissions = [
         section: "tools",
         label: "Run hosted sandboxes",
     },
+    {
+        id: "sites",
+        section: "tools",
+        label: "Publish sites on pollinations.app",
+    },
 ] as const;
 
 /**

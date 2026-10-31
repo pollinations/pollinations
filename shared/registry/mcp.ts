@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "POLLEN_COST_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "pollen-cost",
+        name: "Pollen Cost",
+        description:
+            "Estimate and compare Pollen prices for models before generating.",
+        binding: "POLLEN_COST_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Price lookups are free. Generation you run afterwards uses each model's listed rate.",
             rates: [],
         },
     },

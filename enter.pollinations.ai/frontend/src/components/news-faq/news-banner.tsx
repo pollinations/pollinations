@@ -70,7 +70,7 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-11-15",
         label: "Updated",
         title: "Sandbox launch pricing",
-        text: "Run a 2 vCPU, 2 GB sandbox from 0.0333 Pollen/hour.",
+        text: "Run a 2 vCPU, 2 GB sandbox from 0.0333 pollen/hour.",
         icon: TerminalIcon,
         cta: { label: "Open Sandboxes", href: "/sandboxes" },
     },

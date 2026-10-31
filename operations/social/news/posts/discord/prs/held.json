@@ -32,12 +32,6 @@
       "merge_sha": "54abb1938fe6b8e752f8ee57c419e5efe032664d",
       "merged_at": "2026-10-31T21:35:26Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/floret",
-        "deploy-applications.yml:Deploy apps/mcp",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/kpi",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
@@ -62,10 +56,6 @@
       "merge_sha": "1b7121bde6f18f00387944603fdff12324e9766e",
       "merged_at": "2026-10-31T22:02:38Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/kpi",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"

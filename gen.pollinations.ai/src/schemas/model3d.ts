@@ -136,4 +136,10 @@ export const Generate3dRequestBodySchema = z
     .transform(({ image_urls, ...body }) => ({
         ...body,
         ...(image_urls === undefined ? {} : { image: image_urls }),
-    }));
+    }))
+    .meta({
+        example: {
+            model: "tripoSR",
+            image_urls: ["https://example.com/reference.png"],
+        },
+    });

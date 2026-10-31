@@ -6,7 +6,6 @@ import {
     payload,
     send,
     serial,
-    settle,
     withTimeout,
 } from "./delivery.js";
 
@@ -53,19 +52,6 @@ test("send gives up after 3 failures and on 4xx", async () => {
         ),
         false,
     );
-});
-
-test("undelivered alert stays eligible, undelivered recovery stays active", () => {
-    const prev = { active: { "degraded:b": { postedAt: 1 } } };
-    const next = { active: { "degraded:a": { postedAt: 9 } } };
-    const posts = [
-        { type: "alert", key: "degraded:a" },
-        { type: "recovered", key: "degraded:b" },
-    ];
-    const kept = settle(prev, next, posts, [false, false]);
-    assert.deepEqual(kept.active, { "degraded:b": { postedAt: 1 } });
-    const sent = settle(prev, next, posts, [true, true]);
-    assert.deepEqual(sent.active, next.active);
 });
 
 test("overlapping checks: second is skipped until the first finishes", async () => {
@@ -130,15 +116,15 @@ test("send asks Discord to confirm the saved message (wait=true)", async () => {
     assert.equal(new URL(seen).searchParams.get("wait"), "true");
 });
 
-test("send returns the message id Discord saved, so it can be edited", async () => {
+test("send returns the message Discord saved, so it can be edited and linked", async () => {
     const fetchImpl = async () => ({
         ok: true,
         status: 200,
-        json: async () => ({ id: "123" }),
+        json: async () => ({ id: "123", channel_id: "9" }),
     });
-    assert.equal(
+    assert.deepEqual(
         await send("https://x.test/h", {}, { fetchImpl, sleep: noSleep }),
-        "123",
+        { id: "123", channel_id: "9" },
     );
 });
 

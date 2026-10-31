@@ -348,7 +348,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     {KEY_TABS.map(({ value, label }) => (
                         <TabButton
                             key={value}
-                            size="lg"
                             active={keyTab === value}
                             onClick={() => setKeyTab(value)}
                             ariaLabel={label}

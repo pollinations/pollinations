@@ -470,7 +470,6 @@ export function CommunityEndpoints({
                     {LISTING_TABS.map(({ value, label }) => (
                         <TabButton
                             key={value}
-                            size="lg"
                             active={listingTab === value}
                             onClick={() =>
                                 void navigate({

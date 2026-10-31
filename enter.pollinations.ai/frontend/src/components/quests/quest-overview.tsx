@@ -285,7 +285,7 @@ function SetupHoldNotice() {
     return (
         <p className="px-1 pb-1 text-sm text-theme-text-muted">
             <span className="text-intent-danger-text">
-                We couldn't verify your account, so Setup rewards are locked.
+                We couldn't verify your account, so Setup quests are locked.
             </span>{" "}
             To unlock them,{" "}
             <InlineLink href="/pollen#buy-pollen">buy a pollen pack</InlineLink>{" "}

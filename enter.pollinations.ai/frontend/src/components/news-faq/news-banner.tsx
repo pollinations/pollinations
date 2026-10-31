@@ -35,11 +35,11 @@ import {
 /** Rows shown at first and added per "Show older". */
 const PAGE_SIZE = 10;
 
-/** A launch or change pinned by hand; it shows until `until` (UTC day). */
+/** A launch or change pinned by hand, optionally until a UTC day. */
 type Announcement = {
     /** The day it shipped or takes effect. */
     date: string;
-    until: string;
+    until?: string;
     label: "New" | "Updated" | "Changing";
     title: string;
     text: string;
@@ -56,14 +56,23 @@ const ANNOUNCEMENTS: Announcement[] = [
     {
         date: "2026-11-01",
         until: "2026-11-15",
-        label: "Changing",
-        title: "Publishable keys",
-        text: "From Nov 1, pk_ keys only identify your app; users pay through Connect User Wallets.",
+        label: "Updated",
+        title: "App Keys",
+        text: "pk_ keys now identify apps only. API calls require sk_; connect users through Connect User Wallets.",
         icon: KeyIcon,
         cta: {
             label: "Migrate your app",
             href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         },
+    },
+    {
+        date: "2026-11-01",
+        until: "2026-11-15",
+        label: "Updated",
+        title: "Sandbox launch pricing",
+        text: "Run a 2 vCPU, 2 GB sandbox from 0.0333 Pollen/hour.",
+        icon: TerminalIcon,
+        cta: { label: "Open Sandboxes", href: "/sandboxes" },
     },
     {
         date: "2026-10-22",
@@ -79,21 +88,11 @@ const ANNOUNCEMENTS: Announcement[] = [
     },
     {
         date: "2026-10-17",
-        until: "2026-10-31",
         label: "Updated",
         title: "25% off selected Claude models",
         text: "Sonnet 5.5 and Haiku 5.5: 25% off standard API prices.",
         icon: WalletIcon,
         cta: { label: "View models", href: "/models?q=anthropic" },
-    },
-    {
-        date: "2026-10-13",
-        until: "2026-10-27",
-        label: "Updated",
-        title: "Sandboxes",
-        text: "Now in your dashboard: create, resume and kill sandboxes, then connect over SSH.",
-        icon: TerminalIcon,
-        cta: { label: "Open Sandboxes", href: "/sandboxes" },
     },
     {
         date: "2026-10-10",
@@ -110,7 +109,7 @@ const ANNOUNCEMENTS: Announcement[] = [
 ];
 
 export const currentAnnouncements = (today: string) =>
-    ANNOUNCEMENTS.filter(({ until }) => until >= today).slice(0, 4);
+    ANNOUNCEMENTS.filter(({ until }) => !until || until >= today).slice(0, 4);
 
 function changeChip(
     { action, date, changes, status }: ModelNews,

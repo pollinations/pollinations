@@ -23,7 +23,7 @@ import {
     useState,
 } from "react";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
-import { TitleSwitch } from "../layout/title-switch.tsx";
+import { EXPLORE_VIEWS, TitleSwitch } from "../layout/title-switch.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
@@ -475,30 +475,16 @@ export const Models: FC<{ kind: CatalogKind }> = ({ kind }) => {
         <>
             <Section
                 title={
-                    kind === "models" ? (
-                        "Models"
-                    ) : (
-                        <TitleSwitch
-                            views={[
-                                {
-                                    label: "Agents",
-                                    active: kind === "agent",
-                                    link: {
-                                        to: "/agents",
-                                        search: { view: undefined },
-                                    },
-                                },
-                                {
-                                    label: "MCP",
-                                    active: kind === "mcp",
-                                    link: {
-                                        to: "/agents",
-                                        search: { view: "mcp" },
-                                    },
-                                },
-                            ]}
-                        />
-                    )
+                    <TitleSwitch
+                        views={EXPLORE_VIEWS}
+                        active={
+                            kind === "models"
+                                ? "Models"
+                                : kind === "agent"
+                                  ? "Agents"
+                                  : "MCP"
+                        }
+                    />
                 }
                 actionClassName="ml-auto"
                 action={

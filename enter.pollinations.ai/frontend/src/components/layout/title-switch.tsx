@@ -3,38 +3,54 @@ import type { FC } from "react";
 
 export type TitleSwitchView = {
     label: string;
-    active: boolean;
     /** Name every search param, with `undefined` for a default view's. */
     link: LinkProps;
 };
 
+// The pages behind the drawer's Explore and Publish rows. Each keeps its own
+// address; their headings switch between them.
+export const EXPLORE_VIEWS = [
+    { label: "Models", link: { to: "/models" } },
+    { label: "Agents", link: { to: "/agents", search: { view: undefined } } },
+    { label: "MCP", link: { to: "/agents", search: { view: "mcp" } } },
+    { label: "Sandboxes", link: { to: "/sandboxes" } },
+] as const satisfies readonly TitleSwitchView[];
+
+export const PUBLISH_VIEWS = [
+    { label: "Apps", link: { to: "/my-apps" } },
+    { label: "Models", link: { to: "/my-models" } },
+    { label: "Agents", link: { to: "/my-agents" } },
+] as const satisfies readonly TitleSwitchView[];
+
 /**
  * A page heading made of the page's views, e.g. "News / FAQ": the current
- * view reads as the title, the other is a link that switches to it.
+ * view reads as the title, the others are links that switch to them.
  */
-export const TitleSwitch: FC<{ views: readonly TitleSwitchView[] }> = ({
-    views,
-}) => (
+export const TitleSwitch: FC<{
+    views: readonly TitleSwitchView[];
+    active: string;
+}> = ({ views, active }) => (
     <span className="inline-flex flex-wrap items-baseline gap-x-3">
-        {views.map(({ label, active, link }, index) => (
+        {views.map(({ label, link }, index) => (
             <span key={label} className="inline-flex items-baseline gap-x-3">
-                {index > 0 && (
-                    <span aria-hidden="true" className="text-theme-text-muted">
-                        /
-                    </span>
-                )}
-                {active ? (
+                {label === active ? (
                     <span aria-current="true">{label}</span>
                 ) : (
                     <Link
                         {...link}
-                        // The views share a path, so only an exact search
+                        // Some views share a path, so only an exact search
                         // match counts as the current page.
                         activeOptions={{ exact: true, explicitUndefined: true }}
                         className="text-theme-text-muted transition-colors hover:text-theme-text-strong"
                     >
                         {label}
                     </Link>
+                )}
+                {/* After the word, so a wrapped heading ends a line with it. */}
+                {index < views.length - 1 && (
+                    <span aria-hidden="true" className="text-theme-text-muted">
+                        /
+                    </span>
                 )}
             </span>
         ))}

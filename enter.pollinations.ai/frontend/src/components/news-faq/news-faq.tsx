@@ -59,15 +59,14 @@ export const NewsFaq: FC = () => {
             views={[
                 {
                     label: "News",
-                    active: view !== "faq",
                     link: { to: "/news", search: { view: undefined } },
                 },
                 {
                     label: "FAQ",
-                    active: view === "faq",
                     link: { to: "/news", search: { view: "faq" } },
                 },
             ]}
+            active={view === "faq" ? "FAQ" : "News"}
         />
     );
     if (view === "faq") {

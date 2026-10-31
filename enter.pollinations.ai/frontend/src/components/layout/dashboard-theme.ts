@@ -3,14 +3,11 @@
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 import {
     AccountIcon,
-    AppIcon,
-    BeakerIcon,
-    BotIcon,
+    CloudUploadIcon,
+    CubeIcon,
     LockIcon,
     NewspaperIcon,
-    RobotIcon,
     SparkleIcon,
-    TerminalIcon,
     ToolIcon,
     TrendUpIcon,
     WalletIcon,
@@ -23,6 +20,8 @@ import type { ComponentType } from "react";
  */
 export type DashboardNavGroup = "account" | "yours" | "resources";
 
+// A row with `views` stands for several pages, which its pages' headings
+// switch between (see title-switch.tsx); it stays highlighted on all of them.
 export const DASHBOARD_NAV_ITEMS = [
     {
         id: "account",
@@ -54,32 +53,12 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "yours",
     },
     {
-        id: "my-models",
-        to: "/my-models",
-        label: "My Models",
-        icon: BeakerIcon,
-        group: "yours",
-    },
-    {
-        id: "my-agents",
-        to: "/my-agents",
-        label: "My Agents",
-        icon: RobotIcon,
-        group: "yours",
-    },
-    {
-        id: "my-apps",
+        id: "publish",
         to: "/my-apps",
-        label: "My Apps",
-        icon: AppIcon,
+        label: "Publish",
+        icon: CloudUploadIcon,
         group: "yours",
-    },
-    {
-        id: "sandboxes",
-        to: "/sandboxes",
-        label: "Sandboxes",
-        icon: TerminalIcon,
-        group: "yours",
+        views: ["/my-apps", "/my-models", "/my-agents"],
     },
     {
         id: "activity",
@@ -96,18 +75,12 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "resources",
     },
     {
-        id: "models",
+        id: "explore",
         to: "/models",
-        label: "Models",
-        icon: BeakerIcon,
+        label: "Explore",
+        icon: CubeIcon,
         group: "resources",
-    },
-    {
-        id: "agents",
-        to: "/agents",
-        label: "Agents & MCP",
-        icon: BotIcon,
-        group: "resources",
+        views: ["/models", "/agents", "/sandboxes"],
     },
 ] as const satisfies readonly {
     id: string;
@@ -115,13 +88,23 @@ export const DASHBOARD_NAV_ITEMS = [
     label: string;
     icon: ComponentType<{ className?: string }>;
     group: DashboardNavGroup;
+    views?: readonly string[];
 }[];
 
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
 export type DashboardPath = (typeof DASHBOARD_NAV_ITEMS)[number]["to"];
 
-export function isDashboardPath(path: string): path is DashboardPath {
-    return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
+/** The drawer row a dashboard page belongs to. */
+export function navItemFor(path: string) {
+    return DASHBOARD_NAV_ITEMS.find((item) =>
+        "views" in item
+            ? (item.views as readonly string[]).includes(path)
+            : item.to === path,
+    );
+}
+
+export function isDashboardPath(path: string): boolean {
+    return navItemFor(path) !== undefined;
 }
 
 const RESOURCE_ITEMS = DASHBOARD_NAV_ITEMS.filter(

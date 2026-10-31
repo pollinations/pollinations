@@ -50,6 +50,7 @@ import {
     type DashboardNavGroup,
     type DashboardPage,
     type DashboardPath,
+    navItemFor,
 } from "./dashboard-theme.ts";
 
 /** Counts what the page still waits for; the shell shows one status while > 0. */
@@ -113,9 +114,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
     const location = useRouterState({ select: (state) => state.location });
-    const activeNavItem = DASHBOARD_NAV_ITEMS.find(
-        (item) => item.to === location.pathname,
-    );
+    const activeNavItem = navItemFor(location.pathname);
     const activePage = activeNavItem?.id;
     const questStatus = useQuestNavStatus(showQuestStatus);
 
@@ -380,19 +379,16 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                         onClick={onNavigate}
                                     >
                                         {item.label}
-                                        {(item.id === "sandboxes" ||
-                                            (item.id === "quests" &&
-                                                questStatus)) && (
-                                            <Chip
-                                                intent="neutral"
-                                                size="sm"
-                                                className="ml-auto bg-transparent text-theme-text-soft"
-                                            >
-                                                {item.id === "quests"
-                                                    ? questStatus
-                                                    : "New!"}
-                                            </Chip>
-                                        )}
+                                        {item.id === "quests" &&
+                                            questStatus && (
+                                                <Chip
+                                                    intent="neutral"
+                                                    size="sm"
+                                                    className="ml-auto bg-transparent text-theme-text-soft"
+                                                >
+                                                    {questStatus}
+                                                </Chip>
+                                            )}
                                     </NavItem>
                                 ))}
                             </div>

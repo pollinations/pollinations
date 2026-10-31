@@ -35,10 +35,15 @@ import {
 } from "../hooks/use-account-balance.ts";
 import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 import { isOutageStatus, useOutage, useOutageRetry } from "../lib/outage.ts";
+import { PAGE_TITLES } from "../page-meta.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
+// Pages that load without an account (Sandboxes, under Explore, needs one).
 const PUBLIC_PATHS: ReadonlySet<string> = new Set([
-    ...SIGNED_OUT_NAV_ITEMS.map((item) => item.to),
+    "/news",
+    "/models",
+    "/agents",
+    "/quests",
     "/sign-in",
 ]);
 let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
@@ -166,8 +171,7 @@ function DashboardLayout() {
     // Pages that need the account wait out the outage; public pages still load.
     const outagePageTitle =
         data.sessionUnavailable && !PUBLIC_PATHS.has(pathname)
-            ? (DASHBOARD_NAV_ITEMS.find((item) => item.to === pathname)
-                  ?.label ?? "Account")
+            ? ((PAGE_TITLES as Record<string, string>)[pathname] ?? "Account")
             : undefined;
     useOutageRetry(data.sessionUnavailable, "dashboard-session", () =>
         router.invalidate(),

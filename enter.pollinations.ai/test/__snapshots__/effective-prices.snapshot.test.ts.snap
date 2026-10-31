@@ -4361,6 +4361,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioTokens": 0.0041,
     },
   },
+  "stability-ai/triposr": {
+    "cost": {
+      "completionImageTokens": 0.07,
+    },
+    "price": {
+      "completionImageTokens": 0.07,
+    },
+  },
   "stealth/glyph-cluster": {
     "cost": {
       "completionTextTokens": 0,

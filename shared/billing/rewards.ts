@@ -71,12 +71,21 @@ export interface ClaimRewardResult {
 
 type AuthDb = DrizzleD1Database<typeof schema>;
 
+// The reward's key under the account's GitHub id, as rewardKey() builds it.
+const githubKeyOf = (userId: string) =>
+    sql`'quest:' || ${rewards.questId} || ':github:' || (SELECT github_id FROM ${userTable} WHERE id = ${userId})`;
+
 /**
  * True while the account's email domain, or a domain it is a subdomain of, is
  * flagged and not allowed, and the account isn't verified: no purchase and no
- * linked GitHub account at least 30 days old.
+ * linked GitHub account at least 30 days old. With `rewardId`, GitHub verifies
+ * only a reward keyed to that GitHub id, so one GitHub account unlocks each
+ * setup reward once, even across deleted accounts.
  */
-export const setupRewardHeld = (userId: string) => sql`EXISTS (
+export const setupRewardHeld = (
+    userId: string,
+    rewardId?: string,
+) => sql`EXISTS (
     SELECT 1 FROM ${userTable} u, ${flaggedEmailDomain} f
     WHERE u.id = ${userId}
         AND f.allowed_at IS NULL
@@ -87,6 +96,15 @@ export const setupRewardHeld = (userId: string) => sql`EXISTS (
         AND (
             u.github_created_at IS NULL
             OR u.github_created_at > unixepoch() - 30 * 24 * 60 * 60
+            ${
+                rewardId
+                    ? sql`OR NOT EXISTS (
+                SELECT 1 FROM ${rewards} r
+                WHERE r.id = ${rewardId}
+                    AND r.idempotency_key = 'quest:' || r.quest_id || ':github:' || u.github_id
+            )`
+                    : sql``
+            }
         )
         AND NOT EXISTS (
             SELECT 1 FROM ${stripeCheckoutCredits} c WHERE c.user_id = u.id
@@ -183,28 +201,44 @@ export async function claimReward(
         row.balanceBucket === "tier" ? sql`tier_balance` : sql`pack_balance`;
     const claimedAt = new Date();
 
-    const [, updateResult] = await db.batch([
-        db
-            .update(rewards)
-            .set({ claimedAt })
-            .where(
-                and(
-                    eq(rewards.id, rewardId),
-                    eq(rewards.userId, userId),
-                    isNull(rewards.claimedAt),
-                    row.questId !== null && setupQuestIds?.has(row.questId)
-                        ? sql`NOT ${setupRewardHeld(userId)}`
-                        : undefined,
-                ),
+    const holdable = row.questId !== null && setupQuestIds?.has(row.questId);
+    const claim = db
+        .update(rewards)
+        .set({ claimedAt })
+        .where(
+            and(
+                eq(rewards.id, rewardId),
+                eq(rewards.userId, userId),
+                isNull(rewards.claimedAt),
+                holdable
+                    ? sql`NOT ${setupRewardHeld(userId, rewardId)}`
+                    : undefined,
             ),
-        db
-            .update(userTable)
-            .set({
-                [`${row.balanceBucket}Balance`]: sql`ROUND(COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}, ${POLLEN_BILLING_PRECISION})`,
-            })
-            .where(sql`${userTable.id} = ${userId} AND changes() = 1`)
-            .returning({ newBalance: bucketColumn }),
-    ]);
+        );
+    const credit = db
+        .update(userTable)
+        .set({
+            [`${row.balanceBucket}Balance`]: sql`ROUND(COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}, ${POLLEN_BILLING_PRECISION})`,
+        })
+        .where(sql`${userTable.id} = ${userId} AND changes() = 1`)
+        .returning({ newBalance: bucketColumn });
+    // A setup reward is first re-keyed to the account's GitHub id, unless that
+    // GitHub id already holds it; the hold accepts GitHub only for that key.
+    const bindToGitHub = db
+        .update(rewards)
+        .set({ idempotencyKey: githubKeyOf(userId) })
+        .where(
+            and(
+                eq(rewards.id, rewardId),
+                isNull(rewards.claimedAt),
+                sql`(SELECT github_id FROM ${userTable} WHERE id = ${userId}) IS NOT NULL`,
+                sql`NOT EXISTS (SELECT 1 FROM ${rewards} r WHERE r.idempotency_key = ${githubKeyOf(userId)})`,
+            ),
+        );
+    const results = holdable
+        ? await db.batch([bindToGitHub, claim, credit])
+        : await db.batch([claim, credit]);
+    const updateResult = results[results.length - 1];
 
     const updatedRows =
         (updateResult as Array<{ newBalance: number | null }>) ?? [];

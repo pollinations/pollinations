@@ -129,7 +129,10 @@ export function registrableDomain(email: string): string | null {
         .slice(email.lastIndexOf("@") + 1)
         .toLowerCase()
         .replace(/\.+$/, "");
-    return getDomain(host, { validateHostname: false });
+    const domain = getDomain(host, { validateHostname: false });
+    // Domains reach Discord and maintainers' commands: letters, digits,
+    // dots and hyphens only.
+    return domain && /^[a-z0-9.-]+$/.test(domain) ? domain : null;
 }
 
 /**

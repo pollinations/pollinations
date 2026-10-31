@@ -2861,6 +2861,7 @@ test("sign-up flags: a first setup reward records the registrable domain; reward
     expect(registrableDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
     expect(registrableDomain("x@a_1.sub.test.")).toBe("sub.test");
     expect(registrableDomain("x@co.uk")).toBeNull();
+    expect(registrableDomain('x@a.b"c.com')).toBeNull();
 });
 
 test("sign-up flags: returning accounts don't count as new sign-ups", async ({

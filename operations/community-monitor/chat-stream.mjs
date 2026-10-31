@@ -50,8 +50,8 @@ export function parseChatStream(body) {
     let dataLines = [];
     let errorDetails;
 
-    // The upstream writes its own model name into every chunk; the monitor
-    // compares it with the declared upstream model (informational only).
+    // The upstream writes its own model name into every chunk; the probe
+    // reports it as a diagnostic only.
     const served = () => (servedModel ? { servedModel } : {});
     const fail = (protocolError) => ({
         content,

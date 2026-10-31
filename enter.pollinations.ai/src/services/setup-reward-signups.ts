@@ -158,7 +158,7 @@ export async function recordSetupRewardSignup(
         const response = await fetch(
             getTinybirdDatasourceIngestUrl(
                 env.TINYBIRD_INGEST_URL,
-                "setup_reward_signup",
+                "signup_event",
             ),
             {
                 method: "POST",
@@ -176,10 +176,10 @@ export async function recordSetupRewardSignup(
             },
         );
         if (!response.ok)
-            log.warn("SETUP_REWARD_SIGNUP_FAILED: status={status}", {
+            log.warn("SIGNUP_EVENT_FAILED: status={status}", {
                 status: response.status,
             });
     } catch (error) {
-        log.warn("SETUP_REWARD_SIGNUP_FAILED: {error}", { error });
+        log.warn("SIGNUP_EVENT_FAILED: {error}", { error });
     }
 }

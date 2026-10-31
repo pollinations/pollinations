@@ -12,7 +12,7 @@ SQL >
         email_domain AS domain,
         uniq(user_id) AS accounts,
         toUnixTimestamp(min(timestamp)) AS since
-    FROM setup_reward_signup
+    FROM signup_event
     WHERE environment = 'production'
         AND timestamp >= now() - interval 24 hour
     GROUP BY email_domain

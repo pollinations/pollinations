@@ -99,7 +99,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 state.stripeEvents.push(...rows);
             } else if (eventName === "product_event") {
                 state.productEvents.push(...rows);
-            } else if (eventName === "setup_reward_signup") {
+            } else if (eventName === "signup_event") {
                 state.signupEvents.push(...rows);
             }
 

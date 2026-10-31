@@ -105,7 +105,7 @@ function AppRow({ app }: { app: ListedApp }) {
                             ))}
                             {app.byop && (
                                 <Chip intent="info" size="sm">
-                                    Pollen Pay
+                                    Pollinations Pay
                                 </Chip>
                             )}
                         </div>
@@ -163,7 +163,7 @@ function AppRow({ app }: { app: ListedApp }) {
                             </span>
                         )}
                     </div>
-                    {/* Only a Pollen Pay app reports traffic; the count is its own. */}
+                    {/* Only a Pollinations Pay app reports traffic; the count is its own. */}
                     {app.requests24h !== null && (
                         <span className="text-xs tabular-nums text-theme-text-muted">
                             {app.requests24h.toLocaleString("en-US")} requests ·

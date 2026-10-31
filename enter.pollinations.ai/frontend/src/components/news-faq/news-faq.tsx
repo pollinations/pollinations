@@ -25,7 +25,8 @@ const CHANGELOG_LINKS = (
 type Tab = { label: string; links?: ReactNode; panel: ReactNode };
 
 export const NewsFaq: FC = () => {
-    const { view } = useSearch({ from: "/_dashboard/news" });
+    // Not strict: the sign-in page shows News under its dialog too.
+    const { view } = useSearch({ strict: false });
     // Fetched on load, so the index tabs are ready when opened.
     const index = useNewsIndex();
     const today = new Date().toISOString().slice(0, 10);

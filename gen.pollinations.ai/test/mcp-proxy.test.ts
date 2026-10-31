@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "http-probe",
+                name: "HTTP Probe",
+                description:
+                    "Check a public URL's status, redirect chain, response time, and security headers.",
+                url: "https://gen.pollinations.ai/mcp/http-probe",
+                pricing: {
+                    description: "Free. No Pollinations calls and no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -227,42 +238,48 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
-test("routes Machines with caller authorization without an extra MCP debit", async () => {
-    const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 1 },
-    });
-    const payload = {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: { name: "list_sandboxes", arguments: {} },
-    };
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/machines",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Cookie: "session=private",
-                "Content-Type": "application/json",
+test.for([
+    ["machines", "list_sandboxes"],
+    ["http-probe", "http_probe"],
+])(
+    "routes %s with caller authorization without an extra MCP debit",
+    async ([serverId, toolName]) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1 },
+        });
+        const payload = {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name: toolName, arguments: {} },
+        };
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    Cookie: "session=private",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
             },
-            body: JSON.stringify(payload),
-        },
-    );
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-        pathname: "/",
-        authorization: `Bearer ${key}`,
-        cookie: null,
-        payload,
-    });
-    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
-        tierBalance: 1,
-        packBalance: 0,
-    });
-});
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            pathname: "/",
+            authorization: `Bearer ${key}`,
+            cookie: null,
+            payload,
+        });
+        expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+            tierBalance: 1,
+            packBalance: 0,
+        });
+    },
+);
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "machines", "http-probe"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

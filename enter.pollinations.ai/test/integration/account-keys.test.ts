@@ -301,7 +301,7 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(403);
         });
 
-        test("should create key via publishable API key with account:keys permission", async ({
+        test("refuses a publishable key even with account:keys permission", async ({
             accountToken,
         }) => {
             const createPub = await SELF.fetch(
@@ -349,20 +349,13 @@ describe("Account Key Management API", () => {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${createdPub.key}`,
                     },
-                    // A publishable key's budget is 0, so its keys' are too.
                     body: JSON.stringify({
                         name: "child-from-publishable",
-                        pollenBudget: 0,
                     }),
                 },
             );
 
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.key.startsWith("sk_")).toBe(true);
-            expect(data.name).toBe("child-from-publishable");
-            expect(data.pollenBudget).toBe(0);
-            expect(data.permissions?.account ?? []).not.toContain("keys");
+            expect(response.status).toBe(401);
         });
     });
 

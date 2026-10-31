@@ -23,7 +23,7 @@ import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
-import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
+import { isAppKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
@@ -87,9 +87,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const sortedAppKeys = sortedKeys.filter(isAppKey);
 
     function renderKeyCard(apiKey: ApiKey) {
-        const isPublishable = isPublishableKey(apiKey);
         const isApp = isAppKey(apiKey);
         const keyLabel = isApp ? "app key" : "secret key";
+        // An app key's settings are the app's settings.
+        const editLabel = isApp ? "Edit app" : "Edit secret key";
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
@@ -109,17 +110,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             {isApp ? (
                                 <AppIcon className="h-4 w-4" />
-                            ) : isPublishable ? (
-                                <GlobeIcon className="h-4 w-4" />
                             ) : (
                                 <KeyIcon className="h-4 w-4" />
                             )}
                             <span className="sr-only">
-                                {isApp
-                                    ? "App key"
-                                    : isPublishable
-                                      ? "Publishable key"
-                                      : "Secret key"}
+                                {isApp ? "App key" : "Secret key"}
                             </span>
                         </>
                     }
@@ -128,8 +123,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             <IconButton
                                 intent="info"
-                                title={`Edit ${keyLabel}`}
-                                tooltip={`Edit ${keyLabel}`}
+                                title={editLabel}
+                                tooltip={editLabel}
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
@@ -157,8 +152,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 <div className="mt-1 min-w-0">
                     <KeyChip
                         prefix={apiKey.start ?? ""}
-                        value={isPublishable ? plaintextKey : undefined}
-                        label={isApp ? "Copy app key" : "Copy publishable key"}
+                        value={isApp ? plaintextKey : undefined}
+                        label="Copy app key"
                     />
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
@@ -185,7 +180,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 : "never"}
                         </span>
                     </span>
-                    {isPublishable && primaryRedirectUri && (
+                    {isApp && primaryRedirectUri && (
                         <span className="inline-flex min-w-0 items-center gap-1">
                             <span className="text-theme-text-muted">
                                 Redirect:{" "}
@@ -301,6 +296,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     const keyAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<KeyIcon />}
             aria-haspopup="dialog"
@@ -311,6 +307,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     );
     const appAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<AppIcon />}
             aria-haspopup="dialog"

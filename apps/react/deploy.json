@@ -1,7 +1,0 @@
-{
-  "target": "pages",
-  "credentials": "apps",
-  "subdomain": "react",
-  "output": "redirect",
-  "verify_redirect": "https://github.com/pollinations/pollinations/tree/main/packages/ui"
-}

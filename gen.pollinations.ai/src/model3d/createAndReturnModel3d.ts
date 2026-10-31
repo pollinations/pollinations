@@ -4,6 +4,7 @@ import { callRodinFalAPI } from "./models/rodinModel.ts";
 import { callTrellis2Fal } from "./models/trellis2FalModel.ts";
 import { callTrellis2 } from "./models/trellis2Model.ts";
 import { callTripoP2 } from "./models/tripoP2Model.ts";
+import { callTripoSR } from "./models/tripoSRModel.ts";
 import type { Model3dParams } from "./params.ts";
 
 export interface Model3dGenerationResult {
@@ -21,6 +22,8 @@ export async function createAndReturnModel3d(
     safeParams: Model3dParams,
 ): Promise<Model3dGenerationResult> {
     switch (safeParams.model) {
+        case "stability-ai/triposr":
+            return await callTripoSR(safeParams);
         case "microsoft/trellis-2":
             return await callTrellis2(safeParams);
         case "microsoft/trellis-2:fal":

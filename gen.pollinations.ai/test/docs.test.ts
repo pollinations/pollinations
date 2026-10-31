@@ -401,9 +401,15 @@ describe("docs routes", () => {
         };
         const model3dBodySchema =
             model3dRequestBody.content["application/json"].schema;
-        expect(Object.keys(model3dBodySchema.properties)).toHaveLength(4);
+        expect(Object.keys(model3dBodySchema.properties)).toHaveLength(5);
         expect(Object.keys(model3dBodySchema.properties)).toEqual(
-            expect.arrayContaining(["model", "image", "resolution", "seed"]),
+            expect.arrayContaining([
+                "model",
+                "image",
+                "image_urls",
+                "resolution",
+                "seed",
+            ]),
         );
         expect(model3dBodySchema.properties.safe).toBeUndefined();
         expect(

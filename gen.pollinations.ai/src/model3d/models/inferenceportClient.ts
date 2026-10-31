@@ -5,7 +5,7 @@
  * GET /v1/3d/jobs/{job_id} until data[0].model_glb_b64_bytes or
  * data[0].model_ply_b64_bytes is ready.
  *
- * Confirmed model values: "trellis2", "asset-harvester".
+ * Confirmed model values: "trellis2", "asset-harvester", "tripoSR".
  * Confirmed output fields:
  *   - trellis2: data[0].model_glb_b64_bytes
  *   - asset-harvester: data[0].model_ply_b64_bytes, data[0].orbit_video_b64_bytes
@@ -43,7 +43,14 @@ interface InferenceportSubmitResponse {
 }
 
 interface InferenceportJobResponse {
-    status?: "pending" | "processing" | "completed" | "failed";
+    status?:
+        | "pending"
+        | "queued"
+        | "running"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "refunded";
     data?: InferenceportJobData[];
     error?: string;
     usage?: { payg_credits_charged?: number };
@@ -132,13 +139,20 @@ export async function runInferenceport(
                 cost,
             };
         }
-        if (job.status === "failed") {
+        if (job.status === "failed" || job.status === "refunded") {
+            // Never echo provider error bodies: they may contain image data.
             throw new InferenceportError(
-                job.error || "InferencePort generation failed",
+                job.status === "refunded"
+                    ? "InferencePort generation was refunded"
+                    : "generation failed",
                 502,
             );
         }
-        if (job.status !== "pending" && job.status !== "processing") {
+        if (
+            !["pending", "queued", "running", "processing"].includes(
+                job.status ?? "",
+            )
+        ) {
             throw new InferenceportError(
                 "InferencePort returned an invalid job status",
                 502,
@@ -188,11 +202,12 @@ async function inferenceportFetch<T>(
     }
 
     if (!response.ok) {
-        const text = await response.text().catch(() => "<no body>");
+        // Do not forward or log provider response bodies; they can echo
+        // submitted base64 images or upstream credentials.
+        await response.body?.cancel();
         throw new InferenceportError(
-            `InferencePort ${method} ${url} failed (HTTP ${response.status}): ${text}`,
+            `InferencePort ${method} ${url} failed (HTTP ${response.status})`,
             classifyInferenceportHttpStatus(response.status),
-            text,
         );
     }
     return (await response.json()) as T;

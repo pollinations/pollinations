@@ -217,6 +217,8 @@ export default defineConfig(async ({ mode }) => {
                                 cookie: request.headers.get("cookie"),
                                 payload: await request.json(),
                             }),
+                        RFC_MCP: async (request: Request) =>
+                            Response.json({ payload: await request.json() }),
                         FFMPEG_MCP: async (request: Request) => {
                             if (
                                 request.headers.has("authorization") ||

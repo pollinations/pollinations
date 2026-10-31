@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "RFC_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "rfc",
+        name: "IETF RFCs",
+        description:
+            "Search IETF RFCs, inspect RFC status and obsolescence metadata, and read canonical specification sections.",
+        binding: "RFC_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Public IETF Datatracker and RFC Editor lookups. No Pollen charge.",
             rates: [],
         },
     },

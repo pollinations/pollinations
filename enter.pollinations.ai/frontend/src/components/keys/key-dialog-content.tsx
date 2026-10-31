@@ -81,7 +81,7 @@ export function KeyDialogContent({
         edit: accessContext
             ? `Edit ${accessContext} access`
             : app
-              ? "Edit app key"
+              ? "Edit app"
               : "Edit secret key",
     };
     const title =

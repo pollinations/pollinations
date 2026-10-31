@@ -89,6 +89,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     function renderKeyCard(apiKey: ApiKey) {
         const isApp = isAppKey(apiKey);
         const keyLabel = isApp ? "app key" : "secret key";
+        // An app key's settings are the app's settings.
+        const editLabel = isApp ? "Edit app" : "Edit secret key";
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
@@ -121,8 +123,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             <IconButton
                                 intent="info"
-                                title={`Edit ${keyLabel}`}
-                                tooltip={`Edit ${keyLabel}`}
+                                title={editLabel}
+                                tooltip={editLabel}
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"

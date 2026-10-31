@@ -643,14 +643,47 @@ it("tells the community channel once a day what the listing filter changed", asy
     expect(told()[0].users).toEqual([]);
 });
 
+// A community text model in gen's catalog.
+const community = (name, extra) => ({
+    name,
+    community: true,
+    category: "text",
+    ...extra,
+});
+// Each text model answers its probe's marker; streams of the `broken`
+// models never end. Image models answer an image.
+const answers = (broken) => (path, body) => {
+    if (path !== "/v1/chat/completions")
+        return Response.json({ data: [{ b64_json: btoa("x".repeat(200)) }] });
+    const marker = body.messages[0].content.split(": ")[1];
+    const answer = `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }] })}\n\n`;
+    const done = broken(body.model) ? "" : "data: [DONE]\n\n";
+    return new Response(answer + done, {
+        headers: { "x-model-used": body.model },
+    });
+};
+// A check, and the probe batch it started.
+const probed = async (stub) => {
+    await stub.check();
+    await runInDurableObject(stub, (instance) => instance.probing);
+};
+// Half an hour on, with each model's backoff `ms` further along.
+const later = (stub, ms) =>
+    runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("probes");
+        saved.at -= 30 * 60_000;
+        for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
+        await state.storage.put("probes", saved);
+    });
+// The posts Discord accepted in the community channel.
+const communityPosts = () =>
+    world.writes.filter(
+        (w) => w.ok && w.path === "/api/webhooks/2/y" && w.method === "POST",
+    );
+
 it("probes due community models half-hourly and tells a broken stream once a day, pinging its owner", async () => {
     const stub = watch();
-    const model = (name, extra) => ({
-        name,
-        community: true,
-        category: "text",
-        ...extra,
-    });
+    const model = community;
     world.catalog = [
         { name: "a/model", category: "text" },
         model("community/o/broken", { health: { success_rate: 40 } }),
@@ -665,42 +698,15 @@ it("probes due community models half-hourly and tells a broken stream once a day
     world.regular = ["community/o/broken", "community/o/busy"].map((m) => ({
         model: m,
         is_rollup: 1,
+        total_requests: 30,
         status_2xx: 30,
+        errors_4xx: 0,
         errors_5xx: 0,
     }));
-    // Each text model answers its marker; o/broken's stream never ends.
-    world.probe = (path, body) => {
-        if (path !== "/v1/chat/completions")
-            return Response.json({
-                data: [{ b64_json: btoa("x".repeat(200)) }],
-            });
-        const marker = body.messages[0].content.split(": ")[1];
-        const answer = `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }] })}\n\n`;
-        const done =
-            body.model === "community/o/broken" ? "" : "data: [DONE]\n\n";
-        return new Response(answer + done, {
-            headers: { "x-model-used": body.model },
-        });
-    };
-    const probed = async () => {
-        await stub.check();
-        await runInDurableObject(stub, (instance) => instance.probing);
-    };
-    // Half an hour on, with each model's backoff `ms` further along.
-    const later = (ms) =>
-        runInDurableObject(stub, async (_, state) => {
-            const saved = await state.storage.get("probes");
-            saved.at -= 30 * 60_000;
-            for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
-            await state.storage.put("probes", saved);
-        });
-    const told = () =>
-        world.writes.filter(
-            (w) =>
-                w.ok && w.path === "/api/webhooks/2/y" && w.method === "POST",
-        );
+    world.probe = answers((m) => m === "community/o/broken");
+    const told = communityPosts;
 
-    await probed();
+    await probed(stub);
     // The weak model, the one without real traffic, and the image model,
     // with an edit first.
     expect(world.probes.sort()).toEqual([
@@ -710,15 +716,15 @@ it("probes due community models half-hourly and tells a broken stream once a day
     ]);
     expect(told()).toHaveLength(0);
     // Checked again within the half hour: not even looked for.
-    await probed();
+    await probed(stub);
     expect(world.probes).toHaveLength(3);
     expect(world.regularReads).toBe(1);
 
     // 8 hours on: all are due, the image model generates, and the second
     // broken stream in a row is told, pinging its owner.
     world.probes = [];
-    await later(8 * 60 * 60_000);
-    await probed();
+    await later(stub, 8 * 60 * 60_000);
+    await probed(stub);
     expect(world.probes.sort()).toEqual([
         "/v1/chat/completions community/o/broken",
         "/v1/chat/completions community/o/quiet",
@@ -734,11 +740,33 @@ it("probes due community models half-hourly and tells a broken stream once a day
 
     // Still broken on its next probe, within the day: quiet.
     world.probes = [];
-    await later(16 * 60 * 60_000);
-    await probed();
+    await later(stub, 16 * 60 * 60_000);
+    await probed(stub);
     expect(world.probes).toContain("/v1/chat/completions community/o/broken");
     expect(told()).toHaveLength(1);
     // None reached the infra-watch channel.
     const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
     expect(infra.some((w) => w.text.includes("BROKEN"))).toBe(false);
+});
+
+it("names as many broken streams as a card fits, and the rest after their next probe", async () => {
+    const stub = watch();
+    const names = Array.from({ length: 60 }, (_, i) => `community/o/m${i}`);
+    world.catalog = names.map((name) => community(name));
+    world.probe = answers(() => true);
+    await probed(stub);
+    await later(stub, 8 * 60 * 60_000);
+    await probed(stub);
+    const [first] = communityPosts();
+    expect(first.text.length).toBeLessThanOrEqual(4096);
+    const named = names.filter((n) => first.text.includes(`${n.slice(10)} `));
+    expect(named.length).toBeGreaterThan(0);
+    expect(first.text).toContain(`…and ${60 - named.length} more`);
+
+    // On their next probe, those it named stay quiet and the rest are told.
+    await later(stub, 16 * 60 * 60_000);
+    await probed(stub);
+    const [, second] = communityPosts();
+    expect(second.text).toContain(`${names.at(-1).slice(10)} `);
+    for (const n of named) expect(second.text).not.toContain(`${n.slice(10)} `);
 });

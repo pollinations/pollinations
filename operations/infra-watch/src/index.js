@@ -417,9 +417,11 @@ export class Watch extends DurableObject {
         if (publicModels) {
             await this.fallbacks(gen, publicModels, now);
             await this.listings(gen, now);
-            this.probing ??= this.probes(gen, publicModels, now).finally(() => {
-                this.probing = null;
-            });
+            this.probing ??= this.probes(gen, publicModels, now)
+                .catch((error) => console.error(`probes: ${error.message}`))
+                .finally(() => {
+                    this.probing = null;
+                });
         }
         // A completed check: what /health reports to the outside heartbeat.
         await this.ctx.storage.put("checkedAt", now);
@@ -522,7 +524,9 @@ export class Watch extends DurableObject {
     // Every half hour: the community models due a probe, probed with
     // COMMUNITY_PROBE_KEY, each result's backoff saved as it comes. Broken
     // streams are told in one card to the community channel once all are
-    // in; one Discord refused is told after the next probe that finds it.
+    // in; one the card had no room for, or Discord refused, is told after
+    // the next probe that finds it. A failure ends the batch, logged where
+    // the batch starts.
     async probes(gen, catalog, now) {
         const state = (await this.ctx.storage.get("probes")) ?? {};
         if (now - (state.at ?? 0) < PROBE_EVERY_MS) return;
@@ -536,47 +540,29 @@ export class Watch extends DurableObject {
         const save = () =>
             this.ctx.storage.put("probes", { ...state, at: now, schedule });
         await save();
-        try {
-            const key = this.env.COMMUNITY_PROBE_KEY;
-            if (!key) throw new Error("COMMUNITY_PROBE_KEY missing");
-            const { data: rows } = await getJson(
-                `${gen}/models/status?minutes=${PROBE_MINUTES}&traffic=regular`,
-            );
-            const due = dueProbes(catalog, rows, schedule, now);
-            const results = await pool(due, PROBE_POOL, async (model) => {
-                const result = await probe(
-                    gen,
-                    key,
-                    model,
-                    schedule[model.name],
-                );
-                schedule[model.name] = recordProbe(
-                    schedule[model.name],
-                    result,
-                );
-                await save();
-                if (!result.ok)
-                    console.log(
-                        `probe ${result.model}: ${result.status} ${result.requestId ?? ""}`,
-                    );
-                return result;
-            });
-            const streams = brokenStreams(state.streams, results, Date.now());
-            if (
-                streams.due.length &&
-                (await post(
-                    this.env,
-                    brokenStreamCard(streams.due),
-                    "COMMUNITY_WEBHOOK_URL",
-                ))
-            )
-                for (const { model, error } of streams.due)
-                    streams.told[streamKey(model, error)] = Date.now();
-            state.streams = { streaks: streams.streaks, told: streams.told };
+        const key = this.env.COMMUNITY_PROBE_KEY;
+        if (!key) throw new Error("COMMUNITY_PROBE_KEY missing");
+        const { data: rows } = await getJson(
+            `${gen}/models/status?minutes=${PROBE_MINUTES}&traffic=regular`,
+        );
+        const due = dueProbes(catalog, rows, schedule, now);
+        const results = await pool(due, PROBE_POOL, async (model) => {
+            const result = await probe(gen, key, model, schedule[model.name]);
+            schedule[model.name] = recordProbe(schedule[model.name], result);
             await save();
-        } catch (error) {
-            console.error(`probes: ${error.message}`);
-        }
+            if (!result.ok)
+                console.log(
+                    `probe ${result.model}: ${result.status} ${result.requestId ?? ""}`,
+                );
+            return result;
+        });
+        const streams = brokenStreams(state.streams, results, Date.now());
+        const card = streams.due.length && brokenStreamCard(streams.due);
+        if (card && (await post(this.env, card, "COMMUNITY_WEBHOOK_URL")))
+            for (const { model, error } of card.shown)
+                streams.told[streamKey(model, error)] = Date.now();
+        state.streams = { streaks: streams.streaks, told: streams.told };
+        await save();
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be

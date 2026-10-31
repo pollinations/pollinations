@@ -825,17 +825,22 @@ export function fallbackCard({ model, via, rescued, successes }) {
     };
 }
 
+// Discord cuts an embed at 4,096 characters. A broken-stream card names
+// whole models while it stays within this; the rest are counted.
+const STREAMS_BUDGET = 3800;
+
 // Community models whose probes got the same broken stream twice in a row,
 // in one card pinging their owners. It names the protocol error, with the
 // error event's code when that is a plain word: never stream content,
-// hosts or payloads.
+// hosts or payloads. `shown` are the models it names; the others are named
+// after their next probe.
 export function brokenStreamCard(due) {
     const color = COLOR.PRIMARY_WEAK;
-    return {
-        text: [
+    const render = (shown) =>
+        [
             panel(
                 "BROKEN STREAM",
-                due.flatMap(({ model, error, code }) => [
+                shown.flatMap(({ model, error, code }) => [
                     ["MODEL", community(model)],
                     [
                         "ERROR",
@@ -847,11 +852,23 @@ export function brokenStreamCard(due) {
                 color,
                 Infinity,
             ),
+            ...(shown.length < due.length
+                ? [
+                      `…and ${due.length - shown.length} more, named after their next probe`,
+                  ]
+                : []),
             "Two probes in a row got a broken stream: callers may get failed or cut-off answers.",
-        ].join("\n"),
+        ].join("\n");
+    // ponytail: renders once per model left out, fine for a few hundred.
+    let shown = due;
+    while (shown.length > 1 && render(shown).length > STREAMS_BUDGET)
+        shown = shown.slice(0, -1);
+    return {
+        text: render(shown),
         ping: false,
         color,
-        owners: [...new Set(due.map((d) => ownerOf(d.model)))],
+        owners: [...new Set(shown.map((d) => ownerOf(d.model)))],
+        shown,
     };
 }
 

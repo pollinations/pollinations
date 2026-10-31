@@ -83,20 +83,28 @@ export function discordIds(json) {
     }
 }
 
+// Discord takes at most this much message content.
+const CONTENT_LIMIT = 2000;
+
 // Owners above a community card: one with a known Discord id is pinged,
 // anyone else is named by GitHub username. Only a string of digits is an
-// id; nothing else is ever turned into a mention.
+// id; nothing else is ever turned into a mention. Owners past Discord's
+// content limit are left out whole.
 export function mention(owners, ids) {
-    const id = (name) => {
+    let content = "";
+    const users = new Set();
+    for (const name of owners) {
         const known = ids[name.toLowerCase()];
-        return typeof known === "string" && /^\d{17,20}$/.test(known)
-            ? known
-            : null;
-    };
-    return {
-        content: owners.map((o) => (id(o) ? `<@${id(o)}>` : o)).join(" "),
-        users: [...new Set(owners.map(id).filter(Boolean))],
-    };
+        const id =
+            typeof known === "string" && /^\d{17,20}$/.test(known)
+                ? known
+                : null;
+        const next = `${content}${content && " "}${id ? `<@${id}>` : name}`;
+        if (next.length > CONTENT_LIMIT) break;
+        content = next;
+        if (id) users.add(id);
+    }
+    return { content, users: [...users] };
 }
 
 // A webhook body: the alert as a coloured embed, mentions outside it, since

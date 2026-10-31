@@ -999,6 +999,28 @@ test("a broken-stream card names each model and error, and its owners once", () 
     assert.doesNotMatch(card.text, /private-host/);
     assert.equal(card.ping, false);
     assert.deepEqual(card.owners, ["o", "p"]);
+    assert.equal(card.shown.length, 4);
+});
+
+test("a large broken-stream card fits Discord's 4,096 characters, models whole, the rest counted", () => {
+    const due = Array.from({ length: 60 }, (_, i) => ({
+        model: `community/owner${i}/model-${i}`,
+        error: "stream returned usage_missing: missing or invalid token usage",
+        code: "usage_missing",
+    }));
+    const card = brokenStreamCard(due);
+    assert.ok(card.text.length <= 4096, card.text.length);
+    const named = card.shown.length;
+    assert.ok(named > 0 && named < 60);
+    assert.deepEqual(card.shown, due.slice(0, named));
+    assert.match(
+        card.text,
+        new RegExp(`MODEL {3}owner${named - 1}/model-${named - 1} `),
+    );
+    assert.doesNotMatch(card.text, new RegExp(`owner${named}/`));
+    assert.match(card.text, new RegExp(`…and ${60 - named} more`));
+    // Only the named models' owners are pinged.
+    assert.equal(card.owners.length, named);
 });
 
 // --- community listings ------------------------------------------------------

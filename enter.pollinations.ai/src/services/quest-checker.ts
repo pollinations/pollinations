@@ -3,7 +3,6 @@ import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import type { Env } from "../env.ts";
 import { listSetupQuestIds, QUEST_GROUPS } from "./quests/index.ts";
 import {
     type QuestEvaluation,
@@ -13,13 +12,8 @@ import {
     type QuestUser,
     toReward,
 } from "./quests/types.ts";
-import {
-    bindSetupRewardGithub,
-    type FlaggedDomain,
-    recordSetupRewardSignup,
-    reportFlaggedDomain,
-    setupRewardHoldsOn,
-} from "./setup-reward-holds.ts";
+import { setupHold } from "./setup-reward-holds.ts";
+import { recordSetupRewardSignup } from "./setup-reward-signups.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
@@ -36,7 +30,7 @@ export type QuestCheckResult = {
 };
 
 export async function checkQuestsForUser(
-    env: Env["Bindings"],
+    env: CloudflareBindings,
     userId: string,
     groups: QuestGroup[] = QUEST_GROUPS,
 ): Promise<QuestCheckResult> {
@@ -74,7 +68,7 @@ export async function checkQuestsForUser(
                 .where(eq(schema.rewards.userId, user.id))
         ).map((reward) => reward.questId),
     );
-    let proposals = sourceResults
+    const proposals = sourceResults
         .flatMap((entry) => entry.proposals)
         .filter(
             (proposal) =>
@@ -82,48 +76,17 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
-    // A GitHub account earns setup rewards for the first account it was
-    // linked to only, so a new account can't earn them again with it.
-    if (
-        user.githubId !== null &&
-        proposals.some(({ quest }) => quest.category === "setup") &&
-        (await bindSetupRewardGithub(env.DB, user.githubId, user.id)) !==
-            user.id
-    ) {
-        log.info("QUEST_CHECK_GITHUB_ALREADY_REWARDED: userId={userId}", {
-            userId: user.id,
-        });
-        proposals = proposals.filter(({ quest }) => quest.category !== "setup");
-    }
-    let setupSignupFailed = false;
-    let flagged: FlaggedDomain | null = null;
+    // An account's first setup reward is a sign-up; infra-watch counts them
+    // per email domain and reports a burst.
     const setupQuestIds = await listSetupQuestIds(ctx);
-    // Only an account's first setup reward is a sign-up: returning accounts
-    // completing another setup quest don't count again.
-    const firstSetupReward =
+    if (
         proposals.some(({ quest }) => quest.category === "setup") &&
-        ![...earned].some((id) => id !== null && setupQuestIds.has(id));
-    if (firstSetupReward) {
-        try {
-            flagged = await recordSetupRewardSignup(env.DB, {
-                userId: user.id,
-                email: user.email,
-            });
-        } catch (error) {
-            // Without the sign-up record, no setup reward is recorded; the
-            // next quest check retries.
-            log.error("QUEST_CHECK_SETUP_SIGNUP_FAILED: {error}", { error });
-            setupSignupFailed = true;
-            proposals = proposals.filter(
-                ({ quest }) => quest.category !== "setup",
-            );
-        }
-    }
-    if (flagged) {
-        // Reporting is best effort: rewards and holds never wait on Discord.
-        await reportFlaggedDomain(env, flagged).catch((error) =>
-            log.warn("SETUP_REWARD_REPORT_FAILED: {error}", { error }),
-        );
+        ![...earned].some((id) => id !== null && setupQuestIds.has(id))
+    ) {
+        await recordSetupRewardSignup(env, {
+            userId: user.id,
+            email: user.email,
+        });
     }
     const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(
@@ -152,20 +115,19 @@ export async function checkQuestsForUser(
                     eq(schema.rewards.questId, AUTO_CLAIM_QUEST_ID),
                 ),
             );
+        // A held account's Setup rewards wait for a purchase or a review.
+        const held = await setupHold(env, ctx.db, user);
         for (const reward of pending) {
             await claimReward(ctx.db, {
                 rewardId: reward.id,
                 userId: user.id,
-                setupQuestIds: setupRewardHoldsOn(env)
-                    ? setupQuestIds
-                    : undefined,
+                lockedQuestIds: held ? setupQuestIds : undefined,
             });
         }
     }
 
     const result = {
-        success:
-            !setupSignupFailed && sourceResults.every((entry) => !entry.error),
+        success: sourceResults.every((entry) => !entry.error),
         recorded: recorded.recorded,
         rewardIds: recorded.rewardIds,
         progress: sourceResults.flatMap((entry) => entry.progress ?? []),

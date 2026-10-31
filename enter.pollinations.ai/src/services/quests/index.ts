@@ -34,8 +34,8 @@ export async function listQuestCards(
 }
 
 /**
- * Onboarding quests, whose rewards a setup reward hold blocks. GitHub issue
- * quests are never onboarding quests; skipping them keeps claims off GitHub.
+ * Onboarding (setup) quest ids. GitHub issue quests are never onboarding
+ * quests; skipping them keeps this off the GitHub API.
  */
 export async function listSetupQuestIds(
     ctx: QuestEvaluationContext,

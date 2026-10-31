@@ -35,8 +35,6 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
-  // When the linked GitHub account was created; verifies held accounts.
-  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
   // Public branding shared by every community model owned by this account.
   communityProviderName: text("community_provider_name"),
   communityProviderUrl: text("community_provider_url"),
@@ -509,35 +507,3 @@ export const rewards = sqliteTable("rewards", {
 }, (table) => [
   index("idx_rewards_user_id").on(table.userId),
 ]);
-
-// Accounts on private email domains, recorded at their first setup
-// (onboarding) reward and deleted after 30 days. Counts sign-ups per domain;
-// no foreign key, so deleting accounts can't lower the count.
-export const setupRewardSignup = sqliteTable("setup_reward_signup", {
-  userId: text("user_id").primaryKey(),
-  emailDomain: text("email_domain").notNull(),
-  firstRewardAt: integer("first_reward_at", { mode: "timestamp" }).notNull(),
-}, (table) => [
-  index("idx_setup_reward_signup_domain").on(
-    table.emailDomain,
-    table.firstRewardAt,
-  ),
-  index("idx_setup_reward_signup_time").on(table.firstRewardAt),
-]);
-
-// Private email domains that passed 30 accounts in 24 hours. While holds are
-// on, their accounts can't claim setup rewards until verified or allowed.
-// The first Pollinations account each GitHub account was linked to. Kept when
-// accounts are deleted: a GitHub account verifies and earns setup rewards for
-// that one account only.
-export const setupRewardGithub = sqliteTable("setup_reward_github", {
-  githubId: integer("github_id").primaryKey(),
-  userId: text("user_id").notNull(),
-});
-
-export const flaggedEmailDomain = sqliteTable("flagged_email_domain", {
-  domain: text("domain").primaryKey(),
-  flaggedAt: integer("flagged_at", { mode: "timestamp" }).notNull(),
-  accounts: integer("accounts").notNull(),
-  allowedAt: integer("allowed_at", { mode: "timestamp" }),
-});

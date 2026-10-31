@@ -2,7 +2,6 @@ import { env, SELF } from "cloudflare:test";
 import {
     account as accountTable,
     rewards as rewardsTable,
-    setupRewardGithub,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { and, eq, like } from "drizzle-orm";
@@ -206,10 +205,6 @@ test("connects one GitHub account to a Google account", async ({ mocks }) => {
         githubId: mocks.github.state.user.id,
         githubUsername: mocks.github.state.user.login,
     });
-    // The GitHub account is bound to this account for setup rewards.
-    expect(await drizzle(env.DB).select().from(setupRewardGithub)).toEqual([
-        { githubId: mocks.github.state.user.id, userId: user?.id },
-    ]);
 
     const secondLink = await startGitHubLink(sessionCookie);
     expect(secondLink.status).toBe(400);

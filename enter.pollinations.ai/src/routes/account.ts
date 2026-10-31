@@ -51,8 +51,8 @@ import {
     listSetupQuestIds,
 } from "../services/quests/index.ts";
 import {
-    isSetupRewardHeld,
-    setupRewardHoldsOn,
+    requestSetupReview,
+    setupHold,
 } from "../services/setup-reward-holds.ts";
 import {
     fetchTinybirdRows,
@@ -1001,10 +1001,16 @@ const accountQuestRewardsResponseSchema = z.object({
     rewards: z.array(
         accountQuestRewardSchema.extend({ url: z.string().nullable() }),
     ),
-    held: z
-        .boolean()
+    setupHold: z
+        .object({
+            review: z
+                .enum(["pending", "declined"])
+                .nullable()
+                .describe("State of the account's review request, if any."),
+        })
+        .nullable()
         .describe(
-            "True when the account's onboarding quest rewards are on hold for review and can't be claimed. Contact hello@pollinations.ai.",
+            "Set while the account's Setup quest rewards are on hold and can't be claimed. Buying a pollen pack unlocks them, as does a maintainer approving a review.",
         ),
 });
 
@@ -1344,20 +1350,20 @@ export const accountRoutes = new Hono<Env>()
             requireAccountPermission(c, "usage");
 
             const db = drizzle(c.env.DB, { schema });
-            const [rows, held] = await Promise.all([
+            const [rows, hold] = await Promise.all([
                 db
                     .select()
                     .from(rewardsTable)
                     .where(eq(rewardsTable.userId, user.id))
                     .orderBy(desc(rewardsTable.earnedAt)),
-                isSetupRewardHeld(c.env, db, user.id),
+                setupHold(c.env, db, user),
             ]);
             return c.json({
                 rewards: rows.map((row) => ({
                     ...formatReward(row),
                     url: row.url,
                 })),
-                held,
+                setupHold: hold,
             });
         },
     )
@@ -1405,7 +1411,7 @@ export const accountRoutes = new Hono<Env>()
         const result = await claimReward(db, {
             rewardId: c.req.param("rewardId"),
             userId: user.id,
-            setupQuestIds: setupRewardHoldsOn(c.env)
+            lockedQuestIds: (await setupHold(c.env, db, user))
                 ? await listSetupQuestIds({ db, env: c.env })
                 : undefined,
         });
@@ -1418,6 +1424,29 @@ export const accountRoutes = new Hono<Env>()
             newBalance: result.newBalance,
             reward: formatReward(result.reward),
         });
+    })
+    .post("/quests/review", async (c) => {
+        await c.var.auth.requireAuthorization({
+            message: "Authentication required to request a review",
+        });
+        if (c.var.auth.apiKey) {
+            throw new HTTPException(403, {
+                message: "Reviews require a dashboard session",
+            });
+        }
+
+        const user = c.var.auth.requireUser();
+        const hold = await requestSetupReview(
+            c.env,
+            drizzle(c.env.DB, { schema }),
+            user,
+        );
+        if (!hold) {
+            throw new HTTPException(409, {
+                message: "Setup rewards aren't on hold",
+            });
+        }
+        return c.json({ setupHold: hold });
     })
     .get(
         "/balance",

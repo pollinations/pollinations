@@ -1,13 +1,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type * as schema from "../db/better-auth.ts";
-import {
-    flaggedEmailDomain,
-    rewards,
-    setupRewardGithub,
-    stripeCheckoutCredits,
-    user as userTable,
-} from "../db/better-auth.ts";
+import { rewards, user as userTable } from "../db/better-auth.ts";
 import type { Bucket } from "./deduction.ts";
 import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 
@@ -72,32 +66,6 @@ export interface ClaimRewardResult {
 
 type AuthDb = DrizzleD1Database<typeof schema>;
 
-/**
- * True while the account's email domain, or a domain it is a subdomain of, is
- * flagged and not allowed, and the account isn't verified: no purchase, and no
- * GitHub account at least 30 days old that was first linked to this account.
- */
-export const setupRewardHeld = (userId: string) => sql`EXISTS (
-    SELECT 1 FROM ${userTable} u, ${flaggedEmailDomain} f
-    WHERE u.id = ${userId}
-        AND f.allowed_at IS NULL
-        AND (
-            lower(substr(u.email, instr(u.email, '@') + 1)) = f.domain
-            OR lower(substr(u.email, -length(f.domain) - 1)) = '.' || f.domain
-        )
-        AND (
-            u.github_created_at IS NULL
-            OR u.github_created_at > unixepoch() - 30 * 24 * 60 * 60
-            OR EXISTS (
-                SELECT 1 FROM ${setupRewardGithub} g
-                WHERE g.github_id = u.github_id AND g.user_id <> u.id
-            )
-        )
-        AND NOT EXISTS (
-            SELECT 1 FROM ${stripeCheckoutCredits} c WHERE c.user_id = u.id
-        )
-)`;
-
 function assertRewardAmount(amount: number): void {
     if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_REWARD_AMOUNT) {
         throw new Error(
@@ -161,24 +129,26 @@ export async function recordRewards(
 /**
  * Claims one pending reward and credits the chosen balance bucket. The balance
  * update is gated on the preceding `claimed_at IS NULL` update, so retries and
- * double-clicks cannot double-pay. Rewards for `setupQuestIds` also stay
- * unclaimed while the account is held (see setupRewardHeld).
+ * double-clicks cannot double-pay. Rewards for `lockedQuestIds` stay unclaimed.
  */
 export async function claimReward(
     db: AuthDb,
     {
         rewardId,
         userId,
-        setupQuestIds,
+        lockedQuestIds,
     }: {
         rewardId: string;
         userId: string;
-        setupQuestIds?: ReadonlySet<string>;
+        lockedQuestIds?: ReadonlySet<string>;
     },
 ): Promise<ClaimRewardResult> {
     const row = await loadRewardForUser(db, rewardId, userId);
     if (!row) return { claimed: false, reward: null, newBalance: null };
-    if (row.claimedAt !== null) {
+    if (
+        row.claimedAt !== null ||
+        (row.questId !== null && lockedQuestIds?.has(row.questId))
+    ) {
         return { claimed: false, reward: row, newBalance: null };
     }
 
@@ -197,9 +167,6 @@ export async function claimReward(
                     eq(rewards.id, rewardId),
                     eq(rewards.userId, userId),
                     isNull(rewards.claimedAt),
-                    row.questId !== null && setupQuestIds?.has(row.questId)
-                        ? sql`NOT ${setupRewardHeld(userId)}`
-                        : undefined,
                 ),
             ),
         db

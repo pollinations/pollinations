@@ -33,7 +33,6 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
-import { bindSetupRewardGithub } from "./services/setup-reward-holds.ts";
 import { removeUserSites } from "./services/sites.ts";
 import {
     captureProductEvent,
@@ -74,9 +73,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
     const discordConfig = discordConfigFromEnv(env);
-    let githubProfile:
-        | { id: number; username: string; createdAt: string }
-        | undefined;
+    let githubProfile: { id: number; username: string } | undefined;
 
     // Connected accounts are one per provider: quests key their rewards on
     // the Discord, GitHub and Google ids, so a second link would earn them
@@ -339,32 +336,16 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         // These authorization fields stay read-only in Better
                         // Auth, so persist the verified provider profile here.
                         const githubId = Number(account.accountId);
-                        const profile =
-                            githubProfile?.id === githubId
-                                ? githubProfile
-                                : undefined;
                         await db
                             .update(userTable)
                             .set({
                                 githubId,
-                                githubUsername: profile?.username,
-                                githubCreatedAt: profile?.createdAt
-                                    ? new Date(profile.createdAt)
-                                    : undefined,
+                                githubUsername:
+                                    githubProfile?.id === githubId
+                                        ? githubProfile.username
+                                        : undefined,
                             })
                             .where(eq(userTable.id, account.userId));
-                        // The first account a GitHub account links to owns its
-                        // setup rewards; the quest check backfills a miss.
-                        await bindSetupRewardGithub(
-                            env.DB,
-                            githubId,
-                            account.userId,
-                        ).catch((error) =>
-                            console.error(
-                                `Failed to bind GitHub ${githubId} for setup rewards`,
-                                error,
-                            ),
-                        );
                     },
                 },
             },
@@ -432,7 +413,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     githubProfile = {
                         id: Number(profile.id),
                         username: profile.login,
-                        createdAt: profile.created_at,
                     };
                     return {};
                 },
@@ -532,7 +512,6 @@ export function onAfterSessionCreate(
                             name: userTable.name,
                             githubId: userTable.githubId,
                             githubUsername: userTable.githubUsername,
-                            githubCreatedAt: userTable.githubCreatedAt,
                         })
                         .from(userTable)
                         .where(eq(userTable.id, session.userId))
@@ -570,28 +549,19 @@ export function onAfterSessionCreate(
                     const profile = (await res.json()) as {
                         login: string;
                         name?: string | null;
-                        created_at?: string;
                     };
                     const githubName = profile.name || profile.login;
-                    // Backfills accounts that linked GitHub before the date
-                    // was stored.
-                    const githubCreatedAt =
-                        !user?.githubCreatedAt && profile.created_at
-                            ? new Date(profile.created_at)
-                            : undefined;
 
                     if (
                         profile.login &&
                         (profile.login !== user?.githubUsername ||
-                            githubName !== user?.name ||
-                            githubCreatedAt)
+                            githubName !== user?.name)
                     ) {
                         await db
                             .update(userTable)
                             .set({
                                 githubUsername: profile.login,
                                 name: githubName,
-                                githubCreatedAt,
                             })
                             .where(eq(userTable.id, session.userId));
                     }

@@ -6,7 +6,7 @@ import {
     rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
@@ -19,7 +19,11 @@ import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
-import { registrableDomain } from "../src/services/setup-reward-holds.ts";
+import {
+    requestSetupReview,
+    setupHold,
+} from "../src/services/setup-reward-holds.ts";
+import { registrableDomain } from "../src/services/setup-reward-signups.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
@@ -2735,12 +2739,8 @@ test("account quest history accepts account usage permission", async ({
     });
 });
 
-// Setup reward holds: private email domains with more than 30 sign-ups in 24
-// hours are flagged; while holds are on, their accounts' setup rewards wait.
-const HOLDS_ON = { ...env, SETUP_REWARD_HOLDS: "on" };
-const HOLDS_OFF = { ...env, SETUP_REWARD_HOLDS: "off" };
-const DAY_SECONDS = 24 * 60 * 60;
-const REPORT_WEBHOOK = "https://discord.test/api/webhooks/setup-rewards";
+// Sign-up flags: an account's first onboarding reward on a private email
+// domain is one Tinybird event; infra-watch reports domains past 30 a day.
 
 /** Google-only accounts with an API key: their next check earns first_api_key. */
 async function seedSetupAccounts(
@@ -2784,7 +2784,7 @@ async function seedSetupAccounts(
     return ids;
 }
 
-function earnFirstKey(bindings: typeof HOLDS_ON, userId: string) {
+function earnFirstKey(bindings: typeof env, userId: string) {
     return checkQuestsForUser(bindings, userId, [
         questIndex.ACCOUNT_SETUP_QUEST_GROUP,
     ]);
@@ -2813,10 +2813,6 @@ function completedQuestGroup(
     };
 }
 
-async function flaggedDomains() {
-    return drizzle(env.DB, { schema }).select().from(schema.flaggedEmailDomain);
-}
-
 async function tierBalanceOf(userId: string) {
     const [row] = await drizzle(env.DB, { schema })
         .select({ value: schema.user.tierBalance })
@@ -2825,6 +2821,83 @@ async function tierBalanceOf(userId: string) {
     return row?.value ?? 0;
 }
 
+test("sign-up flags: the setup quest list covers every setup quest in the catalog", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+    const ctx = { db: drizzle(env.DB, { schema }), env };
+    const catalogSetupIds = (await questIndex.listQuestCards(ctx))
+        .filter((card) => card.category === "setup")
+        .map((card) => card.id);
+    expect(catalogSetupIds).toContain("first_api_key");
+    expect([...(await questIndex.listSetupQuestIds(ctx))].sort()).toEqual(
+        catalogSetupIds.sort(),
+    );
+});
+
+function signups(state: { signupEvents: Record<string, unknown>[] }) {
+    return state.signupEvents.map(({ user_id, email_domain }) => ({
+        user_id,
+        email_domain,
+    }));
+}
+
+test("sign-up flags: a first setup reward records the registrable domain; rewards still pay", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const db = drizzle(env.DB, { schema });
+    const [farm] = await seedSetupAccounts("farm", 1, "farm.test");
+    const [sub] = await seedSetupAccounts("sub", 1, "sub.test");
+    await db
+        .update(schema.user)
+        .set({ email: `${sub}@a1.sub.test` })
+        .where(eq(schema.user.id, sub));
+    const [mail] = await seedSetupAccounts("mail", 1, "fastmail.com");
+    for (const id of [farm, sub, mail]) await earnFirstKey(env, id);
+
+    expect(signups(mocks.tinybird.state)).toEqual([
+        { user_id: farm, email_domain: "farm.test" },
+        { user_id: sub, email_domain: "sub.test" },
+    ]);
+    expect(mocks.tinybird.state.signupEvents[0]?.environment).toBe("test");
+    expect(await tierBalanceOf(farm)).toBeCloseTo(0.25);
+    expect(registrableDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
+    expect(registrableDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
+    expect(registrableDomain("x@a_1.sub.test.")).toBe("sub.test");
+    expect(registrableDomain("x@co.uk")).toBeNull();
+});
+
+test("sign-up flags: returning accounts don't count as new sign-ups", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const [back] = await seedSetupAccounts("back", 1, "back.test");
+    await earnFirstKey(env, back);
+    await checkQuestsForUser(env, back, [completedQuestGroup("later_setup")]);
+
+    expect(signups(mocks.tinybird.state)).toEqual([
+        { user_id: back, email_domain: "back.test" },
+    ]);
+});
+
+test("sign-up flags: a failed sign-up write never blocks rewards", async () => {
+    const [offline] = await seedSetupAccounts("offline", 1, "offline.test");
+    vi.stubGlobal("fetch", async () => {
+        throw new Error("Tinybird unavailable");
+    });
+    try {
+        const result = await earnFirstKey(env, offline);
+        expect(result.recorded).toBe(1);
+        expect(await tierBalanceOf(offline)).toBeCloseTo(0.25);
+    } finally {
+        vi.unstubAllGlobals();
+    }
+});
+
+// Setup holds: infra-watch (or a maintainer) holds a domain in the
+// SETUP_HOLDS KV store; a purchase, an approved review or a released domain
+// unlocks the account's Setup rewards.
 async function questReward(userId: string, questId: string) {
     const [reward] = await drizzle(env.DB, { schema })
         .select()
@@ -2839,326 +2912,49 @@ async function questReward(userId: string, questId: string) {
     return reward;
 }
 
-/** Claims as the dashboard does while holds are on. */
-async function claimSetupReward(userId: string, questId: string) {
-    const reward = await questReward(userId, questId);
-    const result = await claimReward(drizzle(env.DB, { schema }), {
-        rewardId: reward.id,
-        userId,
-        setupQuestIds: new Set([questId]),
-    });
-    return result.claimed;
+async function holdUser(id: string) {
+    const [row] = await drizzle(env.DB, { schema })
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, id));
+    if (!row) throw new Error(`Expected user ${id}`);
+    return row;
 }
 
-/** Records Discord webhook posts; any other fetch fails the test. */
-function stubDiscord(status: number) {
-    const posts: { embeds: { description: string; color: number }[] }[] = [];
-    vi.stubGlobal(
-        "fetch",
-        async (input: RequestInfo | URL, init?: RequestInit) => {
-            if (String(input) !== REPORT_WEBHOOK) {
-                throw new Error(`Unexpected fetch: ${String(input)}`);
-            }
-            posts.push(JSON.parse(String(init?.body)));
-            return new Response(null, { status });
-        },
-    );
-    return posts;
-}
-
-test("setup rewards: the claim guard covers every setup quest in the catalog", async ({
+test("setup holds: a held account's Setup rewards stay locked, other rewards pay, and it can ask for one review", async ({
     mocks,
 }) => {
-    await mocks.enable("github");
-    const ctx = { db: drizzle(env.DB, { schema }), env };
-    const catalogSetupIds = (await questIndex.listQuestCards(ctx))
-        .filter((card) => card.category === "setup")
-        .map((card) => card.id);
-    expect(catalogSetupIds).toContain("first_api_key");
-    expect([...(await questIndex.listSetupQuestIds(ctx))].sort()).toEqual(
-        catalogSetupIds.sort(),
-    );
-});
-
-test("setup rewards: the 31st sign-up flags a private domain and holds all its accounts", async () => {
-    const ids = await seedSetupAccounts("farm", 31, "farm.test");
-    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
-
-    expect(await flaggedDomains()).toMatchObject([
-        { domain: "farm.test", accounts: 31, allowedAt: null },
-    ]);
-    // The first 30 were paid before the flag; the 31st is held.
-    expect(await tierBalanceOf(ids[29])).toBeCloseTo(0.25);
-    expect(await tierBalanceOf(ids[30])).toBe(0);
-    expect((await questReward(ids[30], "first_api_key")).claimedAt).toBeNull();
-    // A flag covers every account on the domain, including earlier ones.
-    await checkQuestsForUser(HOLDS_ON, ids[0], [
-        completedQuestGroup("later_setup"),
-    ]);
-    expect(await claimSetupReward(ids[0], "later_setup")).toBe(false);
-});
-
-test("setup rewards: subdomains count as the domain a registrant controls", async () => {
+    await mocks.enable("tinybird");
     const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("sub", 31, "sub.test");
-    for (const [index, id] of ids.entries()) {
-        await db
-            .update(schema.user)
-            .set({ email: `${id}@a${index}.sub.test` })
-            .where(eq(schema.user.id, id));
-    }
-    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
+    const [held] = await seedSetupAccounts("held", 1, "held.test");
+    await env.SETUP_HOLDS.put("hold:held.test", "held");
+    await earnFirstKey(env, held);
+    // The key reward is claimed automatically, except on hold.
+    const firstKey = await questReward(held, "first_api_key");
+    expect(firstKey.claimedAt).toBeNull();
 
-    expect(await flaggedDomains()).toMatchObject([{ domain: "sub.test" }]);
-    expect(await tierBalanceOf(ids[30])).toBe(0);
-    expect(registrableDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
-    expect(registrableDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
-    expect(registrableDomain("x@a_1.sub.test.")).toBe("sub.test");
-    expect(registrableDomain("x@co.uk")).toBeNull();
-});
-
-test("setup rewards: public mail domains are never recorded or flagged", async () => {
-    const ids = await seedSetupAccounts("mail", 31, "fastmail.com");
-    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
-
-    expect(await flaggedDomains()).toEqual([]);
-    expect(
-        await drizzle(env.DB, { schema })
-            .select()
-            .from(schema.setupRewardSignup),
-    ).toEqual([]);
-    expect(await tierBalanceOf(ids[30])).toBeCloseTo(0.25);
-});
-
-test("setup rewards: concurrent sign-ups flag a domain once and retries count once", async () => {
-    const posts = stubDiscord(204);
-    try {
-        const reporting = {
-            ...HOLDS_ON,
-            SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
-        };
-        const ids = await seedSetupAccounts("burst", 35, "burst.test");
-        await Promise.all(ids.map((id) => earnFirstKey(reporting, id)));
-        expect(await flaggedDomains()).toMatchObject([
-            { domain: "burst.test", accounts: 31 },
-        ]);
-        expect(posts).toHaveLength(1);
-        expect(posts[0].embeds[0].color).toBe(0xd85a30);
-        expect(posts[0].embeds[0].description).toContain(
-            "FLAGGED: domain burst.test",
-        );
-        expect(posts[0].embeds[0].description).toContain(
-            "DECISION onboarding rewards held",
-        );
-
-        const [retry] = await seedSetupAccounts("retry", 1, "retry.test");
-        await Promise.all(
-            Array.from({ length: 5 }, () => earnFirstKey(reporting, retry)),
-        );
-        const rows = await drizzle(env.DB, { schema })
-            .select()
-            .from(schema.setupRewardSignup)
-            .where(eq(schema.setupRewardSignup.emailDomain, "retry.test"));
-        expect(rows).toHaveLength(1);
-        expect(await tierBalanceOf(retry)).toBeCloseTo(0.25);
-    } finally {
-        vi.unstubAllGlobals();
-    }
-});
-
-test("setup rewards: a flag outlasts the 24-hour window and 30-day cleanup", async () => {
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("old", 31, "old.test");
-    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
-    await db.update(schema.setupRewardSignup).set({
-        firstRewardAt: sql`${schema.setupRewardSignup.firstRewardAt} - ${31 * DAY_SECONDS}`,
-    });
-
-    const [late] = await seedSetupAccounts("late", 1, "old.test");
-    await earnFirstKey(HOLDS_ON, late);
-
-    // Cleanup deleted the 31 old sign-ups; the flag and the hold remain.
-    const signups = await db.select().from(schema.setupRewardSignup);
-    expect(signups.map((row) => row.userId)).toEqual([late]);
-    expect(await flaggedDomains()).toHaveLength(1);
-    expect(await tierBalanceOf(late)).toBe(0);
-});
-
-test("setup rewards: returning accounts don't count as new sign-ups", async () => {
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("back", 30, "back.test");
-    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
-    await db.update(schema.setupRewardSignup).set({
-        firstRewardAt: sql`${schema.setupRewardSignup.firstRewardAt} - ${31 * DAY_SECONDS}`,
-    });
-    // Another domain's sign-up runs the cleanup of the 30 old rows.
-    const [other] = await seedSetupAccounts("back-other", 1, "elsewhere.test");
-    await earnFirstKey(HOLDS_ON, other);
-
-    for (const id of ids) {
-        await checkQuestsForUser(HOLDS_ON, id, [
-            completedQuestGroup("later_setup"),
-        ]);
-    }
-    const [newcomer] = await seedSetupAccounts("back-new", 1, "back.test");
-    await earnFirstKey(HOLDS_ON, newcomer);
-
-    expect(await flaggedDomains()).toEqual([]);
-    expect(await tierBalanceOf(newcomer)).toBeCloseTo(0.25);
-});
-
-test("setup rewards: a GitHub account verifies and earns for its first account only", async () => {
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("gh", 32, "gh.test");
-    for (const id of ids.slice(0, 31)) await earnFirstKey(HOLDS_ON, id);
-    const [first, second] = [ids[30], ids[31]];
-    const githubId = hashGithubId("shared-github");
-    const linkGitHub = (userId: string) =>
-        db
-            .update(schema.user)
-            .set({
-                githubId,
-                githubUsername: "shared-github",
-                githubCreatedAt: new Date(Date.now() - 40 * DAY_SECONDS * 1000),
-            })
-            .where(eq(schema.user.id, userId));
-
-    // The first account's next quest check binds the GitHub account to it.
-    await linkGitHub(first);
-    await checkQuestsForUser(HOLDS_ON, first, [
-        completedQuestGroup("later_setup"),
-    ]);
-    expect(await claimSetupReward(first, "first_api_key")).toBe(true);
-    expect((await questReward(first, "first_api_key")).idempotencyKey).toBe(
-        `quest:first_api_key:google:google-${first}`,
-    );
-
-    // After it is deleted, the same GitHub account neither verifies nor
-    // earns setup rewards for a new account.
-    await db.delete(schema.user).where(eq(schema.user.id, first));
-    await earnFirstKey(HOLDS_ON, second);
-    await linkGitHub(second);
-    expect(await claimSetupReward(second, "first_api_key")).toBe(false);
-    await checkQuestsForUser(HOLDS_ON, second, [
-        completedQuestGroup("later_setup"),
-    ]);
-    await expect(questReward(second, "later_setup")).rejects.toThrow();
-    expect(await tierBalanceOf(second)).toBe(0);
-});
-
-test("setup rewards: deleted accounts still count toward the limit", async () => {
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("gone", 31, "gone.test");
-    const last = ids.pop() as string;
-    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
-    await db.delete(schema.user).where(inArray(schema.user.id, ids));
-
-    await earnFirstKey(HOLDS_ON, last);
-    expect(await flaggedDomains()).toMatchObject([{ domain: "gone.test" }]);
-    expect(await tierBalanceOf(last)).toBe(0);
-});
-
-test("setup rewards: a purchase or a 30-day-old GitHub account verifies; allowing the domain releases it", async () => {
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("verify", 33, "verify.test");
-    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
-    const [buyer, coder, other] = ids.slice(30);
-    for (const id of [buyer, coder, other]) {
-        expect(await claimSetupReward(id, "first_api_key")).toBe(false);
-    }
-
-    await db.insert(schema.stripeCheckoutCredits).values({
-        sessionId: "cs_verify",
-        eventId: "evt_verify",
-        eventType: "checkout.session.completed",
-        userId: buyer,
-        pollenCredited: 5,
-        createdAt: new Date(),
-    });
-    expect(await claimSetupReward(buyer, "first_api_key")).toBe(true);
-
-    // A GitHub account verifies only once it is at least 30 days old.
-    const linkGitHub = (ageDays: number) =>
-        db
-            .update(schema.user)
-            .set({
-                githubId: hashGithubId(coder),
-                githubUsername: coder,
-                githubCreatedAt: new Date(
-                    Date.now() - ageDays * DAY_SECONDS * 1000,
-                ),
-            })
-            .where(eq(schema.user.id, coder));
-    await linkGitHub(5);
-    expect(await claimSetupReward(coder, "first_api_key")).toBe(false);
-    await linkGitHub(40);
-    expect(await claimSetupReward(coder, "first_api_key")).toBe(true);
-
-    // Allowing the domain releases everyone on it and keeps it from re-flagging.
-    await db
-        .update(schema.flaggedEmailDomain)
-        .set({ allowedAt: new Date() })
-        .where(eq(schema.flaggedEmailDomain.domain, "verify.test"));
-    expect(await claimSetupReward(other, "first_api_key")).toBe(true);
-    const [newcomer] = await seedSetupAccounts("verify-new", 1, "verify.test");
-    await earnFirstKey(HOLDS_ON, newcomer);
-    expect(await tierBalanceOf(newcomer)).toBeCloseTo(0.25);
-    expect(await flaggedDomains()).toHaveLength(1);
-});
-
-test("setup rewards: a held account creates keys and sees held in the API, while other rewards pay", async ({
-    mocks,
-}) => {
-    await mocks.enable("github", "tinybird");
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("held", 31, "held.test");
-    const held = ids.pop() as string;
-    for (const id of ids) await earnFirstKey(HOLDS_ON, id);
-    await earnFirstKey(HOLDS_ON, held);
     const token = await signSessionToken({
         secret: env.BETTER_AUTH_SECRET,
         userId: held,
     });
-
-    await createApiKeyViaApi(token, { name: "held-account-key" });
-    const firstKey = await questReward(held, "first_api_key");
-    expect(firstKey.claimedAt).toBeNull();
-
-    const get = async (path: string) => {
+    const call = async (path: string, method = "GET") => {
         const response = await SELF.fetch(
             `http://localhost:3000/api/account/${path}`,
-            { headers: { Authorization: `Bearer ${token}` } },
+            { method, headers: { Authorization: `Bearer ${token}` } },
         );
         expect(response.status).toBe(200);
         return response.json();
     };
-    const claim = async (rewardId: string) => {
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/account/quests/rewards/${rewardId}/claim`,
-            {
-                method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
-            },
-        );
-        expect(response.status).toBe(200);
-        return ((await response.json()) as { claimed: boolean }).claimed;
-    };
 
-    expect(await get("quests/rewards")).toMatchObject({
-        held: true,
+    expect(await call("quests/rewards")).toMatchObject({
+        setupHold: { review: null },
         rewards: [{ questId: "first_api_key" }],
     });
-    expect(await claim(firstKey.id)).toBe(false);
+    expect(
+        await call(`quests/rewards/${firstKey.id}/claim`, "POST"),
+    ).toMatchObject({ claimed: false });
 
     await recordRewards(db, [
-        {
-            idempotencyKey: "promo:held-account",
-            userId: held,
-            questId: "promo:launch",
-            title: "Promo",
-            amount: 1,
-            bucket: "tier",
-        },
         {
             idempotencyKey: "quest:merged_pr:held-account",
             userId: held,
@@ -3168,71 +2964,75 @@ test("setup rewards: a held account creates keys and sees held in the API, while
             bucket: "tier",
         },
     ]);
-    for (const questId of ["promo:launch", "merged_pr"]) {
-        expect(await claim((await questReward(held, questId)).id)).toBe(true);
-    }
-    expect(await tierBalanceOf(held)).toBeCloseTo(6);
+    const merged = await questReward(held, "merged_pr");
+    expect(
+        await call(`quests/rewards/${merged.id}/claim`, "POST"),
+    ).toMatchObject({ claimed: true });
+    expect(await tierBalanceOf(held)).toBeCloseTo(5);
+
+    expect(await call("quests/review", "POST")).toEqual({
+        setupHold: { review: "pending" },
+    });
+    const first = await env.SETUP_HOLDS.getWithMetadata(`review:${held}`);
+    expect(first.value).toBe("pending");
+    expect(first.metadata).toMatchObject({
+        domain: "held.test",
+        rewards: 2,
+        rewardPollen: 5.25,
+    });
+    // Asking again changes nothing.
+    expect(await call("quests/review", "POST")).toEqual({
+        setupHold: { review: "pending" },
+    });
+    expect(
+        (await env.SETUP_HOLDS.getWithMetadata(`review:${held}`)).metadata,
+    ).toEqual(first.metadata);
 });
 
-test("setup rewards: a failed sign-up write records no setup reward until the next check", async () => {
-    const [id] = await seedSetupAccounts("offline", 1, "offline.test");
-    const groups = [
-        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
-        completedQuestGroup("offline_contribution", "contribute"),
-    ];
+test("setup holds: a purchase, an approved review or a released domain unlocks; a declined review stays held", async () => {
+    const db = drizzle(env.DB, { schema });
+    const ids = await seedSetupAccounts("lock", 4, "lock.test");
+    const [declined, approved, buyer, sub] = ids;
+    await db
+        .update(schema.user)
+        .set({ email: `${sub}@a1.lock.test` })
+        .where(eq(schema.user.id, sub));
+    await env.SETUP_HOLDS.put("hold:lock.test", "held");
+    await env.SETUP_HOLDS.put(`review:${declined}`, "declined");
+    await env.SETUP_HOLDS.put(`review:${approved}`, "approved");
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: "cs_lock",
+        eventId: "evt_lock",
+        eventType: "checkout.session.completed",
+        userId: buyer,
+        pollenCredited: 5,
+    });
+    const holdOf = async (id: string) => setupHold(env, db, await holdUser(id));
 
-    await env.DB.exec(
-        "ALTER TABLE setup_reward_signup RENAME TO setup_reward_signup_offline",
+    expect(await holdOf(declined)).toEqual({ review: "declined" });
+    expect(await holdOf(approved)).toBeNull();
+    expect(await holdOf(buyer)).toBeNull();
+    // A subdomain is held with its registrable domain.
+    expect(await holdOf(sub)).toEqual({ review: null });
+    // A declined review isn't asked again.
+    expect(await requestSetupReview(env, db, await holdUser(declined))).toEqual(
+        { review: "declined" },
     );
-    try {
-        const failed = await checkQuestsForUser(HOLDS_ON, id, groups);
-        expect(failed.recorded).toBe(1);
-        expect(failed.success).toBe(false);
-    } finally {
-        await env.DB.exec(
-            "ALTER TABLE setup_reward_signup_offline RENAME TO setup_reward_signup",
-        );
-    }
-    await expect(questReward(id, "first_api_key")).rejects.toThrow();
-    await questReward(id, "offline_contribution");
 
-    const retried = await checkQuestsForUser(HOLDS_ON, id, groups);
-    expect(retried.recorded).toBe(1);
-    expect(retried.success).toBe(true);
-    expect((await questReward(id, "first_api_key")).claimedAt).not.toBeNull();
+    await env.SETUP_HOLDS.put("hold:lock.test", "released");
+    expect(await holdOf(sub)).toBeNull();
 });
 
-test("setup rewards: with holds off a domain is flagged and reported but nothing is held", async () => {
-    const posts = stubDiscord(500);
-    try {
-        const reporting = {
-            ...HOLDS_OFF,
-            ENVIRONMENT: "staging",
-            SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
-        };
-        const ids = await seedSetupAccounts("watch", 31, "watch.test");
-        let last: Awaited<ReturnType<typeof checkQuestsForUser>> | undefined;
-        for (const id of ids) last = await earnFirstKey(reporting, id);
-
-        // A failed Discord post doesn't affect the check.
-        expect(last?.success).toBe(true);
-        expect(posts).toHaveLength(1);
-        expect(posts[0].embeds[0].color).toBe(0xef9f27);
-        expect(posts[0].embeds[0].description).toContain(
-            "[staging] FLAGGED: domain watch.test",
-        );
-        expect(posts[0].embeds[0].description).toContain(
-            "DECISION recorded only, holds are off",
-        );
-        expect(await flaggedDomains()).toHaveLength(1);
-        expect(await tierBalanceOf(ids[30])).toBeCloseTo(0.25);
-
-        // Switching holds on holds the flagged domain's accounts.
-        await checkQuestsForUser(HOLDS_ON, ids[30], [
-            completedQuestGroup("switched_on"),
-        ]);
-        expect(await claimSetupReward(ids[30], "switched_on")).toBe(false);
-    } finally {
-        vi.unstubAllGlobals();
-    }
+test("setup holds: only a held account can ask for a review", async () => {
+    const [free] = await seedSetupAccounts("free", 1, "free.test");
+    const token = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId: free,
+    });
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/review",
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(response.status).toBe(409);
+    expect(await env.SETUP_HOLDS.get(`review:${free}`)).toBeNull();
 });

@@ -38,6 +38,11 @@ name = "EMAIL"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+[[kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
 [vars]
 ENVIRONMENT = "development"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
@@ -81,6 +86,11 @@ name = "EMAIL"
 [[env.local.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
+[[env.local.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.local.vars]
@@ -151,9 +161,6 @@ simple = { limit = 600, period = 10 }
 
 [env.production.vars]
 ENVIRONMENT = "production"
-# "on" holds onboarding rewards on flagged email domains; "off" only flags
-# domains and reports them to Discord.
-SETUP_REWARD_HOLDS = "off"
 X402_HOLDING_USER_ID = "inFByWZoc0Cuwtj3Pau4Ae9d5VBvfxHp"
 WEFT_FACILITATOR_URL = "https://x402.weft.network"
 WEFT_PAY_TO = "0x657d15ea5f5a2877e766137861d7deee1a9422dc"
@@ -211,6 +218,11 @@ name = "EMAIL"
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
 
+[[env.staging.kv_namespaces]]
+# Setup reward holds; staging reuses the staging KV namespace
+binding = "SETUP_HOLDS"
+id = "ba22195551794751b9792e4e67eb074a"
+
 # Per-key limit before auth; see shared/rate-limit.ts. Separate namespace
 # from gen's 1001 so a request passing through both isn't counted twice.
 [[env.staging.ratelimits]]
@@ -220,9 +232,6 @@ simple = { limit = 600, period = 10 }
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
-# "on" holds onboarding rewards on flagged email domains; "off" only flags
-# domains and reports them to Discord.
-SETUP_REWARD_HOLDS = "off"
 X402_HOLDING_USER_ID = "x402-staging-holding-20260930"
 WEFT_FACILITATOR_URL = "https://x402.staging.weft.network"
 WEFT_PAY_TO = "0x3b0b371ae3cb08f272b87319684f6518b3b313a0"
@@ -274,6 +283,11 @@ name = "EMAIL"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+[[env.dev.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
 [env.dev.vars]
 ENVIRONMENT = "dev"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
@@ -315,10 +329,13 @@ name = "EMAIL"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+[[env.test.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
 [env.test.vars]
 ENVIRONMENT = "test"
-# Tests exercise the holds; tests of the off state override it.
-SETUP_REWARD_HOLDS = "on"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"

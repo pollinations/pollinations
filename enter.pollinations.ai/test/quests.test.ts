@@ -5,7 +5,7 @@ import {
     rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
@@ -18,7 +18,11 @@ import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
-import { registrableDomain } from "../src/services/setup-reward-signups.ts";
+import {
+    detectFlaggedDomains,
+    recordSetupRewardSignup,
+    registrableDomain,
+} from "../src/services/setup-reward-signups.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
@@ -2734,9 +2738,8 @@ test("account quest history accepts account usage permission", async ({
     });
 });
 
-// Sign-up flags: private email domains with more than 30 first onboarding
-// rewards in 24 hours are flagged and reported to Discord; rewards still pay.
-const DAY_SECONDS = 24 * 60 * 60;
+// Sign-up flags: an account's first onboarding reward on a private email
+// domain is a 24-hour KV key; a scheduled detector reports domains past 30.
 const REPORT_WEBHOOK = "https://discord.test/api/webhooks/setup-rewards";
 
 /** Google-only accounts with an API key: their next check earns first_api_key. */
@@ -2810,12 +2813,10 @@ function completedQuestGroup(
     };
 }
 
-async function flaggedDomains() {
-    return drizzle(env.DB, { schema }).select().from(schema.flaggedEmailDomain);
-}
-
-async function signups() {
-    return drizzle(env.DB, { schema }).select().from(schema.setupRewardSignup);
+async function signupKeys() {
+    return (await env.KV.list({ prefix: "signup:" })).keys.map(
+        (key) => key.name,
+    );
 }
 
 async function tierBalanceOf(userId: string) {
@@ -2842,6 +2843,15 @@ function stubDiscord(status: number) {
     return posts;
 }
 
+async function seedSignups(domain: string, count: number) {
+    for (let index = 0; index < count; index++) {
+        await recordSetupRewardSignup(env.KV, {
+            userId: `${domain}-${index}`,
+            email: `user${index}@${domain}`,
+        });
+    }
+}
+
 test("sign-up flags: the setup quest list covers every setup quest in the catalog", async ({
     mocks,
 }) => {
@@ -2856,154 +2866,96 @@ test("sign-up flags: the setup quest list covers every setup quest in the catalo
     );
 });
 
-test("sign-up flags: the 31st sign-up flags a private domain; rewards still pay", async () => {
-    const ids = await seedSetupAccounts("farm", 31, "farm.test");
-    for (const id of ids) await earnFirstKey(env, id);
-
-    expect(await flaggedDomains()).toMatchObject([
-        { domain: "farm.test", accounts: 31 },
-    ]);
-    expect(await tierBalanceOf(ids[30])).toBeCloseTo(0.25);
-});
-
-test("sign-up flags: subdomains count as the domain a registrant controls", async () => {
+test("sign-up flags: a first setup reward records the registrable domain; rewards still pay", async () => {
     const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("sub", 31, "sub.test");
-    for (const [index, id] of ids.entries()) {
-        await db
-            .update(schema.user)
-            .set({ email: `${id}@a${index}.sub.test` })
-            .where(eq(schema.user.id, id));
-    }
-    for (const id of ids) await earnFirstKey(env, id);
+    const [farm] = await seedSetupAccounts("farm", 1, "farm.test");
+    const [sub] = await seedSetupAccounts("sub", 1, "sub.test");
+    await db
+        .update(schema.user)
+        .set({ email: `${sub}@a1.sub.test` })
+        .where(eq(schema.user.id, sub));
+    const [mail] = await seedSetupAccounts("mail", 1, "fastmail.com");
+    for (const id of [farm, sub, mail]) await earnFirstKey(env, id);
 
-    expect(await flaggedDomains()).toMatchObject([{ domain: "sub.test" }]);
+    expect((await signupKeys()).sort()).toEqual(
+        [`signup:farm.test:${farm}`, `signup:sub.test:${sub}`].sort(),
+    );
+    expect(await tierBalanceOf(farm)).toBeCloseTo(0.25);
     expect(registrableDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
     expect(registrableDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
     expect(registrableDomain("x@a_1.sub.test.")).toBe("sub.test");
     expect(registrableDomain("x@co.uk")).toBeNull();
 });
 
-test("sign-up flags: public mail domains are never recorded or flagged", async () => {
-    const ids = await seedSetupAccounts("mail", 31, "fastmail.com");
-    for (const id of ids) await earnFirstKey(env, id);
+test("sign-up flags: returning accounts don't count as new sign-ups", async () => {
+    const [back] = await seedSetupAccounts("back", 1, "back.test");
+    await earnFirstKey(env, back);
+    // The 24-hour key expired; another setup quest is not a new sign-up.
+    await env.KV.delete(`signup:back.test:${back}`);
+    await checkQuestsForUser(env, back, [completedQuestGroup("later_setup")]);
 
-    expect(await flaggedDomains()).toEqual([]);
-    expect(await signups()).toEqual([]);
+    expect(await signupKeys()).toEqual([]);
 });
 
-test("sign-up flags: concurrent sign-ups flag a domain once and retries count once", async () => {
+test("sign-up flags: the detector reports a domain past 30 sign-ups once", async () => {
     const posts = stubDiscord(204);
     try {
         const reporting = {
             ...env,
             SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
         };
-        const ids = await seedSetupAccounts("burst", 35, "burst.test");
-        await Promise.all(ids.map((id) => earnFirstKey(reporting, id)));
-        expect(await flaggedDomains()).toMatchObject([
-            { domain: "burst.test", accounts: 31 },
-        ]);
+        await seedSignups("farm.test", 31);
+        await seedSignups("quiet.test", 30);
+
+        expect(await detectFlaggedDomains(reporting)).toEqual(["farm.test"]);
         expect(posts).toHaveLength(1);
         expect(posts[0].embeds[0].color).toBe(0xef9f27);
         expect(posts[0].embeds[0].description).toContain(
-            "FLAGGED: domain burst.test",
+            "FLAGGED: domain farm.test",
         );
         expect(posts[0].embeds[0].description).toContain(
             "ACCOUNTS 31 in 24h (limit 30)",
         );
 
-        const [retry] = await seedSetupAccounts("retry", 1, "retry.test");
-        await Promise.all(
-            Array.from({ length: 5 }, () => earnFirstKey(reporting, retry)),
-        );
-        expect(
-            (await signups()).filter((row) => row.emailDomain === "retry.test"),
-        ).toHaveLength(1);
-        expect(await tierBalanceOf(retry)).toBeCloseTo(0.25);
-    } finally {
-        vi.unstubAllGlobals();
-    }
-});
-
-test("sign-up flags: a flag outlasts the 24-hour window and 30-day cleanup", async () => {
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("old", 31, "old.test");
-    for (const id of ids) await earnFirstKey(env, id);
-    await db.update(schema.setupRewardSignup).set({
-        firstRewardAt: sql`${schema.setupRewardSignup.firstRewardAt} - ${31 * DAY_SECONDS}`,
-    });
-
-    const [late] = await seedSetupAccounts("late", 1, "old.test");
-    await earnFirstKey(env, late);
-
-    expect((await signups()).map((row) => row.userId)).toEqual([late]);
-    expect(await flaggedDomains()).toHaveLength(1);
-});
-
-test("sign-up flags: deleted accounts still count toward the limit", async () => {
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("gone", 31, "gone.test");
-    const last = ids.pop() as string;
-    for (const id of ids) await earnFirstKey(env, id);
-    await db.delete(schema.user).where(inArray(schema.user.id, ids));
-
-    await earnFirstKey(env, last);
-    expect(await flaggedDomains()).toMatchObject([{ domain: "gone.test" }]);
-});
-
-test("sign-up flags: returning accounts don't count as new sign-ups", async () => {
-    const db = drizzle(env.DB, { schema });
-    const ids = await seedSetupAccounts("back", 30, "back.test");
-    for (const id of ids) await earnFirstKey(env, id);
-    await db.update(schema.setupRewardSignup).set({
-        firstRewardAt: sql`${schema.setupRewardSignup.firstRewardAt} - ${31 * DAY_SECONDS}`,
-    });
-    // Another domain's sign-up runs the cleanup of the 30 old rows.
-    const [other] = await seedSetupAccounts("back-other", 1, "elsewhere.test");
-    await earnFirstKey(env, other);
-
-    for (const id of ids) {
-        await checkQuestsForUser(env, id, [completedQuestGroup("later_setup")]);
-    }
-    const [newcomer] = await seedSetupAccounts("back-new", 1, "back.test");
-    await earnFirstKey(env, newcomer);
-
-    expect(await flaggedDomains()).toEqual([]);
-});
-
-test("sign-up flags: a failed sign-up write or Discord post never blocks rewards", async () => {
-    const posts = stubDiscord(500);
-    try {
-        const reporting = {
-            ...env,
-            ENVIRONMENT: "staging",
-            SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
-        };
-        const ids = await seedSetupAccounts("watch", 31, "watch.test");
-        let last: Awaited<ReturnType<typeof checkQuestsForUser>> | undefined;
-        for (const id of ids) last = await earnFirstKey(reporting, id);
-        expect(last?.success).toBe(true);
+        expect(await detectFlaggedDomains(reporting)).toEqual([]);
         expect(posts).toHaveLength(1);
-        expect(posts[0].embeds[0].description).toContain(
-            "[staging] FLAGGED: domain watch.test",
-        );
-        expect(await tierBalanceOf(ids[30])).toBeCloseTo(0.25);
-
-        const [offline] = await seedSetupAccounts("offline", 1, "offline.test");
-        await env.DB.exec(
-            "ALTER TABLE setup_reward_signup RENAME TO setup_reward_signup_offline",
-        );
-        try {
-            const result = await earnFirstKey(env, offline);
-            expect(result.recorded).toBe(1);
-        } finally {
-            await env.DB.exec(
-                "ALTER TABLE setup_reward_signup_offline RENAME TO setup_reward_signup",
-            );
-        }
-        expect(await tierBalanceOf(offline)).toBeCloseTo(0.25);
     } finally {
         vi.unstubAllGlobals();
     }
+});
+
+test("sign-up flags: a failed Discord post is retried on the next run", async () => {
+    await seedSignups("retry.test", 31);
+    const reporting = {
+        ...env,
+        ENVIRONMENT: "staging",
+        SETUP_REWARD_DISCORD_WEBHOOK_URL: REPORT_WEBHOOK,
+    };
+    try {
+        stubDiscord(500);
+        await expect(detectFlaggedDomains(reporting)).rejects.toThrow();
+        const posts = stubDiscord(204);
+        expect(await detectFlaggedDomains(reporting)).toEqual(["retry.test"]);
+        expect(posts[0].embeds[0].description).toContain(
+            "[staging] FLAGGED: domain retry.test",
+        );
+    } finally {
+        vi.unstubAllGlobals();
+    }
+});
+
+test("sign-up flags: a failed sign-up write never blocks rewards", async () => {
+    const [offline] = await seedSetupAccounts("offline", 1, "offline.test");
+    const failingKv = {
+        get: env.KV.get.bind(env.KV),
+        list: env.KV.list.bind(env.KV),
+        delete: env.KV.delete.bind(env.KV),
+        put: async () => {
+            throw new Error("KV unavailable");
+        },
+    } as unknown as KVNamespace;
+
+    const result = await earnFirstKey({ ...env, KV: failingKv }, offline);
+    expect(result.recorded).toBe(1);
+    expect(await tierBalanceOf(offline)).toBeCloseTo(0.25);
 });

@@ -7,6 +7,7 @@ import {
 import { productPageViewSchema } from "@shared/product-analytics.ts";
 import { afterEach, expect, vi } from "vitest";
 import { productAnalyticsRoutes } from "../src/routes/product-analytics.ts";
+import { signupEmailDomain } from "../src/services/signup-domains.ts";
 import { captureProductEvent } from "../src/utils/product-analytics.ts";
 import { test } from "./fixtures.ts";
 
@@ -315,6 +316,21 @@ test("signing in records the request to GitHub and the resulting session", async
     );
     expect(signup?.user_id).toBe(signIn[2]?.user_id);
     expect(signup?.provider).toBe("github");
+    // The private email domain, so infra-watch can spot bulk sign-ups.
+    expect(signup?.email_domain).toBe("example.com");
+    // Sign-in stages never carry it.
+    expect(signIn.every((row) => row.email_domain === undefined)).toBe(true);
+});
+
+test("a sign-up records only a private registrable email domain", () => {
+    expect(signupEmailDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
+    expect(signupEmailDomain("x@a_1.sub.test.")).toBe("sub.test");
+    expect(signupEmailDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
+    expect(signupEmailDomain("x@mail.bücher.de")).toBe("xn--bcher-kva.de");
+    expect(signupEmailDomain("x@gmail.com")).toBeUndefined();
+    expect(signupEmailDomain("x@fastmail.com")).toBeUndefined();
+    expect(signupEmailDomain("x@co.uk")).toBeUndefined();
+    expect(signupEmailDomain('x@a.b"c.com')).toBeUndefined();
 });
 
 test("a start from an untracked page stays out of the funnel ratio", async ({

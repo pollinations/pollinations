@@ -1,7 +1,7 @@
 import { rewards, stripeCheckoutCredits } from "@shared/db/better-auth.ts";
 import { count, eq, sum } from "drizzle-orm";
 import type { QuestDb } from "./quests/types.ts";
-import { registrableDomain } from "./setup-reward-signups.ts";
+import { registrableDomain } from "./signup-domains.ts";
 
 /**
  * Setup reward holds live in the SETUP_HOLDS KV store, shared with

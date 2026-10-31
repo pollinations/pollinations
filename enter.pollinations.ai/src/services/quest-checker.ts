@@ -13,7 +13,6 @@ import {
     toReward,
 } from "./quests/types.ts";
 import { setupHold } from "./setup-reward-holds.ts";
-import { recordSetupRewardSignup } from "./setup-reward-signups.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
@@ -76,18 +75,6 @@ export async function checkQuestsForUser(
                 proposal.quest.scope === "once" ||
                 !earned.has(proposal.quest.id),
         );
-    // An account's first setup reward is a sign-up; infra-watch counts them
-    // per email domain and reports a burst.
-    const setupQuestIds = await listSetupQuestIds(ctx);
-    if (
-        proposals.some(({ quest }) => quest.category === "setup") &&
-        ![...earned].some((id) => id !== null && setupQuestIds.has(id))
-    ) {
-        await recordSetupRewardSignup(env, {
-            userId: user.id,
-            email: user.email,
-        });
-    }
     const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",
@@ -121,7 +108,7 @@ export async function checkQuestsForUser(
             await claimReward(ctx.db, {
                 rewardId: reward.id,
                 userId: user.id,
-                lockedQuestIds: held ? setupQuestIds : undefined,
+                lockedQuestIds: held ? await listSetupQuestIds(ctx) : undefined,
             });
         }
     }

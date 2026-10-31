@@ -1,11 +1,7 @@
-import { getLogger } from "@logtape/logtape";
-import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
 import { getDomain } from "tldts";
 
-const log = getLogger(["enter", "setup-reward-signups"]);
-
 /**
- * Shared mail providers are never recorded. Exact domains only: a
+ * Shared mail providers are never recorded with a sign-up. Exact domains only: a
  * look-alike on another suffix (gmail.xyz) is anyone's to register.
  */
 const PUBLIC_MAIL_DOMAINS = new Set([
@@ -141,45 +137,11 @@ export function registrableDomain(email: string): string | null {
 }
 
 /**
- * Records an account's first setup reward on a private email domain in
- * Tinybird, domain only. infra-watch counts these per domain and reports a
- * burst to Discord. Best effort: a failure is logged and never blocks rewards.
+ * The email domain a sign-up is recorded with, so infra-watch can spot many
+ * new accounts on one domain: its registrable domain when private. Public
+ * mail providers and hosts without one record nothing.
  */
-export async function recordSetupRewardSignup(
-    env: Pick<
-        CloudflareBindings,
-        "ENVIRONMENT" | "TINYBIRD_INGEST_URL" | "TINYBIRD_INGEST_TOKEN"
-    >,
-    { userId, email }: { userId: string; email: string },
-): Promise<void> {
+export function signupEmailDomain(email: string): string | undefined {
     const domain = registrableDomain(email);
-    if (!domain || PUBLIC_MAIL_DOMAINS.has(domain)) return;
-    try {
-        const response = await fetch(
-            getTinybirdDatasourceIngestUrl(
-                env.TINYBIRD_INGEST_URL,
-                "signup_event",
-            ),
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${env.TINYBIRD_INGEST_TOKEN}`,
-                    "Content-Type": "application/x-ndjson",
-                },
-                body: JSON.stringify({
-                    timestamp: new Date().toISOString(),
-                    environment: env.ENVIRONMENT,
-                    user_id: userId,
-                    email_domain: domain,
-                }),
-                signal: AbortSignal.timeout(3000),
-            },
-        );
-        if (!response.ok)
-            log.warn("SIGNUP_EVENT_FAILED: status={status}", {
-                status: response.status,
-            });
-    } catch (error) {
-        log.warn("SIGNUP_EVENT_FAILED: {error}", { error });
-    }
+    return domain && !PUBLIC_MAIL_DOMAINS.has(domain) ? domain : undefined;
 }

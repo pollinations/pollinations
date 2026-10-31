@@ -11,10 +11,6 @@ import { drizzle } from "drizzle-orm/d1";
 import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
-import type {
-    QuestCategory,
-    QuestDefinition,
-} from "../src/services/quests/definitions.ts";
 import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
@@ -23,7 +19,6 @@ import {
     requestSetupReview,
     setupHold,
 } from "../src/services/setup-reward-holds.ts";
-import { registrableDomain } from "../src/services/setup-reward-signups.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
@@ -2739,8 +2734,8 @@ test("account quest history accepts account usage permission", async ({
     });
 });
 
-// Sign-up flags: an account's first onboarding reward on a private email
-// domain is one Tinybird event; infra-watch reports domains past 30 a day.
+// Setup holds: accounts with a first onboarding reward, as the dashboard
+// sees them.
 
 /** Google-only accounts with an API key: their next check earns first_api_key. */
 async function seedSetupAccounts(
@@ -2790,29 +2785,6 @@ function earnFirstKey(bindings: typeof env, userId: string) {
     ]);
 }
 
-/** A quest every account completes, e.g. a later onboarding reward. */
-function completedQuestGroup(
-    questId: string,
-    category: QuestCategory = "setup",
-): QuestGroup {
-    const quest: QuestDefinition = {
-        id: questId,
-        title: questId,
-        description: "",
-        category,
-        scope: "perUser",
-        rewardAmount: 0.25,
-        balanceBucket: "tier",
-    };
-    return {
-        id: questId,
-        listQuestCards: async () => [],
-        evaluateUser: async (_ctx, user) => ({
-            proposals: [{ quest, userId: user.id }],
-        }),
-    };
-}
-
 async function tierBalanceOf(userId: string) {
     const [row] = await drizzle(env.DB, { schema })
         .select({ value: schema.user.tierBalance })
@@ -2821,7 +2793,7 @@ async function tierBalanceOf(userId: string) {
     return row?.value ?? 0;
 }
 
-test("sign-up flags: the setup quest list covers every setup quest in the catalog", async ({
+test("setup holds: the setup quest list covers every setup quest in the catalog", async ({
     mocks,
 }) => {
     await mocks.enable("github");
@@ -2833,68 +2805,6 @@ test("sign-up flags: the setup quest list covers every setup quest in the catalo
     expect([...(await questIndex.listSetupQuestIds(ctx))].sort()).toEqual(
         catalogSetupIds.sort(),
     );
-});
-
-function signups(state: { signupEvents: Record<string, unknown>[] }) {
-    return state.signupEvents.map(({ user_id, email_domain }) => ({
-        user_id,
-        email_domain,
-    }));
-}
-
-test("sign-up flags: a first setup reward records the registrable domain; rewards still pay", async ({
-    mocks,
-}) => {
-    await mocks.enable("tinybird");
-    const db = drizzle(env.DB, { schema });
-    const [farm] = await seedSetupAccounts("farm", 1, "farm.test");
-    const [sub] = await seedSetupAccounts("sub", 1, "sub.test");
-    await db
-        .update(schema.user)
-        .set({ email: `${sub}@a1.sub.test` })
-        .where(eq(schema.user.id, sub));
-    const [mail] = await seedSetupAccounts("mail", 1, "fastmail.com");
-    for (const id of [farm, sub, mail]) await earnFirstKey(env, id);
-
-    expect(signups(mocks.tinybird.state)).toEqual([
-        { user_id: farm, email_domain: "farm.test" },
-        { user_id: sub, email_domain: "sub.test" },
-    ]);
-    expect(mocks.tinybird.state.signupEvents[0]?.environment).toBe("test");
-    expect(await tierBalanceOf(farm)).toBeCloseTo(0.25);
-    expect(registrableDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
-    expect(registrableDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
-    expect(registrableDomain("x@a_1.sub.test.")).toBe("sub.test");
-    expect(registrableDomain("x@co.uk")).toBeNull();
-    expect(registrableDomain('x@a.b"c.com')).toBeNull();
-    expect(registrableDomain("x@mail.bücher.de")).toBe("xn--bcher-kva.de");
-});
-
-test("sign-up flags: returning accounts don't count as new sign-ups", async ({
-    mocks,
-}) => {
-    await mocks.enable("tinybird");
-    const [back] = await seedSetupAccounts("back", 1, "back.test");
-    await earnFirstKey(env, back);
-    await checkQuestsForUser(env, back, [completedQuestGroup("later_setup")]);
-
-    expect(signups(mocks.tinybird.state)).toEqual([
-        { user_id: back, email_domain: "back.test" },
-    ]);
-});
-
-test("sign-up flags: a failed sign-up write never blocks rewards", async () => {
-    const [offline] = await seedSetupAccounts("offline", 1, "offline.test");
-    vi.stubGlobal("fetch", async () => {
-        throw new Error("Tinybird unavailable");
-    });
-    try {
-        const result = await earnFirstKey(env, offline);
-        expect(result.recorded).toBe(1);
-        expect(await tierBalanceOf(offline)).toBeCloseTo(0.25);
-    } finally {
-        vi.unstubAllGlobals();
-    }
 });
 
 // Setup holds: infra-watch (or a maintainer) holds a domain in the

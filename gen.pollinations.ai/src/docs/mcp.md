@@ -220,3 +220,9 @@ key and cannot spend beyond that key's budget. Configure both in
 [API key settings](https://enter.pollinations.ai/keys). See
 [Authentication](https://gen.pollinations.ai/docs#tag/authentication) for key
 types and security guidance.
+
+### Password MCP
+
+`gen.pollinations.ai/mcp/password` — Generate passwords and passphrases, and score strength.
+
+Tools: `generate_password`, `password_strength`, `generate_passphrase`.

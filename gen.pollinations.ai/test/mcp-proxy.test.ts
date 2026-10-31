@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "password",
+                name: "Password MCP",
+                description:
+                    "Generate passwords and passphrases, and score strength.",
+                url: "https://gen.pollinations.ai/mcp/password",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

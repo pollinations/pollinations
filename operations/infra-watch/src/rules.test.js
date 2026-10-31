@@ -377,6 +377,21 @@ test("a closed card turns green with how long, what it cost, start and now", () 
     assert.match(card.text, /Provider fault\./);
 });
 
+test("each AI line keeps the colour its card had when it was written", () => {
+    const done = opened({ closedAt: 181 * MIN, pinged: true });
+    const { text } = renderCard("model:a/model", done, {
+        lines: [
+            { at: 60 * MIN, text: "Primary weak.", color: 0xef9f27 },
+            { at: 90 * MIN, text: "Worse.", color: 0xd85a30 },
+            { at: 181 * MIN, text: "Closed.", color: 0x639922 },
+        ],
+    });
+    assert.match(
+        text,
+        /↳ 🟨 <t:3600:t> Primary weak\.\n↳ 🟧 <t:5400:t> Worse\.\n↳ 🟩 <t:10860:t> Closed\./,
+    );
+});
+
 test("infrastructure cards follow the same life: red open, green closed", () => {
     const gen = { kind: "GEN_DOWN", openedAt: 0, info: { kind: "GEN_DOWN" } };
     const open = renderCard("gen", gen, { now: 0 });

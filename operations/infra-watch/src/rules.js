@@ -326,6 +326,20 @@ export const COLOR = {
 };
 const GREEN = 0x639922;
 
+// A card's colour: its status while open, green once closed.
+export const cardColor = (incident) =>
+    incident.closedAt != null ? GREEN : COLOR[incident.kind];
+
+// Each AI line's badge: the card's colour when the line was written, so the
+// lines show how the incident moved. Squares, since the lines sit outside the
+// box, where Discord shows local times but no coloured text.
+const BADGE = {
+    [RED]: "🟥",
+    [COLOR.DEGRADED]: "🟧",
+    [COLOR.PRIMARY_WEAK]: "🟨",
+    [GREEN]: "🟩",
+};
+
 // While the AI is writing a line, the card ends with this.
 export const CHECKING = "*checking why…*";
 
@@ -449,7 +463,8 @@ function closedRows(key, incident) {
 }
 
 // The incident's card, in any state: the box, then while open "open since",
-// then the AI's lines in order, then "checking why…" while one is coming.
+// then the AI's lines in order, each with its badge, then "checking why…"
+// while one is coming.
 // Mentions stay those of the opening post, so edits never change them.
 export function renderCard(
     key,
@@ -458,7 +473,7 @@ export function renderCard(
 ) {
     const closed = incident.closedAt != null;
     const title = `${closed ? "RECOVERED" : LABEL[incident.kind]}: ${subjectOf(key)}`;
-    const color = closed ? GREEN : COLOR[incident.kind];
+    const color = cardColor(incident);
     const parts = [
         panel(
             title,
@@ -468,7 +483,11 @@ export function renderCard(
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
     for (const line of lines)
-        parts.push(`↳ <t:${unix(line.at)}:t> ${line.text}`);
+        parts.push(
+            ["↳", BADGE[line.color], `<t:${unix(line.at)}:t>`, line.text]
+                .filter(Boolean)
+                .join(" "),
+        );
     if (checking) parts.push(CHECKING);
     return {
         text: parts.join("\n"),

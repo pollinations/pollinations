@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
@@ -475,6 +476,86 @@ test("refuses agent run tokens on Connectors", async () => {
 
     expect(response.status).toBe(403);
 });
+
+test.for(["composio", "computer"])(
+    "refuses agent run tokens minted from a publishable key on %s",
+    async (serverId) => {
+        const parent = await createTestApiKey({
+            type: "publishable",
+            user: { tierBalance: 1 },
+        });
+        const token = await signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: parent.id,
+            parentRequestId: crypto.randomUUID(),
+        });
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+
+        expect(response.status).toBe(403);
+    },
+);
+
+test("keeps agent run tokens minted from a secret key on Computer", async () => {
+    const parent = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/computer",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain(`computer:${parent.userId}`);
+});
+
+test.for(["composio", "computer"])(
+    "routes the account owner's dashboard session to %s",
+    async (serverId) => {
+        const { userId } = await createTestApiKey({
+            user: { tierBalance: 1 },
+        });
+        const token = await signSessionToken({
+            secret: env.BETTER_AUTH_SECRET,
+            userId,
+        });
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toContain(userId);
+    },
+);
 
 test("refuses receipt-billed tool calls from an empty wallet but keeps initialization free", async () => {
     const { key } = await createTestApiKey();

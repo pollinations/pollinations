@@ -3576,6 +3576,11 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
+        const tinybirdEvents: Record<string, unknown>[] = [];
+        const privateModelFlags = () =>
+            tinybirdEvents
+                .filter((event) => event.resolvedModelRequested === modelId)
+                .map((event) => event.privateModel);
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             if (isChatCompletionsRequest(request)) {
@@ -3597,7 +3602,14 @@ fixtureTest(
                     },
                 });
             }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    tinybirdEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
             throw new Error(`Unexpected fetch: ${request.url}`);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -3637,6 +3649,8 @@ fixtureTest(
         await expect(ownerResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
         });
+        // Public health and stats pipes skip rows flagged as private.
+        expect(privateModelFlags()).toEqual([true]);
 
         const catalogIncludesModel = async (authorization?: string) => {
             const modelsResponse = await fetchGen(
@@ -3711,6 +3725,91 @@ fixtureTest(
         expect(freePublicResponse.status).toBe(200);
         await expect(freePublicResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
+        });
+        expect(privateModelFlags().at(-1)).toBe(false);
+    },
+);
+
+fixtureTest(
+    "public model status and stats leave private community models out",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const privateId = communityModelId(ownerGithubUsername, "hidden");
+        const publicId = communityModelId(ownerGithubUsername, "listed");
+        const deletedId = communityModelId(ownerGithubUsername, "deleted");
+        const endpoint = {
+            ownerUserId,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        await insertCommunityEndpoints([
+            {
+                ...endpoint,
+                id: `endpoint-${crypto.randomUUID()}`,
+                name: "hidden",
+                visibility: "private",
+            },
+            {
+                ...endpoint,
+                id: `endpoint-${crypto.randomUUID()}`,
+                name: "listed",
+                visibility: "public",
+            },
+        ]);
+        await env.KV.delete("model-stats-v3");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input) => {
+                const { pathname } = new URL(String(input));
+                if (pathname === "/v0/pipes/model_route_health.json") {
+                    return Response.json({
+                        data: [
+                            { model: privateId, model_used: "" },
+                            // A public model that fell back to a private one.
+                            { model: publicId, model_used: privateId },
+                            { model: publicId, model_used: publicId },
+                            { model: deletedId, model_used: "" },
+                            { model: "openai", model_used: "" },
+                        ],
+                    });
+                }
+                if (pathname === "/v0/pipes/public_model_stats.json") {
+                    return Response.json({
+                        data: [privateId, publicId, deletedId, "openai"].map(
+                            (model) => ({ model, avg_cost_usd: 0 }),
+                        ),
+                    });
+                }
+                throw new Error(`Unexpected fetch: ${pathname}`);
+            }),
+        );
+
+        const status = await fetchGen(
+            "https://gen.pollinations.ai/models/status",
+        );
+        expect(status.status).toBe(200);
+        await expect(status.json()).resolves.toEqual({
+            data: [
+                { model: publicId, model_used: publicId },
+                { model: "openai", model_used: "" },
+            ],
+        });
+
+        const stats = await fetchGen(
+            "https://gen.pollinations.ai/models/stats",
+        );
+        expect(stats.status).toBe(200);
+        await expect(stats.json()).resolves.toEqual({
+            data: [
+                { model: publicId, avg_cost_usd: 0 },
+                { model: "openai", avg_cost_usd: 0 },
+            ],
         });
     },
 );

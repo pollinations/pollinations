@@ -267,6 +267,14 @@ export const track = (eventType: EventType) =>
             communityModelReward?: CommunityModelRewardResolution | null;
             billedPrice?: number;
         }): Promise<InsertGenerationEvent> => {
+            // Owner-only models stay out of public stats, whether a row names
+            // one as the model asked for or as the route that served it.
+            const privateModel = fallbackCandidates(modelInfo).some(
+                (candidate) =>
+                    candidate.communityEndpoint?.visibility === "private" &&
+                    (candidate.id === requestTracking.resolvedModelRequested ||
+                        candidate.id === row.responseTracking.modelUsed),
+            );
             const event = createTrackingEvent({
                 id: generateRandomId(),
                 requestId: c.get("requestId"),
@@ -288,6 +296,7 @@ export const track = (eventType: EventType) =>
                 markup: row.markup ?? null,
                 communityModelReward: row.communityModelReward ?? null,
                 billedPrice: row.billedPrice ?? 0,
+                privateModel,
             });
             await sendToTinybird(
                 event,
@@ -1293,6 +1302,7 @@ type TrackingEventInput = {
     communityModelReward: CommunityModelRewardResolution | null;
     billedPrice: number;
     errorTracking?: ErrorData;
+    privateModel: boolean;
 };
 
 // Reduce the per-rule adjustment breakdown into the two Map columns the event
@@ -1336,6 +1346,7 @@ function createTrackingEvent({
     communityModelReward,
     billedPrice,
     errorTracking,
+    privateModel,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id,
@@ -1366,6 +1377,7 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         communityEndpointType: requestTracking.communityEndpointType,
+        privateModel,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

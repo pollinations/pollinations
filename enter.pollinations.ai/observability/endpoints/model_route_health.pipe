@@ -149,6 +149,8 @@ SQL >
     FROM generation_events_classified AS events
     WHERE start_time >= now() - interval least(greatest({{Int32(minutes, 60)}}, 1), 10080) minute
     AND ({{String(traffic, 'all')}} = 'all' OR traffic_group = {{String(traffic, 'all')}})
+    -- Owner-only models stay out of this public listing.
+    AND NOT private_model
     -- provider is deliberately not a key: a route id already determines it, and
     -- keying on it would make it unaggregatable and leave rollup rows blank.
     GROUP BY GROUPING SETS (

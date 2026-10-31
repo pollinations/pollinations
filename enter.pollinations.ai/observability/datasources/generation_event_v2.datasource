@@ -168,7 +168,11 @@ SCHEMA >
 
 -- Request-time listing classification. Empty on historical events and on
 -- regular models; never infer an agent from the community provider alone.
-`community_endpoint_type` String        `json:$.communityEndpointType` DEFAULT ''
+`community_endpoint_type` String        `json:$.communityEndpointType` DEFAULT '',
+
+-- The requested or serving model was owner-only. Public health and stats
+-- pipes skip these rows; historical events default to false.
+`private_model` Bool                    `json:$.privateModel` DEFAULT false
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"

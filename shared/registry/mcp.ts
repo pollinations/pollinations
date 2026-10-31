@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "PRAYER_TIMES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "prayer-times",
+        name: "Prayer Times MCP",
+        description:
+            "Prayer times by city or coordinates, plus qibla direction.",
+        binding: "PRAYER_TIMES_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
             rates: [],
         },
     },

@@ -3,6 +3,7 @@ interface CloudflareBindings {
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
     ASK_JEV_MCP: Fetcher;
+    CSV_INSPECTOR_MCP: Fetcher;
     FFMPEG_MCP: Fetcher;
     EXA_MCP: Fetcher;
     COMPOSIO_MCP: Fetcher;

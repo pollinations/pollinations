@@ -7,7 +7,8 @@ import { withTimeout } from "./delivery.js";
 
 const GEN = "https://gen.pollinations.ai/v1/chat/completions";
 export const MODEL = "openai/gpt-6.1-sol";
-export const DAILY_LIMIT = 10;
+// AI lines per UTC day, across all incidents.
+export const DAILY_LIMIT = 20;
 export const MAX_TOOL_CALLS = 8;
 const TIMEOUT_MS = 90_000;
 // The answer is one line under the alert panel.
@@ -65,7 +66,11 @@ const CALLER_FIELDS = [
 ];
 
 export const SYSTEM_PROMPT = `You investigate one infra-watch alert for the Pollinations maintainers in a private Discord channel.
-The user message is JSON: the alert, and public request statistics for the last 15 and 60 minutes.
+The user message is JSON: the moment, your previous lines on this incident, the alert, and public request statistics for the last 15 and 60 minutes.
+The moment is one of:
+- open: the incident just opened.
+- change: it changed in a way that matters; the reason says how.
+- closed: it is over; footprint says how long it lasted and how many requests and callers it cost.
 
 You may call read-only tools when they help explain the alert, at most ${MAX_TOOL_CALLS} calls in all:
 - model_status(model, minutes): public status rows of any official model for the last 15 or 60 minutes, for example a fallback target or a related model.
@@ -83,9 +88,10 @@ How to read a status row:
 - A PRIMARY_WEAK alert means callers are fine thanks to a fallback, but the model's primary route fails often: explain why the primary fails and whether the fallback keeps up.
 - A platform-drop alert lists the models whose traffic fell the most: now10 is the last 10 minutes, baseline10 the average 10 minutes before.
 
-Your answer is shown as the last line of the alert, under a panel that already gives the success rate, the callers and each route. Reply with one line of plain text, at most two short sentences and under 250 characters:
-1. The verdict: an outage, a provider fault, our fault, a single caller, or unclear.
-2. The cause, naming the provider and the kind of error.
+Your answer is added as one line to the incident's card, under a panel that already gives the success rate, the callers and each route, and under your previous lines. Reply with one line of plain text, at most two short sentences and under 250 characters:
+- open: the verdict (an outage, a provider fault, our fault, a single caller, or unclear), then the cause, naming the provider and the kind of error.
+- change: what changed and what it means now, without repeating your previous lines.
+- closed: a closing summary: the cause, and what it cost.
 Do not repeat the panel's numbers, request ids or caveats, and no markdown.
 
 Use only facts from the data and tool results. If they cannot explain the alert, say it is unclear.`;
@@ -147,9 +153,8 @@ const TOOL_SPECS = [
     },
 ];
 
-export const investigates = (post) =>
-    post.type === "alert" &&
-    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP"].includes(post.info.kind);
+export const investigates = (kind) =>
+    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP"].includes(kind);
 
 const only = (fields, row) =>
     Object.fromEntries(fields.map((f) => [f, row[f]]));
@@ -371,7 +376,25 @@ export async function ask(
     });
 }
 
-// Counts investigations per UTC day; null once the day's limit is used.
+// A closed incident's footprint: requests that ended in a server error, and
+// the accounts they came from, over up to 24 hours. Null if Tinybird can't say.
+export async function lost(model, minutes, tinybird) {
+    try {
+        const [row] = await pipe(
+            "infra_watch_callers",
+            { model, minutes: Math.min(Math.max(Math.ceil(minutes), 1), 1440) },
+            { fetchImpl: fetch, ...tinybird },
+        );
+        return row
+            ? { failures: row.failures, failing_callers: row.failing_callers }
+            : null;
+    } catch (error) {
+        console.error(`lost: ${error.message}`);
+        return null;
+    }
+}
+
+// Counts AI lines per UTC day; null once the day's limit is used.
 export function allow(budget, now) {
     const day = new Date(now).toISOString().slice(0, 10);
     const count = budget?.day === day ? budget.count : 0;

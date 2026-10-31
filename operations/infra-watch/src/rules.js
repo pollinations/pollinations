@@ -1,13 +1,17 @@
-// Plain alert rules over public `/models/status` data. No AI, no secrets.
+// Plain alert rules over public `/models/status` data, and the incident
+// cards they drive. No AI, no secrets.
 
-export const COOLDOWN_MS = 3 * 60 * 60 * 1000;
-// Analytics for the newest minute lag, so a drop or outage must hold for
-// this many consecutive checks before it alerts.
+// Analytics for the newest minute lag, so an outage or drop must hold for
+// this many consecutive checks before it opens, and a status change on an
+// open incident must hold as long before it counts.
 export const CONFIRM_CHECKS = 3;
-// A degraded model counts as recovered only after this many clean checks
-// with a fresh sample (one full 15-minute window), so a model hovering at
-// the threshold doesn't flap between alert and recovered every minute.
+// A model incident closes only after this many clean checks with a fresh
+// sample (one full 15-minute window), so a model hovering at the threshold
+// doesn't close and reopen every minute.
 export const RECOVER_CHECKS = 15;
+// A model failing again this soon after its last incident closed gets an
+// AGAIN row on its new card.
+const AGAIN_MS = 60 * 60 * 1000;
 
 const MIN_REQUESTS = 10;
 const MIN_SUCCESS = 0.9;
@@ -93,12 +97,12 @@ export function conditions({
         const primary = primaryOf(info.routes);
         if (h.success < MIN_SUCCESS) {
             if (h.nonClient - h.ok >= MIN_FAILURES)
-                found[`degraded:${model}`] = { kind: "DEGRADED", ...info };
+                found[`model:${model}`] = { kind: "DEGRADED", ...info };
         } else if (
             primary.attempts >= MIN_REQUESTS &&
             primary.success < PRIMARY_MIN_SUCCESS
         ) {
-            found[`primary:${model}`] = { kind: "PRIMARY_WEAK", ...info };
+            found[`model:${model}`] = { kind: "PRIMARY_WEAK", ...info };
         }
     }
     const now10 = totalRequests(last10);
@@ -106,7 +110,8 @@ export function conditions({
     if (baseline10 >= PLATFORM_MIN_BASELINE && now10 < baseline10 / 2) {
         found.platform = { kind: "PLATFORM_DROP", now10, baseline10 };
     }
-    // Private email domains with bulk onboarding sign-ups, from Enter.
+    // Private email domains with bulk onboarding sign-ups, from Enter: open
+    // while over the limit in the last 24 hours.
     for (const signup of signups)
         found[`signup:${signup.domain}`] = { kind: "SIGNUP_BURST", ...signup };
     return found;
@@ -121,69 +126,158 @@ const CONFIRMED = new Set([
 ]);
 const HOSTS = { gen: true, public: true, upstream: true };
 
-// Keys whose recovery we announce. A weak primary just expires: callers
-// were never affected. So does a sign-up burst once its 24 hours pass.
-const RECOVERS = (key) =>
-    !key.startsWith("primary:") && !key.startsWith("signup:");
-// A sign-up burst is posted once a day while it lasts.
-const cooldownOf = (key) =>
-    key.startsWith("signup:") ? 24 * 60 * 60 * 1000 : COOLDOWN_MS;
-
-// Pure state transition: which messages to post, and the next state.
+// One incident per key: a model (`model:<id>`), or gen, a hostname, the
+// status data or the platform. It opens once confirmed, updates on every
+// check that still finds it, and closes once clean; a closed incident is
+// never touched again. Returns what happened to each, and the next state.
 export function step(state, found, now, recent = []) {
     // With gen down, nothing else can be judged, not even a single hostname.
     // With analytics down, only the hostname checks still have data.
-    const active = { ...(state.active ?? {}) };
+    const open = { ...(state.open ?? {}) };
+    const closed = Object.fromEntries(
+        Object.entries(state.closed ?? {}).filter(
+            ([, at]) => now - at < AGAIN_MS,
+        ),
+    );
     const streaks = {};
     const clears = {};
-    const posts = [];
+    const actions = [];
     const health = modelHealth(recent);
 
     for (const [key, info] of Object.entries(found)) {
         const streak = (state.streaks?.[key] ?? 0) + 1;
         streaks[key] = streak;
-        const needs = CONFIRMED.has(key) ? CONFIRM_CHECKS : 1;
-        if (streak < needs) continue;
-        const prev = active[key];
-        if (prev && now - prev.postedAt < cooldownOf(key)) continue;
-        active[key] = { postedAt: now, kind: info.kind };
-        posts.push({ type: "alert", key, info });
+        const incident = open[key];
+        if (!incident) {
+            if (streak < (CONFIRMED.has(key) ? CONFIRM_CHECKS : 1)) continue;
+            open[key] = {
+                kind: info.kind,
+                openedAt: now,
+                again: closed[key] ?? null,
+                start: info,
+                info,
+            };
+            actions.push({ type: "open", key });
+            continue;
+        }
+        // A status change counts once it held for CONFIRM_CHECKS checks.
+        const pending =
+            info.kind === incident.kind
+                ? null
+                : {
+                      kind: info.kind,
+                      count:
+                          incident.pending?.kind === info.kind
+                              ? incident.pending.count + 1
+                              : 1,
+                  };
+        const moved = pending && pending.count >= CONFIRM_CHECKS;
+        open[key] = {
+            ...incident,
+            kind: moved ? info.kind : incident.kind,
+            pending: moved ? null : pending,
+            info,
+        };
+        actions.push({ type: "update", key });
     }
 
-    for (const [key, prev] of Object.entries(active)) {
+    for (const [key, incident] of Object.entries(open)) {
         if (found[key]) continue;
         if (found.gen && key !== "gen") continue;
         if (found.analytics && !HOSTS[key]) continue;
-        if (!RECOVERS(key)) {
-            if (now - prev.postedAt >= cooldownOf(key)) delete active[key];
-            continue;
-        }
-        // A model needs RECOVER_CHECKS clean checks in a row to count as
-        // recovered; a thin sample neither counts nor resets the run, and
-        // never announces (not even a retry after a failed post).
-        const model = key.startsWith("degraded:") ? key.slice(9) : null;
+        // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
+        // sample neither counts nor resets the run.
+        const model = key.startsWith("model:") ? key.slice(6) : null;
         if (model) {
             const fresh = (health[model]?.nonClient ?? 0) >= MIN_REQUESTS;
             clears[key] = (state.clears?.[key] ?? 0) + (fresh ? 1 : 0);
+            // A clean check also ends a status change in progress: it must
+            // hold on consecutive checks.
+            if (fresh && incident.pending)
+                open[key] = { ...incident, pending: null };
             if (!fresh || clears[key] < RECOVER_CHECKS) continue;
         }
-        delete active[key];
-        posts.push({
-            type: "recovered",
+        delete open[key];
+        closed[key] = now;
+        actions.push({
+            type: "close",
             key,
-            info: { ...prev, model, ...health[model] },
+            incident: {
+                ...incident,
+                closedAt: now,
+                latest: model ? health[model] : null,
+            },
         });
     }
 
-    return { posts, state: { active, streaks, clears } };
+    return { actions, state: { open, closed, streaks, clears } };
 }
+
+// A route counts as failing below this, with enough attempts to judge.
+const FAILING_ROUTE = 0.8;
+const MIN_ROUTE_ATTEMPTS = 5;
+
+// What an incident looks like, for telling a real change from noise.
+export function snapshot(incident) {
+    const { info } = incident;
+    return {
+        kind: incident.kind,
+        failing: (info.routes ?? [])
+            .filter(
+                (r) =>
+                    r.attempts >= MIN_ROUTE_ATTEMPTS &&
+                    r.ok / r.attempts < FAILING_ROUTE,
+            )
+            .map((r) => `${r.fallback ? "fallback" : "primary"} ${r.provider}`)
+            .join(", "),
+        errorKind: info.errorKind ?? null,
+        success: info.success ?? null,
+        failingCallers: info.callers?.failing_callers ?? null,
+    };
+}
+
+// Why the incident changed enough for a new AI line, or null if it is
+// the same problem: same status, routes and error, success within 20 points.
+export function noteworthy(before, now) {
+    if (now.kind !== before.kind)
+        return `status changed from ${before.kind} to ${now.kind}`;
+    if (now.failing !== before.failing)
+        return `failing routes changed from "${before.failing || "none"}" to "${now.failing || "none"}"`;
+    if (now.errorKind && before.errorKind && now.errorKind !== before.errorKind)
+        return `main error changed from ${before.errorKind} to ${now.errorKind}`;
+    if (
+        now.success != null &&
+        before.success != null &&
+        Math.abs(now.success - before.success) >= 0.2
+    )
+        return `final success moved from ${pct(before.success)} to ${pct(now.success)}`;
+    if ((before.failingCallers ?? 0) <= 1 && (now.failingCallers ?? 0) > 1)
+        return `failing callers went from ${before.failingCallers ?? 0} to ${now.failingCallers}`;
+    return null;
+}
+
+// Worse in a way that needs a person again: callers now affected, or the
+// affected callers went from one to several.
+export const escalates = (before, now) =>
+    now.kind === "DEGRADED" &&
+    (now.failingCallers ?? 2) > 1 &&
+    (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1);
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
 const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
+const unix = (ms) => Math.round(ms / 1000);
+
+// "2 h 01 min", "47 min", "under 1 min".
+export function duration(ms) {
+    const minutes = Math.round(ms / 60_000);
+    if (minutes < 1) return "under 1 min";
+    if (minutes < 60) return `${minutes} min`;
+    return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
+}
 
 // A box titled with the alert and what it is about. It is as wide as its
 // title or its longest row needs, so a full model id is never cut.
-export function panel(title, lines) {
+function panel(title, lines) {
     const body = lines.map(
         ([field, value]) =>
             `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
@@ -198,34 +292,34 @@ export function panel(title, lines) {
     ].join("\n");
 }
 
-// Each alert's box title: what happened, and to what.
-const TITLE = {
-    GEN_DOWN: () => "DOWN: gen Worker",
-    PUBLIC_DOWN: () => "DOWN: gen.pollinations.ai",
-    UPSTREAM_DOWN: () => "DOWN: gen.myceli.ai",
-    ANALYTICS_DOWN: () => "BLIND: model status data",
-    PLATFORM_DROP: () => "DEGRADED: platform-wide",
-    DEGRADED: (info) => `DEGRADED: ${info.model}`,
-    PRIMARY_WEAK: (info) => `PRIMARY WEAK: ${info.model}`,
-    SIGNUP_BURST: (info) => `FLAGGED: domain ${info.domain}`,
+const LABEL = {
+    GEN_DOWN: "DOWN",
+    PUBLIC_DOWN: "DOWN",
+    UPSTREAM_DOWN: "DOWN",
+    ANALYTICS_DOWN: "BLIND",
+    PLATFORM_DROP: "DEGRADED",
+    DEGRADED: "DEGRADED",
+    PRIMARY_WEAK: "PRIMARY WEAK",
+    SIGNUP_BURST: "FLAGGED",
 };
-const framed = (info, lines) => panel(TITLE[info.kind](info), lines);
-
-// A maintainer's command on the SETUP_HOLDS store, run from
-// enter.pollinations.ai/ with a Cloudflare login on the account.
-export const kvPut = (key, value) =>
-    `npx wrangler kv key put --binding SETUP_HOLDS --env production --remote "${key}" ${value}`;
-
-// Last line of an alert while the AI looks into it. The same message is
-// then edited: the AI's line replaces it, or it simply goes.
-export const CHECKING = "*checking why…*";
-export const complete = (text, line) =>
-    text.replace(`\n${CHECKING}`, line ? `\n↳ ${line}` : "");
+const SUBJECT = {
+    gen: "gen Worker",
+    public: "gen.pollinations.ai",
+    upstream: "gen.myceli.ai",
+    analytics: "model status data",
+    platform: "platform-wide",
+};
+export const subjectOf = (key) =>
+    key.startsWith("model:")
+        ? key.slice(6)
+        : key.startsWith("signup:")
+          ? `domain ${key.slice(7)}`
+          : SUBJECT[key];
 
 // Embed side-bar colour by severity: red down, orange degraded, yellow weak
-// primary, green recovered.
+// primary, green closed.
 const RED = 0xe24b4a;
-const COLOR = {
+export const COLOR = {
     GEN_DOWN: RED,
     PUBLIC_DOWN: RED,
     UPSTREAM_DOWN: RED,
@@ -237,117 +331,164 @@ const COLOR = {
 };
 const GREEN = 0x639922;
 
-export const render = (post) => ({
-    ...draw(post),
-    color: post.type === "recovered" ? GREEN : COLOR[post.info.kind],
-});
+// While the AI is writing a line, the card ends with this.
+export const CHECKING = "*checking why…*";
 
-function draw(post) {
-    const { info } = post;
-    if (post.type === "recovered") {
-        const what =
-            info.model ??
-            {
-                gen: "gen Worker (both gen.pollinations.ai and gen.myceli.ai)",
-                public: "gen.pollinations.ai (public domain)",
-                upstream: "gen.myceli.ai (Myceli upstream domain)",
-                analytics: "model status analytics",
-            }[post.key] ??
-            "platform traffic";
-        const rate =
-            info.success != null
-                ? ` — ${pct(info.success)} final success (${info.nonClient} reqs, 15 min)`
-                : "";
-        return { text: `\`${what}\` recovered${rate}`, ping: false };
-    }
-    if (info.kind === "GEN_DOWN") {
-        return {
-            text: framed(info, [
-                ["WHY", "both hostnames failing:"],
-                ["", "gen.pollinations.ai  DOWN"],
-                ["", "gen.myceli.ai        DOWN"],
-                ["", "-> the Worker itself, not DNS"],
-            ]),
-            ping: true,
-        };
-    }
-    if (info.kind === "PUBLIC_DOWN" || info.kind === "UPSTREAM_DOWN") {
-        const pub = info.kind === "PUBLIC_DOWN";
-        return {
-            text: framed(info, [
-                ["WHY", "one hostname failing:"],
-                ["", `gen.pollinations.ai  ${pub ? "DOWN" : "up"}`],
-                ["", `gen.myceli.ai        ${pub ? "up" : "DOWN"}`],
-                [
-                    "",
-                    pub
-                        ? "-> domain/DNS/route; Worker OK"
-                        : "-> Myceli domain/route; users OK",
-                ],
-            ]),
-            ping: pub,
-        };
-    }
-    if (info.kind === "ANALYTICS_DOWN") {
-        return {
-            text: framed(info, [
-                ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
-                ["", "model alerts paused"],
-            ]),
-            ping: true,
-        };
-    }
-    if (info.kind === "SIGNUP_BURST") {
-        const since = new Date(info.since * 1000).toISOString();
-        const message = {
-            text: framed(info, [
-                ["ACCOUNTS", `${info.accounts} in 24h`],
-                ["SINCE", `${since.slice(0, 16).replace("T", " ")} UTC`],
-                [
-                    "REWARDS",
-                    {
-                        held: "Setup quests held",
-                        released: "released by a maintainer",
-                    }[info.hold] ?? "still paid, review the domain",
-                ],
-            ]),
-            ping: false,
-        };
-        if (info.hold === "held")
-            message.text += `\nRelease the domain:\n\`\`\`\n${kvPut(`hold:${info.domain}`, "released")}\n\`\`\``;
-        return message;
-    }
-    if (info.kind === "PLATFORM_DROP") {
-        return {
-            text: framed(info, [
-                ["REQS", `${info.now10} last 10m`],
-                ["", `baseline ${Math.round(info.baseline10)}`],
-            ]),
-            ping: true,
-        };
-    }
-    const lines = [
-        ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
-    ];
-    // Accounts behind the failures, from Tinybird; unknown if it couldn't say.
-    const { callers } = info;
-    lines.push([
-        "CALLERS",
-        callers
-            ? `${callers.failing_callers} of ${callers.callers} failing`
-            : "unknown",
-    ]);
-    for (const r of (info.routes ?? []).slice(0, MAX_ROUTE_LINES)) {
+// An AI line counts as on its way for at most this long: a restart drops the
+// in-memory task, and its saved pending flag must not block the card forever.
+const PENDING_MS = 10 * 60 * 1000;
+export const waiting = (record, now) =>
+    Boolean(record.pending) &&
+    record.pendingAt != null &&
+    now - record.pendingAt < PENDING_MS;
+
+// Who an opening card pings: a weak primary never (the fallback keeps
+// callers whole), a model failing for a single caller neither, a Myceli-only
+// hostname neither (users are fine); every other alert does.
+export function pings(incident) {
+    const { kind, info } = incident;
+    if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
+        return false;
+    if (kind === "DEGRADED" && info.model)
+        return info.callers?.failing_callers !== 1;
+    return true;
+}
+
+const routeRows = (routes = []) =>
+    routes.slice(0, MAX_ROUTE_LINES).map((r) => {
         const rate = r.attempts > 0 ? r.ok / r.attempts : 1;
-        lines.push([
+        return [
             r.fallback ? "FALLBACK" : "PRIMARY",
             `${r.provider} ${r.ok}/${r.attempts} (${Math.round(rate * 100)}%)`,
-        ]);
+        ];
+    });
+const callersText = (callers) =>
+    callers
+        ? `${callers.failing_callers} of ${callers.callers} failing`
+        : "unknown";
+
+// Rows of an open card: what is true now, plus the frozen start once the
+// card has been updated, so the history stays on the card.
+function openRows(incident, now) {
+    const { info, start, kind } = incident;
+    if (kind === "GEN_DOWN")
+        return [
+            ["WHY", "both hostnames failing:"],
+            ["", "gen.pollinations.ai  DOWN"],
+            ["", "gen.myceli.ai        DOWN"],
+            ["", "-> the Worker itself, not DNS"],
+        ];
+    if (kind === "PUBLIC_DOWN" || kind === "UPSTREAM_DOWN") {
+        const pub = kind === "PUBLIC_DOWN";
+        return [
+            ["WHY", "one hostname failing:"],
+            ["", `gen.pollinations.ai  ${pub ? "DOWN" : "up"}`],
+            ["", `gen.myceli.ai        ${pub ? "up" : "DOWN"}`],
+            [
+                "",
+                pub
+                    ? "-> domain/DNS/route; Worker OK"
+                    : "-> Myceli domain/route; users OK",
+            ],
+        ];
     }
-    // A weak primary is posted quietly: the fallback keeps callers whole.
-    // So is a model failing for a single caller: that's not an outage.
+    if (kind === "ANALYTICS_DOWN")
+        return [
+            ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
+            ["", "model alerts paused"],
+        ];
+    if (kind === "PLATFORM_DROP")
+        return [
+            ["REQS", `${info.now10} last 10m`],
+            ["", `baseline ${Math.round(info.baseline10)}`],
+        ];
+    if (kind === "SIGNUP_BURST") {
+        const since = new Date(info.since * 1000).toISOString();
+        return [
+            ["ACCOUNTS", `${info.accounts} in 24h`],
+            ["SINCE", `${since.slice(0, 16).replace("T", " ")} UTC`],
+            ["REWARDS", "still paid, review the domain"],
+        ];
+    }
+    const rows = [
+        ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
+        ["CALLERS", callersText(info.callers)],
+        ...routeRows(info.routes),
+    ];
+    if (now > incident.openedAt)
+        rows.push([
+            "START",
+            `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
+        ]);
+    if (incident.again)
+        rows.push([
+            "AGAIN",
+            `last closed ${duration(incident.openedAt - incident.again)} ago`,
+        ]);
+    return rows;
+}
+
+// Rows of a closed card: how long, what it cost, how it started, now.
+function closedRows(key, incident) {
+    const rows = [
+        [
+            key.startsWith("signup:") ? "LASTED" : "DOWN",
+            duration(incident.closedAt - incident.openedAt),
+        ],
+    ];
+    if (!key.startsWith("model:")) return rows;
+    const { start, lost, latest } = incident;
+    rows.push([
+        "LOST",
+        lost
+            ? `${lost.failures} request${lost.failures === 1 ? "" : "s"}, ${lost.failing_callers} caller${lost.failing_callers === 1 ? "" : "s"}`
+            : "unknown",
+    ]);
+    rows.push([
+        "START",
+        `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
+    ]);
+    rows.push(...routeRows(start.routes));
+    if (latest)
+        rows.push([
+            "NOW",
+            `${pct(latest.success)} of ${latest.nonClient} reqs 15m`,
+        ]);
+    return rows;
+}
+
+// The incident's card, in any state: the box, then while open "open since",
+// then the AI's lines in order, then "checking why…" while one is coming.
+// Mentions stay those of the opening post, so edits never change them.
+export function renderCard(
+    key,
+    incident,
+    { lines = [], checking = false, now } = {},
+) {
+    const closed = incident.closedAt != null;
+    const ended = key.startsWith("signup:") ? "ENDED" : "RECOVERED";
+    const title = `${closed ? ended : LABEL[incident.kind]}: ${subjectOf(key)}`;
+    const parts = [
+        panel(
+            title,
+            closed ? closedRows(key, incident) : openRows(incident, now),
+        ),
+    ];
+    if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
+    for (const line of lines)
+        parts.push(`↳ <t:${unix(line.at)}:t> ${line.text}`);
+    if (checking) parts.push(CHECKING);
     return {
-        text: framed(info, lines),
-        ping: info.kind === "DEGRADED" && callers?.failing_callers !== 1,
+        text: parts.join("\n"),
+        ping: incident.pinged ?? pings(incident),
+        color: closed ? GREEN : COLOR[incident.kind],
     };
 }
+
+// The one new message an open incident can post: it got worse and needs a
+// person. It links to the card instead of repeating it.
+export const escalation = (key, incident, link) => ({
+    text: `↑ \`${subjectOf(key)}\` is now ${LABEL[incident.kind]}: callers are affected. ${link}`,
+    ping: true,
+    color: COLOR[incident.kind],
+});

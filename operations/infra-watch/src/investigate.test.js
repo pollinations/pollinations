@@ -6,6 +6,7 @@ import {
     DAILY_LIMIT,
     evidence,
     investigates,
+    lost,
     MAX_LINE,
     MAX_TOOL_CALLS,
     MODEL,
@@ -36,13 +37,11 @@ const degraded = {
     info: { kind: "DEGRADED", model: "a/model", success: 0.8, nonClient: 100 },
 };
 
-test("degraded, weak-primary and platform-drop alerts are investigated", () => {
-    assert.equal(investigates(degraded), true);
-    for (const kind of ["PLATFORM_DROP", "PRIMARY_WEAK"])
-        assert.equal(investigates({ type: "alert", info: { kind } }), true);
+test("degraded, weak-primary and platform-drop incidents are investigated", () => {
+    for (const kind of ["DEGRADED", "PLATFORM_DROP", "PRIMARY_WEAK"])
+        assert.equal(investigates(kind), true);
     for (const kind of ["GEN_DOWN", "ANALYTICS_DOWN"])
-        assert.equal(investigates({ type: "alert", info: { kind } }), false);
-    assert.equal(investigates({ ...degraded, type: "recovered" }), false);
+        assert.equal(investigates(kind), false);
 });
 
 test("evidence holds only the alerted model's rows and allowlisted fields", () => {
@@ -389,4 +388,20 @@ test("at most DAILY_LIMIT investigations per UTC day", () => {
         day: "2026-10-31",
         count: 1,
     });
+});
+
+test("lost counts an incident's failed requests over up to 24 hours", async () => {
+    const { seen, fetchImpl } = tinybird([
+        { requests: 900, failures: 37, failing_callers: 5, callers: 40 },
+    ]);
+    const tb = { tinybirdToken: "tb_test", fetchImpl };
+    assert.deepEqual(await lost("a/model", 135, tb), {
+        failures: 37,
+        failing_callers: 5,
+    });
+    assert.equal(seen[0].url.pathname, "/v0/pipes/infra_watch_callers.json");
+    assert.equal(seen[0].url.searchParams.get("minutes"), "135");
+    await lost("a/model", 5000, tb);
+    assert.equal(seen[1].url.searchParams.get("minutes"), "1440");
+    assert.equal(await lost("a/model", 60, {}), null);
 });

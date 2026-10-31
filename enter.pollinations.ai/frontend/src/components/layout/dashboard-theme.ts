@@ -3,11 +3,17 @@
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 import {
     AccountIcon,
+    AppIcon,
+    BeakerIcon,
+    BotIcon,
     CloudUploadIcon,
     CubeIcon,
     LockIcon,
+    McpIcon,
     NewspaperIcon,
+    RobotIcon,
     SparkleIcon,
+    TerminalIcon,
     ToolIcon,
     TrendUpIcon,
     WalletIcon,
@@ -20,8 +26,13 @@ import type { ComponentType } from "react";
  */
 export type DashboardNavGroup = "account" | "yours" | "resources";
 
-// A row with `views` stands for several pages, which its pages' headings
-// switch between (see title-switch.tsx); it stays highlighted on all of them.
+// Rows with a `parent` sit indented under its label: Explore for what
+// Pollinations offers, Publish for what you put out.
+export const NAV_PARENTS = {
+    explore: { label: "Explore", icon: CubeIcon },
+    publish: { label: "Publish", icon: CloudUploadIcon },
+} as const;
+
 export const DASHBOARD_NAV_ITEMS = [
     {
         id: "account",
@@ -53,12 +64,28 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "yours",
     },
     {
-        id: "publish",
+        id: "my-apps",
         to: "/my-apps",
-        label: "Publish",
-        icon: CloudUploadIcon,
+        label: "Apps",
+        icon: AppIcon,
         group: "yours",
-        views: ["/my-apps", "/my-models", "/my-agents"],
+        parent: "publish",
+    },
+    {
+        id: "my-models",
+        to: "/my-models",
+        label: "Models",
+        icon: BeakerIcon,
+        group: "yours",
+        parent: "publish",
+    },
+    {
+        id: "my-agents",
+        to: "/my-agents",
+        label: "Agents",
+        icon: RobotIcon,
+        group: "yours",
+        parent: "publish",
     },
     {
         id: "activity",
@@ -75,36 +102,66 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "resources",
     },
     {
-        id: "explore",
+        id: "models",
         to: "/models",
-        label: "Explore",
-        icon: CubeIcon,
+        label: "Models",
+        icon: BeakerIcon,
         group: "resources",
-        views: ["/models", "/agents", "/sandboxes"],
+        parent: "explore",
+    },
+    {
+        id: "agents",
+        to: "/agents",
+        search: { view: undefined },
+        label: "Agents",
+        icon: BotIcon,
+        group: "resources",
+        parent: "explore",
+    },
+    {
+        id: "mcp",
+        to: "/agents",
+        search: { view: "mcp" },
+        label: "MCP",
+        icon: McpIcon,
+        group: "resources",
+        parent: "explore",
+    },
+    {
+        id: "sandboxes",
+        to: "/sandboxes",
+        label: "Sandboxes",
+        icon: TerminalIcon,
+        group: "resources",
+        parent: "explore",
     },
 ] as const satisfies readonly {
     id: string;
     to: string;
+    search?: { view?: string };
     label: string;
     icon: ComponentType<{ className?: string }>;
     group: DashboardNavGroup;
-    views?: readonly string[];
+    parent?: keyof typeof NAV_PARENTS;
 }[];
 
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
 export type DashboardPath = (typeof DASHBOARD_NAV_ITEMS)[number]["to"];
 
-/** The drawer row a dashboard page belongs to. */
-export function navItemFor(path: string) {
-    return DASHBOARD_NAV_ITEMS.find((item) =>
-        "views" in item
-            ? (item.views as readonly string[]).includes(path)
-            : item.to === path,
+/**
+ * The drawer row for a page. Agents and MCP share /agents; its `view` search
+ * param tells them apart.
+ */
+export function navItemFor(path: string, view?: unknown) {
+    const rows = DASHBOARD_NAV_ITEMS.filter((item) => item.to === path);
+    if (rows.length < 2) return rows[0];
+    return rows.find(
+        (item) => ("search" in item ? item.search.view : undefined) === view,
     );
 }
 
 export function isDashboardPath(path: string): boolean {
-    return navItemFor(path) !== undefined;
+    return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
 }
 
 const RESOURCE_ITEMS = DASHBOARD_NAV_ITEMS.filter(

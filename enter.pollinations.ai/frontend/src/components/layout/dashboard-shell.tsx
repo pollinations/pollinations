@@ -50,6 +50,7 @@ import {
     type DashboardNavGroup,
     type DashboardPage,
     type DashboardPath,
+    NAV_PARENTS,
     navItemFor,
 } from "./dashboard-theme.ts";
 
@@ -63,10 +64,26 @@ export type { DashboardPage } from "./dashboard-theme.ts";
 type DashboardNavItem = {
     id: DashboardPage;
     to: DashboardPath;
+    search?: { view?: string };
     label: string;
     icon: ComponentType<{ className?: string }>;
     group: DashboardNavGroup;
+    parent?: keyof typeof NAV_PARENTS;
 };
+
+/** Consecutive rows that share a parent, so they render under its label. */
+function navSegments(items: readonly DashboardNavItem[]) {
+    const segments: {
+        parent?: DashboardNavItem["parent"];
+        items: DashboardNavItem[];
+    }[] = [];
+    for (const item of items) {
+        const last = segments.at(-1);
+        if (item.parent && last?.parent === item.parent) last.items.push(item);
+        else segments.push({ parent: item.parent, items: [item] });
+    }
+    return segments;
+}
 
 // Thin lines split the drawer into its parts: the logo, Pollinations'
 // resources (News & FAQ, models, agents & MCP), your tools, Docs, then two
@@ -114,7 +131,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
     const location = useRouterState({ select: (state) => state.location });
-    const activeNavItem = navItemFor(location.pathname);
+    const activeNavItem = navItemFor(
+        location.pathname,
+        (location.search as { view?: unknown }).view,
+    );
     const activePage = activeNavItem?.id;
     const questStatus = useQuestNavStatus(showQuestStatus);
 
@@ -359,7 +379,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
-            <nav className="flex flex-col gap-3">
+            <nav className="flex flex-col gap-2">
                 {NAV_GROUP_ORDER.map((group) => {
                     const items = navItems.filter(
                         (item) => item.group === group,
@@ -368,29 +388,24 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     return (
                         <Fragment key={group}>
                             <div className="flex flex-col gap-0.5">
-                                {items.map((item) => (
-                                    <NavItem
-                                        as={Link}
-                                        key={item.id}
-                                        to={item.to}
-                                        data-theme="accent"
-                                        icon={item.icon}
-                                        active={activePage === item.id}
-                                        onClick={onNavigate}
-                                    >
-                                        {item.label}
-                                        {item.id === "quests" &&
-                                            questStatus && (
-                                                <Chip
-                                                    intent="neutral"
-                                                    size="sm"
-                                                    className="ml-auto bg-transparent text-theme-text-soft"
-                                                >
-                                                    {questStatus}
-                                                </Chip>
-                                            )}
-                                    </NavItem>
-                                ))}
+                                {navSegments(items).map(({ parent, items }) => {
+                                    const rows = items.map((item) => (
+                                        <NavRow
+                                            key={item.id}
+                                            item={item}
+                                            active={activePage === item.id}
+                                            questStatus={questStatus}
+                                            onNavigate={onNavigate}
+                                        />
+                                    ));
+                                    return parent ? (
+                                        <NavParent key={parent} parent={parent}>
+                                            {rows}
+                                        </NavParent>
+                                    ) : (
+                                        rows
+                                    );
+                                })}
                             </div>
                             <hr className={NAV_LINE_CLASS} />
                         </Fragment>
@@ -441,6 +456,64 @@ const MobileMenuButton: FC<{
         <MenuIcon className="h-5 w-5" />
     </button>
 );
+
+const NavRow: FC<{
+    item: DashboardNavItem;
+    active: boolean;
+    questStatus: string | null;
+    onNavigate: () => void;
+}> = ({ item, active, questStatus, onNavigate }) => (
+    <NavItem
+        as={Link}
+        // Indented rows sit a step below their label.
+        className={item.parent && "py-1 text-[13px]"}
+        to={item.to}
+        // Agents and MCP share /agents and differ by `view`; Link can't type a
+        // search across a union of routes, so it is passed untyped. An exact
+        // `view` match keeps Agents from also counting as current on MCP.
+        search={item.search as never}
+        activeOptions={{ explicitUndefined: true }}
+        data-theme="accent"
+        icon={item.icon}
+        active={active}
+        onClick={onNavigate}
+    >
+        {item.label}
+        {item.id === "quests" && questStatus && (
+            <Chip
+                intent="neutral"
+                size="sm"
+                className="ml-auto bg-transparent text-theme-text-soft"
+            >
+                {questStatus}
+            </Chip>
+        )}
+    </NavItem>
+);
+
+// A label (not a link) with its rows indented under it, as main's drawer did
+// for Docs' sub-links.
+const NavParent: FC<
+    PropsWithChildren<{ parent: keyof typeof NAV_PARENTS }>
+> = ({ parent, children }) => {
+    const { label, icon: Icon } = NAV_PARENTS[parent];
+    return (
+        <div>
+            <span className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-ink-900">
+                <Icon className="h-4 w-4 shrink-0" />
+                {label}
+            </span>
+            <div
+                className={cn(
+                    "ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l pl-2",
+                    NAV_LINE_CLASS,
+                )}
+            >
+                {children}
+            </div>
+        </div>
+    );
+};
 
 // The lotus above a line; on phones the row also holds the drawer's close
 // button.

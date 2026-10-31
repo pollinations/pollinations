@@ -388,7 +388,8 @@ export const COLOR = {
     DEGRADED: 0xd85a30,
     PRIMARY_WEAK: 0xef9f27,
     WATCH_DOWN: RED,
-    SIGNUP_BURST: 0xef9f27,
+    // A farm signing up stands out like an outage, without the ping.
+    SIGNUP_BURST: RED,
     REVIEW: 0xef9f27,
 };
 const GREEN = 0x639922;

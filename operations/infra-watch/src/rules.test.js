@@ -496,7 +496,7 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
     const incident = { ...r.actions[0].incident, closedAt: undefined };
     const open = renderCard("signup:farm.com", incident, { now: 2 * MIN });
     assert.equal(open.ping, false);
-    assert.equal(open.color, 0xef9f27);
+    assert.equal(open.color, 0xe24b4a);
     assert.match(open.text, /FLAGGED: domain farm\.com/);
     assert.match(open.text, /31 in 24h/);
     assert.match(open.text, /2026-10-31 00:00 UTC/);

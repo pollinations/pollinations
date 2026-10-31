@@ -43,7 +43,14 @@ interface InferenceportSubmitResponse {
 }
 
 interface InferenceportJobResponse {
-    status?: "pending" | "queued" | "running" | "processing" | "completed" | "failed" | "refunded";
+    status?:
+        | "pending"
+        | "queued"
+        | "running"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "refunded";
     data?: InferenceportJobData[];
     error?: string;
     usage?: { payg_credits_charged?: number };
@@ -141,7 +148,11 @@ export async function runInferenceport(
                 502,
             );
         }
-        if (!["pending", "queued", "running", "processing"].includes(job.status ?? "")) {
+        if (
+            !["pending", "queued", "running", "processing"].includes(
+                job.status ?? "",
+            )
+        ) {
             throw new InferenceportError(
                 "InferencePort returned an invalid job status",
                 502,

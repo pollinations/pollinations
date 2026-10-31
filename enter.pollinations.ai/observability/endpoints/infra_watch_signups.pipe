@@ -18,6 +18,5 @@ SQL >
     GROUP BY email_domain
     HAVING accounts > {{Int32(limit, 30)}}
     ORDER BY accounts DESC
-    LIMIT 20
 
 TYPE endpoint

@@ -13,7 +13,7 @@ import {
     useRouter,
     useRouterState,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue, useState } from "react";
+import { Suspense, useDeferredValue } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
@@ -164,7 +164,6 @@ function DashboardLayout() {
     const router = useRouter();
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
-    const [isSigningOut, setIsSigningOut] = useState(false);
     const pathname = useRouterState({ select: (s) => s.location.pathname });
     // Pages that need the account wait out the outage; public pages still load.
     const outagePageTitle =
@@ -176,18 +175,6 @@ function DashboardLayout() {
         router.invalidate(),
     );
 
-    async function handleSignOut(): Promise<void> {
-        if (isSigningOut) return;
-        setIsSigningOut(true);
-        try {
-            await authClient.signOut();
-            window.location.href = "/news";
-        } catch (error) {
-            console.error("Sign out failed:", error);
-            setIsSigningOut(false);
-        }
-    }
-
     return (
         <DashboardShell
             navItems={
@@ -197,7 +184,6 @@ function DashboardLayout() {
             }
             accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
-            onSignOut={data.user ? handleSignOut : undefined}
             accountArea={
                 data.user ? undefined : data.sessionUnavailable ? (
                     // Who is signed in is unknown: the outage takes the

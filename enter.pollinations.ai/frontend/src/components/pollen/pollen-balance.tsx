@@ -24,7 +24,7 @@ import {
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
-import type { FC, ReactNode } from "react";
+import { type FC, Fragment, type ReactNode } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { TopUpPanel } from "./top-up-panel.tsx";
@@ -215,52 +215,65 @@ type SidebarWalletProps = {
     packBalance: number;
     paidWeek?: number;
     tierWeek?: number;
-    onClick?: () => void;
 };
 
+/**
+ * Both balances indented under the drawer's Pollen row: the
+ * number sits on the right edge and what it earned in the last 7 days follows
+ * the label, so nothing moves when earnings load. Only the icons carry the
+ * paid/Quest colour: green would read as Quest, so earnings stay muted and the
+ * "+" marks them.
+ */
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
     packBalance,
     paidWeek = 0,
     tierWeek = 0,
 }) => {
-    const displayTierBalance = normalizeDisplayBalance(tierBalance);
-    const displayPaidBalance = normalizeDisplayBalance(packBalance);
+    const lines = [
+        { kind: "paid", label: "Paid", balance: packBalance, earned: paidWeek },
+        {
+            kind: "tier",
+            label: "Quest",
+            balance: tierBalance,
+            earned: tierWeek,
+        },
+    ] as const;
 
     return (
-        <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletKindIcon kind="paid" />
-                    Paid
-                </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatPollen(displayPaidBalance)}
-                    </span>
-                    {paidWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(paidWeek)}
+        <div className="grid grid-cols-[1rem_auto_1fr_auto] items-center gap-x-2 gap-y-1 text-xs font-normal">
+            {lines.map(({ kind, label, balance, earned }) => {
+                const displayEarned = normalizeDisplayBalance(earned);
+                return (
+                    <Fragment key={kind}>
+                        <span className="flex justify-center">
+                            <WalletKindIcon kind={kind} />
                         </span>
-                    )}
-                </span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletKindIcon kind="tier" />
-                    Quest
-                </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatPollen(displayTierBalance)}
-                    </span>
-                    {tierWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(tierWeek)}
+                        <span className="text-theme-text-muted">{label}</span>
+                        <span
+                            title={
+                                displayEarned > 0
+                                    ? "Earned in the last 7 days"
+                                    : undefined
+                            }
+                            className="tabular-nums text-theme-text-muted"
+                        >
+                            {displayEarned > 0 && (
+                                <>
+                                    +{formatPollen(displayEarned)}
+                                    <span className="sr-only">
+                                        {" "}
+                                        earned in the last 7 days
+                                    </span>
+                                </>
+                            )}
                         </span>
-                    )}
-                </span>
-            </div>
+                        <span className="justify-self-end font-medium tabular-nums text-theme-text-strong">
+                            {formatPollen(normalizeDisplayBalance(balance))}
+                        </span>
+                    </Fragment>
+                );
+            })}
         </div>
     );
 };

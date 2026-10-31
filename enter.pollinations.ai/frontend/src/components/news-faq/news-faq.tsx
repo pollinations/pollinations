@@ -66,7 +66,6 @@ export const NewsFaq: FC = () => {
                             key={label}
                             active={label === tab.label}
                             onClick={() => setActive(label)}
-                            size="sm"
                         >
                             {label}
                         </TabButton>

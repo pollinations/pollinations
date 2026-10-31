@@ -105,16 +105,13 @@ describe("callTripoSR", () => {
     it.each([
         { images: [] },
         { images: [reference, "https://example.com/second.png"] },
-    ])(
-        "requires exactly one reference image: $images",
-        async ({ images }) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-            await expect(callTripoSR(params(images))).rejects.toMatchObject({
-                status: 400,
-            });
-            expect(fetchSpy).not.toHaveBeenCalled();
-        },
-    );
+    ])("requires exactly one reference image: $images", async ({ images }) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(callTripoSR(params(images))).rejects.toMatchObject({
+            status: 400,
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
 
     it("rejects malformed GLB output instead of returning corrupt assets", async () => {
         vi.spyOn(globalThis, "fetch")

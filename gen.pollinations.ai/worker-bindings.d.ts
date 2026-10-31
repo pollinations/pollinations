@@ -97,6 +97,8 @@ interface CloudflareBindings {
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
     XAI_API_KEY: string;
+    POLLEN_REFILL_PER_HOUR?: number;
+    POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
     EDGE_IP_RATE_LIMITER?: RateLimit;

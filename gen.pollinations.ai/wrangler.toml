@@ -44,6 +44,10 @@ binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
 [[durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
 class_name = "CommunityModelRateLimiter"
 
@@ -62,10 +66,6 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
-
-[[migrations]]
-tag = "v4"
-deleted_classes = ["PollenRateLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -201,6 +201,10 @@ namespace_id = "1003"
 simple = { limit = 1000, period = 10 }
 
 [[env.production.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.production.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
 class_name = "CommunityModelRateLimiter"
 
@@ -220,10 +224,6 @@ new_sqlite_classes = ["GenerationCoordinator"]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
 
-[[env.production.migrations]]
-tag = "v4"
-deleted_classes = ["PollenRateLimiter"]
-
 [env.production.vars]
 ENVIRONMENT = "production"
 SITES_HOST_SUFFIX = ".pollinations.app"
@@ -235,6 +235,7 @@ GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
+POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
@@ -347,6 +348,10 @@ namespace_id = "1003"
 simple = { limit = 1000, period = 10 }
 
 [[env.staging.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.staging.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
 class_name = "CommunityModelRateLimiter"
 
@@ -365,10 +370,6 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[env.staging.migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
-
-[[env.staging.migrations]]
-tag = "v4"
-deleted_classes = ["PollenRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -458,6 +459,10 @@ namespace_id = "1003"
 simple = { limit = 10000, period = 10 }
 
 [[env.test.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.test.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
 class_name = "CommunityModelRateLimiter"
 
@@ -476,10 +481,6 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[env.test.migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
-
-[[env.test.migrations]]
-tag = "v4"
-deleted_classes = ["PollenRateLimiter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"
@@ -518,6 +519,7 @@ OPENAI_API_KEY = "not-a-secret-workers-test-only"
 PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"
 PLN_ENTER_TOKEN = "not-a-secret-workers-test-only"
 PLN_GPU_TOKEN = "not-a-secret-workers-test-only"
+POLLEN_REFILL_PER_HOUR = 1
 XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"

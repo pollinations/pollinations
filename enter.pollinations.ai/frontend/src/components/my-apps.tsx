@@ -224,7 +224,6 @@ export function MyApps({
     return (
         <Section
             title="My Apps"
-            intro="Your published apps in the community catalog."
             action={apps && apps.length > 0 ? submitAction : undefined}
         >
             {apps === undefined ? (

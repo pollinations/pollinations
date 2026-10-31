@@ -282,28 +282,16 @@ export type QuestCard = {
 // Atop the Setup lane while the account's Setup rewards are on hold: what
 // happened, then each way to unlock them.
 function SetupHoldNotice() {
-    const line = "flex items-center gap-2";
     return (
-        <div className="flex flex-col gap-2 px-1 pb-1 text-sm text-theme-text-muted">
-            <span>
-                <span className="text-intent-danger-text">
-                    We couldn't verify your account. Setup rewards are locked.
-                </span>{" "}
-                Unlock them with one of:
-            </span>
-            <span className={line}>
-                <CardIcon className="h-4 w-4 shrink-0" />
-                <InlineLink href="/pollen#buy-pollen">
-                    Buy any pollen pack
-                </InlineLink>
-            </span>
-            <span className={line}>
-                <GitHubIcon className="h-4 w-4 shrink-0" />
-                <InlineLink href="/account">
-                    Connect a GitHub account at least 30 days old
-                </InlineLink>
-            </span>
-        </div>
+        <p className="px-1 pb-1 text-sm text-theme-text-muted">
+            <span className="text-intent-danger-text">
+                We couldn't verify your account, so Setup rewards are locked.
+            </span>{" "}
+            To unlock them,{" "}
+            <InlineLink href="/pollen#buy-pollen">buy a pollen pack</InlineLink>{" "}
+            or <InlineLink href="/account">connect a GitHub account</InlineLink>{" "}
+            that's at least 30 days old.
+        </p>
     );
 }
 

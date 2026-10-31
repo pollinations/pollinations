@@ -530,27 +530,21 @@ function openRows(incident, now) {
     return rows;
 }
 
-// Rows of a closed card: how long, what it cost, how it started, now.
+// Rows of a closed card. A domain card keeps how long it lasted; an outage
+// card keeps how it started, its routes then, and now: how long it lasted
+// and what it cost are in its summary line.
 function closedRows(key, incident) {
+    if (DOMAIN_KEY.test(key))
+        return [["LASTED", duration(incident.closedAt - incident.openedAt)]];
+    if (!key.startsWith("model:")) return [];
+    const { start, latest } = incident;
     const rows = [
         [
-            DOMAIN_KEY.test(key) ? "LASTED" : "DOWN",
-            duration(incident.closedAt - incident.openedAt),
+            "START",
+            `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
         ],
+        ...routeRows(start.routes),
     ];
-    if (!key.startsWith("model:")) return rows;
-    const { start, lost, latest } = incident;
-    rows.push([
-        "LOST",
-        lost
-            ? `${lost.failures} request${lost.failures === 1 ? "" : "s"}, ${lost.failing_callers} caller${lost.failing_callers === 1 ? "" : "s"}`
-            : "unknown",
-    ]);
-    rows.push([
-        "START",
-        `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
-    ]);
-    rows.push(...routeRows(start.routes));
     if (latest)
         rows.push([
             "NOW",
@@ -559,9 +553,28 @@ function closedRows(key, incident) {
     return rows;
 }
 
+// A closed outage card's last line, in bigger letters: how long it lasted
+// and what it cost. A model's circle is the harm to callers: none of its
+// requests failed, under half, or half and more. Other outages have no
+// request counts. Domain cards have no summary.
+function summary(key, incident) {
+    if (DOMAIN_KEY.test(key)) return null;
+    const took = duration(incident.closedAt - incident.openedAt);
+    if (!key.startsWith("model:"))
+        return `### ${BADGE[COLOR[incident.kind]]} ${took} ${LABEL[incident.kind].toLowerCase()}`;
+    const { lost } = incident;
+    if (!lost) return `### ⚪ ${took} · impact unknown`;
+    if (!lost.failures) return `### 🟢 ${took} on fallback · no users affected`;
+    const share = lost.failures / lost.requests;
+    const hit = `${lost.failing_callers} of ${lost.callers} users hit · ${lost.failures} of ${lost.requests} requests failed (${pct(share)})`;
+    return share < 0.5
+        ? `### 🟠 ${took} · ${hit}`
+        : `### 🔴 ${took} down · ${hit}`;
+}
+
 // The incident's card, in any state: the box, then while open "open since",
 // then the AI's lines in order, each with its badge, then "checking why…"
-// while one is coming.
+// while one is coming, and once an outage closed its summary line.
 // Mentions stay those of the opening post, so edits never change them.
 export function renderCard(
     key,
@@ -594,12 +607,14 @@ export function renderCard(
             : lines;
     for (const line of shown)
         parts.push(
-            ["↳", BADGE[line.color], `<t:${unix(line.at)}:t>`, line.text]
+            [BADGE[line.color], `<t:${unix(line.at)}:t>`, line.text]
                 .filter(Boolean)
                 .join(" "),
         );
     if (checking) parts.push(CHECKING);
     if (!closed) parts.push(...commands(incident));
+    const last = closed && summary(key, incident);
+    if (last) parts.push(last);
     return {
         text: parts.join("\n"),
         ping: incident.pinged ?? pings(incident),

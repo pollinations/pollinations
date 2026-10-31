@@ -353,13 +353,13 @@ test("once updated, the card keeps its start and the AI timeline", () => {
     assert.match(text, /FINAL\s+30\.0% of 50 reqs 15m/);
     assert.match(text, /START\s+62\.0% of 40 reqs, 7 of 9 failing/);
     assert.match(text, /AGAIN\s+last closed 40 min ago/);
-    assert.match(text, /↳ <t:3600:t> Provider fault\.\n↳ <t:6000:t> Fallback/);
+    assert.match(text, /<t:3600:t> Provider fault\.\n<t:6000:t> Fallback/);
 });
 
-test("a closed card turns green with how long, what it cost, start and now", () => {
+test("a closed card turns green: start and now, then what it cost last", () => {
     const done = opened({
         closedAt: 181 * MIN,
-        lost: { failures: 37, failing_callers: 5 },
+        lost: { requests: 900, failures: 37, callers: 40, failing_callers: 5 },
         latest: { success: 1, nonClient: 22 },
         pinged: true,
     });
@@ -370,12 +370,34 @@ test("a closed card turns green with how long, what it cost, start and now", () 
     // The mentions of the opening post stay as they were.
     assert.equal(card.ping, true);
     assert.match(plain(card.text), /┌─ RECOVERED: a\/model ─/);
-    assert.match(card.text, /DOWN\s+2 h 01 min/);
-    assert.match(card.text, /LOST\s+37 requests, 5 callers/);
+    // How long and what it cost move out of the box into the summary.
+    assert.doesNotMatch(card.text, /DOWN\s|LOST\s/);
     assert.match(card.text, /START\s+62\.0% of 40 reqs/);
     assert.match(card.text, /NOW\s+100\.0% of 22 reqs 15m/);
     assert.doesNotMatch(card.text, /open since/);
     assert.match(card.text, /Provider fault\./);
+    assert.equal(
+        card.text.split("\n").at(-1),
+        "### 🟠 2 h 01 min · 5 of 40 users hit · 37 of 900 requests failed (4.1%)",
+    );
+});
+
+test("an outage summary says what the closed incident cost callers", () => {
+    const last = (lost) =>
+        // Opened at minute 60, so 20 minutes long.
+        renderCard("model:a/model", opened({ closedAt: 80 * MIN, lost }))
+            .text.split("\n")
+            .at(-1);
+    const total = { requests: 152, callers: 9 };
+    assert.equal(
+        last({ ...total, failures: 0, failing_callers: 0 }),
+        "### 🟢 20 min on fallback · no users affected",
+    );
+    assert.equal(
+        last({ ...total, failures: 140, failing_callers: 9 }),
+        "### 🔴 20 min down · 9 of 9 users hit · 140 of 152 requests failed (92.1%)",
+    );
+    assert.equal(last(null), "### ⚪ 20 min · impact unknown");
 });
 
 test("each AI line keeps the colour its card had when it was written", () => {
@@ -389,7 +411,7 @@ test("each AI line keeps the colour its card had when it was written", () => {
     });
     assert.match(
         text,
-        /↳ 🟡 <t:3600:t> Primary weak\.\n↳ 🟠 <t:5400:t> Worse\.\n↳ 🟢 <t:10860:t> Closed\./,
+        /🟡 <t:3600:t> Primary weak\.\n🟠 <t:5400:t> Worse\.\n🟢 <t:10860:t> Closed\./,
     );
 });
 
@@ -400,7 +422,7 @@ test("infrastructure cards follow the same life: red open, green closed", () => 
     assert.match(plain(open.text), /┌─ DOWN: gen Worker ─/);
     const closed = renderCard("gen", { ...gen, closedAt: 7 * MIN });
     assert.match(plain(closed.text), /┌─ RECOVERED: gen Worker ─/);
-    assert.match(closed.text, /DOWN\s+7 min/);
+    assert.equal(closed.text.split("\n").at(-1), "### 🔴 7 min down");
 });
 
 test("who an opening card pings", () => {
@@ -670,7 +692,7 @@ test("heartbeat turns the same card green when checks resume", () => {
     assert.equal(r.edit.card.color, 0x639922);
     assert.equal(r.edit.card.ping, true);
     assert.match(r.edit.card.text, /RECOVERED: infra-watch/);
-    assert.match(r.edit.card.text, /DOWN\s+47 min/);
+    assert.equal(r.edit.card.text.split("\n").at(-1), "### 🔴 47 min down");
     assert.doesNotMatch(r.edit.card.text, /open since/);
     assert.deepEqual(r.state, {});
 });

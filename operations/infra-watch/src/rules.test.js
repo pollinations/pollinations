@@ -10,8 +10,11 @@ import {
     escalation,
     fallbackCard,
     fallbackShares,
+    filteredModels,
     heartbeat,
     kvPut,
+    listingChanges,
+    listingsCard,
     noteworthy,
     RECOVER_CHECKS,
     renderCard,
@@ -822,4 +825,92 @@ test("a fallback notice names both models in full and pings no one", () => {
     assert.match(text, /RESCUED 19 of 19 successes \(100%\), 4h/);
     assert.doesNotMatch(text, /community\//);
     assert.match(text.split("\n").at(-1), /^Callers still get answers/);
+});
+
+// --- community listings ------------------------------------------------------
+
+const listing = (name, success_rate, extra = {}) => ({
+    name,
+    community: true,
+    health: success_rate == null ? null : { success_rate },
+    ...extra,
+});
+
+test("filtered: in the full list, not the default one, at 80% or less", () => {
+    const all = [
+        listing("community/a/hidden", 46),
+        listing("community/a/edge", 80),
+        listing("community/a/shown", 95),
+        listing("community/a/private-soon", 81),
+        listing("community/a/unknown", null),
+        listing("community/a/agent", 10, { agent: true }),
+        { name: "openai", health: { success_rate: 10 } },
+    ];
+    const shown = [listing("community/a/shown", 95)];
+    assert.deepEqual(
+        filteredModels(all, shown).map((m) => m.name),
+        ["community/a/hidden", "community/a/edge"],
+    );
+    // No community rate known: nothing to judge yet.
+    assert.equal(filteredModels([listing("community/a/x", null)], []), null);
+});
+
+test("listing changes: newly filtered, and back in the default list", () => {
+    const before = [
+        "community/a/back",
+        "community/a/still",
+        "community/a/gone",
+    ];
+    const filtered = [
+        listing("community/a/still", 50),
+        listing("community/a/new", 20),
+    ];
+    const shown = [
+        listing("community/a/back", 92),
+        listing("community/a/other", 99),
+    ];
+    const { newly, back } = listingChanges(before, filtered, shown);
+    assert.deepEqual(
+        newly.map((m) => m.name),
+        ["community/a/new"],
+    );
+    // community/a/gone left both lists: removed or private, not back.
+    assert.deepEqual(
+        back.map((m) => m.name),
+        ["community/a/back"],
+    );
+});
+
+test("the listings post names each change with its rate, and pings no one", () => {
+    const card = listingsCard(
+        {
+            newly: [listing("community/a/new", 19.6)],
+            back: [
+                listing("community/a/back", 91.2),
+                listing("community/a/quiet", null),
+            ],
+        },
+        186,
+    );
+    assert.equal(card.ping, false);
+    assert.equal(card.color, 0xef9f27);
+    assert.equal(
+        card.text,
+        [
+            "### Community listings · 186 filtered",
+            "**Newly filtered**",
+            "`a/new` 20%",
+            "**Back in listings**",
+            "`a/back` 91%",
+            "`a/quiet` no recent sample",
+            "*Filtered models are left out of /models but stay callable by their exact ID.*",
+        ].join("\n"),
+    );
+    // Only models back: green. A long list is cut, the rest counted.
+    const many = Array.from({ length: 23 }, (_, i) =>
+        listing(`community/a/m${i}`, 90),
+    );
+    const back = listingsCard({ newly: [], back: many }, 3);
+    assert.equal(back.color, 0x639922);
+    assert.match(back.text, /`a\/m19` 90%\n…and 3 more\n/);
 });

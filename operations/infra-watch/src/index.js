@@ -26,7 +26,10 @@ import {
     FALLBACK_MINUTES,
     fallbackCard,
     fallbackShares,
+    filteredModels,
     lineColor,
+    listingChanges,
+    listingsCard,
     noteworthy,
     pings,
     renderCard,
@@ -60,6 +63,9 @@ const MAX_LINES = 4;
 const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
 // Community models leaning on a fallback are looked for this often.
 const FALLBACK_EVERY_MS = 60 * 60 * 1000;
+// Community listing changes are told once a day, from 12:00 UTC: a check's
+// listings day is its UTC date 12 hours earlier.
+const LISTINGS_DAY_STARTS_MS = 12 * 60 * 60 * 1000;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -379,7 +385,10 @@ export class Watch extends DurableObject {
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", { ...next.state, unposted });
-        if (listed) await this.fallbacks(gen, listed, now);
+        if (listed) {
+            await this.fallbacks(gen, listed, now);
+            await this.listings(gen, now);
+        }
         // A completed check: what /health reports to the outside heartbeat.
         await this.ctx.storage.put("checkedAt", now);
         for (const note of notes) this.background(() => this.note(note, data));
@@ -391,6 +400,46 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Once a day: the community models gen's reliability filter newly left
+    // out of /models, or listed again, since the last day, told to the
+    // community channel. The first day only keeps the filtered set. A read
+    // or post that fails is tried again on the next check.
+    async listings(gen, now) {
+        const day = new Date(now - LISTINGS_DAY_STARTS_MS)
+            .toISOString()
+            .slice(0, 10);
+        const saved = await this.ctx.storage.get("listings");
+        if (saved?.day === day) return;
+        try {
+            const list = async (query) => {
+                const catalog = await getJson(`${gen}/models?${query}`);
+                return Array.isArray(catalog) ? catalog : catalog.data;
+            };
+            const [shown, all] = await Promise.all([
+                list("community=true"),
+                list("community=true&reliability=all"),
+            ]);
+            const filtered = filteredModels(all, shown);
+            if (!filtered) throw new Error("no community success rates yet");
+            if (saved) {
+                const changes = listingChanges(saved.filtered, filtered, shown);
+                const card = listingsCard(changes, filtered.length);
+                const changed = changes.newly.length || changes.back.length;
+                if (
+                    changed &&
+                    !(await post(this.env, card, "COMMUNITY_WEBHOOK_URL"))
+                )
+                    throw new Error("Discord refused the post");
+            }
+            await this.ctx.storage.put("listings", {
+                day,
+                filtered: filtered.map((m) => m.name),
+            });
+        } catch (error) {
+            console.error(`listings: ${error.message}`);
+        }
     }
 
     // Community models leaning on a fallback, looked for hourly over the

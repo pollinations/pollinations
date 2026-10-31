@@ -730,6 +730,67 @@ export function fallbackCard({ model, servedBy, rescued, successes }) {
     };
 }
 
+// The public community models gen's reliability filter leaves out of the
+// default listing: in the `reliability=all` list but not the default one,
+// with a success rate of 80% or less. Agents aside. Null while no community
+// model has a known rate: then nothing can be judged.
+export function filteredModels(all, shown) {
+    const models = all.filter((m) => m.community && !m.agent);
+    if (!models.some((m) => m.health?.success_rate != null)) return null;
+    const listed = new Set(shown.map((m) => m.name));
+    // A model with no recent sample stays listed.
+    return models.filter(
+        (m) =>
+            !listed.has(m.name) &&
+            m.health?.success_rate != null &&
+            m.health.success_rate <= 80,
+    );
+}
+
+// Since the last daily check: the models newly filtered, and those filtered
+// then that are listed again now. A model gone from both lists was removed
+// or made private, not listed again.
+export function listingChanges(before, filtered, shown) {
+    const was = new Set(before);
+    return {
+        newly: filtered.filter((m) => !was.has(m.name)),
+        back: shown.filter((m) => was.has(m.name)),
+    };
+}
+
+// Models named per section; the rest are counted.
+const LISTINGS_SHOWN = 20;
+
+// The daily listings post for the community channel: the filtered total,
+// then each change with its success rate. No ping.
+export function listingsCard({ newly, back }, total) {
+    const rate = (m) =>
+        m.health?.success_rate == null
+            ? "no recent sample"
+            : `${Math.round(m.health.success_rate)}%`;
+    const section = (heading, models) => {
+        if (!models.length) return [];
+        const more = models.length - LISTINGS_SHOWN;
+        return [
+            `**${heading}**`,
+            ...models
+                .slice(0, LISTINGS_SHOWN)
+                .map((m) => `\`${community(m.name)}\` ${rate(m)}`),
+            ...(more > 0 ? [`…and ${more} more`] : []),
+        ];
+    };
+    return {
+        text: [
+            `### Community listings · ${total} filtered`,
+            ...section("Newly filtered", newly),
+            ...section("Back in listings", back),
+            "*Filtered models are left out of /models but stay callable by their exact ID.*",
+        ].join("\n"),
+        ping: false,
+        color: newly.length ? COLOR.PRIMARY_WEAK : GREEN,
+    };
+}
+
 // Heartbeat: infra-watch's own liveness, judged from outside Cloudflare by
 // heartbeat.mjs (GitHub Actions). A last completed check this old means the
 // watcher is down.

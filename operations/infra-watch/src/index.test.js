@@ -52,7 +52,13 @@ async function fake(input, init = {}) {
     if (url.pathname === "/") return new Response("ok");
     if (url.pathname === "/models/status")
         return Response.json({ data: world.rows });
-    if (url.pathname === "/models") return Response.json(world.catalog);
+    // The full catalog, or the default listing without filtered models.
+    if (url.pathname === "/models")
+        return Response.json(
+            url.searchParams.has("reliability")
+                ? world.catalog
+                : (world.shown ?? world.catalog),
+        );
     if (url.pathname.endsWith("/infra_watch_callers.json")) {
         await sleep(world.tinybirdDelay);
         return Response.json({
@@ -495,4 +501,38 @@ it("tells the community channel once a week about a model leaning on its fallbac
     // None reached the infra-watch channel.
     const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
     expect(infra.some((w) => w.text.includes("FALLBACK"))).toBe(false);
+});
+
+it("tells the community channel once a day what the listing filter changed", async () => {
+    const stub = watch();
+    const model = (name, success_rate) => ({
+        name,
+        community: true,
+        health: { success_rate },
+    });
+    world.catalog = [model("community/o/a", 40), model("community/o/b", 95)];
+    world.shown = [model("community/o/b", 95)];
+    const told = () =>
+        world.writes.filter((w) => w.ok && w.path === "/api/webhooks/2/y");
+    await checks(stub, 2);
+    // The first day only keeps the filtered set.
+    expect(told()).toHaveLength(0);
+    expect((await stored(stub, "listings")).filtered).toEqual([
+        "community/o/a",
+    ]);
+
+    // a recovers and b gets filtered: told once, the next day.
+    world.catalog = [model("community/o/a", 90), model("community/o/b", 30)];
+    world.shown = [model("community/o/a", 90)];
+    await stub.check();
+    expect(told()).toHaveLength(0);
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("listings");
+        await state.storage.put("listings", { ...saved, day: "2000-01-01" });
+    });
+    await checks(stub, 2);
+    expect(told()).toHaveLength(1);
+    expect(told()[0].text).toContain(
+        "**Newly filtered**\n`o/b` 30%\n**Back in listings**\n`o/a` 90%",
+    );
 });

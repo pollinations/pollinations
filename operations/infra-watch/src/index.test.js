@@ -481,13 +481,13 @@ it("tells the community channel once a week about a model leaning on its fallbac
     // One notice, for the listed model only, checked once an hour.
     expect(told()).toHaveLength(1);
     expect(told()[0].text).toContain("FALLBACK: o/leaning");
-    expect(told()[0].text).toContain("VIA     o/fallback");
+    expect(told()[0].text).toContain("VIA     o/fallback (30)");
 
     const back = (ms) =>
         runInDurableObject(stub, async (_, state) => {
             const saved = await state.storage.get("fallback");
             saved.checkedAt -= ms;
-            saved.told[model].at -= ms;
+            saved.told[`${model} community/o/fallback`] -= ms;
             await state.storage.put("fallback", saved);
         });
     // An hour later it is still leaning, but was told this week.

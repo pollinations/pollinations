@@ -9,6 +9,7 @@ import {
     escalates,
     escalation,
     fallbackCard,
+    fallbackPair,
     fallbackShares,
     filteredModels,
     heartbeat,
@@ -768,9 +769,15 @@ const leaning = [
 test("a listed model leans on its fallback from 10 rescues and 25% of successes", () => {
     const listed = new Set([LAGUNA, "community/x/a", "community/x/b"]);
     const [share] = fallbackShares(leaning, listed);
+    // The fallback that rescued nothing isn't named.
     assert.deepEqual(share, {
         model: LAGUNA,
-        servedBy: "community/YoannDev90/kilocode-laguna-s-2.1:free",
+        via: [
+            {
+                model: "community/YoannDev90/kilocode-laguna-s-2.1:free",
+                rescued: 73,
+            },
+        ],
         rescued: 73,
         successes: 73,
     });
@@ -792,39 +799,53 @@ test("a listed model leans on its fallback from 10 rescues and 25% of successes"
     assert.deepEqual(fallbackShares(leaning, new Set()), []);
 });
 
-test("each model and fallback pair is told once a week", () => {
-    const [share] = fallbackShares(leaning, new Set([LAGUNA]));
+test("each model and fallback pair is told once a week, even when they alternate", () => {
+    const via = (model) => ({ ...share, via: [{ model, rescued: 20 }] });
+    const share = { model: LAGUNA, rescued: 20, successes: 40 };
+    const [a, b] = [via("community/x/a"), via("community/x/b")];
     const now = 10_000 * MIN;
-    assert.deepEqual(dueFallbacks([share], {}, now).due, [share]);
+    const day = 24 * 60 * MIN;
+    assert.deepEqual(dueFallbacks([a], {}, now).due, [a]);
+    // a told, then b: both stay quiet for the week, so a coming back
+    // hours later is not told again.
     const told = {
-        [LAGUNA]: { servedBy: share.servedBy, at: now - 6 * 24 * 60 * MIN },
+        [fallbackPair(a)]: now - 6 * day,
+        [fallbackPair(b)]: now - 2 * 60 * MIN,
     };
-    assert.deepEqual(dueFallbacks([share], told, now), { due: [], told });
-    // Another fallback is news; a week later the same one is too.
-    const other = { ...share, servedBy: "community/x/b" };
-    assert.deepEqual(dueFallbacks([other], told, now).due, [other]);
-    const old = { [LAGUNA]: { ...told[LAGUNA], at: now - 7 * 24 * 60 * MIN } };
-    assert.deepEqual(dueFallbacks([share], old, now), {
-        due: [share],
-        told: {},
-    });
+    assert.deepEqual(dueFallbacks([a], told, now), { due: [], told });
+    assert.deepEqual(dueFallbacks([b], told, now).due, []);
+    // A week on, a is news again; its old notice is dropped.
+    const later = dueFallbacks([a], told, now + day);
+    assert.deepEqual(later.due, [a]);
+    assert.deepEqual(Object.keys(later.told), [fallbackPair(b)]);
 });
 
-test("a fallback notice names both models in full and pings no one", () => {
+test("a fallback notice gives the total, then each fallback's own part", () => {
     const card = fallbackCard({
-        model: "community/scriptsnsenses-sys/deepseek-v4-flash-0731",
-        servedBy: "community/scriptsnsenses-sys/diffusiongema-26B-free",
-        rescued: 19,
-        successes: 19,
+        model: "community/o/m",
+        via: [
+            {
+                model: "community/scriptsnsenses-sys/diffusiongema-26B-free-long-name",
+                rescued: 16,
+            },
+            { model: "community/o/b", rescued: 14 },
+        ],
+        rescued: 30,
+        successes: 40,
     });
     assert.equal(card.ping, false);
     assert.equal(card.color, 0xef9f27);
-    const text = plain(card.text);
-    assert.match(text, /FALLBACK: scriptsnsenses-sys\/deepseek-v4-flash-0731/);
-    assert.match(text, /VIA {5}scriptsnsenses-sys\/diffusiongema-26B-free /);
-    assert.match(text, /RESCUED 19 of 19 successes \(100%\), 4h/);
-    assert.doesNotMatch(text, /community\//);
-    assert.match(text.split("\n").at(-1), /^Callers still get answers/);
+    const lines = plain(card.text).split("\n");
+    assert.match(lines[1], /FALLBACK: o\/m/);
+    assert.match(lines[2], /│ RESCUED 30 of 40 successes \(75%\), 4h +│/);
+    // A short model name never cuts a long fallback id.
+    assert.match(
+        lines[3],
+        /│ VIA {5}scriptsnsenses-sys\/diffusiongema-26B-free-long-name \(16\) │/,
+    );
+    assert.match(lines[4], /│ VIA {5}o\/b \(14\) +│/);
+    assert.doesNotMatch(card.text, /community\//);
+    assert.match(lines.at(-1), /^Callers still get answers/);
 });
 
 // --- community listings ------------------------------------------------------

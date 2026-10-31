@@ -301,9 +301,10 @@ export function duration(ms) {
 // title or its longest row needs, so a full model id is never cut. The
 // title is drawn in the card's colour (an ansi block): Discord on desktop
 // shows it, the phone shows plain text.
-function panel(title, lines, color) {
-    // A value may be as long as the title, which sets the box's width anyway.
-    const width = Math.max(38, title.length);
+//
+// A value longer than `width` is cut; a card whose values are model ids
+// passes Infinity, so they show whole.
+function panel(title, lines, color, width = 38) {
     const body = lines.map(
         ([field, value]) =>
             `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value), width)}`,
@@ -665,8 +666,8 @@ const MIN_RESCUED_SHARE = 0.25;
 // Each model and fallback pair is told at most this often.
 const FALLBACK_QUIET_MS = 7 * 24 * 60 * 60 * 1000;
 
-// The listed models leaning on a fallback, each with the fallback that
-// rescued the most.
+// The listed models leaning on a fallback, each with the fallbacks that
+// rescued its requests, most first.
 export function fallbackShares(rows, listed) {
     const shares = [];
     for (const row of rows) {
@@ -677,14 +678,19 @@ export function fallbackShares(rows, listed) {
             rescued < MIN_RESCUED_SHARE * row.status_2xx
         )
             continue;
-        const [top] = rows
+        const via = rows
             .filter(
-                (r) => r.model === row.model && !r.is_rollup && r.fallback_used,
+                (r) =>
+                    r.model === row.model &&
+                    !r.is_rollup &&
+                    r.fallback_used &&
+                    r.fallback_rescues > 0,
             )
-            .sort((a, b) => b.fallback_rescues - a.fallback_rescues);
+            .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
+            .map((r) => ({ model: r.model_used, rescued: r.fallback_rescues }));
         shares.push({
             model: row.model,
-            servedBy: top?.model_used || "unknown",
+            via,
             rescued,
             successes: row.status_2xx,
         });
@@ -692,38 +698,52 @@ export function fallbackShares(rows, listed) {
     return shares;
 }
 
+// A share's key in `told`: the model and the fallback that rescued the
+// most.
+export const fallbackPair = (share) =>
+    `${share.model} ${share.via[0]?.model ?? "unknown"}`;
+
 // The shares to tell now: a model and fallback pair not told in the last
-// week. `told` keeps each model's last notice; older ones are dropped.
+// week. `told` keeps when each pair was told; older ones are dropped.
 export function dueFallbacks(shares, told = {}, now) {
     const recent = Object.fromEntries(
-        Object.entries(told).filter(([, t]) => now - t.at < FALLBACK_QUIET_MS),
+        Object.entries(told).filter(([, at]) => now - at < FALLBACK_QUIET_MS),
     );
     return {
-        due: shares.filter((s) => recent[s.model]?.servedBy !== s.servedBy),
+        due: shares.filter((s) => !(fallbackPair(s) in recent)),
         told: recent,
     };
 }
 
 const community = (id) => id.replace(/^community\//, "");
 
+// Fallbacks a notice names, each with its own rescues.
+const VIA_SHOWN = 3;
+
 // A fallback notice for the community channel: no ping, the owner reads
-// their model's id.
-export function fallbackCard({ model, servedBy, rescued, successes }) {
+// their model's id. The total rescued, then each fallback's part.
+export function fallbackCard({ model, via, rescued, successes }) {
     const color = COLOR.PRIMARY_WEAK;
     return {
         text: [
             panel(
                 `FALLBACK: ${community(model)}`,
                 [
-                    ["VIA", community(servedBy)],
                     [
                         "RESCUED",
                         `${rescued} of ${successes} successes (${percent(rescued / successes)}), 4h`,
                     ],
+                    ...via
+                        .slice(0, VIA_SHOWN)
+                        .map((v) => [
+                            "VIA",
+                            `${community(v.model)} (${v.rescued})`,
+                        ]),
                 ],
                 color,
+                Infinity,
             ),
-            "Callers still get answers, but often from this fallback: the model's own upstream is failing.",
+            "Callers still get answers, but often from a fallback: the model's own upstream is failing.",
         ].join("\n"),
         ping: false,
         color,

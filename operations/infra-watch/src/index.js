@@ -25,6 +25,7 @@ import {
     escalation,
     FALLBACK_MINUTES,
     fallbackCard,
+    fallbackPair,
     fallbackShares,
     filteredModels,
     lineColor,
@@ -457,7 +458,7 @@ export class Watch extends DurableObject {
             for (const share of next.due) {
                 const card = fallbackCard(share);
                 if (await post(this.env, card, "COMMUNITY_WEBHOOK_URL"))
-                    told[share.model] = { servedBy: share.servedBy, at: now };
+                    told[fallbackPair(share)] = now;
             }
         } catch (error) {
             console.error(`fallbacks: ${error.message}`);

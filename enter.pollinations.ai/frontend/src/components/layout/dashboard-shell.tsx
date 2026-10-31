@@ -50,7 +50,6 @@ import {
     type DashboardNavGroup,
     type DashboardPage,
     type DashboardPath,
-    NAV_PARENTS,
     navItemFor,
 } from "./dashboard-theme.ts";
 
@@ -68,22 +67,7 @@ type DashboardNavItem = {
     label: string;
     icon: ComponentType<{ className?: string }>;
     group: DashboardNavGroup;
-    parent?: keyof typeof NAV_PARENTS;
 };
-
-/** Consecutive rows that share a parent, so they render under its label. */
-function navSegments(items: readonly DashboardNavItem[]) {
-    const segments: {
-        parent?: DashboardNavItem["parent"];
-        items: DashboardNavItem[];
-    }[] = [];
-    for (const item of items) {
-        const last = segments.at(-1);
-        if (item.parent && last?.parent === item.parent) last.items.push(item);
-        else segments.push({ parent: item.parent, items: [item] });
-    }
-    return segments;
-}
 
 // Thin lines split the drawer into its parts: the logo, Pollinations'
 // resources (News & FAQ, models, agents & MCP), your tools, Docs, then two
@@ -388,24 +372,15 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     return (
                         <Fragment key={group}>
                             <div className="flex flex-col gap-0.5">
-                                {navSegments(items).map(({ parent, items }) => {
-                                    const rows = items.map((item) => (
-                                        <NavRow
-                                            key={item.id}
-                                            item={item}
-                                            active={activePage === item.id}
-                                            questStatus={questStatus}
-                                            onNavigate={onNavigate}
-                                        />
-                                    ));
-                                    return parent ? (
-                                        <NavParent key={parent} parent={parent}>
-                                            {rows}
-                                        </NavParent>
-                                    ) : (
-                                        rows
-                                    );
-                                })}
+                                {items.map((item) => (
+                                    <NavRow
+                                        key={item.id}
+                                        item={item}
+                                        active={activePage === item.id}
+                                        questStatus={questStatus}
+                                        onNavigate={onNavigate}
+                                    />
+                                ))}
                             </div>
                             <hr className={NAV_LINE_CLASS} />
                         </Fragment>
@@ -465,8 +440,6 @@ const NavRow: FC<{
 }> = ({ item, active, questStatus, onNavigate }) => (
     <NavItem
         as={Link}
-        // Indented rows sit a step below their label.
-        className={item.parent && "py-1 text-[13px]"}
         to={item.to}
         // Agents and MCP share /agents and differ by `view`; Link can't type a
         // search across a union of routes, so it is passed untyped. An exact
@@ -490,30 +463,6 @@ const NavRow: FC<{
         )}
     </NavItem>
 );
-
-// A label (not a link) with its rows indented under it, as main's drawer did
-// for Docs' sub-links.
-const NavParent: FC<
-    PropsWithChildren<{ parent: keyof typeof NAV_PARENTS }>
-> = ({ parent, children }) => {
-    const { label, icon: Icon } = NAV_PARENTS[parent];
-    return (
-        <div>
-            <span className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-ink-900">
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-            </span>
-            <div
-                className={cn(
-                    "ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l pl-2",
-                    NAV_LINE_CLASS,
-                )}
-            >
-                {children}
-            </div>
-        </div>
-    );
-};
 
 // The lotus above a line; on phones the row also holds the drawer's close
 // button.

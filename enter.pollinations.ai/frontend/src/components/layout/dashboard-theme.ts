@@ -6,7 +6,6 @@ import {
     AppIcon,
     BeakerIcon,
     BotIcon,
-    CloudUploadIcon,
     LockIcon,
     McpIcon,
     NewspaperIcon,
@@ -24,12 +23,6 @@ import type { ComponentType } from "react";
  * rows are pinned at the bottom as buttons: your balance and your name.
  */
 export type DashboardNavGroup = "account" | "yours" | "resources";
-
-// Rows with a `parent` sit indented under its label: Publish for what you
-// put out (your apps, models and agents).
-export const NAV_PARENTS = {
-    publish: { label: "Publish", icon: CloudUploadIcon },
-} as const;
 
 export const DASHBOARD_NAV_ITEMS = [
     {
@@ -62,28 +55,25 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "yours",
     },
     {
-        id: "my-apps",
-        to: "/my-apps",
-        label: "Apps",
-        icon: AppIcon,
-        group: "yours",
-        parent: "publish",
-    },
-    {
         id: "my-models",
         to: "/my-models",
-        label: "Models",
+        label: "My Models",
         icon: BeakerIcon,
         group: "yours",
-        parent: "publish",
     },
     {
         id: "my-agents",
         to: "/my-agents",
-        label: "Agents",
+        label: "My Agents",
         icon: RobotIcon,
         group: "yours",
-        parent: "publish",
+    },
+    {
+        id: "my-apps",
+        to: "/my-apps",
+        label: "My Apps",
+        icon: AppIcon,
+        group: "yours",
     },
     {
         id: "activity",
@@ -136,7 +126,6 @@ export const DASHBOARD_NAV_ITEMS = [
     label: string;
     icon: ComponentType<{ className?: string }>;
     group: DashboardNavGroup;
-    parent?: keyof typeof NAV_PARENTS;
 }[];
 
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];

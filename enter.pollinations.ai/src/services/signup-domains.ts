@@ -113,6 +113,19 @@ const PUBLIC_MAIL_DOMAINS = new Set([
     "sbcglobal.net",
     "bellsouth.net",
     "cox.net",
+    // Shared forwarding and private-address hosts: many unrelated people
+    // sign up through each, so a busy day would hold all of them.
+    "github.com", // users.noreply.github.com
+    "appleid.com", // privaterelay.appleid.com (Hide My Email)
+    "mozmail.com", // Firefox Relay
+    "simplelogin.com",
+    "simplelogin.co",
+    "aleeas.com",
+    "slmail.me",
+    "addy.io",
+    "anonaddy.com",
+    "anonaddy.me",
+    "passmail.net", // Proton Pass
 ]);
 
 /**

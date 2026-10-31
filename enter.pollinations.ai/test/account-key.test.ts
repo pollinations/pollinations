@@ -185,7 +185,7 @@ test("GET /api/account/key - agent run token has no account permissions", {
     expect(refusal.error).not.toHaveProperty("fixUrl");
 });
 
-test("GET /api/account/key - returns key status for publishable key", {
+test("GET /api/account/key - refuses a publishable key", {
     timeout: 30000,
 }, async ({ pubApiKey, mocks }) => {
     await mocks.enable("tinybird");
@@ -195,12 +195,9 @@ test("GET /api/account/key - returns key status for publishable key", {
             Authorization: `Bearer ${pubApiKey}`,
         },
     });
-    expect(response.status).toBe(200);
-
-    const data = await response.json();
-    expect(data.valid).toBe(true);
-    expect(data.type).toBe("publishable");
-    expect(data.rateLimitEnabled).toBe(true);
+    expect(response.status).toBe(401);
+    const body = (await response.json()) as { error: { message: string } };
+    expect(body.error.message).toContain("only identify your app");
 });
 
 test("GET /api/account/key - shows permissions for restricted key", {

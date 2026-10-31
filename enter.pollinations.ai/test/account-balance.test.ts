@@ -140,27 +140,6 @@ describe("GET /api/account/balance", () => {
         expect(res.status).toBe(403);
     });
 
-    test("publishable key with a zero budget does not leak accountBalance", async ({
-        sessionToken,
-        mocks,
-        accountToken,
-    }) => {
-        await mocks.enable("tinybird");
-        const userId = await sessionUserId(sessionToken);
-        await setAccountBalances(userId);
-
-        const created = await createApiKeyViaApi(accountToken, {
-            name: "raw-pk",
-            type: "publishable",
-        });
-        const res = await getBalance({
-            Authorization: `Bearer ${created.key}`,
-        });
-        expect(res.status).toBe(200);
-        const body = (await res.json()) as BalanceBody;
-        expect(body.balance).toBe(0);
-        expect(body.accountBalance).toBeUndefined();
-    });
     // A pack balance can go negative after a settlement overshoots. Spending
     // still draws on Quest Pollen in that state, so the reported total must
     // not be reduced by the overdraft.

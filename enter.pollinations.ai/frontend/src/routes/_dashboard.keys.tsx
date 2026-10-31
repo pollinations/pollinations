@@ -123,7 +123,7 @@ export function ApiKeys({ kind }: { kind: "secret" | "app" }) {
     );
 }
 
-const KEY_TITLES = { secret: "Keys", app: "App keys" } as const;
+const KEY_TITLES = { secret: "Secret keys", app: "App keys" } as const;
 
 function KeysContent({
     apiKeys,

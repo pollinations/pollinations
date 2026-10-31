@@ -4,17 +4,23 @@ import { PageLoading } from "./dashboard-loading.tsx";
 import { DashboardShell } from "./dashboard-shell.tsx";
 
 const pageTitles: Record<string, readonly string[]> = {
-    "/news": ["News"],
+    "/news": ["News", "FAQ"],
     "/models": ["Models"],
     "/agents": ["Agents"],
     "/my-models": ["Agents", "Models"],
     "/my-apps": ["App keys", "Catalog"],
     "/sandboxes": ["Sandboxes"],
-    "/keys": ["Keys"],
+    "/keys": ["Secret keys"],
     "/pollen": ["Wallet", "Top-up"],
     "/activity": ["Usage", "Earnings", "Last events"],
     "/quests": ["Claimed"],
-    "/account": ["Profile", "Community", "Need help?", "Delete account"],
+    "/account": [
+        "Profile",
+        "Community",
+        "Connected apps",
+        "Need help?",
+        "Delete account",
+    ],
 };
 
 const authTitles: Record<string, string> = {

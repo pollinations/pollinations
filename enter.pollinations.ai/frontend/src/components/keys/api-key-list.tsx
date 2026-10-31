@@ -321,7 +321,7 @@ export const ApiKeyList: FC<
         <>
             {kind === "secret" && (
                 <Section
-                    title="Keys"
+                    title="Secret keys"
                     id="api-keys"
                     action={sortedApiKeys.length > 0 && keyAction}
                 >

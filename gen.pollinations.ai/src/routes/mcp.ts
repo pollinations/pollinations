@@ -193,6 +193,24 @@ export const mcpRoutes = new Hono<Env>()
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
+        // User-scoped servers act on the owner's files and connected
+        // accounts. Publishable keys ship inside public clients, so anyone
+        // holding one could use them.
+        if (
+            server.userScoped &&
+            c.var.auth.apiKey?.metadata?.keyType === "publishable"
+        ) {
+            throw new HTTPException(403, {
+                message: `${server.name} requires a secret (sk_) API key`,
+            });
+        }
+        // Agents run code their author wrote; they never reach the caller's
+        // connected accounts.
+        if (server.id === "composio" && c.var.auth.agentRun) {
+            throw new HTTPException(403, {
+                message: `Agents can't use ${server.name}`,
+            });
+        }
         // A tool's cost is known only from its receipt, so a tool call needs a
         // spendable balance up front. Initialization and discovery stay free.
         if (

@@ -406,6 +406,76 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     });
 });
 
+test.for(["composio", "computer"])(
+    "refuses publishable keys on the user-scoped %s server",
+    async (serverId) => {
+        const { key } = await createTestApiKey({
+            type: "publishable",
+            user: { tierBalance: 1 },
+        });
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+
+        expect(response.status).toBe(403);
+        expect(await response.json()).toMatchObject({
+            error: { message: expect.stringContaining("secret (sk_) API key") },
+        });
+    },
+);
+
+test("keeps publishable keys on servers that are not user-scoped", async () => {
+    const { key } = await createTestApiKey({
+        type: "publishable",
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/ffmpeg",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+});
+
+test("refuses agent run tokens on Connectors", async () => {
+    const parent = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/composio",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(403);
+});
+
 test("refuses receipt-billed tool calls from an empty wallet but keeps initialization free", async () => {
     const { key } = await createTestApiKey();
     const callFfmpeg = (body: unknown) =>

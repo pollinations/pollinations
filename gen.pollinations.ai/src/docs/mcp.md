@@ -161,22 +161,22 @@ Omit the `ffmpeg` executable, source URLs, and output path.
 ### Connectors MCP
 
 The Connectors MCP uses Composio to discover and run tools in each user's own
-accounts. Enable it in your agent or connect the MCP endpoint, then ask for a
+accounts. Connect the MCP endpoint with a secret (`sk_`) key, then ask for a
 specific task, such as “Summarize my unread Gmail”, “Find open issues in my
-GitHub repository” or “Commit this fix to a new branch in my fork.” GitHub
+GitHub repository” or “Commit this fix to a new branch in my fork.” Publishable
+keys and hosted agents can't use it. GitHub
 commits go through Composio's tools, such as `GITHUB_COMMIT_MULTIPLE_FILES`,
 which commits several files at once and can create the branch. `git` in the
 Computer shell can't use the connection.
 
-When an app is not connected, the agent can return a sign-in link. You can also
+When an app is not connected, the client can return a sign-in link. You can also
 [connect apps in your account](https://enter.pollinations.ai/account#connectors).
 Sign-in links expire after 10 minutes; select Connect again for a fresh link.
-Connecting an app does not automatically enable it in an agent.
 
 ### Computer MCP
 
 The Computer server gives each account a private filesystem under `/workspace`
-and a bash shell. Files persist between requests and agent runs; nothing runs
+and a bash shell. It needs a secret (`sk_`) key. Files persist between requests and agent runs; nothing runs
 while idle. There is one tool, `bash`, with `command`, optional `stdin` (for
 example file content for `cat > path`) and optional `cwd`, which defaults to `/workspace` and is created if
 missing. The shell cannot run Node or Python; curl, coreutils,

@@ -1,0 +1,34 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: each community proxy that answered text requests
+    itself in the last full UTC hour, with the model gen asked its upstream
+    for and the name the upstream answered with, as the most common pair.
+    Fallback answers are left out. The EC2 community monitor's duty 2d
+    served-model check, on real requests instead of probes.
+
+NODE infra_watch_served_model_node
+SQL >
+    SELECT
+        model,
+        tupleElement(pair, 1) AS declared,
+        tupleElement(pair, 2) AS served,
+        answers
+    FROM (
+        SELECT
+            resolved_model_requested AS model,
+            topK(1)((upstream_model, upstream_served_model))[1] AS pair,
+            count() AS answers
+        FROM generation_event_v2
+        WHERE environment = 'production'
+            AND is_final
+            AND NOT fallback_used
+            AND response_status BETWEEN 200 AND 299
+            AND upstream_served_model != ''
+            AND start_time >= toStartOfHour(now()) - INTERVAL 1 HOUR
+            AND start_time < toStartOfHour(now())
+        GROUP BY model
+    )
+    ORDER BY model
+
+TYPE endpoint

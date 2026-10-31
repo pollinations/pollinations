@@ -17,10 +17,14 @@ import {
     legacyDown,
     listingChanges,
     listingsCard,
+    mismatchCard,
+    mismatchKey,
     noteworthy,
     RECOVER_CHECKS,
     renderCard,
     STALE_MS,
+    servedMismatches,
+    servedName,
     snapshot,
     step,
     waiting,
@@ -955,6 +959,145 @@ test("a fallback notice gives the total, then each fallback's own part", () => {
     assert.match(lines[4], /│ VIA {5}o\/b \(14\) +│/);
     assert.doesNotMatch(card.text, /community\//);
     assert.match(lines.at(-1), /^Callers still get answers/);
+});
+
+// --- served-model mismatches ------------------------------------------------
+
+test("names compare as the old monitor compared them", () => {
+    const agree = (declared, served) =>
+        servedMismatches(
+            [{ model: "community/o/m", declared, served }],
+            catalog("community/o/m"),
+            {},
+            0,
+        ).seen["community/o/m"] === undefined;
+    assert.equal(
+        servedName("Google/Gemini-3-Flash-Preview:free"),
+        "gemini-3-flash",
+    );
+    assert.equal(servedName("claude-3-5-sonnet-20241022"), "claude-3-5-sonnet");
+    assert.equal(servedName("gpt-4o-2024-08-06-latest"), "gpt-4o");
+    assert.ok(agree("gemini-3-flash-preview", "models/gemini-3-flash"));
+    // One contains the other: a thinking variant of the same model agrees.
+    assert.ok(agree("poe/DeepSeek-V4.1-Flash-T", "deepseek-v4.1-flash"));
+    assert.ok(!agree("gemini-3-flash-preview", "llama-3.1-8b"));
+});
+
+test("the same different name two hours in a row is told, once a week", () => {
+    const M = "community/o/flash";
+    const listed = [
+        ...catalog(M),
+        listing("community/o/agent", 100, { agent: true }),
+    ];
+    const reading = (served, model = M) => [
+        { model, declared: "gemini-3-flash-preview", served },
+    ];
+    const HOUR = 60 * MIN;
+    const t = 10_000 * HOUR;
+    const hour = (state, rows, now) =>
+        servedMismatches(rows, listed, state, now);
+    // Once is not news; the next hour it is.
+    let state = hour({}, reading("llama-3.1-8b"), t);
+    assert.deepEqual(state.due, []);
+    state = hour(state, reading("llama-3.1-8b"), t + HOUR);
+    assert.deepEqual(state.due, [
+        {
+            model: M,
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+            streak: 2,
+            hour: 10_001,
+        },
+    ]);
+    // Told: quiet for the week, then due again.
+    const told = { [mismatchKey(state.due[0])]: t + HOUR };
+    state = hour({ ...state, told }, reading("llama-3.1-8b"), t + 2 * HOUR);
+    assert.deepEqual(state.due, []);
+    assert.equal(state.seen[M].streak, 3);
+    const week = 7 * 24 * HOUR;
+    state = hour(state, reading("llama-3.1-8b"), t + HOUR + week);
+    state = hour(state, reading("llama-3.1-8b"), t + 2 * HOUR + week);
+    assert.equal(state.due.length, 1);
+    assert.deepEqual(state.told, {});
+    // A different name starts again; an agreeing one clears it.
+    state = hour(state, reading("qwen-3-4b"), t + 3 * HOUR + week);
+    assert.equal(state.seen[M].streak, 1);
+    state = hour(state, reading("gemini-3-flash-preview"), t + 4 * HOUR + week);
+    assert.deepEqual(state.seen, {});
+    // Agents, private and official models are never tracked.
+    for (const model of ["community/o/agent", "community/o/private"]) {
+        let other = hour({}, reading("llama-3.1-8b", model), t);
+        other = hour(other, reading("llama-3.1-8b", model), t + HOUR);
+        assert.deepEqual(other, { due: [], seen: {}, told: {} });
+    }
+});
+
+test("an hour without answers breaks a run of mismatches", () => {
+    const M = "community/o/flash";
+    const HOUR = 60 * MIN;
+    const t = 10_000 * HOUR;
+    const rows = [
+        {
+            model: M,
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+        },
+    ];
+    const read = (state, r, now) => servedMismatches(r, catalog(M), state, now);
+    // Mismatch, an hour without answers, mismatch: not two in a row.
+    let state = read({}, rows, t);
+    state = read(state, [], t + HOUR);
+    state = read(state, rows, t + 2 * HOUR);
+    assert.deepEqual(state.due, []);
+    // An hour that could not be read gave no answers either.
+    state = read(state, rows, t + 4 * HOUR);
+    assert.deepEqual(state.due, []);
+    // Two hours that follow each other count.
+    state = read(state, rows, t + 5 * HOUR);
+    assert.deepEqual(state.due.map(mismatchKey), [`${M} llama-3.1-8b`]);
+});
+
+test("an old mismatch is told again only on fresh answers", () => {
+    const M = "community/o/flash";
+    const HOUR = 60 * MIN;
+    const t = 10_000 * HOUR;
+    const rows = [
+        {
+            model: M,
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+        },
+    ];
+    const read = (state, r, now) => servedMismatches(r, catalog(M), state, now);
+    let state = read(read({}, rows, t), rows, t + HOUR);
+    const told = { [mismatchKey(state.due[0])]: t + HOUR };
+    // A week on, with no answers since: nothing to tell.
+    const later = t + HOUR + 7 * 24 * HOUR;
+    state = read({ ...state, told }, [], later);
+    assert.deepEqual(state.due, []);
+    // Reported again two hours in a row: told again.
+    state = read(state, rows, later + HOUR);
+    assert.deepEqual(state.due, []);
+    state = read(state, rows, later + 2 * HOUR);
+    assert.deepEqual(state.due.map(mismatchKey), [`${M} llama-3.1-8b`]);
+});
+
+test("a mismatch notice cannot be broken by the names owners choose", () => {
+    const card = mismatchCard([
+        {
+            model: "community/o/flash",
+            declared: "gemini-3-flash-preview",
+            served: "x```\n@everyone",
+        },
+    ]);
+    assert.equal(card.ping, false);
+    const text = plain(card.text);
+    assert.match(text, /MODEL {3}o\/flash/);
+    assert.match(text, /DECLARED gemini-3-flash-preview/);
+    assert.match(text, /REPORTED x@everyone/);
+    assert.match(text, /a person must review it/);
+    // One code block: the name's backticks and newline are gone.
+    assert.equal(text.match(/```/g).length, 2);
 });
 
 // --- community listings ------------------------------------------------------

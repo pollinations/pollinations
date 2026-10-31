@@ -122,6 +122,8 @@ type RequestTrackingData = {
     resolvedModelRequested: string;
     modelProvider?: string;
     communityEndpointType?: InsertGenerationEvent["communityEndpointType"];
+    /** The model a community proxy's listing asks its upstream for. */
+    upstreamModel?: string;
     modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
@@ -138,6 +140,9 @@ type ResponseTrackingData = {
     isFinal?: boolean;
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Set when a community proxy answered itself: what was asked, what answered. */
+    upstreamModel?: string;
+    upstreamServedModel?: string;
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
@@ -659,6 +664,10 @@ async function trackRequest(
         resolvedModelRequested,
         modelProvider,
         communityEndpointType: modelInfo.communityEndpoint?.type,
+        upstreamModel:
+            modelInfo.communityEndpoint?.type === "proxy"
+                ? modelInfo.communityEndpoint.upstreamModel
+                : undefined,
         modelDefinition,
         modelCostDefinition,
         modelPriceDefinition,
@@ -957,6 +966,12 @@ export async function trackResponse(
         costVariant,
         modelUsed,
         modelProviderUsed,
+        ...(eventType === "generate.text" &&
+            requestTracking.upstreamModel &&
+            !fallbackUsed && {
+                upstreamModel: requestTracking.upstreamModel,
+                upstreamServedModel: answeredModel(modelUsage.output),
+            }),
         usage: modelUsage.usage,
         contentFilterResults,
         errorTracking:
@@ -968,6 +983,25 @@ export async function trackResponse(
                   )
                 : undefined,
     };
+}
+
+// The model name an upstream wrote into its own answer, the last one it gave,
+// as the old monitor's probe read it: chat chunks and bodies carry `model`,
+// Responses events carry it on `response`. The owner's server chooses it, so
+// it is evidence for a person to weigh, never proof. Capped like the listing's
+// own upstream name.
+function answeredModel(output: unknown): string | undefined {
+    const stream = output as { streamEvents?: unknown[] } | undefined;
+    let model: string | undefined;
+    for (const event of stream?.streamEvents ?? [output]) {
+        const e = event as {
+            model?: unknown;
+            response?: { model?: unknown };
+        } | null;
+        const name = e?.model ?? e?.response?.model;
+        if (typeof name === "string" && name.trim()) model = name.trim();
+    }
+    return model?.slice(0, 253);
 }
 
 // A text answer reporting no tokens is billed at zero. Say why on its row,
@@ -1357,6 +1391,8 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         communityEndpointType: requestTracking.communityEndpointType,
+        upstreamModel: responseTracking.upstreamModel,
+        upstreamServedModel: responseTracking.upstreamServedModel,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

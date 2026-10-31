@@ -15,6 +15,7 @@ then choose a server:
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
+| OreoLook | `https://gen.pollinations.ai/mcp/oreolook` | Search, scrape, map, crawl, and extract from the web, or run cited deep research | [Source](https://github.com/pollinations/pollinations/tree/main/apps/oreolook-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
@@ -157,6 +158,24 @@ Omit the `ffmpeg` executable, source URLs, and output path.
   highlights.
 - `web_fetch_exa` reads one or more known URLs as clean text when the search
   highlights are not enough.
+
+### OreoLook MCP
+
+[OreoLook](https://search.elixpo.com) offers Firecrawl-style web tools plus
+deep research:
+
+- `oreolook_search` searches the live web; set `formats` to also scrape each
+  result.
+- `oreolook_scrape` reads one URL as clean markdown, HTML, links, or a
+  screenshot.
+- `oreolook_map` lists a site's URLs without reading them.
+- `oreolook_crawl` starts a site crawl and returns a job id; poll
+  `oreolook_crawl_status` (free) for the pages. Crawls bill per page of the
+  requested `limit`.
+- `oreolook_extract` pulls structured data from up to 10 URLs with a prompt or
+  JSON schema.
+- `oreolook_research` answers an open question with a cited, multi-source
+  synthesis.
 
 ### Connectors MCP
 

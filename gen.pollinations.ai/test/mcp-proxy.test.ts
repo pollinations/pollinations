@@ -96,6 +96,55 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "oreolook",
+                name: "OreoLook",
+                description:
+                    "Search, scrape, map, crawl, and extract from the web, or run cited deep research.",
+                url: "https://gen.pollinations.ai/mcp/oreolook",
+                pricing: {
+                    rates: [
+                        {
+                            name: "oreolook.search.v1",
+                            label: "Search",
+                            kind: "search_request",
+                            price: "0.003",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "request",
+                            suffix: "up to 20 results",
+                        },
+                        {
+                            name: "oreolook.scrape.v1",
+                            label: "Scrape",
+                            kind: "page",
+                            price: "0.001",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "page",
+                        },
+                        {
+                            name: "oreolook.crawl.page.v1",
+                            label: "Crawl",
+                            kind: "page",
+                            price: "0.001",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "page",
+                            suffix: "billed on the requested limit",
+                        },
+                        {
+                            name: "oreolook.research.v1",
+                            label: "Research",
+                            kind: "research_request",
+                            price: "0.025",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "request",
+                        },
+                    ],
+                },
+            },
+            {
                 id: "composio",
                 name: "Connectors",
                 description:

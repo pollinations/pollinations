@@ -86,7 +86,7 @@ function Screenshot({ src }: { src: string | null }) {
     );
 }
 
-/** Every card has the same slots, so cards in the grid share one height. */
+/** One card per listing; the grid gives every card the tallest one's height. */
 function AppCard({ app }: { app: ListedApp }) {
     const approved = formatDate(app.approvedDate);
     const issue = issueNumber(app.issueUrl);
@@ -133,7 +133,7 @@ function AppCard({ app }: { app: ListedApp }) {
                 >
                     {app.description}
                 </Text>
-                <div className="flex min-w-0 items-center gap-1.5">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                     {app.category && (
                         <Chip
                             intent="neutral"
@@ -252,7 +252,7 @@ export function MyApps({
                         </Surface>
                     ) : (
                         <div className="@container">
-                            <div className="grid grid-cols-1 gap-3 @min-[40rem]:grid-cols-2">
+                            <div className="grid auto-rows-fr grid-cols-1 gap-3 @min-[40rem]:grid-cols-2">
                                 {apps.map((app) => (
                                     <AppCard
                                         key={`${app.name}|${app.webUrl}`}

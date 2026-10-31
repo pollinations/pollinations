@@ -375,17 +375,17 @@ const SUBJECT = {
 };
 // Sign-up and review cards are about an email domain.
 const DOMAIN_KEY = /^(signup|review):/;
-export const subjectOf = (key) =>
+const subjectOf = (key) =>
     key.startsWith("model:")
         ? key.slice(6)
         : DOMAIN_KEY.test(key)
           ? `domain ${key.replace(DOMAIN_KEY, "")}`
           : SUBJECT[key];
 
-// Embed side-bar colour by severity: red down, orange degraded, yellow weak
-// primary, green closed.
+// An open card's colour by severity: red down, orange degraded, amber weak
+// primary. A closed card's colour is set by cardColor.
 const RED = 0xe24b4a;
-export const COLOR = {
+const COLOR = {
     GEN_DOWN: RED,
     PUBLIC_DOWN: RED,
     UPSTREAM_DOWN: RED,
@@ -424,9 +424,10 @@ function cardColor(key, incident) {
     return DOMAIN_KEY.test(key) ? GREEN : impactColor(key, incident);
 }
 
-// Each AI line's badge: the card's colour when the line was written, so the
-// lines show how the incident moved. Emoji circles, since the lines sit
-// outside the box, where Discord shows local times but no coloured text.
+// The circles: each AI line's colour (lineColor), so the lines show how the
+// incident moved, and a closed outage's impact in its summary. Emoji, since
+// they sit outside the box, where Discord shows local times but no coloured
+// text.
 const BADGE = {
     [RED]: "🔴",
     [COLOR.DEGRADED]: "🟠",
@@ -474,6 +475,11 @@ const callersText = (callers) =>
     callers
         ? `${callers.failing_callers} of ${callers.callers} failing`
         : "unknown";
+// How a model incident started, on its card open (once updated) and closed.
+const startRow = (start) => [
+    "START",
+    `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
+];
 
 // Rows of an open card: what is true now, plus the frozen start once the
 // card has been updated, so the history stays on the card.
@@ -546,11 +552,7 @@ function openRows(incident, now) {
         ["CALLERS", callersText(info.callers)],
         ...routeRows(info.routes),
     ];
-    if (now > incident.openedAt)
-        rows.push([
-            "START",
-            `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
-        ]);
+    if (now > incident.openedAt) rows.push(startRow(start));
     if (incident.again)
         rows.push([
             "AGAIN",
@@ -567,13 +569,7 @@ function closedRows(key, incident) {
         return [["LASTED", duration(incident.closedAt - incident.openedAt)]];
     if (!key.startsWith("model:")) return [];
     const { start, latest } = incident;
-    const rows = [
-        [
-            "START",
-            `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
-        ],
-        ...routeRows(start.routes),
-    ];
+    const rows = [startRow(start), ...routeRows(start.routes)];
     if (latest)
         rows.push([
             "NOW",
@@ -663,7 +659,7 @@ export const STALE_MS = 10 * 60 * 1000;
 
 // One heartbeat run. The watcher being down is an incident with one card,
 // like any other: posted with a ping when checks stop, left alone while they
-// stay stopped, edited green when they resume. `checkedAt` is infra-watch's
+// stay stopped, closed when they resume. `checkedAt` is infra-watch's
 // last completed check, or null if /health didn't answer. `state.incident`
 // is the open incident with its card's message id. Returns the card to post
 // or the edit to make, and the state to keep once Discord has it.

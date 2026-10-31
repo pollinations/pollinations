@@ -63,9 +63,10 @@ type DashboardNavItem = {
 };
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
-// sandboxes, Docs), and everything about you as one block at the bottom (your
-// pages, then your balance and your name). A thin line opens each part.
-// Signed out, the bottom holds the sign-in buttons.
+// sandboxes, Docs), and everything about you as one block at the bottom: your
+// balance opens it, your pages follow (Quests right under the Quest number),
+// your name closes it. A thin line opens each part. Signed out, the bottom
+// holds the sign-in buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
@@ -376,6 +377,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 NAV_LINE_CLASS,
             )}
         >
+            {walletArea && (
+                <BalanceLink
+                    active={activePage === "balance"}
+                    onNavigate={onNavigate}
+                >
+                    {walletArea}
+                </BalanceLink>
+            )}
             {navItems.some((item) => item.group === "yours") && (
                 <nav aria-label="Yours" className="flex flex-col gap-0.5">
                     {navItems
@@ -390,14 +399,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             />
                         ))}
                 </nav>
-            )}
-            {walletArea && (
-                <BalanceLink
-                    active={activePage === "balance"}
-                    onNavigate={onNavigate}
-                >
-                    {walletArea}
-                </BalanceLink>
             )}
             {accountName && (
                 <AccountLink

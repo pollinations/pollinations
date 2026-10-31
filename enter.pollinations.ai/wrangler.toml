@@ -108,10 +108,11 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUG
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
 
-# The only cron: reports email domains with bulk onboarding sign-ups.
-# Removing it needs `crons = []`; deleting the block leaves crons attached.
+# Explicitly detach cron schedules. Deleting the [triggers] block leaves
+# previously-deployed crons attached (crons undefined = unchanged); only
+# `crons = []` removes them. See Cloudflare Workers cron-triggers docs.
 [env.production.triggers]
-crons = ["*/10 * * * *"]
+crons = []
 
 [env.production.observability]
 enabled = true
@@ -179,9 +180,9 @@ STRIPE_PUBLISHABLE_KEY = "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS7
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
 
-# Same schedule as production.
+# See production note above: explicit empty crons detaches the schedule.
 [env.staging.triggers]
-crons = ["*/10 * * * *"]
+crons = []
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"

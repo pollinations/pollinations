@@ -13,8 +13,6 @@ export type Env = {
         CODE_AGENT_DISPATCH_NAMESPACE?: string;
         SITES_DISPATCH_NAMESPACE?: string;
         SITES_HOST_SUFFIX?: string;
-        /** Discord webhook for flagged sign-up domains; shared with infra-watch. */
-        SETUP_REWARD_DISCORD_WEBHOOK_URL?: string;
         CODE_AGENT_CONTEXT?: {
             authorization: string;
             origin: string;

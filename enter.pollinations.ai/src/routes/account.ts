@@ -2417,11 +2417,6 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Whether this key spends only Quest Pollen, never paid Pollen",
                                         ),
-                                    rateLimitEnabled: z
-                                        .boolean()
-                                        .describe(
-                                            "Whether rate limiting is enabled for this key",
-                                        ),
                                     userId: z
                                         .string()
                                         .nullable()
@@ -2536,8 +2531,6 @@ export const accountRoutes = new Hono<Env>()
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
                 questPollenOnly: apiKey.questPollenOnly ?? false,
-                // Generation rate limiting applies to publishable keys only.
-                rateLimitEnabled: keyType === "publishable",
                 // Server-attested identity. Downstream services (media catalog)
                 // stamp ownership from these values — never from request
                 // params — so user and BYOP app ids cannot be spoofed.

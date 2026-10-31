@@ -127,7 +127,6 @@ test("GET /api/account/key - returns key status for secret key", {
     expect(data).toHaveProperty("expiresIn");
     expect(data).toHaveProperty("permissions");
     expect(data).toHaveProperty("pollenBudget");
-    expect(data).toHaveProperty("rateLimitEnabled");
 });
 
 test("GET /api/account/key - agent run token has no account permissions", {

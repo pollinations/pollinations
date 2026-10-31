@@ -1051,7 +1051,6 @@ export interface KeyInfo {
     };
     pollenBudget?: number | null;
     questPollenOnly?: boolean;
-    rateLimitEnabled?: boolean;
 }
 
 /** Detailed key record returned by GET /account/keys (list) */

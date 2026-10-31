@@ -114,7 +114,6 @@ describe("device login output", () => {
             expect(output).not.toContain("private-device-code");
             expect(saveCredentials).toHaveBeenCalledWith({
                 apiKey: "sk_local_test",
-                keyType: "sk",
             });
         },
     );
@@ -189,7 +188,6 @@ describe("auth login with a key", () => {
         expect(output).not.toContain("sk_local_test");
         expect(saveCredentials).toHaveBeenCalledWith({
             apiKey: "sk_local_test",
-            keyType: "sk",
         });
     });
 
@@ -203,6 +201,21 @@ describe("auth login with a key", () => {
             }),
         ).rejects.toThrow(ExitSignal);
 
+        expect(saveCredentials).not.toHaveBeenCalled();
+    });
+
+    it("refuses a pk_ App Key before calling the API", async () => {
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        const fetch = vi.fn();
+        vi.stubGlobal("fetch", fetch);
+
+        await expect(
+            authCommand.parseAsync(["login", "--token", "pk_app"], {
+                from: "user",
+            }),
+        ).rejects.toThrow(ExitSignal);
+
+        expect(fetch).not.toHaveBeenCalled();
         expect(saveCredentials).not.toHaveBeenCalled();
     });
 });

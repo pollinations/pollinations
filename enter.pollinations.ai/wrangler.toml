@@ -38,6 +38,11 @@ name = "EMAIL"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+[[kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
 [vars]
 ENVIRONMENT = "development"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
@@ -81,6 +86,11 @@ name = "EMAIL"
 [[env.local.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
+[[env.local.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.local.vars]
@@ -141,6 +151,12 @@ name = "EMAIL"
 [[env.production.kv_namespaces]]
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
+
+[[env.production.kv_namespaces]]
+# production-pollinations-setup-holds: Setup reward holds, shared with
+# infra-watch, which writes domain holds and reads review requests
+binding = "SETUP_HOLDS"
+id = "957b3d13dc2c4142ab22fdf889f27bec"
 
 # Per-key limit before auth; see shared/rate-limit.ts. Separate namespace
 # from gen's 1001 so a request passing through both isn't counted twice.
@@ -208,6 +224,11 @@ name = "EMAIL"
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
 
+[[env.staging.kv_namespaces]]
+# Setup reward holds; staging reuses the staging KV namespace
+binding = "SETUP_HOLDS"
+id = "ba22195551794751b9792e4e67eb074a"
+
 # Per-key limit before auth; see shared/rate-limit.ts. Separate namespace
 # from gen's 1001 so a request passing through both isn't counted twice.
 [[env.staging.ratelimits]]
@@ -268,6 +289,11 @@ name = "EMAIL"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+[[env.dev.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
 [env.dev.vars]
 ENVIRONMENT = "dev"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
@@ -307,6 +333,11 @@ name = "EMAIL"
 [[env.test.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
+[[env.test.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.test.vars]

@@ -66,7 +66,6 @@ Pollinations supports text, images and image edits, video, speech and audio, tra
 
 - **Personal Secret Key (`sk_`)**: use on a trusted server for your own model usage. It can have a Pollen budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
 - **App Key (`pk_`)**: a publishable OAuth client identifier for Connect User Wallets. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
-- **Raw publishable key (`pk_` without an app binding)**: legacy direct generation only, limited to 1 Pollen per IP per hour. Do not create new integrations around this flow.
 
 All traffic remains subject to platform abuse protection and any model-specific constraints.
 

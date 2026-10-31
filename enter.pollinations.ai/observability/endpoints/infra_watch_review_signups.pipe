@@ -1,0 +1,22 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch review: new accounts on one email domain per day over the
+    last 30 days, from signup_completed product events. Read by the
+    infra-watch review of held Setup rewards.
+
+NODE infra_watch_review_signups_node
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS day,
+        uniq(user_id) AS accounts
+    FROM product_event
+    WHERE environment = 'production'
+        AND event = 'signup_completed'
+        AND email_domain = {{String(domain, required=True)}}
+        AND timestamp >= now() - INTERVAL 30 DAY
+    GROUP BY day
+    ORDER BY day
+
+TYPE endpoint

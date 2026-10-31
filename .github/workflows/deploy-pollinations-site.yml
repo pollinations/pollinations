@@ -1,0 +1,84 @@
+name: Deploy / Pollinations Site
+
+on:
+  workflow_call:
+    inputs:
+      site-name:
+        description: Existing or new Pollinations Sites name
+        required: true
+        type: string
+      working-directory:
+        description: npm project directory (also supports monorepo apps)
+        type: string
+        default: .
+      site-directory:
+        description: Build output, relative to the project directory
+        type: string
+        default: dist
+    secrets:
+      POLLINATIONS_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pollinations-site-${{ inputs.site-name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Require production branch
+        working-directory: .
+        env:
+          DEPLOY_REF: ${{ github.ref }}
+          DEPLOY_EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$DEPLOY_REF" != 'refs/heads/production' ] ||
+             { [ "$DEPLOY_EVENT" != 'push' ] && [ "$DEPLOY_EVENT" != 'workflow_dispatch' ]; }; then
+            echo '::error::Sites deployments require a push or manual run from production.' >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - run: npm ci
+      - run: npm run typecheck --if-present
+      - run: npm run test --if-present
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pollinations-site-${{ inputs.site-name }}
+          path: ${{ inputs.working-directory }}/${{ inputs.site-directory }}
+          if-no-files-found: error
+          # Keep .well-known files; the CLI still excludes other dotfiles.
+          include-hidden-files: true
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Install published CLI
+        run: npm install --global --ignore-scripts --no-audit --no-fund @pollinations/cli@0.1.72
+      - uses: actions/download-artifact@v8
+        with:
+          name: pollinations-site-${{ inputs.site-name }}
+          path: ${{ runner.temp }}/pollinations-site
+      - name: Publish and verify
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+          SITE_NAME: ${{ inputs.site-name }}
+        run: polli sites deploy "$RUNNER_TEMP/pollinations-site" --name "$SITE_NAME" --verify

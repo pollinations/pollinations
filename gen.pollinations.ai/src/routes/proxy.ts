@@ -13,7 +13,6 @@ import {
     model3dCache,
 } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
@@ -387,6 +386,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         paid_only: entry.info.paid_only,
         pricing: entry.info.pricing,
+        pricing_units: entry.info.pricing_units,
         capabilities: entry.info.capabilities,
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
@@ -682,7 +682,6 @@ export const proxyRoutes = new Hono<Env>()
     .get("/register", handleRegisterServer)
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth())
-    .use(frontendKeyRateLimit)
     .use(balance)
     .get(
         "/realtime",

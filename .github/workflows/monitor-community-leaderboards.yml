@@ -1,0 +1,50 @@
+name: Monitor / community leaderboards
+
+on:
+  schedule:
+    # The day's community text and image leaderboards in
+    # #dev-community-models, as the EC2 community monitor posted them.
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      boards:
+        description: Boards to post (rerun only the one that failed)
+        type: choice
+        options:
+          - text image
+          - text
+          - image
+        default: text image
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-leaderboards
+  cancel-in-progress: false
+
+jobs:
+  post:
+    if: github.repository == 'pollinations/pollinations'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: operations/infra-watch
+    steps:
+      # The script and secrets that match the deployed Worker.
+      - uses: actions/checkout@v5
+        with:
+          ref: production
+          sparse-checkout: operations/infra-watch
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - uses: nhedger/setup-sops@v3
+      - run: npm ci
+      # The decrypted secrets reach the script as environment variables.
+      - name: Post the leaderboards
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          BOARDS: ${{ inputs.boards || 'text image' }}
+        run: sops exec-env secrets.vars.json "node leaderboard/post.mjs $BOARDS"

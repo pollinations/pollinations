@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
     AGENT_FIELD_DESCRIPTIONS,
     ModelHealthSchema,
+    ModelInfoSchema,
 } from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
@@ -814,6 +815,7 @@ export const OpenAIModelSchema = z
             .record(z.string(), z.string())
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
+        pricing_units: ModelInfoSchema.shape.pricing_units,
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())

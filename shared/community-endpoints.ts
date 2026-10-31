@@ -116,6 +116,7 @@ export const CommunityEndpointAdvertisedSchema = z
     .object({
         capabilities: z
             .array(z.enum(COMMUNITY_ENDPOINT_CAPABILITIES))
+            .max(COMMUNITY_ENDPOINT_CAPABILITIES.length)
             .optional(),
         contextLength: z
             .number()
@@ -570,7 +571,11 @@ export function staticFallbackRejection(
         primary.imagePricing,
     );
     // Neither below what Pollinations pays nor below the model's own price.
-    const multiplier = Math.max(target.priceMultiplier, 1);
+    const multiplier = Math.max(
+        target.priceMultiplier,
+        ...Object.values(target.priceMultiplierVariants ?? {}),
+        1,
+    );
     return getCostSheetsForModel(target).every((cost) =>
         isFallbackPricingAllowed(quoted, derivePrice(cost, multiplier)),
     )
@@ -783,15 +788,18 @@ export const EndpointAgentListingPayloadSchema = z
         inputModalities: z
             .array(z.enum(MODEL_INPUT_MODALITIES))
             .min(1)
+            .max(MODEL_INPUT_MODALITIES.length)
             .optional()
             .describe("Input types accepted by the agent. Defaults to text."),
         outputModalities: z
             .array(z.enum(MODEL_OUTPUT_MODALITIES))
             .min(1)
+            .max(MODEL_OUTPUT_MODALITIES.length)
             .optional()
             .describe("Output types produced by the agent. Defaults to text."),
         capabilities: z
             .array(z.enum(ENDPOINT_AGENT_CAPABILITIES))
+            .max(ENDPOINT_AGENT_CAPABILITIES.length)
             .optional()
             .describe(
                 "Traits the agent supports through its public endpoint, such as tools it runs itself. Defaults to none.",

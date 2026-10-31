@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "pretest": "npm run build --prefix ../../../packages/ui",
     "test": "vitest run",
+    "pretest:public": "npm run build:js --prefix ../../../packages/ui",
+    "test:public": "vitest run --mode public",
     "typecheck": "tsc --noEmit",
     "pretypecheck": "npm run build --prefix ../../../packages/ui",
     "deploy": "npm run build && wrangler deploy",

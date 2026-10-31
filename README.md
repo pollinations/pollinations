@@ -21,6 +21,9 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Polli Snap - Text to Image Meme Maker](https://mhmdrizzzki.github.io/polli-snap) | A fast text-to-image meme generator. Type a prompt and instantly get a generated image with quick meme presets. Built directly on the Pollinations image API (flux). Live public app, no login required. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
+| [🛠️ Websim](https://websim.pollinations.app) | Generate, preview, and download single-file HTML pages using Pollinations models and your own Pollen. | [@pollinations-ai](https://github.com/pollinations-ai) |
+| [🖼️ Image Remix](https://image-remix.pollinations.app) | Upload a photo (PNG, JPEG or WebP) and describe the change, or pick an idea such as "Winter night" or "Watercolor painting". A Pollinations image-editing model returns the edited image at the source's | [@danhquach](https://github.com/danhquach) |
 | [🛠️ Screenshot to Bug Report](https://screenshot-to-bug-report.pollinations.app) | Paste, drop or upload a screenshot and add rough notes. The community prompt agent community/danhquach/bug-report-writer reads the screenshot and writes a clean Markdown bug report: title, what happen | [@danhquach](https://github.com/danhquach) |
 | [🖼️ Prompt to Image](https://prompt-to-image.pollinations.app) | Type a rough image idea and pick a style. The community prompt agent community/danhquach/prompt-enhancer expands it into a detailed prompt, which you can edit, and a Pollinations image model renders i | [@danhquach](https://github.com/danhquach) |
 | [🎬 Reel Hook Generator](https://anojan-va.github.io/reel-hook-generator) | Type a reel topic and get five scroll-stopping hooks in different styles (curiosity gap, shock fact, direct question, bold claim, mini story), each read aloud with Pollinations text-to-speech so you c | [@anojan-va](https://github.com/anojan-va) |
@@ -28,9 +31,6 @@
 | [💬 Radio Bloom](https://mrunknowne09-radio-bloom.static.hf.space) | Radio Bloom is a duplicate-ready voice character playground. Visitors sign in with their own Pollen, then speak or type to three AI characters powered by Pollinations chat, transcription, and voice mo | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [🎮 One Line Arena](https://drjacky.github.io/one-line-arena) | Describe a fighter in one line. Pollinations designs the whole fighter from it: name, title, portrait, stats, three moves, a quirk, a weakness and a catchphrase. Then it sends the fighter into a short | [@Drjacky](https://github.com/Drjacky) |
 | [🎬 AI ad video generator](https://github.com/zee7lubricantsoperations-collab/AI-ad-video-generator-free-no-cahrges-) | AI Ad Video Maker is a Windows desktop app that produces 7–10 s advertisement videos with AI‑generated scripts, visuals, voice‑overs, captions and background music. It supports 21 languages, multiple | [@zee7lubricantsoperations-collab](https://github.com/zee7lubricantsoperations-collab) |
-| [🖼️ Poster Iklan Pantas](https://poster.simetry.digital) | Malay-language ad poster maker for small sellers in Malaysia. Users type product, headline and offer, pick style and size (feed, story, banner), optionally upload a product photo, and get a ready-to-p | [@Syafixit](https://github.com/Syafixit) |
-| [🖼️ Pollinations Model Tester](https://polli-model-tester-9321atohv-scriptsnsenses-8753s-projects.vercel.app) | The app is [Pollinations.ai](https://pollinations.ai/) Models Tester — a single-file, browser-based playground for comparing Pollinations text models side-by-side. The app lets you enter any model ID | [@scriptsnsenses-sys](https://github.com/scriptsnsenses-sys) |
-| [🖼️ Teapot Art](https://svirepyibambr.github.io/teapot-art) | A one-page image generator: describe what you want in words — get a picture. Single static HTML file, no build step, no dependencies. Generation goes through the Pollinations image API; a user key is | [@SvirepyiBambr](https://github.com/SvirepyiBambr) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -53,6 +53,9 @@
 
 <!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
 <!-- news:start -->
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Verify a published Site**](https://www.npmjs.com/package/@pollinations/cli) <sub>Oct 30</sub><br>Run `polli sites deploy --verify` to publish a Site, then check that every public file matches your local build. A failed check exits nonzero, but the Site remains published.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Read model billing units**](https://enter.pollinations.ai/models) <sub>Oct 30</sub><br>`/v1/models` and `/v1/models/:model` can now return `pricing_units` when a model defines them. For some image and video models, this identifies `completionImageTokens` as priced per megapixel.
+- <img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Grant missing key permissions** <sub>Oct 28</sub><br>Owners can use the grant link in Enter's 403 error, also returned as JSON `fixUrl`, to add missing `keys`, `machines`, or `usage` permission to an existing key. For keys obtained through a website redirect, add `keys` permission on the Keys page instead.
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Compare community model trust**](https://model-monitor.pollinations.ai) <sub>Oct 26</sub><br>Model Monitor’s Community → Trust view compares each community model with the official model it is named after. Sort the latest weekly scores and see which differences clear the confidence threshold.
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Find models and voices**](https://www.npmjs.com/package/@pollinations/cli) <sub>Oct 26</sub><br>Use `polli models` to search models or filter by source and reliability. Add `--voices` to list voices by audio model.
 - <img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Spot Pollen-related refusals** <sub>Oct 26</sub><br>The `/models/status` response now includes `errors_402` in model and route health data. It separates balance or key-budget refusals from other 4xx responses.
@@ -60,9 +63,6 @@
 - <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **My Apps for everyone** <sub>Oct 25</sub><br>Every signed-in account can now open My Apps, including accounts with no listed apps. The page offers a way to submit an app and explains how approved listings appear.
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Model Monitor links in Discord**](https://model-monitor.pollinations.ai) <sub>Oct 25</sub><br>Model Monitor links now have a Discord embed with direct buttons for model health and evals.
 - [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Tripo P2 text-to-3D**](https://enter.pollinations.ai/models?q=tripo3d/p2) <sub>Oct 24</sub><br>Turn a text prompt of up to 1,024 characters into a GLB mesh with PBR textures using the alpha, paid-only `tripo3d/p2` model. It does not accept image input.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Qwen Image 2.1 Pro**](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-pro) <sub>Oct 24</sub><br>Generate or edit images with paid-balance model `qwen/qwen-image-2.1-pro`. The Alibaba route accepts up to 10 reference images and sizes up to 2560×2560; its fallback accepts at most four references and may return 2048×2048 for a 2560×2560 request.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **FLUX 3 Max video**](https://enter.pollinations.ai/models) <sub>Oct 24</sub><br>Make 5–20 second videos from text or up to two images used as start and end frames. Paid-balance model `black-forest-labs/flux-3-max` supports optional audio, 720p or 1080p output, and seven aspect ratios.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Muse Spark 1.3**](https://enter.pollinations.ai/models?q=meta/muse-spark-1.3) <sub>Oct 24</sub><br>Use paid-only `meta/muse-spark-1.3` for text and image input, reasoning, and tools. It has a 1,048,576-token context window; Muse Spark 1.2 remains a separate model.
 <!-- news:end -->
 
 [More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
@@ -254,10 +254,10 @@ Install globally and use the shorter `polli` command: `npm install -g @pollinati
 Stream AI responses over an OpenAI-compatible WebSocket:
 
 ```
-wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=pk_YOUR_API_KEY
+wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=sk_YOUR_API_KEY
 ```
 
-Browser clients pass the key as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
+Browser clients pass a user-authorized key from [Connect User Wallets](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
 
 ### MCP Servers
 
@@ -279,7 +279,7 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Browsers, mobile apps, public clients | Budget & permissions set at creation | Stable |
+| **App Key** | `pk_`  | Identifies your app in Connect User Wallets sign-in | Can't authenticate requests | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs

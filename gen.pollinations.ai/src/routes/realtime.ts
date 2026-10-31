@@ -131,7 +131,6 @@ type RealtimeBillingContext = {
     settled: boolean;
     deduction?: RealtimeDeduction;
     deductionAttempted: boolean;
-    rateLimitConsumed: boolean;
 };
 
 async function createSafetyIdentifier(
@@ -884,11 +883,6 @@ async function settleRealtimeSession(
         c.var.balance.apiKeyReservation = undefined;
     }
 
-    if (!tracking.rateLimitConsumed) {
-        await c.var.frontendKeyRateLimit?.consumePollen(price.totalPrice);
-        tracking.rateLimitConsumed = true;
-    }
-
     const balances = await getUserBalance(db, tracking.identity.userId);
     await sendToTinybird(
         createRealtimeTrackingEvent({
@@ -1547,7 +1541,6 @@ async function createRealtimeBillingContext(
         settlementAttempts: 0,
         settled: false,
         deductionAttempted: false,
-        rateLimitConsumed: false,
     };
 }
 

@@ -89,14 +89,15 @@ async function pollForToken(
 }
 
 function storeKey(key: string): void {
-    const keyType = key.startsWith("sk_") ? "sk" : "pk";
-    saveCredentials({ apiKey: key, keyType });
+    saveCredentials({ apiKey: key });
 }
 
 function assertApiKey(key: string): string {
     const trimmed = key.trim();
-    if (!trimmed.startsWith("pk_") && !trimmed.startsWith("sk_")) {
-        printError("Invalid key format. Must start with pk_ or sk_");
+    if (!trimmed.startsWith("sk_")) {
+        printError(
+            "Invalid key format. Must start with sk_; pk_ App Keys only identify an app",
+        );
         throw new ExitSignal(1);
     }
     return trimmed;
@@ -243,7 +244,7 @@ const login = new Command("login")
     .addOption(
         new Option(
             "--token <key>",
-            "API key (pk_ or sk_) for direct auth",
+            "Secret API key (sk_) for direct auth",
         ).hideHelp(),
     )
     .option("--with-token", "Read an existing API key from stdin")

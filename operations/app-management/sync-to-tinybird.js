@@ -53,6 +53,7 @@ function catalogRows() {
             approved_date: app.approvedDate || "",
             byop: app.byop ? "true" : "",
             requests_24h: app.requests24h ? String(app.requests24h) : "",
+            app_key_ids: app.appKeyIds ?? [],
         };
 
         // Skip rows with no category and no github_user_id

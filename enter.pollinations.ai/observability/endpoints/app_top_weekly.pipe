@@ -1,10 +1,12 @@
 DESCRIPTION >
     Listed apps ranked by successful, billable Pollen Pay (BYOP) requests in
-    the rolling last 7 days. A registered App Key is credited to the one
-    catalog listing of the same owner whose URL covers the key's redirect URI.
-    Without a URL match, it is credited to the owner's listing only when the
-    owner has exactly one. Ambiguous keys are excluded. Multiple keys for one
-    listing are combined before ranking. Refreshed hourly.
+    the rolling last 7 days. An App Key listed in a catalog entry's
+    `appKeyIds` (app.json) is credited to that listing. Other registered App
+    Keys fall back to a guess: the one catalog listing of the same owner whose
+    URL covers the key's redirect URI, or, without a URL match, the owner's
+    only listing. Guesses never land on a listing that declares its keys.
+    Ambiguous keys are excluded. Multiple keys for one listing are combined
+    before ranking. Refreshed hourly.
     Returns catalog URLs and names, public owner handles, and aggregate counts
     only. No user IDs, App Keys, wallet, revenue, or cost data is exposed.
 

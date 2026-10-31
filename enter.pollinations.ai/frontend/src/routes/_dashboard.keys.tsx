@@ -38,14 +38,6 @@ export const Route = createFileRoute("/_dashboard/keys")({
 });
 
 function KeysPage() {
-    return <ApiKeys kind="secret" />;
-}
-
-/**
- * Your keys of one kind, with their actions: secret keys on this page, app
- * keys on the Apps page (with your catalog listings).
- */
-export function ApiKeys({ kind }: { kind: "secret" | "app" }) {
     const router = useRouter();
     const { apiKeys, user } = useDeferredValue(DashboardRoute.useLoaderData());
 
@@ -103,14 +95,10 @@ export function ApiKeys({ kind }: { kind: "secret" | "app" }) {
     }
 
     return (
-        <Await
-            promise={apiKeys}
-            fallback={<PageLoading titles={[KEY_TITLES[kind]]} />}
-        >
+        <Await promise={apiKeys} fallback={<PageLoading titles={["Keys"]} />}>
             {(keys) => (
                 <KeysContent
                     key={user?.id}
-                    kind={kind}
                     apiKeys={keys}
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
@@ -123,17 +111,13 @@ export function ApiKeys({ kind }: { kind: "secret" | "app" }) {
     );
 }
 
-const KEY_TITLES = { secret: "Secret keys", app: "App keys" } as const;
-
 function KeysContent({
     apiKeys,
     onRetry,
-    kind,
     ...actions
 }: Omit<ApiKeyManagerProps, "apiKeys"> & {
     apiKeys: ApiKey[] | null;
     onRetry: () => Promise<unknown>;
-    kind: "secret" | "app";
 }) {
     const [lastKeys, setLastKeys] = useState(apiKeys);
     // A failed refresh must not unmount the dialog holding a newly created secret.
@@ -142,7 +126,7 @@ function KeysContent({
 
     if (keys === null) {
         return (
-            <Section title={KEY_TITLES[kind]}>
+            <Section title="Keys">
                 <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                     Couldn’t load keys.
                 </LoadError>
@@ -157,10 +141,8 @@ function KeysContent({
                     Couldn’t refresh keys. Showing the last loaded list.
                 </LoadError>
             )}
-            <ApiKeyList apiKeys={keys} kind={kind} {...actions} />
-            {kind === "secret" && (
-                <CliHint command="keys create --name my-app" />
-            )}
+            <ApiKeyList apiKeys={keys} {...actions} />
+            <CliHint command="keys create --name my-app" />
         </>
     );
 }

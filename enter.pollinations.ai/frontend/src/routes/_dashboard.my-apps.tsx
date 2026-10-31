@@ -2,7 +2,6 @@ import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue } from "react";
 import type { ListedApp } from "../backend-types.ts";
 import { MyApps } from "../components/my-apps.tsx";
-import { ApiKeys } from "./_dashboard.keys.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/my-apps")({
@@ -28,11 +27,8 @@ function MyAppsPage() {
         />
     );
     return (
-        <>
-            <ApiKeys kind="app" />
-            <Await promise={apps} fallback={page()}>
-                {page}
-            </Await>
-        </>
+        <Await promise={apps} fallback={page()}>
+            {page}
+        </Await>
     );
 }

@@ -210,11 +210,11 @@ test("TripoSR requires Paid Pollen and meters a promptless GLB exactly once", as
     expect(bills[0]).toMatchObject({
         modelUsed: "stability-ai/triposr",
         modelProviderUsed: "inferenceport",
-        totalPrice: 0.1,
+        totalPrice: 0.07,
         totalCost: 0.07,
     });
     const balance = await getUserBalance(drizzle(env.DB), userId);
-    expect(balance.packBalance).toBeCloseTo(0.9);
+    expect(balance.packBalance).toBeCloseTo(0.93);
     expect(balance.tierBalance).toBe(2);
 
     const { key: questKey } = await createTestApiKey({

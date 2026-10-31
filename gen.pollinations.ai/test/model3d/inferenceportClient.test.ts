@@ -54,6 +54,9 @@ describe("runInferenceport", () => {
             upstreamStatus: 429,
             responseBody: undefined,
         });
+        if (!(error instanceof Error)) {
+            throw new Error("Expected an upstream error");
+        }
         expect(error.message).not.toContain("test-only");
         expect(error.message).not.toContain("xxxxx");
     });

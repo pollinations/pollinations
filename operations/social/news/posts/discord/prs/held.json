@@ -14,11 +14,6 @@
         "deploy-legacy-caches.yml:deploy (text)"
       ]
     },
-    "18852": {
-      "merge_sha": "92b2e775f80b130413f97bb55f57ce8737a00bfa",
-      "merged_at": "2026-10-31T10:30:26Z",
-      "required": []
-    },
     "18853": {
       "merge_sha": "c31d07f5cf163a866b65c026dddc6b6700202f6f",
       "merged_at": "2026-10-31T12:06:38Z",
@@ -29,11 +24,6 @@
         "deploy-cloudflare-production.yml:deploy-media",
         "deploy-website-cloudflare.yml:deploy"
       ]
-    },
-    "18854": {
-      "merge_sha": "d1cd59a9f69dbc83ec0694754956973d94af1b35",
-      "merged_at": "2026-10-31T12:03:33Z",
-      "required": []
     }
   },
   "production": "fc8782af9c1b84f360f64fa46067c7a342a612c7",

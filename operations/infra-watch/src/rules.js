@@ -424,16 +424,14 @@ function cardColor(key, incident) {
     return DOMAIN_KEY.test(key) ? GREEN : impactColor(key, incident);
 }
 
-// The circles: each AI line's colour (lineColor), so the lines show how the
-// incident moved, and a closed outage's impact in its summary. Emoji, since
-// they sit outside the box, where Discord shows local times but no coloured
-// text.
+// Each AI line's circle, in its colour (lineColor), so the lines show how
+// the incident moved. Emoji, since the lines sit outside the box, where
+// Discord shows local times but no coloured text.
 const BADGE = {
     [RED]: "🔴",
     [COLOR.DEGRADED]: "🟠",
     [COLOR.PRIMARY_WEAK]: "🟡",
     [GREEN]: "🟢",
-    [GREY]: "⚪",
 };
 
 // While the AI is writing a line, the card ends with this.
@@ -578,17 +576,21 @@ function closedRows(key, incident) {
     return rows;
 }
 
-// A closed outage card's last line, in bigger letters: that it is over, how
-// long it lasted and what it cost callers, behind its impact circle. Only
-// models have request counts. Domain cards have no summary.
+// A share as a whole percentage; a share under 1% doesn't read as 0%.
+const percent = (x) => (x < 0.01 ? "<1%" : `${Math.round(x * 100)}%`);
+
+// A closed outage card's last line, in bigger letters: how long it lasted
+// and, for a model, what it cost callers. The card's colour already says how
+// bad it was. Domain cards have no summary.
 function summary(key, incident) {
     if (DOMAIN_KEY.test(key)) return null;
-    const over = `### ${BADGE[impactColor(key, incident)]} Over after ${duration(incident.closedAt - incident.openedAt)}`;
-    if (!key.startsWith("model:")) return over;
+    const took = `### ⏱️ ${duration(incident.closedAt - incident.openedAt)}`;
+    if (!key.startsWith("model:")) return took;
     const { lost } = incident;
-    if (!lost) return `${over} · impact unknown`;
-    if (!lost.failures) return `${over} · on fallback, no users affected`;
-    return `${over} · ${lost.failing_callers} of ${lost.callers} users hit · ${lost.failures} of ${lost.requests} requests failed (${pct(lost.failures / lost.requests)})`;
+    if (!lost) return `${took} · impact unknown`;
+    const { requests, failures, callers, failing_callers } = lost;
+    const share = failures ? ` (${percent(failures / requests)})` : "";
+    return `${took} · 👥 ${failing_callers}/${callers} users hit · 📉 ${failures}/${requests} requests failed${share}`;
 }
 
 // The incident's card, in any state: the box, then while open "open since",

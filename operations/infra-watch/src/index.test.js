@@ -6,7 +6,7 @@ import { CHECKING, RECOVER_CHECKS } from "./rules.js";
 
 const GREEN = 0x639922;
 // A closed outage card: it ends with its summary.
-const over = (w) => w.text.includes("Over after");
+const over = (w) => w.text.includes("### ⏱️");
 const KEY = "model:a/model";
 const row = (ok, total, model = "a/model") => ({
     model,
@@ -287,7 +287,7 @@ it("retries a closed card's last edit until Discord takes it", async () => {
     expect(last.color).toBe(0xe24b4a);
     expect(last.text).toContain("DEGRADED: a/model");
     expect(last.text.split("\n").at(-1)).toBe(
-        "### 🔴 Over after under 1 min · 3 of 3 users hit · 30 of 40 requests failed (75.0%)",
+        "### ⏱️ under 1 min · 👥 3/3 users hit · 📉 30/40 requests failed (75%)",
     );
     expect(last.text).not.toContain(CHECKING);
     expect(last.text).toContain("Line 2.");

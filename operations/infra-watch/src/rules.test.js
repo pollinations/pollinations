@@ -392,7 +392,7 @@ test("a closed card keeps its status and takes the colour of what it cost", () =
     assert.match(card.text, /Provider fault\./);
     assert.equal(
         card.text.split("\n").at(-1),
-        "### 🟠 Over after 2 h 01 min · 5 of 40 users hit · 37 of 900 requests failed (4.1%)",
+        "### ⏱️ 2 h 01 min · 👥 5/40 users hit · 📉 37/900 requests failed (4%)",
     );
 });
 
@@ -406,17 +406,29 @@ test("a closed outage's colour and summary say what it cost callers", () => {
     assert.equal(none.color, 0x639922);
     assert.equal(
         last(none),
-        "### 🟢 Over after 20 min · on fallback, no users affected",
+        "### ⏱️ 20 min · 👥 0/9 users hit · 📉 0/152 requests failed",
     );
     const most = close({ ...total, failures: 140, failing_callers: 9 });
     assert.equal(most.color, 0xe24b4a);
     assert.equal(
         last(most),
-        "### 🔴 Over after 20 min · 9 of 9 users hit · 140 of 152 requests failed (92.1%)",
+        "### ⏱️ 20 min · 👥 9/9 users hit · 📉 140/152 requests failed (92%)",
+    );
+    // A share under 1% doesn't read as 0%.
+    assert.match(
+        last(
+            close({
+                requests: 500,
+                callers: 40,
+                failures: 1,
+                failing_callers: 1,
+            }),
+        ),
+        /📉 1\/500 requests failed \(<1%\)$/,
     );
     const unknown = close(null);
     assert.equal(unknown.color, 0x888780);
-    assert.equal(last(unknown), "### ⚪ Over after 20 min · impact unknown");
+    assert.equal(last(unknown), "### ⏱️ 20 min · impact unknown");
 });
 
 test("a closed card's title keeps the worst status its incident reached", () => {
@@ -455,7 +467,7 @@ test("infrastructure cards follow the same life and stay red when closed", () =>
     // No request counts: it keeps its status, and red.
     assert.match(plain(closed.text), /┌─ DOWN: gen Worker ─/);
     assert.equal(closed.color, 0xe24b4a);
-    assert.equal(closed.text.split("\n").at(-1), "### 🔴 Over after 7 min");
+    assert.equal(closed.text.split("\n").at(-1), "### ⏱️ 7 min");
 });
 
 test("who an opening card pings", () => {
@@ -725,10 +737,7 @@ test("heartbeat closes the same card when checks resume", () => {
     assert.equal(r.edit.card.color, 0xe24b4a);
     assert.equal(r.edit.card.ping, true);
     assert.match(plain(r.edit.card.text), /DOWN: infra-watch/);
-    assert.equal(
-        r.edit.card.text.split("\n").at(-1),
-        "### 🔴 Over after 47 min",
-    );
+    assert.equal(r.edit.card.text.split("\n").at(-1), "### ⏱️ 47 min");
     assert.doesNotMatch(r.edit.card.text, /open since/);
     assert.deepEqual(r.state, {});
 });

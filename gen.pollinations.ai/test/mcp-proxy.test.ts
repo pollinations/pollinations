@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "quran",
+                name: "Quran MCP",
+                description: "Read surahs and ayahs, and search Quranic text.",
+                url: "https://gen.pollinations.ai/mcp/quran",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

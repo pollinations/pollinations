@@ -25,6 +25,7 @@ import {
     renderCard,
     snapshot,
     step,
+    waiting,
 } from "./rules.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
@@ -95,16 +96,23 @@ export class Watch extends DurableObject {
     // AI lines are written here, outside `once`: a slow model call never
     // delays the next check.
     background = serial();
+    // Every card write goes through one queue, in order, so a slow AI edit
+    // can never land after a card's closing edit.
+    writes = serial();
+    // Cards closed (or closing) since this object started: no open-card edit
+    // may touch them again.
+    closedCards = new Set();
 
     async check() {
         return (await this.once(() => this.run())) ?? { skipped: true };
     }
 
-    // An incident's AI lines, kept apart from the incident so the check and
-    // a background AI call never overwrite each other.
-    async record(key) {
+    // A card's AI lines, kept apart from the incident so the check and a
+    // background AI call never overwrite each other, and keyed by the card so
+    // a late line can never reach a newer incident's card.
+    async record(id) {
         return (
-            (await this.ctx.storage.get(`lines:${key}`)) ?? {
+            (await this.ctx.storage.get(`lines:${id}`)) ?? {
                 lines: [],
                 pending: false,
             }
@@ -164,28 +172,32 @@ export class Watch extends DurableObject {
                         (now - incident.openedAt) / 60_000 + 15,
                         tinybird,
                     );
-                const { lines } = await this.record(key);
+                const id = incident.messageId;
+                const { lines } = await this.record(id);
                 const closing =
                     Boolean(model) && investigates(incident.kind) && reserve();
                 const card = renderCard(key, incident, {
                     lines,
                     checking: closing,
                 });
-                if (!(await update(this.env, incident.messageId, card))) {
+                this.closedCards.add(id);
+                if (!(await this.writes(() => update(this.env, id, card)))) {
                     // Still on the card as open: try closing again next check.
                     failed++;
+                    this.closedCards.delete(id);
                     const { closedAt, latest, lost: _, ...open } = incident;
                     next.state.open[key] = open;
                     delete next.state.closed[key];
                     continue;
                 }
                 if (closing) {
-                    await this.ctx.storage.put(`lines:${key}`, {
+                    await this.ctx.storage.put(`lines:${id}`, {
                         lines,
                         pending: true,
+                        pendingAt: now,
                     });
-                    notes.push({ key, incident, moment: "closed" });
-                } else await this.ctx.storage.delete(`lines:${key}`);
+                    notes.push({ key, id, incident, moment: "closed" });
+                } else await this.ctx.storage.delete(`lines:${id}`);
                 continue;
             }
 
@@ -197,9 +209,10 @@ export class Watch extends DurableObject {
                 incident.pinged = pings(incident);
                 const checking = investigates(incident.kind) && reserve();
                 const card = renderCard(key, incident, { checking, now });
-                const saved = await post(this.env, card);
-                if (!saved) {
-                    // Not posted: the incident opens again next check.
+                const saved = await this.writes(() => post(this.env, card));
+                if (!saved?.id) {
+                    // Not posted, or no readable receipt to edit it by: the
+                    // incident opens again next check.
                     failed++;
                     delete next.state.open[key];
                     continue;
@@ -212,11 +225,12 @@ export class Watch extends DurableObject {
                     notedAt: now,
                     alerted: snapshot(incident),
                 });
-                await this.ctx.storage.put(`lines:${key}`, {
+                await this.ctx.storage.put(`lines:${saved.id}`, {
                     lines: [],
                     pending: checking,
+                    pendingAt: now,
                 });
-                if (checking) notes.push({ key, moment: "open" });
+                if (checking) notes.push({ key, id: saved.id, moment: "open" });
                 continue;
             }
 
@@ -225,33 +239,37 @@ export class Watch extends DurableObject {
             const current = snapshot(incident);
             if (escalates(incident.alerted, current)) {
                 const link = `https://discord.com/channels/${GUILD}/${incident.channelId}/${incident.messageId}`;
-                if (await post(this.env, escalation(key, incident, link)))
+                const notice = escalation(key, incident, link);
+                if (await this.writes(() => post(this.env, notice)))
                     incident.alerted = current;
             }
-            const record = await this.record(key);
+            const id = incident.messageId;
+            const record = await this.record(id);
+            const pending = waiting(record, now);
             const reason = noteworthy(incident.noted, current);
             const due =
                 Boolean(reason) &&
-                !record.pending &&
+                !pending &&
                 now - incident.notedAt >= NOTE_EVERY_MS &&
                 record.lines.length < MAX_LINES - 1 &&
                 investigates(incident.kind) &&
                 reserve();
             if (due) {
                 Object.assign(incident, { noted: current, notedAt: now });
-                await this.ctx.storage.put(`lines:${key}`, {
+                await this.ctx.storage.put(`lines:${id}`, {
                     ...record,
                     pending: true,
+                    pendingAt: now,
                 });
-                notes.push({ key, moment: "change", reason });
+                notes.push({ key, id, moment: "change", reason });
             }
             const card = renderCard(key, incident, {
                 lines: record.lines,
-                checking: record.pending || due,
+                checking: pending || due,
                 now,
             });
             if (card.text !== incident.text) {
-                if (await update(this.env, incident.messageId, card))
+                if (await this.writes(() => update(this.env, id, card)))
                     incident.text = card.text;
                 else failed++;
             }
@@ -292,13 +310,14 @@ export class Watch extends DurableObject {
         if (opening) incident.start = incident.info;
     }
 
-    // Writes one AI line for a moment of an incident, then edits its card
-    // from the newest state. Without a line, "checking why…" just goes.
-    async note({ key, moment, reason, incident: closed }, data) {
-        const record = await this.record(key);
+    // Writes one AI line for a moment of an incident, then edits its card.
+    // Without a line, "checking why…" just goes. The edit goes through the
+    // write queue and only touches the card it was asked for, while open.
+    async note({ key, id, moment, reason, incident: closed }, data) {
+        const record = await this.record(id);
         const incident =
             closed ?? (await this.ctx.storage.get("state"))?.open?.[key];
-        if (!incident) return;
+        if (incident?.messageId !== id) return;
         let text = null;
         try {
             const apiKey = this.env.POLLINATIONS_API_KEY;
@@ -325,19 +344,31 @@ export class Watch extends DurableObject {
         const lines = text
             ? [...record.lines, { at: Date.now(), text }]
             : record.lines;
-        // The incident may have changed, or closed, while the AI was writing.
-        const latest =
-            closed ?? (await this.ctx.storage.get("state"))?.open?.[key];
-        if (closed) await this.ctx.storage.delete(`lines:${key}`);
-        else
-            await this.ctx.storage.put(`lines:${key}`, {
+        const done = await this.writes(async () => {
+            if (closed) {
+                await this.ctx.storage.delete(`lines:${id}`);
+                return update(this.env, id, renderCard(key, closed, { lines }));
+            }
+            if (this.closedCards.has(id)) {
+                // Closed while the AI was writing: keep the line for the
+                // closing card, which is written next.
+                const current = await this.record(id);
+                await this.ctx.storage.put(`lines:${id}`, {
+                    ...current,
+                    lines,
+                });
+                return true;
+            }
+            const latest = (await this.ctx.storage.get("state"))?.open?.[key];
+            if (latest?.messageId !== id) return true;
+            await this.ctx.storage.put(`lines:${id}`, {
                 lines,
                 pending: false,
             });
-        if (!latest) return;
-        const card = renderCard(key, latest, { lines, now: Date.now() });
-        if (!(await update(this.env, latest.messageId, card)))
-            console.error("investigator: edit failed");
+            const card = renderCard(key, latest, { lines, now: Date.now() });
+            return update(this.env, id, card);
+        });
+        if (!done) console.error("investigator: edit failed");
     }
 }
 

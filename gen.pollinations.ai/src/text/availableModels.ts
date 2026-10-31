@@ -226,14 +226,6 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
-        name: "openai/gpt-4o-mini",
-        config: portkeyConfig["openai/gpt-4o-mini"],
-    },
-    {
-        name: "openai/gpt-4o-mini:openrouter:openai",
-        config: portkeyConfig["gpt-4o-mini-openrouter"],
-    },
-    {
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
         transform: omitOpenAISampling,

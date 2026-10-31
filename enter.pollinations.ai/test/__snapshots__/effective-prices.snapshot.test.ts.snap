@@ -2718,30 +2718,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015825,
     },
   },
-  "openai/gpt-4o-mini": {
-    "cost": {
-      "completionTextTokens": 0.0000006,
-      "promptCachedTokens": 0.000000075,
-      "promptTextTokens": 0.00000015,
-    },
-    "price": {
-      "completionTextTokens": 0.0000006,
-      "promptCachedTokens": 0.000000075,
-      "promptTextTokens": 0.00000015,
-    },
-  },
-  "openai/gpt-4o-mini:openrouter:openai": {
-    "cost": {
-      "completionTextTokens": 0.000000633,
-      "promptCachedTokens": 0.000000079125,
-      "promptTextTokens": 0.00000015825,
-    },
-    "price": {
-      "completionTextTokens": 0.000000633,
-      "promptCachedTokens": 0.000000079125,
-      "promptTextTokens": 0.00000015825,
-    },
-  },
   "openai/gpt-5-nano": {
     "cost": {
       "completionTextTokens": 0.0000004,

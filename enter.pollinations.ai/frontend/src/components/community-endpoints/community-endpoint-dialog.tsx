@@ -831,7 +831,7 @@ export function CommunityEndpointDialog({
                                                             : form.modality ===
                                                                 "embedding"
                                                               ? "text-embedding-3-small"
-                                                              : "gpt-4o-mini"
+                                                              : "openai/gpt-5-nano"
                                                 }
                                                 align="end"
                                                 open={providerModelMenuOpen}

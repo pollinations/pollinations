@@ -736,25 +736,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "openai/gpt-4o-mini": () => ({
-        provider: "openai",
-        model: "gpt-4o-mini",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-    }),
-    "gpt-4o-mini-openrouter": () =>
-        createOpenRouterModelConfig({
-            model: "openai/gpt-4o-mini",
-            defaultOptions: {
-                provider: {
-                    only: ["openai"],
-                    ignore: ["cloudflare"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
 
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>

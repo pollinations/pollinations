@@ -744,27 +744,6 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes GPT-4o Mini directly at Standard pricing with a pinned OpenRouter backup", () => {
-        const primary = resolveModelConfig(messages, {
-            model: "openai/gpt-4o-mini",
-            service_tier: "priority",
-        });
-        expect(primary.options.model).toBe("gpt-4o-mini");
-        expect(primary.options.service_tier).toBe("default");
-        expect(primary.options.modelConfig?.directEndpoint).toBe(
-            "https://api.openai.com/v1/chat/completions",
-        );
-        const fallback = resolveModelConfig(messages, {
-            model: "openai/gpt-4o-mini:openrouter:openai",
-        });
-        expect(fallback.options.model).toBe("openai/gpt-4o-mini");
-        expect(fallback.options.provider).toEqual({
-            only: ["openai"],
-            ignore: ["cloudflare"],
-            allow_fallbacks: false,
-        });
-    });
-
     it("pins Mercury to Inception on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inception/mercury-2",

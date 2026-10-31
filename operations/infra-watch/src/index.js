@@ -28,6 +28,17 @@ import {
     step,
     waiting,
 } from "./rules.js";
+import {
+    due,
+    holdDomains,
+    listAll,
+    mark,
+    pending,
+    REVIEW_PROMPT,
+    reviewEvidence,
+    reviewMessage,
+    verdict,
+} from "./setup-holds.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
@@ -145,17 +156,7 @@ export class Watch extends DurableObject {
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
                 // Bulk onboarding sign-ups per email domain, from Enter.
-                const signups = await pipe(
-                    "infra_watch_signups",
-                    {},
-                    {
-                        tinybirdToken: this.env.TINYBIRD_TOKEN,
-                        fetchImpl: fetch,
-                    },
-                ).catch((error) => {
-                    console.error(`signups: ${error.message}`);
-                    return [];
-                });
+                const signups = await this.signups();
                 found = conditions({ ...data, hosts, signups });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
@@ -319,6 +320,7 @@ export class Watch extends DurableObject {
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", next.state);
         for (const note of notes) this.background(() => this.note(note, data));
+        this.background(() => this.reviews());
         if (failed)
             console.error(`${failed} Discord write(s) failed; retrying`);
         return {
@@ -327,6 +329,90 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Sign-up bursts, each domain held while holds are on. A failure only
+    // costs this check its sign-up cards.
+    async signups() {
+        try {
+            const rows = await pipe(
+                "infra_watch_signups",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+            return this.env.SETUP_REWARD_HOLDS === "on"
+                ? await holdDomains(this.env.SETUP_HOLDS, rows)
+                : rows;
+        } catch (error) {
+            console.error(`signups: ${error.message}`);
+            return [];
+        }
+    }
+
+    // Held accounts asking for a review: one post per domain with the AI's
+    // recommendation, within the daily budget. Runs in the background queue.
+    async reviews() {
+        try {
+            const groups = pending(
+                await listAll(this.env.SETUP_HOLDS, "review:"),
+            );
+            if (!groups.size) return;
+            const stored = (await this.ctx.storage.get("reviews")) ?? {};
+            let { picked, state } = due(groups, stored, Date.now());
+            if (!picked.length) return;
+            await this.ctx.storage.put("reviews", state);
+            const tb = {
+                tinybirdToken: this.env.TINYBIRD_TOKEN,
+                fetchImpl: fetch,
+            };
+            const read = (name, params) =>
+                pipe(name, params, tb).catch((error) => ({
+                    error: error.message,
+                }));
+            for (const review of picked) {
+                const [signups, usage] = await Promise.all([
+                    read("infra_watch_review_signups", {
+                        domain: review.domain,
+                    }),
+                    read("infra_watch_review_usage", {
+                        user_ids: review.accounts
+                            .map((a) => a.userId)
+                            .join(","),
+                    }),
+                ]);
+                const facts = reviewEvidence(
+                    review,
+                    signups,
+                    usage,
+                    Date.now(),
+                );
+                let line = null;
+                try {
+                    const key = this.env.POLLINATIONS_API_KEY;
+                    if (!key) throw new Error("POLLINATIONS_API_KEY missing");
+                    line = verdict(
+                        await ask(
+                            key,
+                            facts,
+                            {},
+                            {
+                                system: REVIEW_PROMPT,
+                                specs: [],
+                            },
+                        ),
+                    );
+                } catch (error) {
+                    console.error(`review: ${error.message}`);
+                }
+                const message = reviewMessage(review, facts, line);
+                if (await this.writes(() => post(this.env, message)))
+                    state = mark(state, review, Date.now());
+                else console.error(`review: post failed for ${review.domain}`);
+            }
+            await this.ctx.storage.put("reviews", state);
+        } catch (error) {
+            console.error(`reviews: ${error.message}`);
+        }
     }
 
     // Who is failing and the main error, from Tinybird, refreshed at most

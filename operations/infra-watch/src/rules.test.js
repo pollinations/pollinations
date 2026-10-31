@@ -7,6 +7,7 @@ import {
     duration,
     escalates,
     escalation,
+    kvPut,
     noteworthy,
     RECOVER_CHECKS,
     renderCard,
@@ -476,4 +477,39 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
     assert.match(ended.text, /ENDED: domain farm\.com/);
     assert.match(ended.text, /LASTED +2 min/);
     assert.equal(ended.color, 0x639922);
+});
+
+test("a held burst says so and shows how to release the domain", () => {
+    const card = (hold) =>
+        renderCard(
+            "signup:farm.com",
+            {
+                kind: "SIGNUP_BURST",
+                openedAt: 0,
+                info: {
+                    kind: "SIGNUP_BURST",
+                    domain: "farm.com",
+                    accounts: 31,
+                    since: 0,
+                    hold,
+                },
+            },
+            { now: 0 },
+        ).text;
+    assert.match(card("held"), /Setup quests held/);
+    assert.match(
+        card("held"),
+        /kv key put --binding SETUP_HOLDS --env production --remote 'hold:farm\.com' released/,
+    );
+    assert.match(card("released"), /released by a maintainer/);
+    assert.doesNotMatch(card("released"), /kv key put/);
+    assert.match(card(undefined), /still paid, review the domain/);
+});
+
+test("a command is built only for keys of ids and plain domain names", () => {
+    assert.match(
+        kvPut("review:AbC_1-2", "approved"),
+        /'review:AbC_1-2' approved$/,
+    );
+    assert.doesNotMatch(kvPut("hold:a';rm -rf ~;'.com", "released"), /rm -rf/);
 });

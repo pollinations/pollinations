@@ -277,7 +277,7 @@ export function duration(ms) {
 
 // A box titled with the alert and what it is about. It is as wide as its
 // title or its longest row needs, so a full model id is never cut.
-function panel(title, lines) {
+export function panel(title, lines) {
     const body = lines.map(
         ([field, value]) =>
             `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
@@ -291,6 +291,14 @@ function panel(title, lines) {
         "```",
     ].join("\n");
 }
+
+// A maintainer's command on the SETUP_HOLDS store, run from
+// enter.pollinations.ai/ with a Cloudflare login on the account. Keys hold
+// only ids and plain domain names; anything else gets no command.
+export const kvPut = (key, value) =>
+    /^(hold|review):[A-Za-z0-9._-]+$/.test(key)
+        ? `npx wrangler kv key put --binding SETUP_HOLDS --env production --remote '${key}' ${value}`
+        : "(no command: unexpected characters, check the key by hand)";
 
 const LABEL = {
     GEN_DOWN: "DOWN",
@@ -407,7 +415,13 @@ function openRows(incident, now) {
         return [
             ["ACCOUNTS", `${info.accounts} in 24h`],
             ["SINCE", `${since.slice(0, 16).replace("T", " ")} UTC`],
-            ["REWARDS", "still paid, review the domain"],
+            [
+                "REWARDS",
+                {
+                    held: "Setup quests held",
+                    released: "released by a maintainer",
+                }[info.hold] ?? "still paid, review the domain",
+            ],
         ];
     }
     const rows = [
@@ -475,6 +489,10 @@ export function renderCard(
         ),
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
+    if (!closed && incident.info.hold === "held")
+        parts.push(
+            `Release the domain:\n\`\`\`\n${kvPut(`hold:${incident.info.domain}`, "released")}\n\`\`\``,
+        );
     for (const line of lines)
         parts.push(`↳ <t:${unix(line.at)}:t> ${line.text}`);
     if (checking) parts.push(CHECKING);

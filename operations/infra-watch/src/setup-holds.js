@@ -119,6 +119,21 @@ export function reviewEvidence({ domain, accounts }, signups, usage, now) {
     };
 }
 
+/**
+ * The model's line, only as "APPROVE: reason" or "DECLINE: reason" in plain
+ * text: no Discord formatting, links or mentions reach the post.
+ */
+export function verdict(line) {
+    const match = /^\**(APPROVE|DECLINE)\**\s*[:\-–]\s*(.+)$/i.exec(line ?? "");
+    if (!match) return null;
+    const reason = match[2]
+        .replace(/[a-z]+:\/\/\S*/gi, "")
+        .replace(/[`*_~|<>[\]()@#\\]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    return reason ? `${match[1].toUpperCase()}: ${reason.slice(0, 200)}` : null;
+}
+
 /** The review post: evidence box, the AI's line, then the commands. */
 export function reviewMessage(review, facts, line) {
     const { domain, accounts } = review;

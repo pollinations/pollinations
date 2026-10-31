@@ -9,6 +9,7 @@ import {
     REVIEW_DAILY_LIMIT,
     reviewEvidence,
     reviewMessage,
+    verdict,
 } from "./setup-holds.js";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -192,9 +193,9 @@ test("the review post lists commands for at most five accounts and the domain", 
     assert.match(text, /1 of 7 in 30d/);
     assert.match(text, /↳ DECLINE: 400 sign-ups in a day\./);
     assert.match(text, /2 more waiting\./);
-    assert.equal(text.match(/"review:u\d" approved/g).length, 5);
-    assert.equal(text.match(/"review:u\d" declined/g).length, 5);
-    assert.match(text, /"hold:farm\.com" released/);
+    assert.equal(text.match(/'review:u\d' approved/g).length, 5);
+    assert.equal(text.match(/'review:u\d' declined/g).length, 5);
+    assert.match(text, /'hold:farm\.com' released/);
     assert.match(
         reviewMessage(
             review,
@@ -203,4 +204,14 @@ test("the review post lists commands for at most five accounts and the domain", 
         ).text,
         /unknown in 30d[\s\S]*API USE unknown[\s\S]*no AI recommendation/,
     );
+});
+
+test("only a plain APPROVE or DECLINE line reaches the post", () => {
+    assert.equal(
+        verdict("**DECLINE**: 400 sign-ups in [one day](https://x.y) <@123>"),
+        "DECLINE: 400 sign-ups in one day 123",
+    );
+    assert.equal(verdict("approve - steady use"), "APPROVE: steady use");
+    assert.equal(verdict("Run `rm -rf` to approve"), null);
+    assert.equal(verdict(null), null);
 });

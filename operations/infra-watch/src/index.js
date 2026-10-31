@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import {
     edit,
     exclusive,
+    MAINTAINERS,
     payload,
     send,
     serial,
@@ -42,8 +43,6 @@ import {
 
 const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
-// thomash, elliot
-const MAINTAINERS = ["304378879705874432", "884468469452656732"];
 // The pollinations.ai Discord server, for links to a card.
 const GUILD = "885844321461485618";
 // Who is failing and the main error, for an open model incident, are read
@@ -114,6 +113,10 @@ export class Watch extends DurableObject {
     // Every card write goes through one queue, in order, so a slow AI edit
     // can never land after a card's closing edit.
     writes = serial();
+
+    async lastCheck() {
+        return (await this.ctx.storage.get("checkedAt")) ?? null;
+    }
 
     async check() {
         return (await this.once(() => this.run())) ?? { skipped: true };
@@ -332,6 +335,8 @@ export class Watch extends DurableObject {
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", { ...next.state, unposted });
+        // A completed check: what /health reports to the outside heartbeat.
+        await this.ctx.storage.put("checkedAt", now);
         for (const note of notes) this.background(() => this.note(note, data));
         this.background(() => this.reviews());
         if (failed)
@@ -529,8 +534,12 @@ export default {
     async scheduled(_event, env) {
         await watch(env).check();
     },
-    // Local testing only (workers_dev and routes are off in production).
-    async fetch(_request, env) {
-        return Response.json(await watch(env).check());
+    // GET /health: the last completed check, read by heartbeat.mjs from
+    // outside Cloudflare. It never runs a check; local runs use
+    // /__scheduled (wrangler dev --test-scheduled).
+    async fetch(request, env) {
+        if (new URL(request.url).pathname !== "/health")
+            return new Response("not found", { status: 404 });
+        return Response.json({ checkedAt: await watch(env).lastCheck() });
     },
 };

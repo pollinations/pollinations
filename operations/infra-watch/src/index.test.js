@@ -1,4 +1,5 @@
 import { env, evictDurableObject, runInDurableObject } from "cloudflare:test";
+import { exports } from "cloudflare:workers";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DAILY_LIMIT } from "./investigate.js";
 import { CHECKING, RECOVER_CHECKS } from "./rules.js";
@@ -370,4 +371,19 @@ it("posts one review per domain with the next five requests, then waits", async 
     expect(reviews[0].text).toContain("6 pending, 5 listed here");
     expect(reviews[0].text).toContain("1 more waiting");
     expect(reviews[0].text).not.toContain("decision:u6");
+});
+
+it("serves only /health, which reports the last check and never runs one", async () => {
+    const get = (path) =>
+        exports.default.fetch(`https://infra-watch.test${path}`);
+    const checkedAt = async () =>
+        (await (await get("/health")).json()).checkedAt;
+    expect(await checkedAt()).toBeNull();
+    expect(await checkedAt()).toBeNull();
+    expect((await get("/")).status).toBe(404);
+
+    world.rows = OK;
+    const before = Date.now();
+    await env.WATCH.get(env.WATCH.idFromName("main")).check();
+    expect(await checkedAt()).toBeGreaterThanOrEqual(before);
 });

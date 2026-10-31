@@ -140,7 +140,11 @@ export async function claimReward(
     }: {
         rewardId: string;
         userId: string;
-        lockedQuestIds?: ReadonlySet<string>;
+        /**
+         * Quest ids this account can't claim now (a Setup hold). Required, so
+         * every claim path decides: undefined when no hold applies.
+         */
+        lockedQuestIds: ReadonlySet<string> | undefined;
     },
 ): Promise<ClaimRewardResult> {
     const row = await loadRewardForUser(db, rewardId, userId);

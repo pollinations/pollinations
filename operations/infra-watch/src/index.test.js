@@ -624,7 +624,7 @@ it("tells the community channel when a model answers as another, twice in a row"
     await read(at(13, 5));
     expect(told()).toHaveLength(1);
     expect(told()[0].text).toContain("MISMATCH");
-    expect(told()[0].text).toContain("SERVED  llama-3.1-8b");
+    expect(told()[0].text).toContain("REPORTED llama-3.1-8b");
     await read(at(14, 5));
     expect(told()).toHaveLength(1);
     expect(world.servedReads).toBe(3);

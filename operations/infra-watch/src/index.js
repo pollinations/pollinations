@@ -500,11 +500,11 @@ export class Watch extends DurableObject {
         await this.ctx.storage.put("fallback", { checkedAt: now, told });
     }
 
-    // Community models whose upstream answers with a different model than
-    // the one asked for, read from Tinybird once an hour from 5 minutes past,
+    // Community models whose upstream reports a different model than the
+    // one asked for, read from Tinybird once an hour from 5 minutes past,
     // over the last full UTC hour. One post to the community channel, no
-    // ping, no AI. An hour that could not be read counts as no reading; a
-    // post Discord refused is tried again the next hour.
+    // ping, no AI. An hour that could not be read ends a run; a post Discord
+    // refused is tried again the next hour if the name is reported again.
     async mismatches(catalog, now) {
         const hour = Math.floor(now / HOUR_MS);
         const saved = (await this.ctx.storage.get("mismatch")) ?? {};

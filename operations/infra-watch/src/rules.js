@@ -836,33 +836,33 @@ const agree = (a, b) => {
     const [x, y] = [servedName(a), servedName(b)];
     return x.includes(y) || y.includes(x);
 };
-// A notice's key in `told`: the model with the name that answered.
+// A notice's key in `told`: the model with the name its upstream reported.
 export const mismatchKey = (m) => `${m.model} ${m.served}`;
 // Models one notice names; the rest are due again the next hour.
 const MISMATCHES_SHOWN = 10;
+const HOUR_MS = 60 * 60 * 1000;
 
-// Folds one hour's readings into `seen` (model → declared, served and how
-// many readings in a row it answered that way). A model without answers
-// this hour keeps its count; one that agrees is dropped; a new answer
-// starts again at 1. Due: the same different answer twice in a row, its
-// model and answer not told in the last week. Private models are never
-// tracked or named.
+// One hour's reading becomes `seen`: each listed model whose upstream
+// reported a different model this hour, with how many hours in a row it
+// reported that name. A run counts only hours that follow each other: an
+// hour without answers, or one that could not be read, starts it again.
+// Due: reported differently this hour and the hour before, the model and
+// name not told in the last week. Nothing older is kept, so earlier state
+// never posts on its own. Private models are never tracked or named.
 export function servedMismatches(rows, catalog, { seen = {}, told = {} }, now) {
+    const hour = Math.floor(now / HOUR_MS);
     const listed = new Set(
         catalog.filter((m) => m.community && !m.agent).map((m) => m.name),
     );
-    const next = Object.fromEntries(
-        Object.entries(seen).filter(([model]) => listed.has(model)),
-    );
+    const next = {};
     for (const { model, declared, served } of rows) {
-        if (!listed.has(model)) continue;
-        if (agree(declared, served)) {
-            delete next[model];
-            continue;
-        }
+        if (!listed.has(model) || agree(declared, served)) continue;
+        const last = seen[model];
         const streak =
-            next[model]?.served === served ? next[model].streak + 1 : 1;
-        next[model] = { declared, served, streak };
+            last?.hour === hour - 1 && last.served === served
+                ? last.streak + 1
+                : 1;
+        next[model] = { declared, served, streak, hour };
     }
     const recent = Object.fromEntries(
         Object.entries(told).filter(([, at]) => now - at < FALLBACK_QUIET_MS),
@@ -882,7 +882,8 @@ export function servedMismatches(rows, catalog, { seen = {}, told = {} }, now) {
 const printable = (name) => String(name).replace(/[`\p{Cc}]/gu, "");
 
 // One grouped notice for the community channel, as the monitor posted it:
-// each model with the model it asks for and the name that answered. No ping.
+// each model with the model it asks for and the name its upstream reported.
+// No ping. The provider writes that name, so it proves nothing by itself.
 export function mismatchCard(due) {
     const color = COLOR.PRIMARY_WEAK;
     return {
@@ -892,12 +893,13 @@ export function mismatchCard(due) {
                 due.flatMap((m) => [
                     ["MODEL", community(m.model)],
                     ["DECLARED", printable(m.declared)],
-                    ["SERVED", printable(m.served)],
+                    ["REPORTED", printable(m.served)],
                 ]),
                 color,
                 60,
             ),
-            "Requests to each model are currently answered by its SERVED model, as its upstream names it.",
+            "Each model's upstream reported a different model than the one it is asked for.",
+            "The provider writes that name: a person must review it before any conclusion about abuse.",
         ].join("\n"),
         ping: false,
         color,

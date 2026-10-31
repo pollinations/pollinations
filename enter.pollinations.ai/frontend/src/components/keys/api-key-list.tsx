@@ -324,27 +324,24 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             {/* Secret and app keys share one card: tab buttons switch
-                between them. */}
-            <Section
-                title="Keys"
-                id="api-keys"
-                action={
-                    keyTab === "secret"
+                between them, with the open tab's Create on the same row. */}
+            <Section title="Keys" id="api-keys">
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                        {KEY_TABS.map(({ value, label }) => (
+                            <TabButton
+                                key={value}
+                                active={keyTab === value}
+                                onClick={() => setKeyTab(value)}
+                                ariaLabel={label}
+                            >
+                                {label}
+                            </TabButton>
+                        ))}
+                    </div>
+                    {keyTab === "secret"
                         ? sortedApiKeys.length > 0 && keyAction
-                        : sortedAppKeys.length > 0 && appAction
-                }
-            >
-                <div className="flex flex-wrap gap-1.5">
-                    {KEY_TABS.map(({ value, label }) => (
-                        <TabButton
-                            key={value}
-                            active={keyTab === value}
-                            onClick={() => setKeyTab(value)}
-                            ariaLabel={label}
-                        >
-                            {label}
-                        </TabButton>
-                    ))}
+                        : sortedAppKeys.length > 0 && appAction}
                 </div>
                 {keyTab === "secret" ? (
                     <>

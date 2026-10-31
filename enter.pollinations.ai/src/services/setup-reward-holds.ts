@@ -5,15 +5,16 @@ import { registrableDomain } from "./setup-reward-signups.ts";
 
 /**
  * Setup reward holds live in the SETUP_HOLDS KV store, shared with
- * infra-watch:
- *   hold:<domain>    "held" by infra-watch after a sign-up burst on the
- *                    domain while holds are on; "released" by a maintainer.
- *   review:<userId>  "pending", with the account's evidence as metadata,
- *                    once the account asks for a review. A maintainer
- *                    replaces it with "approved" or "declined", which drops
- *                    the metadata.
- * An account is held while its email domain is held, it has bought no pollen
- * pack and its review isn't approved.
+ * infra-watch. Each key has one writer, so an automatic write never undoes a
+ * maintainer's:
+ *   hold:<domain>      "held": infra-watch, on a sign-up burst while holds
+ *                      are on
+ *   release:<domain>   "released": a maintainer, which ends the hold
+ *   review:<userId>    "pending", with the account's evidence as metadata:
+ *                      here, when a held account asks
+ *   decision:<userId>  "approved" or "declined": a maintainer
+ * An account is held while its email domain is held and not released, it
+ * has bought no pollen pack and its review isn't approved.
  */
 export type SetupHold = { review: "pending" | "declined" | null };
 
@@ -28,20 +29,26 @@ export async function setupHold(
 ): Promise<SetupHold | null> {
     const domain = registrableDomain(user.email);
     if (!domain) return null;
-    const [hold, review, purchases] = await Promise.all([
+    const [hold, release, review, decision, purchases] = await Promise.all([
         env.SETUP_HOLDS.get(`hold:${domain}`),
+        env.SETUP_HOLDS.get(`release:${domain}`),
         env.SETUP_HOLDS.get(`review:${user.id}`),
+        env.SETUP_HOLDS.get(`decision:${user.id}`),
         db
             .select({ id: stripeCheckoutCredits.sessionId })
             .from(stripeCheckoutCredits)
             .where(eq(stripeCheckoutCredits.userId, user.id))
             .limit(1),
     ]);
-    if (hold !== "held" || review === "approved" || purchases.length > 0)
+    if (
+        hold !== "held" ||
+        release !== null ||
+        decision === "approved" ||
+        purchases.length > 0
+    )
         return null;
-    return {
-        review: review === "pending" || review === "declined" ? review : null,
-    };
+    if (decision === "declined") return { review: "declined" };
+    return { review: review === null ? null : "pending" };
 }
 
 /**

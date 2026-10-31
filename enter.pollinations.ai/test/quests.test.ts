@@ -3000,8 +3000,8 @@ test("setup holds: a purchase, an approved review or a released domain unlocks; 
         .set({ email: `${sub}@a1.lock.test` })
         .where(eq(schema.user.id, sub));
     await env.SETUP_HOLDS.put("hold:lock.test", "held");
-    await env.SETUP_HOLDS.put(`review:${declined}`, "declined");
-    await env.SETUP_HOLDS.put(`review:${approved}`, "approved");
+    await env.SETUP_HOLDS.put(`decision:${declined}`, "declined");
+    await env.SETUP_HOLDS.put(`decision:${approved}`, "approved");
     await db.insert(schema.stripeCheckoutCredits).values({
         sessionId: "cs_lock",
         eventId: "evt_lock",
@@ -3021,7 +3021,9 @@ test("setup holds: a purchase, an approved review or a released domain unlocks; 
         { review: "declined" },
     );
 
-    await env.SETUP_HOLDS.put("hold:lock.test", "released");
+    // A release outlasts infra-watch writing the hold again.
+    await env.SETUP_HOLDS.put("release:lock.test", "released");
+    await env.SETUP_HOLDS.put("hold:lock.test", "held");
     expect(await holdOf(sub)).toBeNull();
 });
 

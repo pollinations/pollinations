@@ -378,11 +378,19 @@ it("a review card lists the oldest requests, follows decisions and closes", asyn
     // The AI's verdict lands on the card.
     expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
 
-    await env.SETUP_HOLDS.put("decision:u0", "approved");
-    await stub.check();
+    // Each decision changes the accounts listed: the old verdict goes, and
+    // the AI looks again, however many rounds it takes.
+    for (let i = 0; i < 4; i++) {
+        await env.SETUP_HOLDS.put(`decision:u${i}`, "approved");
+        await stub.check();
+        await settle(stub);
+        const card = edits("m1").at(-1).text;
+        expect(card).not.toContain(`Line ${i + 1}.`);
+        expect(card).toContain(`APPROVE: Line ${i + 2}.`);
+    }
     expect(edits("m1").at(-1).text).toContain("'decision:u5' approved");
 
-    for (let i = 1; i < 6; i++)
+    for (let i = 4; i < 6; i++)
         await env.SETUP_HOLDS.put(`decision:u${i}`, "declined");
     await stub.check();
     await settle(stub);
@@ -404,4 +412,34 @@ it("serves only /health, which reports the last check and never runs one", async
     const before = Date.now();
     await env.WATCH.get(env.WATCH.idFromName("main")).check();
     expect(await checkedAt()).toBeGreaterThanOrEqual(before);
+});
+
+it("a review the daily budget skipped is investigated once the budget resets", async () => {
+    const stub = watch();
+    world.rows = OK;
+    await env.SETUP_HOLDS.put("hold:budget.com", "held");
+    await env.SETUP_HOLDS.put("review:b0", "pending", {
+        metadata: {
+            domain: "budget.com",
+            requestedAt: Date.now(),
+            createdAt: Date.now(),
+            rewards: 1,
+            rewardPollen: 0.25,
+        },
+    });
+    const budget = (day) =>
+        runInDurableObject(stub, (_, state) =>
+            state.storage.put("ai", { day, count: DAILY_LIMIT }),
+        );
+    await budget(new Date().toISOString().slice(0, 10));
+    await stub.check();
+    await settle(stub);
+    expect(world.answers).toBe(0);
+    expect(world.writes.some((w) => w.text.includes("APPROVE"))).toBe(false);
+
+    // A new day: the next check asks for the missing verdict.
+    await budget("2000-01-01");
+    await stub.check();
+    await settle(stub);
+    expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
 });

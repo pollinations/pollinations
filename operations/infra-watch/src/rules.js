@@ -267,8 +267,6 @@ export function noteworthy(before, now) {
         return `final success moved from ${pct(before.success)} to ${pct(now.success)}`;
     if ((before.failingCallers ?? 0) <= 1 && (now.failingCallers ?? 0) > 1)
         return `failing callers went from ${before.failingCallers ?? 0} to ${now.failingCallers}`;
-    if (now.asking != null && now.asking !== before.asking)
-        return "the accounts listed for review changed";
     return null;
 }
 
@@ -587,7 +585,14 @@ export function renderCard(
         ),
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
-    for (const line of lines)
+    // A review card shows only the verdict on the accounts it lists now.
+    const shown =
+        incident.kind === "REVIEW"
+            ? lines
+                  .filter((l) => l.asking === snapshot(incident).asking)
+                  .slice(-1)
+            : lines;
+    for (const line of shown)
         parts.push(
             ["↳", BADGE[line.color], `<t:${unix(line.at)}:t>`, line.text]
                 .filter(Boolean)

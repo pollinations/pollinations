@@ -586,9 +586,29 @@ test("a review card lists the five oldest requests, moves on as they're decided,
         renderCard("review:farm.com", card, { now: MIN }).text,
         /'decision:u6' approved/,
     );
-    assert.equal(
-        noteworthy(snapshot({ ...card, info: info }), snapshot(card)),
-        "the accounts listed for review changed",
+    // Only the verdict on the accounts listed now is shown.
+    const verdictOn = (accounts, text) => ({
+        at: 0,
+        text,
+        asking: accounts.map((a) => a.userId).join(","),
+    });
+    const stale = verdictOn(info.accounts, "APPROVE: the first five.");
+    const shown = (lines) =>
+        renderCard("review:farm.com", card, { now: MIN, lines }).text;
+    assert.doesNotMatch(shown([stale]), /first five/);
+    assert.match(
+        shown([
+            stale,
+            verdictOn(card.info.accounts, "DECLINE: the next five."),
+        ]),
+        /DECLINE: the next five\./,
+    );
+    assert.doesNotMatch(
+        shown([
+            stale,
+            verdictOn(card.info.accounts, "DECLINE: the next five."),
+        ]),
+        /first five/,
     );
 
     r = step(r.state, {}, 2 * MIN);

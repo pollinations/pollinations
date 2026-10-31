@@ -299,7 +299,13 @@ export class Watch extends DurableObject {
                     pending: checking,
                     pendingAt: now,
                 });
-                if (checking) notes.push({ key, id: saved.id, moment: "open" });
+                if (checking)
+                    notes.push({
+                        key,
+                        id: saved.id,
+                        moment: "open",
+                        info: incident.info,
+                    });
                 continue;
             }
 
@@ -315,14 +321,20 @@ export class Watch extends DurableObject {
             const id = incident.messageId;
             const record = await this.record(id);
             const pending = waiting(record, now);
-            const reason = noteworthy(incident.noted, current);
+            // A review card needs a verdict on exactly the accounts it lists
+            // now, whatever its history; one the budget skipped is tried
+            // again on the next check.
+            const review = incident.kind === "REVIEW";
+            const reason = review
+                ? "the accounts listed for review changed"
+                : noteworthy(incident.noted, current);
+            const wanted = review
+                ? !record.lines.some((l) => l.asking === current.asking)
+                : Boolean(reason) &&
+                  now - incident.notedAt >= NOTE_EVERY_MS &&
+                  record.lines.length < MAX_LINES - 1;
             const due =
-                Boolean(reason) &&
-                !pending &&
-                now - incident.notedAt >= NOTE_EVERY_MS &&
-                record.lines.length < MAX_LINES - 1 &&
-                investigates(incident.kind) &&
-                reserve();
+                wanted && !pending && investigates(incident.kind) && reserve();
             if (due) {
                 Object.assign(incident, { noted: current, notedAt: now });
                 await this.ctx.storage.put(`lines:${id}`, {
@@ -330,7 +342,13 @@ export class Watch extends DurableObject {
                     pending: true,
                     pendingAt: now,
                 });
-                notes.push({ key, id, moment: "change", reason });
+                notes.push({
+                    key,
+                    id,
+                    moment: "change",
+                    reason,
+                    info: incident.info,
+                });
             }
             const card = renderCard(key, incident, {
                 lines: record.lines,
@@ -449,13 +467,15 @@ export class Watch extends DurableObject {
     // Without a line, "checking why…" just goes. The edit goes through the
     // write queue and only touches the card it was asked for: while open, or
     // by the closing line's last edit.
-    async note({ key, id, moment, reason }, data) {
+    async note({ key, id, moment, reason, info }, data) {
         const closing = moment === "closed";
         const record = await this.record(id);
         const incident = closing
             ? record.closed?.incident
             : (await this.ctx.storage.get("state"))?.open?.[key];
         if (incident?.messageId !== id) return;
+        // A review is about the accounts listed when it was asked for.
+        const review = incident.kind === "REVIEW" && (info ?? incident.info);
         let text = null;
         try {
             const apiKey = this.env.POLLINATIONS_API_KEY;
@@ -466,45 +486,53 @@ export class Watch extends DurableObject {
             };
             const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };
             const previous = record.lines.map((l) => l.text);
-            text =
-                incident.kind === "REVIEW"
-                    ? verdict(
-                          await ask(
-                              apiKey,
-                              {
-                                  moment,
-                                  reason,
-                                  previous,
-                                  ...(await this.reviewFacts(incident.info)),
-                              },
-                              {},
-                              { system: REVIEW_PROMPT, specs: [] },
-                          ),
-                      )
-                    : await ask(
+            text = review
+                ? verdict(
+                      await ask(
                           apiKey,
                           {
                               moment,
                               reason,
-                              footprint,
                               previous,
-                              ...evidence({ info: incident.info }, data),
+                              ...(await this.reviewFacts(review)),
                           },
-                          toolsFor(data, tinybird),
-                      );
+                          {},
+                          { system: REVIEW_PROMPT, specs: [] },
+                      ),
+                  )
+                : await ask(
+                      apiKey,
+                      {
+                          moment,
+                          reason,
+                          footprint,
+                          previous,
+                          ...evidence({ info: incident.info }, data),
+                      },
+                      toolsFor(data, tinybird),
+                  );
             if (!text) console.error("investigator: no answer");
         } catch (error) {
             console.error(`investigator: ${error.message}`);
         }
-        // The line keeps the card's colour from when the AI looked.
+        // The line keeps the card's colour from when the AI looked; a
+        // verdict, the accounts it examined.
         const line = text && {
             at: Date.now(),
             text,
             color: cardColor(incident),
+            ...(review && {
+                asking: review.accounts.map((a) => a.userId).join(","),
+            }),
         };
         const done = await this.writes(async () => {
             const current = await this.record(id);
-            const lines = line ? [...current.lines, line] : current.lines;
+            // A review card keeps only its latest verdict.
+            const lines = !line
+                ? current.lines
+                : review
+                  ? [line]
+                  : [...current.lines, line];
             if (current.closed) {
                 // A closed card's lines wait for its last edit: written now
                 // by the closing line, or by a later check if that fails.

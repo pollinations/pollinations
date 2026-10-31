@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "pokemon",
+                name: "PokéAPI MCP",
+                description: "Look up Pokémon data and compare two Pokémon.",
+                url: "https://gen.pollinations.ai/mcp/pokemon",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

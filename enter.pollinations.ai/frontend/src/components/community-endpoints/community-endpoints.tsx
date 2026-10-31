@@ -12,6 +12,7 @@ import {
     Input,
     Section,
     Surface,
+    TabButton,
     TokensIcon,
 } from "@pollinations/ui";
 import {
@@ -92,6 +93,11 @@ function ProviderProfileField({
     );
 }
 
+const LISTING_TABS = [
+    { value: "agents", label: "Agents" },
+    { value: "models", label: "Models" },
+] as const;
+
 export function DeploymentsPlaceholder({
     canPublish = false,
     error,
@@ -101,9 +107,7 @@ export function DeploymentsPlaceholder({
     error?: string | null;
     onRetry?: () => void;
 }) {
-    const titles = canPublish
-        ? ["Publisher info", "Agents", "Models"]
-        : ["Agents", "Models"];
+    const titles = canPublish ? ["Publisher info", "Listings"] : ["Listings"];
     if (!error) return <PageLoading titles={titles} />;
     return (
         <>
@@ -127,6 +131,8 @@ export function CommunityEndpoints({
     fallbackOptions,
     healthByModelId,
 }: CommunityEndpointsProps) {
+    const [listingTab, setListingTab] =
+        useState<(typeof LISTING_TABS)[number]["value"]>("agents");
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [agents, setAgents] = useState<ManagedAgent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -533,72 +539,92 @@ export function CommunityEndpoints({
                 </Section>
             )}
             {error && <Alert intent="danger">{error}</Alert>}
+            {/* Agents and models share one card: normal tab buttons switch
+                between them. */}
             <Section
-                title="Agents"
-                id="agents"
-                action={agentEndpoints.length > 0 && agentAction}
+                title="Listings"
+                id="listings"
+                action={
+                    listingTab === "agents"
+                        ? agentEndpoints.length > 0 && agentAction
+                        : modelEndpoints.length > 0 && modelAction
+                }
             >
-                <div className="flex flex-col gap-3">
-                    {agentEndpoints.length === 0 ? (
-                        <Surface className="p-6 text-center">
-                            <div className="mb-2">{agentAction}</div>
-                            <p className="text-sm text-theme-text-muted">
-                                Build from a prompt and model, or deploy
-                                agent.ts from GitHub.
-                            </p>
-                        </Surface>
-                    ) : (
-                        agentEndpoints.map(renderEndpointCard)
-                    )}
+                <div className="flex flex-wrap gap-1.5">
+                    {LISTING_TABS.map(({ value, label }) => (
+                        <TabButton
+                            key={value}
+                            active={listingTab === value}
+                            onClick={() => setListingTab(value)}
+                            ariaLabel={label}
+                        >
+                            {label}
+                        </TabButton>
+                    ))}
                 </div>
-                {!canPublish && (
-                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Private agents do not need approval. Public agents
-                            require publishing access. Request it through the{" "}
-                            {publisherAccessRequestLink}.
-                        </span>
-                    </p>
-                )}
-            </Section>
-
-            <Section
-                title="Models"
-                id="models"
-                action={modelEndpoints.length > 0 && modelAction}
-            >
-                <div className="flex flex-col gap-3">
-                    {modelEndpoints.length === 0 ? (
-                        <Surface className="p-6 text-center">
-                            <div className="mb-2">{modelAction}</div>
-                            {canPublish && (
-                                <p className="text-sm text-theme-text-muted">
-                                    Register an OpenAI-compatible endpoint.
-                                </p>
-                            )}
-                        </Surface>
-                    ) : (
-                        modelEndpoints.map(renderEndpointCard)
-                    )}
-                </div>
-                {(modelEndpoints.length > 0 || !canPublish) && (
-                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            {canPublish ? (
-                                <>
-                                    Private models are callable only by you and
-                                    shown only when model lists use your key.
-                                    Make one public to list it for everyone in{" "}
-                                    <strong>/models</strong> and bill callers at
-                                    your configured pricing.
-                                </>
+                {listingTab === "agents" ? (
+                    <>
+                        <div className="flex flex-col gap-3">
+                            {agentEndpoints.length === 0 ? (
+                                <Surface className="p-6 text-center">
+                                    <div className="mb-2">{agentAction}</div>
+                                    <p className="text-sm text-theme-text-muted">
+                                        Build from a prompt and model, or deploy
+                                        agent.ts from GitHub.
+                                    </p>
+                                </Surface>
                             ) : (
-                                privateModelGuidance
+                                agentEndpoints.map(renderEndpointCard)
                             )}
-                        </span>
-                    </p>
+                        </div>
+                        {!canPublish && (
+                            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                                <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    Private agents do not need approval. Public
+                                    agents require publishing access. Request it
+                                    through the {publisherAccessRequestLink}.
+                                </span>
+                            </p>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <div className="flex flex-col gap-3">
+                            {modelEndpoints.length === 0 ? (
+                                <Surface className="p-6 text-center">
+                                    <div className="mb-2">{modelAction}</div>
+                                    {canPublish && (
+                                        <p className="text-sm text-theme-text-muted">
+                                            Register an OpenAI-compatible
+                                            endpoint.
+                                        </p>
+                                    )}
+                                </Surface>
+                            ) : (
+                                modelEndpoints.map(renderEndpointCard)
+                            )}
+                        </div>
+                        {(modelEndpoints.length > 0 || !canPublish) && (
+                            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                                <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    {canPublish ? (
+                                        <>
+                                            Private models are callable only by
+                                            you and shown only when model lists
+                                            use your key. Make one public to
+                                            list it for everyone in{" "}
+                                            <strong>/models</strong> and bill
+                                            callers at your configured pricing.
+                                        </>
+                                    ) : (
+                                        privateModelGuidance
+                                    )}
+                                </span>
+                            </p>
+                        )}
+                    </>
                 )}
             </Section>
 

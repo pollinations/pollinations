@@ -26,7 +26,6 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
@@ -173,7 +172,7 @@ export const mcpRoutes = new Hono<Env>()
             })),
         }),
     )
-    .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
+    .use("/mcp/:serverId", auth())
     .all("/mcp/:serverId", async (c) => {
         const user = c.var.auth.requireUser();
         const message =
@@ -212,7 +211,6 @@ export const mcpRoutes = new Hono<Env>()
             if (usage) {
                 try {
                     await settleUsage(c, server, usage, startedAt);
-                    await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
                 } catch (error) {
                     c.var.log.error("MCP billing failed: {error}", {
                         error:

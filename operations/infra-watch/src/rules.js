@@ -710,22 +710,26 @@ export function fallbackShares(rows, catalog) {
 const VIA_SHOWN = 3;
 
 // A share's keys in `told`: the model with each fallback its notice names.
+const pair = (model, v) => `${model} ${v.model ?? "private"}`;
 export const fallbackPairs = (share) =>
-    share.via
-        .slice(0, VIA_SHOWN)
-        .map((v) => `${share.model} ${v.model ?? "private"}`);
+    share.via.slice(0, VIA_SHOWN).map((v) => pair(share.model, v));
 
-// The shares to tell now: those naming a model and fallback pair not told
-// in the last week. `told` keeps when each pair was told; older ones are
+// The shares to tell now, each naming only its fallbacks not told about in
+// the last week. `told` keeps when each pair was told; older ones are
 // dropped.
 export function dueFallbacks(shares, told = {}, now) {
     const recent = Object.fromEntries(
         Object.entries(told).filter(([, at]) => now - at < FALLBACK_QUIET_MS),
     );
     return {
-        due: shares.filter((s) =>
-            fallbackPairs(s).some((pair) => !(pair in recent)),
-        ),
+        due: shares
+            .map((s) => ({
+                ...s,
+                via: s.via
+                    .slice(0, VIA_SHOWN)
+                    .filter((v) => !(pair(s.model, v) in recent)),
+            }))
+            .filter((s) => s.via.length > 0),
         told: recent,
     };
 }

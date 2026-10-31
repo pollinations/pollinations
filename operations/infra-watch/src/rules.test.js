@@ -850,6 +850,17 @@ test("each model and fallback pair is told once a week, even when they alternate
     // later are not news.
     const both = Object.fromEntries(fallbackPairs(ab).map((p) => [p, now]));
     assert.deepEqual(dueFallbacks([ba], both, now + 60 * MIN).due, []);
+    // Then leaning on a and a new c: the notice names and marks only c, so
+    // a's week isn't restarted. The total stays the model's own.
+    const [news] = dueFallbacks(
+        [via("community/x/a", "community/x/c")],
+        both,
+        now + 60 * MIN,
+    ).due;
+    assert.deepEqual(news.via, [{ model: "community/x/c", rescued: 10 }]);
+    assert.equal(news.rescued, 20);
+    assert.deepEqual(fallbackPairs(news), [`${LAGUNA} community/x/c`]);
+    assert.doesNotMatch(plain(fallbackCard(news).text), /x\/a/);
     // A week on, a is news again; its old notice is dropped.
     const later = dueFallbacks([a], told, now + day);
     assert.deepEqual(later.due, [a]);

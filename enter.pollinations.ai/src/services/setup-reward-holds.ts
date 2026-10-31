@@ -29,9 +29,13 @@ export async function setupHold(
 ): Promise<SetupHold | null> {
     const domain = registrableDomain(user.email);
     if (!domain) return null;
-    const [hold, release, review, decision, purchases] = await Promise.all([
+    const [hold, release] = await Promise.all([
         env.SETUP_HOLDS.get(`hold:${domain}`),
         env.SETUP_HOLDS.get(`release:${domain}`),
+    ]);
+    // Almost no domain is held: stop before the account's own lookups.
+    if (hold !== "held" || release !== null) return null;
+    const [review, decision, purchases] = await Promise.all([
         env.SETUP_HOLDS.get(`review:${user.id}`),
         env.SETUP_HOLDS.get(`decision:${user.id}`),
         db
@@ -40,13 +44,12 @@ export async function setupHold(
             .where(eq(stripeCheckoutCredits.userId, user.id))
             .limit(1),
     ]);
-    if (
-        hold !== "held" ||
-        release !== null ||
-        decision === "approved" ||
-        purchases.length > 0
-    )
+    if (decision === "approved") return null;
+    if (purchases.length > 0) {
+        // A purchase unlocked it: its review request waits for nobody now.
+        if (review !== null) await env.SETUP_HOLDS.delete(`review:${user.id}`);
         return null;
+    }
     if (decision === "declined") return { review: "declined" };
     return { review: review === null ? null : "pending" };
 }

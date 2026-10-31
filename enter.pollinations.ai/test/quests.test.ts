@@ -2919,11 +2919,14 @@ test("setup holds: a purchase, an approved review or a released domain unlocks; 
         userId: buyer,
         pollenCredited: 5,
     });
+    await env.SETUP_HOLDS.put(`review:${buyer}`, "pending");
     const holdOf = async (id: string) => setupHold(env, db, await holdUser(id));
 
     expect(await holdOf(declined)).toEqual({ review: "declined" });
     expect(await holdOf(approved)).toBeNull();
     expect(await holdOf(buyer)).toBeNull();
+    // The purchase also takes the buyer's request off the review queue.
+    expect(await env.SETUP_HOLDS.get(`review:${buyer}`)).toBeNull();
     // A subdomain is held with its registrable domain.
     expect(await holdOf(sub)).toEqual({ review: null });
     // A declined review isn't asked again.

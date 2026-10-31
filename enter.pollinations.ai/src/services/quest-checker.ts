@@ -103,12 +103,14 @@ export async function checkQuestsForUser(
                 ),
             );
         // A held account's Setup rewards wait for a purchase or a review.
-        const held = await setupHold(env, ctx.db, user);
+        const lockedQuestIds = (await setupHold(env, ctx.db, user))
+            ? await listSetupQuestIds(ctx)
+            : undefined;
         for (const reward of pending) {
             await claimReward(ctx.db, {
                 rewardId: reward.id,
                 userId: user.id,
-                lockedQuestIds: held ? await listSetupQuestIds(ctx) : undefined,
+                lockedQuestIds,
             });
         }
     }

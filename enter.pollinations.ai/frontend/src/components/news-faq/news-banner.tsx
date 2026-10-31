@@ -339,7 +339,6 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
             <Surface
                 as="li"
                 key={item.title}
-                variant="card-themed"
                 className="flex grow basis-72 flex-col gap-3 p-5 sm:p-6"
             >
                 <div className="flex items-center gap-3">

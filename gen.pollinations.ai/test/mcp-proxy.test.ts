@@ -46,6 +46,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "image-diff",
+                name: "Image Diff",
+                description:
+                    "Compare two images and get a structured description of how they differ.",
+                url: "https://gen.pollinations.ai/mcp/image-diff",
+                pricing: {
+                    description:
+                        "Comparison tools use the selected vision model's listed rate. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:

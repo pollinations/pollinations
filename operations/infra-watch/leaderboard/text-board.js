@@ -239,8 +239,10 @@ function buildDiscordMarkdown({ date, totals, rows, speedChampions }) {
 }
 
 // The day's board and post from every community text model's 24-hour row,
-// or null when none was busy enough to rank.
-export function textBoard(all, date) {
+// or null when none was busy enough to rank. Only `listed` models, the
+// public ones, count: a private model is never ranked or totalled.
+export function textBoard(rows, date, listed) {
+    const all = rows.filter((r) => listed.has(r.model));
     const ranked = all
         .filter((r) => r.requests >= MIN_REQUESTS)
         .sort((a, b) => b.total_tokens - a.total_tokens);

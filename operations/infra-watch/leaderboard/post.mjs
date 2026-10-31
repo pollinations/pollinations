@@ -47,6 +47,21 @@ async function rows(pipe) {
     return (await res.json()).data;
 }
 
+// Public community models by every name a pipe row can carry. Private
+// models are never in this catalog, so they never reach a board.
+async function listed() {
+    const res = await fetch(
+        "https://gen.pollinations.ai/models?community=true&reliability=all",
+    );
+    if (!res.ok) throw new Error(`models -> ${res.status}`);
+    const body = await res.json();
+    return new Set(
+        (Array.isArray(body) ? body : body.data)
+            .flatMap((m) => [m.name, ...(m.aliases ?? [])])
+            .map((name) => name.replace(/^community\//, "")),
+    );
+}
+
 // The whole board at 1200px wide, once its embedded fonts are in. The page
 // needs no script, so none runs.
 async function screenshot(browser, html) {
@@ -81,6 +96,7 @@ async function post(boards) {
         throw new Error(`discord -> ${res.status} ${await res.text()}`);
 }
 
+const publicModels = await listed();
 const browser = await puppeteer.launch({
     executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome",
     // GitHub's Ubuntu 24.04 runners block Chrome's user-namespace sandbox;
@@ -95,6 +111,7 @@ try {
             const board = BOARDS[name].build(
                 await rows(BOARDS[name].pipe),
                 date,
+                publicModels,
             );
             if (!board) {
                 console.log(`${name}: no model busy enough, skipped`);

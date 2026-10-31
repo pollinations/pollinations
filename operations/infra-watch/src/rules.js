@@ -74,6 +74,7 @@ export function conditions({
     official,
     hosts = { public: true, upstream: true },
     analyticsDown,
+    signups = [],
 }) {
     // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
     // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
@@ -105,6 +106,9 @@ export function conditions({
     if (baseline10 >= PLATFORM_MIN_BASELINE && now10 < baseline10 / 2) {
         found.platform = { kind: "PLATFORM_DROP", now10, baseline10 };
     }
+    // Private email domains with bulk onboarding sign-ups, from Enter.
+    for (const signup of signups)
+        found[`signup:${signup.domain}`] = { kind: "SIGNUP_BURST", ...signup };
     return found;
 }
 
@@ -118,8 +122,12 @@ const CONFIRMED = new Set([
 const HOSTS = { gen: true, public: true, upstream: true };
 
 // Keys whose recovery we announce. A weak primary just expires: callers
-// were never affected.
-const RECOVERS = (key) => !key.startsWith("primary:");
+// were never affected. So does a sign-up burst once its 24 hours pass.
+const RECOVERS = (key) =>
+    !key.startsWith("primary:") && !key.startsWith("signup:");
+// A sign-up burst is posted once a day while it lasts.
+const cooldownOf = (key) =>
+    key.startsWith("signup:") ? 24 * 60 * 60 * 1000 : COOLDOWN_MS;
 
 // Pure state transition: which messages to post, and the next state.
 export function step(state, found, now, recent = []) {
@@ -137,7 +145,7 @@ export function step(state, found, now, recent = []) {
         const needs = CONFIRMED.has(key) ? CONFIRM_CHECKS : 1;
         if (streak < needs) continue;
         const prev = active[key];
-        if (prev && now - prev.postedAt < COOLDOWN_MS) continue;
+        if (prev && now - prev.postedAt < cooldownOf(key)) continue;
         active[key] = { postedAt: now, kind: info.kind };
         posts.push({ type: "alert", key, info });
     }
@@ -147,7 +155,7 @@ export function step(state, found, now, recent = []) {
         if (found.gen && key !== "gen") continue;
         if (found.analytics && !HOSTS[key]) continue;
         if (!RECOVERS(key)) {
-            if (now - prev.postedAt >= COOLDOWN_MS) delete active[key];
+            if (now - prev.postedAt >= cooldownOf(key)) delete active[key];
             continue;
         }
         // A model needs RECOVER_CHECKS clean checks in a row to count as
@@ -199,6 +207,7 @@ const TITLE = {
     PLATFORM_DROP: () => "DEGRADED: platform-wide",
     DEGRADED: (info) => `DEGRADED: ${info.model}`,
     PRIMARY_WEAK: (info) => `PRIMARY WEAK: ${info.model}`,
+    SIGNUP_BURST: (info) => `FLAGGED: domain ${info.domain}`,
 };
 const framed = (info, lines) => panel(TITLE[info.kind](info), lines);
 
@@ -219,6 +228,7 @@ const COLOR = {
     PLATFORM_DROP: RED,
     DEGRADED: 0xd85a30,
     PRIMARY_WEAK: 0xef9f27,
+    SIGNUP_BURST: 0xef9f27,
 };
 const GREEN = 0x639922;
 
@@ -280,6 +290,17 @@ function draw(post) {
                 ["", "model alerts paused"],
             ]),
             ping: true,
+        };
+    }
+    if (info.kind === "SIGNUP_BURST") {
+        const since = new Date(info.since * 1000).toISOString();
+        return {
+            text: framed(info, [
+                ["ACCOUNTS", `${info.accounts} in 24h`],
+                ["SINCE", `${since.slice(0, 16).replace("T", " ")} UTC`],
+                ["REWARDS", "still paid, review the domain"],
+            ]),
+            ping: false,
         };
     }
     if (info.kind === "PLATFORM_DROP") {

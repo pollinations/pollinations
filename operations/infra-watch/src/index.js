@@ -8,7 +8,14 @@ import {
     settle,
     withTimeout,
 } from "./delivery.js";
-import { allow, ask, evidence, investigates, toolsFor } from "./investigate.js";
+import {
+    allow,
+    ask,
+    evidence,
+    investigates,
+    pipe,
+    toolsFor,
+} from "./investigate.js";
 import { CHECKING, complete, conditions, render, step } from "./rules.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
@@ -95,7 +102,19 @@ export class Watch extends DurableObject {
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
                 data = { recent: r15, last10: r10, last60: r60, official };
-                found = conditions({ ...data, hosts });
+                // Bulk onboarding sign-ups per email domain, from Enter.
+                const signups = await pipe(
+                    "infra_watch_signups",
+                    {},
+                    {
+                        tinybirdToken: this.env.TINYBIRD_TOKEN,
+                        fetchImpl: fetch,
+                    },
+                ).catch((error) => {
+                    console.error(`signups: ${error.message}`);
+                    return [];
+                });
+                found = conditions({ ...data, hosts, signups });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });

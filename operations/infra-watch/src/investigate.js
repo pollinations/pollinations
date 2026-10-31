@@ -158,7 +158,7 @@ const pick = (row) => only(FIELDS, row);
 // Minutes the Tinybird tools may look back: 1 to 60, 15 by default.
 const lookback = (minutes) => Math.min(Math.max(Number(minutes) || 15, 1), 60);
 
-async function pipe(name, params, { tinybirdToken, fetchImpl }) {
+export async function pipe(name, params, { tinybirdToken, fetchImpl }) {
     if (!tinybirdToken) throw new Error("Tinybird is not configured");
     const url = new URL(`${TINYBIRD}/${name}.json`);
     for (const [key, value] of Object.entries(params))

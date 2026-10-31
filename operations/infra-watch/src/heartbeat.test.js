@@ -56,7 +56,7 @@ async function world() {
     return w;
 }
 
-test("heartbeat posts one card, then edits it green, retrying a failed edit", async (t) => {
+test("heartbeat posts one card, then closes it, retrying a failed edit", async (t) => {
     const w = await world();
     t.after(w.close);
     w.checkedAt = Date.now() - 15 * MIN;
@@ -72,13 +72,13 @@ test("heartbeat posts one card, then edits it green, retrying a failed edit", as
     assert.equal(await w.run(), false);
     assert.equal((await w.state()).incident.messageId, "m1");
 
-    // The next run edits the same card green, and only then forgets it.
+    // The next run closes the same card, and only then forgets it.
     w.editStatus = 200;
     assert.equal(await w.run(), true);
     assert.deepEqual(w.writes.at(-1), {
         method: "PATCH",
         path: "/api/webhooks/1/x/messages/m1",
-        color: 0x639922,
+        color: 0xe24b4a,
     });
     assert.deepEqual(await w.state(), {});
     assert.equal(w.writes.filter((x) => x.method === "POST").length, 1);

@@ -18,11 +18,11 @@ import {
     toolsFor,
 } from "./investigate.js";
 import {
-    cardColor,
     conditions,
     duration,
     escalates,
     escalation,
+    lineColor,
     noteworthy,
     pings,
     renderCard,
@@ -246,7 +246,7 @@ export class Watch extends DurableObject {
                 const id = incident.messageId;
                 const closing =
                     Boolean(model) && investigates(incident.kind) && reserve();
-                // With a closing line to come, the card turns green with
+                // With a closing line to come, the card closes with
                 // "checking why…" now and gets its last edit from the note.
                 const delivered = await this.writes(async () => {
                     const { lines } = await this.record(id);
@@ -522,12 +522,12 @@ export class Watch extends DurableObject {
         } catch (error) {
             console.error(`investigator: ${error.message}`);
         }
-        // The line keeps the card's colour from when the AI looked; a
-        // verdict, the accounts it examined.
+        // The line keeps its colour from when the AI looked (green for the
+        // closing line); a verdict, the accounts it examined.
         const line = text && {
             at: Date.now(),
             text,
-            color: cardColor(incident),
+            color: lineColor(incident),
             ...(review && {
                 asking: review.accounts.map((a) => a.userId).join(","),
             }),

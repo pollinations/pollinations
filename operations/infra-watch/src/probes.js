@@ -20,17 +20,19 @@ export function nextProbeAt(previous) {
 }
 
 // Success, including a fallback's, and inconclusive caller or probe errors
-// reset the backoff.
+// reset the backoff. A probe gen turned away keeps the failures as they
+// were: the interval still runs from it, so a model can't be probed more
+// often by answering with gen's refusal.
 export function recordProbe(previous, result) {
+    const failures = previous?.failures ?? 0;
+    const resets =
+        result.ok ||
+        result.status === "ERR" ||
+        result.status === "INVALID" ||
+        (typeof result.status === "number" && result.status < 500);
     return {
         lastAt: result.timestamp,
-        failures:
-            result.ok ||
-            result.status === "ERR" ||
-            result.status === "INVALID" ||
-            (typeof result.status === "number" && result.status < 500)
-                ? 0
-                : (previous?.failures ?? 0) + 1,
+        failures: result.refused ? failures : resets ? 0 : failures + 1,
         operation: result.operation,
     };
 }
@@ -322,7 +324,8 @@ const SHARED_OWNERS = 3;
 //   owners, unless that model and error were told in the last day.
 // - `shared`: models whose error this batch found for 3 or more owners,
 //   for the maintainers, unless that error was told to them in the last
-//   day. Owners aren't told about it meanwhile.
+//   day. The models they were told about are then quiet for their owners
+//   too; another model with that error is its owner's.
 export function brokenStreams({ streaks = {}, told = {} } = {}, results, now) {
     const next = { ...streaks };
     const recent = Object.fromEntries(
@@ -346,21 +349,18 @@ export function brokenStreams({ streaks = {}, told = {} } = {}, results, now) {
         new Set(
             fresh.filter((f) => f.error === error).map((f) => ownerOf(f.model)),
         ).size;
-    const forGen = (error) =>
-        owners(error) >= SHARED_OWNERS || streamKey(GEN, error) in recent;
+    const shared = (f) => owners(f.error) >= SHARED_OWNERS;
     return {
         streaks: next,
         told: recent,
         due: fresh.filter(
             (f) =>
                 f.streak >= 2 &&
-                !forGen(f.error) &&
+                !shared(f) &&
                 !(streamKey(f.model, f.error) in recent),
         ),
         shared: fresh.filter(
-            (f) =>
-                owners(f.error) >= SHARED_OWNERS &&
-                !(streamKey(GEN, f.error) in recent),
+            (f) => shared(f) && !(streamKey(GEN, f.error) in recent),
         ),
     };
 }

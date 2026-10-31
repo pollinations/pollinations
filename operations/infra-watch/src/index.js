@@ -89,6 +89,7 @@ const LISTINGS_DAY_STARTS_MS = 12 * 60 * 60 * 1000;
 // monitor's half-hourly cycle, and probed at most this many at a time.
 const PROBE_EVERY_MS = 30 * 60 * 1000;
 const PROBE_POOL = 4;
+const FORGET_MS = 7 * 24 * 60 * 60 * 1000;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -529,8 +530,8 @@ export class Watch extends DurableObject {
     }
 
     // Every half hour: the community models due a probe, probed with
-    // COMMUNITY_PROBE_KEY, each result's backoff saved as it comes; a probe
-    // gen turned away leaves it as it was. Once all are in:
+    // COMMUNITY_PROBE_KEY, each result's backoff saved as it comes. Once all
+    // are in:
     // - broken streams go to their owners in one card in the community
     //   channel; a model the card had no room for, or one Discord refused,
     //   is told after its next probe;
@@ -541,7 +542,14 @@ export class Watch extends DurableObject {
         const state = (await this.ctx.storage.get("probes")) ?? {};
         if (now - (state.at ?? 0) < PROBE_EVERY_MS) return;
         state.at = now;
-        state.schedule ??= {};
+        // A model gone from the catalog keeps its backoff for a week, longer
+        // than any backoff runs, then is forgotten.
+        const listed = new Set(catalog.map((m) => m.name));
+        state.schedule = Object.fromEntries(
+            Object.entries(state.schedule ?? {}).filter(
+                ([name, s]) => listed.has(name) || now - s.lastAt < FORGET_MS,
+            ),
+        );
         const { schedule } = state;
         const save = () => this.ctx.storage.put("probes", state);
         await save();
@@ -551,13 +559,8 @@ export class Watch extends DurableObject {
         const due = dueProbes(catalog, rows, schedule, now);
         const results = await pool(due, PROBE_POOL, async (model) => {
             const result = await probe(gen, key, model, schedule[model.name]);
-            if (!result.refused) {
-                schedule[model.name] = recordProbe(
-                    schedule[model.name],
-                    result,
-                );
-                await save();
-            }
+            schedule[model.name] = recordProbe(schedule[model.name], result);
+            await save();
             if (!result.ok)
                 console.log(
                     `probe ${result.model}: ${result.status} ${result.requestId ?? ""}`,
@@ -576,9 +579,11 @@ export class Watch extends DurableObject {
         const tell = async (models, shared, webhook) => {
             if (!models.length) return;
             const card = brokenStreamCard(models, shared);
-            if (await post(this.env, card, webhook))
-                for (const { model, error } of card.shown)
-                    streams.told[streamKey(shared ? GEN : model, error)] = at;
+            if (!(await post(this.env, card, webhook))) return;
+            for (const { model, error } of card.shown) {
+                streams.told[streamKey(model, error)] = at;
+                if (shared) streams.told[streamKey(GEN, error)] = at;
+            }
         };
         await tell(streams.due, false, "COMMUNITY_WEBHOOK_URL");
         await tell(streams.shared, true, "DISCORD_WEBHOOK_URL");

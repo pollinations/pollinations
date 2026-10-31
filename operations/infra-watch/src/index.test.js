@@ -757,6 +757,12 @@ it("probes due community models half-hourly and tells a broken stream once a day
     await probed(stub);
     const { schedule } = await stored(stub, "probes");
     expect(schedule["community/o/broken"].failures).toBe(3);
+    // Gone for over a week, longer than any backoff: forgotten.
+    await later(stub, 7 * 24 * 60 * 60_000);
+    await probed(stub);
+    const after = (await stored(stub, "probes")).schedule;
+    expect(after["community/o/broken"]).toBeUndefined();
+    expect(after["community/o/quiet"]).toBeDefined();
 });
 
 it("names as many broken streams as a card fits, and the rest after their next probe", async () => {
@@ -802,7 +808,9 @@ it("tells the maintainers, not the owners, when one stream breaks for three owne
     const [card] = infraPosts("BROKEN STREAM");
     expect(card.content).toBe(MAINTAINER_PING);
     expect(card.text).toContain("no owner was pinged");
-    // Their second in a row, within the day: no owner is told either.
+    // Their second in a row, within the day, with only two owners probed:
+    // no owner is told either.
+    world.catalog = world.catalog.slice(0, 2);
     await later(stub, 8 * 60 * 60_000);
     await probed(stub);
     expect(infraPosts("BROKEN STREAM")).toHaveLength(1);
@@ -837,13 +845,17 @@ it("tells the maintainers once a day when gen turns every probe away, leaving th
     const [card] = infraPosts("PROBES REFUSED");
     expect(card.content).toBe(MAINTAINER_PING);
     expect(card.text).toContain("2 of 2 turned away");
-    // Only the image model's working probe is in its backoff.
-    expect(Object.keys((await stored(stub, "probes")).schedule)).toEqual([
-        "community/o/image",
-    ]);
-    // Half an hour on both are probed again, but told only once a day.
+    // Their failures stay as they were, and the interval runs from these
+    // probes: half an hour on, neither is probed again.
+    const { schedule } = await stored(stub, "probes");
+    expect(schedule["community/o/text"].failures).toBe(0);
+    expect(schedule["community/o/image"].failures).toBe(0);
     world.probes = [];
     await later(stub, 0);
+    await probed(stub);
+    expect(world.probes).toHaveLength(0);
+    // 4 hours on both are, but the card is told only once a day.
+    await later(stub, 4 * 60 * 60_000);
     await probed(stub);
     expect(world.probes).toHaveLength(2);
     expect(infraPosts("PROBES REFUSED")).toHaveLength(1);

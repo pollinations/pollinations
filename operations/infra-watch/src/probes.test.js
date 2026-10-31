@@ -59,6 +59,14 @@ test("failures back off across restarts, cap below seven days, and fallback succ
     // A broken stream is a failure, like a 5xx.
     previous = recordProbe(previous, { timestamp: now, status: "PROTOCOL" });
     assert.equal(nextProbeAt(previous), now + 8 * HOUR);
+    // Turned away by gen: the failures stay, the interval runs from it.
+    previous = recordProbe(previous, {
+        timestamp: now + HOUR,
+        status: 402,
+        refused: true,
+    });
+    assert.equal(previous.failures, 1);
+    assert.equal(nextProbeAt(previous), now + HOUR + 8 * HOUR);
 });
 
 const text = (name, health, extra) => ({
@@ -553,15 +561,23 @@ test("one broken stream on three owners' models at once goes to the maintainers,
         models,
     );
     assert.deepEqual(state.due, []);
+    // Told to the maintainers: the error, and each model named.
     state.told[streamKey(GEN, MISSING_DONE)] = T0;
-    // Their second in a row, within the day, even with only two of them
-    // probed: still not the owners'.
+    for (const m of models) state.told[streamKey(m, MISSING_DONE)] = T0;
+    // Their second in a row, within the day, with too few owners probed to
+    // be shared: a model told about is still not its owner's, but another
+    // model with that error is.
+    const other = "community/d/w";
+    state = brokenStreams(state, [result(other)], T0);
     const two = brokenStreams(
         state,
-        models.slice(0, 2).map((m) => result(m)),
+        [models[0], other].map((m) => result(m)),
         T0 + 8 * HOUR,
     );
-    assert.deepEqual(two.due, []);
+    assert.deepEqual(
+        two.due.map((f) => f.model),
+        [other],
+    );
     assert.deepEqual(two.shared, []);
     state = brokenStreams(
         state,

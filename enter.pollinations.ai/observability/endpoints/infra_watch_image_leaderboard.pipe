@@ -1,0 +1,32 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: the daily community image leaderboard. One row per
+    community image model over the last 24 hours: final requests, images
+    generated, median seconds per image and provider-attributable success
+    (caller 4xx excluded). Every model is returned so the leaderboard can
+    count totals; it ranks only the busy ones. Read by
+    operations/infra-watch/leaderboard.
+
+NODE infra_watch_image_leaderboard_node
+SQL >
+    SELECT
+        replaceRegexpOne(resolved_model_requested, '^community/', '') AS model,
+        count() AS requests,
+        countIf(response_status >= 200 AND response_status < 300) AS images,
+        round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300 AND response_time > 0) / 1000, 1) AS median_seconds,
+        round(100 * countIf(response_status >= 200 AND response_status < 300) / greatest(countIf(
+            (response_status >= 200 AND response_status < 300)
+            OR response_status >= 500
+            OR (response_status >= 400 AND response_status < 500 AND startsWith(error_message, 'Image provider error:'))
+        ), 1), 2) AS success
+    FROM generation_event_v2
+    WHERE environment = 'production'
+        AND start_time > now() - INTERVAL 24 HOUR
+        AND event_type = 'generate.image'
+        AND model_provider_used = 'community'
+        AND is_final
+    GROUP BY model
+    ORDER BY images DESC
+
+TYPE endpoint

@@ -52,8 +52,13 @@ async function fake(input, init = {}) {
     if (url.pathname === "/") return new Response("ok");
     if (url.pathname === "/models/status")
         return Response.json({ data: world.rows });
+    // The full catalog, or the default listing without filtered models.
     if (url.pathname === "/models")
-        return Response.json([{ name: "a/model" }, { name: "b/model" }]);
+        return Response.json(
+            url.searchParams.has("reliability")
+                ? world.catalog
+                : (world.shown ?? world.catalog),
+        );
     if (url.pathname.endsWith("/infra_watch_callers.json")) {
         await sleep(world.tinybirdDelay);
         return Response.json({
@@ -67,6 +72,12 @@ async function fake(input, init = {}) {
                 },
             ],
         });
+    }
+    if (url.pathname.endsWith("/infra_watch_legacy.json")) {
+        world.legacyReads++;
+        return world.legacy
+            ? Response.json({ data: world.legacy })
+            : new Response("unavailable", { status: 503 });
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
@@ -92,6 +103,9 @@ async function fake(input, init = {}) {
 beforeEach(() => {
     world = {
         rows: [],
+        legacy: [],
+        legacyReads: 0,
+        catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
         aiGate: null,
         aiDelay: 0,
@@ -445,4 +459,162 @@ it("a review the daily budget skipped is investigated once the budget resets", a
     await stub.check();
     await settle(stub);
     expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
+});
+
+const TEXT_BRIDGE = {
+    bridge: "text",
+    last_hour_requests: 40,
+    last_hour_success: 90,
+    median_requests: 10790,
+    median_success: 97.4,
+    last_hour_top_error: [],
+    degraded: 1,
+};
+
+it("a legacy bridge card stays open through a failed read and a missing row, until it recovers", async () => {
+    const stub = watch();
+    world.rows = OK;
+    // The hour's reading, as the reader saved it.
+    const reading = (rows, hour = Math.floor(Date.now() / 3_600_000)) =>
+        runInDurableObject(stub, (_, state) =>
+            state.storage.put("legacy", { hour, rows }),
+        );
+    const card = async () => {
+        await settle(stub);
+        const open = (await stored(stub, "state")).open["legacy:text"];
+        return open && edits(open.messageId);
+    };
+    await reading([TEXT_BRIDGE]);
+    await stub.check();
+    const id = (await stored(stub, "state")).open["legacy:text"].messageId;
+    const posted = world.writes.find(
+        (w) => w.ok && w.method === "POST" && w.text.includes("legacy"),
+    );
+    expect(posted.text).toContain("DEGRADED: legacy text bridge");
+
+    // Tinybird fails on a new hour: the last reading stands.
+    world.legacy = null;
+    await reading([TEXT_BRIDGE], 0);
+    await stub.check();
+    expect(await card()).toBeTruthy();
+    // No traffic in the whole window drops the row: still down.
+    await reading([]);
+    await stub.check();
+    expect(await card()).toBeTruthy();
+    // A reading above half its old medians closes it.
+    await reading([{ ...TEXT_BRIDGE, last_hour_requests: 10500, degraded: 0 }]);
+    await stub.check();
+    await settle(stub);
+    expect(await card()).toBeUndefined();
+    expect(over(edits(id).at(-1))).toBe(true);
+});
+
+it("reads the legacy bridges once an hour, from 5 minutes past", async () => {
+    const stub = watch();
+    world.legacy = [TEXT_BRIDGE];
+    const at = (h, m) => Date.UTC(2026, 9, 31, h, m);
+    const read = (now) =>
+        runInDurableObject(stub, (instance) => instance.legacy(now));
+    // Started at 12:01: nothing known until 12:05, when the hour is in.
+    expect(await read(at(12, 1))).toBeNull();
+    expect(world.legacyReads).toBe(0);
+    expect(await read(at(12, 5))).toEqual([TEXT_BRIDGE]);
+    expect(await read(at(12, 59))).toEqual([TEXT_BRIDGE]);
+    expect(world.legacyReads).toBe(1);
+    // 13:00 to 13:04 keep the 12:05 reading.
+    world.legacy = [{ ...TEXT_BRIDGE, last_hour_requests: 10500 }];
+    expect(await read(at(13, 2))).toEqual([TEXT_BRIDGE]);
+    expect(world.legacyReads).toBe(1);
+    // A failed 13:05 read keeps it too, and 13:06 tries again.
+    const fresh = world.legacy;
+    world.legacy = null;
+    expect(await read(at(13, 5))).toEqual([TEXT_BRIDGE]);
+    world.legacy = fresh;
+    expect(await read(at(13, 6))).toEqual(fresh);
+    expect(world.legacyReads).toBe(3);
+});
+
+it("tells the community channel once a week about a model leaning on its fallback", async () => {
+    const stub = watch();
+    const model = "community/o/leaning";
+    world.catalog = [
+        { name: "a/model" },
+        { name: model, community: true },
+        { name: "community/o/fallback", community: true },
+        { name: "community/o/agent", community: true, agent: true },
+    ];
+    // Each leans on its fallback: 30 of 40 successes rescued.
+    world.rows = [model, "community/o/agent"].flatMap((m) => [
+        { ...row(40, 40, m), fallback_rescues: 30 },
+        {
+            ...row(30, 30, m),
+            is_rollup: 0,
+            fallback_used: true,
+            model_used: "community/o/fallback",
+            fallback_rescues: 30,
+        },
+    ]);
+    const told = () =>
+        world.writes.filter(
+            (w) =>
+                w.ok && w.path === "/api/webhooks/2/y" && w.method === "POST",
+        );
+    await checks(stub, 2);
+    // One notice, for the listed model only, checked once an hour.
+    expect(told()).toHaveLength(1);
+    expect(told()[0].text).toContain("FALLBACK: o/leaning");
+    expect(told()[0].text).toContain("VIA     o/fallback (30)");
+
+    const back = (ms) =>
+        runInDurableObject(stub, async (_, state) => {
+            const saved = await state.storage.get("fallback");
+            saved.checkedAt -= ms;
+            saved.told[`${model} community/o/fallback`] -= ms;
+            await state.storage.put("fallback", saved);
+        });
+    // An hour later it is still leaning, but was told this week.
+    await back(60 * 60_000);
+    await stub.check();
+    expect(told()).toHaveLength(1);
+    // A week on, it is told again.
+    await back(7 * 24 * 60 * 60_000);
+    await stub.check();
+    expect(told()).toHaveLength(2);
+    // None reached the infra-watch channel.
+    const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
+    expect(infra.some((w) => w.text.includes("FALLBACK"))).toBe(false);
+});
+
+it("tells the community channel once a day what the listing filter changed", async () => {
+    const stub = watch();
+    const model = (name, success_rate) => ({
+        name,
+        community: true,
+        health: { success_rate },
+    });
+    world.catalog = [model("community/o/a", 40), model("community/o/b", 95)];
+    world.shown = [model("community/o/b", 95)];
+    const told = () =>
+        world.writes.filter((w) => w.ok && w.path === "/api/webhooks/2/y");
+    await checks(stub, 2);
+    // The first day only keeps the filtered set.
+    expect(told()).toHaveLength(0);
+    expect((await stored(stub, "listings")).filtered).toEqual([
+        "community/o/a",
+    ]);
+
+    // a recovers and b gets filtered: told once, the next day.
+    world.catalog = [model("community/o/a", 90), model("community/o/b", 30)];
+    world.shown = [model("community/o/a", 90)];
+    await stub.check();
+    expect(told()).toHaveLength(0);
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("listings");
+        await state.storage.put("listings", { ...saved, day: "2000-01-01" });
+    });
+    await checks(stub, 2);
+    expect(told()).toHaveLength(1);
+    expect(told()[0].text).toContain(
+        "**Newly filtered**\n`o/b` 30%\n**Back in listings**\n`o/a` 90%",
+    );
 });

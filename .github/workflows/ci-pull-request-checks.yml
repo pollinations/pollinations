@@ -163,11 +163,11 @@ jobs:
           operations/model-evals/*.test.js
           operations/model-monitor/src/*.test.js
 
-      - name: Build UI for accounting and package export tests
-        run: npm run build:js --workspace @pollinations/ui
+      - name: Test shared providers and agent configurations
+        run: npx vitest run --config shared/vitest.config.ts
 
-      - name: Test model catalog and accounting compatibility
-        run: npx vitest run --config apps/model-compatibility.vitest.config.ts
+      - name: Test Economics public calculations and UI
+        run: npm run test:public --workspace economics-web
 
       - name: Get changed files that affect the enter frontend build
         id: enter-frontend
@@ -185,6 +185,7 @@ jobs:
         working-directory: enter.pollinations.ai
         run: npm run build:frontend
 
+      # Reuses packages/ui/dist built by Economics pretest:public above.
       - name: Test UI package exports
         run: node --test packages/ui/scripts/package-exports.test.mjs
 

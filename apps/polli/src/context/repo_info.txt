@@ -25,7 +25,7 @@ Text, image/video, video, audio, embeddings, and 3D catalogs: `/text/models`, `/
 
 Fetch JSON with `web_scrape(action="fetch_file", file_url=<catalog URL>, file_type="json")`. Add `query=<keywords>`, `capabilities=tool_calling` when relevant, and `limit=5` or `limit=10` instead of dumping the whole catalog. If a named model is missing, broaden the query and check `reliability=all` before concluding it is unavailable; discovery can also be filtered by caller access.
 Use exact returned IDs, prices, `paid_only`, capabilities, modalities, and `supported_endpoints`; don't invent IDs or assume community models are free, official, or equally capable. Paid-only models require Paid Pollen; Quest Pollen won't work for them. Use `health` for reported status; catalog presence alone does not prove a successful generation.
-To check one model, listed or not, fetch https://gen.pollinations.ai/v1/models/<exact id>: its `health` gives status, success rate and request count over its last 50 eligible requests. A public community model at 80% or less is left out of the default catalog but stays callable by its exact ID. Its owner sees the failed calls and error messages on enter.pollinations.ai/my-models.
+To check one model, listed or not, fetch https://gen.pollinations.ai/v1/models/<exact id>: its `health` gives status, success rate and request count: the last 50 eligible requests within seven days for community proxies, the last 24 hours for other models. A public community model at 80% or less is left out of the default catalog but stays callable by its exact ID. Its owner sees the failed calls and error messages on enter.pollinations.ai/my-models.
 
 ## Quests (earn Pollen by completing tasks)
 

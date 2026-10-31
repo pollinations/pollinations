@@ -81,8 +81,8 @@ type FetchState = {
     // per-user rewards endpoint 401s, so there is nothing to claim and every
     // quest is rendered open as a "here's what you can earn" preview.
     anonymous: boolean;
-    // The account's onboarding (Setup) rewards are on hold until it is verified.
-    held: boolean;
+    // Set while the account's Setup rewards are on hold, with its review state.
+    setupHold: SetupHold | null;
 };
 
 const INITIAL_STATE: FetchState = {
@@ -95,7 +95,7 @@ const INITIAL_STATE: FetchState = {
     error: null,
     claimingRewardIds: [],
     anonymous: false,
-    held: false,
+    setupHold: null,
 };
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -205,7 +205,7 @@ function rewardIconKind(
 
 type QuestData = Pick<
     FetchState,
-    "catalog" | "rewards" | "standings" | "anonymous" | "held"
+    "catalog" | "rewards" | "standings" | "anonymous" | "setupHold"
 >;
 
 async function loadQuestData(): Promise<QuestData> {
@@ -234,10 +234,10 @@ async function loadQuestData(): Promise<QuestData> {
     }
     const account =
         anonymous || !rewardsResponse
-            ? { rewards: [], held: false }
+            ? { rewards: [], setupHold: null }
             : ((await rewardsResponse.json()) as {
                   rewards: QuestReward[];
-                  held: boolean;
+                  setupHold: SetupHold | null;
               });
 
     const standings = standingsResponse?.ok
@@ -249,7 +249,7 @@ async function loadQuestData(): Promise<QuestData> {
         rewards: account.rewards ?? [],
         standings,
         anonymous,
-        held: account.held,
+        setupHold: account.setupHold,
     };
 }
 
@@ -279,18 +279,53 @@ export type QuestCard = {
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
+type SetupHold = { review: "pending" | "declined" | null };
+
 // Atop the Setup lane while the account's Setup rewards are on hold: what
-// happened, then each way to unlock them.
-function SetupHoldNotice() {
+// happened, then each way to unlock them, or where its review stands.
+function SetupHoldNotice({
+    hold,
+    requesting,
+    onRequestReview,
+}: {
+    hold: SetupHold;
+    requesting: boolean;
+    onRequestReview: () => void;
+}) {
+    const buy = (label: string) => (
+        <InlineLink href="/pollen#buy-pollen">{label}</InlineLink>
+    );
+    if (hold.review === "declined") {
+        return (
+            <p className="px-1 pb-1 text-sm text-theme-text-muted">
+                <span className="text-intent-danger-text">
+                    Your review was declined.
+                </span>{" "}
+                {buy("Buying a pollen pack")} still unlocks them.
+            </p>
+        );
+    }
     return (
         <p className="px-1 pb-1 text-sm text-theme-text-muted">
             <span className="text-intent-danger-text">
                 We couldn't verify your account, so Setup quests are locked.
             </span>{" "}
-            To unlock them,{" "}
-            <InlineLink href="/pollen#buy-pollen">buy a pollen pack</InlineLink>{" "}
-            or <InlineLink href="/account">connect a GitHub account</InlineLink>{" "}
-            that's at least 30 days old.
+            {hold.review === "pending" ? (
+                "Review requested. We'll show the result here."
+            ) : (
+                <>
+                    To unlock them, {buy("buy a pollen pack")} or{" "}
+                    <InlineLink
+                        as="button"
+                        type="button"
+                        disabled={requesting}
+                        onClick={onRequestReview}
+                    >
+                        request a review
+                    </InlineLink>
+                    .
+                </>
+            )}
         </p>
     );
 }
@@ -665,6 +700,7 @@ function QuestOverviewContent({
 }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
+    const [requestingReview, setRequestingReview] = useState(false);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
         anonymous: userId === null,
@@ -796,6 +832,27 @@ function QuestOverviewContent({
         }
     }
 
+    async function handleRequestReview(): Promise<void> {
+        setClaimError(null);
+        setRequestingReview(true);
+        try {
+            const response = await accountClient.quests.review.$post();
+            if (!response.ok) {
+                throw new Error("Couldn’t request a review. Please try again.");
+            }
+            const { setupHold } = await response.json();
+            setState((current) => ({ ...current, setupHold }));
+        } catch (error) {
+            setClaimError(
+                error instanceof Error
+                    ? error.message
+                    : "Couldn’t request a review. Please try again.",
+            );
+        } finally {
+            setRequestingReview(false);
+        }
+    }
+
     async function refreshRewards(): Promise<void> {
         void router.invalidate({
             filter: (match) => match.routeId === "/_dashboard",
@@ -874,7 +931,7 @@ function QuestOverviewContent({
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: deriveCardStatus(comingSoon, previewAll, reward),
                 locked:
-                    state.held &&
+                    state.setupHold !== null &&
                     quest.category === "setup" &&
                     !reward?.claimedAt,
                 earnedAmount: reward?.pollenAmount ?? undefined,
@@ -908,7 +965,7 @@ function QuestOverviewContent({
         rewardedCatalogIds,
         rewardByKey,
         previewAll,
-        state.held,
+        state.setupHold,
     ]);
 
     // Rewards created by a maintainer or another non-catalog source still need
@@ -967,7 +1024,7 @@ function QuestOverviewContent({
     // Keep pending rewards separate from the claimed totals above them. A
     // held account's Setup rewards are locked, so they aren't claimable.
     const claimable = useMemo(() => {
-        const locked = lockedQuestIds(state.catalog, state.held);
+        const locked = lockedQuestIds(state.catalog, state.setupHold !== null);
         const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
         for (const reward of state.rewards) {
@@ -981,7 +1038,7 @@ function QuestOverviewContent({
             .filter((kind) => byKind[kind] > 0)
             .map((kind) => ({ kind, pollen: byKind[kind] }));
         return { count, segments };
-    }, [state.rewards, state.catalog, state.held]);
+    }, [state.rewards, state.catalog, state.setupHold]);
 
     // Quests the viewer can still earn, for the leaderboard's "next step" line.
     const openQuests = useMemo(
@@ -1125,8 +1182,12 @@ function QuestOverviewContent({
                         }
                     >
                         <div className="flex flex-col gap-2">
-                            {category.key === "setup" && state.held && (
-                                <SetupHoldNotice />
+                            {category.key === "setup" && state.setupHold && (
+                                <SetupHoldNotice
+                                    hold={state.setupHold}
+                                    requesting={requestingReview}
+                                    onRequestReview={handleRequestReview}
+                                />
                             )}
                             {cards.map((card) => (
                                 <QuestRow

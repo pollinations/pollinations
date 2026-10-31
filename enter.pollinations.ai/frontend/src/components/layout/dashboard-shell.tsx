@@ -413,7 +413,7 @@ function useQuestNavStatus(enabled: boolean): string | null {
                         questNavLabel(
                             catalog.quests,
                             rewards.rewards,
-                            rewards.held,
+                            rewards.setupHold !== null,
                         ),
                     );
                 }

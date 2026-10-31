@@ -71,12 +71,13 @@ const text = (name, health, extra) => ({
 const traffic = (model, ok, errors5xx = 0, errors4xx = 0) => ({
     model,
     is_rollup: 1,
+    total_requests: ok + errors5xx + errors4xx,
     status_2xx: ok,
     errors_5xx: errors5xx,
     errors_4xx: errors4xx,
 });
 
-test("probes community text and image proxies at 80% health or less, or without real traffic", () => {
+test("probes community text and image proxies at 80% health or less, without real traffic, or at 80% success or less in 4h", () => {
     const now = Date.parse("2026-11-01T00:00:00Z");
     const catalog = [
         text("community/o/weak", 80),
@@ -87,6 +88,13 @@ test("probes community text and image proxies at 80% health or less, or without 
         // No sample: busy with real traffic, so not due.
         { ...text("community/o/unsampled"), health: { success_rate: null } },
         text("community/o/backoff", 10),
+        // Healthy in the catalog, failing in the last 4 hours.
+        text("community/o/slipping", 92),
+        text("community/o/edge", 95),
+        // Rescued by its fallback: those are successes.
+        text("community/o/rescued", 95),
+        // Final 4xx are left out of its success.
+        text("community/o/refusing", 95),
         text("community/o/agent", 10, { agent: true }),
         text("community/o/voice", 10, { category: "audio" }),
         { name: "openai", category: "text", health: { success_rate: 10 } },
@@ -103,6 +111,13 @@ test("probes community text and image proxies at 80% health or less, or without 
         traffic("community/o/refused", 0, 0, 30),
         traffic("community/o/failing", 0, 12),
         traffic("community/o/unsampled", 5),
+        traffic("community/o/slipping", 1, 4),
+        traffic("community/o/edge", 4, 1),
+        {
+            ...traffic("community/o/rescued", 9, 1),
+            fallback_rescues: 9,
+        },
+        traffic("community/o/refusing", 5, 0, 20),
         // A route row is not the model's total.
         { ...traffic("community/o/quiet", 10), is_rollup: 0 },
     ];
@@ -117,6 +132,8 @@ test("probes community text and image proxies at 80% health or less, or without 
             "community/o/quiet",
             "community/o/refused",
             "community/o/failing",
+            "community/o/slipping",
+            "community/o/edge",
             "community/o/image",
         ],
     );

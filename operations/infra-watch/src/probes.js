@@ -38,14 +38,19 @@ export function recordProbe(previous, result) {
 
 // The community text and image proxies to probe now: public (gen's catalog
 // lists no private model) and not agents, due by their backoff, and either
-// at 80% health or less or without real traffic in the last 4 hours. `rows`
-// are gen's status rows for regular traffic, which leaves the probes out.
-// Real traffic is final 2xx and 5xx; 4xx say nothing of the model.
+// at 80% catalog health or less, or without real traffic or at 80% final
+// success or less in the last 4 hours. `rows` are gen's status rows for
+// regular traffic, which leaves the probes out. A model's rollup counts
+// final outcomes, so fallback rescues are successes; final 4xx say nothing
+// of the model and are left out.
 export function dueProbes(catalog, rows, schedule, now) {
-    const busy = new Set(
+    const recent = new Map(
         rows
-            .filter((r) => r.is_rollup && r.status_2xx + r.errors_5xx > 0)
-            .map((r) => r.model),
+            .filter((r) => r.is_rollup && r.total_requests > r.errors_4xx)
+            .map((r) => [
+                r.model,
+                r.status_2xx / (r.total_requests - r.errors_4xx),
+            ]),
     );
     return catalog.filter(
         (m) =>
@@ -53,7 +58,9 @@ export function dueProbes(catalog, rows, schedule, now) {
             !m.agent &&
             ["text", "image"].includes(m.category) &&
             now >= nextProbeAt(schedule[m.name]) &&
-            ((m.health?.success_rate ?? 100) <= 80 || !busy.has(m.name)),
+            ((m.health?.success_rate ?? 100) <= 80 ||
+                !recent.has(m.name) ||
+                recent.get(m.name) <= 0.8),
     );
 }
 

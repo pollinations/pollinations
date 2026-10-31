@@ -28,6 +28,7 @@ import {
     fallbackPairs,
     fallbackShares,
     filteredModels,
+    legacyDown,
     lineColor,
     listingChanges,
     listingsCard,
@@ -62,6 +63,10 @@ const MAX_LINES = 4;
 // A closed card's last edit is retried each check for this long; after that
 // its message is likely gone.
 const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
+// The legacy bridges' last full UTC hour changes on the hour; it is read
+// once an hour, this long after it, when Tinybird has that hour in full.
+const HOUR_MS = 60 * 60 * 1000;
+const LEGACY_READ_DELAY_MS = 5 * 60 * 1000;
 // Community models leaning on a fallback are looked for this often.
 const FALLBACK_EVERY_MS = 60 * 60 * 1000;
 // Community listing changes are told once a day, from 12:00 UTC: a check's
@@ -155,6 +160,8 @@ export class Watch extends DurableObject {
         // the read failed, so their open cards are left as they are.
         let signups = [];
         let reviews = new Map();
+        // The legacy bridges' last reading; null when none could be read.
+        let legacy = [];
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
@@ -177,9 +184,10 @@ export class Watch extends DurableObject {
                 );
                 publicModels = models;
                 data = { recent: r15, last10: r10, last60: r60, official };
-                [signups, reviews] = await Promise.all([
+                [signups, reviews, legacy] = await Promise.all([
                     this.signups(),
                     this.reviews(),
+                    this.legacy(now),
                 ]);
                 found = conditions({
                     ...data,
@@ -206,12 +214,16 @@ export class Watch extends DurableObject {
                 closed[key] = record.closed.incident.closedAt;
             }
         }
-        // Unknown sign-ups or reviews keep their open cards. A sign-up card
-        // Discord hasn't taken yet is retried until it has: its 24-hour
-        // window can end first.
+        // A legacy bridge's open card is judged against the medians it
+        // started with.
+        if (legacy) Object.assign(found, legacyDown(legacy, open));
+        // Unknown sign-ups, reviews or legacy bridges keep their open cards.
+        // A sign-up card Discord hasn't taken yet is retried until it has:
+        // its 24-hour window can end first.
         const unknown = [
             signups === null && "signup:",
             reviews === null && "review:",
+            legacy === null && "legacy:",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -396,6 +408,28 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Each legacy bridge's row from Tinybird, read once an hour from 5
+    // minutes past. Before then, between reads and when a read fails, the
+    // last rows stand; null if none was ever read.
+    async legacy(now) {
+        const hour = Math.floor(now / HOUR_MS);
+        const saved = await this.ctx.storage.get("legacy");
+        if (saved?.hour === hour || now % HOUR_MS < LEGACY_READ_DELAY_MS)
+            return saved?.rows ?? null;
+        try {
+            const rows = await pipe(
+                "infra_watch_legacy",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+            await this.ctx.storage.put("legacy", { hour, rows });
+            return rows;
+        } catch (error) {
+            console.error(`legacy: ${error.message}`);
+            return saved?.rows ?? null;
+        }
     }
 
     // Once a day: the community models gen's reliability filter newly left

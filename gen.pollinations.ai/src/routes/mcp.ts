@@ -204,9 +204,7 @@ export const mcpRoutes = new Hono<Env>()
                 message: `${server.name} requires a secret (sk_) API key`,
             });
         }
-        // Agents run code their author wrote; they never reach the caller's
-        // connected accounts.
-        if (server.id === "composio" && c.var.auth.agentRun) {
+        if (server.agents === false && c.var.auth.agentRun) {
             throw new HTTPException(403, {
                 message: `Agents can't use ${server.name}`,
             });

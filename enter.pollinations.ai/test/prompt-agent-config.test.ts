@@ -1,5 +1,5 @@
 import { PromptAgentConfigSchema } from "@shared/community-endpoints.ts";
-import { MCP_SERVER_IDS } from "@shared/registry/mcp.ts";
+import { AGENT_MCP_SERVER_IDS } from "@shared/registry/mcp.ts";
 import { describe, expect, it } from "vitest";
 import { PromptAgentInputSchema } from "../src/services/prompt-agent.ts";
 
@@ -19,13 +19,22 @@ describe("prompt-agent config", () => {
         ).toBe(false);
     });
 
-    it("accepts MCP servers from the built-in registry", () => {
+    it("accepts the built-in MCP servers agents can use", () => {
         expect(
             PromptAgentConfigSchema.parse({
                 ...config,
-                mcpServers: MCP_SERVER_IDS,
+                mcpServers: AGENT_MCP_SERVER_IDS,
             }),
-        ).toEqual({ ...config, mcpServers: MCP_SERVER_IDS });
+        ).toEqual({ ...config, mcpServers: AGENT_MCP_SERVER_IDS });
+    });
+
+    it("rejects Connectors, which refuses agent run tokens", () => {
+        expect(
+            PromptAgentInputSchema.safeParse({
+                ...config,
+                mcpServers: ["composio"],
+            }).success,
+        ).toBe(false);
     });
 
     it("rejects duplicate built-in MCP servers", () => {

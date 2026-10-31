@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import { MCP_SERVER_IDS } from "./registry/mcp.ts";
+import { AGENT_MCP_SERVER_IDS } from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
 import {
     type Category,
@@ -715,13 +715,13 @@ export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
  * A managed prompt agent Gen runs locally. Its row id is also the model used
  * to load this configuration from the same row.
  */
-export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
+export const BuiltinMcpServerIdSchema = z.enum(AGENT_MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
     systemPrompt: z.string().trim().min(1).max(8000),
     baseModel: z.string().trim().min(1).max(253),
     mcpServers: z
         .array(BuiltinMcpServerIdSchema)
-        .max(MCP_SERVER_IDS.length)
+        .max(AGENT_MCP_SERVER_IDS.length)
         .refine((servers) => new Set(servers).size === servers.length, {
             message: "Duplicate MCP servers are not allowed",
         })

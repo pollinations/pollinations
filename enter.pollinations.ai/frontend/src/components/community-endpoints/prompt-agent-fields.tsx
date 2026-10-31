@@ -1,6 +1,6 @@
 import { Field, InfoTip, InlineLink, Textarea } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
-import { MCP_SERVERS } from "@shared/registry/mcp.ts";
+import { AGENT_MCP_SERVER_IDS, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { config } from "../../config.ts";
 import { BaseModelInput } from "./base-model-input.tsx";
 import { ModelFormRow } from "./model-form-row.tsx";
@@ -76,7 +76,9 @@ export function PromptAgentTools({
                         "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))",
                 }}
             >
-                {MCP_SERVERS.map((server) => (
+                {MCP_SERVERS.filter((server) =>
+                    AGENT_MCP_SERVER_IDS.includes(server.id),
+                ).map((server) => (
                     <AuthAccessItem
                         key={server.id}
                         checked={form.mcpServers.includes(server.id)}

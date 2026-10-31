@@ -220,3 +220,9 @@ key and cannot spend beyond that key's budget. Configure both in
 [API key settings](https://enter.pollinations.ai/keys). See
 [Authentication](https://gen.pollinations.ai/docs#tag/authentication) for key
 types and security guidance.
+
+### Emoji MCP
+
+`gen.pollinations.ai/mcp/emoji` — Search emoji by keyword and resolve emoji names.
+
+Tools: `search_emoji`, `emoji_name`.

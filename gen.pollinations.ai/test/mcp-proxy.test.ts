@@ -149,6 +149,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "emoji",
+                name: "Emoji MCP",
+                description: "Search emoji by keyword and resolve emoji names.",
+                url: "https://gen.pollinations.ai/mcp/emoji",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

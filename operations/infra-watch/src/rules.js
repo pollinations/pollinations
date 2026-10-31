@@ -271,16 +271,19 @@ export function duration(ms) {
 }
 
 // A box titled with the alert and what it is about. It is as wide as its
-// title or its longest row needs, so a full model id is never cut.
-function panel(title, lines) {
+// title or its longest row needs, so a full model id is never cut. The
+// title is drawn in the card's colour (an ansi block): Discord on desktop
+// shows it, the phone shows plain text.
+function panel(title, lines, color) {
     const body = lines.map(
         ([field, value]) =>
             `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
+    const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
     return [
-        "```",
-        `┌─ ${title} ${"─".repeat(inner - title.length - 1)}┐`,
+        "```ansi",
+        `┌─ \u001b[38;2;${rgb}m${title}\u001b[0m ${"─".repeat(inner - title.length - 1)}┐`,
         ...body.map((t) => `│ ${t.padEnd(inner)} │`),
         `└${"─".repeat(inner + 2)}┘`,
         "```",
@@ -455,10 +458,12 @@ export function renderCard(
 ) {
     const closed = incident.closedAt != null;
     const title = `${closed ? "RECOVERED" : LABEL[incident.kind]}: ${subjectOf(key)}`;
+    const color = closed ? GREEN : COLOR[incident.kind];
     const parts = [
         panel(
             title,
             closed ? closedRows(key, incident) : openRows(incident, now),
+            color,
         ),
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
@@ -468,7 +473,7 @@ export function renderCard(
     return {
         text: parts.join("\n"),
         ping: incident.pinged ?? pings(incident),
-        color: closed ? GREEN : COLOR[incident.kind],
+        color,
     };
 }
 

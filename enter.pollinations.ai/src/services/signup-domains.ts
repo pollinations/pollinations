@@ -120,12 +120,16 @@ const PUBLIC_MAIL_DOMAINS = new Set([
     "mozmail.com", // Firefox Relay
     "simplelogin.com",
     "simplelogin.co",
+    "simplelogin.fr",
     "aleeas.com",
     "slmail.me",
     "addy.io",
     "anonaddy.com",
     "anonaddy.me",
     "passmail.net", // Proton Pass
+    "passmail.com",
+    "passinbox.com",
+    "passfwd.com",
 ]);
 
 /**

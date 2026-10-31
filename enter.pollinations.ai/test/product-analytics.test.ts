@@ -334,7 +334,14 @@ test("a sign-up records only a private registrable email domain", () => {
         signupEmailDomain("1234+octo@users.noreply.github.com"),
     ).toBeUndefined();
     expect(signupEmailDomain("x@privaterelay.appleid.com")).toBeUndefined();
-    expect(signupEmailDomain("x@mozmail.com")).toBeUndefined();
+    for (const relay of [
+        "mozmail.com",
+        "simplelogin.fr",
+        "passmail.com",
+        "passinbox.com",
+        "passfwd.com",
+    ])
+        expect(signupEmailDomain(`x@${relay}`)).toBeUndefined();
     expect(signupEmailDomain("x@co.uk")).toBeUndefined();
     expect(signupEmailDomain('x@a.b"c.com')).toBeUndefined();
 });

@@ -5,7 +5,6 @@ import {
     InlineLink,
     OutageNotice,
     Section,
-    WarningIcon,
 } from "@pollinations/ui";
 import {
     Await,
@@ -21,7 +20,10 @@ import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
-import { PageStatus } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+} from "../components/layout/dashboard-loading.tsx";
 import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
@@ -248,10 +250,7 @@ function DashboardLayout() {
     );
 }
 
-/**
- * The drawer's compact outage rows, or a short error when it is not one. Both
- * sit inside the Balance button, so the retry lives on the Balance page.
- */
+/** The drawer's compact outage rows, or the usual error when it is not one. */
 function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
     const outage = useOutage([BALANCE_PATH]);
     // The same resource as the Balance page's balance: one retry for both.
@@ -259,10 +258,9 @@ function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
     return outage ? (
         <SidebarOutage />
     ) : (
-        <span className="flex items-center gap-1.5 text-xs font-normal text-theme-text-muted">
-            <WarningIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-            Couldn’t load your balance
-        </span>
+        <LoadError onRetry={onRetry} paths={[BALANCE_PATH]}>
+            Couldn’t load your balance.
+        </LoadError>
     );
 }
 

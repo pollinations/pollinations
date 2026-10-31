@@ -218,12 +218,11 @@ type SidebarWalletProps = {
 };
 
 /**
- * Both balances inside the drawer's Balance button: the number sits on the
- * right edge and what it earned in the last 7 days follows the label, so
- * nothing moves when earnings load. Only the icons carry the
+ * Both balances indented under the drawer's Balance row: the
+ * number sits on the right edge and what it earned in the last 7 days follows
+ * the label, so nothing moves when earnings load. Only the icons carry the
  * paid/Quest colour: green would read as Quest, so earnings stay muted and the
- * "+" marks them. Text keeps the button's full colour (weight sets the
- * numbers apart): faded text fails contrast on the selected gold.
+ * "+" marks them.
  */
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
@@ -250,14 +249,14 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                         <span className="flex justify-center">
                             <WalletKindIcon kind={kind} />
                         </span>
-                        <span>{label}</span>
+                        <span className="text-theme-text-muted">{label}</span>
                         <span
                             title={
                                 displayEarned > 0
                                     ? "Earned in the last 7 days"
                                     : undefined
                             }
-                            className="tabular-nums"
+                            className="tabular-nums text-theme-text-muted"
                         >
                             {displayEarned > 0 && (
                                 <>
@@ -269,7 +268,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                                 </>
                             )}
                         </span>
-                        <span className="justify-self-end font-medium tabular-nums">
+                        <span className="justify-self-end font-medium tabular-nums text-theme-text-strong">
                             {formatPollen(normalizeDisplayBalance(balance))}
                         </span>
                     </Fragment>

@@ -16,7 +16,6 @@ import {
     NavItem,
     ScrollArea,
     useScrollLock,
-    WalletIcon,
     XIcon,
 } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -30,7 +29,14 @@ import type {
     RefObject,
     SetStateAction,
 } from "react";
-import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import {
+    createContext,
+    Fragment,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { pageMeta } from "../../page-meta.ts";
@@ -63,10 +69,10 @@ type DashboardNavItem = {
 };
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
-// sandboxes, Docs), and everything about you as one block at the bottom: your
-// balance opens it, your pages follow (Quests right under the Quest number),
-// your name closes it. A thin line opens each part. Signed out, the bottom
-// holds the sign-in buttons.
+// sandboxes, Docs), and everything about you as one block at the bottom: the
+// Balance row with your numbers indented under it, your other pages
+// (Quests right under the Quest number), then your name. A thin line opens
+// each part. Signed out, the bottom holds the sign-in buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
@@ -377,26 +383,22 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 NAV_LINE_CLASS,
             )}
         >
-            {walletArea && (
-                <BalanceLink
-                    active={activePage === "balance"}
-                    onNavigate={onNavigate}
-                >
-                    {walletArea}
-                </BalanceLink>
-            )}
             {navItems.some((item) => item.group === "yours") && (
                 <nav aria-label="Yours" className="flex flex-col gap-0.5">
                     {navItems
                         .filter((item) => item.group === "yours")
                         .map((item) => (
-                            <NavRow
-                                key={item.id}
-                                item={item}
-                                active={activePage === item.id}
-                                questStatus={questStatus}
-                                onNavigate={onNavigate}
-                            />
+                            <Fragment key={item.id}>
+                                <NavRow
+                                    item={item}
+                                    active={activePage === item.id}
+                                    questStatus={questStatus}
+                                    onNavigate={onNavigate}
+                                />
+                                {item.id === "balance" && walletArea && (
+                                    <WalletLines>{walletArea}</WalletLines>
+                                )}
+                            </Fragment>
                         ))}
                 </nav>
             )}
@@ -555,27 +557,14 @@ const DashboardFooter: FC<{
     </div>
 );
 
-// Your balances as one button to the Balance page, where top-up and billing
-// live. Styled like the account button below it, so both read as clickable.
-const BalanceLink: FC<
-    PropsWithChildren<{ active: boolean; onNavigate: () => void }>
-> = ({ active, onNavigate, children }) => (
-    <Button
-        as={Link}
-        to="/balance"
-        data-theme="accent"
-        intent={active ? undefined : "surface"}
-        aria-current={active ? "page" : undefined}
-        onClick={onNavigate}
-        className="w-full self-stretch flex-col items-stretch gap-1 rounded-3xl px-3 py-2"
+// Your Paid and Quest numbers indented under the Balance row, lined up with
+// its label: a readout, not a link (the row above opens the page).
+const WalletLines: FC<PropsWithChildren> = ({ children }) => (
+    <div
+        className={cn("mb-1 ml-5 border-l py-1 pr-3 pl-[15px]", NAV_LINE_CLASS)}
     >
-        <span className="flex items-center gap-2">
-            <WalletIcon className="h-4 w-4 shrink-0" />
-            Balance
-            <ChevronIcon className="ml-auto -rotate-90 opacity-60" />
-        </span>
         {children}
-    </Button>
+    </div>
 );
 
 // Who is signed in, under the cards, and the way to Account (profile, sign

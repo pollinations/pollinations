@@ -19,8 +19,8 @@ import {
 import type { ComponentType } from "react";
 
 /**
- * Groups of drawer rows: Pollinations' resources and your pages. "account"
- * rows are pinned at the bottom as buttons: your balance and your name.
+ * Groups of drawer rows: Pollinations' resources and your pages. "account" is
+ * your name, the button that closes your section.
  */
 export type DashboardNavGroup = "account" | "yours" | "resources";
 
@@ -37,7 +37,7 @@ export const DASHBOARD_NAV_ITEMS = [
         to: "/balance",
         label: "Balance",
         icon: WalletIcon,
-        group: "account",
+        group: "yours",
     },
     {
         id: "quests",
@@ -46,14 +46,14 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: SparkleIcon,
         group: "yours",
     },
-    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
     {
-        id: "connectors",
-        to: "/connectors",
-        label: "Connectors",
-        icon: ToolIcon,
+        id: "activity",
+        to: "/activity",
+        label: "Activity",
+        icon: TrendUpIcon,
         group: "yours",
     },
+    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
     {
         id: "my-models",
         to: "/my-models",
@@ -76,10 +76,10 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "yours",
     },
     {
-        id: "activity",
-        to: "/activity",
-        label: "Activity",
-        icon: TrendUpIcon,
+        id: "connectors",
+        to: "/connectors",
+        label: "Connectors",
+        icon: ToolIcon,
         group: "yours",
     },
     {

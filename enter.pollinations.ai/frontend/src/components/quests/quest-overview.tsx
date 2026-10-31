@@ -296,7 +296,7 @@ function SetupHoldNotice() {
                 <span className={line}>
                     <GitHubIcon className="h-4 w-4 shrink-0" />
                     <InlineLink href="/account">
-                        Connect your GitHub account
+                        Connect a GitHub account at least 30 days old
                     </InlineLink>
                 </span>
             </div>

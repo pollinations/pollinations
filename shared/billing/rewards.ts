@@ -74,7 +74,7 @@ type AuthDb = DrizzleD1Database<typeof schema>;
 /**
  * True while the account's email domain, or a domain it is a subdomain of, is
  * flagged and not allowed, and the account isn't verified: no purchase and no
- * linked GitHub account.
+ * linked GitHub account at least 30 days old.
  */
 export const setupRewardHeld = (userId: string) => sql`EXISTS (
     SELECT 1 FROM ${userTable} u, ${flaggedEmailDomain} f
@@ -84,7 +84,10 @@ export const setupRewardHeld = (userId: string) => sql`EXISTS (
             lower(substr(u.email, instr(u.email, '@') + 1)) = f.domain
             OR lower(substr(u.email, -length(f.domain) - 1)) = '.' || f.domain
         )
-        AND u.github_id IS NULL
+        AND (
+            u.github_created_at IS NULL
+            OR u.github_created_at > unixepoch() - 30 * 24 * 60 * 60
+        )
         AND NOT EXISTS (
             SELECT 1 FROM ${stripeCheckoutCredits} c WHERE c.user_id = u.id
         )

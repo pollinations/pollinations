@@ -2933,7 +2933,7 @@ test("setup rewards: deleted accounts still count toward the limit", async () =>
     expect(await tierBalanceOf(last)).toBe(0);
 });
 
-test("setup rewards: a purchase or a linked GitHub account verifies; allowing the domain releases it", async () => {
+test("setup rewards: a purchase or a 30-day-old GitHub account verifies; allowing the domain releases it", async () => {
     const db = drizzle(env.DB, { schema });
     const ids = await seedSetupAccounts("verify", 33, "verify.test");
     for (const id of ids) await earnFirstKey(HOLDS_ON, id);
@@ -2952,10 +2952,21 @@ test("setup rewards: a purchase or a linked GitHub account verifies; allowing th
     });
     expect(await claimSetupReward(buyer, "first_api_key")).toBe(true);
 
-    await db
-        .update(schema.user)
-        .set({ githubId: hashGithubId(coder), githubUsername: coder })
-        .where(eq(schema.user.id, coder));
+    // A GitHub account verifies only once it is at least 30 days old.
+    const linkGitHub = (ageDays: number) =>
+        db
+            .update(schema.user)
+            .set({
+                githubId: hashGithubId(coder),
+                githubUsername: coder,
+                githubCreatedAt: new Date(
+                    Date.now() - ageDays * DAY_SECONDS * 1000,
+                ),
+            })
+            .where(eq(schema.user.id, coder));
+    await linkGitHub(5);
+    expect(await claimSetupReward(coder, "first_api_key")).toBe(false);
+    await linkGitHub(40);
     expect(await claimSetupReward(coder, "first_api_key")).toBe(true);
 
     // Allowing the domain releases everyone on it and keeps it from re-flagging.

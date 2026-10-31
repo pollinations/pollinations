@@ -35,6 +35,8 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
+  // When the linked GitHub account was created; verifies held accounts.
+  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
   // Public branding shared by every community model owned by this account.
   communityProviderName: text("community_provider_name"),
   communityProviderUrl: text("community_provider_url"),

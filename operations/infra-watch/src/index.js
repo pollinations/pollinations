@@ -31,6 +31,7 @@ import {
     waiting,
 } from "./rules.js";
 import {
+    heldDomains,
     holdDomains,
     listAll,
     pending,
@@ -416,12 +417,18 @@ export class Watch extends DurableObject {
     async reviews() {
         try {
             const kv = this.env.SETUP_HOLDS;
+            const [requests, decisions] = await Promise.all([
+                listAll(kv, "review:"),
+                listAll(kv, "decision:"),
+            ]);
+            const domains = new Set(
+                requests.map(({ metadata }) => metadata?.domain),
+            );
+            domains.delete(undefined);
             return pending(
-                ...(await Promise.all(
-                    ["review:", "decision:", "hold:", "release:"].map(
-                        (prefix) => listAll(kv, prefix),
-                    ),
-                )),
+                requests,
+                decisions,
+                await heldDomains(kv, [...domains]),
             );
         } catch (error) {
             console.error(`reviews: ${error.message}`);

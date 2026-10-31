@@ -279,16 +279,16 @@ export type QuestCard = {
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
-// In the Claimed section while the account's onboarding rewards are on hold:
-// what happened, then each way to unlock them.
+// Atop the Setup lane while the account's Setup rewards are on hold: what
+// happened, then each way to unlock them.
 function SetupHoldNotice() {
     const line = "flex items-center gap-2";
     return (
         <Alert intent="warning">
             <div className="flex flex-col gap-2 text-sm">
                 <span>
-                    We couldn't verify your account. Onboarding rewards are
-                    locked. Unlock them with one of:
+                    We couldn't verify your account. Setup rewards are locked.
+                    Unlock them with one of:
                 </span>
                 <span className={line}>
                     <CardIcon className="h-4 w-4 shrink-0" />
@@ -1058,7 +1058,6 @@ function QuestOverviewContent({
                     )}
                     {progressUnavailable && <OutageNotice retrying />}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
-                    {state.held && <SetupHoldNotice />}
                     {showSummary && !state.anonymous && (
                         <QuestSummary
                             quests={claimedStats.quests}
@@ -1137,6 +1136,9 @@ function QuestOverviewContent({
                         }
                     >
                         <div className="flex flex-col gap-2">
+                            {category.key === "setup" && state.held && (
+                                <SetupHoldNotice />
+                            )}
                             {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}

@@ -190,8 +190,8 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 });
 ```
 
-Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
-[existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)
+Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/packages/examples/oauth-client-demo) ·
+[existing user database](https://github.com/pollinations/pollinations/tree/main/packages/examples/oauth-account-linking-demo)
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 

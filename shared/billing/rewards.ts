@@ -4,6 +4,7 @@ import type * as schema from "../db/better-auth.ts";
 import {
     flaggedEmailDomain,
     rewards,
+    setupRewardGithubClaim,
     stripeCheckoutCredits,
     user as userTable,
 } from "../db/better-auth.ts";
@@ -71,16 +72,12 @@ export interface ClaimRewardResult {
 
 type AuthDb = DrizzleD1Database<typeof schema>;
 
-// The reward's key under the account's GitHub id, as rewardKey() builds it.
-const githubKeyOf = (userId: string) =>
-    sql`'quest:' || ${rewards.questId} || ':github:' || (SELECT github_id FROM ${userTable} WHERE id = ${userId})`;
-
 /**
  * True while the account's email domain, or a domain it is a subdomain of, is
  * flagged and not allowed, and the account isn't verified: no purchase and no
  * linked GitHub account at least 30 days old. With `rewardId`, GitHub verifies
- * only a reward keyed to that GitHub id, so one GitHub account unlocks each
- * setup reward once, even across deleted accounts.
+ * only the reward that GitHub id is bound to, so one GitHub account unlocks
+ * each setup reward once, even across deleted accounts.
  */
 export const setupRewardHeld = (
     userId: string,
@@ -99,9 +96,8 @@ export const setupRewardHeld = (
             ${
                 rewardId
                     ? sql`OR NOT EXISTS (
-                SELECT 1 FROM ${rewards} r
-                WHERE r.id = ${rewardId}
-                    AND r.idempotency_key = 'quest:' || r.quest_id || ':github:' || u.github_id
+                SELECT 1 FROM ${setupRewardGithubClaim} g
+                WHERE g.github_id = u.github_id AND g.reward_id = ${rewardId}
             )`
                     : sql``
             }
@@ -222,21 +218,27 @@ export async function claimReward(
         })
         .where(sql`${userTable.id} = ${userId} AND changes() = 1`)
         .returning({ newBalance: bucketColumn });
-    // A setup reward is first re-keyed to the account's GitHub id, unless that
-    // GitHub id already holds it; the hold accepts GitHub only for that key.
-    const bindToGitHub = db
-        .update(rewards)
-        .set({ idempotencyKey: githubKeyOf(userId) })
-        .where(
-            and(
-                eq(rewards.id, rewardId),
-                isNull(rewards.claimedAt),
-                sql`(SELECT github_id FROM ${userTable} WHERE id = ${userId}) IS NOT NULL`,
-                sql`NOT EXISTS (SELECT 1 FROM ${rewards} r WHERE r.idempotency_key = ${githubKeyOf(userId)})`,
-            ),
-        );
-    const results = holdable
-        ? await db.batch([bindToGitHub, claim, credit])
+    // A setup reward first binds the account's GitHub id to this reward, once
+    // per GitHub id and quest; the hold accepts GitHub only for its own reward.
+    const [account] = holdable
+        ? await db
+              .select({ githubId: userTable.githubId })
+              .from(userTable)
+              .where(eq(userTable.id, userId))
+        : [];
+    const results = account?.githubId
+        ? await db.batch([
+              db
+                  .insert(setupRewardGithubClaim)
+                  .values({
+                      githubId: account.githubId,
+                      questId: row.questId as string,
+                      rewardId,
+                  })
+                  .onConflictDoNothing(),
+              claim,
+              credit,
+          ])
         : await db.batch([claim, credit]);
     const updateResult = results[results.length - 1];
 

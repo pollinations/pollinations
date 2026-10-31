@@ -2962,8 +2962,12 @@ test("setup rewards: one GitHub account unlocks each setup reward once, even acr
 
     await linkGitHub(first);
     expect(await claimSetupReward(first, "first_api_key")).toBe(true);
+    // The reward keeps its Google key; the GitHub binding is its own row.
     expect((await questReward(first, "first_api_key")).idempotencyKey).toBe(
-        `quest:first_api_key:github:${githubId}`,
+        `quest:first_api_key:google:google-${first}`,
+    );
+    expect(await db.select().from(schema.setupRewardGithubClaim)).toMatchObject(
+        [{ githubId, questId: "first_api_key" }],
     );
 
     // The first account is deleted; its reward stays in the ledger.

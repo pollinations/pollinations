@@ -11,6 +11,7 @@ import {
   integer,
   real,
   index,
+  primaryKey,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
@@ -527,6 +528,15 @@ export const setupRewardSignup = sqliteTable("setup_reward_signup", {
 
 // Private email domains that passed 30 accounts in 24 hours. While holds are
 // on, their accounts can't claim setup rewards until verified or allowed.
+// GitHub accounts bound to the setup reward they verified, one per quest.
+// Kept when accounts are deleted, so a GitHub account unlocks each setup
+// reward once while every reward keeps its original idempotency key.
+export const setupRewardGithubClaim = sqliteTable("setup_reward_github_claim", {
+  githubId: integer("github_id").notNull(),
+  questId: text("quest_id").notNull(),
+  rewardId: text("reward_id").notNull(),
+}, (table) => [primaryKey({ columns: [table.githubId, table.questId] })]);
+
 export const flaggedEmailDomain = sqliteTable("flagged_email_domain", {
   domain: text("domain").primaryKey(),
   flaggedAt: integer("flagged_at", { mode: "timestamp" }).notNull(),

@@ -756,7 +756,13 @@ test("anyone can read the prices, and they match what gen charges", async () => 
     }>();
     expect(pricing).toMatchObject({
         maxRunning: 8,
-        templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
+        templates: {
+            "pollinations-large": {
+                provider: "e2b",
+                cpuCount: 4,
+                memoryMB: 8192,
+            },
+        },
     });
     // The fake's 2 vCPU, 512 MiB sandbox for 300 s.
     expect(

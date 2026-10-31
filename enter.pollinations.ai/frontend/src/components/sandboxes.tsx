@@ -30,6 +30,10 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
+import {
+    SANDBOX_PROVIDERS,
+    sandboxTemplate,
+} from "@shared/registry/sandbox.ts";
 import { useCallback, useEffect, useState } from "react";
 import { genFetch } from "../api.ts";
 import { genDocsUrl } from "../config.ts";
@@ -123,7 +127,7 @@ const perSecond = (pricing: Pricing, template: string, size: Size) => {
     return size.cpuCount * vcpuSecond + (size.memoryMB / 1024) * gibSecond;
 };
 
-const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
+const pollen = (amount: number) => `${Number(amount.toPrecision(2))} pollen`;
 
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
     `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
@@ -131,15 +135,12 @@ const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
 // An always-on sandbox runs about 720 hours a month.
 const HOURS_PER_MONTH = 720;
 
-const TEMPLATE_LABELS: Record<string, string> = {
-    pollinations: "Pollinations (E2B)",
-    "pollinations-large": "Pollinations Large (E2B)",
-    "pollinations-azure": "Pollinations (Azure)",
-    "pollinations-azure-large": "Pollinations Large (Azure)",
-    "pollinations-azure-xl": "Pollinations XL (Azure)",
+const templateLabel = (id: string) => {
+    const template = sandboxTemplate(id);
+    return template
+        ? `${template.name} (${SANDBOX_PROVIDERS[template.provider].name})`
+        : id;
 };
-
-const templateLabel = (id: string) => TEMPLATE_LABELS[id] ?? id;
 
 // Past half of E2B's longest timeout, it runs until it's stopped.
 const forever = (until: string) =>

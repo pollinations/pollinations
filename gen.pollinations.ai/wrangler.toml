@@ -241,7 +241,8 @@ BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
 # Azure sandboxes (src/routes/azure-sandboxes.ts): gen's own login, whose
 # secret is AZURE_SANDBOX_CLIENT_SECRET, its sandbox group, and the image
-# operations/infrastructure/azure-sandboxes/build.mjs imported there.
+# operations/infrastructure/azure-sandboxes/build.mjs imported there (CI opens
+# a PR with new image ids after each image change on main).
 AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
 AZURE_SANDBOX_CLIENT_ID = "6917c58e-9b41-45bb-9685-0972f7fbd35f"
 AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscriptions/7725a3f5-6483-4079-ba51-a317aa4fc09e/resourceGroups/rg-pollinations-sandboxes/sandboxGroups/pollisbx-production"

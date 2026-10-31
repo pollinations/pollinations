@@ -1,4 +1,5 @@
 import { azureSandbox } from "@shared/db/sandbox.ts";
+import { sandboxTemplate } from "@shared/registry/sandbox.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -13,19 +14,6 @@ import type { Env } from "@/env.ts";
 // Both providers name a sandbox's owner with this metadata key; on Azure it
 // is also a label, which lists a user's boxes.
 export const OWNER_KEY = "pollinations_user";
-// The templates that run on Azure, at sizes Azure accepts.
-export const AZURE_TEMPLATES: Record<
-    string,
-    { cpuCount: number; memoryMB: number }
-> = {
-    "pollinations-azure": { cpuCount: 2, memoryMB: 2048 },
-    "pollinations-azure-large": { cpuCount: 4, memoryMB: 8192 },
-    "pollinations-azure-xl": { cpuCount: 8, memoryMB: 16384 },
-};
-// Azure's rates for a running box, per second, in pollen (1 pollen ≈ $1).
-// Azure credits pay them.
-export const AZURE_VCPU_SECOND = 0.000024;
-export const AZURE_GIB_SECOND = 0.000003;
 const API_VERSION = "2026-02-01-preview";
 // The envd the image builds, which E2B's SDKs check before using features.
 const ENVD_VERSION = "0.10.1";
@@ -174,6 +162,7 @@ async function waitForEnvd(env: CloudflareBindings, id: string) {
 // E2B's sandbox detail, from the row and the box's state.
 function detail(env: CloudflareBindings, row: Row, state: string) {
     const running = state === "Running";
+    const template = sandboxTemplate(row.templateId);
     return {
         sandboxID: row.sandboxId,
         templateID: row.templateId,
@@ -181,7 +170,9 @@ function detail(env: CloudflareBindings, row: Row, state: string) {
         clientID: "",
         startedAt: row.startedAt.toISOString(),
         endAt: row.endAt.toISOString(),
-        ...AZURE_TEMPLATES[row.templateId],
+        cpuCount: template?.cpuCount,
+        memoryMB: template?.memoryMB,
+        diskSizeMB: template?.diskSizeMB,
         envdVersion: ENVD_VERSION,
         state: running ? ("running" as const) : ("paused" as const),
         metadata: row.metadata,
@@ -223,7 +214,10 @@ async function create(env: CloudflareBindings, body: NewSandbox) {
     ) {
         return e2bError(400, "timeout must be a whole number of seconds");
     }
-    const size = AZURE_TEMPLATES[body.templateID];
+    const size = sandboxTemplate(body.templateID);
+    if (size?.provider !== "azure") {
+        return e2bError(404, `Template ${body.templateID} not found`);
+    }
     const accessToken = [...crypto.getRandomValues(new Uint8Array(32))]
         .map((byte) => byte.toString(16).padStart(2, "0"))
         .join("");

@@ -168,7 +168,13 @@ SCHEMA >
 
 -- Request-time listing classification. Empty on historical events and on
 -- regular models; never infer an agent from the community provider alone.
-`community_endpoint_type` String        `json:$.communityEndpointType` DEFAULT ''
+`community_endpoint_type` String        `json:$.communityEndpointType` DEFAULT '',
+
+-- A community proxy answering a text request itself: the model gen asked its
+-- upstream for, and the model name the upstream wrote into its answer. Empty
+-- elsewhere. infra-watch compares them (the old monitor's duty 2d).
+`upstream_model`        LowCardinality(String) `json:$.upstreamModel` DEFAULT '',
+`upstream_served_model` LowCardinality(String) `json:$.upstreamServedModel` DEFAULT ''
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"

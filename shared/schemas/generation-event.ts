@@ -81,6 +81,10 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     /** Resolved request's listing type at execution time, not today's catalog. */
     communityEndpointType?: CommunityEndpointRuntime["type"];
+    /** Community proxy answering itself: the model gen asked its upstream for. */
+    upstreamModel?: string;
+    /** ...and the model name the upstream wrote into its answer. */
+    upstreamServedModel?: string;
     /** Exact registry ID attempted: the primary or a fallback, on success or failure. */
     modelUsed?: string;
     modelProviderUsed?: string;

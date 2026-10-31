@@ -19,8 +19,8 @@ import type { ComponentType } from "react";
 
 /**
  * Groups of drawer rows: Pollinations' resources, then your section: what you
- * create (under a "Create" label) and your other pages. "account" is your
- * name, the button that closes your section.
+ * build (under a "Create" label, keys included) and your pollen. "account" is
+ * your name, the button that closes your section.
  */
 export type DashboardNavGroup = "account" | "create" | "yours" | "resources";
 
@@ -60,7 +60,7 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: TerminalIcon,
         group: "create",
     },
-    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
+    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "create" },
     {
         id: "quests",
         to: "/quests",

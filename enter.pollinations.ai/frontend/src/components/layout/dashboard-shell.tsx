@@ -70,11 +70,11 @@ type DashboardNavItem = {
 };
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
-// Docs), and everything about you as one block at the bottom: what you create
-// (models, agents, apps, sandboxes, under a "Create" label), Keys, then your
-// pollen (Quests, Activity, Pollen with its numbers indented under it), then
-// your name. A thin line opens each part. Signed out, the bottom holds the
-// sign-in buttons.
+// Docs), and everything about you as one block at the bottom: what you build
+// (models, agents, apps, sandboxes and keys, under a "Create" label), a gap,
+// your pollen (Quests, Activity, Pollen with its numbers indented under it),
+// then your name. A thin line opens each part. Signed out, the bottom holds
+// the sign-in buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
@@ -386,36 +386,41 @@ const DashboardRail: FC<DashboardRailProps> = ({
             )}
         >
             {navItems.some((item) => item.group === "yours") && (
-                <nav aria-label="Yours" className="flex flex-col gap-0.5">
-                    <Eyebrow size="chrome" className="px-3 pt-1 pb-0.5">
-                        Create
-                    </Eyebrow>
-                    {navItems
-                        .filter((item) => item.group === "create")
-                        .map((item) => (
-                            <NavRow
-                                key={item.id}
-                                item={item}
-                                active={activePage === item.id}
-                                questStatus={questStatus}
-                                onNavigate={onNavigate}
-                            />
-                        ))}
-                    {navItems
-                        .filter((item) => item.group === "yours")
-                        .map((item) => (
-                            <Fragment key={item.id}>
+                // Space, not a line, splits what you build from your pollen.
+                <nav aria-label="Yours" className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-0.5">
+                        <Eyebrow size="chrome" className="px-3 pt-1 pb-0.5">
+                            Create
+                        </Eyebrow>
+                        {navItems
+                            .filter((item) => item.group === "create")
+                            .map((item) => (
                                 <NavRow
+                                    key={item.id}
                                     item={item}
                                     active={activePage === item.id}
                                     questStatus={questStatus}
                                     onNavigate={onNavigate}
                                 />
-                                {item.id === "pollen" && walletArea && (
-                                    <SubLines>{walletArea}</SubLines>
-                                )}
-                            </Fragment>
-                        ))}
+                            ))}
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        {navItems
+                            .filter((item) => item.group === "yours")
+                            .map((item) => (
+                                <Fragment key={item.id}>
+                                    <NavRow
+                                        item={item}
+                                        active={activePage === item.id}
+                                        questStatus={questStatus}
+                                        onNavigate={onNavigate}
+                                    />
+                                    {item.id === "pollen" && walletArea && (
+                                        <SubLines>{walletArea}</SubLines>
+                                    )}
+                                </Fragment>
+                            ))}
+                    </div>
                 </nav>
             )}
             {accountName && (

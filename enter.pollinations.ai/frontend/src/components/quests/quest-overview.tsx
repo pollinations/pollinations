@@ -441,7 +441,7 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
 //   claimable → muted theme well + check (works in light and dark — receded
 //                relative to the open tile, but readable on either surface)
 //   claimed   → no tile, muted check (banked already, fully receded)
-//   locked    → muted well + lock (held until the account is verified)
+//   locked    → no tile, red lock (held until the account is verified)
 function QuestMarker({
     icon: Icon,
     status,
@@ -464,7 +464,7 @@ function QuestMarker({
     // open → ambient active tile; claimable → muted well; claimed (and
     // coming_soon, which always renders claimed) → no tile, muted glyph.
     function resolveTile(): string {
-        if (locked) return "bg-theme-bg-subtle text-theme-text-muted";
+        if (locked) return "text-intent-danger-text";
         if (!comingSoon && status === "open")
             return "bg-theme-bg-active text-theme-text-strong";
         if (status === "claimable")

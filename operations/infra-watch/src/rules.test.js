@@ -511,5 +511,8 @@ test("a command is built only for keys of ids and plain domain names", () => {
         kvPut("decision:AbC_1-2", "approved"),
         /'decision:AbC_1-2' approved$/,
     );
-    assert.doesNotMatch(kvPut("release:a';rm -rf ~;'.com", "released"), /rm -rf/);
+    assert.doesNotMatch(
+        kvPut("release:a';rm -rf ~;'.com", "released"),
+        /rm -rf/,
+    );
 });

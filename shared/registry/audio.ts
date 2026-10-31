@@ -320,9 +320,9 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-10-08").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
-        // Promotional $0.10/hour; standard $0.36/hour, expiry unpublished.
-        // https://microsoft.ai/models/mai-transcribe-2/
-        cost: { promptAudioSeconds: 0.1 / 3600 },
+        // Azure Speech fast transcription standard rate, $0.36/hour. The
+        // $0.10/hour launch offer ran until the end of 2026.
+        cost: { promptAudioSeconds: 0.36 / 3600 },
         title: "MAI Transcribe 2",
         description:
             "Multilingual file transcription with automatic language detection and timed segments",

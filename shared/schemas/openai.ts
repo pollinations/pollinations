@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
     AGENT_FIELD_DESCRIPTIONS,
     ModelHealthSchema,
+    ModelInfoSchema,
 } from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
@@ -329,6 +330,15 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
+const ChatOutputTokenLimitSchema = z
+    .number()
+    .int()
+    .min(0)
+    .nullish()
+    .describe(
+        "Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort.",
+    );
+
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -364,7 +374,8 @@ export const CreateChatCompletionRequestSchema = z
             .default(null),
         logprobs: z.boolean().nullable().optional(),
         top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
-        max_tokens: z.number().int().min(0).nullable().optional(),
+        max_tokens: ChatOutputTokenLimitSchema,
+        max_completion_tokens: ChatOutputTokenLimitSchema,
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
         seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
@@ -455,7 +466,14 @@ export const CreateResponseRequestSchema = z
         input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
-        max_output_tokens: z.number().int().positive().nullish(),
+        max_output_tokens: z
+            .number()
+            .int()
+            .positive()
+            .nullish()
+            .describe(
+                "Maximum generated tokens, including reasoning. For models served through Chat Completions, non-streaming requests that exhaust an explicit limit without an answer return 400 output_token_limit_exceeded; reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. Native Responses models can instead return status incomplete with reason max_output_tokens.",
+            ),
         max_tool_calls: z.number().int().positive().nullish(),
         stream: z.boolean().optional().default(false),
         stream_options: z
@@ -605,6 +623,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
 
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullish(),
+    refusal: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z
@@ -796,6 +815,7 @@ export const OpenAIModelSchema = z
             .record(z.string(), z.string())
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
+        pricing_units: ModelInfoSchema.shape.pricing_units,
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())

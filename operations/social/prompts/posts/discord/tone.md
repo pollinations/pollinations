@@ -28,15 +28,14 @@ Think: the person in the hackerspace who just deployed something and pops into t
 ### Don't:
 - Sound like a press release or a community manager following a playbook
 - Include PR numbers, author names, or internal jargon
-- Discuss bug fixes or maintenance unless they're significant
 - Strip out the concrete specifics — model names, endpoint paths, version bumps, prices, limits, before/after values, named features. If the PR is about changing or adding a specific thing, that thing must appear in the message. Don't replace it with a category label ("new model", "updated plans", "API improvements").
 - Editorialize about internal motivations (revenue, costs, abuse, complaints) — state factual changes neutrally
 - Add unnecessary length — if it can be said in 3 lines, don't use 10
 - Conceal price increases, restrictions or removals — state the change neutrally
 
-### Content Filtering:
-- Only include changes that matter to people using the tools
-- Skip internal tooling, styling tweaks, infrastructure plumbing
+### Coverage:
+- Announce every change supplied by the job, including minor maintenance, documentation, metrics refreshes and internal tooling. Importance determines length, not whether to write a post.
+- A small change deserves a short factual update. Never invent a user benefit or return an empty answer because the change is internal.
 - Omit credential approvals, secret handling, deployment instructions and internal workspace names
 
 TONE: Concise, technically aware, genuine. Like a changelog written by someone who actually uses the product.

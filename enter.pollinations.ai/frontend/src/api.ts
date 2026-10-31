@@ -1,8 +1,10 @@
 import { hc } from "hono/client";
 import type { ApiRoutes } from "./backend-types.ts";
 import { config } from "./config.ts";
+import { trackedFetch } from "./lib/outage.ts";
 
 export const apiClient = hc<ApiRoutes>(config.apiBaseUrl, {
+    fetch: trackedFetch,
     init: { credentials: "include" },
 });
 
@@ -50,7 +52,7 @@ export async function genFetch(
     path: string,
     { method = "GET", body }: { method?: string; body?: unknown } = {},
 ): Promise<Response> {
-    return fetch(`${config.genBaseUrl}${path}`, {
+    return trackedFetch(`${config.genBaseUrl}${path}`, {
         method,
         headers: {
             ...(await authorization()),
@@ -66,5 +68,6 @@ export async function genFetch(
  * routes with their API keys.
  */
 export const accountClient = hc<ApiRoutes>(config.genBaseUrl, {
+    fetch: trackedFetch,
     headers: authorization,
 }).account;

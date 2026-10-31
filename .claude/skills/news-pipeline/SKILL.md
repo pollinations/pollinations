@@ -16,7 +16,7 @@ How it works: `operations/social/PIPELINE.md`. Everything generated lives on the
 ## Find what happened
 
 - Runs: `gh run list --workflow news-posts.yml` (or `news-deploy-posts.yml`, `news-build-index.yml`); `gh run view <id> --log`.
-- Nothing retries by itself: a failed model, picture, GitHub or Discord call turns the run red. Rerun it, except after an **empty model answer**: our API keeps each answer under its exact request, so the same run asks the same thing and gets the same empty answer back. Write that post by hand (or rerun once its input changes).
+- Empty model answers retry once with a fresh cache key, including legacy cached empty answers and the API's `empty_response` error. Other failed model, picture, GitHub or Discord calls turn the run red immediately. Reruns preserve completed deliveries; inspect the failed input if both text attempts were empty. Every shipped PR gets a factual Discord announcement, including minor and internal work.
 - Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Deploy posts". Read every failed run: more than one post can fail in the same run.
 - Files: `https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/`, in two halves. `data/`: `summaries/<daily|weekly|monthly>/<date>.json`, the `/models` record `models/<date>.json`, `contributors/<month>.json` and `index.json`. `posts/<platform>/<job>/`: one `<date>.json` per post and the folder's `delivery.json`. Deploy posts: `posts/discord/prs/held.json` and `posts/discord/prs/<YYYY-MM>/delivery.json`.
 - Pictures are links, not files: `url` on `media.pollinations.ai`, kept 30 days. Once posted, the picture lives on the platform it went to.

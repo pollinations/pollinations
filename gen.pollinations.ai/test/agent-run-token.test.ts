@@ -73,7 +73,7 @@ async function probe(app: Hono<AuthEnv>, url: string, token?: string) {
     );
 }
 
-test("resolves to the parent key and its permissions", async () => {
+test("keeps the parent key's generation limits but not account permissions", async () => {
     const parent = await createTestApiKey({
         allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
         accountPermissions: ["usage", "machines"],
@@ -90,16 +90,15 @@ test("resolves to the parent key and its permissions", async () => {
         token,
     );
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
+    const result = await response.json();
+    expect(result).toMatchObject({
         userId: parent.userId,
         apiKeyId: parent.id,
         pollenBalance: 42,
-        permissions: {
-            models: [RESTRICTED_TEXT_TEST_MODEL],
-            account: ["usage", "machines"],
-        },
+        permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
         agentRun: { parentApiKeyId: parent.id },
     });
+    expect(result).not.toHaveProperty("permissions.account");
 });
 
 test("preserves the managed agent scope", async () => {

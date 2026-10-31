@@ -79,13 +79,10 @@ export const CHAT_PARAMETERS = {
         "parallel_tool_calls",
         "reasoning_effort",
     ],
-    // OpenRouter xAI tag for Grok 4.7 (2026-09-21). web_search_options is
-    // withheld: OpenRouter bills web search per call ($0.005), a non-token
-    // charge our cost model can't meter yet.
-    openRouterGrok47: [
+    // AWS and direct xAI accept logprobs requests but return no probabilities.
+    grok47: [
         ...TOOL_CHAT,
         ...SAMPLING,
-        ...LOGPROBS,
         ...OPENROUTER_REASONING,
         "seed",
         "structured_outputs",
@@ -173,6 +170,14 @@ export const CHAT_PARAMETERS = {
     azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
     // Bedrock Qwen3 Coder rejects stop and has no seed/logprobs controls.
     bedrockQwenCoder: [...TOOL_CHAT, ...SAMPLING],
+    // Bedrock Kimi fixes top_p at 0.95, rejects penalties and omits logprobs.
+    bedrockKimi: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "reasoning_effort",
+        "parallel_tool_calls",
+    ],
     openRouterMistralSmall32: [
         ...SAMPLED_CHAT,
         ...PENALTIES,

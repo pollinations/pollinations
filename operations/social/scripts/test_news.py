@@ -426,13 +426,33 @@ class ReadmeTest(unittest.TestCase):
 
 
 class TextCallTest(unittest.TestCase):
-    def test_a_failed_or_empty_answer_is_asked_once_and_stops_the_caller(self):
+    def test_a_success_or_non_empty_response_error_is_asked_once(self):
         answer = lambda content: reply(200, {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]})
-        for response, expected in ((answer("Hello"), "Hello"), (answer(""), None), (answer(None), None),
-                                   (reply(503), None)):
+        for response, expected in ((answer("Hello"), "Hello"), (reply(503), None)):
             with self.subTest(response=response.status_code), \
                  patch("common.requests.post", return_value=response) as post:
                 self.assertEqual(call_pollinations_api("system", "user", "token"), expected)
+                self.assertEqual(post.call_count, 1)
+
+    def test_empty_answers_retry_once_with_a_fresh_key_and_preserve_the_request(self):
+        answer = lambda content: reply(200, {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]})
+        for empty in (answer(""), answer(None), answer(" \n"), reply(502, {"error": {"code": "empty_response"}})):
+            for following, expected in ((answer("Recovered"), "Recovered"), (empty, None)):
+                with self.subTest(empty=empty.status_code, expected=expected), \
+                     patch("common.requests.post", side_effect=[empty, following]) as post:
+                    self.assertEqual(call_pollinations_api("system", "user", "token", 0.2, {"type": "json_object"}), expected)
+                    self.assertEqual(post.call_count, 2)
+                    first, second = [call.kwargs["json"] for call in post.call_args_list]
+                    self.assertNotIn("seed", first)
+                    self.assertGreaterEqual(second["seed"], 0)
+                    self.assertLessEqual(second["seed"], 2147483647)
+                    self.assertEqual({key: value for key, value in second.items() if key != "seed"}, first)
+
+    def test_a_refusal_is_not_retried(self):
+        for choice in ({"message": {"content": None, "refusal": "Cannot help"}},
+                       {"message": {"content": ""}, "finish_reason": "content_filter"}):
+            with self.subTest(choice=choice), patch("common.requests.post", return_value=reply(200, {"choices": [choice]})) as post:
+                self.assertIsNone(call_pollinations_api("system", "user", "token"))
                 self.assertEqual(post.call_count, 1)
 
 

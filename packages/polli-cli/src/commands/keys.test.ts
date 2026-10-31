@@ -117,6 +117,38 @@ describe("keys list permissions output", () => {
         expect(output).toContain("models:3 account:profile");
         expect(output).not.toContain("[object Object]");
     });
+
+    it("says which consent box to tick when the login lacks account:keys", async () => {
+        const { fetch } = prepare(null);
+        let stderr = "";
+        vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+            stderr += String(value);
+            return true;
+        });
+        fetch.mockResolvedValue(
+            Response.json(
+                {
+                    status: 403,
+                    success: false,
+                    error: {
+                        code: "FORBIDDEN",
+                        message:
+                            "API key does not have 'account:keys' permission",
+                    },
+                },
+                { status: 403 },
+            ),
+        );
+
+        await expect(
+            keysCommand.parseAsync(["list"], { from: "user" }),
+        ).rejects.toMatchObject({ code: 1 });
+
+        expect(stderr).toContain(
+            'Run `polli auth login` again and tick "Manage keys, agents and models".',
+        );
+        expect(stderr).not.toContain("403");
+    });
 });
 
 describe("keys create --expires-in validation", () => {

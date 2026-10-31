@@ -138,7 +138,7 @@ Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2
 polli gen image "a fox" --model flux --estimate
 polli gen video "a spacecraft landing on mars" --model veo --duration 8 --audio --estimate
 ```
-`--estimate` reads the public model list (`/image/models`), prints the estimated Pollen for that request and exits without generating. Per-image, per-megapixel and per-second rates give a number; token-billed models (e.g. `gpt-image-2`, `nanobanana`) print `estimate: unknown` with their rates, because the charge depends on usage the provider reports afterwards. `--json` adds `pollen` (null when unknown) and the per-rate `lines`.
+`--estimate` reads the public model list (`/image/models`), prints the estimated Pollen for that request and exits without generating. Per-image, per-megapixel and per-second rates, plus fixed per-generation fees, give a number; token-billed models (e.g. `gpt-image-2`, `nanobanana`) print `estimate: unknown` with their rates, because the charge depends on usage the provider reports afterwards. `--json` adds `pollen` (null when unknown) and the per-rate `lines`.
 
 ### Generate video
 ```bash
@@ -255,11 +255,13 @@ Creating an agent also creates its callable model listing. Managed agents are te
 ### Publish a static site
 ```bash
 npm run build
-polli sites deploy ./dist --name my-app   # → https://my-app.pollinations.app
+polli sites deploy ./dist --name my-app --verify   # → https://my-app.pollinations.app
 polli sites list
 polli sites delete my-app
 ```
 Publishes a folder of static files with an `index.html`; unknown paths serve `index.html`, so single-page apps route on the client. Deploying the same name again replaces the site and uploads only changed files. Names are 3–32 lowercase letters, digits and hyphens, starting with a letter; the first deploy claims the name. Limits: 5 sites per account, 200 MB and 1,000 files per site, 25 MiB per file. Dotfiles and `node_modules` are not uploaded. Sites are public: never put an API key in them. To call Pollinations from a site, let visitors sign in with their own Pollen (see [Connect User Wallets](https://gen.pollinations.ai/docs/llm.txt?section=byop)). Share the URL the command prints rather than composing one from the name.
+
+`--verify` reads every published file without credentials and compares its bytes to the build, following redirects and retrying failures. The published URL (or site object with `--json`) is printed before verification. A failed check reports that the site is published, exits non-zero and does not roll back.
 
 ### Manage API keys
 ```bash

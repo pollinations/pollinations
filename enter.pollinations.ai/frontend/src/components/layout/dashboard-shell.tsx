@@ -32,6 +32,7 @@ import type {
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
+import { pageMeta } from "../../page-meta.ts";
 import {
     QUEST_STATUS_UPDATED_EVENT,
     questNavLabel,
@@ -109,32 +110,16 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         (item) => item.to === location.pathname,
     );
     const activePage = activeNavItem?.id;
-    const activePageLabel = activeNavItem?.label ?? "Dashboard";
     const questStatus = useQuestNavStatus(showQuestStatus);
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
 
     useEffect(() => {
-        const canonicalUrl = new URL(
-            location.pathname,
-            window.location.origin,
-        ).toString();
-        const title = `${activePageLabel} | pollinations.ai`;
-        document.title = title;
-        document
-            .querySelector('link[rel="canonical"]')
-            ?.setAttribute("href", canonicalUrl);
-        document
-            .querySelector('meta[property="og:url"]')
-            ?.setAttribute("content", canonicalUrl);
-        document
-            .querySelector('meta[property="og:title"]')
-            ?.setAttribute("content", title);
-        document
-            .querySelector('meta[name="twitter:title"]')
-            ?.setAttribute("content", title);
-    }, [activePageLabel, location.pathname]);
+        const meta = pageMeta(location.pathname);
+        if (!meta) return;
+        document.title = meta.title;
+    }, [location.pathname]);
 
     const closeDrawer = useCallback(() => {
         const activeElement = document.activeElement;
@@ -291,7 +276,13 @@ function useQuestNavStatus(enabled: boolean): string | null {
                     rewardsResponse.json(),
                 ]);
                 if (!cancelled && currentRequest === requestId) {
-                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
+                    setLabel(
+                        questNavLabel(
+                            catalog.quests,
+                            rewards.rewards,
+                            rewards.setupHold !== null,
+                        ),
+                    );
                 }
             } catch {
                 if (!cancelled && currentRequest === requestId) setLabel(null);

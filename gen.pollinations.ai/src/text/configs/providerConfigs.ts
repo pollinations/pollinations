@@ -108,6 +108,26 @@ export function createBedrockNativeConfig(
     };
 }
 
+export function createBedrockResponsesConfig(model: string): ProviderConfig {
+    const region = textEnvironmentValue("AWS_REGION") || "us-east-1";
+    return createBedrockNativeConfig({
+        model,
+        responsesEndpoint: `https://bedrock-runtime.${region}.amazonaws.com/openai/v1/responses`,
+        responsesStreamUpstream: true,
+        serviceTier: "default",
+        supportsMaxCompletionTokens: true,
+        supportsStreamOptions: true,
+    });
+}
+
+/** Keep Chat controls on the native Chat endpoint; Responses remains available. */
+export function createBedrockChatConfig(model: string): ProviderConfig {
+    const config = createBedrockResponsesConfig(model);
+    const endpoint = new URL(config.responsesEndpoint as string);
+    endpoint.pathname = "/openai/v1/chat/completions";
+    return { ...config, directEndpoint: endpoint.href };
+}
+
 export function createFireworksModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

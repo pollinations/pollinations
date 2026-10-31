@@ -26,6 +26,7 @@ import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { agentDiscoveryLinks } from "@/middleware/agent-discovery.ts";
 import { logger } from "@/middleware/logger.ts";
+import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import {
     GENERATION_HANDOFF_PATH,
     generationHandoffRoutes,
@@ -111,9 +112,6 @@ function sitemapXml(c: Context<Env>): Response {
         [
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-            "  <url>",
-            `    <loc>${origin}/</loc>`,
-            "  </url>",
             "  <url>",
             `    <loc>${origin}/docs</loc>`,
             "  </url>",
@@ -214,6 +212,9 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", logger)
     .use("*", async (c, next) => {
         await next();
+        if (c.env.ENVIRONMENT === "staging") {
+            c.header("X-Robots-Tag", "noindex, nofollow");
+        }
         if (c.res.status === 401) {
             c.header(
                 "WWW-Authenticate",
@@ -251,6 +252,10 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .all("/api/docs/*", redirectLegacyDocs)
     .all("/api", () => notFound())
     .all("/api/*", () => notFound())
+    // Account calls reach Enter's D1, so they share gen's edge limit: one IP
+    // rotating made-up keys cannot turn into one D1 lookup per request.
+    // Hono's "/account/*" also matches "/account".
+    .use("/account/*", edgeRateLimit)
     .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/*", (c) => {

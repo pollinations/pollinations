@@ -123,6 +123,34 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("lists registered GPU workers only with the GPU token", async () => {
+        const gpuAuth = { authorization: `Bearer ${env.PLN_GPU_TOKEN}` };
+        const registered = await fetchWorker("/register", env, {
+            method: "POST",
+            headers: { ...gpuAuth, "content-type": "application/json" },
+            body: JSON.stringify({ url: "https://worker.test", type: "flux" }),
+        });
+        expect(registered.status).toBe(200);
+
+        const anonymous = await fetchWorker("/register", env);
+        expect(anonymous.status).toBe(401);
+        await expect(anonymous.json()).resolves.toEqual({
+            success: false,
+            message: "Unauthorized",
+        });
+
+        const listed = await fetchWorker("/register", env, {
+            headers: gpuAuth,
+        });
+        expect(listed.status).toBe(200);
+        await expect(listed.json()).resolves.toContainEqual(
+            expect.objectContaining({
+                type: "flux",
+                url: "https://worker.test",
+            }),
+        );
+    });
+
     it("accepts a 28 MiB inline-image chat body before authentication", async () => {
         const body = JSON.stringify({
             model: "openai/gpt-5-nano",
@@ -184,6 +212,23 @@ describe("gen worker routing", () => {
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
     });
+
+    it.each(["/", "/docs", "/docs/llm.txt", "/llms.txt", "/sitemap.xml"])(
+        "excludes staging %s from indexing while keeping production indexable",
+        async (path) => {
+            for (const environment of ["staging", "production"] as const) {
+                const response = await fetchWorker(path, {
+                    ...envWithEnter(),
+                    ENVIRONMENT: environment,
+                });
+
+                expect(response.status).toBe(200);
+                expect(response.headers.get("X-Robots-Tag")).toBe(
+                    environment === "staging" ? "noindex, nofollow" : null,
+                );
+            }
+        },
+    );
 
     it("serves gen's icons after the routes", async () => {
         // Like Cloudflare's asset server: 405 for methods other than GET/HEAD.
@@ -315,10 +360,7 @@ describe("gen worker routing", () => {
         const locs = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
             (match) => match[1],
         );
-        expect(locs).toEqual([
-            "https://staging.gen.pollinations.ai/",
-            "https://staging.gen.pollinations.ai/docs",
-        ]);
+        expect(locs).toEqual(["https://staging.gen.pollinations.ai/docs"]);
     });
 
     it("serves llms-full.txt with the full guide and CLI skill in one file", async () => {

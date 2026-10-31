@@ -565,7 +565,7 @@ Errors use Anthropic's error shape. `count_tokens`, batches, files, server tools
 | Field | Type | Description |
 |---|---|---|
 | `model` * | `string` | Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`. |
-| `max_tokens` * | `integer` | min: `1` |
+| `max_tokens` * | `integer` | Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; reported usage, including reasoning tokens, is billed. Increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens. · min: `1` |
 | `messages` * | `object`[] | — |
 | `messages[].role` * | `"user"` \| `"assistant"` \| `"system"` | — |
 | `messages[].content` * | `string` \| `object`[] | — |
@@ -655,7 +655,8 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `logit_bias` | `object` \| `null` | default: `null` |
 | `logprobs` | `any` | — |
 | `top_logprobs` | `integer` \| `null` | — |
-| `max_tokens` | `integer` \| `null` | — |
+| `max_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
+| `max_completion_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
 | `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
@@ -847,7 +848,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `input` * | `string` \| `any`[] | — |
 | `instructions` | `any` | — |
 | `reasoning` | `object` \| `null` | — |
-| `max_output_tokens` | `integer` \| `null` | — |
+| `max_output_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. For models served through Chat Completions, non-streaming requests that exhaust an explicit limit without an answer return 400 output_token_limit_exceeded; reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. Native Responses models can instead return status incomplete with reason max_output_tokens. |
 | `max_tool_calls` | `integer` \| `null` | — |
 | `stream` | `boolean` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
@@ -937,7 +938,8 @@ Identical requests may be answered from a shared cache, also for callers without
 | `logit_bias` | `object` \| `null` | default: `null` |
 | `logprobs` | `any` | — |
 | `top_logprobs` | `integer` \| `null` | — |
-| `max_tokens` | `integer` \| `null` | — |
+| `max_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
+| `max_completion_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
 | `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
@@ -1612,7 +1614,7 @@ Gemini task instructions count toward prompt token usage. Cohere requests contai
 
 **Gemini GA migration:** `google/gemini-embedding-2` now uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.
 
-**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-small:openai, openai/text-embedding-3-large, openai/text-embedding-3-large:openai, cohere/embed-v4.0, cohere/embed-v4.0:azure:sweden, qwen/qwen3-embedding-8b, qwen/qwen3-embedding-8b:fireworks
+**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-small:openai, openai/text-embedding-3-large, openai/text-embedding-3-large:openai, cohere/embed-v4.0, cohere/embed-v4.0:aws, qwen/qwen3-embedding-8b, qwen/qwen3-embedding-8b:fireworks
 
 ## Community embedding endpoints
 
@@ -1963,6 +1965,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `data[].paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `data[].pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
+| `data[].pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
 | `data[].capabilities` | `string`[] | — |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
@@ -2070,6 +2073,7 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
+| `pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
 | `capabilities` | `string`[] | — |
 | `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `tools` | `boolean` | — |
@@ -2484,7 +2488,7 @@ Register a private or public community text, image, video, transcription, speech
 | `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
 | `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. · default: `"private"` |
-| `bearerToken` * | `string` | — |
+| `bearerToken` * | `string` | length: `1…4096` |
 | `upstreamModel` | `string` | length: `1…253` |
 | `imagePricing` | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. · default: `"request"` |
 | `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately. |
@@ -2515,7 +2519,7 @@ Register a private or public community text, image, video, transcription, speech
 |---|---|---|
 | `modality` | `"text"` | default: `"text"` |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
-| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 
 <sub>`*` = required field</sub>
 
@@ -2524,7 +2528,7 @@ Register a private or public community text, image, video, transcription, speech
 | Field | Type | Description |
 |---|---|---|
 | `modality` * | `"image"` \| `"video"` \| `"transcription"` \| `"speech"` \| `"embedding"` | — |
-| `baseUrl` * | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. |
+| `baseUrl` * | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. · max length: `2048` |
 
 <sub>`*` = required field</sub>
 
@@ -2684,7 +2688,7 @@ Test an upstream model before registering it. Text tests call the selected Chat 
 
 | Field | Type | Description |
 |---|---|---|
-| `bearerToken` * | `string` | — |
+| `bearerToken` * | `string` | length: `1…4096` |
 
 <sub>`*` = required field</sub>
 
@@ -2693,7 +2697,7 @@ Test an upstream model before registering it. Text tests call the selected Chat 
 | Field | Type | Description |
 |---|---|---|
 | `api` * | `"chat_completions"` \| `"responses"` | — |
-| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 | `model` * | `string` | length: `1…253` |
 | `modality` | `"text"` | default: `"text"` |
 
@@ -2703,7 +2707,7 @@ Test an upstream model before registering it. Text tests call the selected Chat 
 
 | Field | Type | Description |
 |---|---|---|
-| `baseUrl` * | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. |
+| `baseUrl` * | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. · max length: `2048` |
 | `model` | `string` | length: `1…253` |
 | `modality` * | `"image"` \| `"video"` \| `"transcription"` \| `"speech"` \| `"embedding"` | — |
 
@@ -2873,11 +2877,11 @@ Update a community model owned by the authenticated account. Code-agent names, t
 | `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
-| `baseUrl` | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. |
+| `baseUrl` | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. · max length: `2048` |
 | `api` | `"chat_completions"` \| `"responses"` | — |
-| `url` | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 | `upstreamModel` | `string` | length: `1…253` |
-| `bearerToken` | `string` | — |
+| `bearerToken` | `string` | length: `1…4096` |
 | `perUserRpm` | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. |
 | `paidOnly` | `boolean` | Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost. |
 | `imagePricing` | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -3252,7 +3256,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. · default: `"private"` |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
-| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 | `upstreamModel` | `string` | length: `1…253` |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. · default: `[]` |
 | `perUserRpm` | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. · default: `null` |
@@ -3278,7 +3282,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `capabilities` | `"tool_calling"` \| `"reasoning"` \| `"web_search"` \| `"code_execution"` \| `"pollinations_models"`[] | Traits the agent supports through its public endpoint, such as tools it runs itself. Defaults to none. |
 | `type` * | `"endpoint_agent"` | — |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
-| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. · max length: `2048` |
 | `upstreamModel` * | `string` | — |
 | `perUserRpm` * | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. |
 
@@ -3332,7 +3336,7 @@ Stored image, video, audio, and 3D files are linked through `Link: <https://medi
 | `GET /media?tag={tag}` | List the public gallery for a tag (no auth) |
 | `DELETE /media/{id}` | Delete a published item you own (secret `sk_` key) |
 
-Upload requires an API key; retrieval is public. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
+Upload requires a secret (`sk_`) API key; retrieval is public. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
 
 Raw file body (streams to storage; returns a random, unlisted ID):
 
@@ -4385,6 +4389,7 @@ Returns every reward the account has earned, newest first, including claim state
 | `rewards[].earnedAt` * | `string` | — |
 | `rewards[].claimedAt` * | `any` | — |
 | `rewards[].url` * | `any` | — |
+| `setupHold` * | `object` \| `null` | Set while the account's Setup quest rewards are on hold and can't be claimed. Buying a pollen pack unlocks them, as does a maintainer approving a review. |
 
 <sub>`*` = required field</sub>
 
@@ -4393,6 +4398,25 @@ Returns every reward the account has earned, newest first, including claim state
 ```bash
 curl "https://gen.pollinations.ai/account/quests/rewards" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+{
+  "rewards": [
+    {
+      "id": "string",
+      "questId": "string",
+      "title": "string",
+      "balanceBucket": "string",
+      "earnedAt": "string",
+      "claimedAt": "string",
+      "url": "string"
+    }
+  ],
+  "setupHold": {
+    "review": "pending"
+  }
+}
 ```
 
 ---
@@ -4527,16 +4551,20 @@ curl "https://gen.pollinations.ai/account/usage/daily?format=json&days=90" \
 
 #### `GET` `/account/earnings/transactions` — Get Earnings Transactions
 
-Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.
+Returns recent per-request earnings transactions, newest first. Pass the last row's timestamp and cursor fields as `before`, `before_event_id`, `before_source`, and `before_entity_id` together to fetch the next page. Requires `account:usage` permission when using API keys.
 
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
 |---|---|---|---|
 | `limit` | `query` | `integer` | default: `100` · range: `1…50000` |
+| `before` | `query` | `string` \| `string · date-time` | — |
+| `before_event_id` | `query` | `string` | — |
 | `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |
 | `period` | `query` | `string` | — |
 | `timezone` | `query` | `string` | IANA time zone for calendar windows and date buckets. Defaults to UTC. Request timestamps remain UTC. |
+| `before_source` | `query` | `string` | — |
+| `before_entity_id` | `query` | `string` | — |
 | `days` | `query` | `integer` | default: `30` · range: `1…365` |
 
 <sub>`*` = required parameter</sub>
@@ -4548,6 +4576,8 @@ Returns recent per-request earnings transactions, newest first. Requires `accoun
 | `transactions` * | `object`[] | Earning transaction records |
 | `transactions[].timestamp` * | `string` | Request timestamp in UTC (YYYY-MM-DD HH:mm:ss format) |
 | `transactions[].cursor_event_id` * | `string` | Stable event id |
+| `transactions[].cursor_source` * | `string` | Earning source used for pagination |
+| `transactions[].cursor_entity_id` * | `string` | Earning entity id used for pagination |
 | `transactions[].entity_name` * | `string` | Earning entity display name |
 | `transactions[].model` * | `any` | Model used for generation |
 | `transactions[].meter_source` * | `any` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
@@ -4559,7 +4589,7 @@ Returns recent per-request earnings transactions, newest first. Requires `accoun
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/account/earnings/transactions?limit=100&granularity=day" \
+curl "https://gen.pollinations.ai/account/earnings/transactions?limit=100&before=2026-01-01T00%3A00%3A00Z" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -4663,7 +4693,7 @@ curl "https://gen.pollinations.ai/account/keys" \
 
 #### `POST` `/account/keys` — Create API Key
 
-Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it.
+Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it. A key created with an API key stays within the account permissions, models and expiry of that key, and inherits its models and expiry when they are omitted. If the calling key has a pollen budget, the new key needs a `pollenBudget`, which is deducted from the budget of the calling key.
 
 📥 **Request body** · `application/json`
 
@@ -4702,7 +4732,7 @@ curl -X POST "https://gen.pollinations.ai/account/keys" \
 
 #### `PATCH` `/account/keys/{id}` — Update API Key
 
-Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys.
+Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.
 
 ⚙️ **Parameters**
 
@@ -5322,7 +5352,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | Field | Type | Description |
 |---|---|---|
 | `model` * | `string` | Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`. |
-| `max_tokens` * | `integer` | min: `1` |
+| `max_tokens` * | `integer` | Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; reported usage, including reasoning tokens, is billed. Increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens. · min: `1` |
 | `messages` * | `object`[] | — |
 | `messages[].role` * | `"user"` \| `"assistant"` \| `"system"` | — |
 | `messages[].content` * | `string` \| `object`[] | — |

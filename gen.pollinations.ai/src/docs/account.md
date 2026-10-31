@@ -23,7 +23,7 @@ Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed`
 
 ### GET /account/apps
 
-App directory listings whose `github_user_id` matches the account's linked GitHub user, newest approval first: name, description, links, screenshot, category, platforms, approval date, and whether it supports Pollen Pay. `requests24h` is reported only for Pollen Pay apps, where traffic belongs to that listing.
+App directory listings whose `github_user_id` matches the account's linked GitHub user, newest approval first: name, description, links, screenshot, category, platforms, approval date, and whether it supports Pollinations Pay. `requests24h` is reported only for Pollinations Pay apps, where traffic belongs to that listing.
 
 The directory is public, so no extra permission is required (the same as `/account/profile`). An account without a linked GitHub user, or one that has not listed an app, gets an empty `apps` array. A temporarily unavailable directory answers `503` with a `Retry-After` header rather than an empty list, so a caller can tell "no listings" from "could not read".
 

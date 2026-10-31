@@ -1,3 +1,4 @@
+import { PollinationsError } from "@pollinations/sdk";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { AppUserMenu } from "./AppUserMenu.tsx";
@@ -11,12 +12,14 @@ const sdk = vi.hoisted(() => ({
             pollenBudget: 5 as number | null,
             permissions: { account: [] as string[], models: ["openai"] },
         },
+        error: null as Error | null,
         refresh: vi.fn(),
     },
     balance: {
         data: undefined as
             | { accountBalance: { paid: number; tier: number } }
             | undefined,
+        error: null as Error | null,
         refresh: vi.fn(),
     },
     actions: {
@@ -25,7 +28,10 @@ const sdk = vi.hoisted(() => ({
     },
 }));
 
-vi.mock("@pollinations/sdk/react", () => ({
+vi.mock("@pollinations/sdk/react", async (importActual) => ({
+    isOutageError: (
+        await importActual<typeof import("@pollinations/sdk/react")>()
+    ).isOutageError,
     useAuthState: () => sdk.auth,
     useAccountProfile: () => sdk.profile,
     useAccountKey: () => sdk.key,
@@ -45,7 +51,9 @@ describe("AppUserMenu", () => {
             pollenBudget: 5,
             permissions: { account: [], models: ["openai"] },
         };
+        sdk.key.error = null;
         sdk.balance.data = undefined;
+        sdk.balance.error = null;
     });
 
     afterEach(() => vi.unstubAllGlobals());
@@ -143,6 +151,29 @@ describe("AppUserMenu", () => {
         sdk.key.data.permissions.account = ["usage"];
 
         expect(renderMenu()).not.toContain("Unlimited");
+    });
+
+    test("shows pollen unavailable when the key or wallet hits an outage", () => {
+        const outage = new PollinationsError("Down", "UNKNOWN_ERROR", 503);
+        sdk.key.data = undefined as never;
+        sdk.key.error = outage;
+        expect(renderMenu()).toContain("pollen unavailable");
+
+        sdk.key.data = {
+            id: "key-1",
+            pollenBudget: null,
+            permissions: { account: ["usage"], models: ["openai"] },
+        };
+        sdk.key.error = null;
+        sdk.balance.error = new PollinationsError(
+            "Offline",
+            "NETWORK_ERROR",
+            0,
+        );
+        expect(renderMenu()).toContain("pollen unavailable");
+
+        sdk.balance.error = new PollinationsError("No", "FORBIDDEN", 403);
+        expect(renderMenu()).not.toContain("pollen unavailable");
     });
 
     test("keeps the app query and hash in outbound return links", () => {

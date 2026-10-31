@@ -21,7 +21,9 @@ export function videoOptions(id: string, capabilities: readonly string[]) {
     const optionalSound =
         id.startsWith("google/veo-") ||
         id.startsWith("bytedance/seedance-2.") ||
-        id === "alibaba/wan-3.0";
+        id === "alibaba/wan-3.0" ||
+        // Gen's Kling handler only adds audio when audio=true is sent.
+        id === "kwaivgi/kling-v3.0-std";
     return {
         ratios: id === "minimax/minimax-h3" ? ratios : ["", ...ratios],
         sound: optionalSound

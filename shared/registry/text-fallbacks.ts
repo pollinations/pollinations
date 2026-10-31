@@ -12,8 +12,52 @@ import type { FallbackMap } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import { CHAT_PARAMETERS } from "./text-parameters";
 
+// Public chat-audio voices also accepted by direct OpenAI; amuch/dan are Azure-only.
+const OPENAI_CHAT_AUDIO_VOICES = [
+    "alloy",
+    "echo",
+    "fable",
+    "onyx",
+    "nova",
+    "shimmer",
+    "coral",
+    "verse",
+    "ballad",
+    "ash",
+    "sage",
+];
+
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "openai/gpt-5.5": {
+        // Global rates are inferred by removing AWS's documented 10% regional
+        // premium; using them before confirmation is a maintainer-approved risk.
+        "openai/gpt-5.5:aws": {
+            provider: "aws",
+            priceMultiplier: 1,
+        },
+    },
+    "openai/gpt-6.1-terra": {
+        "openai/gpt-6.1-terra:aws": {
+            provider: "aws",
+            priceMultiplier: 1,
+        },
+    },
+    "openai/gpt-audio-mini": {
+        // Direct OpenAI retires this checkpoint on 2027-01-20.
+        "openai/gpt-audio-mini:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+            voices: OPENAI_CHAT_AUDIO_VOICES,
+        },
+    },
+    "openai/gpt-audio-1.5": {
+        "openai/gpt-audio-1.5:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+            voices: OPENAI_CHAT_AUDIO_VOICES,
+        },
+    },
     "openai/gpt-5-nano": {
         "openai/gpt-5-nano:openai": {
             provider: "openai",
@@ -167,8 +211,8 @@ export const TEXT_FALLBACKS = {
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
     "openai/gpt-5.6-sol": {
-        "openai/gpt-5.6-sol:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-sol:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
@@ -184,8 +228,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-5.6-luna": {
-        "openai/gpt-5.6-luna:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-luna:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
@@ -222,33 +266,52 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6-astra": {
-        "openai/gpt-6-astra:openai": {
-            provider: "openai",
+        "openai/gpt-6-astra:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
     "openai/gpt-6-sol": {
-        "openai/gpt-6-sol:openai": { provider: "openai" },
+        "openai/gpt-6-sol:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "openai/gpt-5.4": {
-        "openai/gpt-5.4:openai": {
-            provider: "openai",
+        "openai/gpt-5.4:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
     "openai/gpt-6.1-sol": {
-        "openai/gpt-6.1-sol:openai": { provider: "openai" },
+        "openai/gpt-6.1-sol:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "openai/gpt-6-luna": {
-        "openai/gpt-6-luna:openai": { provider: "openai" },
+        "openai/gpt-6-luna:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "x-ai/grok-4.6": {
-        "x-ai/grok-4.6:xai": {
-            provider: "xai",
+        "x-ai/grok-4.6:aws": {
+            provider: "aws",
             priceMultiplier: 1,
             addedDate: new Date("2026-09-24").getTime(),
-            // xAI /v1/language-models/grok-4.6 rates (2026-09-24). Image tokens
-            // bill at the text input rate; reasoning bills as output.
+            // AWS global Standard rates (2026-10-30), with no context surcharge.
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.5),
+                promptImageTokens: perMillion(2),
+                completionTextTokens: perMillion(6),
+            },
+        },
+    },
+    "openai/gpt-5.4-mini": {
+        "openai/gpt-5.4-mini:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
+    "x-ai/grok-4.7": {
+        "x-ai/grok-4.7:xai": {
+            provider: "xai",
+            priceMultiplierVariants: undefined,
+            addedDate: new Date("2026-10-12").getTime(),
+            // Direct xAI retains its own 200K+ provider cost tier.
             cost: {
                 promptTextTokens: perMillion(2),
                 promptCachedTokens: perMillion(0.5),
@@ -262,43 +325,6 @@ export const TEXT_FALLBACKS = {
                         promptCachedTokens: perMillion(1),
                         promptImageTokens: perMillion(4),
                         completionTextTokens: perMillion(12),
-                    },
-                },
-                longContextAtLeast(200_000),
-                {
-                    long_context: {
-                        label: "Long context (≥200K)",
-                        description:
-                            "xAI doubles text, cached, image, and output rates for the whole request.",
-                    },
-                },
-                "<200K context",
-            ),
-        },
-    },
-    "openai/gpt-5.4-mini": {
-        "openai/gpt-5.4-mini:openai": {
-            provider: "openai",
-            priceMultiplier: 1,
-        },
-    },
-    "x-ai/grok-4.7": {
-        "x-ai/grok-4.7:openrouter": {
-            provider: "openrouter",
-            addedDate: new Date("2026-10-12").getTime(),
-            // OpenRouter base xAI rates (2026-10-12), including the account's
-            // 5.5% credit-purchase fee. Images are tokenized into text tokens.
-            cost: {
-                promptTextTokens: perMillion(2) * 1.055,
-                promptCachedTokens: perMillion(0.5) * 1.055,
-                completionTextTokens: perMillion(6) * 1.055,
-            },
-            ...defineCostVariants(
-                {
-                    long_context: {
-                        promptTextTokens: perMillion(4) * 1.055,
-                        promptCachedTokens: perMillion(1) * 1.055,
-                        completionTextTokens: perMillion(12) * 1.055,
                     },
                 },
                 longContextAtLeast(200_000),
@@ -351,8 +377,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-5.6-terra": {
-        "openai/gpt-5.6-terra:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-terra:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
@@ -536,6 +562,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
+            cost: {
+                promptTextTokens: perMillion(3),
+                promptCachedTokens: perMillion(0.3),
+                completionTextTokens: perMillion(15),
+            },
+        },
         "moonshotai/kimi-k3:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
@@ -730,9 +765,9 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-opus-5.5": {
-        "anthropic/claude-opus-5.5:aws": {
+        "anthropic/claude-opus-5.5:anthropic": {
             priceMultiplier: 1,
-            provider: "aws",
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
@@ -744,8 +779,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-fable-5.1": {
-        "anthropic/claude-fable-5.1:aws": {
-            provider: "aws",
+        "anthropic/claude-fable-5.1:anthropic": {
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },

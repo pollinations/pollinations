@@ -24,7 +24,7 @@ import {
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -205,6 +205,24 @@ async function ensureModelNameAvailable(
     });
 }
 
+// Gen loads every community model and agent into one cached catalog, so each
+// account's share of it must stay bounded.
+const MAX_MODELS_PER_ACCOUNT = 100;
+
+export async function ensureModelLimit(
+    db: Db,
+    ownerUserId: string,
+): Promise<void> {
+    const [{ owned }] = await db
+        .select({ owned: count() })
+        .from(schema.communityEndpoint)
+        .where(eq(schema.communityEndpoint.ownerUserId, ownerUserId));
+    if (owned < MAX_MODELS_PER_ACCOUNT) return;
+    throw new HTTPException(400, {
+        message: `An account can register at most ${MAX_MODELS_PER_ACCOUNT} community models and agents. Delete one to add another.`,
+    });
+}
+
 function throwEndpointTestError(error: unknown): never {
     throw new HTTPException(400, {
         message:
@@ -372,7 +390,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const rows = await db
                 .select()
                 .from(schema.communityEndpoint)
@@ -440,7 +458,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             await requireCommunityEndpointPublishAccess(db, user.id);
 
             const name = input.name.trim();
@@ -506,7 +524,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -604,7 +622,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -615,6 +633,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ownerGithubUsername,
                 input.name,
             );
+            await ensureModelLimit(db, user.id);
             await enforcePublishingAccess(db, user.id, input.visibility);
             const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
@@ -677,7 +696,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -688,6 +707,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ownerGithubUsername,
                 input.name,
             );
+            await ensureModelLimit(db, user.id);
             const targetPolicy = deriveCreateProxyPolicy(input);
             const queuesPublication = input.visibility === "public";
             const modelId = communityModelId(ownerGithubUsername, input.name);
@@ -775,7 +795,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -818,7 +838,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -856,7 +876,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const endpoint = await requireOwnedEndpoint(
                 db,
                 c.req.param("id"),
@@ -931,7 +951,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const endpoint = await requireOwnedEndpoint(
                 db,
                 c.req.param("id"),
@@ -1035,7 +1055,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -1288,7 +1308,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const endpoint = await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

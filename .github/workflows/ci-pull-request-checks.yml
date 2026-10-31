@@ -139,6 +139,16 @@ jobs:
       - name: Test UI
         run: npm test --workspace @pollinations/ui
 
+      # polli-cli is not a workspace; it has its own package-lock.json.
+      - name: Test polli CLI
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- \
+            packages/polli-cli .github/workflows/ci-pull-request-checks.yml \
+            .github/workflows/deploy-pollinations-site.yml; then
+            npm ci --prefix packages/polli-cli
+            npm test --prefix packages/polli-cli
+          fi
+
       - name: Test maintenance scripts
         run: >-
           node --test
@@ -147,6 +157,7 @@ jobs:
           enter.pollinations.ai/observability/scripts/*.test.mjs
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js
+          operations/app-management/performance/*.test.js
           operations/deployment/*.test.cjs
           operations/community-monitor/*.test.mjs
           operations/model-evals/*.test.js

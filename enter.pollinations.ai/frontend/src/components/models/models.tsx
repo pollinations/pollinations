@@ -636,10 +636,8 @@ export const Models: FC<{ kind: CatalogKind }> = ({ kind }) => {
                     <SectionContent loading={catalogLoading}>
                         {catalogError ? (
                             <LoadError
-                                onRetry={() => {
-                                    setCatalogLoading(true);
-                                    void loadModelCatalog();
-                                }}
+                                paths={["/models"]}
+                                onRetry={loadModelCatalog}
                             >
                                 {catalogError}
                             </LoadError>

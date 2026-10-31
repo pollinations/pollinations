@@ -290,11 +290,11 @@ describe("Flash Lite Vercel routing", () => {
         "google/gemini-2.5-flash-lite",
         "gemini-2.5-flash-lite",
         "gemini-fast",
-    ])("routes %s to Vercel pinned to Google", (model) => {
+    ])("lets Vercel route %s between Vertex and Google", (model) => {
         const { options } = resolveModelConfig([], { model });
         expect(options.model).toBe("google/gemini-2.5-flash-lite");
         expect(options.providerOptions).toEqual({
-            gateway: { only: ["google"] },
+            gateway: { only: ["vertex", "google"] },
         });
         expect(options.modelConfig).toMatchObject({
             directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",

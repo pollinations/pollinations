@@ -213,7 +213,7 @@ describe("processParameters", () => {
         "openai/gpt-5.6-terra",
         "openai/gpt-5.6-luna",
         "openai/gpt-6-astra",
-        "openai/gpt-6-astra:openai",
+        "openai/gpt-6-astra:aws",
         "pollinations/midijourney",
         "pollinations/midijourney-large",
     ])(

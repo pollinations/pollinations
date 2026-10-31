@@ -12,7 +12,8 @@ import {
 /**
  * D1 setup group: account-setup quests sourced from D1 source tables.
  *   - first_api_key  -> apikey                    (one key per user)
- *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
+ *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user,
+ *                          into another account's GitHub-linked app)
  *   - connect_polli_cli -> apikey.byop_client_key_id (Polli device login,
  *                          account 3+ days old)
  *   - early_adopter  -> user.created_at           (registered 9+ months ago)
@@ -203,12 +204,17 @@ export async function evaluateUser(
         GROUP BY stripe_checkout_credits.user_id
         LIMIT 1`)
             : [],
+        // Only another account's GitHub-linked app counts, so a fresh
+        // account can't earn the reward by logging in to its own app.
         rewardableQuestIds.has(byopLoginQuest.id)
             ? db.all<SetupQuestRow>(sql`
         SELECT apikey.user_id AS userId
         FROM apikey
+        JOIN apikey AS app_key ON app_key.id = apikey.byop_client_key_id
+        JOIN "user" AS app_owner ON app_owner.id = app_key.user_id
         WHERE apikey.user_id = ${user.id}
-          AND apikey.byop_client_key_id IS NOT NULL
+          AND app_owner.id != apikey.user_id
+          AND app_owner.github_id IS NOT NULL
         LIMIT 1`)
             : [],
         // The age floor stops fresh accounts from farming the reward;

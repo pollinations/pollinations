@@ -149,6 +149,28 @@ describe("responses chat transport", () => {
         });
     });
 
+    it("shows a gateway refusal as answer text", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            sseResponse(
+                sse([
+                    {
+                        type: "response.refusal.delta",
+                        item_id: "msg_1",
+                        content_index: 0,
+                        delta: "I cannot help with that.",
+                    },
+                    { type: "response.completed", response: {} },
+                ]),
+            ),
+        );
+        const stream = await transportWithKey().sendMessages({ messages });
+        expect(await collect(stream)).toContainEqual({
+            type: "text-delta",
+            id: "msg_1",
+            delta: "I cannot help with that.",
+        });
+    });
+
     it("maps server-run MCP calls and their results to tool parts", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             sseResponse(

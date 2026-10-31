@@ -4079,6 +4079,40 @@ export async function handleSpeechWithTimestamps(
     );
 }
 
+/** Multipart body for the OVH and DeepInfra whisper-large-v3 endpoints. */
+export function buildWhisperForm(opts: {
+    file: File;
+    language?: string | null;
+    prompt?: string | null;
+    temperature?: number;
+    isDeepInfra: boolean;
+}): FormData {
+    const { file, language, prompt, temperature, isDeepInfra } = opts;
+    const form = new FormData();
+    const filename =
+        file.name && file.name !== "blob" ? file.name : "audio.mp3";
+    form.append("file", file, filename);
+    if (language) form.append("language", language);
+    if (prompt) form.append("prompt", prompt);
+    if (temperature !== undefined)
+        form.append("temperature", String(temperature));
+    form.append("response_format", "verbose_json");
+    form.append(
+        "model",
+        isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+    );
+    if (isDeepInfra) {
+        // DeepInfra returns segments either way, and drops words when
+        // both granularities are requested.
+        form.append("timestamp_granularities", "word");
+    } else {
+        // OVH leaves segments empty unless asked; srt/vtt cues are those.
+        form.append("timestamp_granularities[]", "word");
+        form.append("timestamp_granularities[]", "segment");
+    }
+    return form;
+}
+
 export async function handleTranscription(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("transcription");
     const formData = c.get("formData");
@@ -4244,25 +4278,13 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "vtt",
         ]);
 
-        const whisperFormData = new FormData();
-        const filename =
-            file.name && file.name !== "blob" ? file.name : "audio.mp3";
-        whisperFormData.append("file", file, filename);
-        if (language) whisperFormData.append("language", language);
-        whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append(
-            "model",
-            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
-        );
-        if (isDeepInfra) {
-            // DeepInfra returns segments either way, and drops words when
-            // both granularities are requested.
-            whisperFormData.append("timestamp_granularities", "word");
-        } else {
-            // OVH leaves segments empty unless asked; srt/vtt cues are those.
-            whisperFormData.append("timestamp_granularities[]", "word");
-            whisperFormData.append("timestamp_granularities[]", "segment");
-        }
+        const whisperFormData = buildWhisperForm({
+            file,
+            language,
+            prompt,
+            temperature,
+            isDeepInfra,
+        });
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"

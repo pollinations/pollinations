@@ -1,8 +1,10 @@
 import { getLogger } from "@logtape/logtape";
-import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
+import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import {
+    BannedAccountError,
     extractApiKey,
     loadActiveApiKeyAuthResult,
+    StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import { isUserBanned } from "@shared/auth/ban.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
@@ -34,7 +36,6 @@ import { logger } from "@/middleware/logger.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
-import { permissionRequired } from "@/utils/refusals.ts";
 import {
     AZURE_GIB_SECOND,
     AZURE_TEMPLATES,
@@ -480,14 +481,7 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
         });
     }
     c.var.auth.requireUser();
-    const apiKey = c.var.auth.apiKey;
-    if (!hasAccountPermission(apiKey, "machines")) {
-        throw permissionRequired(
-            c,
-            { permission: "machines" },
-            "API key does not have 'account:machines' permission.",
-        );
-    }
+    requireAccountPermission(c, "machines");
     await next();
 }
 
@@ -714,7 +708,8 @@ export const e2bRoutes = new Hono<Env>()
 
 // Read again for every renewal, so deleting the key, letting it expire,
 // removing its machines permission or banning the account ends them. A keep
-// set from the dashboard has no key: its owner pays, until banned.
+// set from the dashboard has no key: its owner pays, until banned. A failed
+// read throws, so the keep is tried again next time.
 async function loadPayer(
     env: CloudflareBindings,
     apiKeyId: string | null,
@@ -733,7 +728,15 @@ async function loadPayer(
         apiKeyId,
         rawApiKey: "",
         env,
-    }).catch(() => null);
+    }).catch((error) => {
+        if (
+            error instanceof BannedAccountError ||
+            error instanceof StagingAccessDeniedError
+        ) {
+            return null;
+        }
+        throw error;
+    });
     if (!result?.user) return null;
     const { rawKey: _rawKey, ...apiKey } = result.apiKey;
     return { user: { id: result.user.id, tier: result.user.tier }, apiKey };

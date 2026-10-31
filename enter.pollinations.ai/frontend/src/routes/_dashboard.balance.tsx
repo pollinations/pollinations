@@ -20,6 +20,7 @@ import {
     PollenBalance,
 } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import { BALANCE_PATH } from "../hooks/use-account-balance.ts";
 import { checkoutNotice, checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/_dashboard/balance")({
         ...checkoutReturnSearch(search),
     }),
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -90,7 +91,7 @@ function PollenPage() {
                                 )}
                             </Await>
                         ) : (
-                            <LoadError onRetry={retry}>
+                            <LoadError onRetry={retry} paths={[BALANCE_PATH]}>
                                 Couldn’t load your balance.
                             </LoadError>
                         )
@@ -133,7 +134,10 @@ function PollenPage() {
                                 <BillingPanel billing={billingState} />
                             ) : (
                                 // Not "none saved": it may well be there.
-                                <LoadError onRetry={reloadWallet}>
+                                <LoadError
+                                    onRetry={reloadWallet}
+                                    paths={["/api/stripe/billing"]}
+                                >
                                     Couldn’t load your billing details.
                                 </LoadError>
                             )

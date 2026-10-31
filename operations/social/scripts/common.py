@@ -286,7 +286,7 @@ def call_pollinations_api(
     temperature: float = 0.7,
     response_format: Optional[Dict] = None,
 ) -> Optional[str]:
-    """One model call. None when it fails or the answer is empty: the caller stops the run."""
+    """Retry an empty answer once with a fresh cache key; other failures stop the caller."""
     payload = {
         "model": MODEL,
         "messages": [
@@ -297,32 +297,48 @@ def call_pollinations_api(
     }
     if response_format is not None:
         payload["response_format"] = response_format
-    try:
-        response = requests.post(
-            POLLINATIONS_API_BASE,
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            json=payload,
-            timeout=120
-        )
-    except requests.exceptions.RequestException as e:
-        print(f"  Request failed: {e}")
-        return None
-    if response.status_code != 200:
-        print(f"  API error: {response.status_code}")
-        print(f"  Error preview: {response.text[:500]}")
-        return None
-    try:
-        result = response.json()
-        content = result['choices'][0]['message']['content']
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        print(f"  Error parsing API response: {e}")
-        print(f"  Response preview: {response.text[:500]}")
-        return None
-    print(
-        f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
-        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content or '')}"
-    )
-    return content if content and content.strip() else None
+    for attempt in range(2):
+        try:
+            response = requests.post(
+                POLLINATIONS_API_BASE,
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json=payload,
+                timeout=120
+            )
+        except requests.exceptions.RequestException as e:
+            print(f"  Request failed: {e}")
+            return None
+        try:
+            result = response.json()
+        except json.JSONDecodeError as e:
+            print(f"  Error parsing API response: {e}")
+            return None
+        empty_error = response.status_code == 502 and result.get("error", {}).get("code") == "empty_response"
+        if response.status_code != 200 and not empty_error:
+            print(f"  API error: {response.status_code}")
+            print(f"  Error preview: {response.text[:500]}")
+            return None
+        if not empty_error:
+            try:
+                choice = result['choices'][0]
+                content = choice['message']['content']
+            except (KeyError, IndexError, TypeError) as e:
+                print(f"  Error parsing API response: {e}")
+                return None
+            print(
+                f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
+                f"finish_reason={choice.get('finish_reason')}, chars={len(content or '')}"
+            )
+            if choice['message'].get('refusal') or choice.get('finish_reason') == 'content_filter':
+                print("  The model refused the request")
+                return None
+            if content and content.strip():
+                return content
+        if attempt == 0:
+            # A legacy empty 200 may already be cached. A new seed asks upstream again.
+            payload = {**payload, "seed": random.randint(0, MAX_SEED)}
+            print("  Empty answer; retrying once with a fresh cache key")
+    return None
 
 
 def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None) -> tuple[Optional[bytes], Optional[str]]:

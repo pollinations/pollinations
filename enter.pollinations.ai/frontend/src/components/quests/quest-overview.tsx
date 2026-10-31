@@ -284,26 +284,26 @@ export type QuestCard = {
 function SetupHoldNotice() {
     const line = "flex items-center gap-2";
     return (
-        <Alert intent="warning">
-            <div className="flex flex-col gap-2 text-sm">
-                <span>
+        <div className="flex flex-col gap-2 px-1 pb-1 text-sm text-theme-text-muted">
+            <span>
+                <span className="text-intent-danger-text">
                     We couldn't verify your account. Setup rewards are locked.
-                    Unlock them with one of:
-                </span>
-                <span className={line}>
-                    <CardIcon className="h-4 w-4 shrink-0" />
-                    <InlineLink href="/pollen#buy-pollen">
-                        Buy any pollen pack
-                    </InlineLink>
-                </span>
-                <span className={line}>
-                    <GitHubIcon className="h-4 w-4 shrink-0" />
-                    <InlineLink href="/account">
-                        Connect a GitHub account at least 30 days old
-                    </InlineLink>
-                </span>
-            </div>
-        </Alert>
+                </span>{" "}
+                Unlock them with one of:
+            </span>
+            <span className={line}>
+                <CardIcon className="h-4 w-4 shrink-0" />
+                <InlineLink href="/pollen#buy-pollen">
+                    Buy any pollen pack
+                </InlineLink>
+            </span>
+            <span className={line}>
+                <GitHubIcon className="h-4 w-4 shrink-0" />
+                <InlineLink href="/account">
+                    Connect a GitHub account at least 30 days old
+                </InlineLink>
+            </span>
+        </div>
     );
 }
 

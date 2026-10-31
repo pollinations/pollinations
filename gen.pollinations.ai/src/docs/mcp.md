@@ -220,3 +220,9 @@ key and cannot spend beyond that key's budget. Configure both in
 [API key settings](https://enter.pollinations.ai/keys). See
 [Authentication](https://gen.pollinations.ai/docs#tag/authentication) for key
 types and security guidance.
+
+### Prayer Times MCP
+
+`gen.pollinations.ai/mcp/prayer-times` — Prayer times by city or coordinates, plus qibla direction.
+
+Tools: `prayer_times_by_coords`, `prayer_times_by_city`, `get_qibla`.

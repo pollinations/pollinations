@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "prayer-times",
+                name: "Prayer Times MCP",
+                description:
+                    "Prayer times by city or coordinates, plus qibla direction.",
+                url: "https://gen.pollinations.ai/mcp/prayer-times",
+                pricing: {
+                    description:
+                        "Tools are computed locally and cost nothing; no Pollinations calls, no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

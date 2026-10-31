@@ -816,6 +816,8 @@ export const OpenAIModelSchema = z
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        supports_structured_output:
+            ModelInfoSchema.shape.supports_structured_output,
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())

@@ -294,6 +294,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     const keyAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<KeyIcon />}
             aria-haspopup="dialog"
@@ -304,6 +305,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     );
     const appAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<AppIcon />}
             aria-haspopup="dialog"

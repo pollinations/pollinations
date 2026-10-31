@@ -211,6 +211,7 @@ export function MyApps({
 }) {
     const submitAction = (
         <Button
+            intent="commit"
             as="a"
             href={SUBMIT_APP_URL}
             target="_blank"

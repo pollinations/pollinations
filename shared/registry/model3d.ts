@@ -22,7 +22,7 @@ const MODEL3D_BASE_SERVICES = {
         priceMultiplier: 10 / 7, // $0.07 provider list cost -> $0.10 paid retail
         paidOnly: true,
         flatRate: true,
-        perUserRpm: 6,
+        perUserRpm: 60,
         cost: { completionImageTokens: 0.07 },
         title: "TripoSR",
         description: "Single-image to textured 3D GLB reconstruction",

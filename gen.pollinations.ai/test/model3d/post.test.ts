@@ -61,7 +61,9 @@ function create3dMocks() {
                         glb.write("{}  ", 20);
                         return Response.json({
                             status: "completed",
-                            data: [{ model_glb_b64_bytes: glb.toString("base64") }],
+                            data: [
+                                { model_glb_b64_bytes: glb.toString("base64") },
+                            ],
                             usage: { payg_credits_charged: 0.07 },
                         });
                     }
@@ -195,11 +197,15 @@ test("TripoSR requires Paid Pollen and meters a promptless GLB exactly once", as
     const cached = await fetch3d("/3d", init);
     expect(cached.status).toBe(200);
     expect(cached.headers.get("x-cache")).toBe("HIT");
-    expect(mocks.inferenceport.state.bodies).toEqual([{
-        model: "tripoSR",
-        image_urls: ["https://example.com/reference.png"],
-    }]);
-    const bills = mocks.tinybird.state.events.filter((event) => event.isBilledUsage);
+    expect(mocks.inferenceport.state.bodies).toEqual([
+        {
+            model: "tripoSR",
+            image_urls: ["https://example.com/reference.png"],
+        },
+    ]);
+    const bills = mocks.tinybird.state.events.filter(
+        (event) => event.isBilledUsage,
+    );
     expect(bills).toHaveLength(1);
     expect(bills[0]).toMatchObject({
         modelUsed: "stability-ai/triposr",
@@ -250,10 +256,12 @@ test.each(["failed", "refunded"] as const)(
         });
         expect(response.status).toBe(502);
         expect(await response.text()).not.toContain("private-provider-data");
-        expect((await getUserBalance(drizzle(env.DB), userId)).packBalance)
-            .toBe(1);
-        expect(mocks.tinybird.state.events.filter((event) => event.isBilledUsage))
-            .toHaveLength(0);
+        expect(
+            (await getUserBalance(drizzle(env.DB), userId)).packBalance,
+        ).toBe(1);
+        expect(
+            mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+        ).toHaveLength(0);
     },
 );
 
@@ -266,8 +274,18 @@ test("TripoSR rejects zero or multiple images and conflicting POST aliases", asy
     const { key } = await createTestApiKey({ user: { packBalance: 1 } });
     for (const body of [
         { model: "tripoSR" },
-        { model: "tripoSR", image_urls: ["https://example.com/a.png", "https://example.com/b.png"] },
-        { model: "tripoSR", image: "https://example.com/a.png", image_urls: ["https://example.com/b.png"] },
+        {
+            model: "tripoSR",
+            image_urls: [
+                "https://example.com/a.png",
+                "https://example.com/b.png",
+            ],
+        },
+        {
+            model: "tripoSR",
+            image: "https://example.com/a.png",
+            image_urls: ["https://example.com/b.png"],
+        },
     ]) {
         const response = await fetch3d("/3d", {
             method: "POST",

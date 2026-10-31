@@ -39,7 +39,10 @@ SQL >
     SELECT
         resolved_model_requested as model,
         event_type,
-        model_used,
+        -- A public model's own private fallback still counts toward its
+        -- totals, under one route that doesn't name it. Qualified for the
+        -- same reason as `events.fallback_used` below.
+        if(events.private_route, 'private', events.model_used) as model_used,
         -- Read through an aggregate rather than as a plain key: provider is a
         -- grouping key only at the route grain, so selecting it directly would
         -- leave every rollup row blank — and consumers read it to tell a

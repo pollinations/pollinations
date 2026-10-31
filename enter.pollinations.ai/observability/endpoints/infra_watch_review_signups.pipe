@@ -11,7 +11,7 @@ SQL >
     SELECT
         toDate(timestamp) AS day,
         uniq(user_id) AS accounts
-    FROM setup_reward_signup
+    FROM signup_event
     WHERE environment = 'production'
         AND email_domain = {{String(domain, required=True)}}
         AND timestamp >= now() - INTERVAL 30 DAY

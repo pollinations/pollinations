@@ -9,7 +9,7 @@ import {
     escalates,
     escalation,
     fallbackCard,
-    fallbackPair,
+    fallbackPairs,
     fallbackShares,
     filteredModels,
     heartbeat,
@@ -823,24 +823,37 @@ test("a listed model leans on its fallback from 10 rescues and 25% of successes"
 });
 
 test("each model and fallback pair is told once a week, even when they alternate", () => {
-    const via = (model) => ({ ...share, via: [{ model, rescued: 20 }] });
-    const share = { model: LAGUNA, rescued: 20, successes: 40 };
-    const [a, b] = [via("community/x/a"), via("community/x/b")];
+    const via = (...models) => ({
+        model: LAGUNA,
+        via: models.map((model) => ({ model, rescued: 10 })),
+        rescued: 20,
+        successes: 40,
+    });
+    const [a, b, ab, ba] = [
+        via("community/x/a"),
+        via("community/x/b"),
+        via("community/x/a", "community/x/b"),
+        via("community/x/b", "community/x/a"),
+    ];
     const now = 10_000 * MIN;
     const day = 24 * 60 * MIN;
     assert.deepEqual(dueFallbacks([a], {}, now).due, [a]);
     // a told, then b: both stay quiet for the week, so a coming back
     // hours later is not told again.
     const told = {
-        [fallbackPair(a)]: now - 6 * day,
-        [fallbackPair(b)]: now - 2 * 60 * MIN,
+        [fallbackPairs(a)[0]]: now - 6 * day,
+        [fallbackPairs(b)[0]]: now - 2 * 60 * MIN,
     };
     assert.deepEqual(dueFallbacks([a], told, now), { due: [], told });
     assert.deepEqual(dueFallbacks([b], told, now).due, []);
+    // Told naming a then b, the same fallbacks swapping places an hour
+    // later are not news.
+    const both = Object.fromEntries(fallbackPairs(ab).map((p) => [p, now]));
+    assert.deepEqual(dueFallbacks([ba], both, now + 60 * MIN).due, []);
     // A week on, a is news again; its old notice is dropped.
     const later = dueFallbacks([a], told, now + day);
     assert.deepEqual(later.due, [a]);
-    assert.deepEqual(Object.keys(later.told), [fallbackPair(b)]);
+    assert.deepEqual(Object.keys(later.told), fallbackPairs(b));
 });
 
 test("a fallback notice gives the total, then each fallback's own part", () => {

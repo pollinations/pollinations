@@ -706,27 +706,31 @@ export function fallbackShares(rows, catalog) {
     return shares;
 }
 
-// A share's key in `told`: the model and the fallback that rescued the
-// most.
-export const fallbackPair = (share) =>
-    `${share.model} ${share.via[0]?.model ?? "unknown"}`;
+// Fallbacks a notice names, each with its own rescues.
+const VIA_SHOWN = 3;
 
-// The shares to tell now: a model and fallback pair not told in the last
-// week. `told` keeps when each pair was told; older ones are dropped.
+// A share's keys in `told`: the model with each fallback its notice names.
+export const fallbackPairs = (share) =>
+    share.via
+        .slice(0, VIA_SHOWN)
+        .map((v) => `${share.model} ${v.model ?? "private"}`);
+
+// The shares to tell now: those naming a model and fallback pair not told
+// in the last week. `told` keeps when each pair was told; older ones are
+// dropped.
 export function dueFallbacks(shares, told = {}, now) {
     const recent = Object.fromEntries(
         Object.entries(told).filter(([, at]) => now - at < FALLBACK_QUIET_MS),
     );
     return {
-        due: shares.filter((s) => !(fallbackPair(s) in recent)),
+        due: shares.filter((s) =>
+            fallbackPairs(s).some((pair) => !(pair in recent)),
+        ),
         told: recent,
     };
 }
 
 const community = (id) => id.replace(/^community\//, "");
-
-// Fallbacks a notice names, each with its own rescues.
-const VIA_SHOWN = 3;
 
 // A fallback notice for the community channel: no ping, the owner reads
 // their model's id. The total rescued, then each fallback's part.

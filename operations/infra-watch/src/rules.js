@@ -492,3 +492,36 @@ export const escalation = (key, incident, link) => ({
     ping: true,
     color: COLOR[incident.kind],
 });
+
+// Heartbeat: infra-watch's own liveness, judged from outside Cloudflare by
+// heartbeat.mjs (GitHub Actions). A last completed check this old means the
+// watcher is down.
+export const STALE_MS = 10 * 60 * 1000;
+const REMIND_MS = 60 * 60 * 1000;
+
+// One heartbeat run: what to post, and the state for the next run.
+// `checkedAt` is infra-watch's last completed check, or null if /health
+// didn't answer. The first alert pings; reminders come hourly, quietly.
+export function heartbeat(state, checkedAt, now) {
+    const age = checkedAt == null ? null : now - checkedAt;
+    if (age != null && age < STALE_MS) {
+        if (!state.down) return { post: null, state };
+        const post = { text: "`infra-watch` is checking again", ping: false };
+        return { post: { ...post, color: GREEN }, state: {} };
+    }
+    if (state.down && now - state.alertedAt < REMIND_MS)
+        return { post: null, state };
+    const last =
+        age == null
+            ? "unknown: /health unreachable"
+            : `check ${Math.round(age / 60_000)} min ago`;
+    const text = panel("DOWN: infra-watch", [
+        ["LAST", last],
+        ["WHY", "no completed check for 10+ min"],
+        ["", "model and outage alerts paused"],
+    ]);
+    return {
+        post: { text, ping: !state.down, color: RED },
+        state: { down: true, alertedAt: now },
+    };
+}

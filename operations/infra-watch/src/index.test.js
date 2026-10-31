@@ -1,4 +1,5 @@
 import { env, evictDurableObject, runInDurableObject } from "cloudflare:test";
+import { exports } from "cloudflare:workers";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DAILY_LIMIT } from "./investigate.js";
 import { CHECKING, RECOVER_CHECKS } from "./rules.js";
@@ -339,4 +340,19 @@ it("posts a sign-up card Discord refused, even after its burst ended", async () 
     expect(posts[0].text).toContain("FLAGGED: domain farm.com");
     expect(edits("m1").at(-1).text).toContain("ENDED: domain farm.com");
     expect((await stored(stub, "state")).unposted).toEqual({});
+});
+
+it("serves only /health, which reports the last check and never runs one", async () => {
+    const get = (path) =>
+        exports.default.fetch(`https://infra-watch.test${path}`);
+    const checkedAt = async () =>
+        (await (await get("/health")).json()).checkedAt;
+    expect(await checkedAt()).toBeNull();
+    expect(await checkedAt()).toBeNull();
+    expect((await get("/")).status).toBe(404);
+
+    world.rows = OK;
+    const before = Date.now();
+    await env.WATCH.get(env.WATCH.idFromName("main")).check();
+    expect(await checkedAt()).toBeGreaterThanOrEqual(before);
 });

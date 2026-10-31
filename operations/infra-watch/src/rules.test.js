@@ -7,9 +7,11 @@ import {
     duration,
     escalates,
     escalation,
+    heartbeat,
     noteworthy,
     RECOVER_CHECKS,
     renderCard,
+    STALE_MS,
     snapshot,
     step,
     waiting,
@@ -476,4 +478,41 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
     assert.match(ended.text, /ENDED: domain farm\.com/);
     assert.match(ended.text, /LASTED +2 min/);
     assert.equal(ended.color, 0x639922);
+});
+
+test("heartbeat stays quiet while infra-watch checks", () => {
+    const r = heartbeat({}, 1000 * MIN, 1000 * MIN + 2 * MIN);
+    assert.equal(r.post, null);
+    assert.deepEqual(r.state, {});
+});
+
+test("heartbeat alerts once with a ping when checks stop, then hourly", () => {
+    const last = 1000 * MIN;
+    let r = heartbeat({}, last, last + STALE_MS);
+    assert.equal(r.post.ping, true);
+    assert.equal(r.post.color, 0xe24b4a);
+    assert.match(r.post.text, /DOWN: infra-watch/);
+    assert.match(r.post.text, /10 min ago/);
+    // Later runs within the hour stay quiet.
+    r = heartbeat(r.state, last, last + STALE_MS + 30 * MIN);
+    assert.equal(r.post, null);
+    // An hourly reminder, without a ping.
+    r = heartbeat(r.state, last, last + STALE_MS + 60 * MIN);
+    assert.equal(r.post.ping, false);
+    assert.match(r.post.text, /70 min ago/);
+});
+
+test("heartbeat alerts when /health doesn't answer at all", () => {
+    const r = heartbeat({}, null, 5000 * MIN);
+    assert.equal(r.post.ping, true);
+    assert.match(r.post.text, /unreachable/);
+});
+
+test("heartbeat posts a green note when checks resume", () => {
+    const down = { down: true, alertedAt: 1000 * MIN };
+    const r = heartbeat(down, 1030 * MIN, 1031 * MIN);
+    assert.equal(r.post.color, 0x639922);
+    assert.equal(r.post.ping, false);
+    assert.match(r.post.text, /checking again/);
+    assert.deepEqual(r.state, {});
 });

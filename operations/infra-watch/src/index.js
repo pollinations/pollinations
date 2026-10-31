@@ -19,10 +19,19 @@ import {
 } from "./investigate.js";
 import {
     conditions,
+    dueFallbacks,
     duration,
     escalates,
     escalation,
+    FALLBACK_MINUTES,
+    fallbackCard,
+    fallbackPairs,
+    fallbackShares,
+    filteredModels,
+    legacyDown,
     lineColor,
+    listingChanges,
+    listingsCard,
     noteworthy,
     pings,
     renderCard,
@@ -54,6 +63,15 @@ const MAX_LINES = 4;
 // A closed card's last edit is retried each check for this long; after that
 // its message is likely gone.
 const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
+// The legacy bridges' last full UTC hour changes on the hour; it is read
+// once an hour, this long after it, when Tinybird has that hour in full.
+const HOUR_MS = 60 * 60 * 1000;
+const LEGACY_READ_DELAY_MS = 5 * 60 * 1000;
+// Community models leaning on a fallback are looked for this often.
+const FALLBACK_EVERY_MS = 60 * 60 * 1000;
+// Community listing changes are told once a day, from 12:00 UTC: a check's
+// listings day is its UTC date 12 hours earlier.
+const LISTINGS_DAY_STARTS_MS = 12 * 60 * 60 * 1000;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -79,16 +97,16 @@ const show = (label, body) =>
     );
 
 // Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an
-// error, never a silent dry run. Returns the saved message.
-async function post(env, message) {
+// error, never a silent dry run. Posts to the infra-watch channel, or the
+// community channel with COMMUNITY_WEBHOOK_URL. Returns the saved message.
+async function post(env, message, webhook = "DISCORD_WEBHOOK_URL") {
     const body = payload(message, MAINTAINERS);
     if (env.DRY_RUN === "1") {
-        show("dry-run", body);
+        show(`dry-run ${webhook}`, body);
         return { id: "dry-run", channel_id: "dry-run" };
     }
-    if (!env.DISCORD_WEBHOOK_URL)
-        throw new Error("DISCORD_WEBHOOK_URL missing");
-    return send(env.DISCORD_WEBHOOK_URL, body);
+    if (!env[webhook]) throw new Error(`${webhook} missing`);
+    return send(env[webhook], body);
 }
 
 async function update(env, id, message) {
@@ -142,7 +160,11 @@ export class Watch extends DurableObject {
         // the read failed, so their open cards are left as they are.
         let signups = [];
         let reviews = new Map();
+        // The legacy bridges' last reading; null when none could be read.
+        let legacy = [];
         let data = { recent: [], last10: [], last60: [], official: new Set() };
+        // gen's public catalog; null when it couldn't be read.
+        let publicModels = null;
         const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -160,10 +182,12 @@ export class Watch extends DurableObject {
                 const official = new Set(
                     models.filter((m) => !m.community).map((m) => m.name),
                 );
+                publicModels = models;
                 data = { recent: r15, last10: r10, last60: r60, official };
-                [signups, reviews] = await Promise.all([
+                [signups, reviews, legacy] = await Promise.all([
                     this.signups(),
                     this.reviews(),
+                    this.legacy(now),
                 ]);
                 found = conditions({
                     ...data,
@@ -190,12 +214,16 @@ export class Watch extends DurableObject {
                 closed[key] = record.closed.incident.closedAt;
             }
         }
-        // Unknown sign-ups or reviews keep their open cards. A sign-up card
-        // Discord hasn't taken yet is retried until it has: its 24-hour
-        // window can end first.
+        // A legacy bridge's open card is judged against the medians it
+        // started with.
+        if (legacy) Object.assign(found, legacyDown(legacy, open));
+        // Unknown sign-ups, reviews or legacy bridges keep their open cards.
+        // A sign-up card Discord hasn't taken yet is retried until it has:
+        // its 24-hour window can end first.
         const unknown = [
             signups === null && "signup:",
             reviews === null && "review:",
+            legacy === null && "legacy:",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -365,6 +393,10 @@ export class Watch extends DurableObject {
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", { ...next.state, unposted });
+        if (publicModels) {
+            await this.fallbacks(gen, publicModels, now);
+            await this.listings(gen, now);
+        }
         // A completed check: what /health reports to the outside heartbeat.
         await this.ctx.storage.put("checkedAt", now);
         for (const note of notes) this.background(() => this.note(note, data));
@@ -376,6 +408,91 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Each legacy bridge's row from Tinybird, read once an hour from 5
+    // minutes past. Before then, between reads and when a read fails, the
+    // last rows stand; null if none was ever read.
+    async legacy(now) {
+        const hour = Math.floor(now / HOUR_MS);
+        const saved = await this.ctx.storage.get("legacy");
+        if (saved?.hour === hour || now % HOUR_MS < LEGACY_READ_DELAY_MS)
+            return saved?.rows ?? null;
+        try {
+            const rows = await pipe(
+                "infra_watch_legacy",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+            await this.ctx.storage.put("legacy", { hour, rows });
+            return rows;
+        } catch (error) {
+            console.error(`legacy: ${error.message}`);
+            return saved?.rows ?? null;
+        }
+    }
+
+    // Once a day: the community models gen's reliability filter newly left
+    // out of /models, or listed again, since the last day, told to the
+    // community channel. The first day only keeps the filtered set. A read
+    // or post that fails is tried again on the next check.
+    async listings(gen, now) {
+        const day = new Date(now - LISTINGS_DAY_STARTS_MS)
+            .toISOString()
+            .slice(0, 10);
+        const saved = await this.ctx.storage.get("listings");
+        if (saved?.day === day) return;
+        try {
+            const list = async (query) => {
+                const catalog = await getJson(`${gen}/models?${query}`);
+                return Array.isArray(catalog) ? catalog : catalog.data;
+            };
+            const [shown, all] = await Promise.all([
+                list("community=true"),
+                list("community=true&reliability=all"),
+            ]);
+            const filtered = filteredModels(all, shown);
+            if (!filtered) throw new Error("no community success rates yet");
+            if (saved) {
+                const changes = listingChanges(saved.filtered, filtered, shown);
+                const card = listingsCard(changes, filtered.length);
+                const changed = changes.newly.length || changes.back.length;
+                if (
+                    changed &&
+                    !(await post(this.env, card, "COMMUNITY_WEBHOOK_URL"))
+                )
+                    throw new Error("Discord refused the post");
+            }
+            await this.ctx.storage.put("listings", {
+                day,
+                filtered: filtered.map((m) => m.name),
+            });
+        } catch (error) {
+            console.error(`listings: ${error.message}`);
+        }
+    }
+
+    // Community models leaning on a fallback, looked for hourly over the
+    // last 4 hours and told to the community channel: one post per model
+    // and fallback a week, no ping, no AI. A post Discord refused is tried
+    // again the next hour.
+    async fallbacks(gen, catalog, now) {
+        const saved = (await this.ctx.storage.get("fallback")) ?? {};
+        if (now - (saved.checkedAt ?? 0) < FALLBACK_EVERY_MS) return;
+        let told = saved.told;
+        try {
+            const rows = await statusRows(gen, FALLBACK_MINUTES);
+            const next = dueFallbacks(fallbackShares(rows, catalog), told, now);
+            told = next.told;
+            for (const share of next.due) {
+                const card = fallbackCard(share);
+                if (await post(this.env, card, "COMMUNITY_WEBHOOK_URL"))
+                    for (const pair of fallbackPairs(share)) told[pair] = now;
+            }
+        } catch (error) {
+            console.error(`fallbacks: ${error.message}`);
+        }
+        await this.ctx.storage.put("fallback", { checkedAt: now, told });
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be

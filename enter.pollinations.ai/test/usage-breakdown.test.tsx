@@ -48,7 +48,7 @@ it("shows 15 usage groups at a time while keeping full totals and resets for new
             .find((button) => button.children.includes("Show more"));
     expect(rows()).toHaveLength(15);
     expect(rows()?.[0].findAllByType("td")[1].children.join("")).toBe("0.1%");
-    expect(JSON.stringify(renderer?.toJSON())).toContain("1,000");
+    expect(JSON.stringify(renderer?.toJSON())).toContain("1K");
     await act(async () => more()?.props.onClick());
     expect(rows()).toHaveLength(30);
     await act(async () => {

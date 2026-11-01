@@ -111,6 +111,7 @@ export {
     type ToolCallStatus,
 } from "./compositions/ToolCallDetails.tsx";
 export { cn } from "./lib/cn-app.ts";
+export { formatCount } from "./lib/format-count.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,

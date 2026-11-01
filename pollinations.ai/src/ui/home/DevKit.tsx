@@ -11,6 +11,7 @@ import {
     cn,
     ExternalLinkButton,
     ExternalLinkIcon,
+    formatCount,
     GlobeIcon,
     Heading,
     type IconProps,
@@ -583,7 +584,7 @@ export function DevKit({ className }: { className?: string }) {
                             feature={feature}
                             countLabel={
                                 data && feature.catalogCount === "agents"
-                                    ? data.agents.toLocaleString()
+                                    ? formatCount(data.agents)
                                     : undefined
                             }
                         />

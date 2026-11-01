@@ -1,6 +1,7 @@
 import {
     Button,
     Chip,
+    formatCount,
     GitHubIcon,
     ImageIcon,
     InlineLink,
@@ -115,8 +116,7 @@ function AppCard({ app }: { app: ListedApp }) {
                             className="ml-auto shrink-0 tabular-nums"
                         >
                             <PulseIcon className="h-3 w-3" />
-                            {app.requests24h.toLocaleString("en-US")} requests ·
-                            24h
+                            {formatCount(app.requests24h)} req /24h
                         </Chip>
                     )}
                 </div>
@@ -150,11 +150,7 @@ function AppCard({ app }: { app: ListedApp }) {
                     ))}
                     {/* Same look as the keys page's "Earnings on" chip. */}
                     {app.byop && (
-                        <Chip
-                            intent="neutral"
-                            size="sm"
-                            className="text-intent-success-text"
-                        >
+                        <Chip intent="success" size="sm">
                             Pollinations Pay
                         </Chip>
                     )}

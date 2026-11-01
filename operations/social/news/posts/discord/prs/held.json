@@ -13,8 +13,50 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18950": {
+      "merge_sha": "e2ac54b3555a970b8ac6be027379dc27c05f468e",
+      "merged_at": "2026-11-01T14:20:26Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "18952": {
+      "merge_sha": "2d5fbefb489e61fff03a3b3ae3728e9401e5c916",
+      "merged_at": "2026-11-01T17:28:00Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
+    },
+    "18953": {
+      "merge_sha": "dbfff2f574dfdba16d04d3ad1ab93a8bf2b9dac4",
+      "merged_at": "2026-11-01T17:08:14Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/ai-dungeon-master",
+        "deploy-applications.yml:Deploy apps/mama-barbara",
+        "deploy-applications.yml:Deploy operations/economics",
+        "deploy-applications.yml:Deploy operations/kpi",
+        "deploy-applications.yml:Deploy operations/model-monitor",
+        "deploy-applications.yml:Deploy operations/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18955": {
+      "merge_sha": "27d0ed046ad050a14b3f196dc7b4756041e6f92e",
+      "merged_at": "2026-11-01T16:56:40Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
+    },
+    "18957": {
+      "merge_sha": "1bc2d70202254569c2a523c888c7f78e7bd899fc",
+      "merged_at": "2026-11-01T15:52:30Z",
+      "required": []
     }
   },
-  "production": "cfcc285e39b6ebf8ca941e4426392092cb1e3266",
+  "production": "55c510a649d24fe917d58659993b1ec20bc073a8",
   "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

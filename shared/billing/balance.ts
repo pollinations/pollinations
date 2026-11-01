@@ -19,6 +19,7 @@ export async function getUserBalance(
         .select({
             tierBalance: userTable.tierBalance,
             packBalance: userTable.packBalance,
+            questPollenRestricted: userTable.questPollenRestricted,
         })
         .from(userTable)
         .where(eq(userTable.id, userId))
@@ -28,6 +29,7 @@ export async function getUserBalance(
     return {
         tierBalance: user?.tierBalance ?? 0,
         packBalance: user?.packBalance ?? 0,
+        ...(user?.questPollenRestricted ? { questPollenRestricted: true } : {}),
     };
 }
 
@@ -39,7 +41,7 @@ export function getAvailableBalance(
     balances: UserBalance,
     isPaidOnly = false,
 ): number {
-    if (isPaidOnly) {
+    if (isPaidOnly || balances.questPollenRestricted) {
         return Math.max(0, balances.packBalance);
     }
     return (
@@ -66,6 +68,7 @@ export function createBalanceCheckResult(
     balances: UserBalance,
     isPaidOnly = false,
 ): BalanceCheckResult {
+    isPaidOnly ||= balances.questPollenRestricted === true;
     // Which bucket the charge is expected to land in, for the reported meter.
     // The authoritative choice is the SQL ladder in atomicDeductUserBalance.
     const source: BalanceBucket = isPaidOnly

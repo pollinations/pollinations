@@ -11,7 +11,6 @@ import {
     GitHubIcon,
     InlineLink,
     LoadingStatus,
-    LockIcon,
     OutageNotice,
     RocketIcon,
     Section,
@@ -46,10 +45,7 @@ import {
     LoadError,
     SectionContent,
 } from "../layout/dashboard-loading.tsx";
-import {
-    lockedQuestIds,
-    QUEST_STATUS_UPDATED_EVENT,
-} from "./quest-nav-status.ts";
+import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 import { monthName, QuestStandings } from "./quest-standings.tsx";
 import { RedeemCode } from "./redeem-code.tsx";
 
@@ -83,8 +79,6 @@ type FetchState = {
     // per-user rewards endpoint 401s, so there is nothing to claim and every
     // quest is rendered open as a "here's what you can earn" preview.
     anonymous: boolean;
-    // Set while the account's Setup rewards are on hold, with its review state.
-    setupHold: SetupHold | null;
 };
 
 const INITIAL_STATE: FetchState = {
@@ -97,7 +91,6 @@ const INITIAL_STATE: FetchState = {
     error: null,
     claimingRewardIds: [],
     anonymous: false,
-    setupHold: null,
 };
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -207,7 +200,7 @@ function rewardIconKind(
 
 type QuestData = Pick<
     FetchState,
-    "catalog" | "rewards" | "standings" | "anonymous" | "setupHold"
+    "catalog" | "rewards" | "standings" | "anonymous"
 >;
 
 async function loadQuestData(): Promise<QuestData> {
@@ -236,10 +229,9 @@ async function loadQuestData(): Promise<QuestData> {
     }
     const account =
         anonymous || !rewardsResponse
-            ? { rewards: [], setupHold: null }
+            ? { rewards: [] }
             : ((await rewardsResponse.json()) as {
                   rewards: QuestReward[];
-                  setupHold: SetupHold | null;
               });
 
     const standings = standingsResponse?.ok
@@ -251,7 +243,6 @@ async function loadQuestData(): Promise<QuestData> {
         rewards: account.rewards ?? [],
         standings,
         anonymous,
-        setupHold: account.setupHold,
     };
 }
 
@@ -275,62 +266,9 @@ export type QuestCard = {
     // coming_soon quests render at the bottom of their lane in the receded
     // (claimed) style, with a clock + "Coming soon" in place of the reward.
     comingSoon?: boolean;
-    // A Setup quest of an account on hold: locked, with no Claim button.
-    locked?: boolean;
 };
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
-
-type SetupHold = { review: "pending" | "declined" | null };
-
-// Atop the Setup lane while the account's Setup rewards are on hold: what
-// happened, then each way to unlock them, or where its review stands.
-function SetupHoldNotice({
-    hold,
-    requesting,
-    onRequestReview,
-}: {
-    hold: SetupHold;
-    requesting: boolean;
-    onRequestReview: () => void;
-}) {
-    const buy = (label: string) => (
-        <InlineLink href="/pollen#buy-pollen">{label}</InlineLink>
-    );
-    if (hold.review === "declined") {
-        return (
-            <p className="px-1 pb-1 text-sm text-theme-text-muted">
-                <span className="text-intent-danger-text">
-                    Your review was declined.
-                </span>{" "}
-                {buy("Buying a pollen pack")} still unlocks them.
-            </p>
-        );
-    }
-    return (
-        <p className="px-1 pb-1 text-sm text-theme-text-muted">
-            <span className="text-intent-danger-text">
-                We couldn't verify your account, so Setup quests are locked.
-            </span>{" "}
-            {hold.review === "pending" ? (
-                "Review requested. We'll show the result here."
-            ) : (
-                <>
-                    To unlock them, {buy("buy a pollen pack")} or{" "}
-                    <InlineLink
-                        as="button"
-                        type="button"
-                        disabled={requesting}
-                        onClick={onRequestReview}
-                    >
-                        request a review
-                    </InlineLink>
-                    .
-                </>
-            )}
-        </p>
-    );
-}
 
 // Soft bucket-colored tile for the reward chip: amber paid / green Quest,
 // so the row's reward badge carries the bucket identity.
@@ -464,30 +402,25 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
 //   claimable → muted theme well + check (works in light and dark — receded
 //                relative to the open tile, but readable on either surface)
 //   claimed   → no tile, muted check (banked already, fully receded)
-//   locked    → no tile, red lock (held until the account is verified)
 function QuestMarker({
     icon: Icon,
     status,
     comingSoon,
-    locked,
 }: {
     icon: IconComponent;
     status: QuestCardStatus;
     comingSoon?: boolean;
-    locked?: boolean;
 }) {
-    // coming_soon → clock; locked → lock; open → the lane's section icon;
+    // coming_soon → clock; open → the lane's section icon;
     // otherwise the earned/banked check.
     function resolveIcon(): IconComponent {
         if (comingSoon) return ClockIcon;
-        if (locked) return LockIcon;
         if (status === "open") return Icon;
         return CheckIcon;
     }
     // open → ambient active tile; claimable → muted well; claimed (and
     // coming_soon, which always renders claimed) → no tile, muted glyph.
     function resolveTile(): string {
-        if (locked) return "text-intent-danger-text";
         if (!comingSoon && status === "open")
             return "bg-theme-bg-active text-theme-text-strong";
         if (status === "claimable")
@@ -519,10 +452,8 @@ export function QuestRow({
 }) {
     const earned = card.status !== "open";
     const claimed = card.status === "claimed";
-    // Claimed and locked quests both recede: nothing to do on them now.
-    const receded = claimed || card.locked;
     const claimableRewardId =
-        card.status === "claimable" && !card.locked ? card.rewardId : undefined;
+        card.status === "claimable" ? card.rewardId : undefined;
     // A claimed quest no longer needs its progress bar — the reward is banked,
     // so the "N / N" count is done and just adds noise.
     const progress =
@@ -539,7 +470,7 @@ export function QuestRow({
 
     // Shared pieces, placed differently per breakpoint below.
     const title = (
-        <Text as="span" weight="semibold" tone={receded ? "muted" : "strong"}>
+        <Text as="span" weight="semibold" tone={claimed ? "muted" : "strong"}>
             {card.title}
         </Text>
     );
@@ -576,7 +507,7 @@ export function QuestRow({
             intent="neutral"
             size="lg"
             className={`gap-1.5 tabular-nums ${
-                receded
+                claimed
                     ? "bg-transparent text-theme-text-muted"
                     : BUCKET_CHIP_CLASS[rewardIcon]
             }`}
@@ -613,7 +544,6 @@ export function QuestRow({
                             icon={icon}
                             status={card.status}
                             comingSoon={card.comingSoon}
-                            locked={card.locked}
                         />
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
@@ -649,7 +579,6 @@ export function QuestRow({
                     icon={icon}
                     status={card.status}
                     comingSoon={card.comingSoon}
-                    locked={card.locked}
                 />
                 <div className="flex min-w-0 flex-col gap-1">
                     <div>{title}</div>
@@ -700,7 +629,6 @@ function QuestOverviewContent({
 }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
-    const [requestingReview, setRequestingReview] = useState(false);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
         anonymous: userId === null,
@@ -832,27 +760,6 @@ function QuestOverviewContent({
         }
     }
 
-    async function handleRequestReview(): Promise<void> {
-        setClaimError(null);
-        setRequestingReview(true);
-        try {
-            const response = await accountClient.quests.review.$post();
-            if (!response.ok) {
-                throw new Error("Couldn’t request a review. Please try again.");
-            }
-            const { setupHold } = await response.json();
-            setState((current) => ({ ...current, setupHold }));
-        } catch (error) {
-            setClaimError(
-                error instanceof Error
-                    ? error.message
-                    : "Couldn’t request a review. Please try again.",
-            );
-        } finally {
-            setRequestingReview(false);
-        }
-    }
-
     async function refreshRewards(): Promise<void> {
         void router.invalidate({
             filter: (match) => match.routeId === "/_dashboard",
@@ -930,10 +837,6 @@ function QuestOverviewContent({
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: deriveCardStatus(comingSoon, previewAll, reward),
-                locked:
-                    state.setupHold !== null &&
-                    quest.category === "setup" &&
-                    !reward?.claimedAt,
                 earnedAmount: reward?.pollenAmount ?? undefined,
                 progress:
                     reward && quest.goal
@@ -965,7 +868,6 @@ function QuestOverviewContent({
         rewardedCatalogIds,
         rewardByKey,
         previewAll,
-        state.setupHold,
     ]);
 
     // Rewards created by a maintainer or another non-catalog source still need
@@ -1021,14 +923,12 @@ function QuestOverviewContent({
         return stats;
     }, [state.rewards]);
 
-    // Keep pending rewards separate from the claimed totals above them. A
-    // held account's Setup rewards are locked, so they aren't claimable.
+    // Keep pending rewards separate from the claimed totals above them.
     const claimable = useMemo(() => {
-        const locked = lockedQuestIds(state.catalog, state.setupHold !== null);
         const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
         for (const reward of state.rewards) {
-            if (reward.claimedAt == null && !locked.has(reward.questId ?? "")) {
+            if (reward.claimedAt == null) {
                 byKind[rewardIconKind(reward.balanceBucket)] +=
                     reward.pollenAmount;
                 count += 1;
@@ -1038,7 +938,7 @@ function QuestOverviewContent({
             .filter((kind) => byKind[kind] > 0)
             .map((kind) => ({ kind, pollen: byKind[kind] }));
         return { count, segments };
-    }, [state.rewards, state.catalog, state.setupHold]);
+    }, [state.rewards]);
 
     // Quests the viewer can still earn, for the leaderboard's "next step" line.
     const openQuests = useMemo(
@@ -1177,9 +1077,8 @@ function QuestOverviewContent({
                 // The progress chip counts only real (grantable) quests —
                 // coming_soon rows are excluded from both done and total.
                 const liveCards = cards.filter((card) => !card.comingSoon);
-                // Locked quests aren't done: their rewards can't be claimed.
                 const done = liveCards.filter(
-                    (card) => card.status !== "open" && !card.locked,
+                    (card) => card.status !== "open",
                 ).length;
                 return (
                     <Section
@@ -1195,13 +1094,6 @@ function QuestOverviewContent({
                         }
                     >
                         <div className="flex flex-col gap-2">
-                            {category.key === "setup" && state.setupHold && (
-                                <SetupHoldNotice
-                                    hold={state.setupHold}
-                                    requesting={requestingReview}
-                                    onRequestReview={handleRequestReview}
-                                />
-                            )}
                             {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}

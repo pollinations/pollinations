@@ -48,12 +48,7 @@ import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import {
     ACCOUNT_SETUP_QUEST_GROUP,
     listQuestCards,
-    listSetupQuestIds,
 } from "../services/quests/index.ts";
-import {
-    requestSetupReview,
-    setupHold,
-} from "../services/setup-reward-holds.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
@@ -953,8 +948,22 @@ const accountBalanceSchema = z.object({
         .describe(
             "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
         ),
-    tier: z.number().describe("Quest Pollen remaining, never below 0"),
+    tier: z
+        .number()
+        .describe(
+            "Spendable Quest pollen, never below 0; zero while restricted",
+        ),
     paid: z.number().describe("Paid Pollen remaining, never below 0"),
+    heldTier: z
+        .number()
+        .optional()
+        .describe("Locked Quest pollen, excluded from total and tier"),
+    questPollenRestricted: z
+        .boolean()
+        .optional()
+        .describe(
+            "Whether Quest pollen spending is locked until a purchase or account review",
+        ),
 });
 
 const balanceResponseSchema = z.object({
@@ -1001,17 +1010,6 @@ const accountQuestRewardsResponseSchema = z.object({
     rewards: z.array(
         accountQuestRewardSchema.extend({ url: z.string().nullable() }),
     ),
-    setupHold: z
-        .object({
-            review: z
-                .enum(["pending", "declined"])
-                .nullable()
-                .describe("State of the account's review request, if any."),
-        })
-        .nullable()
-        .describe(
-            "Set while the account's Setup quest rewards are on hold and can't be claimed. Buying a pollen pack unlocks them, as does a maintainer approving a review.",
-        ),
 });
 
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
@@ -1350,20 +1348,16 @@ export const accountRoutes = new Hono<Env>()
             requireAccountPermission(c, "usage");
 
             const db = drizzle(c.env.DB, { schema });
-            const [rows, hold] = await Promise.all([
-                db
-                    .select()
-                    .from(rewardsTable)
-                    .where(eq(rewardsTable.userId, user.id))
-                    .orderBy(desc(rewardsTable.earnedAt)),
-                setupHold(c.env, db, user),
-            ]);
+            const rows = await db
+                .select()
+                .from(rewardsTable)
+                .where(eq(rewardsTable.userId, user.id))
+                .orderBy(desc(rewardsTable.earnedAt));
             return c.json({
                 rewards: rows.map((row) => ({
                     ...formatReward(row),
                     url: row.url,
                 })),
-                setupHold: hold,
             });
         },
     )
@@ -1411,9 +1405,6 @@ export const accountRoutes = new Hono<Env>()
         const result = await claimReward(db, {
             rewardId: c.req.param("rewardId"),
             userId: user.id,
-            lockedQuestIds: (await setupHold(c.env, db, user))
-                ? await listSetupQuestIds({ db, env: c.env })
-                : undefined,
         });
         if (!result.reward) {
             throw new HTTPException(404, { message: "Reward not found" });
@@ -1424,29 +1415,6 @@ export const accountRoutes = new Hono<Env>()
             newBalance: result.newBalance,
             reward: formatReward(result.reward),
         });
-    })
-    .post("/quests/review", async (c) => {
-        await c.var.auth.requireAuthorization({
-            message: "Authentication required to request a review",
-        });
-        if (c.var.auth.apiKey) {
-            throw new HTTPException(403, {
-                message: "Reviews require a dashboard session",
-            });
-        }
-
-        const user = c.var.auth.requireUser();
-        const hold = await requestSetupReview(
-            c.env,
-            drizzle(c.env.DB, { schema }),
-            user,
-        );
-        if (!hold) {
-            throw new HTTPException(409, {
-                message: "Setup rewards aren't on hold",
-            });
-        }
-        return c.json({ setupHold: hold });
     })
     .get(
         "/balance",
@@ -1487,7 +1455,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             let accountBalance:
-                | { total: number; tier: number; paid: number }
+                | z.infer<typeof accountBalanceSchema>
                 | undefined;
             if (canViewAccount) {
                 // Same helper the billing path uses, so a bucket that has gone
@@ -1501,8 +1469,16 @@ export const accountRoutes = new Hono<Env>()
                 );
                 accountBalance = {
                     total: getAvailableBalance(balances),
-                    tier: Math.max(0, balances.tierBalance),
+                    tier: balances.questPollenRestricted
+                        ? 0
+                        : Math.max(0, balances.tierBalance),
                     paid: Math.max(0, balances.packBalance),
+                    ...(balances.questPollenRestricted
+                        ? {
+                              heldTier: Math.max(0, balances.tierBalance),
+                              questPollenRestricted: true,
+                          }
+                        : {}),
                 };
             }
 

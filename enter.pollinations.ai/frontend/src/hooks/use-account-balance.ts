@@ -4,6 +4,7 @@ import { accountClient } from "../api.ts";
 export type AccountBalance = {
     tierBalance: number;
     packBalance: number;
+    questPollenRestricted: boolean;
 };
 
 /** The balance request's path, for outage checks. */
@@ -15,8 +16,11 @@ export async function fetchAccountBalance(): Promise<AccountBalance> {
     const data = await response.json();
     if (!("accountBalance" in data)) throw new Error("Failed to load wallet");
     return {
-        tierBalance: data.accountBalance.tier,
+        tierBalance:
+            data.accountBalance.tier + (data.accountBalance.heldTier ?? 0),
         packBalance: data.accountBalance.paid,
+        questPollenRestricted:
+            data.accountBalance.questPollenRestricted ?? false,
     };
 }
 

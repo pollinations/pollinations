@@ -33,6 +33,7 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { restrictQuestPollenAtSignup } from "./services/quest-restrictions.ts";
 import { signupEmailDomain } from "./services/signup-domains.ts";
 import { removeUserSites } from "./services/sites.ts";
 import {
@@ -299,6 +300,16 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     },
                 },
                 create: {
+                    before: async (user) => ({
+                        data: {
+                            ...user,
+                            questPollenRestricted:
+                                await restrictQuestPollenAtSignup(
+                                    env.SETUP_HOLDS,
+                                    user.email,
+                                ),
+                        },
+                    }),
                     after: async (user, context) => {
                         ctx?.waitUntil(
                             captureProductEvent(

@@ -596,6 +596,36 @@ test("a line that doesn't fit is left out with its incident, which isn't pinged"
     assert.deepEqual(plan.community.owners, ["o"]);
 });
 
+test("a line grouping more incidents than fit goes in with those that fit; the rest stay pending", () => {
+    const streams = Array.from({ length: 20 }, (_, n) => ({
+        ...stream(String(n + 1), `CloudCompile${n}`),
+        model: `community/CloudCompile${n}/nvidia-nemotron-3-ultra-550b-a55b:free`,
+        error: "stream returned usage_missing: missing or invalid token usage",
+    }));
+    const plan = decision(
+        JSON.stringify({
+            community: [
+                line(
+                    streams.map((i) => i.id),
+                    "Their publishers should fix their endpoints.",
+                ),
+            ],
+        }),
+        streams,
+    );
+    const told = plan.community.incidents.length;
+    assert.ok(told > 0 && told < 20, `${told} told`);
+    assert.ok(plan.community.text.length <= 4096);
+    assert.match(
+        words(plan.community.text),
+        /^Their publishers should fix their endpoints\.\n\nPublishers see/,
+    );
+    assert.deepEqual(
+        plan.community.owners,
+        streams.slice(0, told).map((i) => i.owners[0]),
+    );
+});
+
 test("a card's title says it is community models and whose fault, and its facts are never cut", () => {
     const long =
         "community/CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free";

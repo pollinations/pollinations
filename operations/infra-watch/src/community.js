@@ -31,7 +31,7 @@ Each line tells the one incident in its "incidents" and goes to the channel its 
 - shared: models that worked broke the same way at once across many publishers, likely gen's own fault.
 - fallback: a model leans on its fallbacks; "private" fallbacks are never named.
 - listings: models newly filtered out of /models for low health, or back; filtered models stay callable by their exact ID.
-Code puts whole lines into each post until it is full; a line that doesn't fit, and its incidents, come next time. Code pings publishers and points them to their dashboard.`;
+Code puts lines into each post until it is full; incidents that don't fit come next time. Code pings publishers and points them to their dashboard.`;
 
 // The public community models gen's reliability filter leaves out of the
 // default listing: in the full list but not the default one, with a
@@ -342,10 +342,10 @@ const noLinks = (text) =>
 
 // The agent's posts within the rails, or null if its answer isn't one.
 // Each line tells only incidents code found for its channel, goes under
-// their cards, and carries no link of its own. Whole lines go into the post
-// while it and its mentions fit: a line that doesn't is left out with its
-// incidents, which stay pending, so a post never shows less than it pings
-// and acknowledges.
+// their cards, and carries no link of its own. Lines go into the post while
+// it and its mentions fit, each with as many of its incidents as fit: those
+// left out stay pending, so a post never shows less than it pings and
+// acknowledges.
 export function decision(text, found) {
     let answer;
     try {
@@ -363,7 +363,7 @@ export function decision(text, found) {
             const ids = Array.isArray(line?.incidents)
                 ? [...new Set(line.incidents.map(String))]
                 : [];
-            const items = ids.map((id) => byId.get(id));
+            let items = ids.map((id) => byId.get(id));
             const words =
                 typeof line?.text === "string" ? noLinks(line.text).trim() : "";
             if (
@@ -372,18 +372,23 @@ export function decision(text, found) {
                 items.some((i) => i?.to !== to || told.includes(i))
             )
                 continue;
-            const block = [...items.map(card), words].join("\n");
-            const next = body ? `${body}\n${block}` : block;
-            const owners = new Set(
-                [...told, ...items].flatMap((i) => i.owners),
-            );
-            if (
-                next.length + footer.length > LIMIT ||
-                mentionSize([...owners]) > CONTENT_LIMIT
-            )
-                continue;
-            body = next;
-            told.push(...items);
+            // A line too big goes in with its first incidents that fit.
+            while (items.length) {
+                const block = [...items.map(card), words].join("\n");
+                const next = body ? `${body}\n${block}` : block;
+                const owners = new Set(
+                    [...told, ...items].flatMap((i) => i.owners),
+                );
+                if (
+                    next.length + footer.length <= LIMIT &&
+                    mentionSize([...owners]) <= CONTENT_LIMIT
+                ) {
+                    body = next;
+                    told.push(...items);
+                    break;
+                }
+                items = items.slice(0, -1);
+            }
         }
         return told.length
             ? {

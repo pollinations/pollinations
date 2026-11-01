@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     CHECKING,
+    COMMUNITY_STALE_MS,
     CONFIRM_CHECKS,
+    communityDown,
     conditions,
     duration,
     escalates,
@@ -456,6 +458,32 @@ test("each AI line keeps the colour its card had when it was written", () => {
         text,
         /🟡 <t:3600:t> Primary weak\.\n🟠 <t:5400:t> Worse\.\n🟢 <t:10860:t> Closed\./,
     );
+});
+
+test("the community monitor is down once no cycle got done for 90 minutes, with its last error", () => {
+    const at = 1_000_000;
+    const failing = { at: at + 60 * 60_000, doneAt: at };
+    assert.deepEqual(communityDown(undefined, at), {});
+    assert.deepEqual(communityDown(failing, at + COMMUNITY_STALE_MS - 1), {});
+    // No cycle started since the last one done: infra-watch was down, which
+    // the heartbeat tells, not this card.
+    assert.deepEqual(
+        communityDown({ at, doneAt: at }, at + 24 * 60 * 60_000),
+        {},
+    );
+    const { community } = communityDown(
+        { ...failing, error: "probe key refused (402)" },
+        at + COMMUNITY_STALE_MS,
+    );
+    assert.equal(community.kind, "COMMUNITY_DOWN");
+    const card = renderCard(
+        "community",
+        { kind: "COMMUNITY_DOWN", openedAt: at, info: community },
+        { now: at },
+    );
+    assert.match(plain(card.text), /┌─ DOWN: community monitor ─/);
+    assert.match(plain(card.text), /ERROR {3}probe key refused \(402\)/);
+    assert.equal(card.ping, true);
 });
 
 test("infrastructure cards follow the same life and stay red when closed", () => {

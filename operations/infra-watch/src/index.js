@@ -33,6 +33,7 @@ import {
 import { dueProbes, FORGET_MS, pool, probe, recordProbe } from "./probes.js";
 import { holdDomains, sweepDomains } from "./quest-restrictions.js";
 import {
+    communityDown,
     conditions,
     duration,
     escalates,
@@ -277,6 +278,13 @@ export class Watch extends DurableObject {
         // A legacy bridge's open card is judged against the medians it
         // started with.
         if (legacy) Object.assign(found, legacyDown(legacy, open));
+        // The community cycle runs only with gen's catalog read; without it,
+        // gen or analytics is down and that card says so.
+        if (publicModels)
+            Object.assign(
+                found,
+                communityDown(await this.ctx.storage.get("community"), now),
+            );
         // Unknown sign-ups or legacy bridges keep their open cards.
         // A sign-up card Discord hasn't taken yet is retried until it has:
         // its 24-hour window can end first.
@@ -481,7 +489,17 @@ export class Watch extends DurableObject {
         });
         if (publicModels)
             this.cycle ??= this.community(gen, publicModels, now)
-                .catch((error) => console.error(`community: ${error.message}`))
+                .catch(async (error) => {
+                    console.error(`community: ${error.message}`);
+                    // Kept for the card the next checks open if no cycle
+                    // gets done again.
+                    const state = await this.ctx.storage.get("community");
+                    if (state)
+                        await this.ctx.storage.put("community", {
+                            ...state,
+                            error: error.message,
+                        });
+                })
                 .finally(() => {
                     this.cycle = null;
                 });
@@ -530,6 +548,9 @@ export class Watch extends DurableObject {
         const state = (await this.ctx.storage.get("community")) ?? {};
         if (now - (state.at ?? 0) < CYCLE_MS) return;
         state.at = now;
+        // When a cycle last got done, for communityDown (rules.js); the
+        // first cycle under this field starts the count.
+        state.doneAt ??= now;
         // A model gone from the catalog keeps its backoff for a week; a quiet
         // period lasts a week at most.
         const listed = new Set(catalog.map((m) => m.name));
@@ -544,10 +565,16 @@ export class Watch extends DurableObject {
             ),
         );
         const save = () => this.ctx.storage.put("community", state);
+        const done = () => {
+            state.doneAt = now;
+            delete state.error;
+            return save();
+        };
         await save();
         const key = this.env.COMMUNITY_PROBE_KEY;
         if (!key) throw new Error("COMMUNITY_PROBE_KEY missing");
         const rows = await statusRows(gen, WINDOW_MINUTES, "regular");
+        const schedule = { ...state.schedule };
         const probes = await pool(
             dueProbes(catalog, rows, state.schedule, now),
             PROBE_POOL,
@@ -563,6 +590,17 @@ export class Watch extends DurableObject {
                 return result;
             },
         );
+        // Every probe refused (401 or 402) means our key, not the models:
+        // revoked, out of pollen or over its budget. Those probes don't
+        // count, so the models stay due and the cycle fails until it works.
+        if (
+            probes.length > 1 &&
+            probes.every((p) => p.status === 401 || p.status === 402)
+        ) {
+            state.schedule = schedule;
+            await save();
+            throw new Error(`probe key refused (${probes[0].status})`);
+        }
 
         const listings = await this.listingsToday(gen, catalog, now);
         state.served = servedStreaks(
@@ -586,7 +624,7 @@ export class Watch extends DurableObject {
         // the set.
         if (listings && !found.some((i) => i.kind === "listings"))
             await this.ctx.storage.put("listings", listings.saved);
-        if (!found.length) return;
+        if (!found.length) return done();
         const agentKey = this.env.COMMUNITY_AGENT_KEY;
         if (!agentKey) throw new Error("COMMUNITY_AGENT_KEY missing");
         const budget = allow(state.ai, now, AGENT_DAILY_LIMIT);
@@ -625,7 +663,7 @@ export class Watch extends DurableObject {
                     state.served[incident.model].streak = 1;
             }
         }
-        await save();
+        await done();
     }
 
     // This cycle's fresh text probes that their model answered itself with

@@ -985,6 +985,43 @@ const tells =
     };
 const HOURS = (n) => n * 60 * 60_000;
 
+it("opens a community monitor card when no cycle gets done for 90 minutes, says why, and closes it once one does", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/a"), community("community/p/b")];
+    // Gen refuses our probe key: every cycle fails and the models stay due.
+    world.probe = () =>
+        Response.json(
+            { error: { message: "Insufficient balance" } },
+            { status: 402 },
+        );
+    const open = async () =>
+        (await stored(stub, "state")).open.community ?? null;
+    for (let minutes = 0; minutes < 90; minutes += 30) {
+        await cycled(stub);
+        expect(await open()).toBeNull();
+        clock += 30 * 60_000;
+    }
+    await cycled(stub);
+    const card = await open();
+    expect(card).not.toBeNull();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("DOWN: community monitor");
+    expect(post.text).toContain("probe key refused (402)");
+    expect(world.probes).toHaveLength(8);
+    // The key works again: the next cycle gets done and the card closes.
+    world.probe = answers(() => false, "gemini-3-flash");
+    clock += 30 * 60_000;
+    await cycled(stub);
+    clock += 60_000;
+    await stub.check();
+    await settle(stub);
+    expect(await open()).toBeNull();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
 it("probes due models by Thomas's rule, and calls the agent only with incidents, through its own key", async () => {
     const stub = watch();
     world.catalog = [

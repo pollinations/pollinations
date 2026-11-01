@@ -119,6 +119,24 @@ export function conditions({
     return found;
 }
 
+// The community cycle (community.js) runs every half hour. With cycles
+// started since the last one done and none done for COMMUNITY_STALE_MS,
+// probes and community posts have stopped; its last error, such as a
+// refused probe key, says why. A cycle that hangs counts too. With none
+// started, infra-watch itself was down, which the heartbeat tells.
+export const COMMUNITY_STALE_MS = 90 * 60 * 1000;
+export const communityDown = (community, now) =>
+    community?.doneAt != null &&
+    community.at > community.doneAt &&
+    now - community.doneAt >= COMMUNITY_STALE_MS
+        ? {
+              community: {
+                  kind: "COMMUNITY_DOWN",
+                  error: community.error ?? null,
+              },
+          }
+        : {};
+
 // A legacy bridge is down when its last full UTC hour fell below half the
 // median of the same hour on the previous 7 days, in requests or success,
 // with a median of at least 10 requests (the pipe's `degraded`). Once down,
@@ -380,6 +398,7 @@ const LABEL = {
     WATCH_DOWN: "DOWN",
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
+    COMMUNITY_DOWN: "DOWN",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -388,6 +407,7 @@ const SUBJECT = {
     analytics: "model status data",
     platform: "platform-wide",
     watch: "infra-watch",
+    community: "community monitor",
 };
 // Sign-up cards are about an email domain.
 const DOMAIN_KEY = /^signup:/;
@@ -415,6 +435,7 @@ export const COLOR = {
     // A farm signing up stands out like an outage, without the ping.
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
+    COMMUNITY_DOWN: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -532,6 +553,12 @@ function openRows(incident, now) {
                     : "/health unreachable",
             ],
             ["", "model and outage alerts paused"],
+        ];
+    if (kind === "COMMUNITY_DOWN")
+        return [
+            ["WHY", "no community cycle done for 90+ min"],
+            ...(info.error ? [["ERROR", info.error]] : []),
+            ["", "probes and community posts paused"],
         ];
     if (kind === "LEGACY_DOWN") {
         const rows = [

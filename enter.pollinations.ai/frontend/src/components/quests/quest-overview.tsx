@@ -528,7 +528,7 @@ export function QuestRow({
             onClick={() => onClaim(claimableRewardId)}
             className="gap-1.5 tabular-nums"
         >
-            {claiming ? "Claiming" : "Claim"}
+            {claiming ? "Claiming" : "Claim!"}
             <WalletKindIcon kind={rewardIcon} className="ml-1 h-4 w-4" />
             {rewardLabel}
         </Button>

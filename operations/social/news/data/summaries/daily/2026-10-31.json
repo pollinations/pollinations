@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-31",
+  "period_start": "2026-10-31",
+  "period_end": "2026-10-31",
+  "title": "App Keys get a clearer job",
+  "summary": "App Keys prepare for their November 1 role, while app listings, community model reports, and Setup Quest reviews get more useful.\n\nStarting November 1, `pk_` App Keys identify OAuth apps but no longer authenticate API requests. Generation calls need a server-side `sk_` key or a user-authorized key through Connect User Wallets. Enter, the CLI, the SDK, and the docs now reflect that split. Hosted agents can still use Computer, but can no longer use Connectors.\n\nThe catalog now matches Pollinations Pay App Key traffic to listings through redirect URLs and ownership, so sibling apps on one host do not inherit each other's requests. A read-only check found 182 Pay apps in the catalog, up from 67, with none removed. My Apps gained a responsive card grid and 24-hour counts beside app titles. Polli Snap joined the image app catalog; OpenClaw and Open WebUI listings now point to their own repositories.\n\nCommunity Watch adds notices about substantial model fallback use and changes to model listings. It also adds daily text and image leaderboards showing usage, speed, and success rates for public community models. Filtered models leave `/models` listings but remain callable by exact ID.",
+  "pr_count": 24,
+  "prs": [
+    {
+      "number": 18804,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18819,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18828,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18832,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18842,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18852,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18853,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18854,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18857,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18873,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18874,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18875,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18877,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18879,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18880,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18895,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18897,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18898,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18899,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18900,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18903,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18904,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18905,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18912,
+      "date": "2026-10-31"
+    }
+  ],
+  "generated_at": "2026-11-01T06:11:20.448337+00:00",
+  "daily": [
+    {
+      "emoji": "📱",
+      "title": "A clearer My Apps view",
+      "text": "Browse your apps in a card grid with 24-hour request counts beside their titles. The grid uses two columns on wider screens and one on phones.",
+      "prs": [
+        18875
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Community model leaderboards",
+      "text": "Daily text and image boards show usage, speed, and success rates for public community models over the previous 24 hours. Text rankings require at least 50 requests per model; image rankings require at least 10. [Join Discord](https://discord.gg/k9F7SyTgqn).",
+      "prs": [
+        18880
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Community model status notices",
+      "text": "Community Watch posts when a listed community model relies substantially on fallbacks or moves in or out of model listings. A filtered model remains callable by its exact ID. [Join Discord](https://discord.gg/k9F7SyTgqn).",
+      "prs": [
+        18879
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Request a Setup reward review",
+      "text": "If your Setup Quest rewards are on hold, you can request an account review from the dashboard and see whether it is pending or declined. Other Quest rewards remain claimable.",
+      "prs": [
+        18804
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-10-31",
+  "period_start": "2026-10-31",
+  "period_end": "2026-10-31",
+  "generated_at": "2026-11-01T06:11:20.448337+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/25953b008ebe1ed80627e027c246562696137c3045698cfeadfbea93381be3f7"
+    }
+  ],
+  "text": "Added Community Watch: daily text and image leaderboards show usage, speed, and success rates. Notices flag substantial fallback use and listing changes. Filtered models leave `/models` but remain callable by exact ID. The menu isn't the API."
+}

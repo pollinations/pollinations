@@ -31,8 +31,7 @@
         "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     }
   },

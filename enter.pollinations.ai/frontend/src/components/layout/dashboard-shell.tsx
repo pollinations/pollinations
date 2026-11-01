@@ -355,7 +355,27 @@ const DashboardRail: FC<DashboardRailProps> = ({
         className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-68"
         aria-label="Dashboard navigation"
     >
-        <BrandHeader onClose={onNavigate} />
+        {/* You first: your name (the way to Settings), or the sign-in
+            buttons, beside the phone's close button. */}
+        <div
+            className={cn(
+                "flex shrink-0 items-start gap-2 border-b pb-3",
+                NAV_LINE_CLASS,
+            )}
+        >
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+                {accountName && (
+                    <AccountLink
+                        name={accountName}
+                        avatarUrl={avatarUrl}
+                        active={activePage === "account"}
+                        onNavigate={onNavigate}
+                    />
+                )}
+                {accountArea}
+            </div>
+            <CloseButton onClose={onNavigate} />
+        </div>
         <ScrollArea
             // A size container: the guides under Docs show by its height.
             className="-mr-2 min-h-0 flex-1 pt-3 [container-type:size]"
@@ -366,6 +386,26 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
+            {navItems.some((item) => item.group === "yours") && (
+                <>
+                    <nav aria-label="Yours" className="flex flex-col gap-0.5">
+                        {navItems
+                            .filter((item) => item.group === "yours")
+                            .map((item) => (
+                                <NavRow
+                                    key={item.id}
+                                    item={item}
+                                    active={activePage === item.id}
+                                    questStatus={questStatus}
+                                    rowStatus={rowStatus}
+                                    onNavigate={onNavigate}
+                                />
+                            ))}
+                    </nav>
+                    {accountCard}
+                    <hr className={cn("my-2", NAV_LINE_CLASS)} />
+                </>
+            )}
             <nav aria-label="Pollinations" className="flex flex-col gap-0.5">
                 {navItems
                     .filter((item) => item.group === "resources")
@@ -392,32 +432,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 NAV_LINE_CLASS,
             )}
         >
-            {navItems.some((item) => item.group === "yours") && (
-                <nav aria-label="Yours" className="flex flex-col gap-0.5">
-                    {navItems
-                        .filter((item) => item.group === "yours")
-                        .map((item) => (
-                            <NavRow
-                                key={item.id}
-                                item={item}
-                                active={activePage === item.id}
-                                questStatus={questStatus}
-                                rowStatus={rowStatus}
-                                onNavigate={onNavigate}
-                            />
-                        ))}
-                </nav>
-            )}
-            {accountName && (
-                <AccountLink
-                    name={accountName}
-                    avatarUrl={avatarUrl}
-                    active={activePage === "account"}
-                    onNavigate={onNavigate}
-                />
-            )}
-            {accountCard}
-            {accountArea}
             <DashboardFooter links={showFooterLinks ? footerLinks : []} />
         </div>
     </aside>
@@ -488,32 +502,16 @@ const NavRow: FC<{
 
 // The lotus above a line; on phones the row also holds the drawer's close
 // button.
-const BrandHeader: FC<{ onClose: () => void }> = ({ onClose }) => (
-    <div
-        className={cn(
-            "flex shrink-0 items-center justify-between gap-2 border-b pb-3 pl-1",
-            NAV_LINE_CLASS,
-        )}
+// Closes the phone's drawer; the desktop rail is always open.
+const CloseButton: FC<{ onClose: () => void }> = ({ onClose }) => (
+    <button
+        type="button"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque lg:hidden"
+        onClick={onClose}
+        aria-label="Close navigation"
     >
-        <a
-            href="https://pollinations.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex shrink-0 text-current"
-            aria-label="Pollinations"
-        >
-            <span className="sr-only">Pollinations</span>
-            <BrandMark variant="mark" className="h-7 w-7" />
-        </a>
-        <button
-            type="button"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque lg:hidden"
-            onClick={onClose}
-            aria-label="Close navigation"
-        >
-            <XIcon className="h-5 w-5" />
-        </button>
-    </div>
+        <XIcon className="h-5 w-5" />
+    </button>
 );
 
 // Docs opens the docs site, so it is drawn as a link, not a page row: same
@@ -601,7 +599,17 @@ const DocGuides: FC = () => (
 const DashboardFooter: FC<{
     links: readonly FooterLink[];
 }> = ({ links }) => (
-    <div className="flex items-end justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
+    <div className="flex items-center justify-between gap-2 pl-1 text-xs leading-none text-theme-text-muted">
+        {/* The logo signs off the rail, beside the small print. */}
+        <a
+            href="https://pollinations.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex shrink-0 text-theme-text-strong"
+            aria-label="Pollinations"
+        >
+            <BrandMark variant="mark" className="h-6 w-6" />
+        </a>
         {links.length > 0 && (
             <div className="flex flex-wrap gap-x-2 gap-y-1 leading-snug">
                 {links.map((link) => (
@@ -624,7 +632,7 @@ const DashboardFooter: FC<{
     </div>
 );
 
-// Who is signed in, under the cards, and the way to Settings (profile,
+// Who is signed in, at the top of the rail, and the way to Settings (profile,
 // connections, sign out). A button rather than a row: the quiet surface pill when Settings isn't
 // open, the accent fill when it is.
 const AccountLink: FC<{

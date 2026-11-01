@@ -7,6 +7,7 @@ import {
     Button,
     CheckIcon,
     ChevronIcon,
+    Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
@@ -448,6 +449,10 @@ const MobileMenuButton: FC<{
     </button>
 );
 
+/** "49 claimable" → "49"; nothing for other quest statuses. */
+const claimableCount = (status: string | null) =>
+    status?.match(/^(\d+) claimable/)?.[1] ?? null;
+
 const NavRow: FC<{
     item: DashboardNavItem;
     active: boolean;
@@ -469,16 +474,13 @@ const NavRow: FC<{
         onClick={onNavigate}
     >
         {item.label}
-        {/* Something to claim or a new quest: a dot by the label, the
-            count on hover. */}
-        {item.id === "quests" && questStatus && (
-            <span
-                title={questStatus}
-                className="-ml-1 self-start pt-1 text-theme-text-soft"
-            >
-                <span className="block h-1.5 w-1.5 rounded-full bg-current" />
-                <span className="sr-only">{questStatus}</span>
-            </span>
+        {/* Quests waiting to be claimed: their count in the "New!" badge
+            style, right by the label. */}
+        {item.id === "quests" && claimableCount(questStatus) && (
+            <Chip intent="news" size="sm" title={questStatus ?? undefined}>
+                {claimableCount(questStatus)}
+                <span className="sr-only"> claimable</span>
+            </Chip>
         )}
         {rowStatus?.[item.id]}
     </NavItem>

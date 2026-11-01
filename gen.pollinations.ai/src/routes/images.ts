@@ -179,6 +179,26 @@ async function parseEditInput(c: Context): Promise<{
                 message: 'response_format must be "url" or "b64_json"',
             });
 
+        const sizeField = formData.get("size");
+        const size = CreateImageEditRequestSchema.shape.size.safeParse(
+            sizeField == null || sizeField === "" ? undefined : sizeField,
+        );
+        if (!size.success)
+            throw new UpstreamError(400, {
+                message: size.error.issues.map((i) => i.message).join(", "),
+            });
+
+        const qualityField = formData.get("quality");
+        const quality = CreateImageEditRequestSchema.shape.quality.safeParse(
+            qualityField == null || qualityField === ""
+                ? undefined
+                : qualityField,
+        );
+        if (!quality.success)
+            throw new UpstreamError(400, {
+                message: quality.error.issues.map((i) => i.message).join(", "),
+            });
+
         const seedField = formData.get("seed");
         const seed = CreateImageEditRequestSchema.shape.seed.safeParse(
             seedField == null || seedField === ""
@@ -193,8 +213,8 @@ async function parseEditInput(c: Context): Promise<{
         return {
             prompt,
             imageUrls,
-            size: (formData.get("size") as string) || undefined,
-            quality: (formData.get("quality") as string) || undefined,
+            size: size.data,
+            quality: quality.data,
             seed: seed.data ?? undefined,
             safe: formData.get("safe") as string | null,
             response_format: format.data,

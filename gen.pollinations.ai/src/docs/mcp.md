@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Wayback Machine | `https://gen.pollinations.ai/mcp/wayback` | List Internet Archive snapshots and read archived page text | [Source](https://github.com/pollinations/pollinations/tree/main/apps/wayback-mcp) |
 
 Send the key with every request:
 
@@ -205,6 +206,14 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Wayback Machine MCP
+
+`wayback_snapshots` lists the Internet Archive's Wayback Machine snapshots of
+a page or site with timestamps, statuses and types, and `wayback_page` returns
+the text of the latest snapshot, or the latest one at or before a date, with
+markup stripped. Lookups are free and require a Pollinations key. The key is
+not sent to the Wayback Machine.
 
 ### Billing and permissions
 

@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "WAYBACK_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "wayback",
+        name: "Wayback Machine",
+        description:
+            "List Internet Archive snapshots and read archived page text.",
+        binding: "WAYBACK_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Wayback Machine lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

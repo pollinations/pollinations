@@ -518,20 +518,23 @@ export function QuestRow({
             {rewardLabel}
         </span>
     );
+    // A claimable quest's reward is its Claim button: the amount inside it,
+    // in the reward column, so it sits in the same place on every card.
     const claimButton = claimableRewardId ? (
         <Button
             type="button"
             intent="commit"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
-            className="gap-1.5"
+            className="gap-1.5 tabular-nums"
         >
             <SparkleIcon className="h-4 w-4 shrink-0" />
             {claiming ? "Claiming" : "Claim"}
+            <WalletKindIcon kind={rewardIcon} className="ml-1 h-4 w-4" />
+            {rewardLabel}
         </Button>
     ) : null;
-    // Both layouts place the claim button and reward chip separately: claim
-    // beside the text, chip pinned to the right edge (ml-auto).
+    // Both layouts pin the reward (or the Claim button) to the right edge.
 
     return (
         // Only a quest waiting for Claim is a card: the one thing to act on.
@@ -568,9 +571,8 @@ export function QuestRow({
                     {progress}
                 </div>
                 <div className="flex items-center gap-2.5">
-                    {claimButton}
                     <div className="ml-auto flex items-center gap-2.5">
-                        {rewardChip}
+                        {claimButton ?? rewardChip}
                     </div>
                 </div>
             </div>
@@ -602,9 +604,8 @@ export function QuestRow({
                     )}
                     {progress}
                 </div>
-                {claimButton}
                 <div className="ml-auto flex shrink-0 items-center gap-2.5">
-                    {rewardChip}
+                    {claimButton ?? rewardChip}
                 </div>
             </div>
         </Surface>

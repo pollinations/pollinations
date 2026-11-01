@@ -982,6 +982,34 @@ test("a fallback notice with long community ids fits a phone, ids whole", () => 
     );
 });
 
+test("a fallback notice keeps the longest catalog names inside a phone's box", () => {
+    // The two longest public names on 2026-11-01, whole and in order.
+    const model =
+        "sharktide/inferenceport-ai-lightning-text-v2-expanded-knowledge";
+    const fallback =
+        "AkshayCoder48/nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free";
+    const card = fallbackCard({
+        model: `community/${model}`,
+        via: [{ model: `community/${fallback}`, rescued: 128 }],
+        rescued: 128,
+        successes: 400,
+    });
+    const box = plain(card.text)
+        .split("\n")
+        .filter((line) => /^[┌│└]/.test(line));
+    for (const line of box) assert.ok(line.length <= 49, line);
+    const joined = box
+        .map((line) =>
+            line
+                .slice(2, -2)
+                .trim()
+                .replace(/^(MODEL|VIA)\s+/, ""),
+        )
+        .join("");
+    assert.ok(joined.includes(model), joined);
+    assert.ok(joined.includes(`${fallback} (128)`), joined);
+});
+
 // --- community listings ------------------------------------------------------
 
 test("filtered: in the full list, not the default one, at 80% or less", () => {

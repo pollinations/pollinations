@@ -793,16 +793,33 @@ const community = (id) => id.replace(/^community\//, "");
 
 // A phone shows a 49-character box whole, borders included; wider ones
 // wrap and break. A community id longer than this row width moves its name
-// under its owner, so the box stays that narrow and the id is never cut.
+// under its owner, and a long name continues on further rows, broken after
+// a "-", ".", ":", "_" or space where it can be, so the box stays that
+// narrow and the id is never cut.
 const ID_ROW = 37;
+const wrapRow = (text) => {
+    const rows = [];
+    while (text.length > ID_ROW) {
+        const head = text.slice(0, ID_ROW);
+        const at = Math.max(
+            ...["-", ".", ":", "_", " "].map((c) => head.lastIndexOf(c)),
+        );
+        const cut = at > 0 ? at + 1 : ID_ROW;
+        rows.push(text.slice(0, cut).trimEnd());
+        text = text.slice(cut);
+    }
+    return [...rows, text];
+};
 const idRows = (field, id, after = "") => {
-    const slash = id.indexOf("/");
-    if (`${id}${after}`.length <= ID_ROW || slash < 0)
-        return [[field, `${id}${after}`]];
-    return [
-        [field, id.slice(0, slash + 1)],
-        ["", `${id.slice(slash + 1)}${after}`],
-    ];
+    const slash = id.indexOf("/") + 1;
+    const rows =
+        `${id}${after}`.length <= ID_ROW
+            ? [`${id}${after}`]
+            : [
+                  ...wrapRow(id.slice(0, slash)),
+                  ...wrapRow(`${id.slice(slash)}${after}`),
+              ];
+    return rows.filter(Boolean).map((row, i) => [i ? "" : field, row]);
 };
 
 // Where an owner sees their model's failed calls and errors.

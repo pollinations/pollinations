@@ -28,6 +28,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let world;
 
 async function discord(url, init) {
+    if (init.method === "DELETE") {
+        const write = { method: "DELETE", path: url.pathname, text: "" };
+        write.ok = !world.fails(write);
+        world.writes.push(write);
+        return new Response(null, { status: write.ok ? 204 : 503 });
+    }
     const { content, embeds, allowed_mentions } = JSON.parse(init.body);
     const write = {
         method: init.method,
@@ -71,7 +77,7 @@ async function fake(input, init = {}) {
                     requests: 40,
                     failures: 30,
                     callers: 3,
-                    failing_callers: 3,
+                    failing_callers: world.failingCallers,
                     top_caller_failures: 12,
                 },
             ],
@@ -141,6 +147,7 @@ beforeEach(() => {
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
+        failingCallers: 3,
         receipt: true,
         fails: () => false,
         delay: () => 0,
@@ -264,6 +271,93 @@ it("opens a new card when a close was edited but never saved", async () => {
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
     expect(posts).toHaveLength(2);
     expect(posts[1].text).toContain("AGAIN");
+});
+
+// A card opened with one failing caller, then several fail, read on the
+// next check. `also` runs in the object first, e.g. to break its storage.
+const worsen = async (stub, also = () => {}) => {
+    world.rows = BAD;
+    world.failingCallers = 1;
+    await stub.check();
+    await settle(stub);
+    world.failingCallers = 3;
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("state");
+        saved.open[KEY].enriched.at = 0;
+        await state.storage.put("state", saved);
+        also(state);
+    });
+};
+const posted = () => world.writes.filter((w) => w.ok && w.method === "POST");
+const deleted = () =>
+    world.writes
+        .filter((w) => w.ok && w.method === "DELETE")
+        .map((w) => w.path.split("/").at(-1));
+
+it("moves a worsened card to the bottom with its ping and lines", async () => {
+    const stub = watch();
+    await worsen(stub);
+    await stub.check();
+    await settle(stub);
+
+    const posts = posted();
+    expect(posts).toHaveLength(2);
+    expect(posts[0].users).toEqual([]);
+    expect(posts[1].users).toHaveLength(2);
+    expect(posts[1].text).toContain("Line 1.");
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m2");
+    expect((await stored(stub, "lines:m2")).lines).toHaveLength(1);
+    // The next check deletes the old card, then its lines.
+    await stub.check();
+    expect(deleted()).toEqual(["m1"]);
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+});
+
+it("tries a failed delete of a moved card again", async () => {
+    const stub = watch();
+    await worsen(stub);
+    await stub.check();
+    world.fails = (w) => w.method === "DELETE";
+    await stub.check();
+    expect(await stored(stub, "lines:m1")).toBeDefined();
+    world.fails = () => false;
+    await stub.check();
+    expect(deleted()).toEqual(["m1"]);
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+});
+
+it("pings a worsened card once when its post has no readable receipt", async () => {
+    const stub = watch();
+    await worsen(stub);
+    world.receipt = false;
+    await checks(stub, 3);
+    await settle(stub);
+    expect(posted()).toHaveLength(2);
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m1");
+});
+
+it("keeps a worsened card's lines when the move's save fails", async () => {
+    const stub = watch();
+    // The check that moves the card fails to save its state.
+    await worsen(stub, (state) => {
+        const put = state.storage.put.bind(state.storage);
+        state.storage.put = async (key, value) => {
+            if (key === "state") throw new Error("storage unavailable");
+            return put(key, value);
+        };
+    });
+    const failure = await stub.check().catch((error) => error);
+    expect(failure.message).toContain("storage unavailable");
+
+    await evictDurableObject(stub);
+    await checks(stub, 2);
+    await settle(stub);
+    // The old card stayed until a move was saved, and the saved one carries
+    // its line. The card the failed save left behind goes, then the old one.
+    expect(posted().at(-1).text).toContain("Line 1.");
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m3");
+    expect((await stored(stub, "lines:m3")).lines).toHaveLength(1);
+    expect(deleted()).toEqual(["m2", "m1"]);
 });
 
 it("drops a line lost in a restart instead of checking forever", async () => {

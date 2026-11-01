@@ -20,26 +20,21 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18892": {
       "merge_sha": "9db23978f485f35fabc04610bfce218cbaee6a9e",
       "merged_at": "2026-11-01T00:01:58Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/infra-watch"
-      ]
+      "required": []
     },
     "18933": {
       "merge_sha": "183fbae032dd0e741a4a6a03a04fd46e8efc25d7",
       "merged_at": "2026-11-01T10:25:06Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/ai-dungeon-master",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18934": {
@@ -48,8 +43,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     }
   },

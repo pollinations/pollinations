@@ -338,9 +338,11 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
     icon,
     onToggle,
 }) => {
-    // A new list resets paging; picking a row keeps it.
+    // A new list resets paging, also when an earlier list comes back;
+    // picking a row keeps it.
     const ids = entries.map((entry) => entry.id).join("\n");
     const [page, setPage] = useState({ ids, limit: PAGE_SIZE });
+    if (page.ids !== ids) setPage({ ids, limit: PAGE_SIZE });
     const visibleCount = page.ids === ids ? page.limit : PAGE_SIZE;
     const listed = entries.reduce((sum, entry) => sum + entry[metric], 0);
     return (
@@ -385,7 +387,7 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                                         : "cursor-pointer"
                                 }
                             >
-                                <TableCell className="max-w-64 break-words text-xs">
+                                <TableCell className="max-w-64 text-xs [overflow-wrap:anywhere]">
                                     <button
                                         type="button"
                                         aria-pressed={entry.selected}

@@ -9,7 +9,7 @@ vi.mock("../frontend/src/config.ts", () => ({
 }));
 afterEach(() => vi.unstubAllGlobals());
 
-it("shows 15 rows at a time, keeps paging while picking and resets for new lists", async () => {
+it("shows 15 rows at a time, keeps paging while picking and resets for every new list", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     const entries = Array.from({ length: 1000 }, (_, index) => ({
         id: `models:${index}`,
@@ -73,6 +73,14 @@ it("shows 15 rows at a time, keeps paging while picking and resets for new lists
         renderer?.update(table(entries.slice(0, 16)));
     });
     expect(rows()).toHaveLength(15);
+    // Coming back to an earlier list starts from the first page again.
+    await act(async () => {
+        renderer?.update(table(entries));
+    });
+    expect(rows()).toHaveLength(15);
+    await act(async () => {
+        renderer?.update(table(entries.slice(0, 16)));
+    });
     await act(async () => more()?.props.onClick());
     expect(rows()).toHaveLength(16);
     expect(more()).toBeUndefined();

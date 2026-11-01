@@ -50,11 +50,6 @@
       "required": [
         "deploy-applications.yml:Deploy operations/infra-watch"
       ]
-    },
-    "18957": {
-      "merge_sha": "1bc2d70202254569c2a523c888c7f78e7bd899fc",
-      "merged_at": "2026-11-01T15:52:30Z",
-      "required": []
     }
   },
   "production": "55c510a649d24fe917d58659993b1ec20bc073a8",

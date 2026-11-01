@@ -1065,6 +1065,11 @@ describe("docs routes", () => {
         );
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ask-jev");
         expect(mcpBody).toContain("`jev_decide`");
+        expect(mcpBody).toContain(
+            "https://gen.pollinations.ai/mcp/catalog-diff",
+        );
+        expect(mcpBody).toContain("`get_catalog`");
+        expect(mcpBody).toContain("### Catalog Diff MCP");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ffmpeg");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/composio");

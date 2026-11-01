@@ -27,7 +27,7 @@ work; it keeps `sk_...` out of the browser callback URL.
 
 ## Step 1 — App Key (`client_id`)
 
-Create one at `https://enter.pollinations.ai/keys` → **Apps** → **Create**,
+Create one at `https://enter.pollinations.ai/keys?tab=app` → **App** → **Create**,
 or via the API:
 
 ```bash

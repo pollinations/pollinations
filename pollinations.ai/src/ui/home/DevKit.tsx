@@ -268,7 +268,7 @@ const PUBLISH_FEATURES: Feature[] = [
         links: [
             {
                 label: "Add a model",
-                href: "https://enter.pollinations.ai/my-models",
+                href: "https://enter.pollinations.ai/my-models?tab=models",
             },
         ],
         icon: BeakerIcon,

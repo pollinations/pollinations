@@ -71,7 +71,7 @@ Use `?reliability=all` or `Pollinations-Model-Reliability: all` to see all
 otherwise accessible models. The query takes precedence over the header.
 This only affects discovery: exact-ID calls, retrieval and fallback routing
 remain available. Authentication, key permissions, paid access and manual
-hiding still apply. Owners can manage all their models in My Models.
+hiding still apply. Owners can manage all their models in My Listings.
 
 Time-windowed traffic, latency and fallback breakdowns are served separately by
 `/models/status`, described in [Public Stats](https://gen.pollinations.ai/docs#tag/public-stats).

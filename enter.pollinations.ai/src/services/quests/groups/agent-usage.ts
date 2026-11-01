@@ -46,7 +46,7 @@ const createUsedCommunityModelQuest: QuestDefinition = {
     id: "create_used_community_model",
     title: "Your community model gets used",
     description:
-        "Publish a [community model](https://enter.pollinations.ai/my-models). Earn this after other people spend more than 0.5 Paid Pollen in total on your community models. Your own requests and agents do not count.",
+        "Publish a [community model](https://enter.pollinations.ai/my-models?tab=models). Earn this after other people spend more than 0.5 Paid Pollen in total on your community models. Your own requests and agents do not count.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 2,

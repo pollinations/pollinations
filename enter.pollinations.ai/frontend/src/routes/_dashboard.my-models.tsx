@@ -15,11 +15,19 @@ export const Route = createFileRoute("/_dashboard/my-models")({
                 ? search.tab
                 : undefined,
     }),
-    beforeLoad: ({ context, location }) => {
+    beforeLoad: ({ context, location, search }) => {
         if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
+            });
+        }
+        // My Models had Agents and Models sections; #models opened the second.
+        if (location.hash === "models" && !search.tab) {
+            throw redirect({
+                to: "/my-models",
+                search: { tab: "models" },
+                replace: true,
             });
         }
     },

@@ -792,7 +792,8 @@ export function dueFallbacks(shares, told = {}, now) {
 const community = (id) => id.replace(/^community\//, "");
 
 // Where an owner sees their model's failed calls and errors.
-const MY_MODELS = "[My Models](https://enter.pollinations.ai/my-models)";
+const MY_MODELS =
+    "[My Listings](https://enter.pollinations.ai/my-models?tab=models)";
 
 // A fallback notice for the community channel: no ping, the owner reads
 // their model's id. The total rescued, then each fallback's part.

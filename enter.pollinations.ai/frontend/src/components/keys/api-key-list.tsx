@@ -41,15 +41,23 @@ const KEY_TABS = [
     { value: "app", label: "App" },
 ] as const;
 
-export const ApiKeyList: FC<ApiKeyManagerProps> = ({
+type KeyTab = (typeof KEY_TABS)[number]["value"];
+
+export const ApiKeyList: FC<
+    ApiKeyManagerProps & {
+        /** The open tab; the keys page keeps it in the address. */
+        tab: KeyTab;
+        onTabChange: (tab: KeyTab) => void;
+    }
+> = ({
     apiKeys,
+    tab: keyTab,
+    onTabChange,
     onCreate,
     onUpdate,
     onDelete,
     onRefresh,
 }) => {
-    const [keyTab, setKeyTab] =
-        useState<(typeof KEY_TABS)[number]["value"]>("secret");
     const [keyCreateOpen, setKeyCreateOpen] = useState(false);
     const [appCreateOpen, setAppCreateOpen] = useState(false);
     const [deletingKey, setDeletingKey] = useState<ApiKey | null>(null);
@@ -336,7 +344,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <TabButton
                                 key={value}
                                 active={keyTab === value}
-                                onClick={() => setKeyTab(value)}
+                                onClick={() => onTabChange(value)}
                                 ariaLabel={label}
                             >
                                 {label}

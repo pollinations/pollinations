@@ -11,7 +11,7 @@ export const PAGE_TITLES: Record<keyof FileRoutesByFullPath, string> = {
     "/account": "Account",
     "/activity": "Activity",
     "/keys": "Keys",
-    "/my-apps": "My Apps",
+    "/my-apps": "My Listings",
     "/my-models": "My Listings",
     "/pollen": "Pollen",
     "/sandboxes": "Sandboxes",

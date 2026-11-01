@@ -76,7 +76,7 @@ function buildHtml({ rows, speedChampions, totals, date }) {
     const tokensDisplay = totals.total_tokens.toLocaleString("en-US");
 
     return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Community Model Leaderboard</title>
+<html><head><meta charset="utf-8"><title>Community Text Model Leaderboard</title>
 <style id="fonts">${fontsCss}</style>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; border-radius:0 !important; }
@@ -165,7 +165,7 @@ function buildHtml({ rows, speedChampions, totals, date }) {
 </div>
 <div class="titlebar">
   <div class="star"></div>
-  <h1>MODEL LEADERBOARD</h1>
+  <h1>TEXT LEADERBOARD</h1>
   <div class="star flip"></div>
 </div>
 <div class="subtitle">RANKED BY TOKENS SERVED &middot; LAST 24 HOURS</div>
@@ -218,12 +218,12 @@ function buildDiscordMarkdown({ date, totals, rows, speedChampions }) {
     const mrModel = mrRest.join("/");
 
     const lines = [
-        `# 🏆 COMMUNITY MODEL LEADERBOARD — ${date}`,
+        `# 💬 COMMUNITY TEXT MODEL LEADERBOARD — ${date}`,
         "",
-        `**${totals.total_tokens.toLocaleString("en-US")} tokens** served in 24 hours across ${totals.models} models.`,
+        `**${totals.total_tokens.toLocaleString("en-US")} tokens** served in 24 hours across ${totals.models} models (${totals.requests.toLocaleString("en-US")} requests).`,
         "",
         `👑 \`${topOwner}/${topModel}\` — ${top.total_tokens.toLocaleString("en-US")} tokens · ${top.success}% success`,
-        `⚡ speed crown: \`${fastOwner}/${fastModel}\` — **${fastest.median_tps} tokens/sec** median`,
+        `⚡ fastest: \`${fastOwner}/${fastModel}\` — **${fastest.median_tps} tokens/sec** median`,
     ];
     if (mostRequests.model !== top.model) {
         lines.push(

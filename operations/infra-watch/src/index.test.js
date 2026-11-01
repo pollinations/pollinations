@@ -684,16 +684,13 @@ const cycled = async (stub) => {
     await runInDurableObject(stub, (instance) => instance.cycle);
 };
 // Half an hour on, with every saved time `ms` further back: each model's
-// backoff, quiet periods, and the probes a pending shared failure counted.
+// backoff and quiet periods.
 const later = (stub, ms) =>
     runInDurableObject(stub, async (_, state) => {
         const saved = await state.storage.get("community");
         saved.at -= 30 * 60_000;
         for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
         for (const key of Object.keys(saved.quiet)) saved.quiet[key] -= ms;
-        for (const p of Object.values(saved.pending ?? {}))
-            for (const model of Object.keys(p.probes ?? {}))
-                p.probes[model] -= ms;
         await state.storage.put("community", saved);
     });
 const COMMUNITY = "/api/webhooks/2/y";
@@ -758,7 +755,9 @@ it("probes due models by Thomas's rule, and calls the agent only with incidents,
     ]);
     const [told] = posts(COMMUNITY);
     expect(told.content).toBe(OWNER_O);
-    expect(told.text).toMatch(/^community: 1\n\nOwners see .*My Models/);
+    expect(told.text).toMatch(
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT[\s\S]*│ MODEL {3}o\/broken +│[\s\S]*\n```\ncommunity: 1\n\nPublishers see .*My Models/,
+    );
 
     // Told: quiet for a day, so no call even once it breaks again.
     await later(stub, HOURS(16));
@@ -800,13 +799,17 @@ it("starts quiet periods only for incidents in a delivered post; the rest stay p
     expect(world.agentFacts).toHaveLength(3);
 }, 15_000);
 
-it("sends a stream broken for three owners at once to the maintainers, pinging no owner", async () => {
+it("sends a stream broken for three owners' working models at once to the maintainers, pinging no owner", async () => {
     const stub = watch();
     world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
         (n) => community(n),
     );
-    world.probe = answers(() => true);
+    world.probe = answers(() => false);
     world.agent = tells();
+    await cycled(stub);
+    // Working, then 4 hours on all three break the same way.
+    world.probe = answers(() => true);
+    await later(stub, HOURS(4));
     await cycled(stub);
     expect(world.agentFacts[0].incidents).toEqual([
         {
@@ -817,7 +820,9 @@ it("sends a stream broken for three owners at once to the maintainers, pinging n
             models: ["community/a/x", "community/b/y", "community/c/z"],
         },
     ]);
-    const [told] = posts(INFRA).filter((w) => w.text.startsWith("maintainers"));
+    const [told] = posts(INFRA).filter((w) =>
+        w.text.includes("COMMUNITY MODELS: LIKELY A GEN PROBLEM"),
+    );
     expect(told.content).toBe(MAINTAINERS);
     expect(posts(COMMUNITY)).toHaveLength(0);
 });
@@ -877,16 +882,19 @@ it("keeps a shared failure the maintainers didn't get as gen's, past 4 hours and
     world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
         (n) => community(n),
     );
-    world.probe = answers(() => true);
+    world.probe = answers(() => false);
     world.agent = tells();
+    await cycled(stub);
+    world.probe = answers(() => true);
     world.fails = (w) => w.path === INFRA;
+    await later(stub, HOURS(4));
     await cycled(stub);
     // 5 hours on, before their backoff ends: still one incident for the
     // maintainers, none for the owners.
     world.fails = () => false;
     await later(stub, HOURS(5));
     await cycled(stub);
-    expect(world.probes).toHaveLength(3);
+    expect(world.probes).toHaveLength(6);
     expect(world.agentFacts[1].incidents.map((i) => i.kind)).toEqual([
         "shared",
     ]);

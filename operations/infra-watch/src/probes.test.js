@@ -190,7 +190,27 @@ test("rejects finish_reason error even after text", () => {
     const result = parseChatStream(
         `${content}data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: "error", error: { code: 429, message: "Provider quota exhausted" } }] })}\n\n${done}`,
     );
-    assert.equal(result.protocolError, "stream ended with finish_reason=error");
+    assert.equal(
+        result.protocolError,
+        "stream ended with finish_reason=error (429)",
+    );
+});
+
+test("names an error event's code, so two upstream failures never look alike", () => {
+    const event = (error) =>
+        parseChatStream(`${content}data: ${JSON.stringify({ error })}\n\n`)
+            .protocolError;
+    assert.equal(
+        event({ code: "account_fallback_failed", message: "quota" }),
+        "stream returned an error event (account_fallback_failed)",
+    );
+    assert.equal(
+        event({ code: "authentication_error" }),
+        "stream returned an error event (authentication_error)",
+    );
+    // No code, or one that isn't a short plain word: the text alone.
+    for (const code of [undefined, "``` @everyone", "x".repeat(41), { a: 1 }])
+        assert.equal(event({ code }), "stream returned an error event");
 });
 
 test("accepts marker case changes but still requires the nonce in final content", () => {

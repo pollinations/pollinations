@@ -88,7 +88,9 @@ export async function uploadUnlistedMedia(
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
-                    originalName: input.fileName?.slice(0, MAX_ORIGINAL_NAME_LENGTH) || "",
+                    originalName:
+                        input.fileName?.slice(0, MAX_ORIGINAL_NAME_LENGTH) ||
+                        "",
                     uploadedBy: input.uploadedBy || "pollinations-service",
                     keyType: input.keyType || "service",
                 },

@@ -1796,18 +1796,21 @@ describe("media.pollinations.ai", () => {
         });
 
         it("JSON upload with a 3 KB name succeeds with a truncated name", async () => {
-            const res = await SELF.fetch("https://media.pollinations.ai/upload", {
-                method: "POST",
-                body: JSON.stringify({
-                    data: Buffer.from(variant(61)).toString("base64"),
-                    contentType: "image/png",
-                    name: longName,
-                }),
-                headers: {
-                    Authorization: `Bearer ${VALID_KEY}`,
-                    "Content-Type": "application/json",
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        data: Buffer.from(variant(61)).toString("base64"),
+                        contentType: "image/png",
+                        name: longName,
+                    }),
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "application/json",
+                    },
                 },
-            });
+            );
             expect(res.status).toBe(200);
             const uploaded = (await res.json()) as UploadResponse;
 

@@ -739,7 +739,8 @@ api.post(
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
-                    originalName: fileName?.slice(0, MAX_ORIGINAL_NAME_LENGTH) || "",
+                    originalName:
+                        fileName?.slice(0, MAX_ORIGINAL_NAME_LENGTH) || "",
                     uploadedBy: authResult.name || "",
                     keyType: authResult.type,
                 },

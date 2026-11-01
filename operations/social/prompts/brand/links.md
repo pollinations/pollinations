@@ -20,7 +20,7 @@
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
 - **React SDK:** https://github.com/pollinations/pollinations/tree/main/packages/sdk#react-auth-provider
 - **React UI:** https://github.com/pollinations/pollinations/tree/main/packages/ui
-- **Connect User Wallets:** https://gen.pollinations.ai/docs#tag/connect-user-wallets
+- **Pollinations Pay (users pay with their own pollen; they sign in with Pollinations Connect):** https://gen.pollinations.ai/docs#tag/pollinations-pay
 - **MCP Servers Docs:** https://gen.pollinations.ai/docs#tag/mcp-servers
 - **MCP Protocol (contribute):** https://mcp.sequa.ai/v1/pollinations/contribute
 

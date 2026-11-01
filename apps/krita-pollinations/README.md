@@ -91,6 +91,6 @@ install the plug-in in a real Krita, connect, restart Krita, generate onto an
 empty canvas, then select a region on an image and edit it; confirm the
 result aligns with the region and the source is unchanged.
 
-Contracts: [BYOP device flow](../../BRING_YOUR_OWN_POLLEN.md),
+Contracts: [Pollinations Connect device flow](../../BRING_YOUR_OWN_POLLEN.md),
 [image API](https://gen.pollinations.ai/docs#tag/image),
 [Krita Python plugin how-to](https://docs.krita.org/en/user_manual/python_scripting/krita_python_plugin_howto.html).

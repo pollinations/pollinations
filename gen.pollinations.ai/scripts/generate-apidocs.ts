@@ -809,7 +809,7 @@ function renderGettingStarted(): string {
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
 
 - \`sk_*\` — secret key for backend use. Never ship it in a browser, mobile app, or repository.
-- \`pk_*\` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user \`sk_*\`; a \`pk_*\` sent as a key gets \`401\`.
+- \`pk_*\` App Key — public OAuth client id for Pollinations Connect. Use it to obtain a scoped user \`sk_*\`; a \`pk_*\` sent as a key gets \`401\`.
 
 **2. Send the key** in the \`Authorization\` header (or as \`?key=\` query param for GET endpoints):
 

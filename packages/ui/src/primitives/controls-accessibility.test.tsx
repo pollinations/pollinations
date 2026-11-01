@@ -358,7 +358,7 @@ describe("shared control accessibility", () => {
     });
     it("names provider sign-in actions and exposes their pending state", () => {
         const ready = renderToStaticMarkup(<PollinationsSignInButton />);
-        expect(ready).toContain("Connect with Pollinations");
+        expect(ready).toContain("Pollinations Connect");
         expect(ready).not.toContain('aria-busy="true"');
         expect(ready).not.toContain('disabled=""');
 

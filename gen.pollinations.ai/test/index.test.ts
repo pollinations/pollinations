@@ -440,7 +440,7 @@ describe("gen worker routing", () => {
         const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
-        expect(byopSkill.description).toMatch(/Bring Your Own Pollen/);
+        expect(byopSkill.description).toMatch(/Pollinations Pay/);
         expect(
             body.skills.find((skill) => skill.name === "pollinations-sdk")
                 ?.description,

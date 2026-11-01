@@ -738,7 +738,9 @@ const developerEarningsRowSchema = z.object({
         ),
     entity_id: z
         .string()
-        .describe("Earning entity id (BYOP app key or community model)"),
+        .describe(
+            "Earning entity id (Pollinations Pay app key or community model)",
+        ),
     entity_name: z.string().describe("Earning entity display name"),
     source: z
         .enum(["byop_markup", "community_model"])
@@ -765,7 +767,7 @@ const developerEarningsRowSchema = z.object({
     cost_usd: z
         .number()
         .describe(
-            "Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price",
+            "Reward basis total for the bucket; Pollinations Pay rows use payer charge, community model rows use model price",
         ),
     reward_rate: z.number().describe("Average reward or markup rate applied"),
 });
@@ -1809,7 +1811,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings in one response: per-(date, entity) buckets and per-entity rollups across BYOP apps and community models. Rows include `requests`, `baseline_price`, reward basis `cost_usd`, and `reward_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. API keys require the read-only `account:usage` permission.",
+                "Returns developer earnings in one response: per-(date, entity) buckets and per-entity rollups across Pollinations Pay apps and community models. Rows include `requests`, `baseline_price`, reward basis `cost_usd`, and `reward_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
                     description: "Earnings buckets and additive totals",
@@ -2105,7 +2107,7 @@ export const accountRoutes = new Hono<Env>()
             if (earningsEnabled !== undefined && key.prefix !== "pk") {
                 throw new HTTPException(400, {
                     message:
-                        "BYOP earnings can only be enabled on publishable app keys",
+                        "Pollinations Pay earnings can only be enabled on publishable app keys",
                 });
             }
             for (const uri of redirectUris ?? []) {
@@ -2428,24 +2430,24 @@ export const accountRoutes = new Hono<Env>()
                                             clientKeyId: z
                                                 .string()
                                                 .describe(
-                                                    "Publishable app key (client id) that minted this key via the BYOP authorize flow.",
+                                                    "Publishable app key (client id) that minted this key via Pollinations Connect.",
                                                 ),
                                             name: z
                                                 .string()
                                                 .nullable()
                                                 .describe(
-                                                    "Display name of the BYOP app.",
+                                                    "Display name of the Pollinations Pay app.",
                                                 ),
                                             appUser: z
                                                 .string()
                                                 .nullable()
                                                 .describe(
-                                                    "User id of the app account that owns the BYOP app key.",
+                                                    "User id of the app account that owns the Pollinations Pay app key.",
                                                 ),
                                         })
                                         .nullable()
                                         .describe(
-                                            "BYOP app attribution for keys minted through the BYOP authorize flow. Server-attested; null for non-BYOP keys.",
+                                            "Pollinations Pay app attribution for keys minted through Pollinations Connect. Server-attested; null for other keys.",
                                         ),
                                 }),
                             ),

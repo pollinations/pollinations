@@ -175,18 +175,18 @@ const BUILD_FEATURES: Feature[] = [
         color: "var(--polli-color-modality-embedding)",
     },
     {
-        title: "Users pay",
-        chips: ["BYOP", "Earnings"],
+        title: "Pollinations Pay",
+        chips: ["Pollinations Connect", "Earnings"],
         body: (
             <>
-                Your users sign in with Pollinations and set a spending limit.{" "}
+                Your users sign in and set a spending limit.{" "}
                 <Em>They pay for their own usage.</Em>
             </>
         ),
         links: [
             {
                 label: "Integration guide",
-                href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+                href: "https://gen.pollinations.ai/docs#tag/pollinations-pay",
             },
         ],
         icon: WalletIcon,

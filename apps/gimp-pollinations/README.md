@@ -90,6 +90,6 @@ Finally disconnect and confirm generation asks to reconnect. Live account
 authorization and billed generation were not run as part of the automated
 tests.
 
-Contracts: [BYOP device flow](../../BRING_YOUR_OWN_POLLEN.md),
+Contracts: [Pollinations Connect device flow](../../BRING_YOUR_OWN_POLLEN.md),
 [image API](https://gen.pollinations.ai/docs#tag/image),
 [GIMP Python tutorial](https://developer.gimp.org/resource/writing-a-plug-in/tutorial-python/).

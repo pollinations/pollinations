@@ -192,7 +192,7 @@ export function KeyDialogContent({
                                 <InlineLink
                                     href={genDocsUrl(
                                         app
-                                            ? "#tag/connect-user-wallets"
+                                            ? "#tag/pollinations-pay"
                                             : "#tag/authentication",
                                     )}
                                 >

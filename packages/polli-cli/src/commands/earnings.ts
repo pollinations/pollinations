@@ -34,7 +34,9 @@ export function totalPollenEarned(perEntity: EarningsRow[]): number {
 }
 
 export const earningsCommand = new Command("earnings")
-    .description("Show developer earnings from BYOP apps and community models")
+    .description(
+        "Show developer earnings from Pollinations Pay apps and community models",
+    )
     .option("--days <n>", "Rolling window in days", "30")
     .action(async (opts) => {
         const key = requireKey();

@@ -165,7 +165,7 @@ export const accountTools = [
     ],
     [
         "getEarnings",
-        "Show developer earnings from BYOP apps and community models, per day and per entity " +
+        "Show developer earnings from Pollinations Pay apps and community models, per day and per entity " +
             "(`polli earnings`). Requires 'account:usage' permission.",
         {
             days: z
@@ -194,7 +194,7 @@ export const accountTools = [
     [
         "createKey",
         "Create an API key (`polli keys create`). The full key is returned once; show it to the user and never store it. " +
-            "Use type=publishable with redirectUri for a BYOP app key. Requires 'account:keys' permission.",
+            "Use type=publishable with redirectUri for a Pollinations Pay app key. Requires 'account:keys' permission.",
         {
             name: z.string().describe("Key name"),
             type: z
@@ -233,7 +233,9 @@ export const accountTools = [
             redirectUri: z
                 .array(z.string())
                 .optional()
-                .describe("Allowed BYOP redirect URIs (publishable keys)"),
+                .describe(
+                    "Allowed Pollinations Connect redirect URIs (publishable keys)",
+                ),
             earnings: z
                 .boolean()
                 .optional()

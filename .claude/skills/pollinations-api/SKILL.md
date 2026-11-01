@@ -83,7 +83,7 @@ Do not run this under shell tracing (`set -x`). Keep that file out of projects;
 its permissions are `0600`. The user can revoke the issued key on the
 [Pollinations keys page](https://enter.pollinations.ai/keys). For all grant
 options and the browser consent details, see
-[Bring Your Own Pollen](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#️-clis--headless-apps-device-flow).
+[Pollinations Pay](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#️-clis--headless-apps-device-flow).
 
 ## No one to approve: buy a prepaid key with x402
 

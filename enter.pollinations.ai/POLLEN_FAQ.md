@@ -13,7 +13,7 @@ No. Pollinations provides infrastructure that you connect to your own applicatio
 - **Generation APIs** for text, image, video, audio, realtime, embeddings, and 3D.
 - **Managed agents** built from a prompt, a base model, and optional Pollinations tools.
 - **Community models** for developers who operate compatible model endpoints.
-- **Connect User Wallets**, also called BYOP, so each app user can fund their own requests.
+- **Pollinations Pay**, so each app user can fund their own requests.
 
 You build and host the application. Pollinations provides model access, account authorization, and billing.
 
@@ -65,13 +65,13 @@ Pollinations supports text, images and image edits, video, speech and audio, tra
 ## 🔑 Which API key should I use?
 
 - **Personal Secret Key (`sk_`)**: use on a trusted server for your own model usage. It can have a Pollen budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
-- **App Key (`pk_`)**: a publishable OAuth client identifier for Connect User Wallets. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
+- **App Key (`pk_`)**: a publishable OAuth client identifier for Pollinations Connect. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
 
 All traffic remains subject to platform abuse protection and any model-specific constraints.
 
-## 🔌 What is Connect User Wallets?
+## 🔌 What is Pollinations Pay?
 
-Connect User Wallets, also called BYOP (Bring Your Own Pollen), lets users authorize an application to spend Pollen from their own wallet.
+Pollinations Pay lets users authorize an application to spend Pollen from their own wallet. They approve the app through Pollinations Connect.
 
 For app developers:
 
@@ -82,7 +82,7 @@ For app developers:
 
 Users choose the budget, expiry, models, and account permissions they approve. They can edit or revoke issued keys from the dashboard.
 
-Read the [Connect User Wallets guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) for the complete integration.
+Read the [Pollinations Pay guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) for the complete integration.
 
 ## 🤖 Can I build my own agent?
 

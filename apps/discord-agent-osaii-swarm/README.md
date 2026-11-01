@@ -2,11 +2,11 @@
 
 A focused Discord adapter for the existing public Pollinations Community Agent `morriszdweck/osaii-swarm`.
 
-The Community Agent remains the source of behavior. This app adds only Discord interactions, BYOP device authorization, private per-user credential storage, and bounded conversation context reconstructed from prior Discord responses.
+The Community Agent remains the source of behavior. This app adds only Discord interactions, Pollinations Connect device authorization, private per-user credential storage, and bounded conversation context reconstructed from prior Discord responses.
 
 ## Why this agent
 
-`morriszdweck/osaii-swarm` is a public text Community Agent backed by `morriszdweck/osaii-api-smart`. During the quest demo it was verified with both an owner key and a BYOP-issued user key.
+`morriszdweck/osaii-swarm` is a public text Community Agent backed by `morriszdweck/osaii-api-smart`. During the quest demo it was verified with both an owner key and a Pollinations Connect user key.
 
 ## Commands
 
@@ -45,7 +45,7 @@ POLLINATIONS_APP_KEY=pk_...
 DISCORD_GUILD_ID=<optional test guild id>
 ```
 
-`POLLINATIONS_APP_KEY` is the publishable App Key (`pk_...`) used as the BYOP `client_id`. It identifies the app; it does not spend the developer's Pollen. Each Discord user authorizes their own scoped `sk_...` key.
+`POLLINATIONS_APP_KEY` is the publishable App Key (`pk_...`) used as the Pollinations Connect `client_id`. It identifies the app; it does not spend the developer's Pollen. Each Discord user authorizes their own scoped `sk_...` key.
 
 Register slash commands and start:
 

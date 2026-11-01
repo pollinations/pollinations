@@ -122,7 +122,7 @@ model health, usage, earnings, quests, and API keys.
 | `createEmbeddings` | Create text or multimodal embeddings |
 | `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
 | `getUsage` | List recent requests or a daily usage summary; requires `account:usage` permission |
-| `getEarnings` | Show developer earnings from BYOP apps and community models; requires `account:usage` permission |
+| `getEarnings` | Show developer earnings from Pollinations Pay apps and community models; requires `account:usage` permission |
 | `listQuests` | List quests with reward and claim state; requires `account:usage` permission |
 | `listKeys` | List API keys; requires `account:keys` permission |
 | `createKey` | Create a secret or publishable app key; requires `account:keys` permission |

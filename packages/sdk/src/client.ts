@@ -1732,11 +1732,11 @@ export class Pollinations {
     }
 
     // ============================================================================
-    // BYOP (Bring Your Own Pollen)
+    // Pollinations Connect
     // ============================================================================
 
     /**
-     * Build a BYOP authorization URL.
+     * Build a Pollinations Connect authorization URL.
      * Redirect users here to grant your app access to their Pollen balance.
      *
      * @example
@@ -2069,7 +2069,7 @@ export class Pollinations {
     }
 
     /**
-     * Get developer earnings from BYOP apps and community models
+     * Get developer earnings from Pollinations Pay apps and community models
      *
      * @example
      * ```ts

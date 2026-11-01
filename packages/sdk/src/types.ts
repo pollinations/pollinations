@@ -835,13 +835,13 @@ export interface DecisionResponse {
 }
 
 // ============================================================================
-// BYOP (Bring Your Own Pollen)
+// Pollinations Connect
 // ============================================================================
 
 /** Account permission scopes */
 export type AccountPermission = "profile" | "usage" | "keys" | "machines";
 
-/** Options for building a BYOP authorization URL */
+/** Options for building a Pollinations Connect authorization URL */
 export interface AuthorizeOptions {
     /** URL to redirect back to after authorization */
     redirectUrl: string;
@@ -1009,7 +1009,7 @@ export interface DailyUsageResponse {
 export interface DeveloperEarningsRow {
     /** Date bucket (YYYY-MM-DD); empty string on rollup rows */
     date: string;
-    /** Earning entity id (BYOP app key or community model) */
+    /** Earning entity id (Pollinations Pay app key or community model) */
     entity_id: string;
     entity_name: string;
     source: "byop_markup" | "community_model";
@@ -1100,7 +1100,7 @@ export interface CreateKeyOptions {
     questPollenOnly?: boolean;
     /**
      * Allowed OAuth redirect URIs for publishable app keys. Required when
-     * creating a `publishable` key that drives the `/authorize` BYOP flow.
+     * creating a `publishable` key that drives the `/authorize` Pollinations Connect flow.
      * Matching pins scheme, host, port, and path; one trailing slash is
      * ignored; loopback ports are matched port-agnostically.
      */

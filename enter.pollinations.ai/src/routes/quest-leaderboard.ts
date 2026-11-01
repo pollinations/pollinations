@@ -62,7 +62,7 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
         summary: "Get Quest Leaderboard",
         security: [],
         description:
-            "Returns public aggregate totals and top contributors for quest rewards, except BYOP app-growth and BYOM model and agent rewards.",
+            "Returns public aggregate totals and top contributors for quest rewards, except Pollinations Pay app-growth and BYOM model and agent rewards.",
         responses: {
             200: {
                 description: "Quest leaderboard",

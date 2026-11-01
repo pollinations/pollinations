@@ -69,7 +69,7 @@ export function DashboardSignIn({
                     </Button>
                 ) : (
                     <PollinationsSignInButton onClick={onSignIn}>
-                        {error ? "Try again" : "Sign in with Pollinations"}
+                        {error ? "Try again" : "Pollinations Connect"}
                     </PollinationsSignInButton>
                 )
             }

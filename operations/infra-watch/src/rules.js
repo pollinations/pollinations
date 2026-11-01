@@ -319,7 +319,7 @@ export const escalates = (before, now) =>
     (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1);
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
-const fit = (s, width) => (s.length > width ? `${s.slice(0, width - 1)}…` : s);
+const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
 const unix = (ms) => Math.round(ms / 1000);
 
 // "2 h 01 min", "47 min", "under 1 min".
@@ -334,13 +334,10 @@ export function duration(ms) {
 // title or its longest row needs, so a full model id is never cut. The
 // title is drawn in the card's colour (an ansi block): Discord on desktop
 // shows it, the phone shows plain text.
-//
-// A value longer than `width` is cut; a card whose values are model ids
-// passes Infinity, so they show whole.
-function panel(title, lines, color, width = 38) {
+function panel(title, lines, color) {
     const body = lines.map(
         ([field, value]) =>
-            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value), width)}`,
+            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
     const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
@@ -711,10 +708,6 @@ export const escalation = (key, incident, link) => ({
     ping: true,
     color: COLOR[incident.kind],
 });
-
-// A community model's owner: the GitHub username in its id. Community
-// posts list them in `owners`, which delivery pings.
-export const ownerOf = (id) => id.replace(/^community\//, "").split("/")[0];
 
 // Heartbeat: infra-watch's own liveness, judged from outside Cloudflare by
 // heartbeat.mjs (GitHub Actions). A last completed check this old means the

@@ -67,15 +67,18 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
 export const MAINTAINERS = ["304378879705874432", "884468469452656732"];
 
 // OWNER_DISCORD_IDS: community model owners' GitHub usernames to Discord
-// ids, as JSON. Usernames are matched without case. Missing or unreadable,
-// it is empty, and every owner is named instead.
+// ids, as JSON. Usernames are matched without case, and only a string of
+// digits is an id: nothing else is ever turned into a mention. Missing or
+// unreadable, it is empty, and every owner is named instead.
 export function discordIds(json) {
     try {
         return Object.fromEntries(
-            Object.entries(JSON.parse(json ?? "{}")).map(([name, id]) => [
-                name.toLowerCase(),
-                id,
-            ]),
+            Object.entries(JSON.parse(json ?? "{}"))
+                .filter(
+                    ([, id]) =>
+                        typeof id === "string" && /^\d{17,20}$/.test(id),
+                )
+                .map(([name, id]) => [name.toLowerCase(), id]),
         );
     } catch {
         console.error("OWNER_DISCORD_IDS is not a JSON object");
@@ -83,17 +86,10 @@ export function discordIds(json) {
     }
 }
 
-// Owners above a community card: one with a known Discord id is pinged,
-// anyone else is named by GitHub username. Only a string of digits is an
-// id; nothing else is ever turned into a mention. Every owner named also
-// has a model on the card, so the mentions fit when the card does.
+// Owners above a community post: one with a known Discord id is pinged,
+// anyone else is named by GitHub username.
 export function mention(owners, ids) {
-    const id = (name) => {
-        const known = ids[name.toLowerCase()];
-        return typeof known === "string" && /^\d{17,20}$/.test(known)
-            ? known
-            : null;
-    };
+    const id = (name) => ids[name.toLowerCase()];
     return {
         content: owners.map((o) => (id(o) ? `<@${id(o)}>` : o)).join(" "),
         users: [...new Set(owners.map(id).filter(Boolean))],

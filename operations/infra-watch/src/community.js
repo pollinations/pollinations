@@ -3,11 +3,12 @@
 // picks this cycle's incidents and keeps their quiet periods; one AI call
 // only groups them into posts and words them. No Cloudflare imports, so it
 // is testable with plain Node.
-import { ownerOf } from "./rules.js";
 
 // Traffic and fallbacks are read over the last 4 hours.
 export const WINDOW_MINUTES = 240;
-// The agent's calls per UTC day: at most one a half hour.
+// The agent's calls per UTC day. The half-hourly cycle already allows no
+// more; this is a second spending guard on purpose, kept in case the
+// cycle ever runs more often.
 export const AGENT_DAILY_LIMIT = 48;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // A told incident stays quiet this long: a broken stream per model and
@@ -58,6 +59,10 @@ export function listingChanges(before, filtered, shown) {
         back: shown.filter((m) => was.has(m.name)).map(health),
     };
 }
+
+// A community model's owner: the GitHub username in its id. Posts list
+// them in `owners`, which delivery pings.
+const ownerOf = (id) => id.replace(/^community\//, "").split("/")[0];
 
 // `quiet` keys: a model and its broken stream, or a model and a fallback.
 export const streamKey = (model, error) => `stream ${model} ${error}`;

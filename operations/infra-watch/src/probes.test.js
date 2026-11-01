@@ -181,18 +181,16 @@ test("reports missing usage even after a successful-looking answer", () => {
                 content: "ok-marker",
                 protocolError:
                     "stream returned usage_missing: missing or invalid token usage",
-                errorCode: "usage_missing",
             },
         );
     }
 });
 
-test("rejects finish_reason error and preserves its diagnostic even after text", () => {
+test("rejects finish_reason error even after text", () => {
     const result = parseChatStream(
         `${content}data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: "error", error: { code: 429, message: "Provider quota exhausted" } }] })}\n\n${done}`,
     );
     assert.equal(result.protocolError, "stream ended with finish_reason=error");
-    assert.equal(result.errorCode, "429");
 });
 
 test("accepts marker case changes but still requires the nonce in final content", () => {
@@ -232,21 +230,6 @@ test("preserves healthy streams and existing non-error validation", () => {
     }
 });
 
-test("an error code is kept only as a plain word of at most 40 characters", () => {
-    for (const [code, kept] of [
-        ["BAD_GATEWAY", "BAD_GATEWAY"],
-        [429, "429"],
-        ["api.private-host.example", undefined],
-        ["x".repeat(41), undefined],
-        ["y".repeat(2_100_000), undefined],
-    ]) {
-        const result = parseChatStream(
-            `${content}data: ${JSON.stringify({ error: { code } })}\n\n${done}`,
-        );
-        assert.equal(result.errorCode, kept);
-    }
-});
-
 test("rejects an error event even if it includes choices", () => {
     assert.equal(
         parseChatStream(
@@ -263,7 +246,6 @@ test("a text probe passes only with the marker in a valid stream", () => {
         ok: true,
         status: 200,
         protocolError: undefined,
-        errorCode: undefined,
         modelUsed: null,
         requestId: null,
     });

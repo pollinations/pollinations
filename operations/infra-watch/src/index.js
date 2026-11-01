@@ -493,19 +493,12 @@ export class Watch extends DurableObject {
                 await save();
                 if (!result.ok)
                     console.log(
-                        `probe ${result.model}: ${result.status} ${result.requestId ?? ""}`,
+                        `probe ${model.name}: ${result.status} ${result.requestId ?? ""}`,
                     );
             },
         );
 
         const listings = await this.listingsToday(gen, catalog, now);
-        // A day with nothing to tell, or the first, only saves the set.
-        if (
-            listings &&
-            !(listings.changes?.newly.length || listings.changes?.back.length)
-        ) {
-            await this.ctx.storage.put("listings", listings.saved);
-        }
         const { found, pending } = incidents({
             catalog,
             rows,
@@ -517,6 +510,10 @@ export class Watch extends DurableObject {
         });
         state.pending = pending;
         await save();
+        // A day with no listing changes to tell, or the first, only saves
+        // the set.
+        if (listings && !found.some((i) => i.kind === "listings"))
+            await this.ctx.storage.put("listings", listings.saved);
         if (!found.length) return;
         const agentKey = this.env.COMMUNITY_AGENT_KEY;
         if (!agentKey) throw new Error("COMMUNITY_AGENT_KEY missing");

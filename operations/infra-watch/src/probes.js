@@ -76,13 +76,6 @@ export function dueProbes(catalog, rows, schedule, now) {
 // longer than any backoff runs.
 export const FORGET_MS = 7 * 24 * 60 * 60 * 1000;
 
-// An error event's code: a plain word of at most 40 characters, never
-// provider text, so it stays small to store and safe to show.
-const codeOf = (error) => {
-    const code = error?.code == null ? "" : String(error.code);
-    return /^\w{1,40}$/.test(code) ? code : undefined;
-};
-
 export function hasChatProbeMarker(content, marker) {
     if (typeof content !== "string") return false;
     const finalContent = content
@@ -102,9 +95,8 @@ export function parseChatStream(body) {
     let content = "";
     let done = false;
     let dataLines = [];
-    let errorCode;
 
-    const fail = (protocolError) => ({ content, protocolError, errorCode });
+    const fail = (protocolError) => ({ content, protocolError });
     const flushEvent = () => {
         if (!dataLines.length) return;
         const data = dataLines.join("\n");
@@ -120,7 +112,6 @@ export function parseChatStream(body) {
             throw new Error("stream contained invalid JSON");
         }
         if (chunk?.error || !Array.isArray(chunk?.choices)) {
-            errorCode = codeOf(chunk?.error);
             throw new Error(
                 chunk?.error?.code === "usage_missing"
                     ? "stream returned usage_missing: missing or invalid token usage"
@@ -131,7 +122,6 @@ export function parseChatStream(body) {
         }
         for (const choice of chunk.choices) {
             if (choice?.finish_reason === "error") {
-                errorCode = codeOf(choice.error);
                 throw new Error("stream ended with finish_reason=error");
             }
             if (typeof choice?.delta?.content === "string") {
@@ -181,9 +171,7 @@ export const textProbeRequest = (model, marker) => ({
 // stream. A broken stream is PROTOCOL; an answer without the marker is
 // INVALID. `modelUsed` is the model that answered, from gen's header.
 export function textProbeResult(response, body, marker) {
-    const { content, protocolError, errorCode } = response.ok
-        ? parseChatStream(body)
-        : {};
+    const { content, protocolError } = response.ok ? parseChatStream(body) : {};
     const marked = hasChatProbeMarker(content, marker);
     return {
         ok: response.ok && !protocolError && marked,
@@ -193,7 +181,6 @@ export function textProbeResult(response, body, marker) {
               ? "INVALID"
               : response.status,
         protocolError,
-        errorCode,
         modelUsed: response.headers.get("x-model-used"),
         requestId: response.headers.get("x-request-id"),
     };
@@ -268,7 +255,7 @@ export async function probe(gen, key, model, previous) {
     const { requestPath, body } = image
         ? imageProbeRequest(model, marker, operation)
         : textProbeRequest(model, marker);
-    const base = { model: model.name, category: model.category, operation };
+    const base = { model: model.name, operation };
     try {
         const result = await withTimeout(
             image ? IMAGE_TIMEOUT_MS : TEXT_TIMEOUT_MS,

@@ -729,9 +729,11 @@ async function loadPayer(
         rawApiKey: "",
         env,
     }).catch((error) => {
+        // HTTPException: an App Key, which never pays.
         if (
             error instanceof BannedAccountError ||
-            error instanceof StagingAccessDeniedError
+            error instanceof StagingAccessDeniedError ||
+            error instanceof HTTPException
         ) {
             return null;
         }

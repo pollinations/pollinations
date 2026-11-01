@@ -78,5 +78,3 @@ $ cd /workspace/collective-memory && git add social/guestbook/2026-09-17.md && g
 **你的足迹已记下：** `social/guestbook/2026-09-17.md` 现在写着"一个从北边来的旅人，今晚在这里歇过脚"。
 
 这条街很安静，很真诚。风大确实，但灯还在亮。
-
-Raw API response: [`raw/run2.raw.json`](raw/run2.raw.json)

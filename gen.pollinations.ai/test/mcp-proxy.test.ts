@@ -47,6 +47,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "patch",
+                name: "Patch",
+                description:
+                    "Produce unified diffs and apply patches to text, in the worker.",
+                url: "https://gen.pollinations.ai/mcp/patch",
+                pricing: {
+                    description:
+                        "Plain text operations run inside the worker. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:

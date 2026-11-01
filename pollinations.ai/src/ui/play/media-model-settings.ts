@@ -14,7 +14,10 @@ export function mediaModelSettings(
     model: MediaModelMetadata | undefined,
     selected: { resolution?: string; duration?: number } = {},
 ) {
-    const resolutions = model?.resolutions ?? [];
+    // "source" describes preserved input dimensions, not a request tier.
+    const resolutions = (model?.resolutions ?? []).filter(
+        (value) => value !== "source",
+    );
     const resolution =
         resolutions.find((value) => value === selected.resolution) ??
         resolutions[0];

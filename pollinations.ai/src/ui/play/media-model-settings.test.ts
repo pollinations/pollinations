@@ -11,6 +11,15 @@ const empty: MediaModelMetadata = {
 };
 
 describe("catalog-only media settings", () => {
+    it("omits the source resolution sentinel from generation parameters", () => {
+        const model = { ...empty, resolutions: ["source"] };
+        expect(mediaModelSettings(model).resolution).toBeUndefined();
+        expect(
+            mediaModelSettings(model, { resolution: "source" }).resolution,
+        ).toBeUndefined();
+        expect(model.resolutions).toEqual(["source"]);
+    });
+
     it("does not turn a saved selection or catalog default into an invented limit", () => {
         const saved = { resolution: "4k", duration: 10 };
         expect(mediaModelSettings(undefined, saved)).toEqual({

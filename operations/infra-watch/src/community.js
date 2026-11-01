@@ -152,12 +152,14 @@ export function facts({
 const cut = (text) => (text.length > 4096 ? `${text.slice(0, 4095)}…` : text);
 
 // The agent reads model ids that their owners chose, so a post keeps only
-// links to Pollinations itself.
+// links to Pollinations itself. A link is read as Discord reads it, up to
+// whitespace or "<", and one with "@" or "\\" could point elsewhere there.
 const ownLinks = (text) =>
-    text.replace(/https?:\/\/[^\s<>()[\]]+/gi, (url) => {
+    text.replace(/https?:\/\/[^\s<]+/gi, (url) => {
         try {
             const host = new URL(url).hostname;
-            if (/(^|\.)pollinations\.ai$/.test(host)) return url;
+            if (!/[@\\]/.test(url) && /(^|\.)pollinations\.ai$/.test(host))
+                return url;
         } catch {}
         return "[link removed]";
     });

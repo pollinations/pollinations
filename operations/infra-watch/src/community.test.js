@@ -237,11 +237,15 @@ test("a post keeps only Pollinations links", () => {
         "See [My Models](https://enter.pollinations.ai/my-models)",
         "and https://gen.pollinations.ai/models,",
         "not [this](https://evil.example/x) or http://pollinations.ai.evil.example/y",
+        // Read as Discord reads them, these point at evil.example.
+        "nor https://pollinations.ai)@evil.example/z",
+        "nor https://pollinations.ai[@evil.example]",
+        "nor https://evil.example\\@pollinations.ai/",
     ].join(" ");
     const plan = decision(JSON.stringify({ maintainers: { text } }), [], []);
     assert.equal(
         plan.maintainers.text,
-        "See [My Models](https://enter.pollinations.ai/my-models) and https://gen.pollinations.ai/models, not [this]([link removed]) or [link removed]",
+        "See [My Models](https://enter.pollinations.ai/my-models) and https://gen.pollinations.ai/models, not [this]([link removed] or [link removed] nor [link removed] nor [link removed] nor [link removed]",
     );
 });
 

@@ -24,7 +24,7 @@ or when you only need one quick call.
 ## Get a key without copying one into the agent
 
 If `POLLINATIONS_API_KEY` is already set, skip this. Otherwise **ask the user to
-approve sign-in**, then use the [OAuth 2.0 Device Authorization Grant (RFC 8628)](https://www.rfc-editor.org/rfc/rfc8628).
+approve device authorization**, then use the [OAuth 2.0 Device Authorization Grant (RFC 8628)](https://www.rfc-editor.org/rfc/rfc8628).
 The user opens the printed URL on their own device; the agent polls at the
 server-provided interval. No credential goes into a chat, command argument,
 URL, public repository, or log. This uses Python's standard library only:

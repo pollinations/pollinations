@@ -105,7 +105,7 @@
 
 | Guide | Purpose |
 | --- | --- |
-| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay with their own Pollen |
 | [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
 | [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
 | [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
@@ -142,7 +142,7 @@ Community members connect their own OpenAI-compatible text, image, image-editing
 - **Automatic fallback routing**: nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
 - **Discover and monitor**: browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
-For billing details when building apps on top, see [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md).
+For billing details when building apps on top, see [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md).
 
 ## 🚀 Getting Started
 
@@ -257,7 +257,7 @@ Stream AI responses over an OpenAI-compatible WebSocket:
 wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=sk_YOUR_API_KEY
 ```
 
-Browser clients pass a user-authorized key from [Connect User Wallets](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
+Browser clients pass a user-authorized key from [Pollinations Pay](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
 
 ### MCP Servers
 
@@ -279,12 +279,12 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Identifies your app in Connect User Wallets sign-in | Can't authenticate requests | Stable |
+| **App Key** | `pk_`  | Identifies your app in Pollinations Connect | Can't authenticate requests | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
-> 💡 **Building an app?** Use [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
+> 💡 **Building an app?** Use [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
 
 ### Model Restrictions
 

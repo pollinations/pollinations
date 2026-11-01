@@ -144,7 +144,7 @@ export function AuthGate({ onLogin }: AuthGateProps) {
                         letterSpacing: "0.05em",
                     }}
                 >
-                    🐝 Connect with Pollinations
+                    🐝 Pollinations Connect
                 </button>
 
                 {/* Footer note */}

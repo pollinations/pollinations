@@ -4388,7 +4388,6 @@ Returns every reward the account has earned, newest first, including claim state
 | `rewards[].earnedAt` * | `string` | — |
 | `rewards[].claimedAt` * | `any` | — |
 | `rewards[].url` * | `any` | — |
-| `setupHold` * | `object` \| `null` | Set while the account's Setup quest rewards are on hold and can't be claimed. Buying a pollen pack unlocks them, as does a maintainer approving a review. |
 
 <sub>`*` = required field</sub>
 
@@ -4397,25 +4396,6 @@ Returns every reward the account has earned, newest first, including claim state
 ```bash
 curl "https://gen.pollinations.ai/account/quests/rewards" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
-```
-
-```json
-{
-  "rewards": [
-    {
-      "id": "string",
-      "questId": "string",
-      "title": "string",
-      "balanceBucket": "string",
-      "earnedAt": "string",
-      "claimedAt": "string",
-      "url": "string"
-    }
-  ],
-  "setupHold": {
-    "review": "pending"
-  }
-}
 ```
 
 ---
@@ -4431,8 +4411,10 @@ Returns the pollen balance visible to the caller. API keys with a budget always 
 | `balance` * | `number` | Pollen remaining for this caller. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest Pollen + paid). |
 | `accountBalance` | `object` | Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account wallet is not leaked. |
 | `accountBalance.total` * | `number` | Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total. |
-| `accountBalance.tier` * | `number` | Quest Pollen remaining, never below 0 |
+| `accountBalance.tier` * | `number` | Spendable Quest pollen, never below 0; zero while restricted |
 | `accountBalance.paid` * | `number` | Paid Pollen remaining, never below 0 |
+| `accountBalance.heldTier` | `number` | Locked Quest pollen, excluded from total and tier |
+| `accountBalance.questPollenRestricted` | `boolean` | Whether Quest pollen spending is locked until a purchase or account review |
 
 <sub>`*` = required field</sub>
 

@@ -19,8 +19,8 @@ export function nextProbeAt(previous) {
 }
 
 // Success, including a fallback's, and inconclusive caller or probe errors
-// reset the backoff. The probe's status and stream error are kept for the
-// agent to compare with the next one.
+// reset the backoff. The probe's status, stream error and the model that
+// answered are kept for the agent to compare with the next one.
 export function recordProbe(previous, result) {
     return {
         lastAt: result.timestamp,
@@ -34,6 +34,7 @@ export function recordProbe(previous, result) {
         operation: result.operation,
         status: result.status,
         protocolError: result.protocolError,
+        modelUsed: result.modelUsed,
     };
 }
 
@@ -41,9 +42,12 @@ export function recordProbe(previous, result) {
 // longer than any backoff runs.
 export const FORGET_MS = 7 * 24 * 60 * 60 * 1000;
 
-// An error event's code, as text.
-const codeOf = (error) =>
-    error?.code == null ? undefined : String(error.code);
+// An error event's code: a plain word of at most 40 characters, never
+// provider text, so it stays small to store and safe to show.
+const codeOf = (error) => {
+    const code = error?.code == null ? "" : String(error.code);
+    return /^\w{1,40}$/.test(code) ? code : undefined;
+};
 
 export function hasChatProbeMarker(content, marker) {
     if (typeof content !== "string") return false;

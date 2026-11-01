@@ -126,6 +126,21 @@ test("preserves healthy streams and existing non-error validation", () => {
     }
 });
 
+test("an error code is kept only as a plain word of at most 40 characters", () => {
+    for (const [code, kept] of [
+        ["BAD_GATEWAY", "BAD_GATEWAY"],
+        [429, "429"],
+        ["api.private-host.example", undefined],
+        ["x".repeat(41), undefined],
+        ["y".repeat(2_100_000), undefined],
+    ]) {
+        const result = parseChatStream(
+            `${content}data: ${JSON.stringify({ error: { code } })}\n\n${done}`,
+        );
+        assert.equal(result.errorCode, kept);
+    }
+});
+
 test("rejects an error event even if it includes choices", () => {
     assert.equal(
         parseChatStream(

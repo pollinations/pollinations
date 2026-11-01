@@ -176,13 +176,7 @@ SCHEMA >
 
 -- The serving model was owner-only: a public model's own private fallback.
 -- Public pipes keep the row in that model's totals but don't name the route.
-`private_route` Bool                    `json:$.privateRoute` DEFAULT false,
-
--- A community proxy answering a text request itself: the model gen asked its
--- upstream for, and the model name the upstream wrote into its answer. Empty
--- elsewhere. infra-watch compares them (the old monitor's duty 2d).
-`upstream_model`        LowCardinality(String) `json:$.upstreamModel` DEFAULT '',
-`upstream_served_model` LowCardinality(String) `json:$.upstreamServedModel` DEFAULT ''
+`private_route` Bool                    `json:$.privateRoute` DEFAULT false
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"

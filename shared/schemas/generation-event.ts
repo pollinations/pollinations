@@ -85,10 +85,6 @@ export type TinybirdEvent = {
     privateModel?: boolean;
     /** The serving model was owner-only; public stats count the row but don't name the route. */
     privateRoute?: boolean;
-    /** Community proxy answering itself: the model gen asked its upstream for. */
-    upstreamModel?: string;
-    /** ...and the model name the upstream wrote into its answer. */
-    upstreamServedModel?: string;
     /** Exact registry ID attempted: the primary or a fallback, on success or failure. */
     modelUsed?: string;
     modelProviderUsed?: string;

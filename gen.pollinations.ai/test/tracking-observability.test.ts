@@ -113,7 +113,6 @@ function createTestApp(
             JSON.stringify({
                 id: "chatcmpl_test",
                 object: "chat.completion",
-                model: "upstream-reported-model",
                 choices: [
                     {
                         index: 0,
@@ -729,20 +728,11 @@ describe("tracking observability", () => {
             await waitOnExecutionContext(ctx);
             expect(response.status).toBe(200);
             expect(tinybirdRequests).toHaveLength(1);
-            const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
-            expect(event).toMatchObject({
+            expect(await tinybirdRequests[0].json()).toMatchObject({
                 communityEndpointType: type,
                 resolvedModelRequested: endpoint.modelId,
                 isFinal: true,
             });
-            // Only a proxy asks an upstream for a model of its own, and
-            // records the name the upstream answered with.
-            expect(event.upstreamModel).toBe(
-                type === "proxy" ? endpoint.upstreamModel : undefined,
-            );
-            expect(event.upstreamServedModel).toBe(
-                type === "proxy" ? "upstream-reported-model" : undefined,
-            );
         },
     );
 
@@ -3590,100 +3580,6 @@ describe("trackResponse modelUsed", () => {
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.responseStatus).toBe(200);
         expect(tracking.modelUsed).toBeUndefined();
-    });
-
-    const usage = { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 };
-    const sse = (events: unknown[]) =>
-        new Response(
-            `${events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join("")}data: [DONE]\n\n`,
-            { headers: { "content-type": "text/event-stream" } },
-        );
-    it.each([
-        [
-            "chat stream",
-            true,
-            sse([
-                {
-                    model: "other-model",
-                    choices: [{ delta: { content: "a" } }],
-                },
-                { model: "served-model", choices: [], usage },
-            ]),
-        ],
-        [
-            "Responses stream",
-            true,
-            sse([
-                {
-                    type: "response.completed",
-                    response: {
-                        model: "served-model",
-                        status: "completed",
-                        usage: {
-                            input_tokens: 10,
-                            output_tokens: 5,
-                            total_tokens: 15,
-                        },
-                    },
-                },
-            ]),
-        ],
-        [
-            "JSON body",
-            false,
-            Response.json(
-                { model: " served-model ", choices: [] },
-                {
-                    headers: {
-                        "x-model-used": "openai/gpt-5.4-nano",
-                        "x-usage-prompt-text-tokens": "10",
-                    },
-                },
-            ),
-        ],
-        [
-            "JSON body with a field of its own named streamEvents",
-            false,
-            Response.json(
-                { model: "served-model", choices: [], streamEvents: {} },
-                {
-                    headers: {
-                        "x-model-used": "openai/gpt-5.4-nano",
-                        "x-usage-prompt-text-tokens": "10",
-                    },
-                },
-            ),
-        ],
-    ] as const)(
-        "records the name a community proxy answered with (%s)",
-        async (_shape, stream, response) => {
-            const tracking = await trackResponse(
-                "generate.text",
-                {
-                    ...requestTrackingFixture(stream),
-                    upstreamModel: "asked-model",
-                },
-                response,
-                candidateFixture(),
-            );
-            expect(tracking).toMatchObject({
-                isBilledUsage: true,
-                upstreamModel: "asked-model",
-                upstreamServedModel: "served-model",
-            });
-        },
-    );
-
-    it("records no upstream names when a fallback answered", async () => {
-        const tracking = await trackResponse(
-            "generate.text",
-            { ...requestTrackingFixture(true), upstreamModel: "asked-model" },
-            sse([{ model: "served-model", choices: [], usage }]),
-            candidateFixture("qwen/qwen3.8-max"),
-        );
-        expect(tracking.fallbackUsed).toBe(true);
-        expect(tracking.upstreamModel).toBeUndefined();
-        expect(tracking.upstreamServedModel).toBeUndefined();
     });
 
     it("keeps Qwen Max's OpenRouter fallback cost separate from the direct explicit-cache quote", async () => {

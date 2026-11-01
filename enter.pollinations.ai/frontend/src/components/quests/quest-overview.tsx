@@ -174,6 +174,8 @@ function deriveCardStatus(
 
 // Lane ordering rank: claimable first, then claimed, then open, then
 // coming_soon last.
+const BONUS_PAGE_SIZE = 10;
+
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
     switch (card.status) {
@@ -643,6 +645,8 @@ function QuestOverviewContent({
     onRecovered: () => void;
 }) {
     const router = useRouter();
+    // Bonus rewards can run into the hundreds: ten at a time.
+    const [bonusShown, setBonusShown] = useState(BONUS_PAGE_SIZE);
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
@@ -1144,7 +1148,7 @@ function QuestOverviewContent({
                     }
                 >
                     <div className="flex flex-col gap-1">
-                        {bonusRewardCards.map((card) => (
+                        {bonusRewardCards.slice(0, bonusShown).map((card) => (
                             <QuestRow
                                 key={card.key}
                                 card={card}
@@ -1156,6 +1160,19 @@ function QuestOverviewContent({
                             />
                         ))}
                     </div>
+                    {bonusShown < bonusRewardCards.length && (
+                        <div className="mt-4 flex justify-end">
+                            <Button
+                                onClick={() =>
+                                    setBonusShown(
+                                        (shown) => shown + BONUS_PAGE_SIZE,
+                                    )
+                                }
+                            >
+                                Show more
+                            </Button>
+                        </div>
+                    )}
                 </Section>
             )}
             {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}

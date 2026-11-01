@@ -629,9 +629,11 @@ export class Watch extends DurableObject {
     }
 
     // This cycle's fresh text probes that their model answered itself with
-    // a model name, each beside the upstream model its public proxy listing
-    // asks for, read from D1 as the old monitor read it. A failed read is a
-    // skipped check.
+    // a model name, each beside the upstream model its proxy listing asks
+    // for, read from D1 as the old monitor read it. Which models are public
+    // is gen's call: probes only run on its public catalog, which also lists
+    // a queued publication once it takes effect, while the stored row still
+    // says private. A failed read is a skipped check.
     async reported(probes) {
         const own = probes.filter(
             (p) => p.servedModel && p.modelUsed === p.model,
@@ -641,7 +643,7 @@ export class Watch extends DurableObject {
             const { results } = await this.env.DB.prepare(
                 `SELECT 'community/' || u.github_username || '/' || ce.name AS model, ce.upstream_model AS declared
                 FROM community_endpoint ce JOIN user u ON ce.owner_user_id = u.id
-                WHERE ce.visibility = 'public' AND ce.type = 'proxy'`,
+                WHERE ce.type = 'proxy'`,
             ).all();
             const declared = new Map(results.map((r) => [r.model, r.declared]));
             return own

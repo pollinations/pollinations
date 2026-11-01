@@ -1223,20 +1223,14 @@ const proxies = (names, visibility = "public") =>
     ]);
 const runs = async (stub) => (await stored(stub, "community")).served;
 
-it("compares only fresh probes of public proxies that answered themselves with a model name", async () => {
+it("compares only fresh probes of listed proxies that answered themselves with a model name", async () => {
     const stub = watch();
     let clock = Date.UTC(2026, 10, 1, 10, 5);
     vi.spyOn(Date, "now").mockImplementation(() => clock);
     await proxies(["m", "fallback", "anonymous", "unnamed"]);
-    await proxies(["private"], "private");
-    world.catalog = [
-        "m",
-        "fallback",
-        "anonymous",
-        "unnamed",
-        "private",
-        "unlisted",
-    ].map((name) => community(`community/o/${name}`));
+    world.catalog = ["m", "fallback", "anonymous", "unnamed", "unlisted"].map(
+        (name) => community(`community/o/${name}`),
+    );
     world.probe = (path, body) => {
         const name = body.model.split("/").pop();
         const response = answers(
@@ -1264,6 +1258,68 @@ it("compares only fresh probes of public proxies that answered themselves with a
     clock += HOURS(4);
     await cycled(stub);
     expect((await runs(stub))["community/o/m"].streak).toBe(2);
+});
+
+// A public registration is stored private with its publication queued; gen
+// lists it once that takes effect three hours on, and the stored row still
+// says private.
+it("checks a newly published proxy once gen lists it, and tells nothing before", async () => {
+    const { ProxyListingPayloadSchema, resolveEffectiveProxyListing } =
+        await import("../../../shared/community-endpoints.ts");
+    const stub = watch();
+    const queued = Date.UTC(2026, 10, 1, 10, 5);
+    let clock = queued + HOURS(1);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    const payload = ProxyListingPayloadSchema.parse({
+        bearerTokenCiphertext: "fixture-not-a-credential",
+        api: "chat_completions",
+        paidOnly: false,
+        modality: "text",
+        imagePricing: "request",
+        inputModalities: ["text"],
+        perUserRpm: null,
+        fallbacks: [],
+        prices: {},
+    });
+    await proxies(["new"], "private");
+    await env.DB.prepare(
+        "UPDATE community_endpoint SET payload = ?, pending_payload = ?, pending_visibility = 'public', pending_at = ? WHERE id = 'new'",
+    )
+        .bind(JSON.stringify(payload), JSON.stringify(payload), queued / 1000)
+        .run();
+    // Gen's catalog, by gen's own rule for the stored row.
+    const listed = () =>
+        resolveEffectiveProxyListing(
+            {
+                visibility: "private",
+                payload,
+                pendingVisibility: "public",
+                pendingPayload: payload,
+                pendingAt: new Date(queued),
+            },
+            clock,
+        ).visibility === "public"
+            ? [community("community/o/new")]
+            : [];
+    world.probe = answers(() => false, "llama-3.1-8b");
+    world.agent = tells();
+    // Within the delay gen doesn't list it: never probed, nothing told.
+    world.catalog = listed();
+    expect(world.catalog).toEqual([]);
+    await cycled(stub);
+    expect(world.probes).toEqual([]);
+    expect(await runs(stub)).toEqual({});
+    // Listed from three hours on: two probes in a row, then told.
+    clock = queued + HOURS(3);
+    world.catalog = listed();
+    await cycled(stub);
+    clock += HOURS(4);
+    await cycled(stub);
+    expect(world.probes).toEqual([
+        "/v1/chat/completions community/o/new",
+        "/v1/chat/completions community/o/new",
+    ]);
+    expect(posts(COMMUNITY).map((p) => p.content)).toEqual([OWNER_O]);
 });
 
 it("tells a served-model mismatch to its owner once due, however long delivery fails, and again only on a new probe", async () => {

@@ -3,6 +3,7 @@
 declare namespace Cloudflare {
     interface Env {
         TEST_MIGRATIONS: import("cloudflare:test").D1Migration[];
+        CONTRIBUTION_REWARD_KEY: string;
     }
 }
 

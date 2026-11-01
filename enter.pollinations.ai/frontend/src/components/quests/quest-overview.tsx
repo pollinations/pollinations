@@ -535,7 +535,10 @@ export function QuestRow({
     const rewardIcon = rewardIconKind(card.balanceBucket);
     // The icon next to the number IS the "this is pollen" signal, so the word
     // "pollen" would just repeat it. formatRewardAmount renders null as "TBD".
-    const rewardLabel = formatRewardAmount(rewardAmount);
+    const rewardLabel =
+        !earned && ["merged_pr", "reported_merged_issue"].includes(card.key)
+            ? "Varies"
+            : formatRewardAmount(rewardAmount);
 
     // Shared pieces, placed differently per breakpoint below.
     const title = (

@@ -20,7 +20,7 @@ import {
     setupHold,
 } from "../src/services/setup-reward-holds.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
-import type { MockGithubState } from "./mocks/github.ts";
+import type { MockGithubState, MockRewardComment } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
 const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
@@ -33,6 +33,66 @@ const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
 const BEFORE_QUEST_REWARDS_LAUNCH_MILLIS =
     QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS - 1;
 const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
+const CONTRIBUTION_GROUPS = questIndex.QUEST_GROUPS.filter(
+    (group) => group.id === "github-contributions",
+);
+// Contribution assessments start on 2026-11-02.
+const OPENED_AFTER_REWARDS_START = "2026-11-03T00:00:00Z";
+const QUOTED_AT = "2026-11-03T12:00:00Z";
+const MERGED_AFTER_QUOTE = "2026-11-04T00:00:00Z";
+
+function humanComment(
+    body: string,
+    databaseId: number,
+    createdAt = QUOTED_AT,
+): MockRewardComment {
+    return {
+        body,
+        createdAt,
+        lastEditedAt: null,
+        author: { __typename: "User", login: `user${databaseId}`, databaseId },
+        editor: null,
+    };
+}
+
+async function signQuote(number: number, line: string, secret: string) {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(secret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+    );
+    const signature = await crypto.subtle.sign(
+        "HMAC",
+        key,
+        encoder.encode(`pollinations/pollinations#${number}\n${line}`),
+    );
+    return [...new Uint8Array(signature)]
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+// The quote comment as operations/github/project_manager.py posts it.
+async function quoteComment(
+    number: number,
+    line: string,
+    {
+        signedFor = number,
+        secret = env.CONTRIBUTION_REWARD_KEY,
+        createdAt = QUOTED_AT,
+    } = {},
+): Promise<MockRewardComment> {
+    const signature = await signQuote(signedFor, line, secret);
+    return {
+        body: `<!-- pollinations-reward -->\n${line}\n<!-- signature: ${signature} -->\n\nReason: Fixes a reproducible bug.`,
+        createdAt,
+        lastEditedAt: null,
+        author: { __typename: "Bot", login: "pollinations-ai" },
+        editor: null,
+    };
+}
 
 test("omits the Discord quest when its configuration is incomplete", async () => {
     const ctx = {
@@ -330,7 +390,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -475,7 +535,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -511,7 +571,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
-        rewardAmount: 3,
+        rewardAmount: 0,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });
@@ -522,7 +582,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -583,7 +643,7 @@ test("catalog keeps the last GitHub quest issues while GitHub is rate limited", 
         reward: 6,
     });
     const catalogIds = async () => {
-        await env.KV.delete("quests:catalog:v30");
+        await env.KV.delete("quests:catalog:v31");
         const response = await SELF.fetch(
             "http://localhost:3000/api/quests/catalog",
         );
@@ -620,7 +680,7 @@ test("quest checks reuse the GitHub quest issues the catalog just fetched", asyn
         completedByGithubId: user.githubId,
         completedByLogin: user.githubUsername,
     });
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
     );
@@ -645,7 +705,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(
@@ -2135,12 +2195,12 @@ test("issue bounties with out-of-range rewards record nothing and do not fail th
     mocks.github.state.user.created_at = new Date().toISOString();
     await mocks.enable("github", "tinybird");
 
-    // The issue body is author-editable, so a reward of 0 or above the
-    // MAX_REWARD_AMOUNT cap can appear at any time. Before the fix both
-    // parsed into a quest definition and recordRewards threw on the amount,
-    // failing every bounty in the same check, including the valid one.
+    // Invalid body amounts must not prevent valid bounties in the same check.
+    // New bounties are capped at 100; the ledger's higher legacy limit remains
+    // so previously recorded rewards can still be claimed.
     for (const issue of [
-        { issueNumber: 951, reward: 10001 },
+        { issueNumber: 951, reward: 101 },
+        { issueNumber: 954, reward: 10001 },
         { issueNumber: 953, reward: 0 },
         { issueNumber: 952, reward: 17 },
     ]) {
@@ -2343,7 +2403,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
         }
     }
 
-    await env.KV.delete("quests:catalog:v30");
+    await env.KV.delete("quests:catalog:v31");
     mocks.github.state.requests = [];
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -2470,6 +2530,393 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
+});
+
+test("quote signatures match the project manager's", async () => {
+    // Same vector as test_project_manager.py.
+    expect(
+        await signQuote(
+            42,
+            "Reward: 2.5 quest",
+            "test-contribution-reward-key",
+        ),
+    ).toBe("dab6089f5883a110b3d8d0533410801a48c26f6b6dc128d37dbb4ceece40033f");
+});
+
+test("merged PRs opened after the rollout pay a signed quote or a maintainer override; nothing else pays", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    const elliot = 36901823;
+    const thomas = 5099901;
+    const quote = (number: number, options = {}) =>
+        quoteComment(number, "Reward: 2.5 quest", options);
+    const discussion = Array.from({ length: 25 }, () =>
+        humanComment("Looks good", 999),
+    );
+    const cases: {
+        number: number;
+        comments: MockRewardComment[];
+        expected?: [number, "tier" | "pack"];
+        authorId?: number;
+        repository?: string;
+        closingIssueLabels?: string[][];
+    }[] = [
+        {
+            number: 20001,
+            comments: [await quote(20001)],
+            expected: [2.5, "tier"],
+        },
+        // A quote copied from another item, signed with another key, posted by
+        // a person or after the merge never pays.
+        { number: 20002, comments: [await quote(20002, { signedFor: 20001 })] },
+        { number: 20003, comments: [await quote(20003, { secret: "other" })] },
+        {
+            number: 20004,
+            comments: [
+                {
+                    ...(await quote(20004)),
+                    author: {
+                        __typename: "User",
+                        login: "pollinations-ai",
+                        databaseId: 999,
+                    },
+                },
+            ],
+        },
+        {
+            number: 20005,
+            comments: [
+                await quote(20005, { createdAt: "2026-11-05T00:00:00Z" }),
+            ],
+        },
+        {
+            number: 20006,
+            comments: [humanComment("Reward: 4", elliot)],
+            expected: [4, "tier"],
+        },
+        {
+            number: 20007,
+            comments: [
+                await quote(20007),
+                humanComment("Reward: 20 paid", thomas),
+            ],
+            expected: [20, "pack"],
+        },
+        {
+            number: 20008,
+            comments: [await quote(20008), humanComment("Reward: 0", elliot)],
+        },
+        {
+            number: 20009,
+            comments: [
+                await quote(20009),
+                humanComment("Reward: 50", 999),
+                humanComment("Reward: 101", elliot),
+                humanComment("Reward: 1e2", elliot),
+                humanComment("Example:\nReward: 30 paid", thomas),
+                {
+                    ...humanComment("Reward: 40 paid", thomas),
+                    lastEditedAt: "2026-11-03T13:00:00Z",
+                    editor: {
+                        __typename: "User",
+                        login: "other",
+                        databaseId: 999,
+                    },
+                },
+            ],
+            expected: [2.5, "tier"],
+        },
+        {
+            number: 20010,
+            comments: [
+                await quote(20010),
+                humanComment("Reward: 10 paid", thomas),
+                humanComment("Reward: 2", elliot, "2026-11-03T13:00:00Z"),
+            ],
+            expected: [2, "tier"],
+        },
+        // The quote sits on an older page of a long thread.
+        {
+            number: 20011,
+            comments: [await quote(20011), ...discussion],
+            expected: [2.5, "tier"],
+        },
+        // A closed quest pays its bounty instead; only an override adds to it.
+        {
+            number: 20012,
+            comments: [await quote(20012)],
+            closingIssueLabels: [["POLLEN-QUEST"]],
+        },
+        {
+            number: 20013,
+            comments: [await quote(20013), humanComment("Reward: 5", elliot)],
+            closingIssueLabels: [["POLLEN-QUEST"]],
+            expected: [5, "tier"],
+        },
+        {
+            number: 20014,
+            comments: [await quoteComment(20014, "Reward: 3 paid")],
+        },
+        {
+            number: 20017,
+            comments: [await quote(20017)],
+            closingIssueLabels: Array.from({ length: 21 }, () => []),
+        },
+        {
+            number: 20015,
+            comments: [await quote(20015)],
+            repository: "someone/else",
+        },
+        { number: 20016, comments: [await quote(20016)], authorId: 999 },
+    ];
+    for (const {
+        number,
+        comments,
+        authorId,
+        repository,
+        closingIssueLabels,
+    } of cases) {
+        mocks.github.state.mergedPullRequests.push({
+            number,
+            authorLogin: user.githubUsername ?? "",
+            authorId: authorId ?? user.githubId ?? 0,
+            createdAt: OPENED_AFTER_REWARDS_START,
+            mergedAt: MERGED_AFTER_QUOTE,
+            repository,
+            comments,
+            closingIssueLabels,
+        });
+    }
+
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const rewards = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(
+        Object.fromEntries(
+            rewards.map((reward) => [
+                reward.questId,
+                [reward.pollenAmount, reward.balanceBucket],
+            ]),
+        ),
+    ).toEqual(
+        Object.fromEntries(
+            cases.flatMap(({ number, expected }) =>
+                expected ? [[`github:merged_pr:${number}`, expected]] : [],
+            ),
+        ),
+    );
+});
+
+test("without CONTRIBUTION_REWARD_KEY no quote pays, but overrides still do", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    mocks.github.state.mergedPullRequests.push(
+        {
+            number: 20101,
+            authorLogin: user.githubUsername ?? "",
+            authorId: user.githubId ?? 0,
+            createdAt: OPENED_AFTER_REWARDS_START,
+            mergedAt: MERGED_AFTER_QUOTE,
+            comments: [await quoteComment(20101, "Reward: 2.5 quest")],
+        },
+        {
+            number: 20102,
+            authorLogin: user.githubUsername ?? "",
+            authorId: user.githubId ?? 0,
+            createdAt: OPENED_AFTER_REWARDS_START,
+            mergedAt: MERGED_AFTER_QUOTE,
+            comments: [humanComment("Reward: 1", 36901823)],
+        },
+    );
+    await checkQuestsForUser(
+        { ...env, CONTRIBUTION_REWARD_KEY: "" },
+        user.id,
+        CONTRIBUTION_GROUPS,
+    );
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(rewards).toEqual([{ questId: "github:merged_pr:20102" }]);
+});
+
+test("PRs and issues opened before the rollout keep the old fixed rewards", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    const reportedIssue = async (
+        number: number,
+        createdAt: string,
+        comments: MockRewardComment[],
+        mergedAt: string | null = MERGED_AFTER_QUOTE,
+        repository?: string,
+    ) => {
+        mocks.github.state.questIssues.push({
+            number,
+            state: "closed",
+            title: `Issue ${number}`,
+            html_url: `https://github.com/pollinations/pollinations/issues/${number}`,
+            body: "A useful issue report",
+            created_at: createdAt,
+            updated_at: MERGED_AFTER_QUOTE,
+            closed_at: MERGED_AFTER_QUOTE,
+            user: {
+                login: user.githubUsername ?? "",
+                databaseId: user.githubId,
+            },
+            comments,
+            closedByPullRequestsReferences: [
+                { number: number + 1000, mergedAt, repository, author: null },
+            ],
+        });
+    };
+    // Opened before the rollout: the old 3 for a fixed issue, whatever the
+    // comments say, and the old 5 for a first merged PR.
+    await reportedIssue(21001, "2026-10-01T00:00:00Z", [
+        humanComment("Reward: 9", 36901823),
+    ]);
+    mocks.github.state.mergedPullRequests.push({
+        number: 21101,
+        authorLogin: user.githubUsername ?? "",
+        mergedAt: "2026-10-02T00:00:00Z",
+    });
+    // Opened after it: the signed quote or an override, once a merged PR fixes it.
+    await reportedIssue(21002, OPENED_AFTER_REWARDS_START, [
+        await quoteComment(21002, "Reward: 1.5 quest"),
+    ]);
+    await reportedIssue(21003, OPENED_AFTER_REWARDS_START, [
+        humanComment("Reward: 2 paid", 5099901),
+    ]);
+    await reportedIssue(
+        21004,
+        OPENED_AFTER_REWARDS_START,
+        [await quoteComment(21004, "Reward: 1.5 quest")],
+        null,
+    );
+    await reportedIssue(21005, OPENED_AFTER_REWARDS_START, [
+        await quoteComment(21005, "Reward: 1.5 quest", {
+            createdAt: "2026-11-05T00:00:00Z",
+        }),
+    ]);
+    // Only a merge into this repository fixes a report, old or new.
+    await reportedIssue(
+        21006,
+        OPENED_AFTER_REWARDS_START,
+        [await quoteComment(21006, "Reward: 1.5 quest")],
+        MERGED_AFTER_QUOTE,
+        "someone/else",
+    );
+    await reportedIssue(
+        21007,
+        "2026-10-01T00:00:00Z",
+        [],
+        MERGED_AFTER_QUOTE,
+        "someone/else",
+    );
+
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const rewards = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(
+        Object.fromEntries(
+            rewards.map((reward) => [
+                reward.questId,
+                [reward.pollenAmount, reward.balanceBucket],
+            ]),
+        ),
+    ).toEqual({
+        merged_pr: [5, "tier"],
+        "github:reported_issue:21001": [3, "tier"],
+        "github:reported_issue:21002": [1.5, "tier"],
+        "github:reported_issue:21003": [2, "pack"],
+    });
+});
+
+test("a quest PR earns the bounty plus an override, and the override's Paid reward claims once", async ({
+    mocks,
+    accountToken,
+}) => {
+    const user = await getOnlyUser();
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github");
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 22000,
+        title: "Useful implementation",
+        goal: "Solve the problem",
+        reward: 20,
+        completedByPrNumber: 22001,
+        completedByGithubId: user.githubId,
+        completedByLogin: user.githubUsername,
+        updatedAt: new Date(MERGED_AFTER_QUOTE),
+    });
+    const pr = mocks.github.state.mergedPullRequests.at(-1);
+    if (!pr) throw new Error("Expected the quest PR");
+    Object.assign(pr, {
+        authorId: user.githubId ?? 0,
+        createdAt: OPENED_AFTER_REWARDS_START,
+        closingIssueLabels: [["POLLEN-QUEST"]],
+        comments: [
+            await quoteComment(22001, "Reward: 3 quest"),
+            humanComment("Reward: 20 paid", 5099901),
+        ],
+    });
+
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    const rows = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(
+        Object.fromEntries(
+            rows.map((row) => [
+                row.questId,
+                [row.pollenAmount, row.balanceBucket],
+            ]),
+        ),
+    ).toEqual({
+        "github:issue:22000": [20, "tier"],
+        "github:merged_pr:22001": [20, "pack"],
+    });
+
+    const reward = rows.find((row) => row.questId === "github:merged_pr:22001");
+    if (!reward) throw new Error("Expected the override reward");
+    const headers = { Authorization: `Bearer ${accountToken}` };
+    const balances = async () =>
+        (
+            await db
+                .select({
+                    tier: schema.user.tierBalance,
+                    pack: schema.user.packBalance,
+                })
+                .from(schema.user)
+                .where(eq(schema.user.id, user.id))
+        )[0];
+    const before = await balances();
+    const claimUrl = `http://localhost:3000/api/account/quests/rewards/${reward.id}/claim`;
+    const claimed = await SELF.fetch(claimUrl, { method: "POST", headers });
+    expect(await claimed.json()).toMatchObject({ claimed: true });
+    const after = await balances();
+    expect(after.tier).toBe(before.tier);
+    expect(after.pack).toBeCloseTo((before.pack ?? 0) + 20);
+    const retry = await SELF.fetch(claimUrl, { method: "POST", headers });
+    expect(await retry.json()).toMatchObject({ claimed: false });
+    expect(await balances()).toEqual(after);
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

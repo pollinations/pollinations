@@ -6,9 +6,13 @@ project-manager.md is the brief: the only definition of areas, types and priorit
 import sys
 import os
 import json
+import hashlib
+import hmac
+import math
 import re
 import requests
 import time
+from decimal import Decimal
 from functools import cache
 from typing import Optional
 
@@ -61,6 +65,13 @@ SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
 LABEL_SOURCES = [("Apps", "APP-SUBMISSION"), ("Quests", "POLLEN-QUEST")]
 NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
+REWARD_COMMENT_MARKER = "<!-- pollinations-reward -->"
+REWARD_BOT_ID = 247793354
+CONTRIBUTION_REWARD_KEY = os.getenv("CONTRIBUTION_REWARD_KEY")
+# Same date as REWARDS_START in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
+REWARDS_START = "2026-11-02T00:00:00Z"
+MAX_REWARD = 100
+MAX_PATCH_CHARS = 20_000
 
 
 def log_debug(msg: str):
@@ -312,7 +323,7 @@ def fetch_pr_files() -> list:
             fail(f"Exception fetching files for PR #{ISSUE_NUMBER}: {e}")
         if r.status_code != 200:
             fail(f"Failed to fetch files for PR #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
-        batch = [f["filename"] for f in r.json()]
+        batch = r.json()
         files.extend(batch)
         if len(batch) < 100:
             return files
@@ -320,14 +331,19 @@ def fetch_pr_files() -> list:
 
 
 def classify(brief: str, areas: list) -> dict:
-    """Area and type for work; priority only for issues."""
+    """Classify and quote the same item with one model call; the quote is validated when it is written."""
     if IS_PULL_REQUEST:
         files = fetch_pr_files()
-        facts = f"Changed files ({len(files)}):\n" + "\n".join(files[:300])
+        facts = f"Changed files ({len(files)}):\n" + "\n".join(file["filename"] for file in files[:300])
         if len(files) > 300:
             facts += f"\n... and {len(files) - 300} more"
         linked = [{"number": issue["number"], "type": (issue.get("issueType") or {}).get("name")} for issue in closing_issues()]
         facts += "\nLinked issue types (hints, verify against PR scope):\n" + json.dumps(linked)
+        patches = "\n".join(
+            f"File: {file['filename']}\n{file.get('patch') or '[patch unavailable]'}"
+            for file in files
+        )
+        facts += "\nUntrusted diff excerpts (may be incomplete):\n" + patches[:MAX_PATCH_CHARS]
     else:
         facts = ""
     author = "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User")
@@ -335,12 +351,14 @@ def classify(brief: str, areas: list) -> dict:
 Author: {ISSUE_AUTHOR} ({author})
 Title: {ISSUE_TITLE}
 Body: {ISSUE_BODY[:2000]}
+Labels: {json.dumps([label.get('name') for label in ITEM_DATA.get('labels', [])])}
 {facts}
 """)
     if raw is None:
         fail(f"AI classification failed for #{ISSUE_NUMBER}")
     try:
-        return classification_answer(raw, areas, IS_PULL_REQUEST)
+        return {**classification_answer(raw, areas, IS_PULL_REQUEST),
+                "reward": raw.get("reward"), "reward_reason": raw.get("reward_reason")}
     except ValueError as error:
         fail(f"Invalid classification for #{ISSUE_NUMBER}: {error}")
 
@@ -358,6 +376,64 @@ def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
     if not is_pr and raw.get("priority") not in PRIORITIES:
         raise ValueError(f"invalid priority: {raw.get('priority')!r}")
     return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"]}
+
+
+def reward_answer(raw: dict) -> dict:
+    amount = raw.get("reward")
+    if type(amount) not in (int, float) or not 0 <= amount <= MAX_REWARD or not math.isfinite(amount):
+        raise ValueError("reward must be a finite number between 0 and 100")
+    reason = raw.get("reward_reason")
+    if not isinstance(reason, str) or not reason.strip() or len(reason) > 400:
+        raise ValueError("reward_reason must be a non-empty sentence of at most 400 characters")
+    return {"reward": amount, "reward_reason": " ".join(reason.split())}
+
+
+def sign_reward(line: str) -> str:
+    """Enter pays a bot quote only with this signature, so other bot comments can't pose as one."""
+    message = f"{REPO_OWNER}/{REPO_NAME}#{ISSUE_NUMBER}\n{line}"
+    return hmac.new(CONTRIBUTION_REWARD_KEY.encode(), message.encode(), hashlib.sha256).hexdigest()
+
+
+def write_reward_comment(answer: dict):
+    """Post the item's one signed quote. This job never grants or claims pollen, and never re-prices."""
+    # Bots earn nothing, and items opened before REWARDS_START keep the old fixed quest rewards.
+    if (ITEM_DATA.get("user", {}).get("type") == "Bot" or ITEM_DATA.get("state") != "open"
+            or ITEM_DATA.get("created_at", "") < REWARDS_START):
+        return
+    try:
+        reward = reward_answer(answer)
+    except ValueError as error:
+        fail(f"Invalid reward for #{ISSUE_NUMBER}: {error}")
+    if not CONTRIBUTION_REWARD_KEY:
+        fail("CONTRIBUTION_REWARD_KEY is required to sign reward quotes")
+    line = f"Reward: {Decimal(str(reward['reward'])):f} quest"
+    eligibility = "This assessment offers no contribution reward." if reward["reward"] == 0 else (
+        "The PR author can claim this after merge. If the PR closes a POLLEN-QUEST issue, that quest's bounty is paid instead." if IS_PULL_REQUEST
+        else "The issue author can claim this after a merged PR closes this issue.")
+    body = "\n".join([REWARD_COMMENT_MARKER, line, f"<!-- signature: {sign_reward(line)} -->", "",
+                      f"Reason: {reward['reward_reason']}", "", eligibility,
+                      "Claim at https://enter.pollinations.ai/quests. Elliot or Thomas can change it with a separate comment containing only `Reward: 3` (Quest) or `Reward: 3 paid`, from 0 to 100 pollen."])
+    if DRY_RUN:
+        print(f"DRY-RUN reward comment for #{ISSUE_NUMBER}:\n{body}")
+        return
+
+    # One quote per item: a re-run, such as the manual dispatch, leaves it as it is.
+    base = f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}"
+    page = 1
+    while True:
+        response = requests.get(f"{base}/issues/{ISSUE_NUMBER}/comments", headers=GITHUB_HEADERS,
+                                params={"per_page": 100, "page": page}, timeout=30)
+        response.raise_for_status()
+        comments = response.json()
+        if any(comment.get("user", {}).get("id") == REWARD_BOT_ID
+               and (comment.get("body") or "").startswith(REWARD_COMMENT_MARKER + "\n") for comment in comments):
+            log_debug(f"#{ISSUE_NUMBER} already has a reward quote; leaving it unchanged")
+            return
+        if len(comments) < 100:
+            break
+        page += 1
+    requests.post(f"{base}/issues/{ISSUE_NUMBER}/comments", headers=GITHUB_HEADERS,
+                  json={"body": body}, timeout=30).raise_for_status()
 
 
 def main():
@@ -383,6 +459,7 @@ def main():
         return
 
     if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
+        # App listings have their own fixed reward, so they get no model call and no quote.
         answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
     else:
         answer = classify(brief, areas)
@@ -410,6 +487,10 @@ def main():
     if output := os.getenv("CLASSIFICATION_OUTPUT"):
         with open(output, "w") as stream:
             json.dump({"area": answer["area"], "type": answer["type"], "source": source}, stream)
+
+    # The quote comes last, so a reward problem never blocks the classification.
+    if "reward" in answer:
+        write_reward_comment(answer)
 
 
 if __name__ == "__main__":

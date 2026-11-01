@@ -9,6 +9,6 @@ export default defineConfig({
         },
     },
     test: {
-        include: ["shared/providers.test.ts", "apps/agent-json.test.ts"],
+        include: ["shared/providers.test.ts", "shared/agent-json.test.ts"],
     },
 });

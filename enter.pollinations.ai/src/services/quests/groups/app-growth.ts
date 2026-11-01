@@ -34,7 +34,7 @@ const firstByopExternalUserQuest: QuestDefinition = {
     id: "app_active",
     title: "First user connects to your app",
     description:
-        "A user approves a key for your [app](https://gen.pollinations.ai/docs#tag/pollinations-pay) through Pollinations Connect.",
+        "A user logs in to your [app](https://gen.pollinations.ai/docs#tag/pollinations-pay) using the authorize flow.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 7,

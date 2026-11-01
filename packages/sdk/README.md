@@ -365,7 +365,7 @@ function Chat() {
 
 ### Managing API keys
 
-Programmatically create, list, and revoke keys for your account. Useful for Pollinations Pay flows, multi-tenant apps, and automation:
+Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
 
 ```javascript
 import { listKeys, createKey, revokeKey } from '@pollinations/sdk';

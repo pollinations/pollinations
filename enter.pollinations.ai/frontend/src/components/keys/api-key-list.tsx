@@ -366,10 +366,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <p className="flex items-start gap-1.5">
                         <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            For apps, agents and CLIs that get each user's key
-                            through Pollinations Connect, so users spend their
-                            own pollen. Connect your app with the Pollinations
-                            SDK.
+                            For apps where users sign in with their own
+                            Pollinations account and spend their own pollen.
+                            Connect your app with the Pollinations SDK.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">

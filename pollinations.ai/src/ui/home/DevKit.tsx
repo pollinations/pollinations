@@ -175,11 +175,11 @@ const BUILD_FEATURES: Feature[] = [
         color: "var(--polli-color-modality-embedding)",
     },
     {
-        title: "Pollinations Pay",
-        chips: ["Pollinations Connect", "Earnings"],
+        title: "Users pay",
+        chips: ["BYOP", "Earnings"],
         body: (
             <>
-                Your users approve a key with a spending limit.{" "}
+                Your users sign in with Pollinations and set a spending limit.{" "}
                 <Em>They pay for their own usage.</Em>
             </>
         ),

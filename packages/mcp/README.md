@@ -38,7 +38,7 @@ For all Pollinations-hosted MCP servers, see the
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
 | `getUsage` | Request history or daily summary; requires `account:usage` | `/account/usage`, `/account/usage/daily` |
-| `getEarnings` | Developer earnings from Pollinations Pay apps and community models; requires `account:usage` | `/account/earnings` |
+| `getEarnings` | Developer earnings from BYOP apps and community models; requires `account:usage` | `/account/earnings` |
 | `listQuests` | Quests with reward and claim state; requires `account:usage` | `/account/quests` |
 | `listKeys` | List API keys; requires `account:keys` | `/account/keys` |
 | `createKey` | Create a secret or publishable app key; requires `account:keys` | `POST /account/keys` |

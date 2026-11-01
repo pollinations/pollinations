@@ -433,11 +433,11 @@ export function decision(options: DecisionOptions): Promise<DecisionResponse> {
 }
 
 // ============================================================================
-// Pollinations Connect Functions
+// BYOP Functions
 // ============================================================================
 
 /**
- * Build a Pollinations Connect authorization URL
+ * Build a BYOP authorization URL
  *
  * @example
  * ```ts

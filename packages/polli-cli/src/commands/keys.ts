@@ -172,7 +172,7 @@ const create = new Command("create")
     )
     .option(
         "--redirect-uri <uri...>",
-        "Allowed Pollinations Connect redirect URI(s) for publishable app keys",
+        "Allowed BYOP redirect URI(s) for publishable app keys",
     )
     .option("--earnings", "Enable developer earnings for publishable app keys")
     .option(

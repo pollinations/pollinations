@@ -20,7 +20,7 @@
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
 - **React SDK:** https://github.com/pollinations/pollinations/tree/main/packages/sdk#react-auth-provider
 - **React UI:** https://github.com/pollinations/pollinations/tree/main/packages/ui
-- **Pollinations Pay (users pay with their own pollen; Pollinations Connect issues their scoped keys):** https://gen.pollinations.ai/docs#tag/pollinations-pay
+- **Pollinations Pay:** https://gen.pollinations.ai/docs#tag/pollinations-pay
 - **MCP Servers Docs:** https://gen.pollinations.ai/docs#tag/mcp-servers
 - **MCP Protocol (contribute):** https://mcp.sequa.ai/v1/pollinations/contribute
 

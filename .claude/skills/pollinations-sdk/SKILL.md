@@ -41,7 +41,7 @@ single result by default; `n` requests multiple results. `saveToFile` is Node-on
 - For current model IDs, query https://gen.pollinations.ai/models. Pass a chosen
   ID through the helper's `{ model }` option; do not invent model names.
 - For browser apps, use a publishable app key and user-paid sign-in rather than
-  embedding a secret key. See the [Pollinations Pay guide](https://gen.pollinations.ai/docs/llm.txt?section=byop).
+  embedding a secret key. See the [BYOP guide](https://gen.pollinations.ai/docs/llm.txt?section=byop).
 - For device sign-in, React, streaming, editing, and other media, consult the
   [5.0.0 package docs](https://www.npmjs.com/package/@pollinations/sdk/v/5.0.0)
   and its installed type declarations. Verify signatures before copying examples

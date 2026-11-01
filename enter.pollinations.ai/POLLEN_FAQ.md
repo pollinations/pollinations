@@ -13,7 +13,7 @@ No. Pollinations provides infrastructure that you connect to your own applicatio
 - **Generation APIs** for text, image, video, audio, realtime, embeddings, and 3D.
 - **Managed agents** built from a prompt, a base model, and optional Pollinations tools.
 - **Community models** for developers who operate compatible model endpoints.
-- **Pollinations Pay**, so each app user can fund their own requests.
+- **Pollinations Pay**, also called BYOP, so each app user can fund their own requests.
 
 You build and host the application. Pollinations provides model access, account authorization, and billing.
 
@@ -71,7 +71,7 @@ All traffic remains subject to platform abuse protection and any model-specific 
 
 ## 🔌 What is Pollinations Pay?
 
-Pollinations Pay (Bring Your Own Pollen) lets users authorize an application to spend Pollen from their own wallet. The application gets a scoped secret key through Pollinations Connect, which works the same for web apps, CLIs, agents and scripts.
+Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets users authorize an application to spend Pollen from their own wallet.
 
 For app developers:
 

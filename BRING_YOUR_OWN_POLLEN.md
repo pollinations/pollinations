@@ -1,6 +1,6 @@
 # Pollinations Pay
 
-Pollinations Pay (Bring Your Own Pollen) lets your users authorize your app to spend their own Pollen on Pollinations requests. The key comes from Pollinations Connect, which issues a scoped secret key (`sk_...`) to any client (web or mobile app, CLI, agent, or script) once the account owner approves it. Your publishable App Key (`pk_...`) identifies the app.
+Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -24,7 +24,7 @@ Once signed in, they review the requested access and confirm:
 
 ## 🧩 Drop-in Button (No Build Step)
 
-One script tag adds the Pollinations Connect button, which runs the OAuth code flow below for you.
+One script tag adds a Connect button that runs the OAuth code flow below for you.
 Use one `<polli-connect>` per page; additional elements show an error instead of a Connect button.
 
 ```html
@@ -195,7 +195,7 @@ Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 
-The older redirect flow is still supported. It returns the user-authorized key directly in the URL fragment and does not use PKCE.
+The older BYOP redirect flow is still supported. It returns the user-authorized key directly in the URL fragment and does not use PKCE.
 
 ```text
 https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage
@@ -266,7 +266,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
   -d 'device_code=...'
 ```
 
-## 🐍 Python Quickstart (Device Flow)
+## 🐍 Python Quickstart (BYOP Device Flow)
 
 For Python scripts, CLI tools, and backend services, use the device flow:
 
@@ -317,7 +317,7 @@ def use_pollinations(api_key: str):
         headers=headers,
         json={
             'model': 'openai/gpt-5.4-nano',
-            'messages': [{'role': 'user', 'content': 'Hello from Python!'}]
+            'messages': [{'role': 'user', 'content': 'Hello from BYOP Python!'}]
         }
     )
     resp.raise_for_status()

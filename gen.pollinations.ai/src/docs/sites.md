@@ -35,4 +35,4 @@ curl -X PUT https://gen.pollinations.ai/account/sites/my-app \
 - A site is a folder of static files with an `index.html`. Unknown paths serve `index.html`, so single-page apps route on the client.
 - Names are 3–32 lowercase letters, digits and hyphens. They start with a letter, end with a letter or digit, and cannot contain `--`; a few, such as `www` and `admin`, are reserved. The first deploy claims the name; deleting the site frees it.
 - 5 sites per account; 200 MB and 1,000 files per site; 25 MB per file.
-- Sites are public: never put an API key in one. To call Pollinations from a site, let visitors pay with their own Pollen ([Pollinations Pay](#tag/pollinations-pay)).
+- Sites are public: never put an API key in one. To call Pollinations from a site, let visitors sign in with their own Pollen ([Pollinations Pay](#tag/pollinations-pay)).

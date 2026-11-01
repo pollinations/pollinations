@@ -64,7 +64,7 @@ go through the `composio` MCP tools (Pollinations "Connectors").
   the URL it prints. Names are 3-32 lowercase letters, digits and hyphens,
   starting with a letter; `polli sites list` shows the user's sites (5 at
   most). Sites are public: never put a key in one. For AI features, let
-  visitors pay with their own Pollen through Pollinations Pay
+  visitors sign in with their own Pollen
   (https://gen.pollinations.ai/docs/llm.txt?section=byop). Ask before you
   replace or delete a site you didn't make in this chat.
 

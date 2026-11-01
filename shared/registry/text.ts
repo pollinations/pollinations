@@ -1907,7 +1907,7 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "inferenceport-ai/elorian-glimpse": {
+    "elorian/elorian-glimpse": {
         supportedParameters: CHAT_PARAMETERS.inferenceportSampled,
         aliases: [],
         provider: "inferenceport",
@@ -1933,7 +1933,7 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "inferenceport-ai/glm-5.3-prime": {
+    "z-ai/glm-5.3-prime": {
         supportedParameters: CHAT_PARAMETERS.inferenceportMaxTokens,
         aliases: [],
         provider: "inferenceport",
@@ -1958,7 +1958,7 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "inferenceport-ai/solar-mini4": {
+    "upstage/solar-mini4": {
         supportedParameters: CHAT_PARAMETERS.inferenceportSampled,
         aliases: [],
         provider: "inferenceport",
@@ -1984,7 +1984,7 @@ const TEXT_BASE_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
-    "inferenceport-ai/solar-pro4": {
+    "upstage/solar-pro4": {
         supportedParameters: CHAT_PARAMETERS.inferenceportSampled,
         aliases: [],
         provider: "inferenceport",
@@ -2009,7 +2009,7 @@ const TEXT_BASE_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
-    "inferenceport-ai/solar-decide": {
+    "upstage/solar-decide": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
         provider: "inferenceport",
@@ -2035,7 +2035,7 @@ const TEXT_BASE_SERVICES = {
         contextLength: 524288,
         isSpecialized: true,
     },
-    "inferenceport-ai/solar-decide-flash": {
+    "upstage/solar-decide-flash": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
         provider: "inferenceport",

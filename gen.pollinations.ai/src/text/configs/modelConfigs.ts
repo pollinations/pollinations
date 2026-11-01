@@ -1407,20 +1407,20 @@ export const portkeyConfig: PortkeyConfigMap = {
         createInferencePortModelConfig({ model: "lightning" }),
     "inferenceport-lightning-text-v2.1": () =>
         createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
-    "inferenceport-ai/elorian-glimpse": () =>
+    "elorian/elorian-glimpse": () =>
         createInferencePortModelConfig({ model: "elorian-glimpse" }),
-    "inferenceport-ai/glm-5.3-prime": () =>
+    "z-ai/glm-5.3-prime": () =>
         createInferencePortModelConfig({ model: "glm-5.3-prime" }),
-    "inferenceport-ai/solar-mini4": () =>
+    "upstage/solar-mini4": () =>
         createInferencePortModelConfig({ model: "solar-mini4" }),
-    "inferenceport-ai/solar-pro4": () =>
+    "upstage/solar-pro4": () =>
         createInferencePortModelConfig({ model: "solar-pro4" }),
-    "inferenceport-ai/solar-decide": () =>
+    "upstage/solar-decide": () =>
         createInferencePortModelConfig({
             model: "solar-decide",
             directEndpoint: "https://api.inferenceport.ai/v1/systemone",
         }),
-    "inferenceport-ai/solar-decide-flash": () =>
+    "upstage/solar-decide-flash": () =>
         createInferencePortModelConfig({
             model: "solar-decide-flash",
             directEndpoint: "https://api.inferenceport.ai/v1/systemone",

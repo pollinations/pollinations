@@ -149,12 +149,12 @@ describe("resolveModelConfig", () => {
 
     it("routes the InferencePort chat and decision models to their exact IDs", () => {
         for (const [model, upstream] of [
-            ["inferenceport-ai/elorian-glimpse", "elorian-glimpse"],
-            ["inferenceport-ai/glm-5.3-prime", "glm-5.3-prime"],
-            ["inferenceport-ai/solar-mini4", "solar-mini4"],
-            ["inferenceport-ai/solar-pro4", "solar-pro4"],
-            ["inferenceport-ai/solar-decide", "solar-decide"],
-            ["inferenceport-ai/solar-decide-flash", "solar-decide-flash"],
+            ["elorian/elorian-glimpse", "elorian-glimpse"],
+            ["z-ai/glm-5.3-prime", "glm-5.3-prime"],
+            ["upstage/solar-mini4", "solar-mini4"],
+            ["upstage/solar-pro4", "solar-pro4"],
+            ["upstage/solar-decide", "solar-decide"],
+            ["upstage/solar-decide-flash", "solar-decide-flash"],
         ] as const) {
             const result = resolveModelConfig(messages, { model });
             expect(result.options.model).toBe(upstream);

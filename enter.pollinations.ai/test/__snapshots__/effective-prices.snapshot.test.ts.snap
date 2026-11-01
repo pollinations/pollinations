@@ -1093,6 +1093,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.002,
     },
   },
+  "elorian/elorian-glimpse": {
+    "cost": {
+      "completionTextTokens": 0.000003,
+      "promptTextTokens": 0.0000006,
+    },
+    "price": {
+      "completionTextTokens": 0.000003,
+      "promptTextTokens": 0.0000006,
+    },
+  },
   "fish-audio/s2.1-pro": {
     "cost": {
       "completionAudioTokens": 0.000015825,
@@ -1931,26 +1941,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
-  "inferenceport-ai/elorian-glimpse": {
-    "cost": {
-      "completionTextTokens": 0.000003,
-      "promptTextTokens": 0.0000006,
-    },
-    "price": {
-      "completionTextTokens": 0.000003,
-      "promptTextTokens": 0.0000006,
-    },
-  },
-  "inferenceport-ai/glm-5.3-prime": {
-    "cost": {
-      "completionTextTokens": 0.0000088,
-      "promptTextTokens": 0.0000028,
-    },
-    "price": {
-      "completionTextTokens": 0.0000088,
-      "promptTextTokens": 0.0000028,
-    },
-  },
   "inferenceport-ai/lightning-image-turbo": {
     "cost": {
       "completionImageTokens": 0.02,
@@ -1977,46 +1967,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.00000075,
       "promptTextTokens": 0.00000075,
-    },
-  },
-  "inferenceport-ai/solar-decide": {
-    "cost": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0.0000001,
-    },
-    "price": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0.0000001,
-    },
-  },
-  "inferenceport-ai/solar-decide-flash": {
-    "cost": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0.0000001,
-    },
-    "price": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0.0000001,
-    },
-  },
-  "inferenceport-ai/solar-mini4": {
-    "cost": {
-      "completionTextTokens": 0.0000004,
-      "promptTextTokens": 0.0000001,
-    },
-    "price": {
-      "completionTextTokens": 0.0000004,
-      "promptTextTokens": 0.0000001,
-    },
-  },
-  "inferenceport-ai/solar-pro4": {
-    "cost": {
-      "completionTextTokens": 0.0000012,
-      "promptTextTokens": 0.0000003,
-    },
-    "price": {
-      "completionTextTokens": 0.0000012,
-      "promptTextTokens": 0.0000003,
     },
   },
   "jaredpalmer/kev-4b": {
@@ -4587,6 +4537,46 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000004431,
     },
   },
+  "upstage/solar-decide": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "upstage/solar-decide-flash": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "upstage/solar-mini4": {
+    "cost": {
+      "completionTextTokens": 0.0000004,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000004,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "upstage/solar-pro4": {
+    "cost": {
+      "completionTextTokens": 0.0000012,
+      "promptTextTokens": 0.0000003,
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptTextTokens": 0.0000003,
+    },
+  },
   "vllm-sr/d3": {
     "cost": {
       "completionTextTokens": 0,
@@ -5065,6 +5055,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00000131875,
       "promptCachedTokens": 0.00000009495,
       "promptTextTokens": 0.00000039035,
+    },
+  },
+  "z-ai/glm-5.3-prime": {
+    "cost": {
+      "completionTextTokens": 0.0000088,
+      "promptTextTokens": 0.0000028,
+    },
+    "price": {
+      "completionTextTokens": 0.0000088,
+      "promptTextTokens": 0.0000028,
     },
   },
   "z-ai/glm-5.3:deepinfra": {

@@ -1023,29 +1023,29 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inferenceport-lightning-text-v2"],
     },
     {
-        name: "inferenceport-ai/elorian-glimpse",
-        config: portkeyConfig["inferenceport-ai/elorian-glimpse"],
+        name: "elorian/elorian-glimpse",
+        config: portkeyConfig["elorian/elorian-glimpse"],
     },
     {
-        name: "inferenceport-ai/glm-5.3-prime",
-        config: portkeyConfig["inferenceport-ai/glm-5.3-prime"],
+        name: "z-ai/glm-5.3-prime",
+        config: portkeyConfig["z-ai/glm-5.3-prime"],
     },
     {
-        name: "inferenceport-ai/solar-mini4",
-        config: portkeyConfig["inferenceport-ai/solar-mini4"],
+        name: "upstage/solar-mini4",
+        config: portkeyConfig["upstage/solar-mini4"],
     },
     {
-        name: "inferenceport-ai/solar-pro4",
-        config: portkeyConfig["inferenceport-ai/solar-pro4"],
+        name: "upstage/solar-pro4",
+        config: portkeyConfig["upstage/solar-pro4"],
     },
     {
-        name: "inferenceport-ai/solar-decide",
-        config: portkeyConfig["inferenceport-ai/solar-decide"],
+        name: "upstage/solar-decide",
+        config: portkeyConfig["upstage/solar-decide"],
         useSystemOneApi: true,
     },
     {
-        name: "inferenceport-ai/solar-decide-flash",
-        config: portkeyConfig["inferenceport-ai/solar-decide-flash"],
+        name: "upstage/solar-decide-flash",
+        config: portkeyConfig["upstage/solar-decide-flash"],
         useSystemOneApi: true,
     },
     {

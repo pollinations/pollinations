@@ -21,7 +21,9 @@ import { CardLoading, LoadError } from "../layout/dashboard-loading.tsx";
 
 const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
-const TABLE_HEADER_CELL_CLASS = "px-2 py-1.5";
+const TABLE_HEADER_CELL_CLASS = "px-2 py-1 font-normal";
+// Columns a narrow card leaves out.
+const WIDE_CELL = "hidden @[32rem]:table-cell";
 const TABLE_CELL_CLASS = "px-2 py-1.5 text-xs";
 
 type UsageEventRecord = {
@@ -80,9 +82,9 @@ function parseTimestamp(value: string): Date {
     return new Date(`${value.replace(" ", "T")}Z`);
 }
 
+/** No year: the list only reaches back 90 days. */
 function formatTimestamp(value: string): string {
     return parseTimestamp(value).toLocaleString(undefined, {
-        year: "numeric",
         month: "short",
         day: "numeric",
         hour: "2-digit",
@@ -100,7 +102,7 @@ function EventKindChip({ event }: { event: LastEvent }) {
     const earned = event.kind === "earnings";
     const label = earned ? "Earned" : "Spent";
     return (
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex" title={label}>
             <Chip
                 intent={earned ? "info" : "danger"}
                 size="icon"
@@ -110,7 +112,7 @@ function EventKindChip({ event }: { event: LastEvent }) {
                     className={`h-3 w-3 ${earned ? "rotate-90" : "-rotate-90"}`}
                 />
             </Chip>
-            {label}
+            <span className="sr-only">{label}</span>
         </span>
     );
 }
@@ -130,8 +132,10 @@ function EventPollenChip({ event }: { event: LastEvent }) {
         size: "sm" as const,
         title: `${source} Pollen`,
         "aria-label": `${amount} ${source} Pollen`,
+        // Same-width chips with left-aligned digits, as in the Overview table;
+        // 6rem fits the widest value, "-<0.0001".
         className:
-            "inline-flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums",
+            "inline-flex w-24 shrink-0 items-center justify-start gap-2 whitespace-nowrap tabular-nums",
     };
     const content = (
         <>
@@ -327,6 +331,17 @@ export const LastEventsPanel: FC = () => {
         );
     }
 
+    const showOlder = state.hasMore && (
+        <div data-theme="neutral" className="mt-4 flex justify-center">
+            <Button as="button" onClick={load} disabled={state.loading}>
+                <StableLabel
+                    text={loadingMore ? "Loading…" : "Show older"}
+                    options={["Show older", "Loading…"]}
+                />
+            </Button>
+        </div>
+    );
+
     return (
         <div className="flex flex-col gap-3">
             {state.error && (
@@ -334,115 +349,82 @@ export const LastEventsPanel: FC = () => {
                     {state.error}
                 </LoadError>
             )}
-            <div className="flex flex-col gap-3">
-                <ul className="flex flex-col gap-2 sm:hidden">
-                    {state.rows.map((event) => (
-                        <li
-                            key={`${event.kind}-${event.id}`}
-                            className="flex flex-col gap-1.5 rounded-lg bg-theme-bg-pale p-3"
-                        >
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="font-semibold text-ink-900 truncate">
-                                    {event.primary}
-                                </span>
-                                <EventPollenChip event={event} />
-                            </div>
-                            <div className="flex items-center justify-between gap-2 text-xs">
-                                <span className="text-ink-600 tabular-nums">
+            {/* One table at every width, like the Overview table; narrow
+                cards fold Time into Details. */}
+            <Surface className="@container max-w-full overflow-x-auto">
+                <Table aria-label="Last events" className="text-left text-xs">
+                    <TableHead>
+                        <TableRow className="hover:bg-transparent">
+                            <TableHeaderCell
+                                scope="col"
+                                className={`${WIDE_CELL} ${TABLE_HEADER_CELL_CLASS}`}
+                            >
+                                Time
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                scope="col"
+                                className={TABLE_HEADER_CELL_CLASS}
+                            >
+                                <span className="sr-only">Type</span>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                scope="col"
+                                className={TABLE_HEADER_CELL_CLASS}
+                            >
+                                Details
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                scope="col"
+                                align="right"
+                                className={TABLE_HEADER_CELL_CLASS}
+                            >
+                                Pollen
+                            </TableHeaderCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {state.rows.map((event) => (
+                            <TableRow key={`${event.kind}-${event.id}`}>
+                                <TableCell
+                                    numeric
+                                    className={`${WIDE_CELL} ${TABLE_CELL_CLASS} whitespace-nowrap text-ink-800`}
+                                >
                                     {formatTimestamp(event.timestamp)}
-                                </span>
-                                <EventKindChip event={event} />
-                            </div>
-                            <div className="flex items-center justify-between gap-2 text-xs">
-                                <span className="text-ink-500 truncate">
-                                    {event.secondary}
-                                </span>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-
-                <Surface className="hidden overflow-x-auto sm:block">
-                    <Table
-                        aria-label="Last events"
-                        className="text-left text-xs"
-                    >
-                        <TableHead className="sr-only">
-                            <TableRow className="hover:bg-transparent">
-                                <TableHeaderCell
-                                    className={TABLE_HEADER_CELL_CLASS}
+                                </TableCell>
+                                <TableCell className={TABLE_CELL_CLASS}>
+                                    <EventKindChip event={event} />
+                                </TableCell>
+                                <TableCell
+                                    className={`${TABLE_CELL_CLASS} w-full max-w-0 text-ink-900`}
                                 >
-                                    Time
-                                </TableHeaderCell>
-                                <TableHeaderCell
-                                    className={TABLE_HEADER_CELL_CLASS}
+                                    <div className="flex min-w-0 flex-col">
+                                        <span className="truncate font-medium">
+                                            {event.primary}
+                                        </span>
+                                        <span className="truncate text-ink-500">
+                                            <span className="tabular-nums @[32rem]:hidden">
+                                                {formatTimestamp(
+                                                    event.timestamp,
+                                                )}
+                                                {event.secondary && " · "}
+                                            </span>
+                                            {event.secondary}
+                                        </span>
+                                    </div>
+                                </TableCell>
+                                <TableCell
+                                    numeric
+                                    align="right"
+                                    className={TABLE_CELL_CLASS}
                                 >
-                                    Type
-                                </TableHeaderCell>
-                                <TableHeaderCell
-                                    className={TABLE_HEADER_CELL_CLASS}
-                                >
-                                    Details
-                                </TableHeaderCell>
-                                <TableHeaderCell
-                                    className={TABLE_HEADER_CELL_CLASS}
-                                >
-                                    Pollen
-                                </TableHeaderCell>
+                                    <EventPollenChip event={event} />
+                                </TableCell>
                             </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {state.rows.map((event) => (
-                                <TableRow key={`${event.kind}-${event.id}`}>
-                                    <TableCell
-                                        numeric
-                                        className={`${TABLE_CELL_CLASS} whitespace-nowrap text-ink-800`}
-                                    >
-                                        {formatTimestamp(event.timestamp)}
-                                    </TableCell>
-                                    <TableCell className={TABLE_CELL_CLASS}>
-                                        <EventKindChip event={event} />
-                                    </TableCell>
-                                    <TableCell
-                                        className={`${TABLE_CELL_CLASS} text-ink-900`}
-                                    >
-                                        <div className="flex min-w-0 flex-col">
-                                            <span className="truncate font-medium">
-                                                {event.primary}
-                                            </span>
-                                            <span className="truncate text-ink-500">
-                                                {event.secondary}
-                                            </span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell
-                                        numeric
-                                        className={TABLE_CELL_CLASS}
-                                    >
-                                        <EventPollenChip event={event} />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Surface>
-
-                <div className="mt-4 flex justify-end text-[13px] leading-snug text-theme-text-muted">
-                    {state.hasMore && (
-                        <Button
-                            as="button"
-                            onClick={load}
-                            disabled={state.loading}
-                            className="self-start sm:self-auto"
-                        >
-                            <StableLabel
-                                text={loadingMore ? "Loading…" : "Show older"}
-                                options={["Show older", "Loading…"]}
-                            />
-                        </Button>
-                    )}
-                </div>
-            </div>
+                        ))}
+                    </TableBody>
+                </Table>
+                {showOlder}
+            </Surface>
         </div>
     );
 };

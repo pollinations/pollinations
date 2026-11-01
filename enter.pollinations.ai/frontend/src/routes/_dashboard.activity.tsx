@@ -1,4 +1,4 @@
-import { Section } from "@pollinations/ui";
+import { ClockIcon, InlineLink, Section, TerminalIcon } from "@pollinations/ui";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
     ActivityOverview,
@@ -8,8 +8,9 @@ import {
     activityTimezone,
     parseActivityPeriod,
 } from "../components/activity/activity-period";
-import { CliHint } from "../components/cli-hint.tsx";
+import { CopyValue } from "../components/models/copy-value.tsx";
 import { LastEventsPanel } from "../components/pollen/last-events-panel.tsx";
+import { Footnotes } from "../components/pollen/pollen-balance.tsx";
 
 function stringArray(value: unknown): string[] | undefined {
     return Array.isArray(value) &&
@@ -62,11 +63,28 @@ function ActivityPage() {
             </Section>
             <Section title="Last events" framed>
                 <LastEventsPanel />
+                <Footnotes>
+                    <p className="flex items-start gap-1.5">
+                        <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Times shown in your timezone ({activityTimezone()})
+                        </span>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                        <TerminalIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span>Get this history in your terminal:</span>
+                        <CopyValue
+                            value="polli usage --history"
+                            label="Copy CLI command"
+                            showCopyIcon
+                        />
+                        <span aria-hidden="true">·</span>
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/cli">
+                            CLI docs
+                        </InlineLink>
+                    </div>
+                </Footnotes>
             </Section>
-            <p className="px-4 text-micro text-theme-text-muted sm:px-0">
-                Times shown in your timezone ({activityTimezone()}).
-            </p>
-            <CliHint command="usage --history" />
         </>
     );
 }

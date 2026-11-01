@@ -29,6 +29,44 @@ class InspectAppTest(unittest.TestCase):
         self.assertIn("gen.pollinations.ai", evidence["pollinations_markers"])
 
 
+class InspectAppModulesTest(unittest.TestCase):
+    def test_import_of_entry_script_is_inspected(self):
+        pages = {
+            APP_URL: '<script type="module" src="src/app.js"></script>',
+            APP_URL + "src/app.js": 'import { generate } from "./api.js";\nimport "./style-side-effect.js";',
+            APP_URL + "src/api.js": 'const BASE = "https://gen.pollinations.ai";',
+            APP_URL + "src/style-side-effect.js": "document.body.dataset.ready = 1;",
+        }
+        with patch.object(
+            review_agent, "fetch_public_text", side_effect=lambda url, **_: (url, pages[url])
+        ):
+            evidence = review_agent.inspect_app(APP_URL)
+        self.assertEqual(evidence["scripts_checked"], 3)
+        self.assertIn("gen.pollinations.ai", evidence["pollinations_markers"])
+        self.assertEqual(evidence["errors"], [])
+
+    def test_import_cycle_and_cross_origin_are_not_followed(self):
+        pages = {
+            APP_URL: '<script src="app.js"></script>',
+            APP_URL + "app.js": (
+                'import "./b.js";\n'
+                'import "https://cdn.example.com/lib.js";\n'
+                'const lazy = () => import("./c.js");'
+            ),
+            APP_URL + "b.js": 'import "./app.js";',
+            APP_URL + "c.js": 'fetch("https://text.pollinations.ai/openai");',
+        }
+        with patch.object(
+            review_agent, "fetch_public_text", side_effect=lambda url, **_: (url, pages[url])
+        ):
+            evidence = review_agent.inspect_app(APP_URL)
+        # app.js, b.js and the lazily imported c.js; the cycle back to app.js
+        # and the cross-origin CDN module are skipped.
+        self.assertEqual(evidence["scripts_checked"], 3)
+        self.assertIn("text.pollinations.ai", evidence["pollinations_markers"])
+        self.assertEqual(evidence["errors"], [])
+
+
 class InspectRepoTest(unittest.TestCase):
     def test_folder_url_reads_that_folders_readme_and_code(self):
         readme_url = "https://raw.githubusercontent.com/o/mono/main/apps/npc/README.md"

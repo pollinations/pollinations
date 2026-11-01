@@ -47,6 +47,13 @@ HIDDEN_MARKDOWN = re.compile(
     r"<!--.*?-->|^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1|`[^`\n]+`",
     re.S | re.M,
 )
+# Static and dynamic module specifiers. A modern app keeps its API calls one
+# import away from the entry script, so the entry script alone proves nothing.
+MODULE_SPECIFIER = re.compile(
+    r"""(?:\bimport\s*(?:[\w*\s{},]+?\sfrom\s*)?|\bexport\s+[\w*\s{},]+?\sfrom\s*|\bimport\s*\(\s*)["']([^"']+)["']"""
+)
+MAX_APP_SCRIPTS = 8
+
 BADGE_SNIPPET = (
     "```markdown\n"
     "[![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)\n"
@@ -168,6 +175,20 @@ def normalized_origin(value):
     return value.scheme, value.hostname, value.port or default_port
 
 
+def module_sources(script, base_url):
+    """Same-origin modules the script imports, so the scan can follow them."""
+    origin = normalized_origin(urlparse(base_url))
+    found = []
+    for specifier in MODULE_SPECIFIER.findall(script):
+        if not specifier.startswith(("./", "../", "/")):
+            continue
+        url = urljoin(base_url, specifier)
+        if normalized_origin(urlparse(url)) != origin or url in found:
+            continue
+        found.append(url)
+    return found
+
+
 def inspect_app(app_url):
     final_url, html = fetch_public_text(app_url)
     evidence = {
@@ -191,16 +212,31 @@ def inspect_app(app_url):
         script_url = urljoin(final_url, unescape(source))
         if normalized_origin(urlparse(script_url)) == origin:
             script_urls.append(script_url)
-    for script_url in script_urls[:3]:
+    # The first three scripts are the entry points; everything they import is
+    # one level deeper and gets the rest of the budget.
+    queue = [(script_url, 0) for script_url in script_urls[:3]]
+    seen = set()
+    while queue and evidence["scripts_checked"] < MAX_APP_SCRIPTS:
+        script_url, depth = queue.pop(0)
+        if script_url in seen:
+            continue
+        seen.add(script_url)
         try:
             _, script = fetch_public_text(script_url, max_bytes=250_000)
-            evidence["scripts_checked"] += 1
-            evidence["credit_link"] = evidence["credit_link"] or has_credit_link(script)
-            evidence["pollinations_markers"] = sorted(
-                set(evidence["pollinations_markers"] + marker_hits(script))
-            )
         except (requests.RequestException, ValueError) as error:
             evidence["errors"].append(f"script inspection: {error}")
+            continue
+        evidence["scripts_checked"] += 1
+        evidence["credit_link"] = evidence["credit_link"] or has_credit_link(script)
+        evidence["pollinations_markers"] = sorted(
+            set(evidence["pollinations_markers"] + marker_hits(script))
+        )
+        if depth == 0:
+            queue.extend(
+                (source, 1)
+                for source in module_sources(script, script_url)
+                if source not in seen
+            )
     return evidence
 
 

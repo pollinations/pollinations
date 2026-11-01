@@ -1875,7 +1875,7 @@ For current per-model values, read the live [`GET /models`](https://gen.pollinat
 
 #### `GET` `/models/status` — Model Health Status
 
-Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.
+Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the response of the public Tinybird `model_route_health` pipe without private community models: a `data` array of rows plus a `meta` array typing each column.
 
 Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.
 
@@ -1905,7 +1905,7 @@ curl "https://gen.pollinations.ai/models/status?traffic=all&minutes=60" \
 
 Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.
 
-`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers.
+`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers. Private community models are never listed.
 
 Refreshed hourly.
 

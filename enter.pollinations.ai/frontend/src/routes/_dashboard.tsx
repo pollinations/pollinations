@@ -18,7 +18,6 @@ import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
-import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import { type ApiKey, SidebarKeys } from "../components/keys";
 import { LoadError } from "../components/layout/dashboard-loading.tsx";
@@ -186,6 +185,7 @@ function DashboardLayout() {
                     ? DASHBOARD_NAV_ITEMS
                     : SIGNED_OUT_NAV_ITEMS
             }
+            accountName={user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             accountArea={
                 data.user ? undefined : data.sessionUnavailable ? (
@@ -265,7 +265,6 @@ function DashboardLayout() {
             accountCard={
                 user ? (
                     <>
-                        <AuthAccountIdentity user={user} />
                         {/* Await adds no boundary for a null fallback;
                             without this the whole dashboard would wait. */}
                         <Suspense fallback={null}>

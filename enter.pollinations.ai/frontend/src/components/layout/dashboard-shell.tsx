@@ -1,9 +1,12 @@
 import {
+    AccountIcon,
     BeakerIcon,
     BookIcon,
     BotIcon,
     BrandMark,
+    Button,
     CheckIcon,
+    ChevronIcon,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
@@ -64,7 +67,7 @@ type DashboardNavItem = {
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
 // Docs), and everything about you as one block at the bottom: Credit and
 // Quest with their balances, what you build (My Listings, Keys, Sandboxes),
-// Activity, Settings, then your account card. A thin line opens each part. Signed out, the bottom holds the sign-in
+// Activity, then your name, the way to Settings. A thin line opens each part. Signed out, the bottom holds the sign-in
 // buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
@@ -72,6 +75,7 @@ type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
     githubAvatarUrl?: string;
     accountArea?: ReactNode;
+    accountName?: string;
     accountCard?: ReactNode;
     rowStatus?: Partial<Record<DashboardPage, ReactNode>>;
     signInBanner?: ReactNode;
@@ -94,6 +98,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
     githubAvatarUrl,
     accountArea,
+    accountName,
     accountCard,
     rowStatus,
     signInBanner,
@@ -173,6 +178,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         <DashboardRail
             activePage={activePage}
             navItems={navItems}
+            accountName={accountName}
+            avatarUrl={githubAvatarUrl}
             accountCard={accountCard}
             rowStatus={rowStatus}
             accountArea={accountArea}
@@ -320,6 +327,8 @@ function useDashboardShellBodyClass(): void {
 type DashboardRailProps = {
     activePage?: DashboardPage;
     navItems: readonly DashboardNavItem[];
+    accountName?: string;
+    avatarUrl?: string;
     accountCard?: ReactNode;
     rowStatus?: Partial<Record<DashboardPage, ReactNode>>;
     accountArea?: ReactNode;
@@ -331,6 +340,8 @@ type DashboardRailProps = {
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
     navItems,
+    accountName,
+    avatarUrl,
     accountCard,
     rowStatus,
     accountArea,
@@ -395,6 +406,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             />
                         ))}
                 </nav>
+            )}
+            {accountName && (
+                <AccountLink
+                    name={accountName}
+                    avatarUrl={avatarUrl}
+                    active={activePage === "account"}
+                    onNavigate={onNavigate}
+                />
             )}
             {accountCard}
             {accountArea}
@@ -601,6 +620,41 @@ const DashboardFooter: FC<{
             <ColorModeToggle />
         </span>
     </div>
+);
+
+// Who is signed in, under the cards, and the way to Settings (profile,
+// connections, sign out). A button rather than a row: the quiet surface pill when Settings isn't
+// open, the accent fill when it is.
+const AccountLink: FC<{
+    name: string;
+    avatarUrl?: string;
+    active: boolean;
+    onNavigate: () => void;
+}> = ({ name, avatarUrl, active, onNavigate }) => (
+    <Button
+        as={Link}
+        to="/account"
+        data-theme="accent"
+        intent={active ? undefined : "surface"}
+        aria-current={active ? "page" : undefined}
+        onClick={onNavigate}
+        className="w-full self-stretch justify-start gap-2 py-1.5 pr-3 pl-1.5"
+    >
+        {avatarUrl ? (
+            <img
+                src={avatarUrl}
+                alt=""
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
+            />
+        ) : (
+            <AccountIcon className="h-4 w-4 shrink-0" />
+        )}
+        <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate">{name}</span>
+            <span className="text-xs font-normal">Settings</span>
+        </span>
+        <ChevronIcon className="ml-auto -rotate-90 opacity-60" />
+    </Button>
 );
 
 // Lines indented under a row, lined up with its label: the guides under Docs.

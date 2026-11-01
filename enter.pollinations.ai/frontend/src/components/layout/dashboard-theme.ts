@@ -18,9 +18,10 @@ import type { ComponentType } from "react";
 
 /**
  * Groups of drawer rows: Pollinations' resources, then your pages (what you
- * your balances, what you build, then Settings).
+ * your balances, then what you build). "account" is Settings, reached from
+ * your name under them.
  */
-export type DashboardNavGroup = "yours" | "resources";
+export type DashboardNavGroup = "account" | "yours" | "resources";
 
 export const DASHBOARD_NAV_ITEMS = [
     {
@@ -64,7 +65,7 @@ export const DASHBOARD_NAV_ITEMS = [
         to: "/account",
         label: "Settings",
         icon: AccountIcon,
-        group: "yours",
+        group: "account",
     },
     {
         id: "models",

@@ -1262,56 +1262,23 @@ it("compares only fresh probes of listed proxies that answered themselves with a
 
 // A public registration is stored private with its publication queued; gen
 // lists it once that takes effect three hours on, and the stored row still
-// says private.
+// says private. Gen's catalog decides; infra-watch never reads visibility.
 it("checks a newly published proxy once gen lists it, and tells nothing before", async () => {
-    const { ProxyListingPayloadSchema, resolveEffectiveProxyListing } =
-        await import("../../../shared/community-endpoints.ts");
     const stub = watch();
     const queued = Date.UTC(2026, 10, 1, 10, 5);
     let clock = queued + HOURS(1);
     vi.spyOn(Date, "now").mockImplementation(() => clock);
-    const payload = ProxyListingPayloadSchema.parse({
-        bearerTokenCiphertext: "fixture-not-a-credential",
-        api: "chat_completions",
-        paidOnly: false,
-        modality: "text",
-        imagePricing: "request",
-        inputModalities: ["text"],
-        perUserRpm: null,
-        fallbacks: [],
-        prices: {},
-    });
     await proxies(["new"], "private");
-    await env.DB.prepare(
-        "UPDATE community_endpoint SET payload = ?, pending_payload = ?, pending_visibility = 'public', pending_at = ? WHERE id = 'new'",
-    )
-        .bind(JSON.stringify(payload), JSON.stringify(payload), queued / 1000)
-        .run();
-    // Gen's catalog, by gen's own rule for the stored row.
-    const listed = () =>
-        resolveEffectiveProxyListing(
-            {
-                visibility: "private",
-                payload,
-                pendingVisibility: "public",
-                pendingPayload: payload,
-                pendingAt: new Date(queued),
-            },
-            clock,
-        ).visibility === "public"
-            ? [community("community/o/new")]
-            : [];
     world.probe = answers(() => false, "llama-3.1-8b");
     world.agent = tells();
     // Within the delay gen doesn't list it: never probed, nothing told.
-    world.catalog = listed();
-    expect(world.catalog).toEqual([]);
+    world.catalog = [];
     await cycled(stub);
     expect(world.probes).toEqual([]);
     expect(await runs(stub)).toEqual({});
     // Listed from three hours on: two probes in a row, then told.
     clock = queued + HOURS(3);
-    world.catalog = listed();
+    world.catalog = [community("community/o/new")];
     await cycled(stub);
     clock += HOURS(4);
     await cycled(stub);

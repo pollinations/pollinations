@@ -25,11 +25,6 @@
         "deploy-website-cloudflare.yml:deploy"
       ]
     },
-    "18966": {
-      "merge_sha": "ce7a0554633379b66e1323b741af3f48c602f3f2",
-      "merged_at": "2026-11-01T17:54:03Z",
-      "required": []
-    },
     "18968": {
       "merge_sha": "c0393dbee7a3cf399da39c7730f378e03b077118",
       "merged_at": "2026-11-01T18:42:23Z",

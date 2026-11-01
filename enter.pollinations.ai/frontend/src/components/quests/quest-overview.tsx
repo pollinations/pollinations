@@ -178,7 +178,7 @@ const BONUS_PAGE_SIZE = 10;
 // The outlined commit button, card-sized: soft accent fill (outline only in
 // dark), full accent on hover and keyboard focus.
 const CLAIM_CARD_CLASS =
-    "relative cursor-pointer polli:bg-theme-bg-active/30 transition-colors polli:hover:bg-theme-bg-active/60 polli:has-[button:focus-visible]:bg-theme-bg-active/60";
+    "relative cursor-pointer border border-theme-text-soft polli:bg-theme-bg-active/30 transition-colors hover:border-theme-bg-active polli:hover:bg-theme-bg-active has-[button:focus-visible]:border-theme-bg-active polli:has-[button:focus-visible]:bg-theme-bg-active dark:polli:bg-transparent";
 
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
@@ -540,11 +540,13 @@ export function QuestRow({
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
-            className="flex items-center gap-1.5 rounded-full bg-theme-bg-active px-3 py-1 text-sm font-semibold tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
+            className="flex items-center gap-1.5 text-sm font-semibold tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
         >
             <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
             {rewardLabel}
-            <span className="ml-0.5">{claiming ? "Claiming" : "Claim"}</span>
+            <span className="ml-1 font-bold">
+                {claiming ? "Claiming" : "Claim!"}
+            </span>
         </button>
     ) : null;
     // Both layouts pin the reward (or the Claim button) to the right edge.

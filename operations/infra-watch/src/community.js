@@ -250,6 +250,11 @@ export const brief = ({ owners, quiet, ...incident }) => incident;
 
 // Discord cuts an embed at 4,096 characters.
 const LIMIT = 4096;
+// Discord takes at most this much message text, where the mentions go. An
+// owner takes their GitHub name or a mention, `<@` and up to 20 digits.
+const CONTENT_LIMIT = 2000;
+const mentionSize = (owners) =>
+    owners.reduce((size, o) => size + Math.max(o.length, 23) + 1, 0);
 // Every community post ends here, the one link it carries.
 const MY_MODELS =
     "\n\nOwners see their models' errors on [My Models](https://enter.pollinations.ai/my-models).";
@@ -265,9 +270,9 @@ const noLinks = (text) =>
 
 // The agent's posts within the rails, or null if its answer isn't one.
 // Each line tells only incidents code found for its channel, and carries no
-// link of its own. Whole lines go into the post until it is full: a line
-// that doesn't fit is left out with its incidents, which stay pending, so a
-// post never shows less than it pings and acknowledges.
+// link of its own. Whole lines go into the post while it and its mentions
+// fit: a line that doesn't is left out with its incidents, which stay
+// pending, so a post never shows less than it pings and acknowledges.
 export function decision(text, found) {
     let answer;
     try {
@@ -295,7 +300,14 @@ export function decision(text, found) {
             )
                 continue;
             const next = body ? `${body}\n${words}` : words;
-            if (next.length + footer.length > LIMIT) continue;
+            const owners = new Set(
+                [...told, ...items].flatMap((i) => i.owners),
+            );
+            if (
+                next.length + footer.length > LIMIT ||
+                mentionSize([...owners]) > CONTENT_LIMIT
+            )
+                continue;
             body = next;
             told.push(...items);
         }

@@ -469,6 +469,37 @@ test("a post carries no link of the agent's own", () => {
     assert.doesNotMatch(plan.maintainers.text, /My Models/);
 });
 
+test("a post's mentions fit Discord's 2,000 characters; owners that don't stay pending", () => {
+    const owners = Array.from(
+        { length: 100 },
+        (_, i) => `owner-${String(i).padStart(24, "0")}`,
+    );
+    const found = owners.map((o, i) => ({
+        id: String(i + 1),
+        kind: "stream",
+        to: "community",
+        owners: [o],
+        quiet: [],
+    }));
+    const plan = decision(
+        JSON.stringify({
+            community: found.map((i) => ({
+                incidents: [i.id],
+                text: `x ${i.id}`,
+            })),
+        }),
+        found,
+    );
+    const told = plan.community.incidents;
+    assert.ok(told.length > 0 && told.length < 100);
+    // Every owner it pings has an incident in it, and their names fit.
+    assert.deepEqual(
+        plan.community.owners,
+        told.map((i) => i.owners[0]),
+    );
+    assert.ok(plan.community.owners.join(" ").length <= 2000);
+});
+
 const listed = (name, success_rate) =>
     model(name, {
         health: success_rate == null ? null : { success_rate },

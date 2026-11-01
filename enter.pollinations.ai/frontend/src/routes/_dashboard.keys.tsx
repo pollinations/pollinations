@@ -95,10 +95,7 @@ function KeysPage() {
     }
 
     return (
-        <Await
-            promise={apiKeys}
-            fallback={<PageLoading titles={["Secrets", "Apps"]} />}
-        >
+        <Await promise={apiKeys} fallback={<PageLoading titles={["Keys"]} />}>
             {(keys) => (
                 <KeysContent
                     key={user?.id}
@@ -129,15 +126,11 @@ function KeysContent({
 
     if (keys === null) {
         return (
-            <>
-                {["Secrets", "Apps"].map((title) => (
-                    <Section key={title} title={title}>
-                        <LoadError onRetry={onRetry} paths={["/account/keys"]}>
-                            Couldn’t load keys.
-                        </LoadError>
-                    </Section>
-                ))}
-            </>
+            <Section title="Keys">
+                <LoadError onRetry={onRetry} paths={["/account/keys"]}>
+                    Couldn’t load keys.
+                </LoadError>
+            </Section>
         );
     }
 

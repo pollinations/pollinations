@@ -1,28 +1,21 @@
 import {
     AccountIcon,
-    AccountMenu,
     BookIcon,
     BrandMark,
-    BugIcon,
+    Button,
     CheckIcon,
+    ChevronIcon,
     Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
     cn,
-    DiscordIcon,
     ExternalLinkIcon,
-    GenApiIcon,
-    GitHubIcon,
     LoadingStatus,
-    McpIcon,
     MenuIcon,
     NavItem,
     ScrollArea,
-    SignOutIcon,
-    TerminalIcon,
     useScrollLock,
-    WalletIcon,
     XIcon,
 } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -36,7 +29,14 @@ import type {
     RefObject,
     SetStateAction,
 } from "react";
-import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import {
+    createContext,
+    Fragment,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { pageMeta } from "../../page-meta.ts";
@@ -46,8 +46,10 @@ import {
 } from "../quests/quest-nav-status.ts";
 import {
     DASHBOARD_NAV_ITEMS,
+    type DashboardNavGroup,
     type DashboardPage,
     type DashboardPath,
+    navItemFor,
 } from "./dashboard-theme.ts";
 
 /** Counts what the page still waits for; the shell shows one status while > 0. */
@@ -60,15 +62,24 @@ export type { DashboardPage } from "./dashboard-theme.ts";
 type DashboardNavItem = {
     id: DashboardPage;
     to: DashboardPath;
+    search?: { view?: string };
     label: string;
     icon: ComponentType<{ className?: string }>;
+    group: DashboardNavGroup;
 };
+
+// Two parts: the platform at the top (News & FAQ, models, agents, MCP,
+// Docs), and everything about you as one block at the bottom: what you build
+// (My Listings for your agents and models, sandboxes, apps, keys), your pollen
+// (Activity, Quests, Pollen with its numbers indented under it), then your
+// name. A thin line opens each part. Signed out, the bottom holds the sign-in
+// buttons.
+const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
     accountName?: string;
     githubAvatarUrl?: string;
-    onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     signInBanner?: ReactNode;
@@ -76,57 +87,10 @@ type DashboardShellProps = PropsWithChildren<{
     showQuestStatus?: boolean;
 }>;
 
-type BrandLink = {
-    href: string;
-    label: string;
-    icon: ReactNode;
-    text: string;
-    count?: string;
-};
-
-type SupportAction = {
-    label: string;
-    icon: ReactNode;
-    copyLabel: string;
-    idleIcon: ReactNode;
-    successIcon: ReactNode;
-    copyValue: string | (() => string | Promise<string>);
-};
-
-type SupportLink = {
-    label: string;
-    href: string;
-    icon?: ReactNode;
-};
-
 type FooterLink = {
     label: string;
     href: string;
 };
-
-type AccountMenuLink = {
-    href: string;
-    label: string;
-    icon: ReactNode;
-    ariaLabel?: string;
-};
-
-const brandLinks: readonly BrandLink[] = [
-    {
-        href: "https://github.com/pollinations/pollinations",
-        label: "Pollinations on GitHub",
-        icon: <GitHubIcon className="h-full w-full" />,
-        text: "github",
-        count: "5k",
-    },
-    {
-        href: "https://discord.gg/k9F7SyTgqn",
-        label: "Discord community",
-        icon: <DiscordIcon className="h-full w-full" />,
-        text: "discord",
-        count: "19k",
-    },
-];
 
 const footerLinks: readonly FooterLink[] = [
     { label: "Terms", href: "https://pollinations.ai/terms" },
@@ -134,26 +98,10 @@ const footerLinks: readonly FooterLink[] = [
     { label: "Refunds", href: "https://pollinations.ai/refunds" },
 ];
 
-const accountMenuLinks: readonly AccountMenuLink[] = [
-    {
-        href: "https://discord.com/channels/885844321461485618/889573359111774329",
-        label: "Get Help",
-        icon: <DiscordIcon className="h-full w-full" />,
-        ariaLabel: "Get help in the Discord community chat",
-    },
-    {
-        href: "https://github.com/pollinations/pollinations/issues",
-        label: "Report a Bug",
-        icon: <BugIcon className="h-full w-full" />,
-        ariaLabel: "Report a bug on GitHub",
-    },
-];
-
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
     accountName,
     githubAvatarUrl,
-    onSignOut,
     accountArea,
     walletArea,
     signInBanner,
@@ -167,8 +115,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
     const location = useRouterState({ select: (state) => state.location });
-    const activeNavItem = DASHBOARD_NAV_ITEMS.find(
-        (item) => item.to === location.pathname,
+    const activeNavItem = navItemFor(
+        location.pathname,
+        (location.search as { view?: unknown }).view,
     );
     const activePage = activeNavItem?.id;
     const questStatus = useQuestNavStatus(showQuestStatus);
@@ -228,72 +177,14 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         scrollElement.scrollTo({ top: 0, behavior: "auto" });
     }, [activePage, location.hash]);
 
-    const supportLinks: readonly SupportLink[] = [
-        {
-            label: "API",
-            href: `${genDocsUrl()}`,
-            icon: (
-                <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
-            ),
-        },
-        {
-            label: "Connect User Wallets",
-            href: `${genDocsUrl()}#tag/connect-user-wallets`,
-            icon: (
-                <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
-            ),
-        },
-        {
-            label: "CLI",
-            href: `${genDocsUrl()}#tag/cli`,
-            icon: (
-                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
-            ),
-        },
-        {
-            label: "MCP Servers",
-            href: `${genDocsUrl()}#tag/mcp-servers`,
-            icon: (
-                <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
-            ),
-        },
-    ];
-
-    const effectiveAccountArea =
-        accountArea ??
-        (accountName && onSignOut ? (
-            <AccountMenuButton
-                username={accountName}
-                avatarUrl={githubAvatarUrl ?? ""}
-                onSignOut={onSignOut}
-                onNavigate={closeDrawer}
-                links={accountMenuLinks}
-                className="w-full justify-start"
-            />
-        ) : null);
-
-    const supportAction: SupportAction = {
-        label: "Docs",
-        icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
-        copyLabel: "Copy All",
-        // No colour on the icons — they inherit the button's text colour so they
-        // match the filled idle/copied states.
-        idleIcon: <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />,
-        successIcon: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
-        copyValue: async () => {
-            const res = await fetch(`${genDocsUrl()}/llm.txt`);
-            return res.text();
-        },
-    };
-
     const rail = (
         <DashboardRail
             activePage={activePage}
             navItems={navItems}
-            supportAction={supportAction}
-            supportLinks={supportLinks}
-            accountArea={effectiveAccountArea}
+            accountName={accountName}
+            avatarUrl={githubAvatarUrl}
             walletArea={walletArea}
+            accountArea={accountArea}
             questStatus={questStatus}
             showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
@@ -334,34 +225,21 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                                 : "-translate-x-full",
                         )}
                     >
-                        <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
-                            <div className="flex items-center justify-between gap-2">
-                                <DashboardBrand size="drawer" />
-                                <button
-                                    type="button"
-                                    className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
-                                    onClick={closeDrawer}
-                                    aria-label="Close navigation"
-                                >
-                                    <XIcon className="h-5 w-5" />
-                                </button>
-                            </div>
-                            <BrandLinks links={brandLinks} />
-                        </div>
                         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                             {rail}
                         </div>
                     </div>
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
+                <div className="flex min-w-0 flex-1 flex-col lg:ml-68">
                     <MobileMenuButton
                         buttonRef={menuButtonRef}
+                        avatarUrl={githubAvatarUrl}
                         onOpen={() => setIsDrawerOpen(true)}
                     />
                     {/* One status for everything the page waits for, floating at
                     the bottom centre of the content column. */}
                     {pendingCount > 0 && (
-                        <div className="fixed bottom-6 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:left-[calc(50%+7.5rem)] lg:h-8 lg:px-3">
+                        <div className="fixed bottom-6 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:left-[calc(50%+8.5rem)] lg:h-8 lg:px-3">
                             <LoadingStatus>Loading…</LoadingStatus>
                         </div>
                     )}
@@ -451,10 +329,10 @@ function useDashboardShellBodyClass(): void {
 type DashboardRailProps = {
     activePage?: DashboardPage;
     navItems: readonly DashboardNavItem[];
-    supportAction: SupportAction;
-    supportLinks: readonly SupportLink[];
-    accountArea?: ReactNode;
+    accountName?: string;
+    avatarUrl?: string;
     walletArea?: ReactNode;
+    accountArea?: ReactNode;
     questStatus: string | null;
     showFooterLinks: boolean;
     onNavigate: () => void;
@@ -463,23 +341,20 @@ type DashboardRailProps = {
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
     navItems,
-    supportAction,
-    supportLinks,
-    accountArea,
+    accountName,
+    avatarUrl,
     walletArea,
+    accountArea,
     questStatus,
     showFooterLinks,
     onNavigate,
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-68"
         aria-label="Dashboard navigation"
     >
-        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
-            <DashboardBrand size="desktop" />
-            <BrandLinks links={brandLinks} />
-        </div>
+        <BrandHeader onClose={onNavigate} />
         <ScrollArea
             className="-mr-2 min-h-0 flex-1 pt-3"
             style={
@@ -489,45 +364,67 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
-            <nav className="flex flex-col gap-1">
-                {navItems.map((item) => (
-                    <NavItem
-                        as={Link}
-                        key={item.id}
-                        to={item.to}
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={activePage === item.id}
-                        onClick={onNavigate}
-                    >
-                        {item.label}
-                        {(item.id === "sandboxes" ||
-                            (item.id === "quests" && questStatus)) && (
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                className="ml-auto bg-transparent text-theme-text-soft"
-                            >
-                                {item.id === "quests" ? questStatus : "New!"}
-                            </Chip>
-                        )}
-                    </NavItem>
-                ))}
-                <DashboardSupport action={supportAction} links={supportLinks} />
+            <nav aria-label="Pollinations" className="flex flex-col gap-0.5">
+                {navItems
+                    .filter((item) => item.group === "resources")
+                    .map((item) => (
+                        <NavRow
+                            key={item.id}
+                            item={item}
+                            active={activePage === item.id}
+                            questStatus={questStatus}
+                            onNavigate={onNavigate}
+                        />
+                    ))}
+                <DocsRow />
             </nav>
         </ScrollArea>
-        <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
-            {walletArea && <div className="px-1">{walletArea}</div>}
+        <div
+            className={cn(
+                "flex shrink-0 flex-col gap-2 border-t pt-3",
+                NAV_LINE_CLASS,
+            )}
+        >
+            {navItems.some((item) => item.group === "yours") && (
+                <nav aria-label="Yours" className="flex flex-col gap-0.5">
+                    {navItems
+                        .filter((item) => item.group === "yours")
+                        .map((item) => (
+                            <Fragment key={item.id}>
+                                <NavRow
+                                    item={item}
+                                    active={activePage === item.id}
+                                    questStatus={questStatus}
+                                    onNavigate={onNavigate}
+                                />
+                                {item.id === "pollen" && walletArea && (
+                                    <SubLines>{walletArea}</SubLines>
+                                )}
+                            </Fragment>
+                        ))}
+                </nav>
+            )}
+            {accountName && (
+                <AccountLink
+                    name={accountName}
+                    avatarUrl={avatarUrl}
+                    active={activePage === "account"}
+                    onNavigate={onNavigate}
+                />
+            )}
             {accountArea}
             <DashboardFooter links={showFooterLinks ? footerLinks : []} />
         </div>
     </aside>
 );
 
+// Signed in with a profile picture, the phone menu button shows it, so you
+// see whose dashboard this is; otherwise the menu icon.
 const MobileMenuButton: FC<{
     buttonRef: RefObject<HTMLButtonElement | null>;
+    avatarUrl?: string;
     onOpen: () => void;
-}> = ({ buttonRef, onOpen }) => (
+}> = ({ buttonRef, avatarUrl, onOpen }) => (
     <button
         ref={buttonRef}
         type="button"
@@ -535,104 +432,116 @@ const MobileMenuButton: FC<{
         onClick={onOpen}
         aria-label="Open navigation"
     >
-        <MenuIcon className="h-5 w-5" />
+        {avatarUrl ? (
+            <img
+                src={avatarUrl}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover"
+            />
+        ) : (
+            <MenuIcon className="h-5 w-5" />
+        )}
     </button>
 );
 
-const DashboardBrand: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
-    <a
-        href="https://pollinations.ai"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center text-current"
-        aria-label="Pollinations"
+const NavRow: FC<{
+    item: DashboardNavItem;
+    active: boolean;
+    questStatus: string | null;
+    onNavigate: () => void;
+}> = ({ item, active, questStatus, onNavigate }) => (
+    <NavItem
+        as={Link}
+        to={item.to}
+        // Agents and MCP share /agents and differ by `view`; Link can't type a
+        // search across a union of routes, so it is passed untyped. An exact
+        // `view` match keeps Agents from also counting as current on MCP.
+        search={item.search as never}
+        activeOptions={{ explicitUndefined: true }}
+        data-theme="accent"
+        icon={item.icon}
+        active={active}
+        onClick={onNavigate}
     >
-        <span className="sr-only">Pollinations</span>
-        <BrandMark
-            variant="lockup"
-            className={size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]"}
-        />
-    </a>
-);
-
-const BrandLinks: FC<{ links: readonly BrandLink[] }> = ({ links }) => (
-    <div className="flex items-center gap-1.5">
-        {links.map((link) => (
-            <BrandLinkRow key={link.href} {...link} />
-        ))}
-    </div>
-);
-
-// No noreferrer: GitHub's traffic report credits enter.pollinations.ai only
-// when the referrer travels, and it is our only count of clicks to the repo.
-const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
-    <a
-        href={href}
-        target="_blank"
-        rel="noopener"
-        aria-label={label}
-        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
-    >
-        <span className="h-[11px] w-[11px]">{icon}</span>
-        <span className="-translate-y-px">{text}</span>
-        {count && (
-            <span className="ml-0.5 border-l border-theme-text-strong/15 pl-1.5 font-mono text-micro text-theme-text-muted">
-                {count}
-            </span>
+        {item.label}
+        {item.id === "quests" && questStatus && (
+            <Chip
+                intent="neutral"
+                size="sm"
+                className="ml-auto bg-transparent text-theme-text-soft"
+            >
+                {questStatus}
+            </Chip>
         )}
-    </a>
+    </NavItem>
 );
 
-const DashboardSupport: FC<{
-    action: SupportAction;
-    links: readonly SupportLink[];
-}> = ({ action, links }) => (
-    <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
-        {/* "Docs" header on the left; a small labelled copy button on the right
-            (no tooltip — the visible label says what it does). */}
-        <div className="flex items-center justify-between gap-2 px-3 py-1">
-            <span className="flex items-center gap-2 text-sm font-medium text-ink-900">
-                {action.icon}
-                {action.label}
-            </span>
-            {/* accent over the neutral rail (matches the nav buttons) */}
-            <span data-theme="accent">
-                <CopyButton
-                    value={action.copyValue}
-                    copiedTimeoutMs={1500}
-                    tooltip={null}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-theme-bg-active px-2.5 py-1 text-xs font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover"
-                >
-                    {(copied) => (
-                        <>
-                            {copied ? action.successIcon : action.idleIcon}
-                            {copied ? "Copied" : action.copyLabel}
-                        </>
-                    )}
-                </CopyButton>
-            </span>
-        </div>
-        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
-            {links.map((link) => (
-                <SupportLinkRow key={link.href} {...link} />
-            ))}
-        </div>
+// The lotus above a line; on phones the row also holds the drawer's close
+// button.
+const BrandHeader: FC<{ onClose: () => void }> = ({ onClose }) => (
+    <div
+        className={cn(
+            "flex shrink-0 items-center justify-between gap-2 border-b pb-3 pl-1",
+            NAV_LINE_CLASS,
+        )}
+    >
+        <a
+            href="https://pollinations.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex shrink-0 text-current"
+            aria-label="Pollinations"
+        >
+            <span className="sr-only">Pollinations</span>
+            <BrandMark variant="mark" className="h-7 w-7" />
+        </a>
+        <button
+            type="button"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque lg:hidden"
+            onClick={onClose}
+            aria-label="Close navigation"
+        >
+            <XIcon className="h-5 w-5" />
+        </button>
     </div>
 );
 
-const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
-    <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-ink-700 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
-    >
-        <span className="flex items-center gap-2">
-            {icon}
-            {label}
-        </span>
-        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
-    </a>
+// Docs looks like the other rows; ↗ marks that it opens the API reference, and
+// the quiet icon copies all of it as plain text for an AI chat.
+const DocsRow: FC = () => (
+    <div className="flex items-center">
+        <NavItem
+            as="a"
+            href={genDocsUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-theme="accent"
+            icon={BookIcon}
+            className="min-w-0 flex-1"
+        >
+            Docs
+            <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+        </NavItem>
+        <CopyButton
+            value={async () => {
+                const res = await fetch(`${genDocsUrl()}/llm.txt`);
+                return res.text();
+            }}
+            copiedTimeoutMs={1500}
+            data-theme="accent"
+            tooltip="Copy all docs as text"
+            aria-label="Copy all docs as text"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-bg-active/40 hover:text-theme-text-strong"
+        >
+            {(copied) =>
+                copied ? (
+                    <CheckIcon className="h-4 w-4" />
+                ) : (
+                    <ClipboardIcon className="h-4 w-4" />
+                )
+            }
+        </CopyButton>
+    </div>
 );
 
 const DashboardFooter: FC<{
@@ -661,81 +570,47 @@ const DashboardFooter: FC<{
     </div>
 );
 
-type AccountMenuButtonProps = {
-    username: string;
-    avatarUrl: string;
-    onSignOut?: () => void;
-    onNavigate?: () => void;
-    links?: readonly AccountMenuLink[];
-    className?: string;
-};
-
-const AccountMenuButton: FC<AccountMenuButtonProps> = ({
-    username,
-    avatarUrl,
-    onSignOut,
-    onNavigate,
-    links = [],
-    className,
-}) => (
-    <AccountMenu name={username} avatarUrl={avatarUrl} className={className}>
-        {(close) => (
-            <>
-                {links.map((link) => (
-                    <AccountMenuLinkRow key={link.href} {...link} />
-                ))}
-                {links.length > 0 && (
-                    <div className="my-1 border-t border-divider" />
-                )}
-                <Link
-                    to="/account"
-                    onClick={() => {
-                        close();
-                        onNavigate?.();
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
-                >
-                    <AccountIcon
-                        className="h-4 w-4 shrink-0"
-                        aria-hidden="true"
-                    />
-                    <span>Account</span>
-                </Link>
-                <button
-                    type="button"
-                    onClick={() => {
-                        close();
-                        onSignOut?.();
-                    }}
-                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
-                >
-                    <SignOutIcon
-                        className="h-4 w-4 shrink-0"
-                        aria-hidden="true"
-                    />
-                    <span>Sign Out</span>
-                </button>
-            </>
-        )}
-    </AccountMenu>
+// Your Paid and Quest numbers indented under the Pollen row, lined up with
+// its label: a readout, not a link (the row above opens the page).
+const SubLines: FC<PropsWithChildren> = ({ children }) => (
+    <div
+        className={cn("mb-1 ml-5 border-l py-1 pr-3 pl-[15px]", NAV_LINE_CLASS)}
+    >
+        {children}
+    </div>
 );
 
-const AccountMenuLinkRow: FC<AccountMenuLink> = ({
-    href,
-    label,
-    icon,
-    ariaLabel,
-}) => (
-    <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+// Who is signed in, under the cards, and the way to Account (profile, sign
+// out). A button rather than a row: the quiet surface pill when Account isn't
+// open, the accent fill when it is.
+const AccountLink: FC<{
+    name: string;
+    avatarUrl?: string;
+    active: boolean;
+    onNavigate: () => void;
+}> = ({ name, avatarUrl, active, onNavigate }) => (
+    <Button
+        as={Link}
+        to="/account"
+        data-theme="accent"
+        intent={active ? undefined : "surface"}
+        aria-current={active ? "page" : undefined}
+        onClick={onNavigate}
+        className="w-full self-stretch justify-start gap-2 py-1.5 pr-3 pl-1.5"
     >
-        <span className="h-4 w-4 shrink-0" aria-hidden="true">
-            {icon}
+        {avatarUrl ? (
+            <img
+                src={avatarUrl}
+                alt=""
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
+            />
+        ) : (
+            <AccountIcon className="h-4 w-4 shrink-0" />
+        )}
+        <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate">{name}</span>
+            <span className="text-xs font-normal">Account settings</span>
         </span>
-        <span>{label}</span>
-    </a>
+        <ChevronIcon className="ml-auto -rotate-90 opacity-60" />
+    </Button>
 );

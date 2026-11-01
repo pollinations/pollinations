@@ -175,11 +175,6 @@ function deriveCardStatus(
 // coming_soon last.
 const BONUS_PAGE_SIZE = 10;
 
-// The outlined commit button, card-sized: soft accent fill (outline only in
-// dark), full accent on hover and keyboard focus.
-const CLAIM_CARD_CLASS =
-    "relative cursor-pointer border border-theme-text-soft polli:bg-theme-bg-active/30 transition-colors hover:border-theme-bg-active polli:hover:bg-theme-bg-active has-[button:focus-visible]:border-theme-bg-active has-[button:focus-visible]:!bg-theme-bg-active [.dark_&]:!bg-transparent [.dark_&]:hover:!bg-theme-bg-active [.dark_&]:has-[button:focus-visible]:!bg-theme-bg-active";
-
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
     switch (card.status) {
@@ -527,106 +522,91 @@ export function QuestRow({
     );
     // A claimable quest's reward is its Claim button: the amount inside it,
     // in the reward column, so it sits in the same place on every card.
-    // A claimable quest's whole card is its Claim button: this button holds
-    // the reward column, and its ::after stretches over the card so a click
-    // anywhere claims. Links in the description sit above it (z-10).
+    // A claimable quest keeps its white card and gains a claim panel in its
+    // balance's colour (green Quest, amber Paid): the panel is the button.
     const claimButton = claimableRewardId ? (
         <button
             type="button"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
-            className="flex flex-col items-end gap-0.5 pr-3 text-lg font-semibold leading-none tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
+            className={`flex min-h-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-4 font-semibold tabular-nums transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:cursor-wait ${BUCKET_CHIP_CLASS[rewardIcon]}`}
         >
-            {/* The amount where every reward sits, the action under it. */}
-            <span className="flex items-center gap-1">
-                <WalletKindIcon kind={rewardIcon} className="h-5 w-5" />
+            <span className="flex items-center gap-1 text-lg leading-none">
+                <RewardKindIcon className="h-5 w-5 shrink-0" />
                 {rewardLabel}
             </span>
-            <span className="text-sm font-bold">
+            <span className="text-sm font-bold leading-none">
                 {claiming ? "Claiming" : "Claim!"}
             </span>
         </button>
     ) : null;
-    // Both layouts pin the reward (or the Claim button) to the right edge.
+    const details = (description || issueLink || progress) && (
+        <div className="flex min-w-0 flex-col gap-1">
+            {(description || issueLink) && (
+                <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
+                    {description && (
+                        <QuestDescription>{description}</QuestDescription>
+                    )}
+                    {description && issueLink ? " " : null}
+                    {issueLink}
+                </div>
+            )}
+            {progress}
+        </div>
+    );
+    const marker = (
+        <QuestMarker
+            icon={icon}
+            status={card.status}
+            comingSoon={card.comingSoon}
+        />
+    );
 
     return (
-        // Open quests are white cards; a claimable one is a Claim button the
-        // size of the card (the outlined commit look); done ones sit flat, in
+        // Open and claimable quests are white cards; done ones sit flat, in
         // their muted colours.
         <Surface
             variant="card"
-            className={
-                claimableRewardId
-                    ? CLAIM_CARD_CLASS
-                    : claimed
-                      ? "polli:bg-transparent"
-                      : undefined
-            }
+            className={claimed ? "polli:bg-transparent" : undefined}
         >
-            {/* Mobile: stacked. Icon centered with the (wrappable) title; the
-                description (issue link at its end) full-width below; action row
-                last, mirroring desktop — Claim on the left, reward chip pinned
-                right. */}
-            <div className="flex flex-col gap-3 sm:hidden">
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-4">
-                        <QuestMarker
-                            icon={icon}
-                            status={card.status}
-                            comingSoon={card.comingSoon}
-                        />
-                        <div className="min-w-0 flex-1">{title}</div>
-                    </div>
-                    {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted [&_a]:relative [&_a]:z-10 [&_.polli-link-external-icon]:!hidden">
-                            {description && (
-                                <QuestDescription>
-                                    {description}
-                                </QuestDescription>
-                            )}
-                            {description && issueLink ? " " : null}
-                            {issueLink}
-                        </div>
-                    )}
-                    {progress}
+            {/* Mobile: the title full width, then the description beside the
+                claim panel (about a quarter) or above the reward. */}
+            <div className="flex flex-col gap-2 sm:hidden">
+                <div className="flex items-center gap-4">
+                    {marker}
+                    <div className="min-w-0 flex-1">{title}</div>
                 </div>
-                <div className="flex items-center gap-2.5">
-                    <div className="ml-auto flex items-center gap-2.5">
-                        {claimButton ?? rewardChip}
+                {/* Indented past the icon, under the title. */}
+                {claimButton ? (
+                    <div className="flex items-stretch gap-3 pl-9">
+                        <div className="min-w-0 flex-1">{details}</div>
+                        <div className="flex w-1/4">{claimButton}</div>
                     </div>
-                </div>
+                ) : (
+                    <div className="flex flex-col gap-2 pl-9">
+                        {details}
+                        <div className="ml-auto">{rewardChip}</div>
+                    </div>
+                )}
             </div>
 
-            {/* Desktop: icon | content (title + description, with the issue link
-                at the end of the description) | claim | reward. The content is
-                sized to its text (no flex-1), so the claim button sits right
-                beside it; the reward chip is pushed to the far-right edge with
-                ml-auto so amounts line up in a column. Keeps the card to two
-                text rows. */}
-            <div className="hidden items-center gap-4 sm:flex">
-                <QuestMarker
-                    icon={icon}
-                    status={card.status}
-                    comingSoon={card.comingSoon}
-                />
-                <div className="flex min-w-0 flex-col gap-1">
+            {/* Desktop: icon | title and description | reward, or a claim
+                panel the card's full height. */}
+            <div
+                className={`hidden gap-4 sm:flex ${claimButton ? "items-stretch" : "items-center"}`}
+            >
+                <div className="flex items-center">{marker}</div>
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
                     <div>{title}</div>
-                    {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted [&_a]:relative [&_a]:z-10 [&_.polli-link-external-icon]:!hidden">
-                            {description && (
-                                <QuestDescription>
-                                    {description}
-                                </QuestDescription>
-                            )}
-                            {description && issueLink ? " " : null}
-                            {issueLink}
-                        </div>
-                    )}
-                    {progress}
+                    {details}
                 </div>
-                <div className="ml-auto flex shrink-0 items-center gap-2.5">
-                    {claimButton ?? rewardChip}
+                <div className="ml-auto flex shrink-0 items-center">
+                    {claimButton ? (
+                        <div className="flex self-stretch">{claimButton}</div>
+                    ) : (
+                        rewardChip
+                    )}
                 </div>
             </div>
         </Surface>

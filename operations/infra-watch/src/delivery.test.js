@@ -198,6 +198,17 @@ test("a community card pings each owner with a known Discord id and names the re
     assert.equal(payload({ ...card, owners: ["known"] }, []).content, "known");
 });
 
+test("an owner named like an object property is named, never mentioned", () => {
+    const ids = discordIds(JSON.stringify({ known: "123456789012345678" }));
+    const body = payload(
+        { text: "box", owners: ["constructor", "__proto__", "toString"] },
+        [],
+        ids,
+    );
+    assert.equal(body.content, "constructor __proto__ toString");
+    assert.deepEqual(body.allowed_mentions.users, []);
+});
+
 test("an unreadable owner map names every owner", () => {
     for (const json of [undefined, "not json", "null"])
         assert.deepEqual(discordIds(json), {});

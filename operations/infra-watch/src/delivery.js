@@ -89,7 +89,9 @@ export function discordIds(json) {
 // Owners above a community post: one with a known Discord id is pinged,
 // anyone else is named by GitHub username.
 export function mention(owners, ids) {
-    const id = (name) => ids[name.toLowerCase()];
+    // Own keys only: a name like "constructor" is no id.
+    const id = (name) =>
+        Object.hasOwn(ids, name.toLowerCase()) ? ids[name.toLowerCase()] : null;
     return {
         content: owners.map((o) => (id(o) ? `<@${id(o)}>` : o)).join(" "),
         users: [...new Set(owners.map(id).filter(Boolean))],

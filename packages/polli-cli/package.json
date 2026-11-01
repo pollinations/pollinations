@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/cli",
-  "version": "0.1.74",
+  "version": "0.1.75",
   "description": "The Pollinations CLI — for humans, AI agents, and everything in between",
   "type": "module",
   "bin": {
@@ -65,6 +65,7 @@
     "cross-spawn": "^7.0.6",
     "json5": "^2.2.3",
     "open": "^11.0.0",
+    "smol-toml": "^1.9.1",
     "update-notifier": "^7.3.1",
     "yaml": "^2.9.0"
   },

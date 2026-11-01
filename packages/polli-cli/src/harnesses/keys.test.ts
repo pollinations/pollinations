@@ -1,11 +1,31 @@
+import {
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+} from "node:fs";
 import { createServer, type Server } from "node:http";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { parse } from "smol-toml";
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+} from "vitest";
+import type { HarnessContext } from "./types.js";
 
 let server: Server;
 let resolveHarnessKey: typeof import("./keys.js").resolveHarnessKey;
 let fetchHarnessModels: typeof import("./models.js").fetchHarnessModels;
 let setKeyOverride: typeof import("../lib/config.js").setKeyOverride;
 const requests: string[] = [];
+const createdNames: string[] = [];
 const previousBaseUrl = process.env.POLLINATIONS_BASE_URL;
 
 beforeAll(async () => {
@@ -80,8 +100,15 @@ beforeAll(async () => {
             return;
         }
         if (request.method === "POST" && request.url === "/account/keys") {
-            response.writeHead(200, { "Content-Type": "application/json" });
-            response.end('{"key":"sk_harness"}');
+            let body = "";
+            request.on("data", (chunk) => {
+                body += chunk;
+            });
+            request.on("end", () => {
+                createdNames.push(JSON.parse(body).name);
+                response.writeHead(200, { "Content-Type": "application/json" });
+                response.end('{"key":"sk_harness"}');
+            });
             return;
         }
         response.writeHead(503, { "Content-Type": "application/json" });
@@ -97,6 +124,63 @@ beforeAll(async () => {
     ({ resolveHarnessKey } = await import("./keys.js"));
     ({ fetchHarnessModels } = await import("./models.js"));
     ({ setKeyOverride } = await import("../lib/config.js"));
+});
+
+describe("Vibe setup with the harness API helpers", () => {
+    let home: string;
+    let ctx: HarnessContext;
+    beforeEach(() => {
+        home = mkdtempSync(join(tmpdir(), "polli-vibe-on-"));
+        const bin = join(home, "bin");
+        mkdirSync(bin);
+        writeFileSync(
+            join(bin, process.platform === "win32" ? "vibe.exe" : "vibe"),
+            "",
+            { mode: 0o755 },
+        );
+        ctx = { home, env: { PATH: bin, PATHEXT: ".EXE" } };
+        requests.length = 0;
+        createdNames.length = 0;
+        setKeyOverride("sk_mac_login");
+    });
+    afterEach(() => {
+        setKeyOverride(undefined);
+        requests.length = 0;
+        rmSync(home, { recursive: true, force: true });
+    });
+
+    it("resolves model aliases, creates a dedicated Vibe key and configures the catalog", async () => {
+        const { vibe } = await import("./vibe.js");
+        await expect(
+            vibe.on(ctx, { model: "chat-alias", browser: false }),
+        ).resolves.toMatchObject({ configured: true, model: "publisher/chat" });
+        expect(requests).toEqual([
+            "GET /v1/models",
+            "GET /account/key",
+            "POST /account/keys",
+        ]);
+        expect(createdNames).toEqual(["polli-harness-vibe"]);
+        const config = parse(
+            readFileSync(join(home, ".vibe", "config.toml"), "utf8"),
+        );
+        expect(config.models).toHaveLength(2);
+        expect(config.active_model).toBe("pollinations/publisher/chat");
+        expect(vibe.off(ctx).outcome).toBe("restored");
+    });
+
+    it("rejects conflicting configuration before requesting a new key", async () => {
+        const { vibe } = await import("./vibe.js");
+        mkdirSync(join(home, ".vibe"));
+        writeFileSync(
+            join(home, ".vibe", "config.toml"),
+            '[[providers]]\nname = "pollinations"\napi_base = "https://example.com/v1"\n',
+        );
+        await expect(vibe.on(ctx, { model: "chat" })).rejects.toThrow(
+            "different settings",
+        );
+        expect(requests).toEqual(["GET /v1/models"]);
+        expect(createdNames).toEqual([]);
+    });
 });
 
 afterAll(async () => {

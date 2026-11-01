@@ -92,7 +92,7 @@ export const ImageParamsSchema = z
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
-        quality: z.string().catch("medium"),
+        quality: z.enum(validQualities).optional().default("medium"),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {

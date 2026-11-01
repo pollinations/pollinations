@@ -562,7 +562,7 @@ it("tells the community channel once a week about a model leaning on its fallbac
     await checks(stub, 2);
     // One notice, for the listed model only, checked once an hour.
     expect(told()).toHaveLength(1);
-    expect(told()[0].text).toContain("FALLBACK: o/leaning");
+    expect(told()[0].text).toContain("MODEL   o/leaning");
     expect(told()[0].text).toContain("VIA     o/fallback (30)");
 
     const back = (ms) =>

@@ -117,25 +117,33 @@ export function incidents({
     );
 
     // One error on 3 or more owners' models probed in the last 4 hours, each
-    // passing the probe before, is gen's: the maintainers' incident, and
-    // none of those owners'. A model broken before, or never probed before,
-    // is never counted: owners' endpoints that stay broken often fail alike
-    // without gen at fault. Each model it counted stays in it until that
-    // model is probed again, whatever the others do.
+    // passing the probe before with its own answer, is gen's: the
+    // maintainers' incident, and none of those owners'. A model broken
+    // before, never probed before, or saved by a fallback (or with no
+    // attribution) is never counted: owners' endpoints that stay broken often
+    // fail alike without gen at fault. Each model it counted stays in it
+    // until that model is probed again, whatever the others do; one kept
+    // from an earlier cycle is checked again, so an incident saved under an
+    // older rule can't return.
+    const worked = (model, s) =>
+        s?.before?.status === 200 && s.before.modelUsed === model;
     const held = new Map();
     for (const p of Object.values(pending))
         if (p.kind === "shared")
             for (const [model, at] of Object.entries(p.probes))
-                if (listed.has(model) && schedule[model]?.lastAt === at)
+                if (
+                    listed.has(model) &&
+                    schedule[model]?.lastAt === at &&
+                    worked(model, schedule[model])
+                )
                     held.set(p.error, [
                         ...(held.get(p.error) ?? []),
                         [model, at],
                     ]);
     const recent = Map.groupBy(
         streams.filter(
-            ([, s]) =>
-                s.before?.status === 200 &&
-                now - s.lastAt < WINDOW_MINUTES * 60_000,
+            ([model, s]) =>
+                worked(model, s) && now - s.lastAt < WINDOW_MINUTES * 60_000,
         ),
         ([, s]) => s.protocolError,
     );

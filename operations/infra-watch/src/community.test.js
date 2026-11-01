@@ -27,8 +27,9 @@ const broke = (extra) => ({
     ...extra,
 });
 const twice = (extra) => broke({ before: broke(), ...extra });
-// Broken now, after passing the probe before.
-const fresh = (extra) => broke({ before: { status: 200 }, ...extra });
+// Broken now, after its own answer passed the probe before.
+const fresh = (model, extra) =>
+    broke({ before: { status: 200, modelUsed: model }, ...extra });
 const cycle = (input) =>
     incidents({
         catalog: [],
@@ -98,7 +99,7 @@ test("one broken stream on 3 owners' working models within 4 hours is the mainta
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const input = {
         catalog: shared.map((n) => model(n)),
-        schedule: Object.fromEntries(shared.map((n) => [n, fresh()])),
+        schedule: Object.fromEntries(shared.map((n) => [n, fresh(n)])),
     };
     assert.deepEqual(find(input), [
         {
@@ -121,13 +122,13 @@ test("one broken stream on 3 owners' working models within 4 hours is the mainta
     assert.deepEqual(
         find({
             catalog: two.map((n) => model(n)),
-            schedule: Object.fromEntries(two.map((n) => [n, fresh()])),
+            schedule: Object.fromEntries(two.map((n) => [n, fresh(n)])),
         }),
         [],
     );
     // Probed over 4 hours ago: not at once.
     const old = Object.fromEntries(
-        shared.map((n) => [n, fresh({ lastAt: NOW - 5 * HOUR })]),
+        shared.map((n) => [n, fresh(n, { lastAt: NOW - 5 * HOUR })]),
     );
     assert.deepEqual(find({ ...input, schedule: old }), []);
 });
@@ -144,6 +145,31 @@ test("3 owners' models broken alike but not working before are never gen's", () 
     assert.deepEqual(
         brief(find({ catalog, schedule: again })),
         owners.map((n) => `stream ${n}`),
+    ); // Passing before only through a fallback proves nothing of their own.
+    const rescued = Object.fromEntries(
+        owners.map((n) => [
+            n,
+            broke({ before: { status: 200, modelUsed: "community/o/f" } }),
+        ]),
+    );
+    assert.deepEqual(find({ catalog, schedule: rescued }), []);
+    // A shared incident saved under the old rule, its quiet over, its
+    // models not probed since: checked again, and gone.
+    assert.deepEqual(
+        find({
+            catalog,
+            schedule: first,
+            pending: {
+                [`shared ${ERROR}`]: {
+                    kind: "shared",
+                    error: ERROR,
+                    probes: Object.fromEntries(
+                        owners.map((n) => [n, NOW - HOUR]),
+                    ),
+                },
+            },
+        }),
+        [],
     );
 });
 
@@ -262,7 +288,7 @@ test("listing changes are an incident only when something changed", () => {
 test("a shared failure keeps its models until they are probed again, even past 4 hours", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));
-    const schedule = Object.fromEntries(shared.map((n) => [n, fresh()]));
+    const schedule = Object.fromEntries(shared.map((n) => [n, fresh(n)]));
     const first = cycle({ catalog, schedule });
     // Undelivered and 5 hours on, with no new probe: still gen's.
     const later = cycle({
@@ -319,7 +345,7 @@ test("a fallback notice is kept from when it qualifies until its fallbacks are t
 test("a shared failure keeps each model until that model is probed again, whatever the others do", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));
-    const schedule = Object.fromEntries(shared.map((n) => [n, fresh()]));
+    const schedule = Object.fromEntries(shared.map((n) => [n, fresh(n)]));
     const first = cycle({ catalog, schedule });
     // x is probed again and passes: y and z have no new evidence, so they
     // stay the maintainers', not their owners'.

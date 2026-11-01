@@ -264,6 +264,9 @@ export class Watch extends DurableObject {
             return Boolean(reserved);
         };
         const notes = [];
+        // Cards moved this check: they and their lines go only once the
+        // state that points to the new cards is saved.
+        const moved = [];
         let failed = 0;
 
         // A closed card whose last edit failed, or whose closing line a
@@ -376,9 +379,8 @@ export class Watch extends DurableObject {
                 );
                 const saved = await this.writes(() => post(this.env, card));
                 if (saved?.id) {
-                    const gone = incident.messageId;
+                    moved.push(incident.messageId);
                     await this.ctx.storage.put(`lines:${saved.id}`, old);
-                    await this.ctx.storage.delete(`lines:${gone}`);
                     Object.assign(incident, {
                         pinged: true,
                         messageId: saved.id,
@@ -386,8 +388,6 @@ export class Watch extends DurableObject {
                         text: card.text,
                         alerted: current,
                     });
-                    if (!(await this.writes(() => remove(this.env, gone))))
-                        console.error(`could not delete moved card ${gone}`);
                 } else failed++;
             }
             const id = incident.messageId;
@@ -436,6 +436,11 @@ export class Watch extends DurableObject {
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", { ...next.state, unposted });
+        for (const id of moved) {
+            await this.ctx.storage.delete(`lines:${id}`);
+            if (!(await this.writes(() => remove(this.env, id))))
+                console.error(`could not delete moved card ${id}`);
+        }
         if (publicModels)
             this.cycle ??= this.community(gen, publicModels, now)
                 .catch((error) => console.error(`community: ${error.message}`))

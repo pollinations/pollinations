@@ -33,6 +33,8 @@ import {
 import { dueProbes, FORGET_MS, pool, probe, recordProbe } from "./probes.js";
 import { holdDomains, sweepDomains } from "./quest-restrictions.js";
 import {
+    COMMUNITY_FAILURES,
+    COMMUNITY_STUCK_MS,
     communityDown,
     conditions,
     duration,
@@ -496,12 +498,19 @@ export class Watch extends DurableObject {
                 .catch(async (error) => {
                     console.error(`community: ${error.message}`);
                     // Failed cycles in a row, with the last cause, for
-                    // communityDown (rules.js).
+                    // communityDown (rules.js). One that was stuck counts as
+                    // enough failures to keep its card open until a cycle
+                    // works.
                     const state = await this.ctx.storage.get("community");
+                    const stuck =
+                        Date.now() - (state?.at ?? 0) >= COMMUNITY_STUCK_MS;
                     if (state)
                         await this.ctx.storage.put("community", {
                             ...state,
-                            failures: (state.failures ?? 0) + 1,
+                            failures: Math.max(
+                                (state.failures ?? 0) + 1,
+                                stuck ? COMMUNITY_FAILURES : 0,
+                            ),
                             error: error.message,
                         });
                 })

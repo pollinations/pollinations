@@ -1069,8 +1069,44 @@ it("tells nothing for a slow, healthy cycle right after a pause", async () => {
     clock += 60_000;
     await stub.check();
     expect((await stored(stub, "state")).open.community).toBeUndefined();
-    answer();
-    await runInDurableObject(stub, (instance) => instance.cycle);
+    // The answer resolves inside the object, which owns its I/O.
+    await runInDurableObject(stub, async (instance) => {
+        answer();
+        await instance.cycle;
+    });
+});
+
+it("keeps a stuck cycle's card open until a cycle works, even when the stuck one then fails", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/a"), community("community/p/b")];
+    const waiting = [];
+    world.probe = () => new Promise((resolve) => waiting.push(resolve));
+    await stub.check();
+    await vi.waitFor(() => expect(waiting).toHaveLength(2));
+    clock += HOURS(3);
+    await stub.check();
+    const open = async () =>
+        (await stored(stub, "state")).open.community ?? null;
+    expect(await open()).not.toBeNull();
+    // The stuck cycle then fails, and so do the next: gen refuses the key.
+    world.probe = () => Response.json({}, { status: 402 });
+    await runInDurableObject(stub, async (instance) => {
+        for (const resolve of waiting)
+            resolve(Response.json({}, { status: 402 }));
+        await instance.cycle;
+    });
+    clock += 60_000;
+    await stub.check();
+    expect(await open()).not.toBeNull();
+    // A working cycle closes it.
+    world.probe = answers(() => false, "x");
+    clock += 30 * 60_000;
+    await cycled(stub);
+    clock += 60_000;
+    await stub.check();
+    expect(await open()).toBeNull();
 });
 
 it("probes due models by Thomas's rule, and calls the agent only with incidents, through its own key", async () => {

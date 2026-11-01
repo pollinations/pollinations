@@ -8,6 +8,7 @@ import {
     incidents,
     listingChanges,
     QUIET_MS,
+    servedStreaks,
     WINDOW_MINUTES,
 } from "./community.js";
 import {
@@ -69,10 +70,11 @@ const MAX_LINES = 4;
 // A closed card's last edit is retried each check for this long; after that
 // its message is likely gone.
 const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
-// The legacy bridges' last full UTC hour changes on the hour; it is read
-// once an hour, this long after it, when Tinybird has that hour in full.
+// The last full UTC hour (legacy bridges, served models) changes on the
+// hour; it is read once an hour, this long after it, when Tinybird has that
+// hour in full.
 const HOUR_MS = 60 * 60 * 1000;
-const LEGACY_READ_DELAY_MS = 5 * 60 * 1000;
+const LAST_HOUR_READ_DELAY_MS = 5 * 60 * 1000;
 // The community agent runs this often, like the retired monitor's
 // half-hourly cycle, and its probes run at most this many at a time.
 const CYCLE_MS = 30 * 60 * 1000;
@@ -439,7 +441,7 @@ export class Watch extends DurableObject {
     async legacy(now) {
         const hour = Math.floor(now / HOUR_MS);
         const saved = await this.ctx.storage.get("legacy");
-        if (saved?.hour === hour || now % HOUR_MS < LEGACY_READ_DELAY_MS)
+        if (saved?.hour === hour || now % HOUR_MS < LAST_HOUR_READ_DELAY_MS)
             return saved?.rows ?? null;
         try {
             const rows = await pipe(
@@ -499,12 +501,14 @@ export class Watch extends DurableObject {
         );
 
         const listings = await this.listingsToday(gen, catalog, now);
+        state.served = await this.served(state.served, now);
         const { found, pending } = incidents({
             catalog,
             rows,
             schedule: state.schedule,
             quiet: state.quiet,
             pending: state.pending,
+            served: state.served.seen,
             listings: listings?.changes ?? null,
             now,
         });
@@ -556,6 +560,27 @@ export class Watch extends DurableObject {
             }
         }
         await save();
+    }
+
+    // The models whose upstream answered with a different model, read from
+    // Tinybird once an hour from 5 minutes past, over the last full UTC hour,
+    // with each one's run of hours. Until then the last reading stands; an
+    // hour that can't be read counts as one without answers.
+    async served(last, now) {
+        const hour = Math.floor(now / HOUR_MS);
+        if (last?.hour === hour || now % HOUR_MS < LAST_HOUR_READ_DELAY_MS)
+            return last ?? { hour: null, seen: {} };
+        let rows = [];
+        try {
+            rows = await pipe(
+                "infra_watch_served_model",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+        } catch (error) {
+            console.error(`served models: ${error.message}`);
+        }
+        return { hour, seen: servedStreaks(rows, last, hour) };
     }
 
     // The day's community listing changes for the agent, once a day from

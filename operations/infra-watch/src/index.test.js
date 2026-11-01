@@ -83,6 +83,10 @@ async function fake(input, init = {}) {
             ? Response.json({ data: world.legacy })
             : new Response("unavailable", { status: 503 });
     }
+    if (url.pathname.endsWith("/infra_watch_served_model.json"))
+        return world.served
+            ? Response.json({ data: world.served })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
     if (url.pathname.includes("/infra_watch_review_"))
@@ -130,6 +134,7 @@ beforeEach(() => {
     world = {
         rows: [],
         regular: [],
+        served: [],
         probes: [],
         agentFacts: [],
         agentKeys: [],
@@ -835,3 +840,72 @@ it("keeps a refused fallback notice after its rescues leave the 4-hour window", 
     await cycled(stub);
     expect(world.agentFacts).toHaveLength(2);
 }, 15_000);
+
+it("reads the served models once an hour from 5 minutes past; an unread hour restarts every run", async () => {
+    const stub = watch();
+    world.served = [
+        {
+            model: "community/o/m",
+            declared: "gemini-3-flash",
+            served: "llama-3.1-8b",
+        },
+    ];
+    const at = (h, m) => Date.UTC(2026, 10, 1, h, m);
+    let last;
+    const read = async (now) => {
+        last = await runInDurableObject(stub, (instance) =>
+            instance.served(last, now),
+        );
+        return last.seen["community/o/m"]?.streak;
+    };
+    // Before 12:05 nothing is read.
+    expect(await read(at(12, 1))).toBeUndefined();
+    expect(await read(at(12, 5))).toBe(1);
+    expect(await read(at(12, 40))).toBe(1);
+    expect(await read(at(13, 5))).toBe(2);
+    // 14:05 can't be read: the run starts again at 15:05.
+    world.served = null;
+    expect(await read(at(14, 5))).toBeUndefined();
+    world.served = [
+        {
+            model: "community/o/m",
+            declared: "gemini-3-flash",
+            served: "llama-3.1-8b",
+        },
+    ];
+    expect(await read(at(15, 5))).toBe(1);
+});
+
+it("tells a served-model mismatch to its owner through the agent", async () => {
+    const stub = watch();
+    world.catalog = [community("community/o/m")];
+    world.probe = answers(() => false);
+    world.agent = tells();
+    // Read this hour: the same different name two hours running.
+    await runInDurableObject(stub, (_, state) =>
+        state.storage.put("community", {
+            served: {
+                hour: Math.floor(Date.now() / HOURS(1)),
+                seen: {
+                    "community/o/m": {
+                        declared: "gemini-3-flash",
+                        served: "llama-3.1-8b",
+                        streak: 2,
+                    },
+                },
+            },
+        }),
+    );
+    await cycled(stub);
+    expect(world.agentFacts[0].incidents).toEqual([
+        {
+            id: "1",
+            kind: "mismatch",
+            to: "community",
+            model: "community/o/m",
+            declared: "gemini-3-flash",
+            served: "llama-3.1-8b",
+        },
+    ]);
+    expect(posts(COMMUNITY)[0].content).toBe(OWNER_O);
+});

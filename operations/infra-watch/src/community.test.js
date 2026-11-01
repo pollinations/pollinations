@@ -6,6 +6,9 @@ import {
     filteredModels,
     incidents,
     listingChanges,
+    mismatchKey,
+    servedName,
+    servedStreaks,
     streamKey,
 } from "./community.js";
 
@@ -385,6 +388,92 @@ test("a new fallback joins an untold one instead of replacing it", () => {
         ],
     );
     assert.equal(notice.rescued, undefined);
+});
+
+// --- served-model mismatches (the old monitor's duty 2d) ---
+
+const FLASH = "community/o/flash";
+const asked = (served, model = FLASH) => [
+    { model, declared: "gemini-3-flash-preview", served },
+];
+
+test("names compare as the old monitor compared them", () => {
+    assert.equal(
+        servedName("Google/Gemini-3-Flash-Preview:free"),
+        "gemini-3-flash",
+    );
+    assert.equal(servedName("claude-3-5-sonnet-20241022"), "claude-3-5-sonnet");
+    assert.equal(servedName("gpt-4o-2024-08-06-latest"), "gpt-4o");
+    const agree = (declared, served) =>
+        !servedStreaks([{ model: FLASH, declared, served }], null, 1)[FLASH];
+    assert.ok(agree("gemini-3-flash-preview", "models/gemini-3-flash"));
+    // One contains the other: a thinking variant of the same model agrees.
+    assert.ok(agree("poe/DeepSeek-V4.1-Flash-T", "deepseek-v4.1-flash"));
+    assert.ok(!agree("gemini-3-flash-preview", "llama-3.1-8b"));
+});
+
+test("only hours that follow each other count, and names are cleaned", () => {
+    const one = {
+        hour: 10,
+        seen: servedStreaks(asked("llama-3.1-8b"), null, 10),
+    };
+    assert.equal(
+        servedStreaks(asked("llama-3.1-8b"), one, 11)[FLASH].streak,
+        2,
+    );
+    // An hour without answers, or one that couldn't be read, between them.
+    assert.equal(
+        servedStreaks(asked("llama-3.1-8b"), one, 12)[FLASH].streak,
+        1,
+    );
+    // Another name starts again.
+    assert.equal(servedStreaks(asked("qwen-3-4b"), one, 11)[FLASH].streak, 1);
+    // A name can't break a post, or tell an upstream's address.
+    const shown = (served) =>
+        servedStreaks(asked(served), null, 1)[FLASH].served;
+    assert.equal(shown("x```\n@everyone"), "x@everyone");
+    assert.equal(shown("api.together.xyz/llama-3"), "[host]/llama-3");
+    assert.equal(shown("gpt-4.1-mini"), "gpt-4.1-mini");
+});
+
+test("a mismatch two hours in a row is its owner's, pending until told, then quiet for a week", () => {
+    const catalog = [model(FLASH), model("community/o/agent", { agent: true })];
+    const seen = (streak, m = FLASH) => ({
+        [m]: {
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+            streak,
+        },
+    });
+    assert.deepEqual(find({ catalog, served: seen(1) }), []);
+    const first = cycle({ catalog, served: seen(2) });
+    const key = mismatchKey(FLASH, "llama-3.1-8b");
+    assert.deepEqual(first.found, [
+        {
+            id: "1",
+            kind: "mismatch",
+            model: FLASH,
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+            to: "community",
+            owners: ["o"],
+            quiet: [key],
+        },
+    ]);
+    // An hour with no answers: still pending until told.
+    const later = cycle({ catalog, served: {}, pending: first.pending });
+    assert.equal(later.found.length, 1);
+    // Told: quiet for a week, even while still reported.
+    const quiet = { [key]: NOW - 7 * DAY + 1 };
+    assert.deepEqual(find({ catalog, served: seen(3), quiet }), []);
+    assert.equal(
+        find({ catalog, served: seen(3), quiet: { [key]: NOW - 7 * DAY } })
+            .length,
+        1,
+    );
+    // Agents and private (unlisted) models are never tracked or named.
+    for (const m of ["community/o/agent", "community/o/private"])
+        assert.deepEqual(find({ catalog, served: seen(2, m) }), []);
 });
 
 // Incidents code found: a broken stream and a fallback for owners o and p,

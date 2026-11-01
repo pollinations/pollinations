@@ -12,8 +12,13 @@ export const WINDOW_MINUTES = 240;
 export const AGENT_DAILY_LIMIT = 48;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // A told incident stays quiet this long: a broken stream per model and
-// error, a fallback notice per model and fallback.
-export const QUIET_MS = { stream: DAY_MS, fallback: 7 * DAY_MS };
+// error, a fallback notice per model and fallback, a mismatch per model and
+// reported name.
+export const QUIET_MS = {
+    stream: DAY_MS,
+    fallback: 7 * DAY_MS,
+    mismatch: 7 * DAY_MS,
+};
 // Thomas's thresholds: a model leans on its fallbacks from this many
 // rescues and this share of its successes; one broken stream on this many
 // owners' models at once is gen's. A fallback notice names this many.
@@ -29,6 +34,7 @@ Each line tells the incidents in its "incidents" and goes to the channel their "
 - stream: a model's own answers broke the same way twice in a row.
 - shared: one broken stream on many owners' models at once, likely gen's own.
 - fallback: a model leans on its fallbacks. Each snapshot is one 4-hour window, from and to: rescued of its successes in it, and each fallback's part; tell each snapshot's numbers on their own and never add numbers across snapshots. "private" fallbacks are never named.
+- mismatch: a model's upstream answered with a different model (served) than the one it is asked for (declared), two hours in a row. Inform, never accuse: say requests to it are currently answered by the served name, which its provider reports.
 - listings: models newly filtered out of /models or back, with health and the filtered total; newlyMore and backMore count those left unnamed ("…and N more"); filtered models stay callable by their exact ID.
 Code puts whole lines into each post until it is full; a line that doesn't fit, and its incidents, come next time. Code pings owners and points them to their dashboard.`;
 
@@ -81,23 +87,66 @@ export function listingChanges(before, filtered, shown) {
 // them in `owners`, which delivery pings.
 const ownerOf = (id) => id.replace(/^community\//, "").split("/")[0];
 
-// `quiet` keys: a model and its broken stream, or a model and a fallback.
+// `quiet` keys: a model and its broken stream, a model and a fallback, or a
+// model and the name its upstream reported.
 export const streamKey = (model, error) => `stream ${model} ${error}`;
 export const fallbackKey = (model, via) => `fallback ${model} ${via}`;
+export const mismatchKey = (model, served) => `mismatch ${model} ${served}`;
+
+// Names compare as the old monitor compared them: lowercase, without a
+// provider prefix or a trailing :free, :paid, -latest, -preview or date;
+// they agree when one contains the other.
+const NAME_SUFFIX = /(:free|:paid|-latest|-preview|-\d{8}|-\d{4}-\d{2}-\d{2})$/;
+export function servedName(name) {
+    let base = String(name).toLowerCase().split("/").pop();
+    while (NAME_SUFFIX.test(base)) base = base.replace(NAME_SUFFIX, "");
+    return base;
+}
+const agree = (a, b) => {
+    const [x, y] = [servedName(a), servedName(b)];
+    return x.includes(y) || y.includes(x);
+};
+// Both names come from owners' servers: backticks and control characters
+// are dropped, so a name can't break a post, and anything shaped like a
+// hostname is hidden, so an upstream's address is never told.
+const printable = (name) =>
+    String(name)
+        .replace(/[`\p{Cc}]/gu, "")
+        .replace(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi, "[host]");
+
+// The last full UTC hour's reading of each model whose upstream answered
+// with a different model than the one asked for, with how many hours in a
+// row it reported that name. A run counts only hours that follow each
+// other: one without answers, or one that couldn't be read, starts it again.
+export function servedStreaks(rows, previous, hour) {
+    const seen = {};
+    for (const { model, declared, served } of rows) {
+        if (agree(declared, served)) continue;
+        const last = previous?.hour === hour - 1 && previous.seen[model];
+        const name = printable(served);
+        seen[model] = {
+            declared: printable(declared),
+            served: name,
+            streak: last?.served === name ? last.streak + 1 : 1,
+        };
+    }
+    return seen;
+}
 
 // This cycle's incidents, each with an id, where it goes, the owners it
 // pings and the quiet keys it starts once told, and the pending shared
-// failures and fallback notices to keep for the next cycle. `schedule` holds
+// failures, fallback notices and mismatches to keep for the next cycle. `schedule` holds
 // each model's last probe and the one before; `rows` gen's status rows for
 // regular traffic over WINDOW_MINUTES; `quiet` when each key was told;
-// `pending` last cycle's pending incidents; `listings` the day's listing
-// changes or null.
+// `pending` last cycle's pending incidents; `served` the last hour's
+// mismatch streaks; `listings` the day's listing changes or null.
 export function incidents({
     catalog,
     rows,
     schedule,
     quiet,
     pending = {},
+    served = {},
     listings,
     now,
 }) {
@@ -217,11 +266,22 @@ export function incidents({
                 };
             });
     }
+    // A listed model whose upstream reported the same different name two
+    // hours in a row: pending from then until told.
+    for (const [model, m] of Object.entries(served))
+        if (listed.has(model) && m.streak >= 2)
+            kept[mismatchKey(model, m.served)] = {
+                kind: "mismatch",
+                model,
+                declared: m.declared,
+                served: m.served,
+            };
+    // Fallback notices and mismatches wait until told.
+    const waits = (p) => p.kind === "fallback" || p.kind === "mismatch";
     for (const [key, p] of Object.entries(pending))
-        if (p.kind === "fallback" && !(key in kept) && listed.has(p.model))
-            kept[key] = p;
+        if (waits(p) && !(key in kept) && listed.has(p.model)) kept[key] = p;
     for (const [key, p] of Object.entries(kept))
-        if (p.kind === "fallback" && told(key, "fallback")) delete kept[key];
+        if (waits(p) && told(key, p.kind)) delete kept[key];
     // One notice per model, with a snapshot per window its untold pairs come
     // from: each window's counts stay together, never summed with another's.
     const pairs = Object.entries(kept).filter(([, p]) => p.kind === "fallback");
@@ -249,6 +309,15 @@ export function incidents({
             quiet: own.map(([key]) => key),
         });
     }
+
+    for (const [key, p] of Object.entries(kept))
+        if (p.kind === "mismatch")
+            add({
+                ...p,
+                to: "community",
+                owners: [ownerOf(p.model)],
+                quiet: [key],
+            });
 
     if (listings?.newly.length || listings?.back.length)
         add({

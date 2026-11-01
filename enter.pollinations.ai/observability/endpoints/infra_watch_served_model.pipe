@@ -4,8 +4,8 @@ DESCRIPTION >
     infra-watch monitor: each community proxy that answered text requests
     itself in the last full UTC hour, with the model gen asked its upstream
     for and the name the upstream answered with, as the most common pair.
-    Fallback answers are left out. The EC2 community monitor's duty 2d
-    served-model check, on real requests instead of probes.
+    Fallback answers and private models are left out. The EC2 community
+    monitor's duty 2d served-model check, on real requests instead of probes.
 
 NODE infra_watch_served_model_node
 SQL >
@@ -23,6 +23,7 @@ SQL >
         WHERE environment = 'production'
             AND is_final
             AND NOT fallback_used
+            AND NOT private_model
             AND response_status BETWEEN 200 AND 299
             AND upstream_served_model != ''
             AND start_time >= toStartOfHour(now()) - INTERVAL 1 HOUR

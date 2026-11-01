@@ -172,7 +172,8 @@ def waiting_for(held: dict) -> dict[str, list[str]]:
         earliest = min(held[number]["merged_at"] for number in pending)
         # Production deploys run on production; the legacy one is dispatched from main or production.
         branch = {} if workflow == LEGACY else {"branch": "production"}
-        for run in pages(f"actions/workflows/{workflow}/runs", "workflow_runs", status="completed", **branch):
+        # Unfinished runs too: right after a run completes, GitHub's completed filter can still miss it.
+        for run in pages(f"actions/workflows/{workflow}/runs", "workflow_runs", **branch):
             # An older run's commit cannot contain a PR merged later. There is no age limit.
             if run["created_at"] < earliest:
                 break

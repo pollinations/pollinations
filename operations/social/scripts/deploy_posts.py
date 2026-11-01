@@ -14,10 +14,10 @@ readiness without writing records or sending anything.
 import argparse
 import base64
 import json
+import re
 import subprocess
 import sys
 import time
-from datetime import datetime
 from fnmatch import fnmatchcase
 from functools import cache
 from pathlib import Path
@@ -25,7 +25,6 @@ from pathlib import Path
 import yaml
 
 from common import (
-    DISCORD_CHAR_LIMIT,
     GITHUB_API_BASE,
     NEWS_BRANCH,
     POSTS_REL_DIR,
@@ -43,7 +42,7 @@ from common import (
 )
 from deliver import deliver, send_discord, read_news, github as write_news
 from posts import fill, read_post
-from prs import analyze_pr, app_for, fetch_pr_files
+from prs import analyze_pr, app_for, dev_fields, fetch_pr_files
 
 # The PR that replaced the merge-time posts: PRs merged before it were posted when they merged.
 CUTOVER_PR = 17666
@@ -59,6 +58,32 @@ LEGACY = "deploy-legacy-caches.yml"
 PRS_DIR = f"{POSTS_REL_DIR}/discord/prs"
 HELD_PATH = f"{PRS_DIR}/held.json"
 POST = read_post(PROMPTS_DIR / "posts/discord/pr.md")
+# The only pages a post may link to, besides the app it adds.
+PAGES = {
+    "API docs": "https://gen.pollinations.ai/docs",
+    "Models": "https://enter.pollinations.ai/models",
+    "My Models": "https://enter.pollinations.ai/my-models",
+    "My Apps": "https://enter.pollinations.ai/my-apps",
+    "API keys": "https://enter.pollinations.ai/keys",
+    "Pollen": "https://enter.pollinations.ai/pollen",
+    "Quests": "https://enter.pollinations.ai/quests",
+    "Sandboxes": "https://enter.pollinations.ai/sandboxes",
+    "Activity": "https://enter.pollinations.ai/activity",
+    "Account": "https://enter.pollinations.ai/account",
+    "News": "https://enter.pollinations.ai/news",
+}
+LINK = re.compile(r"\[([^\]]+)\]\(<?([^)>\s]+)>?\)")
+PROJECT_QUERY = """
+query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) { pullRequest(number: $number) {
+    projectItems(first: 10) { nodes {
+      project { id }
+      area: fieldValueByName(name: "Area") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+      type: fieldValueByName(name: "Work type") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+      source: fieldValueByName(name: "Source") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+    } }
+  } }
+}"""
 
 
 def github(path: str, **params):
@@ -203,18 +228,45 @@ def save_state(state: dict, sha: str | None) -> str:
     return response.json()["content"]["sha"]
 
 
-def message(pr: dict, text: str, app: dict | None) -> dict:
-    """The post: a heading line, the text, the app's link and the PR footer."""
-    head, _, rest = text.strip().partition("\n")
-    body = f"### {head}" + (f"\n\n{rest.strip()}" if rest.strip() else "")
-    if app:
-        body += f"\n\n🔗 [{app['app_name']}](<{app['app_url']}>)"
-    author = pr["user"]["login"]
-    merged = int(datetime.fromisoformat(pr["merged_at"].replace("Z", "+00:00")).timestamp())
-    footer = (f"\n\n[PR #{pr['number']}](<{pr['html_url']}>) | "
-              f"By [{author}](<https://github.com/{author}>) <t:{merged}:F>")
-    return {"content": safe_truncate(body, DISCORD_CHAR_LIMIT - len(footer)) + footer,
-            "allowed_mentions": {"parse": []}}
+def dev_project(number: int) -> dict:
+    """The PR's Area, Work type and Source, as set on the Dev project."""
+    owner, name = get_env("GITHUB_REPOSITORY").split("/")
+    response = github_api_request(
+        "POST", f"{GITHUB_API_BASE}/graphql", headers=_github_headers(get_env("DEV_PROJECT_TOKEN")),
+        json={"query": PROJECT_QUERY, "variables": {"owner": owner, "name": name, "number": number}},
+    )
+    payload = response.json()
+    if response.status_code != 200 or payload.get("errors"):
+        raise RuntimeError(f"Dev project fields of #{number}: {response.status_code} {payload.get('errors')}")
+    return dev_fields(payload["data"]["repository"]["pullRequest"])
+
+
+def links_for(app: dict) -> dict:
+    return {**PAGES, **({app["app_name"]: app["app_url"]} if app else {})}
+
+
+def message(pr: dict, text: str, app: dict, fields: dict) -> dict:
+    """The post: one card titled with the PR's change, the text's bullets with known links only,
+    a line of labels (Area, Work type, PR), the picture, and the author, Source and merge time."""
+    title, _, rest = text.strip().partition("\n")
+    # A trailing slash added or dropped by the writer still matches.
+    allowed = {url.rstrip("/") for url in links_for(app).values()}
+    rest = LINK.sub(lambda m: m[0] if m[2].rstrip("/") in allowed else m[1], rest.strip())
+    if app and app["app_url"].rstrip("/") not in rest:
+        rest += f"\n\n🔗 [{app['app_name']}]({app['app_url']})"
+    # Inline code is the only text with a background that Discord gives a card.
+    labels = " ".join(f"`{label}`" for label in (fields.get("area"), fields.get("type"), f"PR #{pr['number']}") if label)
+    footer = " · ".join(filter(None, (pr["user"]["login"], fields.get("source"))))
+    embed = {
+        "title": safe_truncate(title.strip("#* "), 256),
+        "url": pr["html_url"],
+        "description": "\n\n".join(filter(None, (safe_truncate(rest.strip(), 3900), labels))),
+        "image": {"url": "attachment://image.jpg"},  # the picture send_discord uploads, under the text
+        "footer": {"text": footer, "icon_url": pr["user"]["avatar_url"]},
+        "timestamp": pr["merged_at"],
+    }
+    # A field the PR lacks is left out, never sent empty or guessed.
+    return {"embeds": [{key: value for key, value in embed.items() if value}], "allowed_mentions": {"parse": []}}
 
 
 def prepare_post(pr: dict, token: str, webhook: str):
@@ -222,27 +274,28 @@ def prepare_post(pr: dict, token: str, webhook: str):
     and return the call that sends it."""
     repository = get_env("GITHUB_REPOSITORY")
     changes, files = fetch_pr_files(repository, str(pr["number"]), get_env("GITHUB_TOKEN"))
-    app = app_for(pr["head"]["ref"], files)
+    app = app_for(pr["head"]["ref"], files) or {}
+    fields = dev_project(pr["number"])
     author = pr["user"]["login"]
     note = analyze_pr({
         "number": pr["number"], "title": pr["title"], "body": pr["body"], "author": author,
         "labels": [label["name"] for label in pr["labels"]], "branch": pr["head"]["ref"],
-        "base": pr["base"]["ref"], "area": None, "type": None, "source": None,
+        "base": pr["base"]["ref"], **fields,
     }, changes, token)
     if not note or not note.get("summary") or not note.get("image_prompt"):
         raise ValueError("the note has no summary or picture prompt")
-    gist = pr_context({**note, "pr_number": pr["number"], "title": pr["title"], "author": author,
-                       "url": pr["html_url"], **(app or {})})
+    gist = {**pr_context({**note, **fields, "pr_number": pr["number"], "title": pr["title"], "author": author,
+                          "url": pr["html_url"], **app}), "links": links_for(app)}
     text = call_pollinations_api(
         load_prompt(f"posts/{POST['tone']}/tone"), fill(prompt_text(POST["text"]), gist=json.dumps(gist, indent=2)),
         token, temperature=POST["temperature"],
     )
     if not text:
         raise ValueError("the reply has no text")
-    picture, _ = generate_image(note["image_prompt"], token)
+    picture, _ = generate_image(note["image_prompt"], token, 1344, 768)  # 16:9, full card width
     if not picture:
         raise ValueError("the picture failed")
-    post = message(pr, text, app)
+    post = message(pr, text, app, fields)
     return lambda: send_discord(webhook, [post], picture)
 
 

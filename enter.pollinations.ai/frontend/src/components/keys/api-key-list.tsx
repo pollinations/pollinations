@@ -224,11 +224,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     {isApp && (
                         <Chip
-                            intent="neutral"
+                            intent={earningsEnabled ? "success" : "neutral"}
                             size="sm"
                             className={
                                 earningsEnabled
-                                    ? "text-intent-success-text"
+                                    ? undefined
                                     : "bg-ink-100 text-theme-text-muted"
                             }
                         >

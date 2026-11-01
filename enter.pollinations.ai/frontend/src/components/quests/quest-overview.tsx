@@ -7,6 +7,7 @@ import {
     Chip,
     ClockIcon,
     DiscordIcon,
+    formatCount,
     GitHubIcon,
     InlineLink,
     LockIcon,
@@ -431,9 +432,7 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
         Math.max(0, (progress.current / progress.target) * 100),
     );
     const formatValue = (value: number) =>
-        progress.unit === "pollen"
-            ? formatPollen(value)
-            : value.toLocaleString();
+        progress.unit === "pollen" ? formatPollen(value) : formatCount(value);
 
     return (
         <div className="mt-1 flex max-w-sm items-center gap-2">

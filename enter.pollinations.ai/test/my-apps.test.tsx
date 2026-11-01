@@ -69,7 +69,7 @@ describe("My Apps", () => {
         );
         expect(html).toContain('src="https://media.pollinations.ai/websim"');
         expect(html).toContain("Pollinations Pay");
-        expect(html).toContain("1,234");
+        expect(html).toContain("1.2K req /24h");
         expect(html).toContain("pollinations/websim");
         expect(html).toContain("Approved Oct 30, 2026");
 

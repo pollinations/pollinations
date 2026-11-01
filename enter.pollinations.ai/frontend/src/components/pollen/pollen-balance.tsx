@@ -1,8 +1,7 @@
 import {
     CardIcon,
-    CheckIcon,
-    ClipboardIcon,
     CopyButton,
+    CopyStateIcon,
     cn,
     InfoTip,
     InlineLink,
@@ -383,17 +382,11 @@ export const PaymentHelp: FC = () => (
                 {(copied) => (
                     <>
                         {copied ? "Copied" : "billing@pollinations.ai"}
-                        {copied ? (
-                            <CheckIcon
-                                aria-hidden="true"
-                                className="polli-link-external-icon"
-                            />
-                        ) : (
-                            <ClipboardIcon
-                                aria-hidden="true"
-                                className="polli-link-external-icon"
-                            />
-                        )}
+                        <CopyStateIcon
+                            copied={copied}
+                            aria-hidden="true"
+                            className="polli-link-external-icon"
+                        />
                     </>
                 )}
             </CopyButton>

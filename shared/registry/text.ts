@@ -1907,6 +1907,110 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "inferenceport-ai/ipai-3-flash": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportIpai3,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-11-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-11-01): $0.40 per
+            // million input and $1.60 per million output tokens.
+            promptTextTokens: perMillion(0.4),
+            completionTextTokens: perMillion(1.6),
+        },
+        billing: { resolveTotalCost: reportedInferencePortCost },
+        title: "IPAI-3 Flash",
+        description:
+            "Fast, cost-efficient routing that escalates hard prompts to a verification pass",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 256000,
+        isSpecialized: false,
+    },
+    "inferenceport-ai/ipai-3-pro": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportIpai3,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-11-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-11-01): $2.00 per
+            // million input and $5.50 per million output tokens.
+            promptTextTokens: perMillion(2),
+            completionTextTokens: perMillion(5.5),
+        },
+        billing: { resolveTotalCost: reportedInferencePortCost },
+        title: "IPAI-3 Pro",
+        description:
+            "Balanced specialist routing with cross-checked answers and weighted voting on maths",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 256000,
+        isSpecialized: false,
+    },
+    "inferenceport-ai/ipai-3-max": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportIpai3,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-11-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-11-01): $3.60 per
+            // million input and $12.00 per million output tokens.
+            promptTextTokens: perMillion(3.6),
+            completionTextTokens: perMillion(12),
+        },
+        billing: { resolveTotalCost: reportedInferencePortCost },
+        title: "IPAI-3 Max",
+        description:
+            "Frontier escalation with cross-family experts, execution-verified code and multi-agent orchestration",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 256000,
+        isSpecialized: false,
+    },
+    "inferenceport-ai/ipai-3-ultra": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportIpai3,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-11-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-11-01): $5.50 per
+            // million input and $20.00 per million output tokens.
+            promptTextTokens: perMillion(5.5),
+            completionTextTokens: perMillion(20),
+        },
+        billing: { resolveTotalCost: reportedInferencePortCost },
+        title: "IPAI-3 Ultra",
+        description:
+            "Flagship multi-lab ensemble with web grounding and adversarial critique",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 256000,
+        isSpecialized: false,
+    },
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],

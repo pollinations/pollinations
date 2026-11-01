@@ -1931,6 +1931,46 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "inferenceport-ai/ipai-3-flash": {
+    "cost": {
+      "completionTextTokens": 0.0000016,
+      "promptTextTokens": 0.0000004,
+    },
+    "price": {
+      "completionTextTokens": 0.0000016,
+      "promptTextTokens": 0.0000004,
+    },
+  },
+  "inferenceport-ai/ipai-3-max": {
+    "cost": {
+      "completionTextTokens": 0.000012,
+      "promptTextTokens": 0.0000036,
+    },
+    "price": {
+      "completionTextTokens": 0.000012,
+      "promptTextTokens": 0.0000036,
+    },
+  },
+  "inferenceport-ai/ipai-3-pro": {
+    "cost": {
+      "completionTextTokens": 0.0000055,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.0000055,
+      "promptTextTokens": 0.000002,
+    },
+  },
+  "inferenceport-ai/ipai-3-ultra": {
+    "cost": {
+      "completionTextTokens": 0.00002,
+      "promptTextTokens": 0.0000055,
+    },
+    "price": {
+      "completionTextTokens": 0.00002,
+      "promptTextTokens": 0.0000055,
+    },
+  },
   "inferenceport-ai/lightning-image-turbo": {
     "cost": {
       "completionImageTokens": 0.02,
@@ -4343,6 +4383,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioSeconds": 0.009,
     },
   },
+  "stability-ai/sf3d": {
+    "cost": {
+      "completionImageTokens": 0.07,
+    },
+    "price": {
+      "completionImageTokens": 0.07,
+    },
+  },
   "stability-ai/stable-audio-3": {
     "cost": {
       "completionAudioTokens": 0.26,
@@ -4359,6 +4407,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionAudioTokens": 0.0376,
       "promptAudioTokens": 0.0041,
+    },
+  },
+  "stability-ai/triposr": {
+    "cost": {
+      "completionImageTokens": 0.07,
+    },
+    "price": {
+      "completionImageTokens": 0.07,
     },
   },
   "stealth/glyph-cluster": {

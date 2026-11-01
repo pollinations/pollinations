@@ -19,7 +19,7 @@ import {
     formatTaxId,
     paymentMethodDetails,
 } from "./payment-method-format.ts";
-import { Footnotes, PaymentHelp } from "./pollen-balance.tsx";
+import { Footnotes, PaymentHelp, PaymentTerms } from "./pollen-balance.tsx";
 
 /**
  * What Stripe holds for the buyer: the card(s) and the details invoices and
@@ -63,6 +63,7 @@ export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
                     </span>
                 </p>
                 <PaymentHelp />
+                <PaymentTerms />
             </Footnotes>
         </>
     );

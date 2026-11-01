@@ -88,10 +88,10 @@ const short = (id) => id.replace(/^community\//, "");
 const ownerOf = (id) => short(id).split("/")[0];
 
 // `quiet` keys: a model and its broken stream, a model and a fallback, or a
-// model and the name its upstream reported.
+// model and the id of the name its upstream reported.
 export const streamKey = (model, error) => `stream ${model} ${error}`;
 export const fallbackKey = (model, via) => `fallback ${model} ${via}`;
-export const mismatchKey = (model, served) => `mismatch ${model} ${served}`;
+export const mismatchKey = (model, id) => `mismatch ${model} ${id}`;
 
 // Names compare as the old monitor compared them: lowercase, without a
 // provider prefix or a trailing :free, :paid, -latest, -preview or date;
@@ -123,6 +123,15 @@ const printable = (name) =>
     String(name)
         .replace(/[`\p{Cc}]/gu, "")
         .replace(ADDRESS, "[host]");
+// A reported name as it came, kept as a short FNV-1a hash: two names that
+// read the same once their addresses are hidden are still different names,
+// and the name itself is never stored.
+const nameId = (name) => {
+    let hash = 0x811c9dc5;
+    for (const c of String(name))
+        hash = Math.imul(hash ^ c.codePointAt(0), 0x01000193);
+    return (hash >>> 0).toString(36);
+};
 
 // Each model of the catalog's `names` whose upstream last reported a
 // different model than the one asked for, with how many of its checks in a
@@ -140,14 +149,14 @@ export function servedStreaks(rows, seen, names) {
         Object.entries(seen ?? {}).filter(([model]) => names.has(model)),
     );
     for (const { model, declared, served } of rows) {
-        const name = printable(served);
+        const id = nameId(served);
         if (agree(declared, served)) delete next[model];
         else
             next[model] = {
                 declared: printable(declared),
-                served: name,
-                streak:
-                    next[model]?.served === name ? next[model].streak + 1 : 1,
+                served: printable(served),
+                id,
+                streak: next[model]?.id === id ? next[model].streak + 1 : 1,
             };
     }
     return next;
@@ -329,7 +338,7 @@ export function incidents({
     // (index.js), so after its quiet week it is told again only on a new
     // check, never on old evidence.
     for (const [model, m] of Object.entries(served)) {
-        const key = mismatchKey(model, m.served);
+        const key = mismatchKey(model, m.id);
         if (listed.has(model) && m.streak >= 2 && !told(key, "mismatch"))
             add({
                 kind: "mismatch",

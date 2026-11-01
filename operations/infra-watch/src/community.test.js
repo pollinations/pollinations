@@ -549,16 +549,18 @@ test("a sparse model's run keeps through hours without a check, and a fresh chec
 
 test("a mismatch at the second check in a row is its publisher's until a fresh check disproves it, then quiet for a week", () => {
     const catalog = [model(FLASH), model("community/o/agent", { agent: true })];
+    const { id } = read(asked("llama-3.1-8b"))[FLASH];
     const seen = (streak, m = FLASH) => ({
         [m]: {
             declared: "gemini-3-flash-preview",
             served: "llama-3.1-8b",
+            id,
             streak,
         },
     });
     assert.deepEqual(find({ catalog, served: seen(1) }), []);
     const first = cycle({ catalog, served: seen(2) });
-    const key = mismatchKey(FLASH, "llama-3.1-8b");
+    const key = mismatchKey(FLASH, id);
     assert.deepEqual(first.found, [
         {
             id: "1",
@@ -591,6 +593,20 @@ test("a mismatch at the second check in a row is its publisher's until a fresh c
     // Agents and private (unlisted) models are never named.
     for (const m of ["community/o/agent", "community/o/private"])
         assert.deepEqual(find({ catalog, served: seen(2, m) }), []);
+    // Two addresses read the same once hidden, yet are different names: the
+    // second starts a run of its own, under its own quiet key, and neither
+    // address is kept or told.
+    const [one, two] = [
+        "http://192.0.2.10:8000/llama-3",
+        "http://192.0.2.11:8000/qwen-3",
+    ].map((name) => read(asked(name), read(asked(name))));
+    assert.equal(
+        read(asked("http://192.0.2.11:8000/qwen-3"), one)[FLASH].streak,
+        1,
+    );
+    const told = [one, two].map((served) => find({ catalog, served }));
+    assert.notDeepEqual(told[0][0].quiet, told[1][0].quiet);
+    assert.ok(!JSON.stringify([one, two, told]).includes("192.0.2"));
 });
 
 // Incidents code found: a broken stream and a fallback for owners o and p,

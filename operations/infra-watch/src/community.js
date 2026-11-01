@@ -283,7 +283,9 @@ const named = (label, values, more = values.length - SHOWN) => [
     ...(more > 0 ? [["", `…and ${more} more`]] : []),
 ];
 const health = (m) =>
-    m.health == null ? short(m.model) : `${short(m.model)} (${m.health}%)`;
+    m.health == null
+        ? short(m.model)
+        : `${short(m.model)} (${Math.round(m.health)}%)`;
 // The error without "stream returned ", so the box stays narrow enough for
 // Discord not to wrap it.
 const error = (i) => i.error.replace(/^stream returned /, "");

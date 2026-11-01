@@ -650,6 +650,18 @@ test("a card's title says it is community models and whose fault, and its facts 
     ])
         assert.ok(text.includes(`│ ${row}`), row);
     assert.doesNotMatch(text, /o4\/m/);
+    // A listing's health is rounded to the nearest percent.
+    const listing = decision(
+        JSON.stringify({ community: [line(["1"], "Hidden.")] }),
+        [
+            {
+                ...FOUND[2],
+                id: "1",
+                newly: [{ model: "community/q/m", health: 67.3469387755102 }],
+            },
+        ],
+    );
+    assert.ok(listing.community.text.includes("│ HIDDEN  q/m (67%)"));
     assert.match(text, /\n```\nCheck gen\.$/);
 });
 

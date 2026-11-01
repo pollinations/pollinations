@@ -490,24 +490,22 @@ export function QuestRow({
             {rewardLabel}
         </span>
     );
-    // A claimable quest keeps its white card and gains a claim panel: the
-    // action button (outlined commit), card-tall, the amount over "Claim!".
-    // Only the icon carries the balance's colour.
+    // A claimable quest's left icon becomes the Claim button: the standard
+    // large action button, its sparkle over "Claim". The reward on the right
+    // stays as on any other row.
     const claimButton = claimableRewardId ? (
         <Button
             type="button"
             intent="commit"
+            size="lg"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
-            className="h-full min-h-16 w-full flex-col justify-center gap-1 rounded-xl px-4 font-semibold tabular-nums"
+            className="flex-col justify-center gap-0.5 px-5 py-2 font-bold"
         >
-            <span className="flex items-center gap-1 text-lg leading-none">
-                <WalletKindIcon kind={rewardIcon} className="h-5 w-5" />
-                {rewardLabel}
-            </span>
-            <span className="text-sm font-bold leading-none">
-                {claiming ? "Claiming" : "Claim!"}
+            <SparkleIcon className="h-4 w-4 shrink-0" />
+            <span className="text-sm leading-none">
+                {claiming ? "Claiming" : "Claim"}
             </span>
         </Button>
     ) : null;
@@ -525,7 +523,7 @@ export function QuestRow({
             {progress}
         </div>
     );
-    const marker = (
+    const marker = claimButton ?? (
         <QuestMarker status={card.status} comingSoon={card.comingSoon} />
     );
 
@@ -544,35 +542,22 @@ export function QuestRow({
                     <div className="min-w-0 flex-1">{title}</div>
                 </div>
                 {/* Indented past the icon, under the title. */}
-                {claimButton ? (
-                    <div className="flex items-stretch gap-3 pl-9">
-                        <div className="min-w-0 flex-1">{details}</div>
-                        <div className="flex w-1/4">{claimButton}</div>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-2 pl-9">
-                        {details}
-                        <div className="ml-auto">{rewardChip}</div>
-                    </div>
-                )}
+                <div className="flex flex-col gap-2 pl-9">
+                    {details}
+                    <div className="ml-auto">{rewardChip}</div>
+                </div>
             </div>
 
             {/* Desktop: icon | title and description | reward, or a claim
                 panel the card's full height. */}
-            <div
-                className={`hidden gap-4 sm:flex ${claimButton ? "items-stretch" : "items-center"}`}
-            >
+            <div className="hidden items-center gap-4 sm:flex">
                 <div className="flex items-center">{marker}</div>
                 <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
                     <div>{title}</div>
                     {details}
                 </div>
                 <div className="ml-auto flex shrink-0 items-center">
-                    {claimButton ? (
-                        <div className="flex self-stretch">{claimButton}</div>
-                    ) : (
-                        rewardChip
-                    )}
+                    {rewardChip}
                 </div>
             </div>
         </Surface>

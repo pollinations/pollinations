@@ -283,7 +283,11 @@ export class Watch extends DurableObject {
         if (publicModels)
             Object.assign(
                 found,
-                communityDown(await this.ctx.storage.get("community"), now),
+                communityDown(
+                    await this.ctx.storage.get("community"),
+                    now,
+                    Boolean(this.cycle),
+                ),
             );
         // Unknown sign-ups or legacy bridges keep their open cards.
         // A sign-up card Discord hasn't taken yet is retried until it has:
@@ -491,12 +495,13 @@ export class Watch extends DurableObject {
             this.cycle ??= this.community(gen, publicModels, now)
                 .catch(async (error) => {
                     console.error(`community: ${error.message}`);
-                    // Kept for the card the next checks open if no cycle
-                    // gets done again.
+                    // Failed cycles in a row, with the last cause, for
+                    // communityDown (rules.js).
                     const state = await this.ctx.storage.get("community");
                     if (state)
                         await this.ctx.storage.put("community", {
                             ...state,
+                            failures: (state.failures ?? 0) + 1,
                             error: error.message,
                         });
                 })
@@ -548,9 +553,6 @@ export class Watch extends DurableObject {
         const state = (await this.ctx.storage.get("community")) ?? {};
         if (now - (state.at ?? 0) < CYCLE_MS) return;
         state.at = now;
-        // When a cycle last got done, for communityDown (rules.js); the
-        // first cycle under this field starts the count.
-        state.doneAt ??= now;
         // A model gone from the catalog keeps its backoff for a week; a quiet
         // period lasts a week at most.
         const listed = new Set(catalog.map((m) => m.name));
@@ -566,7 +568,7 @@ export class Watch extends DurableObject {
         );
         const save = () => this.ctx.storage.put("community", state);
         const done = () => {
-            state.doneAt = now;
+            delete state.failures;
             delete state.error;
             return save();
         };
@@ -646,14 +648,21 @@ export class Watch extends DurableObject {
             found,
         );
         if (!plan) throw new Error("the agent gave no decision");
-        for (const [message, webhook] of [
-            [plan.community, "COMMUNITY_WEBHOOK_URL"],
+        // A post Discord rejects stays pending and fails the cycle.
+        const rejected = [];
+        for (const [message, webhook, channel] of [
+            [plan.community, "COMMUNITY_WEBHOOK_URL", "community"],
             [
                 plan.maintainers && { ...plan.maintainers, ping: true },
                 undefined,
+                "maintainers",
             ],
         ]) {
-            if (!message || !(await post(this.env, message, webhook))) continue;
+            if (!message) continue;
+            if (!(await post(this.env, message, webhook))) {
+                rejected.push(channel);
+                continue;
+            }
             for (const incident of message.incidents) {
                 for (const k of incident.quiet) state.quiet[k] = now;
                 if (incident.kind === "listings")
@@ -662,6 +671,12 @@ export class Watch extends DurableObject {
                 if (incident.kind === "mismatch")
                     state.served[incident.model].streak = 1;
             }
+        }
+        if (rejected.length) {
+            await save();
+            throw new Error(
+                `Discord rejected the ${rejected.join(" and ")} post`,
+            );
         }
         await done();
     }

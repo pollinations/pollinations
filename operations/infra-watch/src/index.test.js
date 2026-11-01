@@ -58,7 +58,10 @@ async function discord(url, init) {
     await sleep(world.delay(write));
     write.ok = !world.fails(write);
     world.writes.push(write);
-    if (!write.ok) return new Response("unavailable", { status: 503 });
+    if (!write.ok)
+        return new Response("unavailable", {
+            status: world.failStatus ?? 503,
+        });
     world.seen(write);
     if (init.method === "PATCH") return Response.json({});
     world.posts++;
@@ -1020,6 +1023,54 @@ it("opens a community monitor card when no cycle gets done for 90 minutes, says 
     await settle(stub);
     expect(await open()).toBeNull();
     expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("counts a cycle whose post Discord rejects as failed, and says so", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/m")];
+    // Its stream breaks every time; the community webhook is gone (404).
+    world.probe = answers(() => true, "x");
+    world.agent = tells();
+    world.fails = (w) => w.path === COMMUNITY;
+    world.failStatus = 404;
+    await cycled(stub);
+    // Its second broken probe, after the doubled backoff, makes it due.
+    clock += HOURS(8);
+    // Each cycle tries it, and Discord rejects it three times.
+    for (let i = 0; i < 3; i++) {
+        await cycled(stub);
+        clock += 30 * 60_000;
+    }
+    expect(posts(INFRA)).toHaveLength(0);
+    await cycled(stub);
+    const [card] = posts(INFRA);
+    expect(card.content).toBe(MAINTAINERS);
+    expect(card.text).toContain("Discord rejected the community post");
+});
+
+it("tells nothing for a slow, healthy cycle right after a pause", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/m")];
+    world.probe = answers(() => false, "x");
+    await cycled(stub);
+    // Five hours of pause, then a probe still answering a minute on.
+    clock += HOURS(5);
+    let answer;
+    world.probe = (path, body) =>
+        new Promise((resolve) => {
+            answer = () => resolve(answers(() => false, "x")(path, body));
+        });
+    await stub.check();
+    await vi.waitFor(() => expect(answer).toBeDefined());
+    clock += 60_000;
+    await stub.check();
+    expect((await stored(stub, "state")).open.community).toBeUndefined();
+    answer();
+    await runInDurableObject(stub, (instance) => instance.cycle);
 });
 
 it("probes due models by Thomas's rule, and calls the agent only with incidents, through its own key", async () => {

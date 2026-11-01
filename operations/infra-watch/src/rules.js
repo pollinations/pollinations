@@ -119,23 +119,26 @@ export function conditions({
     return found;
 }
 
-// The community cycle (community.js) runs every half hour. With cycles
-// started since the last one done and none done for COMMUNITY_STALE_MS,
-// probes and community posts have stopped; its last error, such as a
-// refused probe key, says why. A cycle that hangs counts too. With none
-// started, infra-watch itself was down, which the heartbeat tells.
-export const COMMUNITY_STALE_MS = 90 * 60 * 1000;
-export const communityDown = (community, now) =>
-    community?.doneAt != null &&
-    community.at > community.doneAt &&
-    now - community.doneAt >= COMMUNITY_STALE_MS
-        ? {
-              community: {
-                  kind: "COMMUNITY_DOWN",
-                  error: community.error ?? null,
-              },
-          }
-        : {};
+// The community cycle (community.js) runs every half hour. It is down after
+// COMMUNITY_FAILURES failed cycles in a row, about 90 minutes, with the last
+// error (a refused probe key, a rejected Discord post) saying why; or while
+// one is still `running` after COMMUNITY_STUCK_MS, far past any cycle's
+// probes and their timeouts. A pause in infra-watch fails nothing: the
+// heartbeat tells that.
+export const COMMUNITY_FAILURES = 3;
+export const COMMUNITY_STUCK_MS = 3 * 60 * 60 * 1000;
+export function communityDown(community, now, running) {
+    const stuck = running && now - (community?.at ?? now) >= COMMUNITY_STUCK_MS;
+    if (!stuck && (community?.failures ?? 0) < COMMUNITY_FAILURES) return {};
+    return {
+        community: {
+            kind: "COMMUNITY_DOWN",
+            error: stuck
+                ? "a cycle has run for 3+ hours"
+                : (community.error ?? null),
+        },
+    };
+}
 
 // A legacy bridge is down when its last full UTC hour fell below half the
 // median of the same hour on the previous 7 days, in requests or success,
@@ -556,7 +559,7 @@ function openRows(incident, now) {
         ];
     if (kind === "COMMUNITY_DOWN")
         return [
-            ["WHY", "no community cycle done for 90+ min"],
+            ["WHY", "community cycles failing or stuck"],
             ...(info.error ? [["ERROR", info.error]] : []),
             ["", "probes and community posts paused"],
         ];

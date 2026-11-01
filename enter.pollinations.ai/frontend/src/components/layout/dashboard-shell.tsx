@@ -4,11 +4,10 @@ import {
     BookIcon,
     BrandMark,
     BugIcon,
-    CheckIcon,
     Chip,
-    ClipboardIcon,
     ColorModeToggle,
     CopyButton,
+    CopyStateIcon,
     cn,
     DiscordIcon,
     ExternalLinkIcon,
@@ -88,8 +87,6 @@ type SupportAction = {
     label: string;
     icon: ReactNode;
     copyLabel: string;
-    idleIcon: ReactNode;
-    successIcon: ReactNode;
     copyValue: string | (() => string | Promise<string>);
 };
 
@@ -276,10 +273,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         label: "Docs",
         icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
         copyLabel: "Copy All",
-        // No colour on the icons — they inherit the button's text colour so they
-        // match the filled idle/copied states.
-        idleIcon: <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />,
-        successIcon: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
         copyValue: async () => {
             const res = await fetch(`${genDocsUrl()}/llm.txt`);
             return res.text();
@@ -599,7 +592,12 @@ const DashboardSupport: FC<{
                 >
                     {(copied) => (
                         <>
-                            {copied ? action.successIcon : action.idleIcon}
+                            {/* No colour: the icon inherits the button's
+                                text colour in both states. */}
+                            <CopyStateIcon
+                                copied={copied}
+                                className="h-3.5 w-3.5 shrink-0"
+                            />
                             {copied ? "Copied" : action.copyLabel}
                         </>
                     )}

@@ -8,8 +8,18 @@ import {
 } from "react";
 import { cn } from "../lib/cn.ts";
 import { Button, type ButtonProps } from "../primitives/Button.tsx";
-import { CheckIcon } from "../primitives/icons/index.tsx";
+import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
+import type { IconProps } from "../primitives/icons/types.ts";
 import { Tooltip } from "../primitives/Tooltip.tsx";
+
+/** The copy state as an icon: a clipboard, then a check once copied. */
+export function CopyStateIcon({
+    copied,
+    ...props
+}: IconProps & { copied: boolean }) {
+    const Icon = copied ? CheckIcon : ClipboardIcon;
+    return <Icon {...props} />;
+}
 
 type CopyValue = string | (() => string | Promise<string>);
 

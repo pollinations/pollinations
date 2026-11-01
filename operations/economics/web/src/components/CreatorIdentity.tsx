@@ -19,7 +19,6 @@ export function CreatorIdentity({
         <CopyButton
             value={recipientId}
             tooltip={<span className="break-all">{recipientId}</span>}
-            copiedTooltip="Copied user ID"
             tooltipAlign="start"
             tooltipMaxWidth={420}
             aria-label={`Copy user ID for ${label}`}

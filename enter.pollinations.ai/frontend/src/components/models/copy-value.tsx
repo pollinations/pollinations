@@ -1,4 +1,4 @@
-import { CheckIcon, ClipboardIcon, CopyButton, cn } from "@pollinations/ui";
+import { CopyButton, CopyStateIcon, cn } from "@pollinations/ui";
 import type { FC } from "react";
 
 type CopyValueProps = {
@@ -31,12 +31,12 @@ export const CopyValue: FC<CopyValueProps> = ({
         {(copied) => (
             <span className="inline-flex min-w-0 items-center gap-1.5">
                 <span className="min-w-0 truncate">{value}</span>
-                {showCopyIcon &&
-                    (copied ? (
-                        <CheckIcon className="h-3.5 w-3.5 shrink-0" />
-                    ) : (
-                        <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />
-                    ))}
+                {showCopyIcon && (
+                    <CopyStateIcon
+                        copied={copied}
+                        className="h-3.5 w-3.5 shrink-0"
+                    />
+                )}
                 {showCopyIcon && copied && (
                     <span className="sr-only">Copied</span>
                 )}

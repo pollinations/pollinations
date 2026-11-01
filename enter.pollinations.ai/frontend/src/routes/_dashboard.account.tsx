@@ -1,10 +1,9 @@
 import {
     Alert,
     Button,
-    CheckIcon,
-    ClipboardIcon,
     ConfirmationDialog,
     CopyButton,
+    CopyStateIcon,
     DiscordIcon,
     Field,
     FieldStack,
@@ -276,7 +275,7 @@ function ContactEmail({ email }: { email: string }) {
                         className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"
                         aria-hidden="true"
                     >
-                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                        <CopyStateIcon copied={copied} />
                     </span>
                 </>
             )}

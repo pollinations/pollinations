@@ -102,6 +102,46 @@ const MODEL3D_BASE_SERVICES = {
         outputModalities: ["3d"],
         maxReferenceImages: 1,
     },
+    "stability-ai/sf3d": {
+        aliases: [],
+        publisher: "Stability AI",
+        provider: "inferenceport",
+        category: "3d",
+        addedDate: new Date("2026-11-01").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        flatRate: true,
+        cost: {
+            // InferencePort /v1/models list price (2026-11-01): $0.07 per
+            // completed generation.
+            completionImageTokens: 0.07,
+        },
+        title: "SF3D",
+        description: "Single-image to textured 3D asset in GLB format",
+        inputModalities: ["image"],
+        outputModalities: ["3d"],
+        maxReferenceImages: 1,
+    },
+    "stability-ai/triposr": {
+        aliases: [],
+        publisher: "Stability AI",
+        provider: "inferenceport",
+        category: "3d",
+        addedDate: new Date("2026-11-01").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        flatRate: true,
+        cost: {
+            // InferencePort /v1/models list price (2026-11-01): $0.07 per
+            // completed generation.
+            completionImageTokens: 0.07,
+        },
+        title: "TripoSR",
+        description: "Fast single-image 3D reconstruction as a GLB mesh",
+        inputModalities: ["image"],
+        outputModalities: ["3d"],
+        maxReferenceImages: 1,
+    },
     "hyper3d/rodin-2.5": {
         aliases: ["rodin", "hyper3d-rodin"],
         provider: "fal",

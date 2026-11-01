@@ -1407,6 +1407,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         createInferencePortModelConfig({ model: "lightning" }),
     "inferenceport-lightning-text-v2.1": () =>
         createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
+    "inferenceport-ai/ipai-3-flash": () =>
+        createInferencePortModelConfig({ model: "ipai-3-flash" }),
+    "inferenceport-ai/ipai-3-pro": () =>
+        createInferencePortModelConfig({ model: "ipai-3-pro" }),
+    "inferenceport-ai/ipai-3-max": () =>
+        createInferencePortModelConfig({ model: "ipai-3-max" }),
+    "inferenceport-ai/ipai-3-ultra": () =>
+        createInferencePortModelConfig({ model: "ipai-3-ultra" }),
 
     // -- OVHcloud -------------------------------------------------------------
     "gpt-oss-20b": () =>

@@ -176,6 +176,11 @@ function deriveCardStatus(
 // coming_soon last.
 const BONUS_PAGE_SIZE = 10;
 
+// The outlined commit button, card-sized: soft accent fill (outline only in
+// dark), full accent on hover and keyboard focus.
+const CLAIM_CARD_CLASS =
+    "relative cursor-pointer border border-theme-text-soft polli:bg-theme-bg-active/30 transition-colors hover:border-theme-bg-active polli:hover:bg-theme-bg-active has-[button:focus-visible]:border-theme-bg-active polli:has-[button:focus-visible]:bg-theme-bg-active dark:polli:bg-transparent";
+
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
     switch (card.status) {
@@ -523,34 +528,38 @@ export function QuestRow({
     );
     // A claimable quest's reward is its Claim button: the amount inside it,
     // in the reward column, so it sits in the same place on every card.
+    // A claimable quest's whole card is its Claim button: this button holds
+    // the reward column, and its ::after stretches over the card so a click
+    // anywhere claims. Links in the description sit above it (z-10).
     const claimButton = claimableRewardId ? (
-        <Button
+        <button
             type="button"
-            intent="commit"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
-            className="gap-1.5 tabular-nums"
+            className="flex items-center gap-1.5 text-sm font-semibold tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
         >
             <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
             {rewardLabel}
-            <span className="ml-1 font-bold text-theme-text-soft">
+            <span className="ml-1 font-bold">
                 {claiming ? "Claiming" : "Claim!"}
             </span>
-        </Button>
+        </button>
     ) : null;
     // Both layouts pin the reward (or the Claim button) to the right edge.
 
     return (
-        // Only a quest waiting for Claim is a card: the one thing to act on.
-        // The rest sit flat, padded like a card so their columns line up.
+        // Open quests are white cards; a claimable one is a Claim button the
+        // size of the card (the outlined commit look); done ones sit flat and
+        // faded.
         <Surface
             variant="card"
-            // Done quests fade right back, so what's left stands out.
             className={
                 claimableRewardId
-                    ? undefined
-                    : `polli:bg-transparent ${claimed ? "opacity-45" : ""}`
+                    ? CLAIM_CARD_CLASS
+                    : claimed
+                      ? `polli:bg-transparent ${card.comingSoon ? "" : "opacity-45"}`
+                      : undefined
             }
         >
             {/* Mobile: stacked. Icon centered with the (wrappable) title; the
@@ -568,7 +577,7 @@ export function QuestRow({
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
                     {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted">
+                        <div className="text-sm text-theme-text-muted [&_a]:relative [&_a]:z-10">
                             {description && (
                                 <QuestDescription>
                                     {description}
@@ -602,7 +611,7 @@ export function QuestRow({
                 <div className="flex min-w-0 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted">
+                        <div className="text-sm text-theme-text-muted [&_a]:relative [&_a]:z-10">
                             {description && (
                                 <QuestDescription>
                                     {description}

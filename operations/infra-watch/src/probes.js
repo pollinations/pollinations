@@ -141,9 +141,10 @@ export function parseChatStream(body) {
                 content += choice.delta.content;
             }
         }
-        // The upstream writes its own model name into its chunks.
+        // The upstream writes its own model name into its chunks, capped
+        // like the listing's own upstream name.
         if (typeof chunk.model === "string" && chunk.model.trim())
-            model = chunk.model.trim();
+            model = chunk.model.trim().slice(0, 253);
     };
 
     try {

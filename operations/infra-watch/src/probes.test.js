@@ -279,6 +279,10 @@ test("a text probe passes only with the marker in a valid stream", () => {
         answer(named("other") + named(" served ") + counts + done).servedModel,
         "served",
     );
+    assert.equal(
+        answer(named("x".repeat(100_000)) + counts + done).servedModel,
+        "x".repeat(253),
+    );
     const other = 'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n';
     assert.equal(answer(other + counts + done).status, "INVALID");
     const broken = answer(content + counts, {

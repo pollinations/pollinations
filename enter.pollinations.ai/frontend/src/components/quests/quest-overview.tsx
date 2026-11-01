@@ -530,7 +530,7 @@ export function QuestRow({
         >
             <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
             {rewardLabel}
-            <span className="ml-1 font-bold">{claiming ? "Claiming" : "Claim!"}</span>
+            <span className="ml-1 font-bold text-theme-text-soft">{claiming ? "Claiming" : "Claim!"}</span>
         </Button>
     ) : null;
     // Both layouts pin the reward (or the Claim button) to the right edge.

@@ -45,6 +45,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "UNIT_CONVERSION_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -126,6 +127,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "unit-conversion",
+        name: "Unit Conversion",
+        description:
+            "Convert pressure, volumetric flow, power and energy using fixed SI factors.",
+        binding: "UNIT_CONVERSION_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Local arithmetic only. No model calls or additional MCP fee.",
             rates: [],
         },
     },

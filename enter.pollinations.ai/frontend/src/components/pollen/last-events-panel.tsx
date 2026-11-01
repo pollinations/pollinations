@@ -4,6 +4,7 @@ import {
     CardIcon,
     Chip,
     SproutIcon,
+    StableLabel,
     Surface,
     Table,
     TableBody,
@@ -16,7 +17,7 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
-import { LoadError, PageStatus } from "../layout/dashboard-loading.tsx";
+import { CardLoading, LoadError } from "../layout/dashboard-loading.tsx";
 
 const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
@@ -305,7 +306,7 @@ export const LastEventsPanel: FC = () => {
     const loadingMore = state.loading && state.rows.length > 0;
 
     if (state.loading && state.rows.length === 0) {
-        return <PageStatus />;
+        return <CardLoading className="h-64" />;
     }
 
     if (state.error && state.rows.length === 0) {
@@ -328,7 +329,6 @@ export const LastEventsPanel: FC = () => {
 
     return (
         <div className="flex flex-col gap-3">
-            {loadingMore && <PageStatus />}
             {state.error && (
                 <LoadError onRetry={load} paths={LAST_EVENTS_PATHS}>
                     {state.error}
@@ -435,7 +435,10 @@ export const LastEventsPanel: FC = () => {
                             disabled={state.loading}
                             className="self-start sm:self-auto"
                         >
-                            {loadingMore ? "Loading…" : "Show older"}
+                            <StableLabel
+                                text={loadingMore ? "Loading…" : "Show older"}
+                                options={["Show older", "Loading…"]}
+                            />
                         </Button>
                     )}
                 </div>

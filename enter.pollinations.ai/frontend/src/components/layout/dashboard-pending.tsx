@@ -10,7 +10,7 @@ const pageTitles: Record<string, readonly string[]> = {
     "/my-models": ["My Listings"],
     "/sandboxes": ["Sandboxes"],
     "/keys": ["Keys"],
-    "/pollen": ["Wallet", "Top-up"],
+    "/pollen": ["Pollen", "Top-up", "Billing"],
     "/activity": ["Usage", "Earnings", "Last events"],
     "/quests": ["Claimed"],
     "/account": [

@@ -4,21 +4,13 @@ import {
     CHECKING,
     CONFIRM_CHECKS,
     conditions,
-    dueFallbacks,
     duration,
     escalates,
-    escalation,
-    fallbackCard,
-    fallbackPairs,
-    fallbackShares,
-    filteredModels,
     heartbeat,
-    kvPut,
     legacyDown,
-    listingChanges,
-    listingsCard,
     noteworthy,
     RECOVER_CHECKS,
+    releaseCommands,
     renderCard,
     STALE_MS,
     snapshot,
@@ -510,15 +502,6 @@ test("the box title carries the status and full model id, in the card's colour",
     for (const line of box) assert.equal(visible(line), visible(box[0]));
 });
 
-test("an escalation links to the card and pings", () => {
-    const post = escalation("model:a/model", opened(), "https://x.test/m/1");
-    assert.equal(post.ping, true);
-    assert.match(
-        post.text,
-        /`a\/model` is now DEGRADED.*https:\/\/x\.test\/m\/1/,
-    );
-});
-
 test("durations read plainly", () => {
     assert.equal(duration(20 * 1000), "under 1 min");
     assert.equal(duration(47 * MIN), "47 min");
@@ -572,10 +555,10 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
     const open = renderCard("signup:farm.com", incident, { now: 2 * MIN });
     assert.equal(open.ping, false);
     assert.equal(open.color, 0xe24b4a);
-    assert.match(open.text, /SETUP QUESTS LIMITED: domain farm\.com/);
+    assert.match(open.text, /QUEST POLLEN RESTRICTED: domain farm\.com/);
     assert.match(open.text, /31 in 24h/);
     assert.match(open.text, /2026-10-31 00:00 UTC/);
-    assert.match(open.text, /held until a purchase or review/);
+    assert.match(open.text, /spending frozen; Paid usable/);
     const ended = renderCard("signup:farm.com", r.actions[0].incident);
     assert.match(ended.text, /ENDED: domain farm\.com/);
     assert.match(ended.text, /LASTED +2 min/);
@@ -599,8 +582,8 @@ test("a burst card says the domain is held and shows how to release it", () => {
             },
             { now: 0 },
         ).text;
-    assert.match(card("held"), /SETUP QUESTS LIMITED: domain farm\.com/);
-    assert.match(card("held"), /held until a purchase or review/);
+    assert.match(card("held"), /QUEST POLLEN RESTRICTED: domain farm\.com/);
+    assert.match(card("held"), /spending frozen; Paid usable/);
     assert.match(
         card("held"),
         /kv key put --binding SETUP_HOLDS --env production --remote 'release:farm\.com' released/,
@@ -610,96 +593,14 @@ test("a burst card says the domain is held and shows how to release it", () => {
     assert.doesNotMatch(card("released"), /kv key put/);
 });
 
-const asking = (n) =>
-    new Map([
-        [
-            "farm.com",
-            Array.from({ length: n }, (_, i) => ({
-                userId: `u${i}`,
-                domain: "farm.com",
-                requestedAt: Date.UTC(2026, 9, 31) + i,
-            })),
-        ],
-    ]);
-
-test("a review card lists the five oldest requests, moves on as they're decided, and closes", () => {
-    const found = conditions({ ...quiet(busy), reviews: asking(7) });
-    const info = found["review:farm.com"];
-    assert.equal(info.kind, "REVIEW");
-    assert.equal(info.pending, 7);
-    assert.deepEqual(
-        info.accounts.map((a) => a.userId),
-        ["u0", "u1", "u2", "u3", "u4"],
-    );
-    let r = step({}, found, 0);
-    assert.deepEqual(
-        r.actions.map((a) => a.type),
-        ["open"],
-    );
-    const open = renderCard(
-        "review:farm.com",
-        r.state.open["review:farm.com"],
-        {
-            now: 0,
-        },
-    );
-    assert.equal(open.ping, false);
-    assert.equal(open.color, 0xef9f27);
-    assert.match(open.text, /REVIEW: domain farm\.com/);
-    assert.match(open.text, /ASKING +7 accounts/);
-    assert.match(open.text, /OLDEST +2026-10-31 00:00 UTC/);
-    assert.equal(open.text.match(/'decision:u\d' approved/g).length, 5);
-    assert.equal(open.text.match(/'decision:u\d' declined/g).length, 5);
-    assert.match(open.text, /'release:farm\.com' released/);
-
-    // Two decided: the card shows the next ones, and the AI may look again.
-    const later = new Map([["farm.com", asking(7).get("farm.com").slice(2)]]);
-    const next = conditions({ ...quiet(busy), reviews: later });
-    r = step(r.state, next, MIN);
-    const card = r.state.open["review:farm.com"];
-    assert.match(
-        renderCard("review:farm.com", card, { now: MIN }).text,
-        /'decision:u6' approved/,
-    );
-    // Only the verdict on the accounts listed now is shown.
-    const verdictOn = (accounts, text) => ({
-        at: 0,
-        text,
-        asking: accounts.map((a) => a.userId).join(","),
-    });
-    const stale = verdictOn(info.accounts, "APPROVE: the first five.");
-    const shown = (lines) =>
-        renderCard("review:farm.com", card, { now: MIN, lines }).text;
-    assert.doesNotMatch(shown([stale]), /first five/);
-    assert.match(
-        shown([
-            stale,
-            verdictOn(card.info.accounts, "DECLINE: the next five."),
-        ]),
-        /DECLINE: the next five\./,
-    );
+test("release commands clear existing accounts and reject unsafe domains", () => {
+    const commands = releaseCommands("farm.com").join("\n");
+    assert.match(commands, /release:farm\.com/);
+    assert.match(commands, /UPDATE user SET quest_pollen_restricted = 0/);
+    assert.match(commands, /lower\(email\) LIKE '%@farm\.com'/);
+    assert.match(commands, /lower\(email\) LIKE '%\.farm\.com'/);
     assert.doesNotMatch(
-        shown([
-            stale,
-            verdictOn(card.info.accounts, "DECLINE: the next five."),
-        ]),
-        /first five/,
-    );
-
-    r = step(r.state, {}, 2 * MIN);
-    const closed = renderCard("review:farm.com", r.actions[0].incident);
-    assert.match(closed.text, /DECIDED: domain farm\.com/);
-    assert.doesNotMatch(closed.text, /kv key put/);
-    assert.equal(closed.color, 0x639922);
-});
-
-test("a command is built only for keys of ids and plain domain names", () => {
-    assert.match(
-        kvPut("decision:AbC_1-2", "approved"),
-        /'decision:AbC_1-2' approved$/,
-    );
-    assert.doesNotMatch(
-        kvPut("release:a';rm -rf ~;'.com", "released"),
+        releaseCommands("a';rm -rf ~;'.com").join("\n"),
         /rm -rf/,
     );
 });
@@ -809,252 +710,4 @@ test("a legacy bridge card gives the last hour against its medians and pings", (
     const quiet = legacyDown([bridge({ last_hour_requests: 40, degraded: 1 })]);
     const opened = step({}, quiet, 1000 * MIN).state.open["legacy:text"];
     assert.doesNotMatch(renderCard("legacy:text", opened).text, /WHY/);
-});
-
-// --- community fallback notices --------------------------------------------
-
-// Live case: laguna's fallback answered all 73 of its successes in 4 hours.
-const LAGUNA = "community/YoannDev90/poolside-laguna-s-2.1:free";
-const leaning = [
-    row(LAGUNA, 73, 160, { fallback_rescues: 73 }),
-    route(LAGUNA, "community", 0, 80, {
-        model_used: "community/YoannDev90/vercel-laguna-s-2.1:free",
-        fallback_used: true,
-    }),
-    route(LAGUNA, "community", 73, 153, {
-        model_used: "community/YoannDev90/kilocode-laguna-s-2.1:free",
-        fallback_used: true,
-        fallback_rescues: 73,
-    }),
-];
-
-// gen's public catalog: listed community models and the fallbacks it names.
-const listing = (name, success_rate, extra = {}) => ({
-    name,
-    community: true,
-    health: success_rate == null ? null : { success_rate },
-    ...extra,
-});
-const catalog = (...names) => names.map((name) => listing(name, 100));
-const LAGUNA_FALLBACK = "community/YoannDev90/kilocode-laguna-s-2.1:free";
-
-test("a listed model leans on its fallback from 10 rescues and 25% of successes", () => {
-    const listed = catalog(
-        LAGUNA,
-        LAGUNA_FALLBACK,
-        "community/x/a",
-        "community/x/b",
-    );
-    const [share] = fallbackShares(leaning, listed);
-    // The fallback that rescued nothing isn't named.
-    assert.deepEqual(share, {
-        model: LAGUNA,
-        via: [
-            {
-                model: "community/YoannDev90/kilocode-laguna-s-2.1:free",
-                rescued: 73,
-            },
-        ],
-        rescued: 73,
-        successes: 73,
-    });
-    const shares = (rows) => fallbackShares(rows, listed);
-    assert.equal(
-        shares([row("community/x/a", 40, 40, { fallback_rescues: 10 })]).length,
-        1,
-    );
-    // Too few rescues, or too small a share of the successes.
-    assert.deepEqual(
-        shares([row("community/x/a", 12, 12, { fallback_rescues: 9 })]),
-        [],
-    );
-    assert.deepEqual(
-        shares([row("community/x/b", 41, 41, { fallback_rescues: 10 })]),
-        [],
-    );
-    // Not listed: an official model, an agent or a private model.
-    assert.deepEqual(fallbackShares(leaning, []), []);
-    const agent = listing(LAGUNA, 100, { agent: true });
-    assert.deepEqual(fallbackShares(leaning, [agent]), []);
-    // A fallback missing from the public catalog is private: never named.
-    const [hidden] = fallbackShares(leaning, catalog(LAGUNA));
-    assert.deepEqual(hidden.via, [{ model: null, rescued: 73 }]);
-    const card = plain(fallbackCard(hidden).text);
-    assert.match(card, /VIA {5}a private model \(73\)/);
-    assert.doesNotMatch(card, /kilocode/);
-});
-
-test("each model and fallback pair is told once a week, even when they alternate", () => {
-    const via = (...models) => ({
-        model: LAGUNA,
-        via: models.map((model) => ({ model, rescued: 10 })),
-        rescued: 20,
-        successes: 40,
-    });
-    const [a, b, ab, ba] = [
-        via("community/x/a"),
-        via("community/x/b"),
-        via("community/x/a", "community/x/b"),
-        via("community/x/b", "community/x/a"),
-    ];
-    const now = 10_000 * MIN;
-    const day = 24 * 60 * MIN;
-    assert.deepEqual(dueFallbacks([a], {}, now).due, [a]);
-    // a told, then b: both stay quiet for the week, so a coming back
-    // hours later is not told again.
-    const told = {
-        [fallbackPairs(a)[0]]: now - 6 * day,
-        [fallbackPairs(b)[0]]: now - 2 * 60 * MIN,
-    };
-    assert.deepEqual(dueFallbacks([a], told, now), { due: [], told });
-    assert.deepEqual(dueFallbacks([b], told, now).due, []);
-    // Told naming a then b, the same fallbacks swapping places an hour
-    // later are not news.
-    const both = Object.fromEntries(fallbackPairs(ab).map((p) => [p, now]));
-    assert.deepEqual(dueFallbacks([ba], both, now + 60 * MIN).due, []);
-    // Then leaning on a and a new c: the notice names and marks only c, so
-    // a's week isn't restarted. The total stays the model's own.
-    const [news] = dueFallbacks(
-        [via("community/x/a", "community/x/c")],
-        both,
-        now + 60 * MIN,
-    ).due;
-    assert.deepEqual(news.via, [{ model: "community/x/c", rescued: 10 }]);
-    assert.equal(news.rescued, 20);
-    assert.deepEqual(fallbackPairs(news), [`${LAGUNA} community/x/c`]);
-    assert.doesNotMatch(plain(fallbackCard(news).text), /x\/a/);
-    // A week on, a is news again; its old notice is dropped.
-    const later = dueFallbacks([a], told, now + day);
-    assert.deepEqual(later.due, [a]);
-    assert.deepEqual(Object.keys(later.told), fallbackPairs(b));
-});
-
-test("a fallback notice gives the total, then each fallback's own part", () => {
-    const card = fallbackCard({
-        model: "community/o/m",
-        via: [
-            {
-                model: "community/scriptsnsenses-sys/diffusiongema-26B-free-long-name",
-                rescued: 16,
-            },
-            { model: "community/o/b", rescued: 14 },
-        ],
-        rescued: 30,
-        successes: 40,
-    });
-    assert.equal(card.ping, false);
-    assert.equal(card.color, 0xef9f27);
-    const lines = plain(card.text).split("\n");
-    assert.match(lines[1], /FALLBACK: o\/m/);
-    assert.match(lines[2], /│ RESCUED 30 of 40 successes \(75%\), 4h +│/);
-    // A short model name never cuts a long fallback id.
-    assert.match(
-        lines[3],
-        /│ VIA {5}scriptsnsenses-sys\/diffusiongema-26B-free-long-name \(16\) │/,
-    );
-    assert.match(lines[4], /│ VIA {5}o\/b \(14\) +│/);
-    assert.doesNotMatch(card.text, /community\//);
-    assert.match(lines.at(-1), /^Callers still get answers/);
-    assert.match(
-        lines.at(-1),
-        /\[My Listings\]\(https:\/\/enter\.pollinations\.ai\/my-models\?tab=models\)\.$/,
-    );
-});
-
-// --- community listings ------------------------------------------------------
-
-test("filtered: in the full list, not the default one, at 80% or less", () => {
-    const all = [
-        listing("community/a/hidden", 46),
-        listing("community/a/edge", 80),
-        listing("community/a/shown", 95),
-        listing("community/a/private-soon", 81),
-        listing("community/a/unknown", null),
-        listing("community/a/agent", 10, { agent: true }),
-        { name: "openai", health: { success_rate: 10 } },
-    ];
-    const shown = [listing("community/a/shown", 95)];
-    assert.deepEqual(
-        filteredModels(all, shown).map((m) => m.name),
-        ["community/a/hidden", "community/a/edge"],
-    );
-    // No community rate known: nothing to judge yet.
-    assert.equal(filteredModels([listing("community/a/x", null)], []), null);
-});
-
-test("listing changes: newly filtered, and back in the default list", () => {
-    const before = [
-        "community/a/back",
-        "community/a/still",
-        "community/a/gone",
-    ];
-    const filtered = [
-        listing("community/a/still", 50),
-        listing("community/a/new", 20),
-    ];
-    const shown = [
-        listing("community/a/back", 92),
-        listing("community/a/other", 99),
-    ];
-    const { newly, back } = listingChanges(before, filtered, shown);
-    assert.deepEqual(
-        newly.map((m) => m.name),
-        ["community/a/new"],
-    );
-    // community/a/gone left both lists: removed or private, not back.
-    assert.deepEqual(
-        back.map((m) => m.name),
-        ["community/a/back"],
-    );
-});
-
-test("the listings post names each change with its rate, and pings no one", () => {
-    const card = listingsCard(
-        {
-            newly: [listing("community/a/new", 19.6)],
-            back: [
-                listing("community/a/back", 91.2),
-                listing("community/a/quiet", null),
-            ],
-        },
-        186,
-    );
-    assert.equal(card.ping, false);
-    assert.equal(card.color, 0xef9f27);
-    assert.equal(
-        card.text,
-        [
-            "### Community listings · 186 filtered",
-            "**Newly filtered**",
-            "`a/new` 20%",
-            "**Back in listings**",
-            "`a/back` 91%",
-            "`a/quiet` no recent sample",
-            "*Filtered models are left out of /models but stay callable by their exact ID. Owners see why on [My Listings](https://enter.pollinations.ai/my-models?tab=models).*",
-        ].join("\n"),
-    );
-    // Only models back: green.
-    const back = listingsCard(
-        { newly: [], back: [listing("community/a/b", 90)] },
-        3,
-    );
-    assert.equal(back.color, 0x639922);
-});
-
-test("a long listings post fits Discord's 4,096 characters, ids whole, the rest counted", () => {
-    // 40 of the longest ids: a 39-character owner and a long model name.
-    const long = (i) =>
-        listing(`community/${"o".repeat(39)}/${"m".repeat(100)}-${i}`, 50);
-    const many = Array.from({ length: 40 }, (_, i) => long(i));
-    const { text } = listingsCard(
-        { newly: many.slice(0, 20), back: many.slice(20) },
-        40,
-    );
-    assert.ok(text.length <= 4096, `${text.length} characters`);
-    const shown = text.match(/^`[^`]+` 50%$/gm);
-    for (const line of shown) assert.match(line, /^`o{39}\/m{100}-\d+` 50%$/);
-    const counted = [...text.matchAll(/^…and (\d+) more$/gm)].map((m) =>
-        Number(m[1]),
-    );
-    assert.equal(shown.length + counted.reduce((a, b) => a + b, 0), 40);
 });

@@ -31,9 +31,8 @@ describe("questNavLabel", () => {
         ).toBe("2 new!");
     });
 
-    it("does not count a held account's Setup rewards as claimable", () => {
+    it("counts Setup rewards as claimable", () => {
         const setup = { ...available("done"), category: "setup" };
-        expect(questNavLabel([setup], [reward("done", null)], true)).toBeNull();
         expect(questNavLabel([setup], [reward("done", null)])).toBe(
             "1 claimable",
         );

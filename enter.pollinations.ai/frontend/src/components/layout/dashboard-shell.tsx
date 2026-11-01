@@ -5,15 +5,13 @@ import {
     BotIcon,
     BrandMark,
     Button,
-    CheckIcon,
     ChevronIcon,
     Chip,
-    ClipboardIcon,
     ColorModeToggle,
     CopyButton,
+    CopyStateIcon,
     cn,
     InlineLink,
-    LoadingStatus,
     MenuIcon,
     NavItem,
     RocketIcon,
@@ -26,14 +24,12 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
     CSSProperties,
-    Dispatch,
     FC,
     PropsWithChildren,
     ReactNode,
     RefObject,
-    SetStateAction,
 } from "react";
-import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { pageMeta } from "../../page-meta.ts";
@@ -48,11 +44,6 @@ import {
     type DashboardPath,
     navItemFor,
 } from "./dashboard-theme.ts";
-
-/** Counts what the page still waits for; the shell shows one status while > 0. */
-export const PendingCount = createContext<Dispatch<SetStateAction<number>>>(
-    () => {},
-);
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -108,7 +99,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [pendingCount, setPendingCount] = useState(0);
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -191,72 +181,61 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
 
     return (
-        <PendingCount.Provider value={setPendingCount}>
-            <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
-                <div className="hidden lg:block">{rail}</div>
-                <div
-                    ref={drawerRef}
+        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
+            <div className="hidden lg:block">{rail}</div>
+            <div
+                ref={drawerRef}
+                className={cn(
+                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
+                    isDrawerOpen
+                        ? "pointer-events-auto visible delay-0"
+                        : "pointer-events-none invisible delay-[420ms]",
+                )}
+                aria-hidden={!isDrawerOpen}
+                inert={!isDrawerOpen}
+            >
+                <button
+                    type="button"
                     className={cn(
-                        "fixed inset-0 z-40 transition-[visibility] lg:hidden",
-                        isDrawerOpen
-                            ? "pointer-events-auto visible delay-0"
-                            : "pointer-events-none invisible delay-[420ms]",
+                        "absolute inset-0 bg-black/40 transition-opacity ease-out",
+                        "duration-[420ms]",
+                        isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}
-                    aria-hidden={!isDrawerOpen}
-                    inert={!isDrawerOpen}
+                    onClick={closeDrawer}
+                    aria-label="Close navigation"
+                />
+                <div
+                    className={cn(
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "duration-[420ms]",
+                        isDrawerOpen ? "translate-x-0" : "-translate-x-full",
+                    )}
                 >
-                    <button
-                        type="button"
-                        className={cn(
-                            "absolute inset-0 bg-black/40 transition-opacity ease-out",
-                            "duration-[420ms]",
-                            isDrawerOpen ? "opacity-100" : "opacity-0",
-                        )}
-                        onClick={closeDrawer}
-                        aria-label="Close navigation"
-                    />
-                    <div
-                        className={cn(
-                            "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
-                            "duration-[420ms]",
-                            isDrawerOpen
-                                ? "translate-x-0"
-                                : "-translate-x-full",
-                        )}
-                    >
-                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                            {rail}
-                        </div>
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                        {rail}
                     </div>
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col lg:ml-68">
-                    <MobileMenuButton
-                        buttonRef={menuButtonRef}
-                        avatarUrl={githubAvatarUrl}
-                        onOpen={() => setIsDrawerOpen(true)}
-                    />
-                    {/* One status for everything the page waits for, floating at
-                    the bottom centre of the content column. */}
-                    {pendingCount > 0 && (
-                        <div className="fixed bottom-6 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:left-[calc(50%+8.5rem)] lg:h-8 lg:px-3">
-                            <LoadingStatus>Loading…</LoadingStatus>
-                        </div>
-                    )}
-                    <ScrollArea
-                        ref={mainScrollRef}
-                        className={cn(
-                            "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
-                            signInBanner ? "pt-3" : "pt-16",
-                        )}
-                    >
-                        <main className="mx-auto flex max-w-[800px] flex-col gap-3">
-                            {signInBanner}
-                            {children}
-                        </main>
-                    </ScrollArea>
-                </div>
             </div>
-        </PendingCount.Provider>
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-68">
+                <MobileMenuButton
+                    buttonRef={menuButtonRef}
+                    avatarUrl={githubAvatarUrl}
+                    onOpen={() => setIsDrawerOpen(true)}
+                />
+                <ScrollArea
+                    ref={mainScrollRef}
+                    className={cn(
+                        "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
+                        signInBanner ? "pt-3" : "pt-16",
+                    )}
+                >
+                    <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                        {signInBanner}
+                        {children}
+                    </main>
+                </ScrollArea>
+            </div>
+        </div>
     );
 };
 
@@ -286,13 +265,7 @@ function useQuestNavStatus(enabled: boolean): string | null {
                     rewardsResponse.json(),
                 ]);
                 if (!cancelled && currentRequest === requestId) {
-                    setLabel(
-                        questNavLabel(
-                            catalog.quests,
-                            rewards.rewards,
-                            rewards.setupHold !== null,
-                        ),
-                    );
+                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
                 }
             } catch {
                 if (!cancelled && currentRequest === requestId) setLabel(null);
@@ -500,8 +473,6 @@ const NavRow: FC<{
     </NavItem>
 );
 
-// The lotus above a line; on phones the row also holds the drawer's close
-// button.
 // Closes the phone's drawer; the desktop rail is always open.
 const CloseButton: FC<{ onClose: () => void }> = ({ onClose }) => (
     <button
@@ -534,13 +505,7 @@ const DocsRow: FC = () => (
             aria-label="Copy all docs as text"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-bg-active/40 hover:text-theme-text-strong"
         >
-            {(copied) =>
-                copied ? (
-                    <CheckIcon className="h-4 w-4" />
-                ) : (
-                    <ClipboardIcon className="h-4 w-4" />
-                )
-            }
+            {(copied) => <CopyStateIcon copied={copied} className="h-4 w-4" />}
         </CopyButton>
     </div>
 );
@@ -555,8 +520,8 @@ const DOC_GUIDES = [
         show: "[@container(min-height:14.8125rem)]:flex",
     },
     {
-        label: "Connect User Wallets",
-        tag: "connect-user-wallets",
+        label: "Pollinations Pay",
+        tag: "pollinations-pay",
         icon: WalletIcon,
         show: "[@container(min-height:16.0625rem)]:flex",
     },

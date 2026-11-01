@@ -3,10 +3,9 @@ import {
     BeakerIcon,
     BotIcon,
     CardIcon,
-    CheckIcon,
     Chip,
-    ClipboardIcon,
     CopyButton,
+    CopyStateIcon,
     currentPeriod,
     ExternalLinkIcon,
     GitHubIcon,
@@ -344,16 +343,14 @@ function CommunityDetailRow({
                     <CopyButton
                         value={copyValue}
                         tooltip={copyLabel}
-                        copiedTooltip="Copied"
                         className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
                     >
-                        {(copied: boolean) =>
-                            copied ? (
-                                <CheckIcon className="h-3.5 w-3.5" />
-                            ) : (
-                                <ClipboardIcon className="h-3.5 w-3.5" />
-                            )
-                        }
+                        {(copied: boolean) => (
+                            <CopyStateIcon
+                                copied={copied}
+                                className="h-3.5 w-3.5"
+                            />
+                        )}
                     </CopyButton>
                 )}
             </span>

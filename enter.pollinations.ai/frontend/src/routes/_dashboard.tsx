@@ -230,6 +230,9 @@ function DashboardLayout() {
                                               <SidebarBalance
                                                   kind="tier"
                                                   balance={balance.tierBalance}
+                                                  restricted={
+                                                      balance.questPollenRestricted
+                                                  }
                                               />
                                           )
                                       }

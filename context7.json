@@ -31,7 +31,7 @@
   "rules": [
     "Send every API request to https://gen.pollinations.ai; use https://gen.pollinations.ai/v1 as the base URL for OpenAI-compatible SDKs.",
     "Authenticate with the header Authorization: Bearer <key>. Get keys at https://enter.pollinations.ai/keys.",
-    "Keep sk_ keys on the server. For browser or mobile apps where users pay, use Connect User Wallets (BRING_YOUR_OWN_POLLEN.md) instead of shipping a key.",
+    "Keep sk_ keys on the server. For browser or mobile apps where users pay, use Pollinations Pay (BRING_YOUR_OWN_POLLEN.md) instead of shipping a key.",
     "List live models with GET https://gen.pollinations.ai/v1/models or /text/models, /image/models, /audio/models; do not hardcode model names.",
     "Use the hosted MCP server at https://gen.pollinations.ai/mcp/pollinations (Streamable HTTP, Bearer key). The npm package @pollinations/mcp is retired.",
     "Install the MCP servers into coding agents with npx @pollinations/cli mcp install <client>."

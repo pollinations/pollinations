@@ -1,7 +1,19 @@
-import { env, evictDurableObject, runInDurableObject } from "cloudflare:test";
+import {
+    applyD1Migrations,
+    env,
+    evictDurableObject,
+    runInDurableObject,
+} from "cloudflare:test";
 import { exports } from "cloudflare:workers";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { DAILY_LIMIT } from "./investigate.js";
+import {
+    PURCHASED_SQL,
+    releaseDomainSql,
+    restrictDomain,
+    restrictionCandidatesSql,
+    restrictionSql,
+} from "./quest-restrictions.js";
 import { CHECKING, RECOVER_CHECKS } from "./rules.js";
 
 const GREEN = 0x639922;
@@ -28,12 +40,20 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let world;
 
 async function discord(url, init) {
-    const { embeds } = JSON.parse(init.body);
+    if (init.method === "DELETE") {
+        const write = { method: "DELETE", path: url.pathname, text: "" };
+        write.ok = !world.fails(write);
+        world.writes.push(write);
+        return new Response(null, { status: write.ok ? 204 : 503 });
+    }
+    const { content, embeds, allowed_mentions } = JSON.parse(init.body);
     const write = {
         method: init.method,
         path: url.pathname,
         color: embeds[0].color,
         text: embeds[0].description,
+        content,
+        users: allowed_mentions.users,
     };
     await sleep(world.delay(write));
     write.ok = !world.fails(write);
@@ -50,8 +70,10 @@ async function fake(input, init = {}) {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.hostname === "discord.test") return discord(url, init);
     if (url.pathname === "/") return new Response("ok");
-    if (url.pathname === "/models/status")
-        return Response.json({ data: world.rows });
+    if (url.pathname === "/models/status") {
+        const regular = url.searchParams.get("traffic") === "regular";
+        return Response.json({ data: regular ? world.regular : world.rows });
+    }
     // The full catalog, or the default listing without filtered models.
     if (url.pathname === "/models")
         return Response.json(
@@ -67,7 +89,7 @@ async function fake(input, init = {}) {
                     requests: 40,
                     failures: 30,
                     callers: 3,
-                    failing_callers: 3,
+                    failing_callers: world.failingCallers,
                     top_caller_failures: 12,
                 },
             ],
@@ -81,28 +103,53 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
-    if (url.pathname.includes("/infra_watch_review_"))
-        return Response.json({ data: [] });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
             : new Response("unavailable", { status: 503 });
+    // A probe: streamed chat, or an image.
+    if (
+        url.pathname.startsWith("/v1/images/") ||
+        (url.pathname === "/v1/chat/completions" &&
+            JSON.parse(init.body).stream)
+    ) {
+        const body = JSON.parse(init.body);
+        world.probes.push(`${url.pathname} ${body.model}`);
+        return world.probe(url.pathname, body);
+    }
     if (url.pathname === "/v1/chat/completions") {
+        const { messages } = JSON.parse(init.body);
+        // The community agent answers with its posts.
+        if (
+            messages[0].content.startsWith(
+                "You write the Pollinations community",
+            )
+        ) {
+            const facts = JSON.parse(messages[1].content);
+            world.agentFacts.push(facts);
+            world.agentKeys.push(init.headers.authorization);
+            const content = JSON.stringify(world.agent(facts));
+            return Response.json({ choices: [{ message: { content } }] });
+        }
         await world.aiGate;
         await sleep(world.aiDelay);
         world.answers++;
-        // A review answers as a verdict; any other alert with a plain line.
-        const { messages } = JSON.parse(init.body);
-        const review = messages[0].content.startsWith("You review");
-        const content = `${review ? "APPROVE: " : ""}Line ${world.answers}.`;
+        const content = `Line ${world.answers}.`;
         return Response.json({ choices: [{ message: { content } }] });
     }
     throw new Error(`unexpected fetch ${url}`);
 }
 
+beforeAll(() => applyD1Migrations(env.DB, env.TEST_MIGRATIONS));
+
 beforeEach(() => {
     world = {
         rows: [],
+        regular: [],
+        probes: [],
+        agentFacts: [],
+        agentKeys: [],
+        agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
@@ -110,6 +157,7 @@ beforeEach(() => {
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
+        failingCallers: 3,
         receipt: true,
         fails: () => false,
         delay: () => 0,
@@ -120,7 +168,10 @@ beforeEach(() => {
     };
     vi.stubGlobal("fetch", fake);
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+});
 
 const watch = () => env.WATCH.get(env.WATCH.idFromName(crypto.randomUUID()));
 const checks = async (stub, n) => {
@@ -235,6 +286,93 @@ it("opens a new card when a close was edited but never saved", async () => {
     expect(posts[1].text).toContain("AGAIN");
 });
 
+// A card opened with one failing caller, then several fail, read on the
+// next check. `also` runs in the object first, e.g. to break its storage.
+const worsen = async (stub, also = () => {}) => {
+    world.rows = BAD;
+    world.failingCallers = 1;
+    await stub.check();
+    await settle(stub);
+    world.failingCallers = 3;
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("state");
+        saved.open[KEY].enriched.at = 0;
+        await state.storage.put("state", saved);
+        also(state);
+    });
+};
+const posted = () => world.writes.filter((w) => w.ok && w.method === "POST");
+const deleted = () =>
+    world.writes
+        .filter((w) => w.ok && w.method === "DELETE")
+        .map((w) => w.path.split("/").at(-1));
+
+it("moves a worsened card to the bottom with its ping and lines", async () => {
+    const stub = watch();
+    await worsen(stub);
+    await stub.check();
+    await settle(stub);
+
+    const posts = posted();
+    expect(posts).toHaveLength(2);
+    expect(posts[0].users).toEqual([]);
+    expect(posts[1].users).toHaveLength(2);
+    expect(posts[1].text).toContain("Line 1.");
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m2");
+    expect((await stored(stub, "lines:m2")).lines).toHaveLength(1);
+    // The next check deletes the old card, then its lines.
+    await stub.check();
+    expect(deleted()).toEqual(["m1"]);
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+});
+
+it("tries a failed delete of a moved card again", async () => {
+    const stub = watch();
+    await worsen(stub);
+    await stub.check();
+    world.fails = (w) => w.method === "DELETE";
+    await stub.check();
+    expect(await stored(stub, "lines:m1")).toBeDefined();
+    world.fails = () => false;
+    await stub.check();
+    expect(deleted()).toEqual(["m1"]);
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+});
+
+it("pings a worsened card once when its post has no readable receipt", async () => {
+    const stub = watch();
+    await worsen(stub);
+    world.receipt = false;
+    await checks(stub, 3);
+    await settle(stub);
+    expect(posted()).toHaveLength(2);
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m1");
+});
+
+it("keeps a worsened card's lines when the move's save fails", async () => {
+    const stub = watch();
+    // The check that moves the card fails to save its state.
+    await worsen(stub, (state) => {
+        const put = state.storage.put.bind(state.storage);
+        state.storage.put = async (key, value) => {
+            if (key === "state") throw new Error("storage unavailable");
+            return put(key, value);
+        };
+    });
+    const failure = await stub.check().catch((error) => error);
+    expect(failure.message).toContain("storage unavailable");
+
+    await evictDurableObject(stub);
+    await checks(stub, 2);
+    await settle(stub);
+    // The old card stayed until a move was saved, and the saved one carries
+    // its line. The card the failed save left behind goes, then the old one.
+    expect(posted().at(-1).text).toContain("Line 1.");
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m3");
+    expect((await stored(stub, "lines:m3")).lines).toHaveLength(1);
+    expect(deleted()).toEqual(["m2", "m1"]);
+});
+
 it("drops a line lost in a restart instead of checking forever", async () => {
     const stub = watch();
     world.rows = BAD;
@@ -329,7 +467,305 @@ it("gives up on a closed card's last edit after a day", async () => {
     expect(await stored(stub, "lines:m1")).toBeUndefined();
 });
 
-const BURST = [{ domain: "farm.com", accounts: 31, since: 1_793_404_800 }];
+const SINCE = 1_793_404_800;
+const BURST = [{ domain: "farm.com", accounts: 31, since: SINCE }];
+
+it("restricts domain accounts once, preserves approvals and purchases, and leaves balances intact", async () => {
+    const plan = await env.DB.prepare(
+        `EXPLAIN QUERY PLAN SELECT id, ${PURCHASED_SQL} FROM user`,
+    ).all();
+    // Each correlated purchase lookup must seek this user, not all paid invoices.
+    expect(
+        plan.results.filter(({ detail }) => detail.includes("user_id=?")),
+    ).toHaveLength(3);
+    // The sweep reads accounts made since the burst, never the whole table.
+    const sweep = await env.DB.prepare(
+        `EXPLAIN QUERY PLAN ${restrictionCandidatesSql("cohort.test", SINCE)}`,
+    ).all();
+    expect(sweep.results.map(({ detail }) => detail).join()).toContain(
+        "USING INDEX idx_user_created_at (created_at>?)",
+    );
+    const accounts = [
+        ["farm", "a@cohort.test", null],
+        ["subdomain", "a@SUB.COHORT.TEST", null],
+        ["unrelated", "a@notcohort.test", null],
+        ["cleared", "cleared@cohort.test", 0],
+        ["approved", "approved@cohort.test", null],
+        ["checkout", "checkout@cohort.test", null],
+        ["auto", "auto@cohort.test", null],
+        ["failed-auto", "failed-auto@cohort.test", null],
+        ["polar", "polar@cohort.test", null],
+        ["at-start", "at-start@cohort.test", null, SINCE],
+        ["before-start", "before-start@cohort.test", null, SINCE - 1],
+    ];
+    await env.DB.batch(
+        accounts.map(([id, email, restricted, createdAt = SINCE + 60]) =>
+            env.DB.prepare(
+                "INSERT INTO user (id, name, email, created_at, updated_at, tier_balance, pack_balance, quest_pollen_restricted) VALUES (?, ?, ?, ?, 1, 5, 3, ?)",
+            ).bind(id, id, email, createdAt, restricted),
+        ),
+    );
+    await env.DB.batch([
+        env.DB.prepare(
+            "INSERT INTO stripe_checkout_credits (session_id, event_id, event_type, user_id, pollen_credited, created_at) VALUES ('checkout', 'checkout', 'checkout.session.completed', 'checkout', 5, 1)",
+        ),
+        env.DB.prepare(
+            "INSERT INTO stripe_auto_top_up_attempt (id, user_id, amount_usd, status, created_at, updated_at) VALUES ('auto', 'auto', 5, 'paid', 1, 1), ('failed-auto', 'failed-auto', 5, 'failed', 1, 1)",
+        ),
+        env.DB.prepare(
+            "INSERT INTO polar_checkout_credits (order_id, event_id, event_type, user_id, pollen_credited, polar_created_at, created_at) VALUES ('polar', 'polar', 'order.paid', 'polar', 5, 1, 1)",
+        ),
+    ]);
+    await env.SETUP_HOLDS.put("decision:approved", "approved");
+    await restrictDomain(env.DB, env.SETUP_HOLDS, "cohort.test", SINCE);
+    const { results } = await env.DB.prepare(
+        "SELECT id, quest_pollen_restricted, tier_balance, pack_balance FROM user",
+    ).all();
+    expect(
+        Object.fromEntries(
+            results.map((r) => [r.id, r.quest_pollen_restricted]),
+        ),
+    ).toEqual({
+        farm: 1,
+        subdomain: 1,
+        unrelated: null,
+        cleared: 0,
+        approved: 0,
+        checkout: 0,
+        auto: 0,
+        "failed-auto": 1,
+        polar: 0,
+        "at-start": 1,
+        "before-start": null,
+    });
+    expect(
+        results.every((r) => r.tier_balance === 5 && r.pack_balance === 3),
+    ).toBe(true);
+
+    // A clear is permanent even while the domain keeps producing signups.
+    await env.DB.prepare(
+        "UPDATE user SET quest_pollen_restricted = 0 WHERE id = 'farm'",
+    ).run();
+    await env.DB.prepare(
+        `INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('late', 'late', 'late@cohort.test', ${SINCE + 120}, 1)`,
+    ).run();
+    await restrictDomain(env.DB, env.SETUP_HOLDS, "cohort.test", SINCE);
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'farm'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(0);
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'late'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(1);
+
+    // A maintainer's release clears existing accounts explicitly. KV only
+    // controls detection, so later scans cannot undo an account-level decision.
+    await env.SETUP_HOLDS.put("release:cohort.test", "released");
+    await env.DB.prepare(releaseDomainSql("cohort.test")).run();
+    expect(
+        await env.DB.prepare(
+            "SELECT count(*) AS n FROM user WHERE quest_pollen_restricted = 1",
+        ).first("n"),
+    ).toBe(0);
+    expect(() =>
+        restrictionCandidatesSql("cohort.test'; DROP TABLE user", SINCE),
+    ).toThrow("Invalid signup domain");
+    expect(() => restrictionCandidatesSql("cohort.test", "0 OR 1")).toThrow(
+        "burst start",
+    );
+    expect(() => restrictionSql([])).toThrow("1–200 user IDs");
+    expect(() => restrictionSql(Array(201).fill("farm"))).toThrow(
+        "1–200 user IDs",
+    );
+});
+
+it("sweeps each new domain sequentially in bounded batches, then once after KV propagation", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.signups = ["sweep-a.test", "sweep-b.test"].map((domain) => ({
+        domain,
+        accounts: 201,
+        since: SINCE,
+    }));
+    await env.DB.prepare(`WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<201)
+        INSERT INTO user (id, name, email, created_at, updated_at)
+        SELECT 'sweep-'||x, 'sweep', x||'@sweep-a.test', ${SINCE}, 1 FROM n`).run();
+    await env.DB.prepare(
+        `INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('sweep-b', 'sweep', 'a@sweep-b.test', ${SINCE}, 1), ('sweep-old', 'old', 'old@sweep-a.test', ${SINCE - 1}, 1)`,
+    ).run();
+    const queries = [];
+    await runInDurableObject(stub, (instance) => {
+        const prepare = instance.env.DB.prepare.bind(instance.env.DB);
+        vi.spyOn(instance.env.DB, "prepare").mockImplementation((sql) => {
+            queries.push(sql);
+            return prepare(sql);
+        });
+    });
+    const before = Date.now();
+    await stub.check();
+    // A second domain cannot start reading while the first is still updating.
+    expect(queries.map((sql) => sql.split(" ")[0])).toEqual([
+        "SELECT",
+        "UPDATE",
+        "UPDATE",
+        "SELECT",
+        "UPDATE",
+    ]);
+    expect(queries[0]).toContain("sweep-a.test");
+    expect(queries[3]).toContain("sweep-b.test");
+    const pending = await stored(stub, "quest-sweeps");
+    expect(Object.keys(pending)).toHaveLength(2);
+    expect(pending["sweep-a.test"].followup).toBe(false);
+    expect(pending["sweep-a.test"].since).toBe(SINCE);
+    expect(pending["sweep-a.test"].dueAt).toBeGreaterThanOrEqual(
+        before + 120_000,
+    );
+    await checks(stub, 3);
+    expect(queries).toHaveLength(5);
+    expect(
+        await env.DB.prepare(
+            "SELECT count(*) AS n FROM user WHERE email LIKE '%@sweep-a.test' AND quest_pollen_restricted = 1",
+        ).first("n"),
+    ).toBe(201);
+
+    await env.DB.prepare(
+        "UPDATE user SET quest_pollen_restricted = 0 WHERE id = 'sweep-1'",
+    ).run();
+    await env.DB.prepare(
+        `INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('sweep-late', 'late', 'late@sweep-a.test', ${SINCE + 600}, 1)`,
+    ).run();
+    await runInDurableObject(stub, async (_, state) => {
+        for (const sweep of Object.values(pending)) sweep.dueAt = 0;
+        await state.storage.put("quest-sweeps", pending);
+    });
+    // The follow-up survives a restart.
+    vi.restoreAllMocks();
+    await evictDurableObject(stub);
+    queries.length = 0;
+    await runInDurableObject(stub, (instance) => {
+        const prepare = instance.env.DB.prepare.bind(instance.env.DB);
+        vi.spyOn(instance.env.DB, "prepare").mockImplementation((sql) => {
+            queries.push(sql);
+            return prepare(sql);
+        });
+    });
+    // The rolling window now starts later; the follow-up keeps the saved start.
+    world.signups = [
+        { domain: "sweep-a.test", accounts: 201, since: SINCE + 3600 },
+    ];
+    await stub.check();
+    expect(queries.map((sql) => sql.split(" ")[0])).toEqual([
+        "SELECT",
+        "UPDATE",
+        "SELECT",
+    ]);
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'sweep-old'",
+        ).first("quest_pollen_restricted"),
+    ).toBeNull();
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'sweep-late'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(1);
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'sweep-1'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(0);
+    const done = queries.length;
+    world.signups = [
+        { domain: "sweep-a.test", accounts: 201, since: 1_793_404_800 },
+    ];
+    await checks(stub, 3);
+    expect(queries).toHaveLength(done);
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+});
+
+it("posts signup cards during D1 failures and retries persisted work after the burst ends", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.signups = [
+        { domain: "retry.test", accounts: 31, since: 1_793_404_800 },
+    ];
+    await env.DB.prepare(
+        `INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('retry', 'retry', 'a@retry.test', ${SINCE}, 1)`,
+    ).run();
+    await runInDurableObject(stub, (instance) => {
+        vi.spyOn(instance.env.DB, "prepare").mockImplementation(() => {
+            throw new Error("D1 unavailable");
+        });
+    });
+    await stub.check();
+    expect(
+        world.writes.some(
+            (w) => w.ok && w.text.includes("restriction pending; Paid usable"),
+        ),
+    ).toBe(true);
+    expect((await stored(stub, "quest-sweeps"))["retry.test"].followup).toBe(
+        true,
+    );
+    expect(await stored(stub, "checkedAt")).toBeDefined();
+    vi.restoreAllMocks();
+    await evictDurableObject(stub);
+    world.signups = [];
+    await stub.check();
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'retry'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(1);
+    const pending = await stored(stub, "quest-sweeps");
+    expect(pending["retry.test"].followup).toBe(false);
+    await runInDurableObject(stub, async (_, state) => {
+        pending["retry.test"].dueAt = 0;
+        await state.storage.put("quest-sweeps", pending);
+    });
+    await stub.check();
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+});
+
+it("cancels released-domain sweeps without overwriting account decisions", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.signups = [
+        { domain: "released.test", accounts: 31, since: 1_793_404_800 },
+    ];
+    await env.DB.prepare(
+        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('released', 'released', 'a@released.test', 1, 1)",
+    ).run();
+    await stub.check();
+    await env.SETUP_HOLDS.put("release:released.test", "released");
+    await env.DB.prepare(releaseDomainSql("released.test")).run();
+    // A subsequent maintainer restriction is independent of the domain release.
+    await env.DB.prepare(
+        "UPDATE user SET quest_pollen_restricted = 1 WHERE id = 'released'",
+    ).run();
+    await runInDurableObject(stub, async (_, state) => {
+        const pending = await state.storage.get("quest-sweeps");
+        pending["released.test"].dueAt = 0;
+        await state.storage.put("quest-sweeps", pending);
+    });
+    await stub.check();
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'released'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(1);
+    expect(edits("m1").at(-1).text).toContain("released by a maintainer");
+    await env.SETUP_HOLDS.put("release:pre-released.test", "released");
+    world.signups = [
+        { domain: "pre-released.test", accounts: 31, since: 1_793_404_800 },
+    ];
+    await stub.check();
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+});
 
 it("keeps a sign-up card open while sign-ups can't be read", async () => {
     const stub = watch();
@@ -364,58 +800,46 @@ it("posts a sign-up card Discord refused, even after its burst ended", async () 
 
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
     expect(posts).toHaveLength(1);
-    expect(posts[0].text).toContain("SETUP QUESTS LIMITED: domain farm.com");
+    expect(posts[0].text).toContain("QUEST POLLEN RESTRICTED: domain farm.com");
     expect(edits("m1").at(-1).text).toContain("ENDED: domain farm.com");
     expect((await stored(stub, "state")).unposted).toEqual({});
 });
 
-it("a review card lists the oldest requests, follows decisions and closes", async () => {
+it("retires saved review cards, retries failed edits, and keeps checking services", async () => {
     const stub = watch();
     world.rows = OK;
-    const now = Date.now();
-    for (let i = 0; i < 7; i++)
-        await env.SETUP_HOLDS.put(`review:u${i}`, "pending", {
-            metadata: {
-                domain: "farm.com",
-                requestedAt: now + i,
-                createdAt: now,
-                rewards: 1,
-                rewardPollen: 0.25,
+    await runInDurableObject(stub, async (_, state) => {
+        await state.storage.put("state", {
+            open: {
+                "review:farm.com": {
+                    kind: "REVIEW",
+                    messageId: "old-review",
+                    info: { domain: "farm.com" },
+                },
             },
         });
-    await env.SETUP_HOLDS.put("decision:u6", "declined");
-    await env.SETUP_HOLDS.put("hold:farm.com", "held");
+        await state.storage.put("lines:old-review", { lines: [] });
+    });
+    world.fails = (w) => w.method === "PATCH";
     await stub.check();
-    await settle(stub);
-
-    const opened = world.writes.find((w) => w.ok && w.method === "POST");
-    expect(opened.text).toContain("REVIEW: domain farm.com");
-    expect(opened.text).toContain("6 accounts");
-    expect(opened.text).not.toContain("decision:u6");
-    // The AI's verdict lands on the card.
-    expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
-
-    // Each decision changes the accounts listed: the old verdict goes, and
-    // the AI looks again, however many rounds it takes.
-    for (let i = 0; i < 4; i++) {
-        await env.SETUP_HOLDS.put(`decision:u${i}`, "approved");
-        await stub.check();
-        await settle(stub);
-        const card = edits("m1").at(-1).text;
-        expect(card).not.toContain(`Line ${i + 1}.`);
-        expect(card).toContain(`APPROVE: Line ${i + 2}.`);
-    }
-    expect(edits("m1").at(-1).text).toContain("'decision:u5' approved");
-
-    for (let i = 4; i < 6; i++)
-        await env.SETUP_HOLDS.put(`decision:u${i}`, "declined");
+    expect((await stored(stub, "state")).open["review:farm.com"]).toBeDefined();
+    expect((await stored(stub, "state")).reviewsRetired).toBe(false);
+    expect(await stored(stub, "checkedAt")).toBeDefined();
+    world.fails = () => false;
     await stub.check();
-    await settle(stub);
-    const last = edits("m1").at(-1);
-    expect(last.color).toBe(GREEN);
-    expect(last.text).toContain("DECIDED: domain farm.com");
-    expect(world.writes.filter((w) => w.method === "POST")).toHaveLength(1);
+    expect(edits("old-review").at(-1).text).toContain("REVIEW CLOSED");
+    expect((await stored(stub, "state")).open).toEqual({});
+    expect(await stored(stub, "lines:old-review")).toBeUndefined();
+    expect(world.answers).toBe(0);
+    expect((await stored(stub, "state")).reviewsRetired).toBe(true);
+    await runInDurableObject(stub, (instance) => {
+        vi.spyOn(instance, "retireReviews").mockImplementation(() => {
+            throw new Error("completed retirement must not run again");
+        });
+    });
+    await stub.check();
 });
+
 it("serves only /health, which reports the last check and never runs one", async () => {
     const get = (path) =>
         exports.default.fetch(`https://infra-watch.test${path}`);
@@ -429,36 +853,6 @@ it("serves only /health, which reports the last check and never runs one", async
     const before = Date.now();
     await env.WATCH.get(env.WATCH.idFromName("main")).check();
     expect(await checkedAt()).toBeGreaterThanOrEqual(before);
-});
-
-it("a review the daily budget skipped is investigated once the budget resets", async () => {
-    const stub = watch();
-    world.rows = OK;
-    await env.SETUP_HOLDS.put("hold:budget.com", "held");
-    await env.SETUP_HOLDS.put("review:b0", "pending", {
-        metadata: {
-            domain: "budget.com",
-            requestedAt: Date.now(),
-            createdAt: Date.now(),
-            rewards: 1,
-            rewardPollen: 0.25,
-        },
-    });
-    const budget = (day) =>
-        runInDurableObject(stub, (_, state) =>
-            state.storage.put("ai", { day, count: DAILY_LIMIT }),
-        );
-    await budget(new Date().toISOString().slice(0, 10));
-    await stub.check();
-    await settle(stub);
-    expect(world.answers).toBe(0);
-    expect(world.writes.some((w) => w.text.includes("APPROVE"))).toBe(false);
-
-    // A new day: the next check asks for the missing verdict.
-    await budget("2000-01-01");
-    await stub.check();
-    await settle(stub);
-    expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
 });
 
 const TEXT_BRIDGE = {
@@ -534,87 +928,281 @@ it("reads the legacy bridges once an hour, from 5 minutes past", async () => {
     expect(world.legacyReads).toBe(3);
 });
 
-it("tells the community channel once a week about a model leaning on its fallback", async () => {
+// A community text model in gen's catalog.
+const community = (name, extra) => ({
+    name,
+    community: true,
+    category: "text",
+    ...extra,
+});
+// Each text model answers its probe's marker; streams of the `broken`
+// models never end. Image models answer an image.
+const answers = (broken) => (path, body) => {
+    if (path !== "/v1/chat/completions")
+        return Response.json({ data: [{ b64_json: btoa("x".repeat(200)) }] });
+    const marker = body.messages[0].content.split(": ")[1];
+    const answer = `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }] })}\n\n`;
+    const done = broken(body.model) ? "" : "data: [DONE]\n\n";
+    return new Response(answer + done, {
+        headers: { "x-model-used": body.model },
+    });
+};
+// A check, and the community cycle it started.
+const cycled = async (stub) => {
+    await stub.check();
+    await runInDurableObject(stub, (instance) => instance.cycle);
+};
+// Half an hour on, with every saved time `ms` further back: each model's
+// backoff and quiet periods.
+const later = (stub, ms) =>
+    runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("community");
+        saved.at -= 30 * 60_000;
+        for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
+        for (const key of Object.keys(saved.quiet)) saved.quiet[key] -= ms;
+        await state.storage.put("community", saved);
+    });
+const COMMUNITY = "/api/webhooks/2/y";
+const INFRA = "/api/webhooks/1/x";
+const posts = (path) =>
+    world.writes.filter((w) => w.ok && w.method === "POST" && w.path === path);
+const MAINTAINERS = "<@304378879705874432> <@884468469452656732>";
+const OWNER_O = "<@123456789012345678>";
+// The agent tells every incident it gets, or only those `pick` keeps, one
+// line each.
+const tells =
+    (pick = () => true) =>
+    ({ incidents }) => {
+        const lines = (to) =>
+            incidents
+                .filter((i) => i.to === to && pick(i))
+                .map((i) => ({ incidents: [i.id], text: `${to}: ${i.id}` }));
+        return {
+            community: lines("community"),
+            maintainers: lines("maintainers"),
+        };
+    };
+const HOURS = (n) => n * 60 * 60_000;
+
+it("probes due models by Thomas's rule, and calls the agent only with incidents, through its own key", async () => {
     const stub = watch();
-    const model = "community/o/leaning";
     world.catalog = [
-        { name: "a/model" },
-        { name: model, community: true },
-        { name: "community/o/fallback", community: true },
-        { name: "community/o/agent", community: true, agent: true },
+        { name: "a/model", category: "text" },
+        community("community/o/broken"),
+        community("community/p/busy", { health: { success_rate: 100 } }),
+        community("community/o/agent", { agent: true }),
     ];
-    // Each leans on its fallback: 30 of 40 successes rescued.
-    world.rows = [model, "community/o/agent"].flatMap((m) => [
-        { ...row(40, 40, m), fallback_rescues: 30 },
+    world.regular = [
         {
-            ...row(30, 30, m),
+            model: "community/p/busy",
+            is_rollup: 1,
+            total_requests: 30,
+            status_2xx: 30,
+            errors_4xx: 0,
+            errors_5xx: 0,
+        },
+    ];
+    world.probe = answers(() => true);
+    world.agent = tells();
+    // A first broken stream: probed, nothing to tell yet.
+    await cycled(stub);
+    expect(world.probes).toEqual(["/v1/chat/completions community/o/broken"]);
+    expect(world.agentFacts).toHaveLength(0);
+
+    // The second in a row, after the backoff: one incident for its owner.
+    await later(stub, HOURS(8));
+    await cycled(stub);
+    expect(world.agentKeys).toEqual(["Bearer agent-test"]);
+    expect(world.agentFacts[0].incidents).toEqual([
+        {
+            id: "1",
+            kind: "stream",
+            to: "community",
+            model: "community/o/broken",
+            error: "stream is missing [DONE]",
+        },
+    ]);
+    const [told] = posts(COMMUNITY);
+    expect(told.content).toBe(OWNER_O);
+    expect(told.text).toMatch(
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT[\s\S]*│ MODEL {3}o\/broken +│[\s\S]*\n```\ncommunity: 1\n\nPublishers see .*My Models/,
+    );
+
+    // Told: quiet for a day, so no call even once it breaks again.
+    await later(stub, HOURS(16));
+    await cycled(stub);
+    expect(world.probes).toHaveLength(3);
+    expect(world.agentFacts).toHaveLength(1);
+});
+
+it("starts quiet periods only for incidents in a delivered post; the rest stay pending", async () => {
+    const stub = watch();
+    world.catalog = [community("community/o/a"), community("community/p/b")];
+    world.probe = answers(() => true);
+    await cycled(stub);
+    await later(stub, HOURS(8));
+    // Both broke twice; the agent tells only o/a.
+    world.agent = tells((i) => i.model === "community/o/a");
+    await cycled(stub);
+    expect(world.agentFacts[0].incidents.map((i) => i.model)).toEqual([
+        "community/o/a",
+        "community/p/b",
+    ]);
+    // p/b is still pending; Discord refuses the post telling it.
+    world.agent = tells();
+    world.fails = (w) => w.path === COMMUNITY;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts[1].incidents.map((i) => i.model)).toEqual([
+        "community/p/b",
+    ]);
+    // Still pending, and told once Discord takes it.
+    world.fails = () => false;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts[2].incidents.map((i) => i.model)).toEqual([
+        "community/p/b",
+    ]);
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(3);
+}, 15_000);
+
+it("sends a stream broken for three owners' working models at once to the maintainers, pinging no owner", async () => {
+    const stub = watch();
+    world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
+        (n) => community(n),
+    );
+    world.probe = answers(() => false);
+    world.agent = tells();
+    await cycled(stub);
+    // Working, then 4 hours on all three break the same way.
+    world.probe = answers(() => true);
+    await later(stub, HOURS(4));
+    await cycled(stub);
+    expect(world.agentFacts[0].incidents).toEqual([
+        {
+            id: "1",
+            kind: "shared",
+            to: "maintainers",
+            error: "stream is missing [DONE]",
+            models: ["community/a/x", "community/b/y", "community/c/z"],
+        },
+    ]);
+    const [told] = posts(INFRA).filter((w) =>
+        w.text.includes("COMMUNITY MODELS: LIKELY A GEN PROBLEM"),
+    );
+    expect(told.content).toBe(MAINTAINERS);
+    expect(posts(COMMUNITY)).toHaveLength(0);
+});
+
+it("tells the day's listing changes once, moving the saved set only once they are delivered", async () => {
+    const stub = watch();
+    const model = (name, success_rate) =>
+        community(name, { health: { success_rate } });
+    world.probe = answers(() => false);
+    world.catalog = [model("community/o/a", 40), model("community/o/b", 95)];
+    world.shown = [model("community/o/b", 95)];
+    // The first day only saves the set.
+    await cycled(stub);
+    expect((await stored(stub, "listings")).filtered).toEqual([
+        "community/o/a",
+    ]);
+
+    // The next day a recovers and b gets filtered; the agent leaves it out.
+    world.catalog = [model("community/o/a", 90), model("community/o/b", 30)];
+    world.shown = [model("community/o/a", 90)];
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("listings");
+        await state.storage.put("listings", { ...saved, day: "2000-01-01" });
+    });
+    world.agent = () => ({ community: [], maintainers: [] });
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts.at(-1).incidents).toEqual([
+        {
+            id: "1",
+            kind: "listings",
+            to: "community",
+            filtered: 1,
+            newly: [{ model: "community/o/b", health: 30 }],
+            back: [{ model: "community/o/a", health: 90 }],
+        },
+    ]);
+    expect((await stored(stub, "listings")).day).toBe("2000-01-01");
+
+    // Told the next cycle: the set moves on, and it isn't told again.
+    world.agent = tells();
+    await later(stub, 0);
+    await cycled(stub);
+    expect((await stored(stub, "listings")).filtered).toEqual([
+        "community/o/b",
+    ]);
+    const calls = world.agentFacts.length;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(calls);
+    // Listings ping no one.
+    expect(posts(COMMUNITY).at(-1).content).toBe("");
+});
+
+it("keeps a shared failure the maintainers didn't get as gen's, past 4 hours and without new probes", async () => {
+    const stub = watch();
+    world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
+        (n) => community(n),
+    );
+    world.probe = answers(() => false);
+    world.agent = tells();
+    await cycled(stub);
+    world.probe = answers(() => true);
+    world.fails = (w) => w.path === INFRA;
+    await later(stub, HOURS(4));
+    await cycled(stub);
+    // 5 hours on, before their backoff ends: still one incident for the
+    // maintainers, none for the owners.
+    world.fails = () => false;
+    await later(stub, HOURS(5));
+    await cycled(stub);
+    expect(world.probes).toHaveLength(6);
+    expect(world.agentFacts[1].incidents.map((i) => i.kind)).toEqual([
+        "shared",
+    ]);
+    expect(posts(COMMUNITY)).toHaveLength(0);
+}, 15_000);
+
+it("keeps a refused fallback notice after its rescues leave the 4-hour window", async () => {
+    const stub = watch();
+    const leaning = "community/o/leaning";
+    world.catalog = [community(leaning), community("community/o/fallback")];
+    world.regular = [
+        { model: leaning, is_rollup: 1, status_2xx: 40, fallback_rescues: 30 },
+        {
+            model: leaning,
             is_rollup: 0,
             fallback_used: true,
             model_used: "community/o/fallback",
             fallback_rescues: 30,
         },
+    ];
+    world.probe = answers(() => false);
+    world.agent = tells();
+    world.fails = (w) => w.path === COMMUNITY;
+    await cycled(stub);
+    // The rescues are out of the window; the notice is still pending, and
+    // told once Discord takes it.
+    world.regular = [];
+    world.fails = () => false;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts[1].incidents).toMatchObject([
+        {
+            kind: "fallback",
+            model: leaning,
+            snapshots: [{ rescued: 30, successes: 40 }],
+        },
     ]);
-    const told = () =>
-        world.writes.filter(
-            (w) =>
-                w.ok && w.path === "/api/webhooks/2/y" && w.method === "POST",
-        );
-    await checks(stub, 2);
-    // One notice, for the listed model only, checked once an hour.
-    expect(told()).toHaveLength(1);
-    expect(told()[0].text).toContain("FALLBACK: o/leaning");
-    expect(told()[0].text).toContain("VIA     o/fallback (30)");
-
-    const back = (ms) =>
-        runInDurableObject(stub, async (_, state) => {
-            const saved = await state.storage.get("fallback");
-            saved.checkedAt -= ms;
-            saved.told[`${model} community/o/fallback`] -= ms;
-            await state.storage.put("fallback", saved);
-        });
-    // An hour later it is still leaning, but was told this week.
-    await back(60 * 60_000);
-    await stub.check();
-    expect(told()).toHaveLength(1);
-    // A week on, it is told again.
-    await back(7 * 24 * 60 * 60_000);
-    await stub.check();
-    expect(told()).toHaveLength(2);
-    // None reached the infra-watch channel.
-    const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
-    expect(infra.some((w) => w.text.includes("FALLBACK"))).toBe(false);
-});
-
-it("tells the community channel once a day what the listing filter changed", async () => {
-    const stub = watch();
-    const model = (name, success_rate) => ({
-        name,
-        community: true,
-        health: { success_rate },
-    });
-    world.catalog = [model("community/o/a", 40), model("community/o/b", 95)];
-    world.shown = [model("community/o/b", 95)];
-    const told = () =>
-        world.writes.filter((w) => w.ok && w.path === "/api/webhooks/2/y");
-    await checks(stub, 2);
-    // The first day only keeps the filtered set.
-    expect(told()).toHaveLength(0);
-    expect((await stored(stub, "listings")).filtered).toEqual([
-        "community/o/a",
-    ]);
-
-    // a recovers and b gets filtered: told once, the next day.
-    world.catalog = [model("community/o/a", 90), model("community/o/b", 30)];
-    world.shown = [model("community/o/a", 90)];
-    await stub.check();
-    expect(told()).toHaveLength(0);
-    await runInDurableObject(stub, async (_, state) => {
-        const saved = await state.storage.get("listings");
-        await state.storage.put("listings", { ...saved, day: "2000-01-01" });
-    });
-    await checks(stub, 2);
-    expect(told()).toHaveLength(1);
-    expect(told()[0].text).toContain(
-        "**Newly filtered**\n`o/b` 30%\n**Back in listings**\n`o/a` 90%",
-    );
-});
+    expect(posts(COMMUNITY)).toHaveLength(1);
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(2);
+}, 15_000);

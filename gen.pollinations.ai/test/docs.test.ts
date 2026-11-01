@@ -459,7 +459,7 @@ describe("docs routes", () => {
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
-            "Connect User Wallets",
+            "Pollinations Pay",
         );
         expect(schema.tags.map((tag) => tag.name)).toContain("Publish a Model");
         expect(schema.tags.map((tag) => tag.name)).toContain(
@@ -744,8 +744,10 @@ describe("docs routes", () => {
             'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
-        expect(html).toContain("window.location.hash === '#tag/byop'");
-        expect(html).toContain("#tag/connect-user-wallets");
+        expect(html).toContain(
+            "window.location.hash === '#tag/byop' || window.location.hash === '#tag/connect-user-wallets'",
+        );
+        expect(html).toContain("#tag/pollinations-pay");
     });
 
     it("adds the pinned sign-in button without rendering credentials", async () => {
@@ -982,7 +984,7 @@ describe("docs routes", () => {
         );
         expect(walletRes.status).toBe(301);
         expect(walletRes.headers.get("Location")).toBe(
-            "/docs#tag/connect-user-wallets",
+            "/docs#tag/pollinations-pay",
         );
 
         const missingRes = await worker.fetch(
@@ -1016,7 +1018,7 @@ describe("docs routes", () => {
         expect(realtimeSection).toContain("`GET /realtime`");
         expect(realtimeSection).toContain("`GET /v1/realtime`");
         expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
-        expect(apiBody).not.toContain("## Connect User Wallets");
+        expect(apiBody).not.toContain("## Pollinations Pay");
 
         const byopRes = await worker.fetch(
             new Request(
@@ -1026,7 +1028,7 @@ describe("docs routes", () => {
             ctx,
         );
         expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("## Connect User Wallets");
+        expect(await byopRes.text()).toContain("## Pollinations Pay");
 
         const modelsRes = await worker.fetch(
             new Request(

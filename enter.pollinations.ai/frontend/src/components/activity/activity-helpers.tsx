@@ -2,6 +2,7 @@ import {
     Button,
     CardIcon,
     DownloadIcon,
+    formatCount,
     MultiSelect,
     SproutIcon,
     Tooltip,
@@ -10,7 +11,6 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { Await, useLoaderData } from "@tanstack/react-router";
 import type { FC, KeyboardEvent, ReactNode } from "react";
 import { useDeferredValue } from "react";
-import { PageStatus } from "../layout/dashboard-loading.tsx";
 import { saveBlob } from "./activity-csv";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric } from "./types";
@@ -191,10 +191,10 @@ export function PollenUsageBadges(usage: {
     const isPollen = usage.metric === "pollen";
     const paid = isPollen
         ? formatActivityPollen(usage.paidPollen)
-        : usage.paidRequests.toLocaleString();
+        : formatCount(usage.paidRequests);
     const quest = isPollen
         ? formatActivityPollen(usage.tierPollen)
-        : usage.tierRequests.toLocaleString();
+        : formatCount(usage.tierRequests);
     const unit = isPollen ? "Pollen" : "requests";
     return (
         <div className="ml-auto grid min-w-40 grid-cols-2 items-center justify-items-end gap-1">
@@ -233,12 +233,8 @@ export function ActivityKeyFilter({
     return (
         <Await
             promise={apiKeys}
-            fallback={
-                <>
-                    <ActivityFilter {...props} />
-                    <PageStatus />
-                </>
-            }
+            // Key names only label selections; the filter works without them.
+            fallback={<ActivityFilter {...props} />}
         >
             {(keys) => {
                 const options = [...props.options];

@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { defaultKeyHasher } from "@better-auth/api-key";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -192,6 +193,31 @@ test("GET /api/account/key - refuses a publishable key", {
     const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
         headers: {
             Authorization: `Bearer ${pubApiKey}`,
+        },
+    });
+    expect(response.status).toBe(401);
+    const body = (await response.json()) as { error: { message: string } };
+    expect(body.error.message).toContain("only identify your app");
+});
+
+test("GET /api/account/key - refuses an App Key in the old plln_pk_ format", {
+    timeout: 30000,
+}, async ({ pubApiKey, mocks }) => {
+    await mocks.enable("tinybird");
+    const legacyKey = `plln_${pubApiKey}`;
+    const row = await drizzle(env.DB)
+        .select({ id: schema.apikey.id })
+        .from(schema.apikey)
+        .where(eq(schema.apikey.key, await defaultKeyHasher(pubApiKey)))
+        .get();
+    await updateKey(row?.id ?? "", {
+        key: await defaultKeyHasher(legacyKey),
+        prefix: "plln_pk",
+    });
+
+    const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+        headers: {
+            Authorization: `Bearer ${legacyKey}`,
         },
     });
     expect(response.status).toBe(401);

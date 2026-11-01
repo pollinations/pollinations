@@ -1,10 +1,9 @@
 import {
     AppIcon,
     Button,
-    CheckIcon,
-    ClipboardIcon,
     CopyButton,
     CopyField,
+    CopyStateIcon,
     DialogBody,
     DialogHeader,
     FieldStack,
@@ -128,7 +127,7 @@ export function KeyDialogContent({
                             aria-hidden="true"
                             className="flex size-4 shrink-0 [&>svg]:size-full"
                         >
-                            {copied ? <CheckIcon /> : <ClipboardIcon />}
+                            <CopyStateIcon copied={copied} />
                         </span>
                         {copied ? "Copied" : "Copy and close"}
                     </span>
@@ -193,7 +192,7 @@ export function KeyDialogContent({
                                 <InlineLink
                                     href={genDocsUrl(
                                         app
-                                            ? "#tag/connect-user-wallets"
+                                            ? "#tag/pollinations-pay"
                                             : "#tag/authentication",
                                     )}
                                 >

@@ -8,7 +8,18 @@ import {
 } from "react";
 import { cn } from "../lib/cn.ts";
 import { Button, type ButtonProps } from "../primitives/Button.tsx";
+import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
+import type { IconProps } from "../primitives/icons/types.ts";
 import { Tooltip } from "../primitives/Tooltip.tsx";
+
+/** The copy state as an icon: a clipboard, then a check once copied. */
+export function CopyStateIcon({
+    copied,
+    ...props
+}: IconProps & { copied: boolean }) {
+    const Icon = copied ? CheckIcon : ClipboardIcon;
+    return <Icon {...props} />;
+}
 
 type CopyValue = string | (() => string | Promise<string>);
 
@@ -37,11 +48,17 @@ export function CopyButton({
     value,
     children,
     copiedTimeoutMs = 2000,
-    tooltip = "📋 Click to copy",
+    tooltip = "Click to copy",
     tooltipAlign,
     tooltipClampToViewport,
     tooltipMaxWidth,
-    copiedTooltip = "✅ Copied!",
+    // Icons, never emoji: the check is the package's own CheckIcon.
+    copiedTooltip = (
+        <span className="polli:inline-flex polli:items-center polli:gap-1 polli:text-intent-success-text">
+            <CheckIcon className="polli:h-3.5 polli:w-3.5" />
+            Copied
+        </span>
+    ),
     tooltipClassName,
     className,
     variant = "plain",

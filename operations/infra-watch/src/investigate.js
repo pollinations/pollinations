@@ -154,7 +154,7 @@ const TOOL_SPECS = [
 ];
 
 export const investigates = (kind) =>
-    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP", "REVIEW"].includes(kind);
+    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP"].includes(kind);
 
 const only = (fields, row) =>
     Object.fromEntries(fields.map((f) => [f, row[f]]));
@@ -295,7 +295,15 @@ export function reply(text) {
     return line ? line.slice(0, MAX_LINE) : null;
 }
 
-async function chat(key, messages, specs, offerTools, signal, fetchImpl) {
+async function chat(
+    key,
+    messages,
+    specs,
+    offerTools,
+    signal,
+    fetchImpl,
+    maxTokens,
+) {
     const res = await fetchImpl(GEN, {
         method: "POST",
         headers: {
@@ -305,7 +313,7 @@ async function chat(key, messages, specs, offerTools, signal, fetchImpl) {
         body: JSON.stringify({
             model: MODEL,
             reasoning_effort: "low",
-            max_completion_tokens: 1500,
+            max_completion_tokens: maxTokens,
             messages,
             ...(specs.length && {
                 tools: specs,
@@ -333,12 +341,19 @@ async function runTool(tools, call) {
 
 // Runs the model until it answers. It may call tools for at most
 // MAX_TOOL_CALLS calls; the whole investigation shares one timeout. Without
-// specs the model just answers.
+// specs the model just answers. `answer` shapes the answer: one line by
+// default.
 export async function ask(
     key,
     payload,
     tools,
-    { fetchImpl = fetch, system = SYSTEM_PROMPT, specs = TOOL_SPECS } = {},
+    {
+        fetchImpl = fetch,
+        system = SYSTEM_PROMPT,
+        specs = TOOL_SPECS,
+        answer = reply,
+        maxTokens = 1500,
+    } = {},
 ) {
     return withTimeout(TIMEOUT_MS, async (signal) => {
         const messages = [
@@ -355,9 +370,10 @@ export async function ask(
                 offer,
                 signal,
                 fetchImpl,
+                maxTokens,
             );
             if (!offer || !message.tool_calls?.length)
-                return reply(message.content);
+                return answer(message.content);
             messages.push(message);
             // The budget is checked per call: one reply can hold many calls.
             for (const call of message.tool_calls) {
@@ -395,9 +411,9 @@ export async function lost(model, minutes, tinybird) {
     }
 }
 
-// Counts AI lines per UTC day; null once the day's limit is used.
-export function allow(budget, now) {
+// Counts AI calls per UTC day; null once the day's limit is used.
+export function allow(budget, now, limit = DAILY_LIMIT) {
     const day = new Date(now).toISOString().slice(0, 10);
     const count = budget?.day === day ? budget.count : 0;
-    return count < DAILY_LIMIT ? { day, count: count + 1 } : null;
+    return count < limit ? { day, count: count + 1 } : null;
 }

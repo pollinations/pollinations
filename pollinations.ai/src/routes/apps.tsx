@@ -117,7 +117,7 @@ function FilterAxis<T extends string>({
     );
 }
 
-type AppFilterKey = "platform" | "pollen-pay";
+type AppFilterKey = "platform" | "pollinations-pay";
 type AppFilterDraft = {
     key: AppFilterKey;
     value: string;
@@ -126,7 +126,7 @@ type AppFilterDraft = {
 
 const APP_FILTER_LABELS: Record<AppFilterKey, string> = {
     platform: "Platform",
-    "pollen-pay": "pollinations pay",
+    "pollinations-pay": "Pollinations Pay",
 };
 
 function AppSearchInput({
@@ -165,7 +165,9 @@ function AppSearchInput({
                   ...(platforms.length < APP_PLATFORMS.length
                       ? (["platform"] as const)
                       : []),
-                  ...(pollenPay === undefined ? (["pollen-pay"] as const) : []),
+                  ...(pollenPay === undefined
+                      ? (["pollinations-pay"] as const)
+                      : []),
               ];
               return availableKeys
                   .filter((key) => `${key}:`.startsWith(token))
@@ -216,7 +218,10 @@ function AppSearchInput({
         const token = next.slice(tokenStart);
         const separator = token.indexOf(":");
         const key = token.slice(0, separator).toLowerCase() as AppFilterKey;
-        if (separator < 0 || (key !== "platform" && key !== "pollen-pay")) {
+        if (
+            separator < 0 ||
+            (key !== "platform" && key !== "pollinations-pay")
+        ) {
             onQueryChange(next);
             return;
         }
@@ -240,12 +245,12 @@ function AppSearchInput({
 
     const editPollenPay = () => {
         setPendingRemoval(undefined);
-        setDraft({ key: "pollen-pay", value: "" });
+        setDraft({ key: "pollinations-pay", value: "" });
         setOpen(true);
     };
 
     const removeFilter = (id: string) => {
-        if (id === "pollen-pay") {
+        if (id === "pollinations-pay") {
             onPollenPayChange(undefined);
         } else {
             const value = id.slice("platform:".length) as AppPlatform;
@@ -259,11 +264,11 @@ function AppSearchInput({
         (platform) => platform !== draft?.editingPlatform,
     );
     const showPollenToken =
-        pollenPay !== undefined && draft?.key !== "pollen-pay";
+        pollenPay !== undefined && draft?.key !== "pollinations-pay";
     const pollenLabel = pollenPay ? "Yes" : "No";
     const tokenIds = [
         ...visiblePlatforms.map((platform) => `platform:${platform}`),
-        ...(showPollenToken ? ["pollen-pay"] : []),
+        ...(showPollenToken ? ["pollinations-pay"] : []),
     ];
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -330,10 +335,12 @@ function AppSearchInput({
                         ))}
                         {showPollenToken && (
                             <EditableComboboxToken
-                                label="pollinations pay"
+                                label="Pollinations Pay"
                                 value={pollenLabel}
-                                highlighted={pendingRemoval === "pollen-pay"}
-                                aria-label={`Change pollinations pay filter: ${pollenLabel}`}
+                                highlighted={
+                                    pendingRemoval === "pollinations-pay"
+                                }
+                                aria-label={`Change Pollinations Pay filter: ${pollenLabel}`}
                                 onClick={editPollenPay}
                             />
                         )}
@@ -456,7 +463,7 @@ function AppsPage() {
                 >
                     <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
                         <ContentHeader
-                            eyebrow="pollinations pay"
+                            eyebrow="Pollinations Pay"
                             title="Most used this week"
                             subtitle="Apps ranked by requests their users paid for with their own pollen."
                         />

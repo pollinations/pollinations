@@ -1,5 +1,10 @@
 import { env } from "cloudflare:test";
-import { getUserBalance } from "@shared/billing/balance.ts";
+import {
+    createBalanceCheckResult,
+    getAvailableBalance,
+    getUserBalance,
+} from "@shared/billing/balance.ts";
+import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import {
     atomicDeductUserBalance,
     atomicReserveApiKeyBalance,
@@ -19,6 +24,7 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
+import { requireFunds } from "../src/utils/refusals.ts";
 
 const db = drizzle(env.DB);
 
@@ -51,6 +57,134 @@ async function getApiKeyBalance(apiKeyId: string) {
 }
 
 describe("billing deduction", () => {
+    it("freezes previously earned Quest Pollen at preflight and settlement, preserving paid usage and manual clears", async () => {
+        const userId = await createUser({ tierBalance: 35.5, packBalance: 2 });
+        // The flag is applied after the wallet was funded, as in the backfill.
+        await db
+            .update(userTable)
+            .set({ questPollenRestricted: true })
+            .where(eq(userTable.id, userId));
+        const held = await getUserBalance(db, userId);
+        const context = { env, var: {} };
+        await expect(
+            requireFunds(context, 3, () => getUserBalance(db, userId)),
+        ).rejects.toMatchObject({
+            status: 402,
+            errorCode: "QUEST_POLLEN_RESTRICTED",
+        });
+        await expect(
+            requireFunds(context, 1, () => getUserBalance(db, userId)),
+        ).resolves.toMatchObject({ packBalance: 2 });
+        expect(getAvailableBalance(held)).toBe(2);
+        expect(canCoverEstimatedCharge(held, 3)).toBe(false);
+        expect(createBalanceCheckResult(held)).toMatchObject({
+            selectedMeterSlug: "v1:meter:pack",
+            balances: { "v1:meter:tier": 0 },
+        });
+        expect(await atomicDeductUserBalance(db, userId, 2)).toMatchObject({
+            ok: true,
+            bucket: "pack",
+        });
+        expect(await atomicDeductUserBalance(db, userId, 1)).toMatchObject({
+            ok: true,
+            bucket: "pack",
+        });
+        expect(
+            await atomicDeductUserBalance(db, userId, 1, true),
+        ).toMatchObject({ ok: true, bucket: "pack" });
+        expect(await getUserBalance(db, userId)).toMatchObject({
+            tierBalance: 35.5,
+            packBalance: -2,
+        });
+        await db
+            .update(userTable)
+            .set({ questPollenRestricted: false })
+            .where(eq(userTable.id, userId));
+        expect(await atomicDeductUserBalance(db, userId, 1)).toMatchObject({
+            ok: true,
+            bucket: "tier",
+        });
+        expect(await getUserBalance(db, userId)).toEqual({
+            tierBalance: 34.5,
+            packBalance: -2,
+        });
+    });
+
+    it("settles every admitted parallel request even after restricted paid funds run out", async () => {
+        const userId = await createUser({ tierBalance: 35.5, packBalance: 2 });
+        await db
+            .update(userTable)
+            .set({ questPollenRestricted: true })
+            .where(eq(userTable.id, userId));
+        const context = { env, var: {} };
+        // All three requests pass before any provider response settles.
+        await Promise.all(
+            Array.from({ length: 3 }, () =>
+                requireFunds(context, 1, () => getUserBalance(db, userId)),
+            ),
+        );
+        const settled = await Promise.all(
+            Array.from({ length: 3 }, () =>
+                handleBalanceDeduction({
+                    db,
+                    isBilledUsage: true,
+                    totalPrice: 1,
+                    userId,
+                }),
+            ),
+        );
+        expect(
+            settled.map(({ payerBucket, billedPrice }) => ({
+                payerBucket,
+                billedPrice,
+            })),
+        ).toEqual(
+            Array.from({ length: 3 }, () => ({
+                payerBucket: "pack",
+                billedPrice: 1,
+            })),
+        );
+        expect(await getUserBalance(db, userId)).toMatchObject({
+            tierBalance: 35.5,
+            packBalance: -1,
+        });
+        await expect(
+            requireFunds(context, 1, () => getUserBalance(db, userId)),
+        ).rejects.toMatchObject({ status: 402 });
+    });
+
+    it.each([false, true])(
+        "settles a request admitted before restriction, preserving quest-only=%s",
+        async (questPollenOnly) => {
+            const userId = await createUser({
+                tierBalance: 10,
+                packBalance: 0,
+            });
+            await requireFunds({ env, var: {} }, 2, () =>
+                getUserBalance(db, userId),
+            );
+            await db
+                .update(userTable)
+                .set({ questPollenRestricted: true })
+                .where(eq(userTable.id, userId));
+            const settled = await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 2,
+                userId,
+                questPollenOnly,
+            });
+            expect(settled).toMatchObject({
+                billedPrice: 2,
+                payerBucket: questPollenOnly ? "tier" : "pack",
+            });
+            expect(await getUserBalance(db, userId)).toMatchObject({
+                tierBalance: questPollenOnly ? 8 : 10,
+                packBalance: questPollenOnly ? 0 : -2,
+            });
+        },
+    );
+
     it("refills each internal balance at 10 or less without duplicate concurrent grants", async () => {
         await db.insert(userTable).values({
             id: INTERNAL_AUTOMATION_USER_ID,

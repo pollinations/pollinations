@@ -31,7 +31,9 @@ export function AuthAccountIdentity({
                             type: "wallet",
                             balances: {
                                 paid: balance.packBalance,
-                                quest: balance.tierBalance,
+                                quest: balance.questPollenRestricted
+                                    ? 0
+                                    : balance.tierBalance,
                             },
                         }}
                         topUpHref={topUpHref}

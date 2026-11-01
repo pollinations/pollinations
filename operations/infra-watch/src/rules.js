@@ -1,6 +1,8 @@
 // Plain alert rules over public `/models/status` data, and the incident
 // cards they drive. No AI, no secrets.
 
+import { releaseDomainSql } from "./quest-restrictions.js";
+
 // Analytics for the newest minute lag, so an outage or drop must hold for
 // this many consecutive checks before it opens, and a status change on an
 // open incident must hold as long before it counts.
@@ -79,7 +81,6 @@ export function conditions({
     hosts = { public: true, upstream: true },
     analyticsDown,
     signups = [],
-    reviews = new Map(),
 }) {
     // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
     // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
@@ -115,15 +116,6 @@ export function conditions({
     // while over the limit in the last 24 hours.
     for (const signup of signups)
         found[`signup:${signup.domain}`] = { kind: "SIGNUP_BURST", ...signup };
-    // Held accounts asking for a review, per email domain, oldest first:
-    // open while any waits for a maintainer's decision.
-    for (const [domain, accounts] of reviews)
-        found[`review:${domain}`] = {
-            kind: "REVIEW",
-            domain,
-            pending: accounts.length,
-            accounts: accounts.slice(0, REVIEW_LISTED),
-        };
     return found;
 }
 
@@ -284,10 +276,6 @@ export function snapshot(incident) {
         errorKind: info.errorKind ?? null,
         success: info.success ?? null,
         failingCallers: info.callers?.failing_callers ?? null,
-        asking:
-            incident.kind === "REVIEW"
-                ? info.accounts.map((a) => a.userId).join(",")
-                : null,
     };
 }
 
@@ -319,7 +307,7 @@ export const escalates = (before, now) =>
     (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1);
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
-const fit = (s, width) => (s.length > width ? `${s.slice(0, width - 1)}…` : s);
+const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
 const unix = (ms) => Math.round(ms / 1000);
 
 // "2 h 01 min", "47 min", "under 1 min".
@@ -333,14 +321,12 @@ export function duration(ms) {
 // A box titled with the alert and what it is about. It is as wide as its
 // title or its longest row needs, so a full model id is never cut. The
 // title is drawn in the card's colour (an ansi block): Discord on desktop
-// shows it, the phone shows plain text.
-//
-// A value longer than `width` is cut; a card whose values are model ids
-// passes Infinity, so they show whole.
-function panel(title, lines, color, width = 38) {
+// shows it, the phone shows plain text. `whole` keeps every value whole,
+// for cards whose rows are model ids and errors.
+export function panel(title, lines, color, { whole = false } = {}) {
     const body = lines.map(
         ([field, value]) =>
-            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value), width)}`,
+            `${field.padEnd(Math.max(8, field.length + 1))}${whole ? value : fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
     const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
@@ -357,37 +343,30 @@ function panel(title, lines, color, width = 38) {
 const utc = (ms) =>
     `${new Date(ms).toISOString().slice(0, 16).replace("T", " ")} UTC`;
 
-// The Setup hold commands under an open card: release a held domain, and
-// approve or decline each listed review.
-function commands({ kind, info }) {
-    const block = (intro, lines) =>
-        `${intro}\n\`\`\`\n${lines.join("\n")}\n\`\`\``;
-    const release = kvPut(`release:${info.domain}`, "released");
-    if (kind === "SIGNUP_BURST" && info.hold === "held")
-        return [block("Release the domain:", [release])];
-    if (kind !== "REVIEW") return [];
-    return [
-        block("Approve or decline each account, or release the domain:", [
-            ...info.accounts.flatMap((a) => [
-                kvPut(`decision:${a.userId}`, "approved"),
-                kvPut(`decision:${a.userId}`, "declined"),
-            ]),
-            release,
-        ]),
-    ];
+// A release clears current accounts and prevents restrictions on future signups.
+// Commands run from enter.pollinations.ai/; the validated domain is safe in
+// both shell strings and the SQL predicate.
+export function releaseCommands(domain) {
+    try {
+        const sql = releaseDomainSql(domain);
+        return [
+            `npx wrangler kv key put --binding SETUP_HOLDS --env production --remote 'release:${domain}' released`,
+            `npx wrangler d1 execute DB --env production --remote --command "${sql}"`,
+        ];
+    } catch {
+        return ["(no command: unexpected domain, check it by hand)"];
+    }
 }
 
-// Accounts a review card lists, each with its commands; the card moves on
-// to the next ones as a maintainer decides.
-export const REVIEW_LISTED = 5;
-
-// A maintainer's command on the SETUP_HOLDS store, run from
-// enter.pollinations.ai/ with a Cloudflare login on the account. Keys hold
-// only ids and plain domain names; anything else gets no command.
-export const kvPut = (key, value) =>
-    /^(release|decision):[A-Za-z0-9._-]+$/.test(key)
-        ? `npx wrangler kv key put --binding SETUP_HOLDS --env production --remote '${key}' ${value}`
-        : "(no command: unexpected characters, check the key by hand)";
+function commands({ kind, info }) {
+    if (kind !== "SIGNUP_BURST" || info.hold !== "held") return [];
+    return [
+        `Release the domain and its accounts:
+\`\`\`
+${releaseCommands(info.domain).join("\n")}
+\`\`\``,
+    ];
+}
 
 const LABEL = {
     GEN_DOWN: "DOWN",
@@ -398,8 +377,7 @@ const LABEL = {
     DEGRADED: "DEGRADED",
     PRIMARY_WEAK: "PRIMARY WEAK",
     WATCH_DOWN: "DOWN",
-    SIGNUP_BURST: "SETUP QUESTS LIMITED",
-    REVIEW: "REVIEW",
+    SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
 };
 const SUBJECT = {
@@ -410,8 +388,8 @@ const SUBJECT = {
     platform: "platform-wide",
     watch: "infra-watch",
 };
-// Sign-up and review cards are about an email domain.
-const DOMAIN_KEY = /^(signup|review):/;
+// Sign-up cards are about an email domain.
+const DOMAIN_KEY = /^signup:/;
 const subjectOf = (key) =>
     key.startsWith("model:")
         ? key.slice(6)
@@ -424,7 +402,7 @@ const subjectOf = (key) =>
 // An open card's colour by severity: red down, orange degraded, amber weak
 // primary. A closed card's colour is set by cardColor.
 const RED = 0xe24b4a;
-const COLOR = {
+export const COLOR = {
     GEN_DOWN: RED,
     PUBLIC_DOWN: RED,
     UPSTREAM_DOWN: RED,
@@ -435,7 +413,6 @@ const COLOR = {
     WATCH_DOWN: RED,
     // A farm signing up stands out like an outage, without the ping.
     SIGNUP_BURST: RED,
-    REVIEW: 0xef9f27,
     LEGACY_DOWN: 0xd85a30,
 };
 const GREEN = 0x639922;
@@ -490,11 +467,7 @@ export const waiting = (record, now) =>
 // hostname neither (users are fine); every other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
-    if (
-        ["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST", "REVIEW"].includes(
-            kind,
-        )
-    )
+    if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
         return false;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
@@ -582,24 +555,17 @@ function openRows(incident, now) {
             ["REQS", `${info.now10} last 10m`],
             ["", `baseline ${Math.round(info.baseline10)}`],
         ];
-    if (kind === "REVIEW")
-        return [
-            [
-                "ASKING",
-                `${info.pending} account${info.pending === 1 ? "" : "s"}`,
-            ],
-            ["OLDEST", utc(info.accounts[0].requestedAt)],
-            ["LISTED", `${info.accounts.length} oldest, below`],
-        ];
     if (kind === "SIGNUP_BURST") {
         return [
             ["ACCOUNTS", `${info.accounts} in 24h`],
             ["SINCE", utc(info.since * 1000)],
             [
-                "SETUP",
+                "QUEST",
                 info.hold === "released"
                     ? "released by a maintainer"
-                    : "held until a purchase or review",
+                    : info.sweepPending
+                      ? "restriction pending; Paid usable"
+                      : "spending frozen; Paid usable",
             ],
         ];
     }
@@ -666,7 +632,7 @@ export function renderCard(
         incident.info.hold === "released" ? "RELEASED" : LABEL[incident.kind];
     // Closed, a domain card says how it ended; an outage keeps the worst
     // status it reached.
-    const ended = { SIGNUP_BURST: "ENDED", REVIEW: "DECIDED" }[incident.kind];
+    const ended = incident.kind === "SIGNUP_BURST" ? "ENDED" : null;
     const status = closed
         ? (ended ?? LABEL[incident.worst ?? incident.kind])
         : label;
@@ -680,14 +646,7 @@ export function renderCard(
         ),
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
-    // A review card shows only the verdict on the accounts it lists now.
-    const shown =
-        incident.kind === "REVIEW"
-            ? lines
-                  .filter((l) => l.asking === snapshot(incident).asking)
-                  .slice(-1)
-            : lines;
-    for (const line of shown)
+    for (const line of lines)
         parts.push(
             [BADGE[line.color], `<t:${unix(line.at)}:t>`, line.text]
                 .filter(Boolean)
@@ -701,192 +660,6 @@ export function renderCard(
         text: parts.join("\n"),
         ping: incident.pinged ?? pings(incident),
         color,
-    };
-}
-
-// The one new message an open incident can post: it got worse and needs a
-// person. It links to the card instead of repeating it.
-export const escalation = (key, incident, link) => ({
-    text: `↑ \`${subjectOf(key)}\` is now ${LABEL[incident.kind]}: callers are affected. ${link}`,
-    ping: true,
-    color: COLOR[incident.kind],
-});
-
-// A listed community model whose fallback answered at least this many and
-// this share of its successful requests in the window leans on its
-// fallback: callers get answers, but its own upstream fails often.
-export const FALLBACK_MINUTES = 240;
-const MIN_RESCUED = 10;
-const MIN_RESCUED_SHARE = 0.25;
-// Each model and fallback pair is told at most this often.
-const FALLBACK_QUIET_MS = 7 * 24 * 60 * 60 * 1000;
-
-// The listed models leaning on a fallback, each with the fallbacks that
-// rescued its requests, most first. `catalog` is gen's public catalog: a
-// fallback missing from it is private, so it is never named.
-export function fallbackShares(rows, catalog) {
-    const listed = new Set(
-        catalog.filter((m) => m.community && !m.agent).map((m) => m.name),
-    );
-    const named = new Set(catalog.map((m) => m.name));
-    const shares = [];
-    for (const row of rows) {
-        if (!row.is_rollup || !listed.has(row.model)) continue;
-        const rescued = row.fallback_rescues;
-        if (
-            rescued < MIN_RESCUED ||
-            rescued < MIN_RESCUED_SHARE * row.status_2xx
-        )
-            continue;
-        const via = rows
-            .filter(
-                (r) =>
-                    r.model === row.model &&
-                    !r.is_rollup &&
-                    r.fallback_used &&
-                    r.fallback_rescues > 0,
-            )
-            .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
-            .map((r) => ({
-                model: named.has(r.model_used) ? r.model_used : null,
-                rescued: r.fallback_rescues,
-            }));
-        shares.push({
-            model: row.model,
-            via,
-            rescued,
-            successes: row.status_2xx,
-        });
-    }
-    return shares;
-}
-
-// Fallbacks a notice names, each with its own rescues.
-const VIA_SHOWN = 3;
-
-// A share's keys in `told`: the model with each fallback its notice names.
-const pair = (model, v) => `${model} ${v.model ?? "private"}`;
-export const fallbackPairs = (share) =>
-    share.via.slice(0, VIA_SHOWN).map((v) => pair(share.model, v));
-
-// The shares to tell now, each naming only its fallbacks not told about in
-// the last week. `told` keeps when each pair was told; older ones are
-// dropped.
-export function dueFallbacks(shares, told = {}, now) {
-    const recent = Object.fromEntries(
-        Object.entries(told).filter(([, at]) => now - at < FALLBACK_QUIET_MS),
-    );
-    return {
-        due: shares
-            .map((s) => ({
-                ...s,
-                via: s.via
-                    .slice(0, VIA_SHOWN)
-                    .filter((v) => !(pair(s.model, v) in recent)),
-            }))
-            .filter((s) => s.via.length > 0),
-        told: recent,
-    };
-}
-
-const community = (id) => id.replace(/^community\//, "");
-
-// Where an owner sees their model's failed calls and errors.
-const MY_MODELS =
-    "[My Listings](https://enter.pollinations.ai/my-models?tab=models)";
-
-// A fallback notice for the community channel: no ping, the owner reads
-// their model's id. The total rescued, then each fallback's part.
-export function fallbackCard({ model, via, rescued, successes }) {
-    const color = COLOR.PRIMARY_WEAK;
-    return {
-        text: [
-            panel(
-                `FALLBACK: ${community(model)}`,
-                [
-                    [
-                        "RESCUED",
-                        `${rescued} of ${successes} successes (${percent(rescued / successes)}), 4h`,
-                    ],
-                    ...via
-                        .slice(0, VIA_SHOWN)
-                        .map((v) => [
-                            "VIA",
-                            `${v.model ? community(v.model) : "a private model"} (${v.rescued})`,
-                        ]),
-                ],
-                color,
-                Infinity,
-            ),
-            `Callers still get answers, but often from a fallback: the model's own upstream is failing. Its owner sees the errors on ${MY_MODELS}.`,
-        ].join("\n"),
-        ping: false,
-        color,
-    };
-}
-
-// The public community models gen's reliability filter leaves out of the
-// default listing: in the `reliability=all` list but not the default one,
-// with a success rate of 80% or less. Agents aside. Null while no community
-// model has a known rate: then nothing can be judged.
-export function filteredModels(all, shown) {
-    const models = all.filter((m) => m.community && !m.agent);
-    if (!models.some((m) => m.health?.success_rate != null)) return null;
-    const listed = new Set(shown.map((m) => m.name));
-    // A model with no recent sample stays listed.
-    return models.filter(
-        (m) =>
-            !listed.has(m.name) &&
-            m.health?.success_rate != null &&
-            m.health.success_rate <= 80,
-    );
-}
-
-// Since the last daily check: the models newly filtered, and those filtered
-// then that are listed again now. A model gone from both lists was removed
-// or made private, not listed again.
-export function listingChanges(before, filtered, shown) {
-    const was = new Set(before);
-    return {
-        newly: filtered.filter((m) => !was.has(m.name)),
-        back: shown.filter((m) => was.has(m.name)),
-    };
-}
-
-// Discord cuts an embed at 4,096 characters. Model lines stop at this
-// many, leaving room for the headings, the counts and the footer; the rest
-// are counted.
-const LISTINGS_BUDGET = 3800;
-
-// The daily listings post for the community channel: the filtered total,
-// then each change with its success rate. No ping.
-export function listingsCard({ newly, back }, total) {
-    const rate = (m) =>
-        m.health?.success_rate == null
-            ? "no recent sample"
-            : `${Math.round(m.health.success_rate)}%`;
-    let size = 0;
-    const section = (heading, models) => {
-        if (!models.length) return [];
-        const lines = [`**${heading}**`];
-        for (const [i, m] of models.entries()) {
-            const line = `\`${community(m.name)}\` ${rate(m)}`;
-            size += line.length + 1;
-            if (size > LISTINGS_BUDGET)
-                return [...lines, `…and ${models.length - i} more`];
-            lines.push(line);
-        }
-        return lines;
-    };
-    return {
-        text: [
-            `### Community listings · ${total} filtered`,
-            ...section("Newly filtered", newly),
-            ...section("Back in listings", back),
-            `*Filtered models are left out of /models but stay callable by their exact ID. Owners see why on ${MY_MODELS}.*`,
-        ].join("\n"),
-        ping: false,
-        color: newly.length ? COLOR.PRIMARY_WEAK : GREEN,
     };
 }
 

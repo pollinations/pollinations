@@ -1,39 +1,35 @@
-// The community agent: every half hour one AI call reads the community
-// models' facts and decides, as the retired monitor's agent did
-// (operations/community-monitor/CYCLE.md), which models to probe and what
-// to tell their owners or the maintainers. Code gathers the facts and keeps
-// the rails: only eligible, due models are probed, only real owners are
-// mentioned, and each post stays within Discord's limit. No Cloudflare
-// imports, so it is testable with plain Node.
-import { nextProbeAt } from "./probes.js";
+// The community monitor, ported from the retired one
+// (operations/community-monitor/CYCLE.md): code applies Thomas's rules,
+// picks this cycle's incidents and keeps their quiet periods; one AI call
+// only groups them into posts and words them. No Cloudflare imports, so it
+// is testable with plain Node.
 import { ownerOf } from "./rules.js";
 
 // Traffic and fallbacks are read over the last 4 hours.
 export const WINDOW_MINUTES = 240;
-// The agent's calls per UTC day: one a half hour.
+// The agent's calls per UTC day: at most one a half hour.
 export const AGENT_DAILY_LIMIT = 48;
-// What it told is kept this long for it to read.
-export const TOLD_MS = 7 * 24 * 60 * 60 * 1000;
-// At most this many of its notes are kept, the newest.
-const TOLD_KEPT = 200;
+const DAY_MS = 24 * 60 * 60 * 1000;
+// A told incident stays quiet this long: a broken stream per model and
+// error, a fallback notice per model and fallback.
+export const QUIET_MS = { stream: DAY_MS, fallback: 7 * DAY_MS };
+// Thomas's thresholds: a model leans on its fallbacks from this many
+// rescues and this share of its successes; one broken stream on this many
+// owners' models at once is gen's. A fallback notice names this many.
+const MIN_RESCUED = 10;
+const MIN_RESCUED_SHARE = 0.25;
+const SHARED_OWNERS = 3;
+const VIA_SHOWN = 3;
 
-export const COMMUNITY_PROMPT = `You run the Pollinations community model monitor. Every half hour you get the community models' facts as JSON. Answer with one JSON object and nothing else:
-{"probe": [model ids], "community": {"text": "...", "owners": ["github username"], "told": ["short note"]} or null, "maintainers": {"text": "...", "told": ["short note"]} or null}
+export const COMMUNITY_PROMPT = `You write the Pollinations community model monitor's Discord posts. You get this cycle's incidents as JSON; code has already decided each one is worth telling. Answer with one JSON object and nothing else:
+{"community": {"text": "...", "incidents": ["id"]} or null, "maintainers": {"text": "...", "incidents": ["id"]} or null}
 
-probe: each probe costs pollen, so never probe just to fill a sample. From candidates (public community text and image models due a probe), pick those with health 80 or less, or no real traffic (final_2xx + final_5xx is 0), or final success final_2xx / (final_2xx + final_5xx) of 80% or less. Fallback rescues are in final_2xx; final 4xx are callers' errors, not the model's.
-
-results are probes not yet told about, newest last:
-- status PROTOCOL is a broken stream; protocolError says how. Tell the owner when previous.protocolError is the same and neither the result nor previous has servedBy: two fresh probes in a row answered by the model itself. A result with servedBy was answered by a fallback: it says nothing of the model's own stream, and a pass through a fallback never means the model itself works.
-- The same protocolError on models of 3 or more owners in one cycle points at gen itself: tell the maintainers, not the owners.
-- If every result is 402, 403 or INVALID, the probe key is likely out of pollen: tell the maintainers.
-
-fallbacks: a model whose fallbacks rescued at least 10 requests and at least 25% of its successes leans on them. Tell its owner how many were rescued and by which fallbacks; "private" fallbacks are never named.
-
-listings come once a day: if models were newly filtered out of /models or are back, post the changes with each one's health, the filtered total, and that filtered models stay callable by their exact ID. Ping no one for listings.
-
-told is what you told in the last 7 days. Never tell again within 24 hours a broken stream for the same model and error, or the empty probe key; within 7 days a fallback for the same model and fallback.
-
-community goes to the community channel; in owners, list the owners to ping: the part after community/ in the id of a model in results or fallbacks. maintainers goes to the maintainers' channel. Put everything in these two posts. Keep them short: model ids without community/, errors and counts, no links, stream content, hosts or payloads, under 3,500 characters each. Owners are pointed to their dashboard for you. When a post can't fit everything, name what fits and say how many more; leave those out of its told, to tell next time, oldest first. Each post's told gets one short note for each thing it tells, such as "stream o/m stream is missing [DONE]", "fallback o/m via o/f" or "probe key". With nothing to tell, both posts are null.`;
+Put each incident in the post its "to" names, and list in "incidents" the ids your text tells. Group them into one short post per channel, with model ids without community/, errors and counts as given. Never add models, numbers or links.
+- stream: a model's own answers broke the same way twice in a row.
+- shared: one broken stream on many owners' models at once, likely gen's own.
+- fallback: a model leans on its fallbacks: rescued of its successes over 4 hours, by each fallback; "private" ones are never named.
+- listings: models newly filtered out of /models or back, with health and the filtered total; filtered models stay callable by their exact ID.
+Keep each post under 3,500 characters. If not all fit, tell what fits and list only those ids: the rest come next time. Code pings owners and points them to their dashboard.`;
 
 // The public community models gen's reliability filter leaves out of the
 // default listing: in the full list but not the default one, with a
@@ -63,94 +59,127 @@ export function listingChanges(before, filtered, shown) {
     };
 }
 
-// One cycle's facts for the agent. `catalog` is gen's full public catalog,
-// `rows` its status rows for regular traffic over WINDOW_MINUTES, which
-// leaves the probes out. `results` are last cycle's probes, `told` what the
-// agent told, `listings` the day's listing changes or null.
-export function facts({
-    catalog,
-    rows,
-    schedule,
-    results,
-    told,
-    listings,
-    now,
-}) {
-    const rollups = new Map(
-        rows.filter((r) => r.is_rollup).map((r) => [r.model, r]),
-    );
+// `quiet` keys: a model and its broken stream, or a model and a fallback.
+export const streamKey = (model, error) => `stream ${model} ${error}`;
+export const fallbackKey = (model, via) => `fallback ${model} ${via}`;
+
+// This cycle's incidents, each with an id, where it goes, the owners it
+// pings and the quiet keys it starts once told. `schedule` holds each
+// model's last probe and the one before; `rows` gen's status rows for
+// regular traffic over WINDOW_MINUTES; `quiet` when each key was told;
+// `listings` the day's listing changes or null.
+export function incidents({ catalog, rows, schedule, quiet, listings, now }) {
     const named = new Set(catalog.map((m) => m.name));
-    const listed = catalog.filter((m) => m.community && !m.agent);
-    // The model that answered, when it wasn't the one asked: a fallback,
-    // named only when public.
-    const servedBy = (model, used) =>
-        used && used !== model
-            ? named.has(used)
-                ? used
-                : "private"
-            : undefined;
-    return {
-        now: new Date(now).toISOString(),
-        candidates: listed
+    const listed = new Set(
+        catalog.filter((m) => m.community && !m.agent).map((m) => m.name),
+    );
+    const told = (key, kind) =>
+        now - (quiet[key] ?? Number.NEGATIVE_INFINITY) < QUIET_MS[kind];
+    const found = [];
+    const add = (incident) =>
+        found.push({ id: String(found.length + 1), ...incident });
+
+    // A broken stream counts only when the model answered itself.
+    const broken = (model, p) =>
+        p?.status === "PROTOCOL" && (!p.modelUsed || p.modelUsed === model);
+    const streams = Object.entries(schedule).filter(
+        ([model, s]) => listed.has(model) && broken(model, s),
+    );
+
+    // One error on 3 or more owners' models probed in the last 4 hours is
+    // gen's: the maintainers' incident, and none of those owners'.
+    const byError = Map.groupBy(
+        streams.filter(([, s]) => now - s.lastAt < WINDOW_MINUTES * 60_000),
+        ([, s]) => s.protocolError,
+    );
+    const gens = new Set();
+    for (const [error, entries] of byError) {
+        const models = entries.map(([model]) => model);
+        if (new Set(models.map(ownerOf)).size < SHARED_OWNERS) continue;
+        for (const model of models) gens.add(model);
+        const fresh = models.filter(
+            (m) => !told(streamKey(m, error), "stream"),
+        );
+        if (fresh.length)
+            add({
+                kind: "shared",
+                to: "maintainers",
+                error,
+                models: fresh,
+                owners: [],
+                quiet: fresh.map((m) => streamKey(m, error)),
+            });
+    }
+
+    // The same error twice in a row on the model's own answers.
+    for (const [model, s] of streams) {
+        const key = streamKey(model, s.protocolError);
+        if (
+            gens.has(model) ||
+            !broken(model, s.before) ||
+            s.before.protocolError !== s.protocolError ||
+            told(key, "stream")
+        )
+            continue;
+        add({
+            kind: "stream",
+            to: "community",
+            model,
+            error: s.protocolError,
+            owners: [ownerOf(model)],
+            quiet: [key],
+        });
+    }
+
+    // A listed model whose fallbacks rescued enough of its successes, with
+    // the fallbacks not told about this week; private ones unnamed.
+    for (const r of rows) {
+        const rescued = r.fallback_rescues;
+        if (!r.is_rollup || !listed.has(r.model)) continue;
+        if (rescued < MIN_RESCUED || rescued < MIN_RESCUED_SHARE * r.status_2xx)
+            continue;
+        const via = rows
             .filter(
-                (m) =>
-                    ["text", "image"].includes(m.category) &&
-                    now >= nextProbeAt(schedule[m.name]),
+                (v) =>
+                    v.model === r.model &&
+                    !v.is_rollup &&
+                    v.fallback_used &&
+                    v.fallback_rescues > 0,
             )
-            .map((m) => {
-                const r = rollups.get(m.name);
-                return {
-                    model: m.name,
-                    category: m.category,
-                    health: m.health?.success_rate ?? null,
-                    final_2xx: r?.status_2xx ?? 0,
-                    final_5xx: r?.errors_5xx ?? 0,
-                    final_4xx: r?.errors_4xx ?? 0,
-                };
-            }),
-        results: results.map((r) => ({
-            model: r.model,
-            category: r.category,
-            operation: r.operation,
-            status: r.status,
-            protocolError: r.protocolError,
-            errorCode: r.errorCode,
-            servedBy: servedBy(r.model, r.modelUsed),
-            previous: r.previous && {
-                status: r.previous.status,
-                protocolError: r.previous.protocolError,
-                servedBy: servedBy(r.model, r.previous.modelUsed),
-            },
-        })),
-        fallbacks: listed
-            .map((m) => rollups.get(m.name))
-            .filter((r) => r?.fallback_rescues > 0)
-            .map((r) => ({
+            .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
+            .slice(0, VIA_SHOWN)
+            .map((v) => ({
+                model: named.has(v.model_used) ? v.model_used : "private",
+                rescued: v.fallback_rescues,
+            }))
+            .filter((v) => !told(fallbackKey(r.model, v.model), "fallback"));
+        if (via.length)
+            add({
+                kind: "fallback",
+                to: "community",
                 model: r.model,
-                rescued: r.fallback_rescues,
+                rescued,
                 successes: r.status_2xx,
-                via: rows
-                    .filter(
-                        (v) =>
-                            v.model === r.model &&
-                            !v.is_rollup &&
-                            v.fallback_used &&
-                            v.fallback_rescues > 0,
-                    )
-                    .map((v) => ({
-                        model: named.has(v.model_used)
-                            ? v.model_used
-                            : "private",
-                        rescued: v.fallback_rescues,
-                    })),
-            })),
-        listings,
-        told: told.map(({ at, note }) => ({
-            at: new Date(at).toISOString(),
-            note,
-        })),
-    };
+                via,
+                owners: [ownerOf(r.model)],
+                quiet: via.map((v) => fallbackKey(r.model, v.model)),
+            });
+    }
+
+    if (listings?.newly.length || listings?.back.length)
+        add({
+            kind: "listings",
+            to: "community",
+            ...listings,
+            owners: [],
+            quiet: [],
+        });
+    return found;
 }
+
+// What the agent reads of an incident: what it says, not who it pings or
+// how it is kept quiet.
+export const brief = ({ owners, quiet, ...incident }) => incident;
 
 // Discord cuts an embed at 4,096 characters.
 const LIMIT = 4096;
@@ -167,15 +196,11 @@ const noLinks = (text) =>
         .replace(/\[([^\]]*)\]\([^)]*\)?/g, "$1")
         .replace(/\S*(?::(?:[\\/]|%2f)|www\.)\S*/gi, "");
 
-// What the agent told, kept with when: the newest TOLD_KEPT notes.
-export const remember = (told, notes, now) =>
-    [...told, ...notes.map((note) => ({ at: now, note }))].slice(-TOLD_KEPT);
-
-// The agent's answer within the rails, or null if it isn't one, for the
-// facts it read: only candidates are probed, only the owners of models in
-// its results or fallbacks are pinged, and a post holds no link of its own
-// and fits Discord.
-export function decision(text, input) {
+// The agent's posts within the rails, or null if its answer isn't one. A
+// post holds only incidents code found for its channel, pings only their
+// owners, carries no link of its own and fits Discord; one that tells no
+// incident is dropped.
+export function decision(text, found) {
     let answer;
     try {
         answer = JSON.parse(
@@ -184,34 +209,27 @@ export function decision(text, input) {
     } catch {
         return null;
     }
-    const due = new Set(input.candidates.map((c) => c.model));
-    const owners = new Set(
-        [...input.results, ...input.fallbacks].map((r) => ownerOf(r.model)),
-    );
-    const list = (value) => (Array.isArray(value) ? value : []);
-    const post = (p, footer = "") => {
-        if (typeof p?.text !== "string" || !p.text.trim()) return null;
+    const byId = new Map(found.map((i) => [i.id, i]));
+    const post = (p, to, footer = "") => {
+        const told = [
+            ...new Set(
+                Array.isArray(p?.incidents) ? p.incidents.map(String) : [],
+            ),
+        ]
+            .map((id) => byId.get(id))
+            .filter((i) => i?.to === to);
+        if (!told.length || typeof p.text !== "string" || !p.text.trim())
+            return null;
         const body = noLinks(p.text);
         const room = LIMIT - footer.length;
         return {
             text: `${body.length > room ? `${body.slice(0, room - 1)}…` : body}${footer}`,
-            told: list(p.told)
-                .filter((t) => typeof t === "string" && t.trim())
-                .map((t) => t.slice(0, 200))
-                .slice(0, 50),
+            owners: [...new Set(told.flatMap((i) => i.owners))],
+            incidents: told,
         };
     };
-    const community = post(answer?.community, MY_MODELS);
     return {
-        probe: [...new Set(list(answer?.probe).filter((m) => due.has(m)))],
-        community: community && {
-            ...community,
-            owners: [
-                ...new Set(
-                    list(answer.community.owners).filter((o) => owners.has(o)),
-                ),
-            ],
-        },
-        maintainers: post(answer?.maintainers),
+        community: post(answer?.community, "community", MY_MODELS),
+        maintainers: post(answer?.maintainers, "maintainers"),
     };
 }

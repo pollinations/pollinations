@@ -2,162 +2,280 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     decision,
-    facts,
+    fallbackKey,
     filteredModels,
+    incidents,
     listingChanges,
-    remember,
+    streamKey,
 } from "./community.js";
 
 const NOW = Date.parse("2026-11-01T12:00:00Z");
 const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
 const model = (name, extra) => ({
     name,
     community: true,
     category: "text",
     ...extra,
 });
-const CATALOG = [
-    model("community/o/due", { health: { success_rate: 40 } }),
-    model("community/o/later"),
-    model("community/o/agent", { agent: true }),
-    model("community/o/voice", { category: "audio" }),
-    model("community/p/image", { category: "image" }),
-    model("community/p/fallback"),
-    { name: "openai", category: "text" },
+const ERROR = "stream is missing [DONE]";
+// A model's last probe, broken, an hour ago; twice: the one before too.
+const broke = (extra) => ({
+    lastAt: NOW - HOUR,
+    status: "PROTOCOL",
+    protocolError: ERROR,
+    ...extra,
+});
+const twice = (extra) => broke({ before: broke(), ...extra });
+const find = (input) =>
+    incidents({
+        catalog: [],
+        rows: [],
+        schedule: {},
+        quiet: {},
+        listings: null,
+        now: NOW,
+        ...input,
+    });
+const brief = (found) => found.map((i) => `${i.kind} ${i.model ?? i.models}`);
+
+test("a broken stream is its owner's at the second in a row on the model's own answers", () => {
+    const names = ["a", "b", "c", "d", "e", "f"].map((n) => `community/o/${n}`);
+    const found = find({
+        catalog: [
+            ...names.map((n) => model(n)),
+            model("community/o/agent", { agent: true }),
+        ],
+        schedule: {
+            "community/o/a": twice(),
+            // Once: the probe before passed.
+            "community/o/b": broke({ before: { status: 200 } }),
+            // Two different errors.
+            "community/o/c": twice({
+                protocolError: "stream contained invalid JSON",
+            }),
+            // The one before was a fallback's answer, not the model's.
+            "community/o/d": broke({
+                before: broke({ modelUsed: "community/o/f" }),
+            }),
+            // Now a fallback answered.
+            "community/o/e": twice({ modelUsed: "community/o/f" }),
+            "community/o/agent": twice(),
+            // Not in the catalog.
+            "community/o/gone": twice(),
+        },
+    });
+    assert.deepEqual(found, [
+        {
+            id: "1",
+            kind: "stream",
+            to: "community",
+            model: "community/o/a",
+            error: ERROR,
+            owners: ["o"],
+            quiet: [streamKey("community/o/a", ERROR)],
+        },
+    ]);
+});
+
+test("a told broken stream stays quiet for a day, per model and error", () => {
+    const input = {
+        catalog: [model("community/o/a")],
+        schedule: { "community/o/a": twice() },
+    };
+    const key = streamKey("community/o/a", ERROR);
+    assert.deepEqual(find({ ...input, quiet: { [key]: NOW - DAY + 1 } }), []);
+    assert.equal(find({ ...input, quiet: { [key]: NOW - DAY } }).length, 1);
+    // Another error told doesn't quiet this one.
+    const other = streamKey("community/o/a", "stream contained invalid JSON");
+    assert.equal(find({ ...input, quiet: { [other]: NOW } }).length, 1);
+});
+
+test("one broken stream on 3 owners' models within 4 hours is the maintainers', and none of the owners'", () => {
+    const shared = ["community/a/x", "community/b/y", "community/c/z"];
+    const input = {
+        catalog: shared.map((n) => model(n)),
+        schedule: Object.fromEntries(shared.map((n) => [n, twice()])),
+    };
+    assert.deepEqual(find(input), [
+        {
+            id: "1",
+            kind: "shared",
+            to: "maintainers",
+            error: ERROR,
+            models: shared,
+            owners: [],
+            quiet: shared.map((n) => streamKey(n, ERROR)),
+        },
+    ]);
+    // Told: nothing for the maintainers again, still nothing for the owners.
+    const quiet = Object.fromEntries(
+        shared.map((n) => [streamKey(n, ERROR), NOW]),
+    );
+    assert.deepEqual(find({ ...input, quiet }), []);
+    // Two owners: each owner's.
+    const two = ["community/a/x", "community/a/w", "community/b/y"];
+    assert.deepEqual(
+        brief(
+            find({
+                catalog: two.map((n) => model(n)),
+                schedule: Object.fromEntries(two.map((n) => [n, twice()])),
+            }),
+        ),
+        two.map((n) => `stream ${n}`),
+    );
+    // Probed over 4 hours ago: not at once.
+    const old = Object.fromEntries(
+        shared.map((n) => [n, twice({ lastAt: NOW - 5 * HOUR })]),
+    );
+    assert.deepEqual(
+        brief(find({ ...input, schedule: old })),
+        shared.map((n) => `stream ${n}`),
+    );
+});
+
+const PUBLIC = "community/o/public";
+const leaning = (rescued, successes, extra) => [
+    {
+        model: "community/o/m",
+        is_rollup: 1,
+        status_2xx: successes,
+        fallback_rescues: rescued,
+        ...extra,
+    },
+    {
+        model: "community/o/m",
+        is_rollup: 0,
+        fallback_used: true,
+        model_used: PUBLIC,
+        fallback_rescues: rescued - 2,
+    },
+    {
+        model: "community/o/m",
+        is_rollup: 0,
+        fallback_used: true,
+        model_used: "community/x/hidden",
+        fallback_rescues: 2,
+    },
 ];
-const base = {
-    catalog: CATALOG,
-    rows: [],
-    schedule: {},
-    results: [],
-    told: [],
-    listings: null,
-    now: NOW,
-};
 
-test("candidates are the due community text and image proxies, with their 4h traffic", () => {
-    const { candidates } = facts({
-        ...base,
-        rows: [
-            {
-                model: "community/o/due",
-                is_rollup: 1,
-                status_2xx: 3,
-                errors_5xx: 9,
-                errors_4xx: 2,
-            },
-            // A route row is not the model's total.
-            { model: "community/o/due", is_rollup: 0, status_2xx: 50 },
+test("a fallback notice from 10 rescues and 25% of successes, private fallbacks unnamed", () => {
+    const catalog = [model("community/o/m"), model(PUBLIC)];
+    const [notice] = find({ catalog, rows: leaning(10, 40) });
+    assert.deepEqual(notice, {
+        id: "1",
+        kind: "fallback",
+        to: "community",
+        model: "community/o/m",
+        rescued: 10,
+        successes: 40,
+        via: [
+            { model: PUBLIC, rescued: 8 },
+            { model: "private", rescued: 2 },
         ],
-        schedule: { "community/o/later": { lastAt: NOW - HOUR, failures: 0 } },
+        owners: ["o"],
+        quiet: [
+            fallbackKey("community/o/m", PUBLIC),
+            fallbackKey("community/o/m", "private"),
+        ],
     });
-    assert.deepEqual(candidates, [
-        {
-            model: "community/o/due",
-            category: "text",
-            health: 40,
-            final_2xx: 3,
-            final_5xx: 9,
-            final_4xx: 2,
-        },
-        ...["community/p/image", "community/p/fallback"].map((name) => ({
-            model: name,
-            category: name.includes("image") ? "image" : "text",
-            health: null,
-            final_2xx: 0,
-            final_5xx: 0,
-            final_4xx: 0,
-        })),
-    ]);
+    assert.deepEqual(find({ catalog, rows: leaning(9, 36) }), []);
+    assert.deepEqual(find({ catalog, rows: leaning(10, 41) }), []);
 });
 
-test("results and the probe before each name a fallback only when public", () => {
-    const { results } = facts({
-        ...base,
-        results: [
-            {
-                model: "community/o/due",
-                category: "text",
-                status: "PROTOCOL",
-                protocolError: "stream returned an error event",
-                modelUsed: "community/o/due",
-                previous: {
-                    status: "PROTOCOL",
-                    protocolError: "stream returned an error event",
-                    modelUsed: "community/o/later",
-                },
-            },
-            {
-                model: "community/o/later",
-                category: "text",
-                status: 200,
-                errorCode: "BAD_GATEWAY",
-                modelUsed: "community/x/hidden",
-            },
-            {
-                model: "community/p/fallback",
-                category: "text",
-                status: 200,
-                modelUsed: "community/o/later",
-            },
-        ],
+test("a told fallback stays quiet for a week, per model and fallback", () => {
+    const catalog = [model("community/o/m"), model(PUBLIC)];
+    const key = fallbackKey("community/o/m", PUBLIC);
+    const [notice] = find({
+        catalog,
+        rows: leaning(10, 40),
+        quiet: { [key]: NOW - 7 * DAY + 1 },
     });
-    assert.equal(results[0].servedBy, undefined);
-    // The probe before was a fallback's answer, not the model's own.
-    assert.deepEqual(results[0].previous, {
-        status: "PROTOCOL",
-        protocolError: "stream returned an error event",
-        servedBy: "community/o/later",
+    assert.deepEqual(notice.via, [{ model: "private", rescued: 2 }]);
+    const [later] = find({
+        catalog,
+        rows: leaning(10, 40),
+        quiet: { [key]: NOW - 7 * DAY },
     });
-    assert.equal(results[1].errorCode, "BAD_GATEWAY");
-    assert.equal(results[1].servedBy, "private");
-    assert.equal(results[2].servedBy, "community/o/later");
+    assert.equal(later.via.length, 2);
 });
 
-test("fallbacks: listed models with rescues, each fallback's part, private ones unnamed", () => {
-    const { fallbacks } = facts({
-        ...base,
-        rows: [
-            {
-                model: "community/p/fallback",
-                is_rollup: 1,
-                status_2xx: 40,
-                fallback_rescues: 30,
-            },
-            {
-                model: "community/p/fallback",
-                is_rollup: 0,
-                fallback_used: true,
-                model_used: "community/o/later",
-                fallback_rescues: 20,
-            },
-            {
-                model: "community/p/fallback",
-                is_rollup: 0,
-                fallback_used: true,
-                model_used: "community/x/hidden",
-                fallback_rescues: 10,
-            },
-            // Agents are not watched.
-            {
-                model: "community/o/agent",
-                is_rollup: 1,
-                status_2xx: 5,
-                fallback_rescues: 5,
-            },
-        ],
-    });
-    assert.deepEqual(fallbacks, [
-        {
-            model: "community/p/fallback",
-            rescued: 30,
-            successes: 40,
-            via: [
-                { model: "community/o/later", rescued: 20 },
-                { model: "private", rescued: 10 },
-            ],
-        },
+test("listing changes are an incident only when something changed", () => {
+    const changes = {
+        filtered: 1,
+        newly: [{ model: "community/o/a", health: 20 }],
+        back: [],
+    };
+    assert.deepEqual(brief(find({ listings: changes })), [
+        "listings undefined",
     ]);
+    assert.deepEqual(
+        find({ listings: { filtered: 1, newly: [], back: [] } }),
+        [],
+    );
+});
+
+// Incidents code found: a broken stream and a fallback for owners o and p,
+// listing changes, and a shared break for the maintainers.
+const FOUND = [
+    { id: "1", kind: "stream", to: "community", owners: ["o"], quiet: [] },
+    { id: "2", kind: "fallback", to: "community", owners: ["p"], quiet: [] },
+    { id: "3", kind: "listings", to: "community", owners: [], quiet: [] },
+    { id: "4", kind: "shared", to: "maintainers", owners: [], quiet: [] },
+];
+const answer = (value) => decision(JSON.stringify(value), FOUND);
+
+test("a post holds only incidents code found for its channel, and pings only their owners", () => {
+    const plan = answer({
+        community: {
+            text: "Streams and fallbacks",
+            incidents: ["1", "1", "3", "4", "9"],
+            owners: ["p", "everyone"],
+        },
+        maintainers: { text: "Gen", incidents: ["4", "2"] },
+    });
+    assert.deepEqual(
+        plan.community.incidents.map((i) => i.id),
+        ["1", "3"],
+    );
+    assert.deepEqual(plan.community.owners, ["o"]);
+    assert.deepEqual(
+        plan.maintainers.incidents.map((i) => i.id),
+        ["4"],
+    );
+    // A post telling no incident code found isn't sent.
+    assert.deepEqual(
+        answer({ community: { text: "Made up", incidents: ["9"] } }),
+        { community: null, maintainers: null },
+    );
+    assert.equal(decision("not json", FOUND), null);
+});
+
+test("a post carries no link of the agent's own, and fits Discord", () => {
+    const text = [
+        "[Owner dashboard](https:\\/\\/evil.example/login)",
+        "https\\://evil.example/a <https://evil.example/b>",
+        "1https://evil.example/d _https://evil.example/e_ www.evil.example/c",
+        "done",
+    ].join(" ");
+    const plan = answer({
+        community: { text, incidents: ["1"] },
+        maintainers: { text, incidents: ["4"] },
+    });
+    for (const post of [plan.community.text, plan.maintainers.text]) {
+        const own = post.replace(/\n\nOwners see .*$/s, "");
+        assert.doesNotMatch(own, /https?:|www\.|\]\(/i);
+        assert.match(own, /^Owner dashboard .*done$/);
+    }
+    assert.match(
+        plan.community.text,
+        /\[My Models\]\(https:\/\/enter\.pollinations\.ai\/my-models\)\.$/,
+    );
+    assert.doesNotMatch(plan.maintainers.text, /My Models/);
+    const long = answer({
+        community: { text: "x".repeat(5000), incidents: ["1"] },
+    });
+    assert.equal(long.community.text.length, 4096);
 });
 
 const listed = (name, success_rate) =>
@@ -205,93 +323,4 @@ test("listing changes: newly filtered, and back in the default list", () => {
         newly: [{ model: "community/a/new", health: 20 }],
         back: [{ model: "community/a/back", health: 92 }],
     });
-});
-
-test("only the newest 200 notes are kept", () => {
-    let told = [];
-    for (let i = 0; i < 5; i++)
-        told = remember(
-            told,
-            Array.from({ length: 50 }, (_, j) => `n${i}-${j}`),
-            i,
-        );
-    assert.equal(told.length, 200);
-    assert.deepEqual(told[0], { at: 1, note: "n1-0" });
-    assert.deepEqual(told.at(-1), { at: 4, note: "n4-49" });
-});
-
-// The facts an answer is judged against: o/due was probed, p/fallback
-// leans on a fallback, o/later is only a candidate.
-const INPUT = {
-    candidates: [{ model: "community/o/due" }, { model: "community/o/later" }],
-    results: [{ model: "community/o/due" }],
-    fallbacks: [{ model: "community/p/fallback" }],
-};
-const answer = (value) => decision(JSON.stringify(value), INPUT);
-
-test("only candidates are probed, and only owners of models in results or fallbacks are pinged", () => {
-    const plan = answer({
-        probe: [
-            "community/o/due",
-            "community/o/due",
-            "community/o/agent",
-            "openai",
-        ],
-        community: { text: "hi", owners: ["o", "p", "q", "everyone"] },
-    });
-    assert.deepEqual(plan.probe, ["community/o/due"]);
-    assert.deepEqual(plan.community.owners, ["o", "p"]);
-    // An owner whose model is only a candidate isn't pinged.
-    const later = decision(
-        JSON.stringify({ community: { text: "hi", owners: ["o"] } }),
-        { ...INPUT, results: [], fallbacks: [] },
-    );
-    assert.deepEqual(later.community.owners, []);
-});
-
-test("each post keeps its own notes, fits Discord, and an empty one is null", () => {
-    const plan = answer({
-        community: {
-            text: "x".repeat(5000),
-            told: ["note", 7, "y".repeat(300)],
-        },
-        maintainers: { text: "  ", told: ["lost"] },
-    });
-    assert.equal(plan.community.text.length, 4096);
-    assert.match(
-        plan.community.text,
-        /My Models\]\(https:\/\/enter\.pollinations\.ai\/my-models\)\.$/,
-    );
-    assert.deepEqual(plan.community.told, ["note", "y".repeat(200)]);
-    assert.equal(plan.maintainers, null);
-    // A fenced answer still reads; anything else is no decision.
-    assert.deepEqual(
-        decision(`\`\`\`json\n${JSON.stringify({ probe: [] })}\n\`\`\``, INPUT),
-        { probe: [], community: null, maintainers: null },
-    );
-    assert.equal(decision("not json", INPUT), null);
-    assert.equal(decision(null, INPUT), null);
-});
-
-test("the agent can write no link; code adds the one to My Models", () => {
-    const text = [
-        "[Owner dashboard](https:\\/\\/evil.example/login)",
-        "[here](https://enter.pollinations.ai/my-models)",
-        "https\\://evil.example/a <https://evil.example/b>",
-        "https://gen.pollinations.ai/models www.evil.example/c",
-        "1https://evil.example/d _https://evil.example/e_ x:%2F%2Fevil.example",
-        "done",
-    ].join(" ");
-    const plan = answer({ community: { text }, maintainers: { text } });
-    for (const post of [plan.community.text, plan.maintainers.text]) {
-        const own = post.replace(/\n\nOwners see .*$/s, "");
-        assert.doesNotMatch(own, /https?:|www\.|\]\(/i);
-        assert.match(own, /Owner dashboard here/);
-        assert.match(own, /done$/);
-    }
-    assert.match(
-        plan.community.text,
-        /\n\nOwners see their models' errors on \[My Models\]/,
-    );
-    assert.doesNotMatch(plan.maintainers.text, /My Models/);
 });

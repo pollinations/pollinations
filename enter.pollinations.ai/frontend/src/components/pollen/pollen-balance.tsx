@@ -212,8 +212,8 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
 /**
  * What your listings earned in the last 7 days, on the drawer's My Listings
- * row: a "+" per balance it landed in, only when it is above zero. Only the
- * icons carry the paid/Quest colour.
+ * row: a "+" per balance it landed in, only when it is above zero. Green like
+ * the Pollen page's "+X / 7d"; the icons keep the paid/Quest colour.
  */
 export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
     paidWeek,
@@ -229,7 +229,7 @@ export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
     return (
         <span
             title="Earned in the last 7 days"
-            className="ml-auto flex items-center gap-2 text-xs font-normal tabular-nums text-theme-text-soft"
+            className="ml-auto flex items-center gap-2.5 pr-2 text-xs font-semibold leading-none tabular-nums text-intent-success-text"
         >
             {wins.map(({ kind, label, earned }) => (
                 <span key={kind} className="flex items-center gap-1">

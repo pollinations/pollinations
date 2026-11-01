@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "MUSICBRAINZ_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "musicbrainz",
+        name: "MusicBrainz",
+        description:
+            "Search MusicBrainz for artists and list their releases with tracks and labels.",
+        binding: "MUSICBRAINZ_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Music metadata lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

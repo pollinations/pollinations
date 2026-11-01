@@ -18,11 +18,25 @@ import type { ComponentType } from "react";
 
 /**
  * Groups of drawer rows: Pollinations' resources, then your pages (what you
- * build, your pollen, then Settings).
+ * your pollen, what you build, then Settings).
  */
 export type DashboardNavGroup = "yours" | "resources";
 
 export const DASHBOARD_NAV_ITEMS = [
+    {
+        id: "pollen",
+        to: "/pollen",
+        label: "Pollen",
+        icon: WalletIcon,
+        group: "yours",
+    },
+    {
+        id: "quests",
+        to: "/quests",
+        label: "Quests",
+        icon: SparkleIcon,
+        group: "yours",
+    },
     {
         id: "my-models",
         to: "/my-models",
@@ -43,20 +57,6 @@ export const DASHBOARD_NAV_ITEMS = [
         to: "/activity",
         label: "Activity",
         icon: TrendUpIcon,
-        group: "yours",
-    },
-    {
-        id: "quests",
-        to: "/quests",
-        label: "Quests",
-        icon: SparkleIcon,
-        group: "yours",
-    },
-    {
-        id: "pollen",
-        to: "/pollen",
-        label: "Pollen",
-        icon: WalletIcon,
         group: "yours",
     },
     {

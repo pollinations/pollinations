@@ -63,10 +63,9 @@ type DashboardNavItem = {
 };
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
-// Docs), and everything about you as one block at the bottom: what you build
-// (My Listings for your agents and models, sandboxes, apps, keys), your pollen
-// (Activity, Quests, Pollen with its numbers indented under it), then your
-// name. A thin line opens each part. Signed out, the bottom holds the sign-in
+// Docs), and everything about you as one block at the bottom: Pollen and
+// Quests, what you build (My Listings, Sandboxes, Keys), Activity, Settings,
+// then your account card. A thin line opens each part. Signed out, the bottom holds the sign-in
 // buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 

@@ -827,16 +827,10 @@ function QuestOverviewContent({
             });
         }
 
-        // Order per lane by lifecycle rank; within a rank, cheaper reward first.
+        // Order per lane by lifecycle rank only: a claim moves its own row and
+        // nothing else; within a rank the catalog's order stays (stable sort).
         for (const key of Object.keys(byCat) as CategoryKey[]) {
-            byCat[key].sort((a, b) => {
-                const rankDelta = cardSortRank(a) - cardSortRank(b);
-                if (rankDelta !== 0) return rankDelta;
-                return (
-                    (a.reward ?? Number.POSITIVE_INFINITY) -
-                    (b.reward ?? Number.POSITIVE_INFINITY)
-                );
-            });
+            byCat[key].sort((a, b) => cardSortRank(a) - cardSortRank(b));
         }
         return byCat;
     }, [

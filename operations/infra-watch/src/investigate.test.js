@@ -384,6 +384,16 @@ test("at most DAILY_LIMIT investigations per UTC day", () => {
         assert.ok(budget);
     }
     assert.equal(allow(budget, day1), null);
+    // A caller may set its own limit.
+    assert.equal(
+        allow({ day: "2026-01-01", count: 47 }, Date.parse("2026-01-01"), 48)
+            .count,
+        48,
+    );
+    assert.equal(
+        allow({ day: "2026-01-01", count: 48 }, Date.parse("2026-01-01"), 48),
+        null,
+    );
     assert.deepEqual(allow(budget, day1 + 24 * 3600 * 1000), {
         day: "2026-10-31",
         count: 1,

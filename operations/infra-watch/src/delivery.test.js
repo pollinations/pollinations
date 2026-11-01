@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+    discordIds,
     edit,
     exclusive,
     payload,
@@ -162,4 +163,53 @@ test("alerts go out as a coloured embed; mentions stay outside it", () => {
     const quiet = payload({ ...message, ping: false }, ["1", "2"]);
     assert.equal(quiet.content, "");
     assert.deepEqual(quiet.allowed_mentions, { parse: [], users: [] });
+});
+
+test("a community card pings each owner with a known Discord id and names the rest", () => {
+    const ids = discordIds(
+        JSON.stringify({
+            Known: "123456789012345678",
+            "no-discord": null,
+            // A number may have lost digits; never a guessed id.
+            rounded: 123456789012345680,
+            fake: "<@1>",
+        }),
+    );
+    const card = { text: "box", color: 1 };
+    const body = payload(
+        {
+            ...card,
+            owners: ["known", "unknown", "no-discord", "rounded", "fake"],
+        },
+        ["1", "2"],
+        ids,
+    );
+    assert.equal(
+        body.content,
+        "<@123456789012345678> unknown no-discord rounded fake",
+    );
+    assert.deepEqual(body.allowed_mentions, {
+        parse: [],
+        users: ["123456789012345678"],
+    });
+    // No maintainer is pinged by a community card.
+    assert.doesNotMatch(body.content, /<@[12]>/);
+    // Without the map, every owner is named.
+    assert.equal(payload({ ...card, owners: ["known"] }, []).content, "known");
+});
+
+test("an owner named like an object property is named, never mentioned", () => {
+    const ids = discordIds(JSON.stringify({ known: "123456789012345678" }));
+    const body = payload(
+        { text: "box", owners: ["constructor", "__proto__", "toString"] },
+        [],
+        ids,
+    );
+    assert.equal(body.content, "constructor __proto__ toString");
+    assert.deepEqual(body.allowed_mentions.users, []);
+});
+
+test("an unreadable owner map names every owner", () => {
+    for (const json of [undefined, "not json", "null"])
+        assert.deepEqual(discordIds(json), {});
 });

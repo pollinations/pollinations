@@ -28,12 +28,14 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let world;
 
 async function discord(url, init) {
-    const { embeds } = JSON.parse(init.body);
+    const { content, embeds, allowed_mentions } = JSON.parse(init.body);
     const write = {
         method: init.method,
         path: url.pathname,
         color: embeds[0].color,
         text: embeds[0].description,
+        content,
+        users: allowed_mentions.users,
     };
     await sleep(world.delay(write));
     write.ok = !world.fails(write);
@@ -50,8 +52,10 @@ async function fake(input, init = {}) {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.hostname === "discord.test") return discord(url, init);
     if (url.pathname === "/") return new Response("ok");
-    if (url.pathname === "/models/status")
-        return Response.json({ data: world.rows });
+    if (url.pathname === "/models/status") {
+        const regular = url.searchParams.get("traffic") === "regular";
+        return Response.json({ data: regular ? world.regular : world.rows });
+    }
     // The full catalog, or the default listing without filtered models.
     if (url.pathname === "/models")
         return Response.json(
@@ -87,12 +91,34 @@ async function fake(input, init = {}) {
         return world.signups
             ? Response.json({ data: world.signups })
             : new Response("unavailable", { status: 503 });
+    // A probe: streamed chat, or an image.
+    if (
+        url.pathname.startsWith("/v1/images/") ||
+        (url.pathname === "/v1/chat/completions" &&
+            JSON.parse(init.body).stream)
+    ) {
+        const body = JSON.parse(init.body);
+        world.probes.push(`${url.pathname} ${body.model}`);
+        return world.probe(url.pathname, body);
+    }
     if (url.pathname === "/v1/chat/completions") {
+        const { messages } = JSON.parse(init.body);
+        // The community agent answers with its posts.
+        if (
+            messages[0].content.startsWith(
+                "You write the Pollinations community",
+            )
+        ) {
+            const facts = JSON.parse(messages[1].content);
+            world.agentFacts.push(facts);
+            world.agentKeys.push(init.headers.authorization);
+            const content = JSON.stringify(world.agent(facts));
+            return Response.json({ choices: [{ message: { content } }] });
+        }
         await world.aiGate;
         await sleep(world.aiDelay);
         world.answers++;
         // A review answers as a verdict; any other alert with a plain line.
-        const { messages } = JSON.parse(init.body);
         const review = messages[0].content.startsWith("You review");
         const content = `${review ? "APPROVE: " : ""}Line ${world.answers}.`;
         return Response.json({ choices: [{ message: { content } }] });
@@ -103,6 +129,11 @@ async function fake(input, init = {}) {
 beforeEach(() => {
     world = {
         rows: [],
+        regular: [],
+        probes: [],
+        agentFacts: [],
+        agentKeys: [],
+        agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
@@ -534,87 +565,273 @@ it("reads the legacy bridges once an hour, from 5 minutes past", async () => {
     expect(world.legacyReads).toBe(3);
 });
 
-it("tells the community channel once a week about a model leaning on its fallback", async () => {
+// A community text model in gen's catalog.
+const community = (name, extra) => ({
+    name,
+    community: true,
+    category: "text",
+    ...extra,
+});
+// Each text model answers its probe's marker; streams of the `broken`
+// models never end. Image models answer an image.
+const answers = (broken) => (path, body) => {
+    if (path !== "/v1/chat/completions")
+        return Response.json({ data: [{ b64_json: btoa("x".repeat(200)) }] });
+    const marker = body.messages[0].content.split(": ")[1];
+    const answer = `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }] })}\n\n`;
+    const done = broken(body.model) ? "" : "data: [DONE]\n\n";
+    return new Response(answer + done, {
+        headers: { "x-model-used": body.model },
+    });
+};
+// A check, and the community cycle it started.
+const cycled = async (stub) => {
+    await stub.check();
+    await runInDurableObject(stub, (instance) => instance.cycle);
+};
+// Half an hour on, with every saved time `ms` further back: each model's
+// backoff, quiet periods, and the probes a pending shared failure counted.
+const later = (stub, ms) =>
+    runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("community");
+        saved.at -= 30 * 60_000;
+        for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
+        for (const key of Object.keys(saved.quiet)) saved.quiet[key] -= ms;
+        for (const p of Object.values(saved.pending ?? {}))
+            for (const model of Object.keys(p.probes ?? {}))
+                p.probes[model] -= ms;
+        await state.storage.put("community", saved);
+    });
+const COMMUNITY = "/api/webhooks/2/y";
+const INFRA = "/api/webhooks/1/x";
+const posts = (path) =>
+    world.writes.filter((w) => w.ok && w.method === "POST" && w.path === path);
+const MAINTAINERS = "<@304378879705874432> <@884468469452656732>";
+const OWNER_O = "<@123456789012345678>";
+// The agent tells every incident it gets, or only those `pick` keeps, one
+// line each.
+const tells =
+    (pick = () => true) =>
+    ({ incidents }) => {
+        const lines = (to) =>
+            incidents
+                .filter((i) => i.to === to && pick(i))
+                .map((i) => ({ incidents: [i.id], text: `${to}: ${i.id}` }));
+        return {
+            community: lines("community"),
+            maintainers: lines("maintainers"),
+        };
+    };
+const HOURS = (n) => n * 60 * 60_000;
+
+it("probes due models by Thomas's rule, and calls the agent only with incidents, through its own key", async () => {
     const stub = watch();
-    const model = "community/o/leaning";
     world.catalog = [
-        { name: "a/model" },
-        { name: model, community: true },
-        { name: "community/o/fallback", community: true },
-        { name: "community/o/agent", community: true, agent: true },
+        { name: "a/model", category: "text" },
+        community("community/o/broken"),
+        community("community/p/busy", { health: { success_rate: 100 } }),
+        community("community/o/agent", { agent: true }),
     ];
-    // Each leans on its fallback: 30 of 40 successes rescued.
-    world.rows = [model, "community/o/agent"].flatMap((m) => [
-        { ...row(40, 40, m), fallback_rescues: 30 },
+    world.regular = [
         {
-            ...row(30, 30, m),
+            model: "community/p/busy",
+            is_rollup: 1,
+            total_requests: 30,
+            status_2xx: 30,
+            errors_4xx: 0,
+            errors_5xx: 0,
+        },
+    ];
+    world.probe = answers(() => true);
+    world.agent = tells();
+    // A first broken stream: probed, nothing to tell yet.
+    await cycled(stub);
+    expect(world.probes).toEqual(["/v1/chat/completions community/o/broken"]);
+    expect(world.agentFacts).toHaveLength(0);
+
+    // The second in a row, after the backoff: one incident for its owner.
+    await later(stub, HOURS(8));
+    await cycled(stub);
+    expect(world.agentKeys).toEqual(["Bearer agent-test"]);
+    expect(world.agentFacts[0].incidents).toEqual([
+        {
+            id: "1",
+            kind: "stream",
+            to: "community",
+            model: "community/o/broken",
+            error: "stream is missing [DONE]",
+        },
+    ]);
+    const [told] = posts(COMMUNITY);
+    expect(told.content).toBe(OWNER_O);
+    expect(told.text).toMatch(/^community: 1\n\nOwners see .*My Models/);
+
+    // Told: quiet for a day, so no call even once it breaks again.
+    await later(stub, HOURS(16));
+    await cycled(stub);
+    expect(world.probes).toHaveLength(3);
+    expect(world.agentFacts).toHaveLength(1);
+});
+
+it("starts quiet periods only for incidents in a delivered post; the rest stay pending", async () => {
+    const stub = watch();
+    world.catalog = [community("community/o/a"), community("community/p/b")];
+    world.probe = answers(() => true);
+    await cycled(stub);
+    await later(stub, HOURS(8));
+    // Both broke twice; the agent tells only o/a.
+    world.agent = tells((i) => i.model === "community/o/a");
+    await cycled(stub);
+    expect(world.agentFacts[0].incidents.map((i) => i.model)).toEqual([
+        "community/o/a",
+        "community/p/b",
+    ]);
+    // p/b is still pending; Discord refuses the post telling it.
+    world.agent = tells();
+    world.fails = (w) => w.path === COMMUNITY;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts[1].incidents.map((i) => i.model)).toEqual([
+        "community/p/b",
+    ]);
+    // Still pending, and told once Discord takes it.
+    world.fails = () => false;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts[2].incidents.map((i) => i.model)).toEqual([
+        "community/p/b",
+    ]);
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(3);
+}, 15_000);
+
+it("sends a stream broken for three owners at once to the maintainers, pinging no owner", async () => {
+    const stub = watch();
+    world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
+        (n) => community(n),
+    );
+    world.probe = answers(() => true);
+    world.agent = tells();
+    await cycled(stub);
+    expect(world.agentFacts[0].incidents).toEqual([
+        {
+            id: "1",
+            kind: "shared",
+            to: "maintainers",
+            error: "stream is missing [DONE]",
+            models: ["community/a/x", "community/b/y", "community/c/z"],
+        },
+    ]);
+    const [told] = posts(INFRA).filter((w) => w.text.startsWith("maintainers"));
+    expect(told.content).toBe(MAINTAINERS);
+    expect(posts(COMMUNITY)).toHaveLength(0);
+});
+
+it("tells the day's listing changes once, moving the saved set only once they are delivered", async () => {
+    const stub = watch();
+    const model = (name, success_rate) =>
+        community(name, { health: { success_rate } });
+    world.probe = answers(() => false);
+    world.catalog = [model("community/o/a", 40), model("community/o/b", 95)];
+    world.shown = [model("community/o/b", 95)];
+    // The first day only saves the set.
+    await cycled(stub);
+    expect((await stored(stub, "listings")).filtered).toEqual([
+        "community/o/a",
+    ]);
+
+    // The next day a recovers and b gets filtered; the agent leaves it out.
+    world.catalog = [model("community/o/a", 90), model("community/o/b", 30)];
+    world.shown = [model("community/o/a", 90)];
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("listings");
+        await state.storage.put("listings", { ...saved, day: "2000-01-01" });
+    });
+    world.agent = () => ({ community: [], maintainers: [] });
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts.at(-1).incidents).toEqual([
+        {
+            id: "1",
+            kind: "listings",
+            to: "community",
+            filtered: 1,
+            newly: [{ model: "community/o/b", health: 30 }],
+            back: [{ model: "community/o/a", health: 90 }],
+        },
+    ]);
+    expect((await stored(stub, "listings")).day).toBe("2000-01-01");
+
+    // Told the next cycle: the set moves on, and it isn't told again.
+    world.agent = tells();
+    await later(stub, 0);
+    await cycled(stub);
+    expect((await stored(stub, "listings")).filtered).toEqual([
+        "community/o/b",
+    ]);
+    const calls = world.agentFacts.length;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(calls);
+    // Listings ping no one.
+    expect(posts(COMMUNITY).at(-1).content).toBe("");
+});
+
+it("keeps a shared failure the maintainers didn't get as gen's, past 4 hours and without new probes", async () => {
+    const stub = watch();
+    world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
+        (n) => community(n),
+    );
+    world.probe = answers(() => true);
+    world.agent = tells();
+    world.fails = (w) => w.path === INFRA;
+    await cycled(stub);
+    // 5 hours on, before their backoff ends: still one incident for the
+    // maintainers, none for the owners.
+    world.fails = () => false;
+    await later(stub, HOURS(5));
+    await cycled(stub);
+    expect(world.probes).toHaveLength(3);
+    expect(world.agentFacts[1].incidents.map((i) => i.kind)).toEqual([
+        "shared",
+    ]);
+    expect(posts(COMMUNITY)).toHaveLength(0);
+}, 15_000);
+
+it("keeps a refused fallback notice after its rescues leave the 4-hour window", async () => {
+    const stub = watch();
+    const leaning = "community/o/leaning";
+    world.catalog = [community(leaning), community("community/o/fallback")];
+    world.regular = [
+        { model: leaning, is_rollup: 1, status_2xx: 40, fallback_rescues: 30 },
+        {
+            model: leaning,
             is_rollup: 0,
             fallback_used: true,
             model_used: "community/o/fallback",
             fallback_rescues: 30,
         },
+    ];
+    world.probe = answers(() => false);
+    world.agent = tells();
+    world.fails = (w) => w.path === COMMUNITY;
+    await cycled(stub);
+    // The rescues are out of the window; the notice is still pending, and
+    // told once Discord takes it.
+    world.regular = [];
+    world.fails = () => false;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts[1].incidents).toMatchObject([
+        {
+            kind: "fallback",
+            model: leaning,
+            snapshots: [{ rescued: 30, successes: 40 }],
+        },
     ]);
-    const told = () =>
-        world.writes.filter(
-            (w) =>
-                w.ok && w.path === "/api/webhooks/2/y" && w.method === "POST",
-        );
-    await checks(stub, 2);
-    // One notice, for the listed model only, checked once an hour.
-    expect(told()).toHaveLength(1);
-    expect(told()[0].text).toContain("MODEL   o/leaning");
-    expect(told()[0].text).toContain("VIA     o/fallback (30)");
-
-    const back = (ms) =>
-        runInDurableObject(stub, async (_, state) => {
-            const saved = await state.storage.get("fallback");
-            saved.checkedAt -= ms;
-            saved.told[`${model} community/o/fallback`] -= ms;
-            await state.storage.put("fallback", saved);
-        });
-    // An hour later it is still leaning, but was told this week.
-    await back(60 * 60_000);
-    await stub.check();
-    expect(told()).toHaveLength(1);
-    // A week on, it is told again.
-    await back(7 * 24 * 60 * 60_000);
-    await stub.check();
-    expect(told()).toHaveLength(2);
-    // None reached the infra-watch channel.
-    const infra = world.writes.filter((w) => w.path === "/api/webhooks/1/x");
-    expect(infra.some((w) => w.text.includes("FALLBACK"))).toBe(false);
-});
-
-it("tells the community channel once a day what the listing filter changed", async () => {
-    const stub = watch();
-    const model = (name, success_rate) => ({
-        name,
-        community: true,
-        health: { success_rate },
-    });
-    world.catalog = [model("community/o/a", 40), model("community/o/b", 95)];
-    world.shown = [model("community/o/b", 95)];
-    const told = () =>
-        world.writes.filter((w) => w.ok && w.path === "/api/webhooks/2/y");
-    await checks(stub, 2);
-    // The first day only keeps the filtered set.
-    expect(told()).toHaveLength(0);
-    expect((await stored(stub, "listings")).filtered).toEqual([
-        "community/o/a",
-    ]);
-
-    // a recovers and b gets filtered: told once, the next day.
-    world.catalog = [model("community/o/a", 90), model("community/o/b", 30)];
-    world.shown = [model("community/o/a", 90)];
-    await stub.check();
-    expect(told()).toHaveLength(0);
-    await runInDurableObject(stub, async (_, state) => {
-        const saved = await state.storage.get("listings");
-        await state.storage.put("listings", { ...saved, day: "2000-01-01" });
-    });
-    await checks(stub, 2);
-    expect(told()).toHaveLength(1);
-    expect(told()[0].text).toContain(
-        "**Newly filtered**\n`o/b` 30%\n**Back in listings**\n`o/a` 90%",
-    );
-});
+    expect(posts(COMMUNITY)).toHaveLength(1);
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(2);
+}, 15_000);

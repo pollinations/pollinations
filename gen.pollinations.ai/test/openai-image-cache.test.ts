@@ -115,6 +115,39 @@ describe("OpenAI image cache", () => {
             expect(result.input.seed).toBe(123);
         },
     );
+    it.each(["0", "2", "1.5", "many"])(
+        "rejects unsupported multipart image count %s before generation",
+        async (count) => {
+            let generated = false;
+            const app = new Hono<Env>()
+                .use("*", async (c, next) => {
+                    c.set("model", {
+                        requested: "flux",
+                        resolved: "flux",
+                        definition:
+                            {} as Env["Variables"]["model"]["definition"],
+                    });
+                    await next();
+                })
+                .post("/v1/images/edits", prepareOpenAIImageEdit, () => {
+                    generated = true;
+                    return new Response("generated");
+                });
+            const form = new FormData();
+            form.set("prompt", "make it blue");
+            form.set("image", "https://example.com/image.png");
+            form.set("n", count);
+            const response = await app.fetch(
+                new Request("https://gen.pollinations.ai/v1/images/edits", {
+                    method: "POST",
+                    body: form,
+                }),
+                {} as CloudflareBindings,
+            );
+            expect(response.status).toBe(400);
+            expect(generated).toBe(false);
+        },
+    );
     it("rejects an invalid seed on multipart edits", async () => {
         const app = new Hono<Env>().post(
             "/v1/images/edits",

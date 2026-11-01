@@ -1,6 +1,7 @@
 import {
     CardIcon,
     CheckIcon,
+    Chip,
     ClipboardIcon,
     CopyButton,
     cn,
@@ -16,11 +17,7 @@ import {
     WalletIcon,
     WarningIcon,
 } from "@pollinations/ui";
-import {
-    formatPollen,
-    WalletBalanceCard,
-    WalletKindIcon,
-} from "@pollinations/ui/wallet";
+import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
@@ -211,36 +208,26 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 };
 
 /**
- * What your listings earned in the last 7 days, on the drawer's My Listings
- * row: a "+" per balance it landed in, only when it is above zero. Green like
- * the Pollen page's "+X / 7d"; the icons keep the paid/Quest colour.
+ * What your listings earned in the last 7 days, paid and Quest together, on
+ * the drawer's My Listings row: the same chip as Quests' "claimable", only
+ * when it is above zero.
  */
 export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
     paidWeek,
     tierWeek,
 }) => {
-    const wins = (
-        [
-            { kind: "tier", label: "Quest", earned: tierWeek },
-            { kind: "paid", label: "Paid", earned: paidWeek },
-        ] as const
-    ).filter(({ earned }) => normalizeDisplayBalance(earned) > 0);
-    if (wins.length === 0) return null;
+    const earned = normalizeDisplayBalance(paidWeek + tierWeek);
+    if (earned <= 0) return null;
     return (
-        <span
+        <Chip
+            intent="neutral"
+            size="sm"
             title="Earned in the last 7 days"
-            className="ml-auto flex items-center gap-2.5 pr-2 text-xs font-semibold leading-none tabular-nums text-intent-success-text"
+            className="ml-auto bg-transparent text-theme-text-soft"
         >
-            {wins.map(({ kind, label, earned }) => (
-                <span key={kind} className="flex items-center gap-1">
-                    <WalletKindIcon kind={kind} />+{formatPollen(earned)}
-                    <span className="sr-only">
-                        {" "}
-                        {label} earned in the last 7 days
-                    </span>
-                </span>
-            ))}
-        </span>
+            +{formatPollen(earned)} pollen
+            <span className="sr-only"> earned in the last 7 days</span>
+        </Chip>
     );
 };
 

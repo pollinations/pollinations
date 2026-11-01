@@ -645,7 +645,7 @@ function QuestOverviewContent({
     onRecovered: () => void;
 }) {
     const router = useRouter();
-    // Bonus rewards can run into the hundreds: ten at a time.
+    // Contribution rewards can run into the hundreds: ten at a time.
     const [bonusShown, setBonusShown] = useState(BONUS_PAGE_SIZE);
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
@@ -1135,7 +1135,7 @@ function QuestOverviewContent({
             })}
             {bonusRewardCards.length > 0 && (
                 <Section
-                    title="Bonus rewards"
+                    title="Contribution rewards"
                     action={
                         <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                             {

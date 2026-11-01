@@ -470,6 +470,30 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
 });
 
+test("video quest states the Paid Pollen prerequisite it needs", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v30");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: { id: string; description: string }[];
+    };
+    const video = payload.quests.find(
+        (quest) => quest.id === "use_video_model",
+    );
+
+    // Every video model is paid-only and the modality pipe cannot see that: it
+    // only records a billed, successful generation. Without the prerequisite on
+    // the card the quest reads as free while Quest Pollen is refused at the model.
+    expect(video?.description).toMatch(/paid/i);
+});
+
 test("catalog includes coming-soon GitHub issue placeholder", async ({
     mocks,
     sessionToken: _sessionToken,

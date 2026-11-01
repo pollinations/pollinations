@@ -2,6 +2,7 @@ import { cn } from "@pollinations/ui";
 import type { ReactNode } from "react";
 import { type ArtPage, useArt } from "../../art";
 import { HERO_IMAGE_SIZES } from "../../art-config";
+import { HeroMotes } from "./HeroMotes";
 
 export const postHeroSpacingClassName = "-mt-5 sm:-mt-8";
 
@@ -12,16 +13,19 @@ export const postHeroSpacingClassName = "-mt-5 sm:-mt-8";
  *
  * `wide` is Home's longer headline: the copy column widens and the art
  * narrows from `md`, so the flying bee clears the H1 instead of sitting on it.
+ * `ambient` adds drifting pollen over the art (fireflies at night).
  */
 export function HeroScene({
     page,
     compactBottom = false,
     wide = false,
+    ambient = false,
     children,
 }: {
     page: ArtPage;
     compactBottom?: boolean;
     wide?: boolean;
+    ambient?: boolean;
     children: ReactNode;
 }) {
     const scene = useArt(page, "hero");
@@ -42,6 +46,7 @@ export function HeroScene({
                     wide && "md:w-[66%] lg:w-[76%]",
                 )}
             />
+            {ambient && <HeroMotes wide={wide} />}
             <div
                 className={cn(
                     "relative flex w-full max-w-none min-w-0 flex-col gap-6 px-5 sm:max-w-[70%] sm:gap-8 sm:px-8 sm:pt-16 md:px-18 lg:max-w-[58%]",

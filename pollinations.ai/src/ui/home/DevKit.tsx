@@ -30,9 +30,17 @@ import {
 } from "@pollinations/ui";
 import { modalityBgVar, modalityTextColor } from "@pollinations/ui/gen";
 import { PaidChip } from "@pollinations/ui/wallet";
-import type { ComponentType, ReactNode } from "react";
+import {
+    type ComponentType,
+    type CSSProperties,
+    type ReactNode,
+    useRef,
+} from "react";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useMcpServers, usePlatformStats } from "../../data/publicStats";
+import { POLLI_PERCH } from "../site/PolliFlight";
+import { useInView } from "../site/useInView";
+import { ModelPixels, type PixelKind } from "./ModelPixels";
 
 type Feature = {
     title: string;
@@ -306,7 +314,7 @@ function FeatureCard({
     return (
         <Surface
             variant="card"
-            className="flex h-full flex-col gap-5 p-5 sm:p-6"
+            className={cn("flex h-full flex-col gap-5 p-5 sm:p-6", POLLI_PERCH)}
         >
             <div className="flex items-center gap-3">
                 <IconTile
@@ -372,10 +380,14 @@ function FeatureCard({
  */
 function Models() {
     const { data: stats } = usePlatformStats();
+    const grid = useRef<HTMLUListElement>(null);
+    const seen = useInView(grid, { once: true, threshold: 0.5 });
     const cards = [
         ...MODEL_KINDS.map(({ label, icon, categories }) => ({
             label,
             icon,
+            // Drawings are keyed by each kind's first catalog category.
+            pixels: categories[0] as PixelKind,
             href: `https://enter.pollinations.ai/models?category=${categories[0]}`,
             count: stats
                 ? categories.reduce(
@@ -392,6 +404,7 @@ function Models() {
         {
             label: "Community",
             icon: SproutIcon,
+            pixels: "community" as const,
             href: "https://enter.pollinations.ai/models?q=source:community",
             count: stats?.community ?? null,
             names: stats?.newest.community ?? [],
@@ -406,23 +419,42 @@ function Models() {
             title="Models"
             description="From official providers and the community. Add yours too."
         >
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <ul
+                ref={grid}
+                data-seen={seen ? "" : undefined}
+                className="grid grid-cols-2 gap-4 sm:grid-cols-3"
+            >
                 {cards.map(
-                    ({
-                        label,
-                        icon: Icon,
-                        href,
-                        count,
-                        names,
-                        color,
-                        background,
-                    }) => (
-                        <li key={label}>
+                    (
+                        {
+                            label,
+                            icon: Icon,
+                            pixels,
+                            href,
+                            count,
+                            names,
+                            color,
+                            background,
+                        },
+                        index,
+                    ) => (
+                        <li
+                            key={label}
+                            style={
+                                {
+                                    "--card-delay": `${index * 120}ms`,
+                                } as CSSProperties
+                            }
+                        >
                             <LinkCard
                                 href={href}
-                                surfaceClassName="gap-0 p-3.5 sm:p-5"
+                                surfaceClassName={cn(
+                                    "site-model-card relative gap-0 p-3.5 sm:p-5",
+                                    POLLI_PERCH,
+                                )}
                                 tint={background}
                             >
+                                <ModelPixels kind={pixels} color={color} />
                                 <span
                                     className="flex items-center gap-2"
                                     style={{ color }}

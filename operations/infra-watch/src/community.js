@@ -114,32 +114,38 @@ const printable = (name) =>
         .replace(/[`\p{Cc}]/gu, "")
         .replace(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi, "[host]");
 
-// The last full UTC hour's reading of each model whose upstream answered
-// with a different model than the one asked for, with how many hours in a
-// row it reported that name. A run counts only hours that follow each
-// other: one without answers, or one that couldn't be read, starts it again.
-export function servedStreaks(rows, previous, hour) {
-    const seen = {};
+// Each model of the catalog's `names` whose upstream last reported a
+// different model than the one asked for, with how many of its checks in a
+// row reported that name and when the last one was read, after one hour's
+// `rows` read `at`. As in the old monitor, a model with no check that hour
+// keeps its run, however long the gap; a check reporting the asked-for
+// model ends it, and another name starts it again.
+export function servedStreaks(rows, seen, names, at) {
+    const next = Object.fromEntries(
+        Object.entries(seen ?? {}).filter(([model]) => names.has(model)),
+    );
     for (const { model, declared, served } of rows) {
-        if (agree(declared, served)) continue;
-        const last = previous?.hour === hour - 1 && previous.seen[model];
         const name = printable(served);
-        seen[model] = {
-            declared: printable(declared),
-            served: name,
-            streak: last?.served === name ? last.streak + 1 : 1,
-        };
+        if (agree(declared, served)) delete next[model];
+        else
+            next[model] = {
+                declared: printable(declared),
+                served: name,
+                streak:
+                    next[model]?.served === name ? next[model].streak + 1 : 1,
+                at,
+            };
     }
-    return seen;
+    return next;
 }
 
 // This cycle's incidents, each with an id, where it goes, the owners it
 // pings and the quiet keys it starts once told, and the pending shared
-// failures, fallback notices and mismatches to keep for the next cycle. `schedule` holds
+// failures and fallback notices to keep for the next cycle. `schedule` holds
 // each model's last probe and the one before; `rows` gen's status rows for
 // regular traffic over WINDOW_MINUTES; `quiet` when each key was told;
-// `pending` last cycle's pending incidents; `served` the last hour's
-// mismatch streaks; `listings` the day's listing changes or null.
+// `pending` last cycle's pending incidents; `served` each model's run of
+// reported names; `listings` the day's listing changes or null.
 export function incidents({
     catalog,
     rows,
@@ -269,22 +275,11 @@ export function incidents({
                 };
             });
     }
-    // A listed model whose upstream reported the same different name two
-    // hours in a row: pending from then until told.
-    for (const [model, m] of Object.entries(served))
-        if (listed.has(model) && m.streak >= 2)
-            kept[mismatchKey(model, m.served)] = {
-                kind: "mismatch",
-                model,
-                declared: m.declared,
-                served: m.served,
-            };
-    // Fallback notices and mismatches wait until told.
-    const waits = (p) => p.kind === "fallback" || p.kind === "mismatch";
     for (const [key, p] of Object.entries(pending))
-        if (waits(p) && !(key in kept) && listed.has(p.model)) kept[key] = p;
+        if (p.kind === "fallback" && !(key in kept) && listed.has(p.model))
+            kept[key] = p;
     for (const [key, p] of Object.entries(kept))
-        if (waits(p) && told(key, p.kind)) delete kept[key];
+        if (p.kind === "fallback" && told(key, "fallback")) delete kept[key];
     // One notice per model, with a snapshot per window its untold pairs come
     // from: each window's counts stay together, never summed with another's.
     const pairs = Object.entries(kept).filter(([, p]) => p.kind === "fallback");
@@ -313,14 +308,29 @@ export function incidents({
         });
     }
 
-    for (const [key, p] of Object.entries(kept))
-        if (p.kind === "mismatch")
+    // A listed model whose upstream reported the same other name in two
+    // checks in a row. Its run is the pending state: a later check that
+    // reports the asked-for model, or another name, withdraws it. Told
+    // again after its quiet week only on a check from that week, so a model
+    // without traffic since isn't told again on old evidence.
+    for (const [model, m] of Object.entries(served)) {
+        const key = mismatchKey(model, m.served);
+        if (
+            listed.has(model) &&
+            m.streak >= 2 &&
+            now - m.at < QUIET_MS.mismatch &&
+            !told(key, "mismatch")
+        )
             add({
-                ...p,
+                kind: "mismatch",
                 to: "community",
-                owners: [ownerOf(p.model)],
+                model,
+                declared: m.declared,
+                served: m.served,
+                owners: [ownerOf(model)],
                 quiet: [key],
             });
+    }
 
     if (listings?.newly.length || listings?.back.length)
         add({

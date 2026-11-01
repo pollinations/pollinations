@@ -1212,7 +1212,7 @@ it("keeps a refused fallback notice after its rescues leave the 4-hour window", 
     expect(world.agentFacts).toHaveLength(2);
 }, 15_000);
 
-it("reads the served models once an hour from 5 minutes past; an unread hour restarts every run", async () => {
+it("reads the served models once an hour from 5 minutes past; an unread or empty hour leaves every run", async () => {
     const stub = watch();
     world.served = [
         {
@@ -1225,7 +1225,7 @@ it("reads the served models once an hour from 5 minutes past; an unread hour res
     let last;
     const read = async (now) => {
         last = await runInDurableObject(stub, (instance) =>
-            instance.served(last, now),
+            instance.served(last, new Set(["community/o/m"]), now),
         );
         return last.seen["community/o/m"]?.streak;
     };
@@ -1234,17 +1234,14 @@ it("reads the served models once an hour from 5 minutes past; an unread hour res
     expect(await read(at(12, 5))).toBe(1);
     expect(await read(at(12, 40))).toBe(1);
     expect(await read(at(13, 5))).toBe(2);
-    // 14:05 can't be read: the run starts again at 15:05.
+    // 14:05 can't be read and 15:05 has no answers: skipped checks.
+    const reported = world.served;
     world.served = null;
-    expect(await read(at(14, 5))).toBeUndefined();
-    world.served = [
-        {
-            model: "community/o/m",
-            declared: "gemini-3-flash",
-            served: "llama-3.1-8b",
-        },
-    ];
-    expect(await read(at(15, 5))).toBe(1);
+    expect(await read(at(14, 5))).toBe(2);
+    world.served = [];
+    expect(await read(at(15, 5))).toBe(2);
+    world.served = reported;
+    expect(await read(at(16, 5))).toBe(3);
 });
 
 it("tells a served-model mismatch to its owner through the agent", async () => {
@@ -1252,7 +1249,7 @@ it("tells a served-model mismatch to its owner through the agent", async () => {
     world.catalog = [community("community/o/m")];
     world.probe = answers(() => false);
     world.agent = tells();
-    // Read this hour: the same different name two hours running.
+    // Read this hour: the same other name at two checks in a row.
     await runInDurableObject(stub, (_, state) =>
         state.storage.put("community", {
             served: {
@@ -1262,6 +1259,7 @@ it("tells a served-model mismatch to its owner through the agent", async () => {
                         declared: "gemini-3-flash",
                         served: "llama-3.1-8b",
                         streak: 2,
+                        at: Date.now(),
                     },
                 },
             },

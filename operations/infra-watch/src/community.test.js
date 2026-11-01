@@ -497,6 +497,8 @@ const FLASH = "community/o/flash";
 const asked = (served, model = FLASH) => [
     { model, declared: "gemini-3-flash-preview", served },
 ];
+// One hour's reading, with FLASH in the catalog.
+const read = (rows, seen) => servedStreaks(rows, seen, new Set([FLASH]), NOW);
 
 test("names compare as the old monitor compared them", () => {
     assert.equal(
@@ -506,44 +508,41 @@ test("names compare as the old monitor compared them", () => {
     assert.equal(servedName("claude-3-5-sonnet-20241022"), "claude-3-5-sonnet");
     assert.equal(servedName("gpt-4o-2024-08-06-latest"), "gpt-4o");
     const agree = (declared, served) =>
-        !servedStreaks([{ model: FLASH, declared, served }], null, 1)[FLASH];
+        !read([{ model: FLASH, declared, served }])[FLASH];
     assert.ok(agree("gemini-3-flash-preview", "models/gemini-3-flash"));
     // One contains the other: a thinking variant of the same model agrees.
     assert.ok(agree("poe/DeepSeek-V4.1-Flash-T", "deepseek-v4.1-flash"));
     assert.ok(!agree("gemini-3-flash-preview", "llama-3.1-8b"));
 });
 
-test("only hours that follow each other count, and names are cleaned", () => {
-    const one = {
-        hour: 10,
-        seen: servedStreaks(asked("llama-3.1-8b"), null, 10),
-    };
-    assert.equal(
-        servedStreaks(asked("llama-3.1-8b"), one, 11)[FLASH].streak,
-        2,
-    );
-    // An hour without answers, or one that couldn't be read, between them.
-    assert.equal(
-        servedStreaks(asked("llama-3.1-8b"), one, 12)[FLASH].streak,
-        1,
-    );
-    // Another name starts again.
-    assert.equal(servedStreaks(asked("qwen-3-4b"), one, 11)[FLASH].streak, 1);
+test("a sparse model's run keeps through hours without a check, and a fresh check that disagrees ends it", () => {
+    const one = read(asked("llama-3.1-8b"));
+    assert.equal(one[FLASH].streak, 1);
+    // Hours without answers, or that couldn't be read, leave the run.
+    const gap = read([], read([], one));
+    assert.deepEqual(gap, one);
+    assert.equal(read(asked("llama-3.1-8b"), gap)[FLASH].streak, 2);
+    // The asked-for model ends it; another name starts it again.
+    assert.deepEqual(read(asked("gemini-3-flash"), one), {});
+    assert.equal(read(asked("qwen-3-4b"), one)[FLASH].streak, 1);
+    // A model gone from the catalog loses its run.
+    assert.deepEqual(servedStreaks([], one, new Set(), NOW), {});
     // A name can't break a post, or tell an upstream's address.
-    const shown = (served) =>
-        servedStreaks(asked(served), null, 1)[FLASH].served;
+    const shown = (served) => read(asked(served))[FLASH].served;
     assert.equal(shown("x```\n@everyone"), "x@everyone");
     assert.equal(shown("api.together.xyz/llama-3"), "[host]/llama-3");
     assert.equal(shown("gpt-4.1-mini"), "gpt-4.1-mini");
 });
 
-test("a mismatch two hours in a row is its owner's, pending until told, then quiet for a week", () => {
+test("a mismatch at the second check in a row is its publisher's until a fresh check disproves it, then quiet for a week", () => {
     const catalog = [model(FLASH), model("community/o/agent", { agent: true })];
-    const seen = (streak, m = FLASH) => ({
+    const seen = (streak, extra, m = FLASH) => ({
         [m]: {
             declared: "gemini-3-flash-preview",
             served: "llama-3.1-8b",
             streak,
+            at: NOW,
+            ...extra,
         },
     });
     assert.deepEqual(find({ catalog, served: seen(1) }), []);
@@ -561,20 +560,30 @@ test("a mismatch two hours in a row is its owner's, pending until told, then qui
             quiet: [key],
         },
     ]);
-    // An hour with no answers: still pending until told.
-    const later = cycle({ catalog, served: {}, pending: first.pending });
-    assert.equal(later.found.length, 1);
-    // Told: quiet for a week, even while still reported.
+    // Untold, it stays while no check disproves it; a check reporting the
+    // asked-for model, or another name, withdraws it.
+    const again = (served) =>
+        cycle({ catalog, served, pending: first.pending }).found;
+    assert.equal(again(seen(2)).length, 1);
+    assert.deepEqual(again(read(asked("gemini-3-flash"), seen(2))), []);
+    assert.deepEqual(again(read(asked("qwen-3-4b"), seen(2))), []);
+    // Told: quiet for a week, even while still reported; then told again
+    // only on a check from that week.
     const quiet = { [key]: NOW - 7 * DAY + 1 };
     assert.deepEqual(find({ catalog, served: seen(3), quiet }), []);
-    assert.equal(
-        find({ catalog, served: seen(3), quiet: { [key]: NOW - 7 * DAY } })
-            .length,
-        1,
+    const after = { [key]: NOW - 7 * DAY };
+    assert.equal(find({ catalog, served: seen(3), quiet: after }).length, 1);
+    assert.deepEqual(
+        find({
+            catalog,
+            served: seen(3, { at: NOW - 7 * DAY }),
+            quiet: after,
+        }),
+        [],
     );
-    // Agents and private (unlisted) models are never tracked or named.
+    // Agents and private (unlisted) models are never named.
     for (const m of ["community/o/agent", "community/o/private"])
-        assert.deepEqual(find({ catalog, served: seen(2, m) }), []);
+        assert.deepEqual(find({ catalog, served: seen(2, {}, m) }), []);
 });
 
 // Incidents code found: a broken stream and a fallback for owners o and p,

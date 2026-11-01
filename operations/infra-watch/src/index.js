@@ -565,7 +565,7 @@ export class Watch extends DurableObject {
         );
 
         const listings = await this.listingsToday(gen, catalog, now);
-        state.served = await this.served(state.served, now);
+        state.served = await this.served(state.served, listed, now);
         const { found, pending } = incidents({
             catalog,
             rows,
@@ -621,11 +621,12 @@ export class Watch extends DurableObject {
         await save();
     }
 
-    // The models whose upstream answered with a different model, read from
-    // Tinybird once an hour from 5 minutes past, over the last full UTC hour,
-    // with each one's run of hours. Until then the last reading stands; an
-    // hour that can't be read counts as one without answers.
-    async served(last, now) {
+    // The catalog models whose upstream answered with a different model,
+    // read from Tinybird once an hour from 5 minutes past, over the last
+    // full UTC hour, with each one's run of checks. Until then the last
+    // reading stands; an hour that can't be read is a skipped check, which
+    // leaves every run as it is.
+    async served(last, names, now) {
         const hour = Math.floor(now / HOUR_MS);
         if (last?.hour === hour || now % HOUR_MS < LAST_HOUR_READ_DELAY_MS)
             return last ?? { hour: null, seen: {} };
@@ -639,7 +640,7 @@ export class Watch extends DurableObject {
         } catch (error) {
             console.error(`served models: ${error.message}`);
         }
-        return { hour, seen: servedStreaks(rows, last, hour) };
+        return { hour, seen: servedStreaks(rows, last?.seen, names, now) };
     }
 
     // The day's community listing changes for the agent, once a day from

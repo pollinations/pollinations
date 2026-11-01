@@ -179,8 +179,8 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["BYOP", "Earnings"],
         body: (
             <>
-                Your users sign in with Pollinations and set a spending limit.{" "}
-                <Em>They pay for their own usage.</Em>
+                Your users connect through Pollinations Connect and set a
+                spending limit. <Em>They pay for their own usage.</Em>
             </>
         ),
         links: [

@@ -62,7 +62,7 @@ For custom menu links, use UI `0.1.0-alpha.20` or later and single quotes around
 ></polli-connect>
 ```
 
-Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; sign-in still works.
+Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; Connect still works.
 
 The key stays in `sessionStorage`, so it lasts until the tab closes.
 

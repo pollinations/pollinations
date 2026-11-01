@@ -68,6 +68,13 @@ export const DASHBOARD_NAV_ITEMS = [
         group: "account",
     },
     {
+        id: "news-faq",
+        to: "/news",
+        label: "News & FAQ",
+        icon: NewspaperIcon,
+        group: "resources",
+    },
+    {
         id: "models",
         to: "/models",
         label: "Models",
@@ -88,13 +95,6 @@ export const DASHBOARD_NAV_ITEMS = [
         search: { view: "mcp" },
         label: "MCP",
         icon: McpIcon,
-        group: "resources",
-    },
-    {
-        id: "news-faq",
-        to: "/news",
-        label: "News & FAQ",
-        icon: NewspaperIcon,
         group: "resources",
     },
 ] as const satisfies readonly {

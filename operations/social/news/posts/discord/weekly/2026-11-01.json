@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-11-01",
+  "period_start": "2026-10-25",
+  "period_end": "2026-10-31",
+  "generated_at": "2026-11-01T06:12:02.180137+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/af5d9fcb329200db2ef2a9ae06e2a735908e718c537d307a46c01bc78c3f224c"
+    }
+  ],
+  "text": "## Weekly Update - 2026-11-01\n\nHey <@&1424461167883194418>, here’s what changed this week.\n\n🔑 **App Keys:** Starting November 1, `pk_` keys identify OAuth apps but no longer authenticate API requests. Generation needs a server-side `sk_` key or a user-authorized key through Connect User Wallets. Enter, the CLI, SDK, and docs reflect the split. Permission errors give owners clearer guidance, and keys that manage other keys must stay within their own limits.\n\n📊 **Community models:** Model Monitor compares community-model Trust scores with their named official counterparts. Health data separates Pollen-related 402s from other 4xx errors. Community Watch flags fallbacks and listing changes; daily text and image boards show usage, speed, and success rates. Responses can report `pricing_units`, including per-megapixel image-token pricing.\n\n🌱 **Apps:** My Apps opens for every signed-in account, with submissions, a card grid, and 24-hour request counts. Six apps joined the catalog. Pollinations Pay matching now keeps sibling apps on one host from sharing each other’s traffic.\n\n🛠️ **Requests and tools:** Refusals reach Messages, CLI, and SDK chat responses. Blank non-streaming answers are handled before caching; affected requests with an explicit output limit can return a guided 400. Enter distinguishes outages from sign-in errors and retries affected account panels. `polli models` gained model filters and per-model voice lists. The CLI prioritizes `POLLINATIONS_API_KEY`, includes fixed fees in estimates, and supports npm-backed commands on Windows. `polli sites deploy --verify` checks published files; failure exits nonzero **without unpublishing the Site**. SDK `imageUrl()` and `videoUrl()` return stored media URLs.\n\n💬 **Smaller paths:** Barbara can read every Telegram group message when selected, replying to unmentioned ones only when useful. Old chat links redirect to Open WebUI with paths and queries intact. Kling v3.0 standard gained Play’s Sound setting; media-reference URLs keep their commas. Setup Quest gained review requests.\n\nCode and changes: https://github.com/pollinations/pollinations"
+}

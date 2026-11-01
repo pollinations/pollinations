@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "weekly",
+  "date": "2026-11-01",
+  "period_start": "2026-10-25",
+  "period_end": "2026-10-31",
+  "generated_at": "2026-11-01T06:12:02.180137+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/f4ba0a4eea2c99aaefe7fdb36f65c68f4791c3d825843b5b9300359fb14529aa"
+    }
+  ],
+  "text": "Shipped this week: community-model Trust comparisons, daily usage/speed/success boards, My Apps submissions with 24-hour counts, and clearer failure messages. From Nov 1, `pk_` identifies OAuth apps; API calls need `sk_` or a user-authorized key."
+}

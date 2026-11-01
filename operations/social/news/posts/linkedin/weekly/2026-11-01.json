@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-11-01",
+  "period_start": "2026-10-25",
+  "period_end": "2026-10-31",
+  "generated_at": "2026-11-01T06:12:02.180137+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/3429b1216ebda80bdc2fb3128e929284a690a30e854c29003660065be043ddc1"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol.44: keys, models & apps\n\n1. From November 1, pk_ keys identify OAuth apps, not API requests. Generation needs a server-side sk_ key or a user-authorized key via Connect User Wallets. Enter, CLI, SDK, and docs reflect the split.\n\n2. Model Monitor compares community-model Trust with the official models they are named after. Health data separates Pollen-related 402s from other 4xx errors. Community Watch adds fallback and listing-change notices.\n\n3. My Apps lets signed-in users submit an app without an existing listing. Its card grid shows 24-hour request counts. Six apps joined the catalog. Traffic matching no longer credits sibling apps for each other's requests.\n\n4. Refusal-only answers reach Messages, CLI, and SDK. Blank answers are handled before caching. An explicit output limit with no answer returns a guided 400 in affected paths.\n\n5. The CLI gained model and voice search. polli sites deploy --verify checks published files against the local build. A failed check exits nonzero; the Site stays published. SDK media helpers return stored URLs.\n\nThe repo is public: https://github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

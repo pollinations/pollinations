@@ -1,0 +1,535 @@
+{
+  "date": "2026-11-01",
+  "period_start": "2026-10-25",
+  "period_end": "2026-10-31",
+  "title": "App Keys get a specific job",
+  "summary": "The week clarified which keys can do what, made community models and apps easier to inspect, and gave failed requests more useful answers.\n\nStarting November 1, `pk_` App Keys identify OAuth apps but no longer authenticate API requests. Generation calls need a server-side `sk_` key or a user-authorized key through Connect User Wallets. Enter, the CLI, the SDK, and the docs now reflect that split. Permission errors also point owners toward a fix, while keys that create or edit other keys must stay within their own limits.\n\nModel Monitor now compares community-model Trust scores with the official models they are named after. Health data separates Pollen-related 402 responses from other 4xx errors, and Community Watch adds fallback and listing-change notices. Daily text and image boards show usage, speed, and success rates. Model responses can also report `pricing_units`, including when image tokens are priced per megapixel.\n\nMy Apps now opens for every signed-in account, including people who have not listed an app yet. It gained a submission path, a responsive card grid, and 24-hour request counts. The catalog added six apps across the week and improved how Pollinations Pay traffic is matched to listings, so sibling apps on one host do not inherit each other's requests.\n\nRefusal-only answers now reach Messages, the CLI, and SDK chat responses instead of disappearing. Blank non-streaming answers are handled before caching, and requests that use an explicit output limit without producing an answer now return a 400 with guidance in affected paths. Enter distinguishes temporary outages from sign-in errors and retries affected account panels when connectivity permits.",
+  "pr_count": 131,
+  "prs": [
+    {
+      "number": 16852,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 17949,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18164,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18229,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18360,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18394,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18406,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18413,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18418,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18442,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 18450,
+      "date": "2026-10-25"
+    },
+    {
+      "number": 15233,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 17398,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 17864,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 17914,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18039,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18109,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18200,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18212,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18402,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18421,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18423,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18424,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18429,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18433,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18438,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18451,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18452,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18468,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18469,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18471,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18517,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18521,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18523,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18526,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18527,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18529,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18533,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18534,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18535,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18536,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 18537,
+      "date": "2026-10-26"
+    },
+    {
+      "number": 17600,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18539,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18543,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18552,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18555,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18560,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18563,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18564,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18575,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18578,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18580,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18581,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18582,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18586,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18589,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18590,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18594,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18601,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18603,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 18610,
+      "date": "2026-10-27"
+    },
+    {
+      "number": 17422,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18579,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18583,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18612,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18615,
+      "date": "2026-10-28"
+    },
+    {
+      "number": 18201,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18650,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18660,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18692,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18694,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18702,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18709,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18710,
+      "date": "2026-10-29"
+    },
+    {
+      "number": 18540,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18584,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18591,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18593,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18715,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18734,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18738,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18739,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18741,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18742,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18743,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18744,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18746,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18754,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18756,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18758,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18759,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18763,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18767,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18771,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18775,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18778,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18784,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18786,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18787,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18790,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18793,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18797,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18800,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18811,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18812,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18816,
+      "date": "2026-10-30"
+    },
+    {
+      "number": 18804,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18819,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18828,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18832,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18842,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18852,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18853,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18854,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18857,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18873,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18874,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18875,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18877,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18879,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18880,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18895,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18897,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18898,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18899,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18900,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18903,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18904,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18905,
+      "date": "2026-10-31"
+    },
+    {
+      "number": 18912,
+      "date": "2026-10-31"
+    }
+  ],
+  "generated_at": "2026-11-01T06:12:02.180137+00:00"
+}

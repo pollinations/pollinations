@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-11-01",
+  "period_start": "2026-10-25",
+  "period_end": "2026-10-31",
+  "generated_at": "2026-11-01T06:12:02.180137+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/30fec7af7c24c28b557f5e7ad9b2d19661a5574240def35af6a42d7ee169b2ae"
+    },
+    {
+      "url": "https://media.pollinations.ai/b0eb595d0175bb579c95e39c3c117ba520c123a19e9ca9b506175e245282d32d"
+    },
+    {
+      "url": "https://media.pollinations.ai/5f389927ea7265ae20f31f87dde217e160d5fa45cd22ee02dd64bd243ab24907"
+    }
+  ],
+  "text": "This week in the garden: App Keys got a clearer job. Starting November 1, `pk_` identifies OAuth apps; generation calls need a server-side `sk_` or a user-authorized key. Community models gained Trust comparisons, clearer health data, Watch notices, and daily boards. My Apps gained submissions, cards, and 24-hour request counts. We also made failed requests easier to understand and added CLI model and voice search. Software still has edges. At least more of them have labels now. Code and details: github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #developer tools #communitymodels",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

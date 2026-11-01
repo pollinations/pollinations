@@ -27,6 +27,8 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
     pricing: McpPricingDefinition;
     userScoped?: boolean;
+    /** Agents run code their author wrote, so their run tokens are refused. */
+    agents?: false;
     accountPath?: string;
 };
 
@@ -46,7 +48,9 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "MACHINES_MCP"
+    | "HN_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -193,11 +197,12 @@ export const MCP_SERVERS = [
         id: "composio",
         name: "Connectors",
         description:
-            "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
+            "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
         binding: "COMPOSIO_MCP",
         billing: "usage_receipt",
         provider: "composio",
         userScoped: true,
+        agents: false,
         accountPath: "/account#connectors",
         pricing: COMPOSIO_MCP_PRICING,
     },
@@ -205,20 +210,46 @@ export const MCP_SERVERS = [
         id: "computer",
         name: "Computer",
         description:
-            "A private persistent computer: files and a bash shell that survive between runs.",
+            "A private persistent computer: files that survive between runs, a bash shell and JavaScript.",
         binding: "COMPUTER_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
     },
+    {
+        id: "machines",
+        name: "Machines",
+        description:
+            "Start, pause, resume, and run commands and file operations in Linux sandboxes.",
+        binding: "MACHINES_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "hn",
+        name: "Hacker News",
+        description:
+            "Search Hacker News, read the front page, and open stories with their comments.",
+        binding: "HN_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Hacker News lookups are free. No additional MCP fee.",
+            rates: [],
+        },
+    },
 ] as const satisfies readonly McpServerDefinition[];
 
 export type McpServerId = (typeof MCP_SERVERS)[number]["id"];
-export const MCP_SERVER_IDS = MCP_SERVERS.map(({ id }) => id) as [
-    McpServerId,
-    ...McpServerId[],
-];
+
+/** The servers a hosted agent can be given. */
+export const AGENT_MCP_SERVER_IDS = MCP_SERVERS.filter(
+    (server: McpServerDefinition) => server.agents !== false,
+).map(({ id }) => id) as [McpServerId, ...McpServerId[]];
 
 export function getMcpServerDefinition(
     id: string,

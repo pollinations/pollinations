@@ -441,10 +441,6 @@ function QuestMarker({
         if (status === "claimable") return "text-theme-text-strong";
         return "text-theme-text-muted";
     }
-    // An open quest's icon would only repeat its section's: keep the space
-    // so titles line up, show nothing.
-    if (!comingSoon && status === "open")
-        return <span aria-hidden="true" className="h-5 w-5 shrink-0" />;
     const MarkerIcon = resolveIcon();
     return (
         <span

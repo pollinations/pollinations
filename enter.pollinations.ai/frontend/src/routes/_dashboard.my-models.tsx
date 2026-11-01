@@ -1,13 +1,8 @@
 import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue } from "react";
-import { AppOverview } from "../components/app-overview.tsx";
 import { Deployments } from "../components/community-endpoints";
 import { DeploymentsPlaceholder } from "../components/community-endpoints/community-endpoints.tsx";
-import {
-    ListingFootnote,
-    MyApps,
-    SubmitAppButton,
-} from "../components/my-apps.tsx";
+import { MyApps, SubmitAppButton } from "../components/my-apps.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/my-models")({
@@ -42,44 +37,34 @@ export const Route = createFileRoute("/_dashboard/my-models")({
 function MyModelsPage() {
     const retry = useDashboardRetry("profile");
     const retryApps = useDashboardRetry("apps");
-    const { profile, apps, apiKeys, user } = useDeferredValue(
+    const { profile, apps, user } = useDeferredValue(
         DashboardRoute.useLoaderData(),
     );
     const githubConnected = Boolean(user?.githubId);
-    const loading = (
-        <MyApps
-            apps={undefined}
-            githubConnected={githubConnected}
-            onRetry={retryApps}
-        />
-    );
     const appsTab = {
-        action: <SubmitAppButton />,
+        action: (
+            <Await promise={apps} fallback={null}>
+                {(listed) => (listed?.length ? <SubmitAppButton /> : null)}
+            </Await>
+        ),
         content: (
-            <Await promise={apps} fallback={loading}>
-                {(listed) =>
-                    listed ? (
-                        <Await promise={apiKeys} fallback={loading}>
-                            {(keys) => (
-                                <AppOverview
-                                    apps={listed}
-                                    appKeys={keys ?? []}
-                                    footnote={
-                                        <ListingFootnote
-                                            githubConnected={githubConnected}
-                                        />
-                                    }
-                                />
-                            )}
-                        </Await>
-                    ) : (
-                        <MyApps
-                            apps={null}
-                            githubConnected={githubConnected}
-                            onRetry={retryApps}
-                        />
-                    )
+            <Await
+                promise={apps}
+                fallback={
+                    <MyApps
+                        apps={undefined}
+                        githubConnected={githubConnected}
+                        onRetry={retryApps}
+                    />
                 }
+            >
+                {(listed) => (
+                    <MyApps
+                        apps={listed}
+                        githubConnected={githubConnected}
+                        onRetry={retryApps}
+                    />
+                )}
             </Await>
         ),
     };

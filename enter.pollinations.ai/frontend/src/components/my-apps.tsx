@@ -18,7 +18,7 @@ import type { ListedApp } from "../backend-types.ts";
 import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
 
 /** The submission form every listed app started as (issue template). */
-export const SUBMIT_APP_URL =
+const SUBMIT_APP_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml";
 
 function formatDate(value: string | null): string | null {
@@ -255,32 +255,21 @@ export function MyApps({
                     </div>
                 </div>
             )}
-            <ListingFootnote githubConnected={githubConnected} />
+            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {githubConnected ? (
+                    <span>
+                        A listing is matched to your connected GitHub account,
+                        so submit from that account.
+                    </span>
+                ) : (
+                    <span>
+                        Listings are matched to a GitHub account.{" "}
+                        <InlineLink href="/account">Connect GitHub</InlineLink>{" "}
+                        on your account page, then submit from that account.
+                    </span>
+                )}
+            </p>
         </>
-    );
-}
-
-/** Which GitHub account a listing is matched to. */
-export function ListingFootnote({
-    githubConnected,
-}: {
-    githubConnected: boolean;
-}) {
-    return (
-        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-            <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            {githubConnected ? (
-                <span>
-                    A listing is matched to your connected GitHub account, so
-                    submit from that account.
-                </span>
-            ) : (
-                <span>
-                    Listings are matched to a GitHub account.{" "}
-                    <InlineLink href="/account">Connect GitHub</InlineLink> on
-                    your account page, then submit from that account.
-                </span>
-            )}
-        </p>
     );
 }

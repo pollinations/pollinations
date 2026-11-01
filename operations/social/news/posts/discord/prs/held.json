@@ -13,16 +13,6 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
-    },
-    "18883": {
-      "merge_sha": "1217b6ea6989c1df0fddee99d4991519038c202b",
-      "merged_at": "2026-11-01T11:55:44Z",
-      "required": []
-    },
-    "18936": {
-      "merge_sha": "b7a607f813c79113cc840f2abe03f255b9479276",
-      "merged_at": "2026-11-01T11:05:27Z",
-      "required": []
     }
   },
   "production": "852cfa25c907f213dd7f659110fec3edb6a69929",

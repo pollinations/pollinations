@@ -29,6 +29,7 @@ import {
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
 import { SidebarEarnings, SidebarOutage } from "../components/pollen";
+import { SidebarSandboxes } from "../components/sandboxes.tsx";
 import {
     BALANCE_PATH,
     fetchAccountBalance,
@@ -200,16 +201,23 @@ function DashboardLayout() {
                     <DashboardSignInBanner />
                 )
             }
-            listingsStatus={
-                user ? (
-                    <Suspense fallback={null}>
-                        <Await promise={data.earnings}>
-                            {(earnings) =>
-                                earnings && <SidebarEarnings {...earnings} />
-                            }
-                        </Await>
-                    </Suspense>
-                ) : undefined
+            rowStatus={
+                user
+                    ? {
+                          "my-models": (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.earnings}>
+                                      {(earnings) =>
+                                          earnings && (
+                                              <SidebarEarnings {...earnings} />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          sandboxes: <SidebarSandboxes />,
+                      }
+                    : undefined
             }
             accountCard={
                 user ? (

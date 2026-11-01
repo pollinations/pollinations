@@ -529,6 +529,7 @@ export function QuestRow({
             intent="commit"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
+            aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
             className="gap-1.5 tabular-nums"
         >
             <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
@@ -645,7 +646,7 @@ function QuestOverviewContent({
     onRecovered: () => void;
 }) {
     const router = useRouter();
-    // Contribution rewards can run into the hundreds: ten at a time.
+    // Bonus rewards can run into the hundreds: ten at a time.
     const [bonusShown, setBonusShown] = useState(BONUS_PAGE_SIZE);
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
@@ -1135,7 +1136,7 @@ function QuestOverviewContent({
             })}
             {bonusRewardCards.length > 0 && (
                 <Section
-                    title="Contribution rewards"
+                    title="Bonus rewards"
                     action={
                         <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                             {

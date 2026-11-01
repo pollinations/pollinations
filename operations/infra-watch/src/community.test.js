@@ -279,7 +279,7 @@ test("the agent can write no link; code adds the one to My Models", () => {
         "[here](https://enter.pollinations.ai/my-models)",
         "https\\://evil.example/a <https://evil.example/b>",
         "https://gen.pollinations.ai/models www.evil.example/c",
-        "1https://evil.example/d _https://evil.example/e x:%2F%2Fevil.example",
+        "1https://evil.example/d _https://evil.example/e_ x:%2F%2Fevil.example",
         "done",
     ].join(" ");
     const plan = answer({ community: { text }, maintainers: { text } });

@@ -434,28 +434,29 @@ export const PaymentHelp: FC = () => (
         <MailIcon aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>
             Payment help:{" "}
-            {/* Styled like Terms and Refund; a copy icon where theirs has
-                the arrow. The icon says copy and the text says Copied,
-                so no tooltip. */}
-            <CopyButton
-                value="billing@pollinations.ai"
-                className="polli-link"
-                data-tone="accent"
-                tooltip={null}
-            >
-                {(copied) => (
-                    <>
-                        {copied ? "Copied" : "billing@pollinations.ai"}
-                        <CopyStateIcon
-                            copied={copied}
-                            aria-hidden="true"
-                            className="polli-link-external-icon"
-                        />
-                    </>
-                )}
-            </CopyButton>
-            {/* Terms and Refund wrap as one piece, never split apart. */}
+            {/* The address, Terms and Refund wrap as one piece: on a phone
+                the line breaks after "Payment help:", never inside. */}
             <span className="whitespace-nowrap">
+                {/* Styled like Terms and Refund; a copy icon where theirs
+                    has the arrow. The icon says copy and the text says
+                    Copied, so no tooltip. */}
+                <CopyButton
+                    value="billing@pollinations.ai"
+                    className="polli-link"
+                    data-tone="accent"
+                    tooltip={null}
+                >
+                    {(copied) => (
+                        <>
+                            {copied ? "Copied" : "billing@pollinations.ai"}
+                            <CopyStateIcon
+                                copied={copied}
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
+                            />
+                        </>
+                    )}
+                </CopyButton>
                 <LinkSeparator />
                 <InlineLink href={TERMS_URL}>Terms</InlineLink>
                 <LinkSeparator />

@@ -1161,17 +1161,19 @@ function QuestOverviewContent({
                         ))}
                     </div>
                     {bonusShown < bonusRewardCards.length && (
-                        <div className="mt-4 flex justify-end">
-                            <Button
-                                onClick={() =>
-                                    setBonusShown(
-                                        (shown) => shown + BONUS_PAGE_SIZE,
-                                    )
-                                }
-                            >
-                                Show more
-                            </Button>
-                        </div>
+                        // Paging, not an action: quiet grey text, not a button
+                        // that competes with Claim.
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setBonusShown(
+                                    (shown) => shown + BONUS_PAGE_SIZE,
+                                )
+                            }
+                            className="mx-auto mt-3 block text-sm font-medium text-theme-text-muted hover:text-theme-text-strong"
+                        >
+                            Show more
+                        </button>
                     )}
                 </Section>
             )}

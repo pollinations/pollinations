@@ -183,11 +183,34 @@ test("a fallback notice from 10 rescues and 25% of successes, private fallbacks 
         owners: ["o"],
         quiet: [
             fallbackKey("community/o/m", PUBLIC),
-            fallbackKey("community/o/m", "private"),
+            fallbackKey("community/o/m", "community/x/hidden"),
         ],
     });
     assert.deepEqual(find({ catalog, rows: leaning(9, 36) }), []);
     assert.deepEqual(find({ catalog, rows: leaning(10, 41) }), []);
+});
+
+test("two private fallbacks of one model are both kept, each unnamed", () => {
+    const rows = [
+        {
+            model: "community/o/m",
+            is_rollup: 1,
+            status_2xx: 40,
+            fallback_rescues: 30,
+        },
+        ...["community/x/a", "community/x/b"].map((used, i) => ({
+            model: "community/o/m",
+            is_rollup: 0,
+            fallback_used: true,
+            model_used: used,
+            fallback_rescues: [25, 5][i],
+        })),
+    ];
+    const [notice] = find({ catalog: [model("community/o/m")], rows });
+    assert.deepEqual(notice.snapshots[0].via, [
+        { model: "private", rescued: 25 },
+        { model: "private", rescued: 5 },
+    ]);
 });
 
 test("a told fallback stays quiet for a week, per model and fallback", () => {

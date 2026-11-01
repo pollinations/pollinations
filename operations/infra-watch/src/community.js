@@ -165,10 +165,10 @@ export function incidents({
     }
 
     // A listed model whose fallbacks rescued enough of its successes. Each
-    // of its fallbacks is kept as a pending pair from when it qualifies
-    // until it is told, so a notice outlives the 4-hour window and a new
-    // fallback joins an untold one. A fallback that isn't public when the
-    // notice goes out is unnamed.
+    // of its fallbacks is kept, by its own id, as a pending pair from when
+    // it qualifies until it is told, so a notice outlives the 4-hour window
+    // and a new fallback joins an untold one. A fallback that isn't public
+    // when the notice goes out is unnamed there.
     for (const r of rows) {
         const rescued = r.fallback_rescues;
         if (!r.is_rollup || !listed.has(r.model)) continue;
@@ -184,11 +184,10 @@ export function incidents({
             .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
             .slice(0, VIA_SHOWN)
             .forEach((v) => {
-                const via = named.has(v.model_used) ? v.model_used : "private";
-                kept[fallbackKey(r.model, via)] = {
+                kept[fallbackKey(r.model, v.model_used)] = {
                     kind: "fallback",
                     model: r.model,
-                    via,
+                    via: v.model_used,
                     rescued: v.fallback_rescues,
                     total: rescued,
                     successes: r.status_2xx,

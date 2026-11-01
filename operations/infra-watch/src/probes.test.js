@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { inflateSync } from "node:zlib";
 import {
+    dueProbes,
     hasChatProbeMarker,
     imageProbeRequest,
     imageProbeResult,
@@ -55,6 +56,111 @@ test("failures back off across restarts, cap below seven days, and fallback succ
     // A broken stream is a failure, like a 5xx.
     previous = recordProbe(previous, { timestamp: now, status: "PROTOCOL" });
     assert.equal(nextProbeAt(previous), now + 8 * HOUR);
+});
+
+const text = (name, health, extra) => ({
+    name,
+    category: "text",
+    community: true,
+    health: health === undefined ? undefined : { success_rate: health },
+    ...extra,
+});
+const traffic = (model, ok, errors5xx = 0, errors4xx = 0) => ({
+    model,
+    is_rollup: 1,
+    total_requests: ok + errors5xx + errors4xx,
+    status_2xx: ok,
+    errors_5xx: errors5xx,
+    errors_4xx: errors4xx,
+});
+
+test("probes community text and image proxies at 80% health or less, without real traffic, or at 80% success or less in 4h", () => {
+    const now = Date.parse("2026-11-01T00:00:00Z");
+    const catalog = [
+        text("community/o/weak", 80),
+        text("community/o/healthy", 81),
+        text("community/o/quiet", 100),
+        text("community/o/refused", 100),
+        text("community/o/failing", 0),
+        // No sample: busy with real traffic, so not due.
+        { ...text("community/o/unsampled"), health: { success_rate: null } },
+        text("community/o/backoff", 10),
+        // Healthy in the catalog, failing in the last 4 hours.
+        text("community/o/slipping", 92),
+        text("community/o/edge", 95),
+        // Rescued by its fallback: those are successes.
+        text("community/o/rescued", 95),
+        // Final 4xx are left out of its success.
+        text("community/o/refusing", 95),
+        text("community/o/agent", 10, { agent: true }),
+        text("community/o/voice", 10, { category: "audio" }),
+        { name: "openai", category: "text", health: { success_rate: 10 } },
+        {
+            name: "community/o/image",
+            category: "image",
+            community: true,
+        },
+    ];
+    const rows = [
+        traffic("community/o/weak", 10),
+        traffic("community/o/healthy", 10),
+        // Only 4xx: callers refused, not real traffic for the model.
+        traffic("community/o/refused", 0, 0, 30),
+        traffic("community/o/failing", 0, 12),
+        traffic("community/o/unsampled", 5),
+        traffic("community/o/slipping", 1, 4),
+        traffic("community/o/edge", 4, 1),
+        {
+            ...traffic("community/o/rescued", 9, 1),
+            fallback_rescues: 9,
+        },
+        traffic("community/o/refusing", 5, 0, 20),
+        // A route row is not the model's total.
+        { ...traffic("community/o/quiet", 10), is_rollup: 0 },
+    ];
+    const schedule = {
+        "community/o/backoff": { lastAt: now - 7 * HOUR, failures: 1 },
+        "community/o/weak": { lastAt: now - 4 * HOUR, failures: 0 },
+    };
+    assert.deepEqual(
+        dueProbes(catalog, rows, schedule, now).map((m) => m.name),
+        [
+            "community/o/weak",
+            "community/o/quiet",
+            "community/o/refused",
+            "community/o/failing",
+            "community/o/slipping",
+            "community/o/edge",
+            "community/o/image",
+        ],
+    );
+    // An hour later the backed-off model is due again.
+    assert.ok(
+        dueProbes(catalog, rows, schedule, now + HOUR).some(
+            (m) => m.name === "community/o/backoff",
+        ),
+    );
+});
+
+test("a probe keeps the one before it, to tell two in a row", () => {
+    const first = recordProbe(undefined, {
+        timestamp: 0,
+        status: "PROTOCOL",
+        protocolError: "stream is missing [DONE]",
+        modelUsed: "community/o/fallback",
+    });
+    assert.equal(first.before, undefined);
+    const second = recordProbe(first, { timestamp: 1, ok: true, status: 200 });
+    assert.deepEqual(second.before, {
+        status: "PROTOCOL",
+        protocolError: "stream is missing [DONE]",
+        modelUsed: "community/o/fallback",
+    });
+    // Only the one before: no chain grows.
+    assert.equal(
+        recordProbe(second, { timestamp: 2 }).before.before,
+        undefined,
+    );
 });
 
 // Ported from operations/community-monitor/chat-stream.test.mjs.

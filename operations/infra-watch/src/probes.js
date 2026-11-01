@@ -20,7 +20,7 @@ export function nextProbeAt(previous) {
 
 // Success, including a fallback's, and inconclusive caller or probe errors
 // reset the backoff. The probe's status, stream error and the model that
-// answered are kept for the agent to compare with the next one.
+// answered are kept, with the probe before, to tell two in a row.
 export function recordProbe(previous, result) {
     return {
         lastAt: result.timestamp,
@@ -35,7 +35,41 @@ export function recordProbe(previous, result) {
         status: result.status,
         protocolError: result.protocolError,
         modelUsed: result.modelUsed,
+        before: previous && {
+            status: previous.status,
+            protocolError: previous.protocolError,
+            modelUsed: previous.modelUsed,
+        },
     };
+}
+
+// The community text and image proxies to probe now: public (gen's catalog
+// lists no private model) and not agents, due by their backoff, and either
+// at 80% catalog health or less, or without real traffic or at 80% final
+// success or less in the last 4 hours. `rows` are gen's status rows for
+// regular traffic over those 4 hours, which leaves the probes out, and
+// legacy-API and other internal traffic too. A model's rollup counts
+// final outcomes, so fallback rescues are successes; final 4xx say nothing
+// of the model and are left out.
+export function dueProbes(catalog, rows, schedule, now) {
+    const recent = new Map(
+        rows
+            .filter((r) => r.is_rollup && r.total_requests > r.errors_4xx)
+            .map((r) => [
+                r.model,
+                r.status_2xx / (r.total_requests - r.errors_4xx),
+            ]),
+    );
+    return catalog.filter(
+        (m) =>
+            m.community &&
+            !m.agent &&
+            ["text", "image"].includes(m.category) &&
+            now >= nextProbeAt(schedule[m.name]) &&
+            ((m.health?.success_rate ?? 100) <= 80 ||
+                !recent.has(m.name) ||
+                recent.get(m.name) <= 0.8),
+    );
 }
 
 // What is kept of a model gone from the catalog, and for how long: a week,

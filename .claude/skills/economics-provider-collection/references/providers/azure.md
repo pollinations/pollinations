@@ -79,11 +79,17 @@ Collection steps:
    ```
 
 7. Save raw API JSON to `<collection-dir>/evidence/azure-<period>-billing-invoices.json`.
-8. For provider detail, query the subscription Cost Management endpoint with
-   monthly granularity and group by `ServiceName` and `Meter`. Preserve the raw
-   values; for closed months, allocate the final invoice total and funding split
-   across meter rows so the detailed ledger still ties exactly to the invoice.
-9. Use this skill for saved raw evidence.
+8. For closed months, export Transactions from the monthly invoice in the
+   billing profile. The CSV may begin with `SEP=,`; skip that line before
+   parsing. Group only identical product family/product/SKU lines and pair
+   usage charges with their credit lines. Preserve the exact invoice amounts
+   and any cash-funded remainder, including small nonzero amounts. Verify the
+   grouped charges, credits and net against the invoice.
+9. Query subscription Cost Management with monthly granularity grouped by
+   `ServiceName` and `Meter` for model labels and usage cross-checks. Raw costs
+   can differ from finalized invoice transactions; do not proportionally
+   allocate invoice totals when exact transaction lines are available.
+10. Use this skill for saved raw evidence.
 
 ## Verified — 2026-09-06
 
@@ -100,7 +106,10 @@ Known traps:
 - Use `totalAmount.value` or `amountDue.value` for payable/due amount when payments are absent.
 - Use `payments[].amount.value` when present for actual cash payment evidence.
 - Use `freeAzureCreditApplied.value` and `azurePrepaymentApplied.value` for Azure credit/prepayment burn.
-- Do not treat `creditAmount` as sponsorship credit; Azure documents it as refunds, returns, or cancellations.
+- Do not treat `creditAmount` alone as sponsorship credit; Azure documents it
+  as refunds, returns, or cancellations. Paired invoice credit transactions
+  corroborated by the Azure credits ledger establish the actual funding split,
+  even with a nonzero cash remainder or zero `freeAzureCreditApplied`.
 - Exception: if a full-month invoice has `billedAmount.value > 0`,
   `totalAmount.value == 0`, `amountDue.value == 0`, no payments, and
   `creditAmount.value == -billedAmount.value`, the invoice is evidence that the

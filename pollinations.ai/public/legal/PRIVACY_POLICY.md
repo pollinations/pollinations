@@ -1,23 +1,24 @@
 # Privacy Policy
 
-**Last updated: 2026-10-10**
+**Last updated: 2026-10-31**
 
 ## 1) Scope & Roles
 
-This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, and (c) the Polli Discord bot and its HTTP API. For Discord/GitHub use, their policies also apply.
+This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, (c) the Polli Discord bot and its HTTP API, and (d) the Free API Classic at text.pollinations.ai and image.pollinations.ai, which needs no account. For Discord/GitHub/Google use, their policies also apply.
 
 **Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we act as processor. Our Terms do not currently incorporate a standard DPA; contact **hello@pollinations.ai** before using the Service for processing that requires one. Any separately agreed processing terms remain applicable.
 
 ## 2) Data We Process
 
-* **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs.
+* **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs (the GitHub or Google account you sign in with).
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
 * **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
+* **Free API Classic usage (no account):** timestamps, endpoints, request status, IP address and country, and the referring site or app name a request carries. We use the IP address to apply the free limit and prevent abuse. Usage records keep a keyed hash and the network prefix of the IP address instead of the full address; the hash counts distinct callers.
 * **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
 * **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub ID/username and public GitHub profile/repository/activity signals if you link GitHub, contribute, identify an app, or complete GitHub-based quests; email if you contact us.
-* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes.
+* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes; Free API Classic analytics use only the keyed IP hash described above.
 * **Telemetry:** aggregated counters and performance metrics.
 * **Support:** emails, tickets, in-app chats.
 
@@ -29,7 +30,7 @@ This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
 * **Analytics & product research** using aggregated/pseudonymised metrics and the analytics processing described in §2 (legitimate interests).
-* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We do not currently send email directly.
+* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. We also email you about your own account through Cloudflare: when your paid Pollen balance is running low (once per pack you buy) and when we switch auto top-up off because your saved payment details can't be used. These emails contain no tracking pixels, and each has an unsubscribe link; once you use it we send you no more emails, including these balance warnings. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We send no marketing email.
 
 ## 4) Authorized Apps
 
@@ -79,7 +80,8 @@ Community providers may process data in other countries. Before sending personal
 ## 10) Retention
 
 * **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
-* **Reward-protection records:** an immutable linked GitHub user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
+* **Reward-protection records:** an immutable linked GitHub or Google user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
+* **Sign-up checks:** when an account is created with a private email domain (not a public provider such as Gmail), we record that domain with the sign-up in our product analytics, kept as long as other product events, to detect bulk account creation. A domain used by many new accounts within a day is reported to our team for review. While such a domain is held, its accounts' onboarding rewards can't be claimed until the account buys a pollen pack or a team member approves a review it requested. A review request stores the account ID, email domain, account age and quest rewards; an AI model reads these with the domain's sign-up counts and the account's API usage, without account IDs, and recommends a decision, which a team member makes. Hold and review records are kept while onboarding rewards are offered.
 * **Billing, wallet, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Website and dashboard usage measurement (§7):** 24 months.
@@ -91,7 +93,7 @@ Community providers may process data in other countries. Before sending personal
 * **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.
 * **Backups:** encrypted, rolling 30-90 days. Data deleted from active systems may remain in restricted backup copies until those copies expire through the normal backup rotation.
 
-**Account deletion:** account access is revoked immediately. Personal data is deleted or de-identified from active systems within 30 days except for the reward-protection, billing, usage, fraud-prevention, and legal records described above. Residual backup copies expire through the backup schedule described above. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
+**Account deletion:** account access is revoked immediately. Personal data is deleted or de-identified from active systems within 30 days except for the reward-protection, billing, usage, fraud-prevention, and legal records described above. Residual backup copies expire through the backup schedule described above. If you later create a new account with the same GitHub or Google identity, rewards already issued to that identity cannot be claimed again.
 
 ## 11) Your Rights (GDPR)
 

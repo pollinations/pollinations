@@ -163,7 +163,7 @@ test("rendered leaderboard shows its heading and CTA while loading", () => {
     expect(html).toContain('aria-busy="true"');
 });
 
-test("admins are left out of both quest leaderboards", async () => {
+test("admins and pollinations-ai are left out of both quest leaderboards", async () => {
     const db = drizzle(env.DB, { schema });
     await db.insert(schema.user).values(
         [
@@ -180,12 +180,21 @@ test("admins are left out of both quest leaderboards", async () => {
             role,
         })),
     );
+    await db.insert(schema.user).values({
+        id: "pollinations-ai-leaderboard-user",
+        name: "Pollinations AI",
+        email: "pollinations-ai-leaderboard@example.com",
+        githubId: 314960022,
+        githubUsername: "pollinations-ai",
+        role: "user",
+    });
     await db.insert(schema.rewards).values(
         [
             ["admin-role-user", 100],
             ["multi-role-user", 50],
             ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv", 25],
             ["community-user", 3],
+            ["pollinations-ai-leaderboard-user", 200],
         ].map(([userId, pollenAmount]) => ({
             id: `admin-test-${userId}`,
             idempotencyKey: `admin-test-${userId}`,
@@ -364,7 +373,7 @@ test("rendered standings point the viewer at the quest that passes the next row"
     expect(html).toContain("Pollen supporter");
     // A 1 Pollen gap needs more than 1 Pollen, so the 5 Pollen quest is next.
     expect(html).toContain(
-        "1 Pollen to pass @bob — “Contribute a pull request” is +5.",
+        "1 Pollen to pass @bob. “Contribute a pull request” earns 5 Pollen.",
     );
 });
 
@@ -400,7 +409,7 @@ test("rendered standings show the minimum increment for a tied row", () => {
     );
 
     expect(html).toContain(
-        "0.25 Pollen to pass @alice — “Use a text model” is +0.25.",
+        "0.25 Pollen to pass @alice. “Use a text model” earns 0.25 Pollen.",
     );
 });
 

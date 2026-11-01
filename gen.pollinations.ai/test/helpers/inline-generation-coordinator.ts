@@ -19,20 +19,24 @@ export function withInlineGenerationCoordinator(
                 ) {
                     let execution = active.get(name);
                     if (!execution) {
-                        const job: GenerationJob = body
-                            ? {
-                                  ...head,
-                                  request: {
-                                      ...head.request,
-                                      body: new Uint8Array(
-                                          await new Response(
-                                              body,
-                                          ).arrayBuffer(),
-                                      ),
-                                  },
-                              }
-                            : head;
-                        execution = executeGeneration(job, coordinated);
+                        // Register before reading the body, as the real
+                        // coordinator does, so concurrent joiners share it.
+                        execution = (async () => {
+                            const job: GenerationJob = body
+                                ? {
+                                      ...head,
+                                      request: {
+                                          ...head.request,
+                                          body: new Uint8Array(
+                                              await new Response(
+                                                  body,
+                                              ).arrayBuffer(),
+                                          ),
+                                      },
+                                  }
+                                : head;
+                            return executeGeneration(job, coordinated);
+                        })();
                         active.set(name, execution);
                     } else {
                         await body?.cancel();

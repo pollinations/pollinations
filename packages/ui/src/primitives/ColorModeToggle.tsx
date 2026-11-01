@@ -18,7 +18,7 @@ import { Switch } from "./Switch.tsx";
  * document head, reading the same key) to avoid a flash of light before React
  * mounts; this store is the source of truth after hydration.
  *
- * Side-effect-free on import: the <html> sync and the cross-tab listener are
+ * Side-effect-free on import: the <html> sync and browser listeners are
  * attached lazily on first subscribe, so importing this module (e.g. via the
  * package barrel) never mutates the DOM on its own.
  */
@@ -44,6 +44,7 @@ function systemMode(): ColorMode {
 
 let current: ColorMode = readStored() ?? systemMode();
 const listeners = new Set<() => void>();
+let systemQuery: MediaQueryList | undefined;
 
 function apply(): void {
     if (typeof document === "undefined") return;
@@ -82,16 +83,29 @@ function handleStorage(event: StorageEvent): void {
     emit();
 }
 
+function handleSystemChange(): void {
+    if (readStored() !== null) return;
+    const next = systemMode();
+    if (next === current) return;
+    current = next;
+    apply();
+    emit();
+}
+
 function subscribe(listener: () => void): () => void {
     if (listeners.size === 0 && typeof window !== "undefined") {
         apply(); // safety-net sync once a consumer mounts
         window.addEventListener("storage", handleStorage);
+        systemQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+        systemQuery?.addEventListener("change", handleSystemChange);
     }
     listeners.add(listener);
     return () => {
         listeners.delete(listener);
         if (listeners.size === 0 && typeof window !== "undefined") {
             window.removeEventListener("storage", handleStorage);
+            systemQuery?.removeEventListener("change", handleSystemChange);
+            systemQuery = undefined;
         }
     };
 }

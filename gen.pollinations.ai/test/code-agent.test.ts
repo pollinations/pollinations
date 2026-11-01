@@ -12,63 +12,67 @@ const endpoint = {
 } as CodeAgentCommunityEndpointRuntime;
 
 describe("code agent Responses client", () => {
-    it.each([
-        "init",
-        "Request",
-    ])("keeps %s credentials outside the user Worker", async (input) => {
-        const workerFetch = vi.fn(async (_request: Request) =>
-            Response.json({ ok: true }),
-        );
-        const get = vi.fn(() => ({ fetch: workerFetch }));
-        const c = {
-            env: { CODE_AGENTS: { get } },
-            req: { url: "https://gen.pollinations.ai/v1/responses" },
-        } as unknown as Context<Env>;
+    it.each(["init", "Request"])(
+        "keeps %s credentials outside the user Worker",
+        async (input) => {
+            const workerFetch = vi.fn(async (_request: Request) =>
+                Response.json({ ok: true }),
+            );
+            const get = vi.fn(() => ({ fetch: workerFetch }));
+            const c = {
+                env: { CODE_AGENTS: { get } },
+                req: { url: "https://gen.pollinations.ai/v1/responses" },
+            } as unknown as Context<Env>;
 
-        const client = createCodeAgentResponsesClient(c, endpoint, "ag_run");
-        const controller = new AbortController();
-        const init = {
-            method: "POST",
-            headers: {
-                ...client.target.headers,
-                authorization: "Bearer ag_run",
-                cookie: "session=caller",
-                "api-key": "caller-key",
-            },
-            body: "{}",
-            redirect: "manual" as const,
-            signal: controller.signal,
-        };
-        if (input === "Request") {
-            await client.fetcher(new Request(client.target.endpoint, init));
-        } else {
-            await client.fetcher(client.target.endpoint, init);
-        }
+            const client = createCodeAgentResponsesClient(
+                c,
+                endpoint,
+                "ag_run",
+            );
+            const controller = new AbortController();
+            const init = {
+                method: "POST",
+                headers: {
+                    ...client.target.headers,
+                    authorization: "Bearer ag_run",
+                    cookie: "session=caller",
+                    "api-key": "caller-key",
+                },
+                body: "{}",
+                redirect: "manual" as const,
+                signal: controller.signal,
+            };
+            if (input === "Request") {
+                await client.fetcher(new Request(client.target.endpoint, init));
+            } else {
+                await client.fetcher(client.target.endpoint, init);
+            }
 
-        expect(get).toHaveBeenCalledWith(
-            "agent-id",
-            {},
-            {
-                limits: { cpuMs: 5_000, subRequests: 64 },
-                outbound: {
-                    CODE_AGENT_CONTEXT: {
-                        authorization: "Bearer ag_run",
-                        origin: "https://gen.pollinations.ai",
+            expect(get).toHaveBeenCalledWith(
+                "agent-id",
+                {},
+                {
+                    limits: { cpuMs: 5_000, subRequests: 64 },
+                    outbound: {
+                        CODE_AGENT_CONTEXT: {
+                            authorization: "Bearer ag_run",
+                            origin: "https://gen.pollinations.ai",
+                        },
                     },
                 },
-            },
-        );
-        const request = workerFetch.mock.calls[0][0] as Request;
-        expect([...request.headers]).toEqual([
-            ["content-type", "application/json"],
-        ]);
-        expect(request.url).toBe(client.target.endpoint);
-        expect(request.method).toBe("POST");
-        expect(request.redirect).toBe("manual");
-        expect(await request.text()).toBe("{}");
-        controller.abort();
-        expect(request.signal.aborted).toBe(true);
-    });
+            );
+            const request = workerFetch.mock.calls[0][0] as Request;
+            expect([...request.headers]).toEqual([
+                ["content-type", "application/json"],
+            ]);
+            expect(request.url).toBe(client.target.endpoint);
+            expect(request.method).toBe("POST");
+            expect(request.redirect).toBe("manual");
+            expect(await request.text()).toBe("{}");
+            controller.abort();
+            expect(request.signal.aborted).toBe(true);
+        },
+    );
 
     it("removes the run token reconstructed by the Chat adapter", async () => {
         const workerFetch = vi.fn(async (_request: Request) =>

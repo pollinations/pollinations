@@ -2,12 +2,21 @@ import { describe, expect, it } from "vitest";
 import { reproducibleApiUrl, videoOptions } from "./video-options";
 
 describe("video controls", () => {
+    it("retains the gateway-supported square aspect ratio for Kling text-to-video links", () => {
+        expect(videoOptions("kwaivgi/kling-v3.0-std", []).ratios).toContain(
+            "1:1",
+        );
+    });
     it("matches optional sound defaults and fixed sound capabilities", () => {
         expect(
             videoOptions("google/veo-3.1-fast", ["audio_output"]),
         ).toMatchObject({ sound: "optional", defaultSound: false });
         expect(
             videoOptions("bytedance/seedance-2.0", ["audio_output"]),
+        ).toMatchObject({ sound: "optional", defaultSound: true });
+        // Kling sends generate_audio only for audio=true, so Play must send it.
+        expect(
+            videoOptions("kwaivgi/kling-v3.0-std", ["audio_output"]),
         ).toMatchObject({ sound: "optional", defaultSound: true });
         expect(
             videoOptions("minimax/minimax-h3", ["audio_output"]),

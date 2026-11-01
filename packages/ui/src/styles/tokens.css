@@ -118,6 +118,8 @@
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
+    /* A step toward orange keeps focus amber, not brown; 3.9:1 on the cream block. */
+    --polli-color-focus:           oklch(0.58 0.16 calc(var(--polli-hue) - 10));
     --polli-color-text-hover:      var(--polli-color-text-strong);
 }
 
@@ -133,6 +135,7 @@
     --polli-color-border:          color-mix(in oklab, var(--polli-color-text-muted) 50%, transparent);
     --polli-color-scrollbar-thumb: color-mix(in oklab, var(--polli-color-text-muted) 55%, transparent);
     --polli-color-text-soft:       var(--polli-color-text-muted);
+    --polli-color-focus:           var(--polli-color-text-soft);
     --polli-color-text-hover:      var(--polli-color-text-strong);
 }
 
@@ -293,4 +296,5 @@
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.83 0.135 var(--polli-hue));
+    --polli-color-focus:           var(--polli-color-text-soft);
 }

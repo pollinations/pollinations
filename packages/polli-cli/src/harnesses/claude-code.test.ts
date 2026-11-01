@@ -18,11 +18,11 @@ const mocks = vi.hoisted(() => ({
         async (harness: { existingKey: string | null }) =>
             harness.existingKey ?? "sk_child",
     ),
-    fetchHarnessModels: vi.fn(async (selected: string) => [
-        { id: selected, contextWindow: 128000, input: ["text"] },
-    ]),
-    keyUsageCount: vi.fn(async () => 4),
-    waitForKeyUsageIncrease: vi.fn(async () => 5),
+    fetchHarnessModels: vi.fn(async (selected: string) => ({
+        model: selected,
+        models: [{ id: selected, contextWindow: 128000, input: ["text"] }],
+    })),
+    gen: vi.fn(),
 }));
 
 vi.mock("./keys.js", () => ({
@@ -31,10 +31,7 @@ vi.mock("./keys.js", () => ({
 vi.mock("./models.js", () => ({
     fetchHarnessModels: mocks.fetchHarnessModels,
 }));
-vi.mock("./usage-proof.js", () => ({
-    keyUsageCount: mocks.keyUsageCount,
-    waitForKeyUsageIncrease: mocks.waitForKeyUsageIncrease,
-}));
+vi.mock("../lib/api.js", () => ({ gen: mocks.gen }));
 
 import { claudeCode } from "./claude-code.js";
 
@@ -60,10 +57,7 @@ const calls = () =>
 const installFakeClaude = () => {
     const bin = join(home, "bin");
     mkdirSync(bin, { recursive: true });
-    writeFileSync(
-        join(bin, "claude"),
-        `#!/usr/bin/env node
-const { appendFileSync, readFileSync } = require("node:fs");
+    const script = `const { appendFileSync, readFileSync } = require("node:fs");
 const args = process.argv.slice(2);
 const settings = JSON.parse(readFileSync(args[args.indexOf("--settings") + 1], "utf-8"));
 appendFileSync(${JSON.stringify(callsFile())}, JSON.stringify({ args, settings }) + "\\n");
@@ -72,9 +66,19 @@ if (process.env.FAKE_CLAUDE_FAIL) {
     process.exit(1);
 }
 console.log("pong");
-`,
-    );
-    chmodSync(join(bin, "claude"), 0o755);
+`;
+    if (process.platform === "win32") {
+        const scriptPath = join(bin, "claude.cjs");
+        writeFileSync(scriptPath, script);
+        writeFileSync(
+            join(bin, "claude.cmd"),
+            `@echo off\r\n"${process.execPath}" "${scriptPath}" %*\r\n`,
+        );
+    } else {
+        const binary = join(bin, "claude");
+        writeFileSync(binary, `#!/usr/bin/env node\n${script}`);
+        chmodSync(binary, 0o755);
+    }
     ctx.env = {
         ...process.env,
         HOME: home,
@@ -84,7 +88,7 @@ console.log("pong");
 
 beforeEach(() => {
     mocks.resolveHarnessKey.mockClear();
-    mocks.waitForKeyUsageIncrease.mockClear();
+    mocks.gen.mockClear();
     home = mkdtempSync(join(tmpdir(), "polli-claude-harness-"));
     ctx = { home, env: {} };
     installFakeClaude();
@@ -125,12 +129,21 @@ describe("Claude Code harness", () => {
                 settings: { env },
             }),
         ]);
-        expect(mocks.waitForKeyUsageIncrease).toHaveBeenCalledWith(
-            "sk_child",
-            4,
-            expect.objectContaining({ afterMs: expect.any(Number) }),
-        );
+        // gen can answer the pong from its cache without a usage row (#18053).
+        expect(mocks.gen).not.toHaveBeenCalled();
         expect(existsSync(join(home, ".claude"))).toBe(false);
+    });
+
+    it("writes the canonical model ID when --model is an alias", async () => {
+        mocks.fetchHarnessModels.mockResolvedValueOnce({
+            model: "deepseek/deepseek-v4-flash",
+            models: [],
+        });
+        const result = await claudeCode.on(ctx, { model: "deepseek" });
+        expect(mocks.fetchHarnessModels).toHaveBeenLastCalledWith("deepseek");
+        expect(result.model).toBe("deepseek/deepseek-v4-flash");
+        const { env } = JSON.parse(readFileSync(settingsFile(), "utf-8"));
+        expect(env.ANTHROPIC_MODEL).toBe("deepseek/deepseek-v4-flash");
     });
 
     it("reuses the key stored in its settings file", async () => {

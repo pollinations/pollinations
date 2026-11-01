@@ -9,6 +9,7 @@ import {
     SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -51,7 +52,18 @@ export const stripeRoutes = new Hono<Env>()
      */
     .get("/checkout/:packKey", async (c) => {
         const session = await createPackCheckoutSession(c, "hosted");
-        if (session instanceof Response) return session;
+        if (session instanceof Response) {
+            // A link the buyer followed, so never a JSON error: back to the
+            // page they came from, which asks a signed-out buyer to sign in
+            // and tells everyone else that checkout didn't open.
+            const back = walletReturnUrl(c);
+            const packKey = c.req.param("packKey");
+            if (isPollenPackKey(packKey))
+                back.searchParams.set("pack", packKey);
+            if (session.status !== 401)
+                back.searchParams.set("checkout_error", "failed");
+            return c.redirect(back.toString());
+        }
         // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
         return c.redirect(session.url as string);
     })
@@ -62,7 +74,7 @@ export const stripeRoutes = new Hono<Env>()
      * with Stripe.js paying through the buyer's saved card.
      */
     .post("/checkout/:packKey/session", async (c) => {
-        const session = await createPackCheckoutSession(c, "custom");
+        const session = await createPackCheckoutSession(c, "elements");
         if (session instanceof Response) return session;
         return c.json({
             clientSecret: session.client_secret as string,
@@ -162,8 +174,9 @@ export const stripeRoutes = new Hono<Env>()
     /**
      * POST /api/stripe/billing/portal
      * Create a Stripe Customer Portal session for billing management.
-     * `flow: "card"` opens adding a card (made the default) and returns
-     * once it is done. Without it, the portal's home page.
+     * `flow: "card"` opens adding a card (made the default), `flow:
+     * "details"` the billing details; either returns once it is done.
+     * Without it, the portal's home page.
      */
     .post("/billing/portal", async (c) => {
         const user = await requireSessionUser(c);
@@ -191,7 +204,9 @@ export const stripeRoutes = new Hono<Env>()
                             ? body.pack
                             : undefined,
                 },
-                body?.flow === "card" ? "card" : undefined,
+                body?.flow === "card" || body?.flow === "details"
+                    ? body.flow
+                    : undefined,
             );
 
             if (!session.url) {
@@ -283,9 +298,9 @@ export const stripeRoutes = new Hono<Env>()
 
 /**
  * How the session is shown: Stripe's hosted page, or our pay modal
- * (`custom`: the saved card, rendered by Stripe.js).
+ * (`elements`: the saved card, rendered by Stripe.js).
  */
-type CheckoutUiMode = "hosted" | "custom";
+type CheckoutUiMode = "hosted" | "elements";
 
 /**
  * Create a pack Checkout Session for the signed-in buyer. Every UI mode
@@ -420,8 +435,6 @@ async function createPackCheckoutSession(
                         card: { request_three_d_secure: "any" },
                     },
                 }),
-            // Enable discount/promotion codes
-            allow_promotion_codes: true,
             // Automatic tax & VAT
             automatic_tax: { enabled: true },
             // Auto billing address - collects only what's needed (country for tax)
@@ -461,7 +474,7 @@ async function createPackCheckoutSession(
                 : {
                       // Payments finish inside the modal; only methods that
                       // need a redirect come back through return_url.
-                      ui_mode: "custom",
+                      ui_mode: "elements",
                       return_url: successUrl,
                   }),
         });
@@ -532,28 +545,7 @@ async function isInternalRequest(
     const header = request.headers.get("Authorization") ?? "";
     if (!header.startsWith("Bearer ")) return false;
 
-    const presentedToken = header.slice("Bearer ".length);
-    const [presentedDigest, expectedDigest] = await Promise.all([
-        sha256Utf8(presentedToken),
-        sha256Utf8(expectedToken),
-    ]);
-    return constantTimeBytesEqual(presentedDigest, expectedDigest);
-}
-
-async function sha256Utf8(value: string): Promise<Uint8Array> {
-    const bytes = new TextEncoder().encode(value);
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    return new Uint8Array(digest);
-}
-
-function constantTimeBytesEqual(left: Uint8Array, right: Uint8Array): boolean {
-    if (left.length !== right.length) return false;
-
-    let mismatch = 0;
-    for (let index = 0; index < left.length; index += 1) {
-        mismatch |= left[index] ^ right[index];
-    }
-    return mismatch === 0;
+    return secretEquals(header.slice("Bearer ".length), expectedToken);
 }
 
 function normalizeStripePortalError(error: unknown): string {

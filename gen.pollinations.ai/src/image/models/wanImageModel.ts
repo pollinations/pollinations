@@ -46,10 +46,6 @@ const WAN_SIZES_4K = [
     { ratio: 3 / 4, size: "3072*4096" },
 ] as const;
 
-// Reference-image cap — matches the prior DashScope path and registry
-// maxReferenceImages: 9.
-const WAN_MAX_IMAGES = 9;
-
 // ImageParams.aspectRatio → width/height pair, so an explicit aspect ratio wins
 // over (possibly defaulted) width/height when picking the closest size.
 const ASPECT_RATIO_WH: Record<string, [number, number]> = {
@@ -95,9 +91,7 @@ export async function callWanImageAPI(
         isPro && !hasImage ? WAN_SIZES_4K : WAN_SIZES_2K,
     );
 
-    const imageInput = hasImage
-        ? await Promise.all(images.slice(0, WAN_MAX_IMAGES).map(toDataUri))
-        : [];
+    const imageInput = hasImage ? await Promise.all(images.map(toDataUri)) : [];
 
     const input: Record<string, unknown> = {
         prompt,

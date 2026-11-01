@@ -5,6 +5,105 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
+    it("keeps Microsoft Decision-1 backup pins in the native config", () => {
+        for (const [suffix, pin] of [
+            ["vercel", { providerOptions: { gateway: { only: ["azure"] } } }],
+            [
+                "openrouter",
+                {
+                    provider: {
+                        only: ["azure"],
+                        ignore: ["cloudflare"],
+                        allow_fallbacks: false,
+                    },
+                },
+            ],
+        ] as const) {
+            const result = resolveModelConfig(messages, {
+                model: `microsoft/microsoft-decision-1:${suffix}`,
+                provider: { only: ["cloudflare"] },
+            });
+            expect(result.options.modelConfig?.defaultOptions).toMatchObject(
+                pin,
+            );
+        }
+    });
+
+    it("pins Liquid D1's primary and backup native configs", () => {
+        for (const [model, expected] of [
+            [
+                "liquid/d1",
+                { providerOptions: { gateway: { only: ["liquid"] } } },
+            ],
+            [
+                "liquid/d1:openrouter",
+                {
+                    provider: {
+                        only: ["liquid"],
+                        ignore: ["cloudflare"],
+                        allow_fallbacks: false,
+                    },
+                },
+            ],
+        ] as const) {
+            const result = resolveModelConfig(messages, {
+                model,
+                provider: { only: ["cloudflare"] },
+            });
+            expect(result.options.modelConfig?.defaultOptions).toEqual(
+                expected,
+            );
+        }
+    });
+
+    it("keeps jaredpalmer/kev-4b's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "jaredpalmer/kev-4b",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["siliconflow/fp8"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
+    });
+
+    it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "stealth/glyph-cluster",
+            reasoning_effort: "low",
+            reasoning: { exclude: true },
+        });
+        const model = findModelByName("stealth/glyph-cluster");
+        const transformed = await model?.transform?.(
+            messages,
+            resolved.options,
+        );
+        expect(transformed?.options.reasoning).toEqual({
+            exclude: true,
+            effort: "low",
+        });
+        expect(transformed?.options.reasoning_effort).toBeUndefined();
+        expect(resolved.options.providerOptions).toEqual({
+            gateway: { only: ["stealth"] },
+        });
+    });
+    it("keeps respan/span-01-lite's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "respan/span-01-lite",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["respan"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
+    });
+
     it("sets Anthropic max_tokens defaults", () => {
         expect(
             resolveModelConfig(messages, {
@@ -31,6 +130,23 @@ describe("resolveModelConfig", () => {
         ).toBe(128000);
     });
 
+    it("pins PPLX Decider's Vercel route and resolves its direct backup", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2",
+        });
+        expect(primary.options.modelConfig?.defaultOptions).toEqual({
+            providerOptions: { gateway: { only: ["perplexity"] } },
+        });
+        const backup = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2:perplexity",
+        });
+        expect(backup.options.modelConfig).toMatchObject({
+            model: "pplx-decider-v1.2",
+            directEndpoint: "https://api.perplexity.ai/v1/decisions",
+        });
+        expect(backup.options.modelConfig?.defaultOptions).toBeUndefined();
+    });
+
     it("lets callers override Anthropic max_tokens", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-sonnet-4.6",
@@ -40,12 +156,35 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBe(1024);
     });
 
+    it("keeps Kimi K2.6 recovery on direct DeepInfra", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k2.6:deepinfra",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "moonshotai/Kimi-K2.6",
+        });
+        expect(findModelByName("moonshotai/kimi-k2.6:azure:sweden")).toBeNull();
+    });
+
     it("routes claude-large to the global Opus 5 profile", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5",
         });
 
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
+    });
+
+    it("routes the GPT-OSS 20B fallback to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-oss-20b:deepinfra",
+        });
+
+        expect(result.options.model).toBe("openai/gpt-oss-20b");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
     });
 
     it("routes openai/gpt-6-astra to the direct Azure Responses deployment", () => {
@@ -63,11 +202,11 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("keeps GPT-5.3 Codex primary and Sweden fallback routes distinct", () => {
+    it("keeps GPT-5.3 Codex primary and OpenAI fallback routes distinct", () => {
         const primary = resolveModelConfig(messages, {
             model: "openai/gpt-5.3-codex",
         });
-        const fallback = findModelByName("openai/gpt-5.3-codex:azure:sweden");
+        const fallback = findModelByName("openai/gpt-5.3-codex:openai");
 
         expect(primary.options.model).toBe("gpt-5.3-codex");
         expect(primary.options.modelConfig).toMatchObject({
@@ -79,11 +218,10 @@ describe("resolveModelConfig", () => {
         });
         expect(fallback?.useResponsesApi).toBe(true);
         expect(fallback?.config()).toMatchObject({
-            provider: "azure-openai",
-            "azure-resource-name": "myceli-prod-swedencentral",
-            "azure-deployment-id": "gpt-5.3-codex",
-            responsesEndpoint:
-                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+            provider: "openai",
+            model: "gpt-5.3-codex",
+            responsesEndpoint: "https://api.openai.com/v1/responses",
+            serviceTier: "default",
         });
     });
 
@@ -93,45 +231,97 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-5.3-codex");
     });
 
+    it("routes Scout recovery directly to DeepInfra priority", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/llama-4-scout:deepinfra:priority",
+        });
+        expect(result.options.model).toBe(
+            "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        );
+        expect(result.options.service_tier).toBe("priority");
+        expect(result.options.max_tokens).toBe(16384);
+        expect(result.options.provider).toBeUndefined();
+        expect(result.options.modelConfig?.directEndpoint).toBe(
+            "https://api.deepinfra.com/v1/openai/chat/completions",
+        );
+    });
+
     it("does not expose gpt-6-astra as an alias", () => {
         expect(() =>
             resolveModelConfig(messages, { model: "gpt-6-astra" }),
         ).toThrow("Model configuration not found for: gpt-6-astra");
     });
 
-    it.each([
-        "gpt-6-sol",
-        "gpt-6.1-sol",
-        "gpt-6-luna",
-    ])("routes %s through Azure with direct OpenAI fallback", (model) => {
-        const canonical = `openai/${model}`;
-        const result = resolveModelConfig(messages, { model: canonical });
-
-        expect(result.options.model).toBe(model);
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "azure-openai",
-            "azure-resource-name": "myceli-prod-eastus",
-            "azure-deployment-id": model,
-            responsesEndpoint:
-                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+    it("pins the GPT-5 Nano backup to its exact OpenAI checkpoint and Standard tier", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5-nano:openai",
+            service_tier: "priority",
         });
-        expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
-        expect(findModelByName(`${canonical}:openai`)?.config()).toMatchObject({
+        expect(resolved.options.model).toBe("gpt-5-nano-2025-08-07");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
             provider: "openai",
-            model,
-            responsesEndpoint: "https://api.openai.com/v1/responses",
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
         });
-        expect(() => resolveModelConfig(messages, { model })).toThrow(
-            `Model configuration not found for: ${model}`,
-        );
     });
 
-    it("routes Claude Fable 5.1 to its global profile", () => {
-        expect(
-            resolveModelConfig(messages, {
-                model: "anthropic/claude-fable-5.1",
-            }).options.model,
-        ).toBe("global.anthropic.claude-fable-5-1");
+    it.each(["openai/gpt-audio-mini:openai", "openai/gpt-audio-1.5:openai"])(
+        "keeps %s on Standard regardless of the caller's processing tier",
+        (model) => {
+            for (const service_tier of [undefined, "auto", "priority"]) {
+                const resolved = resolveModelConfig(messages, {
+                    model,
+                    service_tier,
+                });
+                expect(resolved.options.service_tier).toBe("default");
+            }
+        },
+    );
+
+    it.each(["gpt-6-sol", "gpt-6.1-sol", "gpt-6-luna"])(
+        "routes %s through Azure with AWS global fallback",
+        (model) => {
+            const canonical = `openai/${model}`;
+            const result = resolveModelConfig(messages, { model: canonical });
+
+            expect(result.options.model).toBe(model);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "azure-openai",
+                "azure-resource-name": "myceli-prod-eastus",
+                "azure-deployment-id": model,
+                responsesEndpoint:
+                    "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+            });
+            expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
+            expect(findModelByName(`${canonical}:aws`)?.config()).toMatchObject(
+                {
+                    provider: "bedrock",
+                    model: `global.openai.${model}`,
+                    responsesEndpoint:
+                        "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+                },
+            );
+            expect(() => resolveModelConfig(messages, { model })).toThrow(
+                `Model configuration not found for: ${model}`,
+            );
+        },
+    );
+
+    it("pins gpt-6-astra recovery to exact AWS global Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-6-astra:aws",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("global.openai.gpt-6-astra");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
     });
 
     it("does not set max_tokens for non-Anthropic models", () => {
@@ -142,12 +332,42 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBeUndefined();
     });
 
+    it("pins gpt-5.4-nano recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4-nano:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.4-nano-2026-03-17");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelDef).toMatchObject({
+            useResponsesApi: true,
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("resolves nova-fast to us.amazon.nova-micro-v1:0", () => {
         const result = resolveModelConfig(messages, {
             model: "amazon/nova-micro-v1",
         });
 
         expect(result.options.model).toBe("us.amazon.nova-micro-v1:0");
+    });
+
+    it("pins Qwen 3.7 Max to the quoted Alibaba endpoint without pricier regions", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.7-max",
+        });
+        expect(result.options.model).toBe("qwen/qwen3.7-max");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["alibaba"],
+            ignore: ["alibaba/us-east-1", "cloudflare"],
+            allow_fallbacks: false,
+        });
     });
 
     it("pins longcat to the exact OpenRouter endpoint without fallback", () => {
@@ -159,6 +379,21 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toEqual({
             only: ["atlas-cloud/fp8"],
             allow_fallbacks: false,
+        });
+    });
+
+    it("pins gpt-5.6-sol recovery to exact AWS global Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.6-sol:aws",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("global.openai.gpt-5.6-sol");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
         });
     });
 
@@ -176,6 +411,7 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Hy3 to Novita on OpenRouter without fallback", () => {
+        expect(findModelByName("tencent/hy3:openrouter:phala")).toBeNull();
         const result = resolveModelConfig(messages, {
             model: "tencent/hy3",
         });
@@ -183,18 +419,6 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("tencent/hy3");
         expect(result.options.provider).toEqual({
             only: ["novita"],
-            allow_fallbacks: false,
-        });
-    });
-
-    it("routes the Hy3 Phala fallback to the exact OpenRouter endpoint", () => {
-        const result = resolveModelConfig(messages, {
-            model: "tencent/hy3:openrouter:phala",
-        });
-
-        expect(result.options.model).toBe("tencent/hy3");
-        expect(result.options.provider).toEqual({
-            only: ["phala"],
             allow_fallbacks: false,
         });
     });
@@ -211,15 +435,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins the Ling OpenRouter fallback to Novita without gateway fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inclusionai/ling-3.1-flash:openrouter:novita",
+    it("pins gpt-5.6-luna recovery to exact AWS global Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.6-luna:aws",
+            service_tier: "priority",
         });
-
-        expect(result.options.model).toBe("inclusionai/ling-3.1-flash");
-        expect(result.options.provider).toEqual({
-            only: ["novita"],
-            allow_fallbacks: false,
+        expect(resolved.options.model).toBe("global.openai.gpt-5.6-luna");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
         });
     });
 
@@ -235,6 +462,23 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.4 recovery to global AWS Standard on native Chat", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4:aws",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("global.openai.gpt-5.4");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins Nex N2.5 Pro to Nex AGI on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "nex-agi/nex-n2.5-pro",
@@ -247,12 +491,43 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.4-mini recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4-mini:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.4-mini-2026-03-17");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("routes Mistral Large 4 to Mistral direct", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4",
         });
 
         expect(result.options.model).toBe("mistral-large-4");
+    });
+
+    it("pins Step 5 Preview to StepFun and its fallback to DeepInfra", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "stepfun/step-5-preview",
+        });
+        expect(primary.options.provider).toEqual({
+            only: ["stepfun/fp8"],
+            allow_fallbacks: false,
+        });
+
+        const fallback = resolveModelConfig(messages, {
+            model: "stepfun/step-5-preview:vercel",
+        });
+        expect(fallback.options.providerOptions).toEqual({
+            gateway: { only: ["deepinfra"] },
+        });
     });
 
     it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
@@ -263,6 +538,33 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral/mistral-large-4");
         expect(result.options.providerOptions).toEqual({
             gateway: { only: ["mistral"] },
+        });
+    });
+
+    it("routes GPT-6.1 Terra to the myceli Azure deployment without fallback", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-6.1-terra",
+        });
+        expect(resolved.options.model).toBe("gpt-6.1-terra");
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "gpt-6.1-terra",
+        });
+    });
+
+    it("pins gpt-5.6-terra recovery to exact AWS global Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.6-terra:aws",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("global.openai.gpt-5.6-terra");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
         });
     });
 
@@ -278,6 +580,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.3-codex recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.3-codex:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.3-codex");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins GLM-5.3 FlashX to Z.AI on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "z-ai/glm-5.3-flashx",
@@ -290,88 +606,161 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
+    it.each([undefined, "auto", "priority"])(
+        "routes Grok 4.7 to global AWS with Standard xAI recovery (%s)",
+        (service_tier) => {
+            const primary = resolveModelConfig(messages, {
+                model: "x-ai/grok-4.7",
+                service_tier,
+            });
+            const fallback = resolveModelConfig(messages, {
+                model: "x-ai/grok-4.7:xai",
+                service_tier,
+            });
+
+            expect(primary.options.model).toBe("global.xai.grok-4.7");
+            expect(primary.options.provider).toBeUndefined();
+            expect(primary.options.modelConfig).toMatchObject({
+                provider: "bedrock",
+                directEndpoint:
+                    "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            });
+            expect(primary.options.service_tier).toBe("default");
+            expect(fallback.options.model).toBe("grok-4.7");
+            expect(fallback.options.provider).toBeUndefined();
+            expect(fallback.options.service_tier).toBe("default");
+        },
+    );
+
+    it.each([
+        ["xiaomi/mimo-v2.6-flash", "xiaomimimo/mimo-v2.6-flash"],
+        ["xiaomi/mimo-v2.6-pro", "xiaomimimo/mimo-v2.6-pro"],
+    ])("routes %s directly to Novita as %s", (model, upstream) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(upstream);
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+            model: upstream,
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Opus 5.5 fast mode through Vercel pinned to Anthropic", () => {
         const result = resolveModelConfig(messages, {
-            model: "x-ai/grok-4.7",
+            model: "anthropic/claude-opus-5.5:fast",
         });
 
-        expect(result.options.model).toBe("x-ai/grok-4.7");
-        expect(result.options.provider).toEqual({
-            only: ["xai"],
-            allow_fallbacks: false,
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5-fast");
+        expect(result.options.providerOptions).toEqual({
+            gateway: { only: ["anthropic"] },
         });
     });
 
-    it("routes Claude Sonnet 5.5 to the Bedrock global inference profile", () => {
+    it("falls back to OpenRouter's Anthropic fast endpoint for Opus 5.5 fast mode", () => {
         const result = resolveModelConfig(messages, {
-            model: "anthropic/claude-sonnet-5.5",
-        });
-
-        expect(result.options.model).toBe("global.anthropic.claude-sonnet-5-5");
-        expect(result.options.modelConfig?.provider).toBe("bedrock");
-        expect(result.options.max_tokens).toBe(128000);
-    });
-
-    it("routes Claude Haiku 5.5 to the Bedrock global inference profile and the Vercel fallback to the gateway", () => {
-        const primary = resolveModelConfig(messages, {
-            model: "anthropic/claude-haiku-5.5",
-        });
-        expect(primary.options.model).toBe("global.anthropic.claude-haiku-5-5");
-        expect(primary.options.modelConfig?.provider).toBe("bedrock");
-        expect(primary.options.max_tokens).toBe(128000);
-
-        const fallback = resolveModelConfig(messages, {
-            model: "anthropic/claude-haiku-5.5:vercel",
-        });
-        expect(fallback.options.model).toBe("anthropic/claude-haiku-5.5");
-        expect(fallback.options.modelConfig?.directEndpoint).toBe(
-            "https://ai-gateway.vercel.sh/v1/chat/completions",
-        );
-    });
-
-    it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {
-        const result = resolveModelConfig(messages, {
-            model: "anthropic/claude-opus-5.5",
-        });
-
-        expect(result.options.model).toBe("global.anthropic.claude-opus-5-5");
-        expect(result.options.modelConfig?.provider).toBe("bedrock");
-        expect(result.options.max_tokens).toBe(128000);
-    });
-
-    it("routes the Claude Opus 5.5 Anthropic fallback to the exact OpenRouter endpoint", () => {
-        const result = resolveModelConfig(messages, {
-            model: "anthropic/claude-opus-5.5:openrouter:anthropic",
+            model: "anthropic/claude-opus-5.5:fast:openrouter:anthropic-fast",
         });
 
         expect(result.options.model).toBe("anthropic/claude-opus-5.5");
         expect(result.options.provider).toEqual({
-            only: ["anthropic"],
+            only: ["anthropic/fast"],
             allow_fallbacks: false,
         });
     });
 
-    it("pins Inkling to Together on OpenRouter without fallback", () => {
+    it.each([
+        ["anthropic/claude-haiku-5.5", "claude-haiku-5-5", "anthropic"],
+        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", "anthropic"],
+        ["anthropic/claude-opus-5.5", "claude-opus-5-5", "bedrock"],
+        ["anthropic/claude-fable-5.1", "claude-fable-5-1", "bedrock"],
+    ])(
+        "resolves the configured primary and fallback for %s",
+        (model, upstream, provider) => {
+            const awsPrimary = provider === "bedrock";
+            const primary = resolveModelConfig(messages, { model });
+            expect(primary.options.model).toBe(
+                awsPrimary ? `global.anthropic.${upstream}` : upstream,
+            );
+            expect(primary.options.modelConfig?.provider).toBe(provider);
+            expect(primary.options.max_tokens).toBe(128000);
+
+            const fallback = resolveModelConfig(messages, {
+                model: `${model}:${awsPrimary ? "anthropic" : "aws"}`,
+            });
+            expect(fallback.options.model).toBe(
+                awsPrimary ? upstream : `global.anthropic.${upstream}`,
+            );
+            expect(fallback.options.modelConfig?.provider).toBe(
+                awsPrimary ? "anthropic" : "bedrock",
+            );
+            expect(fallback.options.max_tokens).toBe(128000);
+        },
+    );
+
+    it("routes Grok 4.6 recovery through global AWS", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.6:aws",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "bedrock",
+            model: "global.xai.grok-4.6",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+        });
+        expect(findModelByName("x-ai/grok-4.6:azure:sweden")).toBeNull();
+    });
+
+    it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "typesafe/jev-1.13",
+        });
+        expect(primary.options.model).toBe("typesafe-ai/jev-1.13.0");
+        expect(primary.options.providerOptions).toEqual({
+            gateway: { only: ["typesafe-ai"] },
+            typesafe: { longContext: true },
+        });
+        const backup = resolveModelConfig(messages, {
+            model: "typesafe/jev-1.13:openrouter:typesafe",
+        });
+        expect(backup.options.model).toBe("typesafe/jev-1.13");
+        expect(backup.options.provider).toEqual({
+            only: ["typesafe"],
+            ignore: ["cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",
         });
 
         expect(result.options.model).toBe("thinkingmachines/inkling-small");
         expect(result.options.provider).toEqual({
-            only: ["Together"],
+            only: ["deepinfra"],
             allow_fallbacks: false,
         });
     });
 
-    it("pins gpt-4o-mini to Azure then OpenAI on OpenRouter without further fallback", () => {
-        const result = resolveModelConfig(messages, {
+    it("routes GPT-4o Mini directly at Standard pricing with a pinned OpenRouter backup", () => {
+        const primary = resolveModelConfig(messages, {
             model: "openai/gpt-4o-mini",
+            service_tier: "priority",
         });
-
-        expect(result.options.model).toBe("openai/gpt-4o-mini");
-        expect(result.options.provider).toEqual({
-            order: ["azure", "openai"],
-            ignore: ["azure/swedencentral"],
+        expect(primary.options.model).toBe("gpt-4o-mini");
+        expect(primary.options.service_tier).toBe("default");
+        expect(primary.options.modelConfig?.directEndpoint).toBe(
+            "https://api.openai.com/v1/chat/completions",
+        );
+        const fallback = resolveModelConfig(messages, {
+            model: "openai/gpt-4o-mini:openrouter:openai",
+        });
+        expect(fallback.options.model).toBe("openai/gpt-4o-mini");
+        expect(fallback.options.provider).toEqual({
+            only: ["openai"],
+            ignore: ["cloudflare"],
             allow_fallbacks: false,
         });
     });
@@ -382,6 +771,18 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("inception/mercury-2");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Mercury 3 to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-3",
+        });
+
+        expect(result.options.model).toBe("inception/mercury-3");
         expect(result.options.provider).toEqual({
             only: ["Inception"],
             allow_fallbacks: false,
@@ -406,20 +807,35 @@ describe("resolveModelConfig", () => {
         "qwen3-coder",
         "qwen3-coder-30b-a3b-instruct",
         "qwen-coder",
-    ])("routes %s directly to Bedrock", (model) => {
+    ])("routes %s to the pinned OpenRouter coder", (model) => {
         const result = resolveModelConfig(messages, {
             model,
             stop: ["STOP"],
             reasoning_effort: "high",
         });
 
+        expect(result.options.model).toBe("qwen/qwen3-coder-30b-a3b-instruct");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+        });
+        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
+        expect(result.options.provider).toEqual({
+            only: ["siliconflow/fp8"],
+            ignore: ["cloudflare"],
+            allow_fallbacks: false,
+        });
+        expect(result.messages).toEqual(messages);
+    });
+
+    it("retains the exact Bedrock coder as the backup", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3-coder-30b-a3b-instruct:aws",
+        });
         expect(result.options.model).toBe("qwen.qwen3-coder-30b-a3b-v1:0");
         expect(result.options.modelConfig).toMatchObject({
             provider: "bedrock",
             "aws-region": "us-east-1",
         });
-        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
-        expect(result.messages).toEqual(messages);
     });
 
     it("removes unsupported controls without injecting a coder prompt", async () => {
@@ -474,17 +890,47 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes Step Flash directly to DeepInfra without fallback", () => {
+    it.each([
+        ["inferenceport-ai/lightning-text-v2", "lightning"],
+        ["inferenceport-ai/lightning-text-v2.1", "lightning-text-v2.1"],
+    ])(
+        "routes %s directly to InferencePort without fallback",
+        (model, upstream) => {
+            const result = resolveModelConfig(messages, { model });
+
+            expect(result.options.model).toBe(upstream);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "openai",
+                "custom-host": "https://api.inferenceport.ai/v1",
+            });
+            expect(result.options.provider).toBeUndefined();
+        },
+    );
+
+    it("routes Step Flash directly to Novita", () => {
         const result = resolveModelConfig(messages, {
             model: "stepfun/step-3.7-flash",
         });
 
-        expect(result.options.model).toBe("stepfun-ai/Step-3.7-Flash");
+        expect(result.options.model).toBe("stepfun/step-3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins the Qwen3.7 Flash OpenRouter fallback away from Alibaba US", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.7-flash:openrouter:alibaba",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.7-flash");
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            ignore: ["alibaba/us-east-1"],
+            allow_fallbacks: false,
+        });
     });
 
     it("routes qwen3.7-flash directly to Alibaba", () => {
@@ -539,16 +985,19 @@ describe("resolveModelConfig", () => {
                 function: { name: "get_weather" },
             },
         ],
-    ])("disables Qwen3.8 Max 0902 thinking for %s tool choice", async (_label, toolChoice) => {
-        const definition = findModelByName("qwen/qwen3.8-max-0902");
-        const transformed = await definition?.transform?.(messages, {
-            model: "qwen/qwen3.8-max-0902",
-            reasoning_effort: "high",
-            tool_choice: toolChoice,
-        });
+    ])(
+        "disables Qwen3.8 Max 0902 thinking for %s tool choice",
+        async (_label, toolChoice) => {
+            const definition = findModelByName("qwen/qwen3.8-max-0902");
+            const transformed = await definition?.transform?.(messages, {
+                model: "qwen/qwen3.8-max-0902",
+                reasoning_effort: "high",
+                tool_choice: toolChoice,
+            });
 
-        expect(transformed?.options.reasoning_effort).toBe("none");
-    });
+            expect(transformed?.options.reasoning_effort).toBe("none");
+        },
+    );
 
     it("keeps Qwen3.8 Max 0902 reasoning for automatic tool choice", async () => {
         const definition = findModelByName("qwen/qwen3.8-max-0902");
@@ -577,6 +1026,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Qwen3.8 27B to Chutes on OpenRouter without fallback", () => {
+        expect(
+            findModelByName("qwen/qwen3.8-27b:openrouter:reka-fp8"),
+        ).toBeNull();
         const result = resolveModelConfig(messages, {
             model: "qwen3.8-27b",
         });
@@ -614,21 +1066,24 @@ describe("resolveModelConfig", () => {
                 function: { name: "get_weather" },
             },
         ],
-    ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
-        for (const name of [
-            "qwen/qwen3.8-flash",
-            "qwen/qwen3.8-flash:openrouter:alibaba",
-        ]) {
-            const definition = findModelByName(name);
-            const transformed = await definition?.transform?.(messages, {
-                model: name,
-                reasoning_effort: "high",
-                tool_choice: toolChoice,
-            });
+    ])(
+        "disables Qwen3.8 Flash thinking for %s tool choice",
+        async (_label, toolChoice) => {
+            for (const name of [
+                "qwen/qwen3.8-flash",
+                "qwen/qwen3.8-flash:openrouter:alibaba",
+            ]) {
+                const definition = findModelByName(name);
+                const transformed = await definition?.transform?.(messages, {
+                    model: name,
+                    reasoning_effort: "high",
+                    tool_choice: toolChoice,
+                });
 
-            expect(transformed?.options.reasoning_effort).toBe("none");
-        }
-    });
+                expect(transformed?.options.reasoning_effort).toBe("none");
+            }
+        },
+    );
 
     it("keeps Qwen3.8 Flash reasoning for automatic tool choice", async () => {
         const definition = findModelByName("qwen/qwen3.8-flash");
@@ -641,17 +1096,83 @@ describe("resolveModelConfig", () => {
         expect(transformed?.options.reasoning_effort).toBe("high");
     });
 
-    it("routes Kimi K3 directly to Fireworks without fallback", () => {
+    it("routes Kimi K3 to global Bedrock Standard without filtering optional controls", () => {
         const result = resolveModelConfig(messages, {
             model: "moonshotai/kimi-k3",
+            service_tier: "priority",
+            presence_penalty: 0.1,
+            logprobs: true,
         });
 
-        expect(result.options.model).toBe("accounts/fireworks/models/kimi-k3");
+        expect(result.options).toMatchObject({
+            model: "global.moonshotai.kimi-k3",
+            service_tier: "default",
+            presence_penalty: 0.1,
+            logprobs: true,
+        });
         expect(result.options.modelConfig).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+        });
+        expect(result.options.provider).toBeUndefined();
+        const fallback = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k3:fireworks",
+        });
+        expect(fallback.options.model).toBe(
+            "accounts/fireworks/models/kimi-k3",
+        );
+        expect(fallback.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Nemotron 3.5 Super VL directly to DeepInfra with a Together fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3.5-super-vl",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3.5-super-vl:openrouter:together",
+        });
+
+        expect(primary.options.model).toBe(
+            "nvidia/NVIDIA-Nemotron-3.5-Super-VL",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.provider).toEqual({
+            only: ["together"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes DeepSeek V4.1 Flash 1017 directly to Fireworks with a DeepInfra fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash-1017",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
+        });
+
+        expect(primary.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4p1-flash-1017",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.model).toBe(
+            "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+        );
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
     });
 
     it("routes Muse Glimmer directly to DeepInfra", () => {
@@ -676,6 +1197,31 @@ describe("resolveModelConfig", () => {
             "custom-host": "https://ai-gateway.vercel.sh/v1",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Muse Spark 1.3 directly through Vercel without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/muse-spark-1.3",
+        });
+
+        expect(result.options.model).toBe("meta/muse-spark-1.3");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Muse Wonder to Meta on OpenRouter", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/muse-wonder-1.0",
+        });
+
+        expect(result.options.model).toBe("meta/muse-wonder");
+        expect(result.options.provider).toEqual({
+            only: ["meta"],
+            allow_fallbacks: false,
+        });
     });
 
     it("routes Grok 4.6 directly to its Azure deployment", () => {
@@ -735,35 +1281,49 @@ describe("resolveModelConfig", () => {
 
     it.each([
         ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
-        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "deepinfra/fp8"],
         [
             "mistral-small-3.2",
             "mistralai/mistral-small-3.2-24b-instruct",
             "deepinfra/fp8",
         ],
-        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
-        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
+        ["gemma", "google/gemma-4-26b-a4b-it", "deepinfra/fp8"],
+        ["gemma-4-31b", "google/gemma-4-31b-it", "crusoe/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
-        ["xiaomi/mimo-v2.6-flash", "xiaomi/mimo-v2.6-flash", "xiaomi/fp8"],
-        ["xiaomi/mimo-v2.6-pro", "xiaomi/mimo-v2.6-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
-        [
-            "minimax/minimax-m2.7:openrouter:minimax",
-            "minimax/minimax-m2.7",
-            "minimax/fp8",
-        ],
-        [
-            "meta/llama-4-scout:openrouter:novita-bf16",
-            "meta-llama/llama-4-scout",
-            "novita/bf16",
-        ],
-    ])("pins %s to %s through %s without fallback", (model, route, provider) => {
-        const result = resolveModelConfig(messages, { model });
+    ])(
+        "pins %s to %s through %s without fallback",
+        (model, route, provider) => {
+            const result = resolveModelConfig(messages, { model });
 
-        expect(result.options.model).toBe(route);
-        expect(result.options.provider).toEqual({
-            only: [provider],
+            expect(result.options.model).toBe(route);
+            expect(result.options.provider).toEqual({
+                only: [provider],
+                allow_fallbacks: false,
+            });
+        },
+    );
+
+    it("does not resolve the removed MiniMax M2.7 gateway fallback", () => {
+        expect(
+            findModelByName("minimax/minimax-m2.7:openrouter:minimax"),
+        ).toBeNull();
+    });
+
+    it("routes Qwen Vision directly to DeepInfra with an exact gateway backup", () => {
+        const primary = resolveModelConfig(messages, { model: "qwen-vision" });
+        expect(primary.options.model).toBe("Qwen/Qwen3-VL-30B-A3B-Instruct");
+        expect(primary.options.modelConfig?.directEndpoint).toBe(
+            "https://api.deepinfra.com/v1/openai/chat/completions",
+        );
+        expect(primary.options.provider).toBeUndefined();
+        const fallback = resolveModelConfig(messages, {
+            model: "qwen/qwen3-vl-30b-a3b-instruct:openrouter:deepinfra",
+        });
+        expect(fallback.options.model).toBe("qwen/qwen3-vl-30b-a3b-instruct");
+        expect(fallback.options.provider).toEqual({
+            only: ["deepinfra/fp8"],
+            ignore: ["deepinfra/fp8/priority", "cloudflare"],
             allow_fallbacks: false,
         });
     });
@@ -780,6 +1340,19 @@ describe("resolveModelConfig", () => {
                 "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Mistral Small 4's backup to its quoted standard ZDR endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-small-4:openrouter",
+        });
+        expect(result.options.model).toBe("mistralai/mistral-small-2603");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["mistral/zdr"],
+            ignore: ["mistral/eu", "mistral/us", "cloudflare"],
+            allow_fallbacks: false,
+        });
     });
 
     it("routes Mistral Small 4 to Mistral's direct API", () => {
@@ -813,19 +1386,27 @@ describe("resolveModelConfig", () => {
         ).toBe("none");
     });
 
-    it("routes DeepSeek V4.1 Flash to the exact Fireworks checkpoint", () => {
-        const result = resolveModelConfig(messages, {
+    it("routes DeepSeek V4.1 Flash to Azure with a Fireworks fallback", () => {
+        const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash",
         });
+        const fireworks = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash:fireworks",
+        });
 
-        expect(result.options.model).toBe(
+        expect(primary.options.model).toBe("DeepSeek-V4.1-Flash");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "DeepSeek-V4.1-Flash",
+        });
+        expect(fireworks.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4p1-flash",
         );
-        expect(result.options.modelConfig).toMatchObject({
+        expect(fireworks.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes DeepSeek Vision to the exact DeepInfra vision checkpoint", () => {
@@ -849,23 +1430,25 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("deepseek/deepseek-v4-pro-0813");
         expect(result.options.provider).toEqual({
             only: ["alibaba"],
+            ignore: ["alibaba/us-east-1"],
             allow_fallbacks: false,
         });
     });
 
-    it("routes Command A+ to the exact Azure deployment without fallback", () => {
+    it("routes Command A+ to Cohere on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "command-a-plus-05-2026",
         });
 
-        expect(result.options.model).toBe("Cohere-command-a-plus-05-2026");
+        expect(result.options.model).toBe("cohere/command-a-plus");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "azure-openai",
-            "azure-resource-name": "myceli-prod-eastus",
-            "azure-deployment-id": "Cohere-command-a-plus-05-2026",
-            "azure-model-name": "Cohere-command-a-plus-05-2026",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
-        expect(result.options.provider).toBeUndefined();
+        expect(result.options.provider).toEqual({
+            only: ["Cohere"],
+            allow_fallbacks: false,
+        });
     });
 
     it.each([
@@ -873,57 +1456,63 @@ describe("resolveModelConfig", () => {
         "sonar-deep",
         "perplexity/sonar-pro",
         "sonar-reasoning-pro",
-    ])("resolves %s to Sonar with search options on its web_search tool", async (modelName) => {
-        const model = findModelByName(modelName);
-        expect(model?.name).toBe("perplexity/sonar");
+    ])(
+        "resolves %s to Sonar with search options on its web_search tool",
+        async (modelName) => {
+            const model = findModelByName(modelName);
+            expect(model?.name).toBe("perplexity/sonar");
 
-        const transformed = await model?.transform?.(messages, {
-            model: modelName,
-            web_search_options: { search_context_size: "high" },
-            search_recency_filter: "day",
-            presence_penalty: 1,
-        });
-        if (!transformed) throw new Error("Sonar transform missing");
-        const result = resolveModelConfig(
-            transformed.messages,
-            transformed.options,
-        );
-        expect(result.options.model).toBe("perplexity/sonar");
-        expect(result.options).not.toHaveProperty("presence_penalty");
-        expect(result.options).not.toHaveProperty("web_search_options");
-        expect(result.options.modelConfig).toMatchObject({
-            responsesEndpoint: "https://api.perplexity.ai/v1/agent",
-            responsesDefaults: {
-                tools: [
-                    {
-                        type: "web_search",
-                        search_context_size: "high",
-                        filters: { search_recency_filter: "day" },
-                    },
-                ],
-            },
-        });
-    });
+            const transformed = await model?.transform?.(messages, {
+                model: modelName,
+                web_search_options: { search_context_size: "high" },
+                search_recency_filter: "day",
+                presence_penalty: 1,
+            });
+            if (!transformed) throw new Error("Sonar transform missing");
+            const result = resolveModelConfig(
+                transformed.messages,
+                transformed.options,
+            );
+            expect(result.options.model).toBe("perplexity/sonar");
+            expect(result.options).not.toHaveProperty("presence_penalty");
+            expect(result.options).not.toHaveProperty("web_search_options");
+            expect(result.options.modelConfig).toMatchObject({
+                responsesEndpoint: "https://api.perplexity.ai/v1/agent",
+                responsesDefaults: {
+                    tools: [
+                        {
+                            type: "web_search",
+                            search_context_size: "high",
+                            filters: { search_recency_filter: "day" },
+                        },
+                    ],
+                },
+            });
+        },
+    );
 
     it.each([
         ["grok", undefined, "grok-4-20-non-reasoning"],
         ["grok-4-20-reasoning", undefined, "grok-4-20-non-reasoning"],
         ["grok", "high", "grok-4-20-reasoning"],
         ["grok-4-20-reasoning", "none", "grok-4-20-non-reasoning"],
-    ] as const)("routes %s with reasoning_effort=%s to %s", async (model, reasoningEffort, deployment) => {
-        const definition = findModelByName(model);
-        const transformed = await definition?.transform?.(messages, {
-            model,
-            reasoning_effort: reasoningEffort,
-        });
-        if (!transformed) throw new Error("Grok transform missing");
+    ] as const)(
+        "routes %s with reasoning_effort=%s to %s",
+        async (model, reasoningEffort, deployment) => {
+            const definition = findModelByName(model);
+            const transformed = await definition?.transform?.(messages, {
+                model,
+                reasoning_effort: reasoningEffort,
+            });
+            if (!transformed) throw new Error("Grok transform missing");
 
-        const result = resolveModelConfig(messages, transformed.options);
-        expect(result.options.model).toBe(deployment);
-        if (deployment === "grok-4-20-non-reasoning") {
-            expect(result.options.reasoning_effort).toBeUndefined();
-        }
-    });
+            const result = resolveModelConfig(messages, transformed.options);
+            expect(result.options.model).toBe(deployment);
+            if (deployment === "grok-4-20-non-reasoning") {
+                expect(result.options.reasoning_effort).toBeUndefined();
+            }
+        },
+    );
 
     it("marks missing model configs as 404 errors", () => {
         expect(() =>
@@ -934,5 +1523,28 @@ describe("resolveModelConfig", () => {
                 status: 404,
             }),
         );
+    });
+});
+
+it("excludes Grok 4.3 backup priority endpoints from the quoted price", () => {
+    expect(
+        resolveModelConfig(messages, {
+            model: "x-ai/grok-4.3:openrouter:xai-zdr",
+        }).options.provider,
+    ).toEqual({
+        only: ["xai/zdr"],
+        ignore: ["xai/zdr/priority", "cloudflare"],
+        allow_fallbacks: false,
+    });
+});
+
+it("pins Luna Decisions backup to the quoted OpenAI endpoint", () => {
+    const { options } = resolveModelConfig(messages, {
+        model: "openai/gpt-6-luna-decisions:openrouter",
+    });
+    expect(options.provider).toEqual({
+        only: ["openai"],
+        ignore: ["cloudflare"],
+        allow_fallbacks: false,
     });
 });

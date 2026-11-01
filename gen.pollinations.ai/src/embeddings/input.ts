@@ -1,7 +1,7 @@
 import { UpstreamError } from "@shared/error.ts";
 import { HTTPException } from "hono/http-exception";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
-import { UserImageError } from "@/userImage.ts";
+import { fetchUserImage, UserImageError } from "@/userImage.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "./limits.ts";
 import type {
     ContentPart,
@@ -25,41 +25,21 @@ export function badRequest(message: string): never {
     throw new HTTPException(400, { message });
 }
 
-function parseRemoteMediaUrl(url: string): URL {
-    try {
-        const parsed = new URL(url);
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-            badRequest(`Unsupported media URL protocol: ${parsed.protocol}`);
-        }
-        return parsed;
-    } catch (error) {
-        if (error instanceof HTTPException) throw error;
-        badRequest(`Invalid media URL: ${url}`);
+/**
+ * A rejected user-media fetch, carried with its code and diagnostics the way
+ * the image funnel does — an HTTPException would flatten it to a generic
+ * BAD_REQUEST and lose the reason the URL was refused.
+ */
+function toUserMediaError(error: unknown): unknown {
+    if (error instanceof UserImageError) {
+        return new UpstreamError(400, {
+            message: error.message,
+            errorCode: error.errorCode,
+            requestUrl: error.requestUrl,
+            upstreamStatus: error.upstreamStatus,
+        });
     }
-}
-
-async function fetchMedia(
-    url: string,
-): Promise<{ data: string; contentType: string }> {
-    const parsed = parseRemoteMediaUrl(url);
-    let response: Response;
-    try {
-        response = await fetch(parsed);
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        badRequest(`Failed to fetch media: ${message}`);
-    }
-    if (!response.ok) {
-        badRequest(
-            `Failed to fetch media: ${response.status} ${response.statusText}`,
-        );
-    }
-    const buffer = await response.arrayBuffer();
-    return {
-        data: Buffer.from(buffer).toString("base64"),
-        contentType:
-            response.headers.get("content-type") || "application/octet-stream",
-    };
+    return error;
 }
 
 function parseDataUrl(dataUrl: string): { mimeType: string; data: string } {
@@ -83,8 +63,21 @@ async function urlToInlineData(
         const { mimeType, data } = parseDataUrl(url);
         return { inlineData: { mimeType: mimeOverride || mimeType, data } };
     }
-    const { data, contentType } = await fetchMedia(url);
-    return { inlineData: { mimeType: mimeOverride || contentType, data } };
+    // Every user-supplied media fetch goes through the shared guard: the URL
+    // policy (HTTP(S) only; credentialed, loopback, and literal-IP hosts
+    // refused) and the 20 MiB streaming cap. Buffering a raw response here
+    // instead would let one URL exhaust the worker's memory.
+    try {
+        const { bytes, mimeType } = await fetchUserImage(url);
+        return {
+            inlineData: {
+                mimeType: mimeOverride || mimeType,
+                data: Buffer.from(bytes).toString("base64"),
+            },
+        };
+    } catch (error) {
+        throw toUserMediaError(error);
+    }
 }
 
 async function imageUrlToInlineData(url: string): Promise<GeminiPart> {
@@ -95,14 +88,7 @@ async function imageUrlToInlineData(url: string): Promise<GeminiPart> {
     } catch (error) {
         // Carries the code through, the way the image and text funnels do —
         // an HTTPException would flatten it back to a generic BAD_REQUEST.
-        if (error instanceof UserImageError) {
-            throw new UpstreamError(400, {
-                message: error.message,
-                errorCode: error.errorCode,
-                requestUrl: error.requestUrl,
-                upstreamStatus: error.upstreamStatus,
-            });
-        }
+        if (error instanceof UserImageError) throw toUserMediaError(error);
         if (error instanceof UpstreamError) badRequest(error.message);
         throw error;
     }

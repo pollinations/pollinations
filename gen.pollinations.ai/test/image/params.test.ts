@@ -1,3 +1,5 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
@@ -11,31 +13,6 @@ describe("ImageParamsSchema", () => {
         });
 
         expect(result.seed).toBe(SENTINEL_SEED);
-    });
-
-    it("rejects transparent backgrounds for gpt-image-2", () => {
-        const result = ImageParamsSchema.safeParse({
-            model: "openai/gpt-image-2",
-            transparent: true,
-        });
-
-        expect(result.success).toBe(false);
-        if (!result.success) {
-            expect(result.error.issues[0]).toMatchObject({
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by gpt-image-2.",
-            });
-        }
-    });
-
-    it("keeps transparent backgrounds available for gptimage models", () => {
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "openai/gpt-image-1-mini",
-                transparent: true,
-            }).success,
-        ).toBe(true);
     });
 
     it("accepts resolutions declared by the model", () => {
@@ -404,5 +381,131 @@ describe("ImageParamsSchema", () => {
             resolution: "720p",
         });
         expect(result.success).toBe(false);
+    });
+
+    it("accepts default dimensions and explicit 1024x1024 for lightning-image-turbo", () => {
+        const defaultResult = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+        });
+        expect(defaultResult.success).toBe(true);
+        if (defaultResult.success) {
+            expect(defaultResult.data.width).toBe(1024);
+            expect(defaultResult.data.height).toBe(1024);
+            expect(defaultResult.data.dimensionsExplicit).toBe(false);
+        }
+
+        const explicit1024 = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            width: 1024,
+            height: 1024,
+        });
+        expect(explicit1024.success).toBe(true);
+        if (explicit1024.success) {
+            expect(explicit1024.data.dimensionsExplicit).toBe(true);
+        }
+    });
+
+    it.each([
+        [{ width: 768, height: 1024 }],
+        [{ width: 1024, height: 768 }],
+        [{ width: 1536, height: 1536 }],
+        [{ width: 512 }],
+        [{ height: 512 }],
+    ])("rejects non-1024 dimensions on lightning-image-turbo (%j)", (dims) => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            ...dims,
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it.each([
+        "microsoft/mai-image-2.6",
+        "bytedance/seedream-5.0-flash",
+    ] as const)("rejects more reference images than %s declares", (model) => {
+        const max =
+            (IMAGE_SERVICES[model] as ModelDefinition).maxReferenceImages ?? 0;
+        const images = Array.from(
+            { length: max + 1 },
+            (_, i) => `https://example.com/${i}.png`,
+        );
+        expect(
+            ImageParamsSchema.safeParse({ model, image: images.slice(0, max) })
+                .success,
+        ).toBe(true);
+
+        const result = ImageParamsSchema.safeParse({ model, image: images });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]).toMatchObject({
+            path: ["image"],
+            message: expect.stringContaining(`at most ${max} reference`),
+        });
+    });
+});
+
+describe("image dimensions", () => {
+    it("rejects zero and negative sides before any provider is contacted", () => {
+        for (const params of [
+            { width: 0 },
+            { height: 0 },
+            { width: 0, height: 0 },
+            { width: -100 },
+            { height: -50 },
+            { width: -100, height: -50 },
+        ]) {
+            const result = ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                ...params,
+            });
+            expect(result.success, JSON.stringify(params)).toBe(false);
+            expect(result.error?.issues[0]?.path).toEqual([
+                Object.hasOwn(params, "width") ? "width" : "height",
+            ]);
+        }
+    });
+
+    it("refuses image sides under 16 px", () => {
+        for (const side of ["width", "height"] as const) {
+            const result = ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                [side]: 8,
+            });
+            expect(result.success, side).toBe(false);
+            expect(result.error?.issues[0]?.path).toEqual([side]);
+        }
+    });
+
+    it("keeps small positive aspect-ratio sides for video models", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "google/veo-3.1-fast",
+                width: 16,
+                height: 9,
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "google/veo-3.1-fast",
+                width: 0,
+                height: 9,
+            }).success,
+        ).toBe(false);
+    });
+
+    it("still accepts the 16px floor and ordinary sizes", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                width: 16,
+                height: 16,
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                width: 1024,
+                height: 768,
+            }).success,
+        ).toBe(true);
     });
 });

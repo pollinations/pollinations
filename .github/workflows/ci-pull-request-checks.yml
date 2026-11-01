@@ -3,13 +3,15 @@ name: CI / Pull request checks
 "on":
   pull_request:
     branches: [main, master]
+  merge_group:
 
 permissions:
   contents: read
 
-# HEAD is the pull request merge commit. With fetch-depth 2 its first parent
-# (HEAD^1) is the base branch tip, so `git diff HEAD^1 HEAD` is the pull
-# request diff without fetching the full repository history.
+# HEAD is the pull request merge commit, or in the merge queue this pull
+# request's squashed commit. With fetch-depth 2 its first parent (HEAD^1) is the
+# base branch tip or the queue entry ahead, so `git diff HEAD^1 HEAD` is the
+# pull request diff without fetching the full repository history.
 
 jobs:
   project-manager:
@@ -23,7 +25,7 @@ jobs:
       - name: Check for project manager changes
         id: changes
         run: |
-          if ! git diff --quiet HEAD^1 HEAD -- operations/github operations/social/scripts .github/workflows/ci-pull-request-checks.yml; then
+          if ! git diff --quiet HEAD^1 HEAD -- operations/github operations/social/scripts operations/social/prompts operations/app-management/ingestion .github/workflows/ci-pull-request-checks.yml; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-python@v6
@@ -32,10 +34,10 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         if: steps.changes.outputs.changed == 'true'
-        run: pip install requests
+        run: pip install requests pyyaml
       - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
-        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_gist_enrichment.py
+        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_news.py operations/app-management/ingestion/test_review_agent.py
 
   gpu-tunnels:
     name: Test GPU tunnel recovery
@@ -80,6 +82,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -136,6 +139,16 @@ jobs:
       - name: Test UI
         run: npm test --workspace @pollinations/ui
 
+      # polli-cli is not a workspace; it has its own package-lock.json.
+      - name: Test polli CLI
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- \
+            packages/polli-cli .github/workflows/ci-pull-request-checks.yml \
+            .github/workflows/deploy-pollinations-site.yml; then
+            npm ci --prefix packages/polli-cli
+            npm test --prefix packages/polli-cli
+          fi
+
       - name: Test maintenance scripts
         run: >-
           node --test
@@ -144,13 +157,17 @@ jobs:
           enter.pollinations.ai/observability/scripts/*.test.mjs
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js
+          operations/app-management/performance/*.test.js
           operations/deployment/*.test.cjs
           operations/community-monitor/*.test.mjs
           operations/model-evals/*.test.js
           operations/model-monitor/src/*.test.js
 
-      - name: Test model catalog and accounting compatibility
-        run: npx vitest run --config apps/model-compatibility.vitest.config.ts
+      - name: Test shared providers and agent configurations
+        run: npx vitest run --config shared/vitest.config.ts
+
+      - name: Test Economics public calculations and UI
+        run: npm run test:public --workspace economics-web
 
       - name: Get changed files that affect the enter frontend build
         id: enter-frontend
@@ -167,6 +184,10 @@ jobs:
         if: steps.enter-frontend.outputs.any_changed == 'true'
         working-directory: enter.pollinations.ai
         run: npm run build:frontend
+
+      # Reuses packages/ui/dist built by Economics pretest:public above.
+      - name: Test UI package exports
+        run: node --test packages/ui/scripts/package-exports.test.mjs
 
   enter:
     name: Test enter.pollinations.ai
@@ -194,21 +215,34 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check for API example validation changes
+        id: enter-docs
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- enter.pollinations.ai shared gen.pollinations.ai/scripts/generate-apidocs.ts gen.pollinations.ai/scripts/validate-request-examples.ts gen.pollinations.ai/package.json package.json package-lock.json .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Node.js
-        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        if: steps.enter-ts-files.outputs.any_changed == 'true' || steps.enter-docs.outputs.changed == 'true'
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
-        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        if: steps.enter-ts-files.outputs.any_changed == 'true' || steps.enter-docs.outputs.changed == 'true'
         run: npm ci
 
       - name: Test enter.pollinations.ai
         if: steps.enter-ts-files.outputs.any_changed == 'true'
         working-directory: enter.pollinations.ai
         run: npm test
+
+      - name: Validate Enter API request examples
+        if: steps.enter-ts-files.outputs.any_changed != 'true' && steps.enter-docs.outputs.changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: npm test -- test/docs-redirect.test.ts
 
       - name: Typecheck changed files only
         if: steps.enter-ts-files.outputs.any_changed == 'true'
@@ -243,9 +277,15 @@ jobs:
           fi
 
   gen:
-    name: Test gen.pollinations.ai
+    name: Test gen.pollinations.ai (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Every test file starts its own Workers runtime, so the files are split
+    # across three runners. A fourth runner saved only ~20 s (#18135).
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
 
     steps:
       - name: Checkout code
@@ -256,7 +296,8 @@ jobs:
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '^(gen.pollinations.ai/|shared/)' || true)
+          # Include imported docs and old paths of deleted or renamed inputs.
+          FILES=$(git diff --no-renames --name-only HEAD^1 HEAD | grep -E '^(gen\.pollinations\.ai/|shared/|packages/ui/src/(styles/tokens\.css|brand/lockup-horizontal(-white)?\.svg)$|pollinations\.ai/public/legal/SUBPROCESSORS\.md$|packages/polli-cli/(README|SKILL|TASKS)\.md$|\.claude/skills/(bring-your-own-pollen|pollinations-api|pollinations-sdk|quest-contributor)/SKILL\.md$|(BRING_YOUR_OWN_MODEL|BRING_YOUR_OWN_POLLEN|BUILD_YOUR_OWN_AGENT|CODING_HARNESSES)\.md$|package(-lock)?\.json$|\.github/workflows/ci-pull-request-checks\.yml$)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -273,6 +314,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -281,11 +323,46 @@ jobs:
 
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
-        run: npm test --workspace pollinations-gen
+        run: npm test --workspace pollinations-gen -- --shard=${{ matrix.shard }}/3
 
       - name: Typecheck gen.pollinations.ai
-        if: steps.gen-files.outputs.any_changed == 'true'
+        if: steps.gen-files.outputs.any_changed == 'true' && matrix.shard == 1
         run: npm run typecheck --workspace pollinations-gen
+
+  media-docs:
+    name: Validate media.pollinations.ai API examples
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check for API example validation changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- media.pollinations.ai shared enter.pollinations.ai/drizzle gen.pollinations.ai/scripts/generate-apidocs.ts gen.pollinations.ai/scripts/validate-request-examples.ts gen.pollinations.ai/package.json package.json package-lock.json .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Install workspace dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: npm ci
+
+      - name: Validate Media API request examples
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: media.pollinations.ai
+        run: npm test -- test/docs.test.ts
 
   website:
     name: Build pollinations.ai
@@ -311,6 +388,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -335,7 +413,7 @@ jobs:
     name: Check formatting and linting
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, enter, gen, website]
+    needs: [lint, enter, gen, media-docs, website]
     if: always()
 
     steps:

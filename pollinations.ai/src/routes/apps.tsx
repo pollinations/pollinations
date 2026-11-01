@@ -126,7 +126,7 @@ type AppFilterDraft = {
 
 const APP_FILTER_LABELS: Record<AppFilterKey, string> = {
     platform: "Platform",
-    "pollen-pay": "pollen pay",
+    "pollen-pay": "pollinations pay",
 };
 
 function AppSearchInput({
@@ -330,10 +330,10 @@ function AppSearchInput({
                         ))}
                         {showPollenToken && (
                             <EditableComboboxToken
-                                label="pollen pay"
+                                label="pollinations pay"
                                 value={pollenLabel}
                                 highlighted={pendingRemoval === "pollen-pay"}
-                                aria-label={`Change pollen pay filter: ${pollenLabel}`}
+                                aria-label={`Change pollinations pay filter: ${pollenLabel}`}
                                 onClick={editPollenPay}
                             />
                         )}
@@ -418,8 +418,8 @@ function AppsPage() {
                     title="Apps"
                     subtitle={
                         <>
-                            Explore what the community builds with
-                            Pollinations—from{" "}
+                            Explore what the community builds with Pollinations,
+                            from{" "}
                             <strong>
                                 creative weekend experiments to apps used at
                                 scale
@@ -456,7 +456,7 @@ function AppsPage() {
                 >
                     <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
                         <ContentHeader
-                            eyebrow="pollen pay"
+                            eyebrow="pollinations pay"
                             title="Most used this week"
                             subtitle="Apps ranked by requests their users paid for with their own pollen."
                         />

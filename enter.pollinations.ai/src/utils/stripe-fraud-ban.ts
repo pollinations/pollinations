@@ -27,7 +27,7 @@ export async function runFraudBanCheck(
         excludedUserIds = [],
     }: { apply?: boolean; excludedUserIds?: string[] } = {},
 ) {
-    const account = await stripe.accounts.retrieve();
+    const account = await stripe.accounts.retrieveCurrent();
     if (account.id !== "acct_1SrY3q7rcjS3l7tr")
         throw new FraudCheckError("Unexpected Stripe account");
     const users: FraudReportUser[] = [];

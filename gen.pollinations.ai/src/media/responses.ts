@@ -109,8 +109,6 @@ export function mediaResponses(protocol: MediaProtocol) {
                 const { prompt, images } = mediaPrompt(
                     protocol === "responses" ? body.input : body.messages,
                 );
-                // The provider is not a text stream; only the final wrapper is.
-                ctx.var.track.streamRequested = false;
                 if (images.length === 0) {
                     const url = new URL(
                         `${route}${encodeURIComponent(prompt)}`,

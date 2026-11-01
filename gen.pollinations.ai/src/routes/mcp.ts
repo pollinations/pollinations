@@ -26,10 +26,9 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
-import { requireFunds } from "@/utils/generation-access.ts";
+import { requireAccountFunds } from "@/utils/generation-access.ts";
 
 function requestForMcp(
     request: Request,
@@ -173,7 +172,7 @@ export const mcpRoutes = new Hono<Env>()
             })),
         }),
     )
-    .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
+    .use("/mcp/:serverId", auth())
     .all("/mcp/:serverId", async (c) => {
         const user = c.var.auth.requireUser();
         const message =
@@ -193,13 +192,18 @@ export const mcpRoutes = new Hono<Env>()
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
+        if (server.agents === false && c.var.auth.agentRun) {
+            throw new HTTPException(403, {
+                message: `Agents can't use ${server.name}`,
+            });
+        }
         // A tool's cost is known only from its receipt, so a tool call needs a
         // spendable balance up front. Initialization and discovery stay free.
         if (
             server.billing === "usage_receipt" &&
             message?.method === "tools/call"
         ) {
-            await requireFunds(c, 0, "tool call");
+            await requireAccountFunds(c, 0);
         }
         const binding = c.env[server.binding] as Fetcher;
 
@@ -212,7 +216,6 @@ export const mcpRoutes = new Hono<Env>()
             if (usage) {
                 try {
                     await settleUsage(c, server, usage, startedAt);
-                    await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
                 } catch (error) {
                     c.var.log.error("MCP billing failed: {error}", {
                         error:

@@ -71,9 +71,6 @@ This will enable comprehensive debug output to help troubleshoot issues during d
 
 Current-state architecture diagrams for pollinations.ai infrastructure and model routing.
 
-For the agent-specific request paths, credential delegation, MCP gateway, and
-billing model, see [Agents and MCP Architecture](./AGENTS_AND_MCP.md).
-
 ## Models & Providers
 
 ```mermaid
@@ -191,7 +188,7 @@ graph TD
     GEN -->|"service binding\n(zero latency)"| ENTER
 
     subgraph CF["☁️ Cloudflare Workers"]
-        ENTER["🔐 enter.pollinations.ai · API Gateway\n─────────────────\n🔑 OAuth + API Keys (pk_ / sk_)\n💰 Pollen wallet (Quest + Paid buckets)\n⏱️ Rate Limiting (Durable Objects)\n📊 Usage → TinyBird\n🔄 Response dedup"]:::cfWorker
+        ENTER["🔐 enter.pollinations.ai · API Gateway\n─────────────────\n🔑 OAuth + API Keys (sk_) · App Keys (pk_)\n💰 Pollen wallet (Quest + Paid buckets)\n⏱️ Rate Limiting (Durable Objects)\n📊 Usage → TinyBird\n🔄 Response dedup"]:::cfWorker
         IMG_ROUTER["🎨 Image/video router\nHono routes · KV heartbeats\nProvider + GPU dispatch"]:::cfWorkerLight
         PORTKEY_W["🔀 portkey.pollinations.ai\nText routing worker"]:::cfWorkerLight
         MEDIA["📁 media.pollinations.ai\nUUID uploads · 100MB\nR2 30-day lifecycle"]:::cfWorkerLight
@@ -202,7 +199,7 @@ graph TD
         D1["🗃️ D1 SQLite\n40K users · auth\nkeys · balances"]:::cfStorage
         KV_S["⚡ KV Store\nstats · dedup"]:::cfStorage
         R2["📦 R2 · 48 TB\n4 buckets · images\ntext · media · cache"]:::cfStorage
-        DO["🔒 Durable Objects\nPollenRateLimiter\n10K req/10s per IP"]:::cfStorage
+        DO["🔒 Durable Objects\nGenerationCoordinator\nCommunityModelRateLimiter"]:::cfStorage
     end
 
     ENTER --> D1
@@ -250,7 +247,6 @@ graph TD
 
     subgraph SOCIAL["📢 Social Automation"]
         BUFFER["Buffer\nX · LinkedIn · IG"]:::social
-        REDDIT["Reddit VPS\nSSH deploy"]:::social
         DISCORD_W["Discord\nWebhooks"]:::social
     end
 

@@ -7,6 +7,7 @@ import {
 import { productPageViewSchema } from "@shared/product-analytics.ts";
 import { afterEach, expect, vi } from "vitest";
 import { productAnalyticsRoutes } from "../src/routes/product-analytics.ts";
+import { signupEmailDomain } from "../src/services/signup-domains.ts";
 import { captureProductEvent } from "../src/utils/product-analytics.ts";
 import { test } from "./fixtures.ts";
 
@@ -136,14 +137,8 @@ test("website views come only from the sibling site and keep their own event", a
         const ctx = createExecutionContext();
         const response = await productAnalyticsRoutes.fetch(
             new Request(
-                `http://localhost:3000/website-page-view?${new URLSearchParams({ page, utm_source: "reddit" })}`,
-                {
-                    method: "POST",
-                    headers: {
-                        Origin: origin,
-                        "X-Forwarded-Host": "enter.pollinations.ai",
-                    },
-                },
+                `https://enter.pollinations.ai/website-page-view?${new URLSearchParams({ page, utm_source: "reddit" })}`,
+                { method: "POST", headers: { Origin: origin } },
             ),
             env,
             ctx,
@@ -308,12 +303,50 @@ test("signing in records the request to GitHub and the resulting session", async
     // The start carries the page it came from, so the funnel can divide it by
     // views of that same page.
     expect(signIn[0]?.page).toBe("/sign-in");
+    // Every stage names the provider, so GitHub and Google funnels separate.
+    expect(signIn.map((row) => row.provider)).toEqual([
+        "github",
+        "github",
+        "github",
+    ]);
     // A first sign-in also created the user, which is what separates new from
     // returning without joining the daily d1_user snapshot.
     const signup = mocks.tinybird.state.productEvents.find(
         (row) => row.event === "signup_completed",
     );
     expect(signup?.user_id).toBe(signIn[2]?.user_id);
+    expect(signup?.provider).toBe("github");
+    // The private email domain, so infra-watch can spot bulk sign-ups.
+    expect(signup?.email_domain).toBe("example.com");
+    // Sign-in stages never carry it.
+    expect(signIn.every((row) => row.email_domain === undefined)).toBe(true);
+});
+
+test("a sign-up records only a private registrable email domain", () => {
+    expect(signupEmailDomain("x@mail.farm.co.uk")).toBe("farm.co.uk");
+    expect(signupEmailDomain("x@a_1.sub.test.")).toBe("sub.test");
+    expect(signupEmailDomain("x@school.k12.ca.us")).toBe("school.k12.ca.us");
+    expect(signupEmailDomain("x@mail.bücher.de")).toBe("xn--bcher-kva.de");
+    expect(signupEmailDomain("x@gmail.com")).toBeUndefined();
+    expect(signupEmailDomain("x@fastmail.com")).toBeUndefined();
+    // Relays many people share never count as one domain's sign-ups.
+    expect(
+        signupEmailDomain("1234+octo@users.noreply.github.com"),
+    ).toBeUndefined();
+    expect(signupEmailDomain("x@privaterelay.appleid.com")).toBeUndefined();
+    for (const relay of [
+        "mozmail.com",
+        "simplelogin.fr",
+        "simplelogin.io",
+        "8shield.net",
+        "pass2mail.com",
+        "passmail.com",
+        "passinbox.com",
+        "passfwd.com",
+    ])
+        expect(signupEmailDomain(`x@${relay}`)).toBeUndefined();
+    expect(signupEmailDomain("x@co.uk")).toBeUndefined();
+    expect(signupEmailDomain('x@a.b"c.com')).toBeUndefined();
 });
 
 test("a start from an untracked page stays out of the funnel ratio", async ({

@@ -1,4 +1,7 @@
-import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
+import {
+    buildUsageHeaders,
+    openaiUsageToUsage,
+} from "@shared/registry/usage-headers.ts";
 import type {
     CreateDecisionRequest,
     CreateDecisionResponse,
@@ -9,7 +12,10 @@ import { withModelFallbackResponse } from "../../fallback.ts";
 import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
-import { requestDecision } from "../systemOneClient.js";
+import {
+    decisionCompletionUsage,
+    requestDecision,
+} from "../systemOneClient.js";
 import { resolveModelConfig } from "../utils/modelResolver.js";
 
 /**
@@ -50,10 +56,10 @@ export async function generateDecision(c: Context<Env>): Promise<Response> {
             };
 
             return Response.json(body, {
-                headers: buildUsageHeaders(candidate.id, {
-                    promptTextTokens: result.usage.input_tokens,
-                    completionTextTokens: result.usage.output_tokens,
-                }),
+                headers: buildUsageHeaders(
+                    candidate.id,
+                    openaiUsageToUsage(decisionCompletionUsage(result.usage)),
+                ),
             });
         },
         c.var.track?.attempts,

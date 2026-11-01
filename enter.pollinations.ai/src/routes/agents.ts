@@ -6,13 +6,16 @@ import {
     COMMUNITY_ENDPOINT_VISIBILITIES,
     CodeAgentConfigSchema,
     CodeAgentInputSchema,
+    communityModelId,
     isCommunityEndpointOwnerAllowed,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+    parseCommunityModelId,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { and, eq, inArray } from "drizzle-orm";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -32,9 +35,14 @@ import {
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
 import {
+    findReferenceableCommunityModel,
+    registryModelId,
+} from "./community-endpoints/fallbacks.ts";
+import {
     CodeAgentUpdateSchema,
     RequiredSafetyFeaturesSchema,
 } from "./community-endpoints/schemas.ts";
+import { ensureModelLimit } from "./community-endpoints.ts";
 
 const ListingFieldsSchema = z.object({
     name: z
@@ -84,7 +92,7 @@ const CreateCodeAgentSchema = CodeAgentInputSchema.extend({
         .default("private"),
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default([]),
 }).strict();
-const CreateAgentSchema = z.union([
+const CreateAgentSchema = z.discriminatedUnion("type", [
     CreateCodeAgentSchema,
     CreatePromptAgentSchema,
 ]);
@@ -103,6 +111,10 @@ const UpdateAgentEnvelopeSchema = z
 const AgentResponseBaseSchema = z.object({
     id: z.string(),
     name: z.string(),
+    // The exact string to pass as `model` when calling this agent, e.g.
+    // "community/octocat/my-agent". Null only for pre-migration agents whose
+    // owner has not linked a GitHub account; new agents always have one.
+    model: z.string().nullable(),
     title: z.string(),
     description: z.string().nullable(),
     visibility: z.enum(COMMUNITY_ENDPOINT_VISIBILITIES),
@@ -134,7 +146,7 @@ const CodeAgentSyncResponseSchema = z.object({
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type AgentRow = typeof schema.communityEndpoint.$inferSelect;
 
-function toResponse(row: AgentRow) {
+function toResponse(row: AgentRow, ownerGithubUsername: string | null) {
     if (row.type !== "prompt_agent" && row.type !== "code_agent") {
         throw new Error(`Listing ${row.id} is not a managed agent`);
     }
@@ -143,6 +155,9 @@ function toResponse(row: AgentRow) {
     return {
         id: row.id,
         name: row.name,
+        model: ownerGithubUsername
+            ? communityModelId(ownerGithubUsername, row.name)
+            : null,
         title: row.title,
         description: row.description,
         visibility: row.visibility,
@@ -167,6 +182,48 @@ async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
     });
     if (!row) throw new HTTPException(404, { message: "Agent not found" });
     return row;
+}
+
+// Gen resolves baseModel on every call; an unknown id would otherwise only
+// surface as a 400 to the agent's callers.
+async function requireValidBaseModel(
+    db: Db,
+    ownerUserId: string,
+    baseModel: string,
+): Promise<void> {
+    const invalid = () =>
+        new HTTPException(400, {
+            message: `baseModel "${baseModel}" is not a callable text model`,
+        });
+    const registryId = registryModelId(baseModel);
+    if (registryId) {
+        const definition = getRegistryModelDefinition(registryId);
+        if (definition.category !== "text" || definition.fallbackOnly)
+            throw invalid();
+        return;
+    }
+    const parsed = parseCommunityModelId(baseModel);
+    const target = parsed
+        ? await findReferenceableCommunityModel(db, ownerUserId, parsed)
+        : undefined;
+    if (
+        !target ||
+        (target.type === "proxy" &&
+            parseListingPayload("proxy", target.payload)?.modality !== "text")
+    ) {
+        throw invalid();
+    }
+}
+
+async function lookupOwnerGithubUsername(
+    db: Db,
+    ownerUserId: string,
+): Promise<string | null> {
+    const owner = await db.query.user.findFirst({
+        columns: { githubUsername: true },
+        where: eq(schema.user.id, ownerUserId),
+    });
+    return owner?.githubUsername ?? null;
 }
 
 const CODE_AGENT_SYNC_THROTTLE_SECONDS = 30;
@@ -199,19 +256,30 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
         throw new Error(`Agent ${id} has invalid configuration`);
     }
 
-    const throttleKey = `code-agent-sync:throttle:${id}`;
-    const now = Date.now();
-    const throttleUntil = Number(await c.env.KV.get(throttleKey));
-    if (Number.isFinite(throttleUntil) && throttleUntil > now) {
+    // Claim the sync with one conditional write so parallel requests, even
+    // from other colos, start at most one deploy. Rows written in the last
+    // 30 seconds (created, edited or synced) are refused without a write.
+    const cutoff = new Date(
+        Date.now() - CODE_AGENT_SYNC_THROTTLE_SECONDS * 1000,
+    );
+    const claimed =
+        row.updatedAt <= cutoff &&
+        (
+            await db
+                .update(schema.communityEndpoint)
+                .set({ updatedAt: new Date() })
+                .where(
+                    and(
+                        eq(schema.communityEndpoint.id, id),
+                        lte(schema.communityEndpoint.updatedAt, cutoff),
+                    ),
+                )
+        ).meta.changes === 1;
+    if (!claimed) {
         throw new HTTPException(429, {
             message: "Agent sync is limited to once every 30 seconds",
         });
     }
-    await c.env.KV.put(
-        throttleKey,
-        String(now + CODE_AGENT_SYNC_THROTTLE_SECONDS * 1000),
-        { expirationTtl: 60 },
-    );
 
     const repository = await resolveCodeAgentRepository(
         c.env,
@@ -253,7 +321,7 @@ async function requireAgentWriteAccess(
     name: string,
     visibility: "private" | "public",
     currentId?: string,
-) {
+): Promise<string | null> {
     const owner = await db.query.user.findFirst({
         columns: { githubId: true, githubUsername: true },
         where: eq(schema.user.id, ownerUserId),
@@ -264,7 +332,7 @@ async function requireAgentWriteAccess(
     if (!owner?.githubUsername && (!currentId || visibility === "public")) {
         throw new HTTPException(400, {
             message:
-                "A GitHub username is required to create or publish an agent",
+                "Connect GitHub on your account page to create or publish an agent.",
         });
     }
     if (visibility === "public" && !isCommunityEndpointOwnerAllowed(owner)) {
@@ -285,6 +353,7 @@ async function requireAgentWriteAccess(
             message: "Community model name is already registered",
         });
     }
+    return owner?.githubUsername ?? null;
 }
 
 export const agentsRoutes = new Hono<Env>()
@@ -311,7 +380,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const rows = await db.query.communityEndpoint.findMany({
                 where: and(
@@ -323,8 +392,12 @@ export const agentsRoutes = new Hono<Env>()
                 ),
                 orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
             });
+            const ownerGithubUsername = await lookupOwnerGithubUsername(
+                db,
+                user.id,
+            );
             return c.json({
-                data: rows.map(toResponse),
+                data: rows.map((row) => toResponse(row, ownerGithubUsername)),
             });
         },
     )
@@ -351,13 +424,14 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
-            return c.json(
-                toResponse(
-                    await requireOwnedAgent(db, c.req.param("id"), user.id),
-                ),
+            const row = await requireOwnedAgent(db, c.req.param("id"), user.id);
+            const ownerGithubUsername = await lookupOwnerGithubUsername(
+                db,
+                user.id,
             );
+            return c.json(toResponse(row, ownerGithubUsername));
         },
     )
     .post(
@@ -385,8 +459,9 @@ export const agentsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
+            await ensureModelLimit(db, user.id);
             const id = crypto.randomUUID();
             let payload: string;
             let listing: {
@@ -394,6 +469,7 @@ export const agentsRoutes = new Hono<Env>()
                 title: string;
                 description: string | null;
             };
+            let ownerGithubUsername: string | null;
             if (input.type === "code_agent") {
                 const repository = await resolveCodeAgentRepository(
                     c.env,
@@ -401,7 +477,7 @@ export const agentsRoutes = new Hono<Env>()
                 );
                 const { deployedCommitSha } = repository;
                 listing = codeAgentListingFields(repository);
-                await requireAgentWriteAccess(
+                ownerGithubUsername = await requireAgentWriteAccess(
                     db,
                     user.id,
                     listing.name,
@@ -422,12 +498,13 @@ export const agentsRoutes = new Hono<Env>()
                     title: input.title,
                     description: input.description || null,
                 };
-                await requireAgentWriteAccess(
+                ownerGithubUsername = await requireAgentWriteAccess(
                     db,
                     user.id,
                     listing.name,
                     input.visibility,
                 );
+                await requireValidBaseModel(db, user.id, input.baseModel);
                 payload = serializePromptAgentConfig(input);
             }
             let row: AgentRow;
@@ -459,7 +536,7 @@ export const agentsRoutes = new Hono<Env>()
                 }
                 throw error;
             }
-            return c.json(toResponse(row));
+            return c.json(toResponse(row, ownerGithubUsername));
         },
     )
     .patch(
@@ -488,7 +565,7 @@ export const agentsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);
@@ -505,11 +582,18 @@ export const agentsRoutes = new Hono<Env>()
                           ...input,
                       });
             if (!parsed.success) {
+                const issue = parsed.error.issues[0];
                 throw new HTTPException(400, {
-                    message: parsed.error.issues[0]?.message,
+                    message: issue?.path.length
+                        ? `${issue.path.join(".")}: ${issue.message}`
+                        : issue?.message,
                 });
             }
             const data = parsed.data;
+            // Only a changed baseModel is checked, so other edits still save.
+            if ("baseModel" in data && input.baseModel !== undefined) {
+                await requireValidBaseModel(db, user.id, data.baseModel);
+            }
             const update: Partial<
                 typeof schema.communityEndpoint.$inferInsert
             > = {
@@ -534,7 +618,7 @@ export const agentsRoutes = new Hono<Env>()
                     mcpServers: data.mcpServers,
                 });
             }
-            await requireAgentWriteAccess(
+            const ownerGithubUsername = await requireAgentWriteAccess(
                 db,
                 user.id,
                 update.name ?? stored.name,
@@ -552,7 +636,7 @@ export const agentsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row));
+            return c.json(toResponse(row, ownerGithubUsername));
         },
     )
     .delete(
@@ -578,7 +662,7 @@ export const agentsRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);

@@ -12,6 +12,17 @@ on:
       - 'packages/sdk/**'
       - 'packages/ui/**'
       - 'packages/mcp/**'
+      - 'BRING_YOUR_OWN_MODEL.md'
+      - 'BRING_YOUR_OWN_POLLEN.md'
+      - 'BUILD_YOUR_OWN_AGENT.md'
+      - 'CODING_HARNESSES.md'
+      - 'packages/polli-cli/README.md'
+      - 'packages/polli-cli/SKILL.md'
+      - 'packages/polli-cli/TASKS.md'
+      - '.claude/skills/bring-your-own-pollen/SKILL.md'
+      - '.claude/skills/pollinations-api/SKILL.md'
+      - '.claude/skills/pollinations-sdk/SKILL.md'
+      - '.claude/skills/quest-contributor/SKILL.md'
       - 'apps/*-mcp/**'
       - 'package.json'
       - 'package-lock.json'
@@ -76,6 +87,20 @@ jobs:
             gen:
               - 'gen.pollinations.ai/**'
               - 'packages/mcp/**'
+              - 'packages/ui/src/styles/tokens.css'
+              - 'packages/ui/src/brand/lockup-horizontal-white.svg'
+              - 'packages/ui/src/brand/lockup-horizontal.svg'
+              - 'BRING_YOUR_OWN_MODEL.md'
+              - 'BRING_YOUR_OWN_POLLEN.md'
+              - 'BUILD_YOUR_OWN_AGENT.md'
+              - 'CODING_HARNESSES.md'
+              - 'packages/polli-cli/README.md'
+              - 'packages/polli-cli/SKILL.md'
+              - 'packages/polli-cli/TASKS.md'
+              - '.claude/skills/bring-your-own-pollen/SKILL.md'
+              - '.claude/skills/pollinations-api/SKILL.md'
+              - '.claude/skills/pollinations-sdk/SKILL.md'
+              - '.claude/skills/quest-contributor/SKILL.md'
               - 'shared/**'
               - 'package.json'
               - 'package-lock.json'
@@ -87,6 +112,8 @@ jobs:
               # move together.
               - 'shared/**'
               - 'enter.pollinations.ai/drizzle/**'
+              - 'package.json'
+              - 'package-lock.json'
               - '.github/workflows/deploy-cloudflare-production.yml'
 
       - name: Detect changed MCP applications
@@ -122,6 +149,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install dependencies
         run: npm ci
@@ -162,6 +190,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -190,6 +219,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -251,6 +281,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -296,7 +327,12 @@ jobs:
 
   deploy-media:
     needs: [changes, migrate]
-    if: needs.changes.outputs.media == 'true'
+    # always() as in deploy-enter: a skipped test-gen (no gen changes) would
+    # otherwise skip this job through migrate, even when media changed.
+    if: >-
+      always() &&
+      needs.changes.outputs.media == 'true' &&
+      needs.migrate.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -306,13 +342,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
-      - name: Install shared dependencies
-        run: npm install --workspace shared --include-workspace-root=false
-
-      - name: Install media dependencies
-        run: npm install
-        working-directory: ./media.pollinations.ai
+      - name: Install workspace dependencies
+        run: npm ci
 
       - name: Test
         run: npm test
@@ -356,6 +389,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Setup SOPS
         if: matrix.app.sops != 'none'

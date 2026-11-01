@@ -1,11 +1,18 @@
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
+import { createParser } from "eventsource-parser";
+import {
+    type BedrockCredentials,
+    bedrockCredentials,
+    signBedrockHeaders,
+} from "../auth/bedrock.js";
 import { findModelByName } from "../availableModels.js";
 import { imageUrlToBase64Transform } from "../transforms/imageUrlToBase64Transform.js";
 import type { ChatMessage, ServiceError, TransformOptions } from "../types.js";
 import { resolveModelConfig } from "../utils/modelResolver.js";
 import { isPlainObject } from "../utils/objectCleaners.js";
 import { buildDirectResponsesRequestBody } from "./request.js";
+import { RESPONSE_TERMINAL_EVENT_TYPES } from "./tracking.js";
 
 type JsonObject = Record<string, unknown>;
 
@@ -16,9 +23,17 @@ export type DirectResponsesTarget = {
     disableReasoningForForcedTools?: true;
     endpoint: string;
     headers: Record<string, string>;
+    aws?: BedrockCredentials;
     model: string;
     defaults: JsonObject;
+    serviceTier?: string;
     imageConversionModel?: string;
+    /**
+     * Ask for a stream even when the caller wants JSON. Cloudflare ends a
+     * subrequest to Azure that has no response headers after ~125 s, and a
+     * long JSON answer only sends them at the end.
+     */
+    streamUpstream?: true;
 };
 
 /** Build a Responses target from an already-resolved model configuration. */
@@ -30,6 +45,7 @@ export function responsesTargetFromConfig(
     if (typeof endpoint !== "string") return null;
 
     const authKey = config.authKey;
+    const aws = bedrockCredentials(config);
     const authHeader: Record<string, string> =
         typeof authKey !== "string" || !authKey
             ? {}
@@ -41,15 +57,23 @@ export function responsesTargetFromConfig(
         : {};
 
     return {
-        authConfigured: typeof authKey === "string" && authKey.length > 0,
+        authConfigured:
+            !!aws || (typeof authKey === "string" && authKey.length > 0),
+        ...(aws ? { aws } : {}),
         ...(config.responsesDisableReasoningForForcedTools === true
             ? { disableReasoningForForcedTools: true as const }
             : {}),
         endpoint,
+        ...(typeof config.serviceTier === "string"
+            ? { serviceTier: config.serviceTier }
+            : {}),
         headers: authHeader,
         model,
         ...(config.requiresBase64ImageUrls === true
             ? { imageConversionModel: model }
+            : {}),
+        ...(config.responsesStreamUpstream === true
+            ? { streamUpstream: true as const }
             : {}),
         defaults: {
             // Request fields the route always sends unless the caller sets them.
@@ -116,11 +140,51 @@ function errorMessage(details: unknown, response: Response): string {
     return `${response.status} ${response.statusText}`;
 }
 
+/** The response object carried by a Responses stream's terminal event. */
+async function finalStreamResponse(
+    response: Response,
+    requestUrl: URL,
+): Promise<unknown> {
+    let final: unknown;
+    let failure: string | undefined;
+    const parser = createParser({
+        onEvent(message) {
+            const event = parseJson(message.data);
+            if (!isPlainObject(event)) return;
+            const type = event.type ?? message.event;
+            if (type === "error") failure = errorMessage(event, response);
+            if (RESPONSE_TERMINAL_EVENT_TYPES.has(String(type))) {
+                final = event.response;
+            }
+        },
+    });
+    parser.feed(await response.text());
+    if (final !== undefined) return final;
+    const error = new Error(
+        failure ?? "Responses provider stream ended without a final response",
+    ) as ServiceError;
+    error.status = 502;
+    error.requestUrl = requestUrl;
+    throw error;
+}
+
 export async function callDirectResponses(
     request: CreateResponseRequest,
     target: DirectResponsesTarget,
     fetcher: typeof fetch = fetch,
 ): Promise<{ response: Response; requestUrl: URL }> {
+    if (target.streamUpstream && !request.stream) {
+        const result = await callDirectResponses(
+            { ...request, stream: true },
+            target,
+            fetcher,
+        );
+        const final = await finalStreamResponse(
+            result.response,
+            result.requestUrl,
+        );
+        return { ...result, response: Response.json(final) };
+    }
     const requestUrl = new URL(target.endpoint);
     if (!target.authConfigured) {
         const error = new Error(
@@ -150,16 +214,26 @@ export async function callDirectResponses(
 
     let response: Response;
     try {
+        const body = JSON.stringify(
+            buildDirectResponsesRequestBody(request, target),
+        );
+        let headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            ...target.headers,
+        };
+        if (target.aws) {
+            headers = await signBedrockHeaders(
+                requestUrl,
+                body,
+                headers,
+                target.aws,
+            );
+        }
         response = await fetcher(target.endpoint, {
             method: "POST",
             redirect: "manual",
-            headers: {
-                "Content-Type": "application/json",
-                ...target.headers,
-            },
-            body: JSON.stringify(
-                buildDirectResponsesRequestBody(request, target),
-            ),
+            headers,
+            body,
         });
     } catch (thrown) {
         const error =

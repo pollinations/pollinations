@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
-import { toModelCategories } from "../registry/model-permissions.ts";
+import { toModelPermissions } from "../registry/model-permissions.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 import { isUserBanned } from "./ban.ts";
@@ -86,6 +86,12 @@ export function validateRedirectUriFormat(redirectUri: string): void {
     if (parsed.hash) {
         throw new HTTPException(400, {
             message: "Redirect URI must not include a fragment",
+        });
+    }
+    // Catches two URLs run together, e.g. typed after a pre-filled default.
+    if (parsed.pathname.includes("://")) {
+        throw new HTTPException(400, {
+            message: "Redirect URI must be a single URL",
         });
     }
     if (!isAllowedRedirectUrl(parsed)) {
@@ -247,11 +253,12 @@ export async function createApiKeyForUser({
     const safeAccountPerms =
         sanitizeAuthorizeAccountPermissions(accountPermissions);
 
+    // An App Key (pk_) never authenticates requests, so it holds no scopes.
     const permissions: Record<string, string[]> = {};
-    if (allowedModels) {
-        permissions.models = await toModelCategories(dbBinding, allowedModels);
+    if (allowedModels && !isPublishable) {
+        permissions.models = await toModelPermissions(dbBinding, allowedModels);
     }
-    if (safeAccountPerms && safeAccountPerms.length > 0) {
+    if (safeAccountPerms && safeAccountPerms.length > 0 && !isPublishable) {
         permissions.account = safeAccountPerms;
     }
 

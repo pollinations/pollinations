@@ -46,64 +46,68 @@ function streamEvents(body: string): Record<string, unknown>[] {
 }
 
 describe("shared agent Responses adapter", () => {
-    it.each([
-        false,
-        true,
-    ])("defers invalid provider usage rejection until strict aggregation (stream:%s)", async (stream) => {
-        const invalidUsage = {
-            prompt_tokens: -1,
-            completion_tokens: 2,
-            total_tokens: 1,
-        };
-        const provider = createAgentModelProvider({
-            baseURL: "https://gen.test/v1",
-            fetch: async () =>
-                stream
-                    ? new Response(
-                          'data: {"choices":[{"delta":{"content":"done"},"finish_reason":null}]}\n\n' +
-                              `data: ${JSON.stringify({
-                                  choices: [
-                                      { delta: {}, finish_reason: "stop" },
-                                  ],
-                                  usage: invalidUsage,
-                              })}\n\n` +
-                              "data: [DONE]\n\n",
-                          { headers: { "content-type": "text/event-stream" } },
-                      )
-                    : Response.json({
-                          choices: [
+    it.each([false, true])(
+        "defers invalid provider usage rejection until strict aggregation (stream:%s)",
+        async (stream) => {
+            const invalidUsage = {
+                prompt_tokens: -1,
+                completion_tokens: 2,
+                total_tokens: 1,
+            };
+            const provider = createAgentModelProvider({
+                baseURL: "https://gen.test/v1",
+                fetch: async () =>
+                    stream
+                        ? new Response(
+                              'data: {"choices":[{"delta":{"content":"done"},"finish_reason":null}]}\n\n' +
+                                  `data: ${JSON.stringify({
+                                      choices: [
+                                          { delta: {}, finish_reason: "stop" },
+                                      ],
+                                      usage: invalidUsage,
+                                  })}\n\n` +
+                                  "data: [DONE]\n\n",
                               {
-                                  message: {
-                                      role: "assistant",
-                                      content: "done",
+                                  headers: {
+                                      "content-type": "text/event-stream",
                                   },
-                                  finish_reason: "stop",
                               },
-                          ],
-                          usage: invalidUsage,
-                      }),
-        });
-        const agent = new ToolLoopAgent({
-            model: provider("test"),
-            maxRetries: 0,
-        });
-        const result = stream
-            ? await agent.stream({ prompt: "hello" })
-            : await agent.generate({ prompt: "hello" });
-        const [text, steps, finishReason] = await Promise.all([
-            result.text,
-            result.steps,
-            result.finishReason,
-        ]);
-        expect(text).toBe("done");
-        expect(finishReason).toBe("stop");
-        expect(
-            steps[0].providerMetadata?.pollinations?.completionUsage,
-        ).toBeNull();
-        expect(() => strictAgentUsage(steps)).toThrow(
-            "Agent response omitted valid usage",
-        );
-    });
+                          )
+                        : Response.json({
+                              choices: [
+                                  {
+                                      message: {
+                                          role: "assistant",
+                                          content: "done",
+                                      },
+                                      finish_reason: "stop",
+                                  },
+                              ],
+                              usage: invalidUsage,
+                          }),
+            });
+            const agent = new ToolLoopAgent({
+                model: provider("test"),
+                maxRetries: 0,
+            });
+            const result = stream
+                ? await agent.stream({ prompt: "hello" })
+                : await agent.generate({ prompt: "hello" });
+            const [text, steps, finishReason] = await Promise.all([
+                result.text,
+                result.steps,
+                result.finishReason,
+            ]);
+            expect(text).toBe("done");
+            expect(finishReason).toBe("stop");
+            expect(
+                steps[0].providerMetadata?.pollinations?.completionUsage,
+            ).toBeNull();
+            expect(() => strictAgentUsage(steps)).toThrow(
+                "Agent response omitted valid usage",
+            );
+        },
+    );
 
     const output = {
         finishReason: "stop",
@@ -111,215 +115,222 @@ describe("shared agent Responses adapter", () => {
         toolCallCounts: {},
     };
 
-    it.each([
-        false,
-        true,
-    ])("round-trips ordinary JSON tools without treating content as MCP with stream:%s", async (stream) => {
-        const toolOutput = {
-            answer: 42,
-            content: [{ type: "application-record", value: "preserve me" }],
-        };
-        let invocations = 0;
-        const runner: AgentRunner = async ({
-            onPart,
-            messages,
-            settings,
-            stream: streaming,
-        }) => {
-            invocations++;
-            expect(streaming).toBe(stream);
-            if (invocations === 1) {
-                expect(settings).toMatchObject({ maxOutputTokens: 42 });
-                expect(messages).toEqual([
-                    { role: "system", content: "Use the lookup tool." },
-                    {
-                        role: "user",
-                        content: [
-                            { type: "text", text: "What is this?" },
+    it.each([false, true])(
+        "round-trips ordinary JSON tools without treating content as MCP with stream:%s",
+        async (stream) => {
+            const toolOutput = {
+                answer: 42,
+                content: [{ type: "application-record", value: "preserve me" }],
+            };
+            let invocations = 0;
+            const runner: AgentRunner = async ({
+                onPart,
+                messages,
+                settings,
+                stream: streaming,
+            }) => {
+                invocations++;
+                expect(streaming).toBe(stream);
+                if (invocations === 1) {
+                    expect(settings).toMatchObject({ maxOutputTokens: 42 });
+                    expect(messages).toEqual([
+                        { role: "system", content: "Use the lookup tool." },
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "What is this?" },
+                                {
+                                    type: "image",
+                                    image: "https://media.test/input.png",
+                                },
+                            ],
+                        },
+                    ]);
+                    onPart({
+                        type: "text-delta",
+                        text: "Looking up the answer.",
+                    });
+                    onPart({
+                        type: "tool-call",
+                        toolCallId: "lookup-call",
+                        toolName: "lookup",
+                        input: { question: "test" },
+                    });
+                    onPart({
+                        type: "tool-result",
+                        toolCallId: "lookup-call",
+                        toolName: "lookup",
+                        input: { question: "test" },
+                        output: toolOutput,
+                    });
+                } else {
+                    expect(messages).toEqual(
+                        expect.arrayContaining([
                             {
-                                type: "image",
-                                image: "https://media.test/input.png",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "tool-call",
+                                        toolCallId: "lookup-call",
+                                        toolName: "lookup",
+                                        input: { question: "test" },
+                                    },
+                                ],
+                            },
+                            {
+                                role: "tool",
+                                content: [
+                                    {
+                                        type: "tool-result",
+                                        toolCallId: "lookup-call",
+                                        toolName: "lookup",
+                                        output: {
+                                            type: "json",
+                                            value: toolOutput,
+                                        },
+                                    },
+                                ],
+                            },
+                            { role: "user", content: "Remember that result." },
+                        ]),
+                    );
+                }
+                onPart({ type: "text-delta", text: "The answer is 42." });
+                return output;
+            };
+            const response = await handleAgentResponsesRequest(
+                request({
+                    stream,
+                    instructions: "Use the lookup tool.",
+                    max_output_tokens: 42,
+                    input: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "input_text", text: "What is this?" },
+                                {
+                                    type: "input_image",
+                                    image_url: "https://media.test/input.png",
+                                },
+                            ],
+                        },
+                    ],
+                }),
+                new AbortController().signal,
+                runner,
+            );
+            expect(invocations).toBe(1);
+            const body = stream
+                ? streamEvents(await response.text()).at(-1)?.response
+                : await response.json();
+            expect(body).toMatchObject({
+                status: "completed",
+                usage: { input_tokens: 6, output_tokens: 2, total_tokens: 8 },
+                output: [
+                    {
+                        type: "message",
+                        content: [{ text: "Looking up the answer." }],
+                    },
+                    {
+                        type: "function_call",
+                        name: "lookup",
+                        call_id: "lookup-call",
+                    },
+                    {
+                        type: "function_call_output",
+                        call_id: "lookup-call",
+                        output: [
+                            {
+                                type: "input_text",
+                                text: JSON.stringify(toolOutput),
                             },
                         ],
                     },
-                ]);
-                onPart({ type: "text-delta", text: "Looking up the answer." });
-                onPart({
-                    type: "tool-call",
-                    toolCallId: "lookup-call",
-                    toolName: "lookup",
-                    input: { question: "test" },
-                });
-                onPart({
-                    type: "tool-result",
-                    toolCallId: "lookup-call",
-                    toolName: "lookup",
-                    input: { question: "test" },
-                    output: toolOutput,
-                });
-            } else {
-                expect(messages).toEqual(
-                    expect.arrayContaining([
-                        {
-                            role: "assistant",
-                            content: [
-                                {
-                                    type: "tool-call",
-                                    toolCallId: "lookup-call",
-                                    toolName: "lookup",
-                                    input: { question: "test" },
-                                },
-                            ],
-                        },
-                        {
-                            role: "tool",
-                            content: [
-                                {
-                                    type: "tool-result",
-                                    toolCallId: "lookup-call",
-                                    toolName: "lookup",
-                                    output: { type: "json", value: toolOutput },
-                                },
-                            ],
-                        },
+                    {
+                        type: "message",
+                        content: [{ text: "The answer is 42." }],
+                    },
+                ],
+            });
+            const history = (body as { output: unknown[] }).output;
+            const replay = await handleAgentResponsesRequest(
+                request({
+                    stream,
+                    input: [
+                        ...history,
                         { role: "user", content: "Remember that result." },
-                    ]),
-                );
-            }
-            onPart({ type: "text-delta", text: "The answer is 42." });
-            return output;
-        };
-        const response = await handleAgentResponsesRequest(
-            request({
-                stream,
-                instructions: "Use the lookup tool.",
-                max_output_tokens: 42,
-                input: [
+                    ],
+                }),
+                new AbortController().signal,
+                runner,
+            );
+            expect(replay.status).toBe(200);
+            await replay.text();
+            expect(invocations).toBe(2);
+        },
+    );
+
+    it.each([null, ["one", 2], "plain text", 42])(
+        "preserves a JSON tool result %j",
+        async (toolOutput) => {
+            const response = await handleAgentResponsesRequest(
+                request({}),
+                new AbortController().signal,
+                async ({ onPart }) => {
+                    onPart({
+                        type: "tool-call",
+                        toolCallId: "call",
+                        toolName: "lookup",
+                        input: {},
+                    });
+                    onPart({
+                        type: "tool-result",
+                        toolCallId: "call",
+                        toolName: "lookup",
+                        input: {},
+                        output: toolOutput,
+                    });
+                    return output;
+                },
+            );
+            expect(response.status).toBe(200);
+            const body = await response.json<{ output: unknown[] }>();
+            expect(body).toMatchObject({
+                output: [
+                    { type: "function_call", name: "lookup" },
                     {
-                        role: "user",
-                        content: [
-                            { type: "input_text", text: "What is this?" },
+                        type: "function_call_output",
+                        output: [
                             {
-                                type: "input_image",
-                                image_url: "https://media.test/input.png",
+                                type: "input_text",
+                                text: JSON.stringify(toolOutput),
                             },
                         ],
                     },
                 ],
-            }),
-            new AbortController().signal,
-            runner,
-        );
-        expect(invocations).toBe(1);
-        const body = stream
-            ? streamEvents(await response.text()).at(-1)?.response
-            : await response.json();
-        expect(body).toMatchObject({
-            status: "completed",
-            usage: { input_tokens: 6, output_tokens: 2, total_tokens: 8 },
-            output: [
-                {
-                    type: "message",
-                    content: [{ text: "Looking up the answer." }],
+            });
+            const replay = await handleAgentResponsesRequest(
+                request({ input: body.output }),
+                new AbortController().signal,
+                async ({ messages, onPart }) => {
+                    expect(messages[1]).toMatchObject({
+                        role: "tool",
+                        content: [
+                            {
+                                output:
+                                    typeof toolOutput === "string"
+                                        ? { type: "text", value: toolOutput }
+                                        : { type: "json", value: toolOutput },
+                            },
+                        ],
+                    });
+                    onPart({ type: "text-delta", text: "Remembered." });
+                    return output;
                 },
-                {
-                    type: "function_call",
-                    name: "lookup",
-                    call_id: "lookup-call",
-                },
-                {
-                    type: "function_call_output",
-                    call_id: "lookup-call",
-                    output: [
-                        {
-                            type: "input_text",
-                            text: JSON.stringify(toolOutput),
-                        },
-                    ],
-                },
-                { type: "message", content: [{ text: "The answer is 42." }] },
-            ],
-        });
-        const history = (body as { output: unknown[] }).output;
-        const replay = await handleAgentResponsesRequest(
-            request({
-                stream,
-                input: [
-                    ...history,
-                    { role: "user", content: "Remember that result." },
-                ],
-            }),
-            new AbortController().signal,
-            runner,
-        );
-        expect(replay.status).toBe(200);
-        await replay.text();
-        expect(invocations).toBe(2);
-    });
-
-    it.each([
-        null,
-        ["one", 2],
-        "plain text",
-        42,
-    ])("preserves a JSON tool result %j", async (toolOutput) => {
-        const response = await handleAgentResponsesRequest(
-            request({}),
-            new AbortController().signal,
-            async ({ onPart }) => {
-                onPart({
-                    type: "tool-call",
-                    toolCallId: "call",
-                    toolName: "lookup",
-                    input: {},
-                });
-                onPart({
-                    type: "tool-result",
-                    toolCallId: "call",
-                    toolName: "lookup",
-                    input: {},
-                    output: toolOutput,
-                });
-                return output;
-            },
-        );
-        expect(response.status).toBe(200);
-        const body = await response.json<{ output: unknown[] }>();
-        expect(body).toMatchObject({
-            output: [
-                { type: "function_call", name: "lookup" },
-                {
-                    type: "function_call_output",
-                    output: [
-                        {
-                            type: "input_text",
-                            text: JSON.stringify(toolOutput),
-                        },
-                    ],
-                },
-            ],
-        });
-        const replay = await handleAgentResponsesRequest(
-            request({ input: body.output }),
-            new AbortController().signal,
-            async ({ messages, onPart }) => {
-                expect(messages[1]).toMatchObject({
-                    role: "tool",
-                    content: [
-                        {
-                            output:
-                                typeof toolOutput === "string"
-                                    ? { type: "text", value: toolOutput }
-                                    : { type: "json", value: toolOutput },
-                        },
-                    ],
-                });
-                onPart({ type: "text-delta", text: "Remembered." });
-                return output;
-            },
-        );
-        expect(replay.status).toBe(200);
-    });
+            );
+            expect(replay.status).toBe(200);
+        },
+    );
 
     it("aborts the active run when the client cancels its response stream", async () => {
         let runSignal: AbortSignal | undefined;
@@ -382,96 +393,102 @@ describe("shared agent Responses adapter", () => {
 describe("managed agent Responses runtime", () => {
     beforeEach(() => vi.unstubAllGlobals());
 
-    it.each([
-        false,
-        true,
-    ])("replays caller function history with plain-text results (stream:%s)", async (stream) => {
-        const fetchMock = vi.fn(
-            async (input: RequestInfo | URL, init?: RequestInit) => {
-                const body = (await new Request(input, init).json()) as {
-                    messages: unknown[];
-                };
-                expect(body.messages).toEqual(
-                    expect.arrayContaining([
-                        expect.objectContaining({
-                            role: "assistant",
-                            tool_calls: [
-                                expect.objectContaining({
-                                    id: "external-call",
-                                    function: {
-                                        name: "lookup",
-                                        arguments: "{}",
-                                    },
-                                }),
-                            ],
-                        }),
-                        {
-                            role: "tool",
-                            tool_call_id: "external-call",
-                            content: "The answer is 42.",
-                        },
-                    ]),
-                );
-                const usage = {
-                    prompt_tokens: 6,
-                    completion_tokens: 2,
-                    total_tokens: 8,
-                };
-                return stream
-                    ? new Response(
-                          `data: ${JSON.stringify({ choices: [{ delta: { content: "Remembered" }, finish_reason: "stop" }], usage })}\n\ndata: [DONE]\n\n`,
-                          { headers: { "content-type": "text/event-stream" } },
-                      )
-                    : Response.json({
-                          choices: [
+    it.each([false, true])(
+        "replays caller function history with plain-text results (stream:%s)",
+        async (stream) => {
+            const fetchMock = vi.fn(
+                async (input: RequestInfo | URL, init?: RequestInit) => {
+                    const body = (await new Request(input, init).json()) as {
+                        messages: unknown[];
+                    };
+                    expect(body.messages).toEqual(
+                        expect.arrayContaining([
+                            expect.objectContaining({
+                                role: "assistant",
+                                tool_calls: [
+                                    expect.objectContaining({
+                                        id: "external-call",
+                                        function: {
+                                            name: "lookup",
+                                            arguments: "{}",
+                                        },
+                                    }),
+                                ],
+                            }),
+                            {
+                                role: "tool",
+                                tool_call_id: "external-call",
+                                content: "The answer is 42.",
+                            },
+                        ]),
+                    );
+                    const usage = {
+                        prompt_tokens: 6,
+                        completion_tokens: 2,
+                        total_tokens: 8,
+                    };
+                    return stream
+                        ? new Response(
+                              `data: ${JSON.stringify({ choices: [{ delta: { content: "Remembered" }, finish_reason: "stop" }], usage })}\n\ndata: [DONE]\n\n`,
                               {
-                                  message: {
-                                      role: "assistant",
-                                      content: "Remembered",
+                                  headers: {
+                                      "content-type": "text/event-stream",
                                   },
-                                  finish_reason: "stop",
                               },
-                          ],
-                          usage,
-                      });
-            },
-        );
-        vi.stubGlobal("fetch", fetchMock);
-        const response = await handlePromptAgentResponsesRequest(
-            request({
-                stream,
-                tool_choice: "auto",
-                input: [
-                    {
-                        type: "function_call",
-                        id: "fc_external",
-                        call_id: "external-call",
-                        name: "lookup",
-                        arguments: "{}",
-                        status: "completed",
-                    },
-                    {
-                        type: "function_call_output",
-                        id: "fco_external",
-                        call_id: "external-call",
-                        output: "The answer is 42.",
-                        status: "completed",
-                    },
+                          )
+                        : Response.json({
+                              choices: [
+                                  {
+                                      message: {
+                                          role: "assistant",
+                                          content: "Remembered",
+                                      },
+                                      finish_reason: "stop",
+                                  },
+                              ],
+                              usage,
+                          });
+                },
+            );
+            vi.stubGlobal("fetch", fetchMock);
+            const response = await handlePromptAgentResponsesRequest(
+                request({
+                    stream,
+                    tool_choice: "auto",
+                    input: [
+                        {
+                            type: "function_call",
+                            id: "fc_external",
+                            call_id: "external-call",
+                            name: "lookup",
+                            arguments: "{}",
+                            status: "completed",
+                        },
+                        {
+                            type: "function_call_output",
+                            id: "fco_external",
+                            call_id: "external-call",
+                            output: "The answer is 42.",
+                            status: "completed",
+                        },
+                    ],
+                }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            expect(response.status).toBe(200);
+            const result = stream
+                ? streamEvents(await response.text()).at(-1)?.response
+                : await response.json();
+            expect(result).toMatchObject({
+                status: "completed",
+                output: [
+                    { type: "message", content: [{ text: "Remembered" }] },
                 ],
-            }),
-            new AbortController().signal,
-            RUNTIME,
-        );
-        expect(response.status).toBe(200);
-        const result = stream
-            ? streamEvents(await response.text()).at(-1)?.response
-            : await response.json();
-        expect(result).toMatchObject({
-            status: "completed",
-            output: [{ type: "message", content: [{ text: "Remembered" }] }],
-        });
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
+            });
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it.each([
         ["lookup", "lookup"],
@@ -480,25 +497,31 @@ describe("managed agent Responses runtime", () => {
         [""],
         ["not a name"],
         ["x".repeat(65)],
-    ])("rejects conflicting or invalid caller tool names: %j", async (...names) => {
-        const fetchMock = vi.fn();
-        vi.stubGlobal("fetch", fetchMock);
-        for (const stream of [false, true]) {
-            const response = await handlePromptAgentResponsesRequest(
-                request({
-                    stream,
-                    tools: names.map((name) => ({ type: "function", name })),
-                }),
-                new AbortController().signal,
-                RUNTIME,
-            );
-            expect(response.status).toBe(400);
-            expect(await response.json()).toMatchObject({
-                error: { param: "tools" },
-            });
-        }
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
+    ])(
+        "rejects conflicting or invalid caller tool names: %j",
+        async (...names) => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+            for (const stream of [false, true]) {
+                const response = await handlePromptAgentResponsesRequest(
+                    request({
+                        stream,
+                        tools: names.map((name) => ({
+                            type: "function",
+                            name,
+                        })),
+                    }),
+                    new AbortController().signal,
+                    RUNTIME,
+                );
+                expect(response.status).toBe(400);
+                expect(await response.json()).toMatchObject({
+                    error: { param: "tools" },
+                });
+            }
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
 
     it("returns a native stateless Response with required usage", async () => {
         const fetchMock = vi.fn(
@@ -830,45 +853,50 @@ describe("managed agent Responses runtime", () => {
             "Provider temporarily unavailable",
         ],
         ["   ", "Agent request failed"],
-    ])("reports an upstream stream error message %j", async (message, expected) => {
-        const fetchMock = vi.fn(
-            async () =>
-                new Response(
-                    `data: ${JSON.stringify({
-                        error: {
-                            message,
-                            type: "server_error",
-                            code: "provider_unavailable",
-                            param: { authorization: "private-provider-detail" },
-                        },
-                    })}\n\ndata: [DONE]\n\n`,
-                    { headers: { "content-type": "text/event-stream" } },
-                ),
-        );
-        vi.stubGlobal("fetch", fetchMock);
+    ])(
+        "reports an upstream stream error message %j",
+        async (message, expected) => {
+            const fetchMock = vi.fn(
+                async () =>
+                    new Response(
+                        `data: ${JSON.stringify({
+                            error: {
+                                message,
+                                type: "server_error",
+                                code: "provider_unavailable",
+                                param: {
+                                    authorization: "private-provider-detail",
+                                },
+                            },
+                        })}\n\ndata: [DONE]\n\n`,
+                        { headers: { "content-type": "text/event-stream" } },
+                    ),
+            );
+            vi.stubGlobal("fetch", fetchMock);
 
-        const response = await handlePromptAgentResponsesRequest(
-            request({ stream: true }),
-            new AbortController().signal,
-            RUNTIME,
-        );
-        const body = await response.text();
-        expect(streamEvents(body)).toMatchObject([
-            { type: "response.created" },
-            { type: "error", code: "agent_error", message: expected },
-            {
-                type: "response.failed",
-                response: {
-                    status: "failed",
-                    usage: null,
-                    error: { code: "agent_error", message: expected },
+            const response = await handlePromptAgentResponsesRequest(
+                request({ stream: true }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            const body = await response.text();
+            expect(streamEvents(body)).toMatchObject([
+                { type: "response.created" },
+                { type: "error", code: "agent_error", message: expected },
+                {
+                    type: "response.failed",
+                    response: {
+                        status: "failed",
+                        usage: null,
+                        error: { code: "agent_error", message: expected },
+                    },
                 },
-            },
-        ]);
-        expect(body).not.toContain("private-provider-detail");
-        expect(body.match(/data: \[DONE\]/g)).toHaveLength(1);
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
+            ]);
+            expect(body).not.toContain("private-provider-detail");
+            expect(body.match(/data: \[DONE\]/g)).toHaveLength(1);
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it.each([
         [new Error("Connection failed"), "Connection failed"],
@@ -898,280 +926,285 @@ describe("managed agent Responses runtime", () => {
         });
     });
 
-    it.each([
-        false,
-        true,
-    ])("fails closed when stream:%s omits usage", async (stream) => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => {
-                if (!stream) {
-                    return Response.json({
-                        id: "chatcmpl-upstream",
-                        object: "chat.completion",
-                        created: 1,
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: "untrusted",
-                                },
-                                finish_reason: "stop",
-                            },
-                        ],
-                    });
-                }
-                return new Response(
-                    'data: {"choices":[{"index":0,"delta":{"content":"untrusted"},"finish_reason":null}]}\n\n' +
-                        'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n' +
-                        "data: [DONE]\n\n",
-                    { headers: { "content-type": "text/event-stream" } },
-                );
-            }),
-        );
-
-        const response = await handlePromptAgentResponsesRequest(
-            request({ stream }),
-            new AbortController().signal,
-            RUNTIME,
-        );
-        if (!stream) {
-            expect(response.status).toBe(502);
-            await expect(response.json()).resolves.toMatchObject({
-                error: { code: "agent_error" },
-            });
-            return;
-        }
-        const events = streamEvents(await response.text());
-        expect(events.at(-2)).toMatchObject({
-            type: "error",
-            code: "agent_error",
-            message: expect.any(String),
-            param: null,
-        });
-        expect(events.at(-1)).toMatchObject({
-            type: "response.failed",
-            response: { status: "failed", usage: null },
-        });
-        expect(
-            events.some((event) => event.type === "response.completed"),
-        ).toBe(false);
-    });
-
-    it.each([
-        false,
-        true,
-    ])("fails closed when stream:%s returns malformed usage", async (stream) => {
-        const usage = {
-            prompt_tokens: "four",
-            completion_tokens: 1,
-            total_tokens: 5,
-        };
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => {
-                if (!stream) {
-                    return Response.json({
-                        id: "chatcmpl-upstream",
-                        object: "chat.completion",
-                        created: 1,
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: "untrusted",
-                                },
-                                finish_reason: "stop",
-                            },
-                        ],
-                        usage,
-                    });
-                }
-                return new Response(
-                    'data: {"choices":[{"index":0,"delta":{"content":"untrusted"},"finish_reason":null}]}\n\n' +
-                        `data: ${JSON.stringify({
+    it.each([false, true])(
+        "fails closed when stream:%s omits usage",
+        async (stream) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => {
+                    if (!stream) {
+                        return Response.json({
+                            id: "chatcmpl-upstream",
+                            object: "chat.completion",
+                            created: 1,
                             choices: [
                                 {
                                     index: 0,
-                                    delta: {},
+                                    message: {
+                                        role: "assistant",
+                                        content: "untrusted",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                        });
+                    }
+                    return new Response(
+                        'data: {"choices":[{"index":0,"delta":{"content":"untrusted"},"finish_reason":null}]}\n\n' +
+                            'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n' +
+                            "data: [DONE]\n\n",
+                        { headers: { "content-type": "text/event-stream" } },
+                    );
+                }),
+            );
+
+            const response = await handlePromptAgentResponsesRequest(
+                request({ stream }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            if (!stream) {
+                expect(response.status).toBe(502);
+                await expect(response.json()).resolves.toMatchObject({
+                    error: { code: "agent_error" },
+                });
+                return;
+            }
+            const events = streamEvents(await response.text());
+            expect(events.at(-2)).toMatchObject({
+                type: "error",
+                code: "agent_error",
+                message: expect.any(String),
+                param: null,
+            });
+            expect(events.at(-1)).toMatchObject({
+                type: "response.failed",
+                response: { status: "failed", usage: null },
+            });
+            expect(
+                events.some((event) => event.type === "response.completed"),
+            ).toBe(false);
+        },
+    );
+
+    it.each([false, true])(
+        "fails closed when stream:%s returns malformed usage",
+        async (stream) => {
+            const usage = {
+                prompt_tokens: "four",
+                completion_tokens: 1,
+                total_tokens: 5,
+            };
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => {
+                    if (!stream) {
+                        return Response.json({
+                            id: "chatcmpl-upstream",
+                            object: "chat.completion",
+                            created: 1,
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "untrusted",
+                                    },
                                     finish_reason: "stop",
                                 },
                             ],
                             usage,
-                        })}\n\n` +
-                        "data: [DONE]\n\n",
-                    { headers: { "content-type": "text/event-stream" } },
-                );
-            }),
-        );
-
-        const response = await handlePromptAgentResponsesRequest(
-            request({ stream }),
-            new AbortController().signal,
-            RUNTIME,
-        );
-        if (!stream) {
-            expect(response.status).toBe(502);
-            await expect(response.json()).resolves.toMatchObject({
-                error: { code: "agent_error" },
-            });
-            return;
-        }
-        const events = streamEvents(await response.text());
-        expect(events.at(-2)).toMatchObject({
-            type: "error",
-            code: "agent_error",
-            message: expect.any(String),
-            param: null,
-        });
-        expect(events.at(-1)).toMatchObject({
-            type: "response.failed",
-            response: { status: "failed", usage: null },
-        });
-        expect(
-            events.some((event) => event.type === "response.completed"),
-        ).toBe(false);
-    });
-
-    it.each([
-        false,
-        true,
-    ])("replays completed function pairs with isError %j without executing them", async (isError) => {
-        const call = {
-            type: "function_call",
-            id: "fc_prior",
-            call_id: "prior-call",
-            name: "mcp__exa__search",
-            arguments: '{"query":"old question"}',
-            status: "completed",
-        };
-        const result = {
-            type: "function_call_output",
-            id: "fco_prior",
-            call_id: call.call_id,
-            status: "completed",
-            output: JSON.stringify({
-                content: [
-                    {
-                        type: "text",
-                        text: isError ? "Saved failure" : "Saved answer",
-                    },
-                ],
-                ...(isError ? { isError } : {}),
-            }),
-        };
-        const fetchMock = vi.fn(
-            async (input: RequestInfo | URL, init?: RequestInit) => {
-                const upstream = new Request(input, init);
-                expect(upstream.url).toBe(
-                    "https://gen.test/v1/chat/completions",
-                );
-                const body = (await upstream.json()) as Record<string, unknown>;
-                expect(body.messages).toEqual(
-                    expect.arrayContaining([
-                        expect.objectContaining({
-                            role: "assistant",
-                            tool_calls: [
-                                {
-                                    id: "prior-call",
-                                    type: "function",
-                                    function: {
-                                        name: "mcp__exa__search",
-                                        arguments: call.arguments,
+                        });
+                    }
+                    return new Response(
+                        'data: {"choices":[{"index":0,"delta":{"content":"untrusted"},"finish_reason":null}]}\n\n' +
+                            `data: ${JSON.stringify({
+                                choices: [
+                                    {
+                                        index: 0,
+                                        delta: {},
+                                        finish_reason: "stop",
                                     },
-                                },
-                            ],
-                        }),
-                        {
-                            role: "tool",
-                            tool_call_id: "prior-call",
-                            content: JSON.stringify([
-                                {
-                                    type: "text",
-                                    text: isError
-                                        ? "Saved failure"
-                                        : "Saved answer",
-                                },
-                            ]),
-                        },
-                        expect.objectContaining({
-                            role: "user",
-                            content: "What happened?",
-                        }),
-                    ]),
-                );
-                return Response.json({
-                    choices: [
-                        {
-                            message: {
-                                role: "assistant",
-                                content: "I remember",
-                            },
-                            finish_reason: "stop",
-                        },
-                    ],
-                    usage: {
-                        prompt_tokens: 4,
-                        completion_tokens: 2,
-                        total_tokens: 6,
-                    },
-                });
-            },
-        );
-        vi.stubGlobal("fetch", fetchMock);
-        const response = await handlePromptAgentResponsesRequest(
-            request({
-                input: [
-                    call,
-                    result,
-                    { role: "user", content: "What happened?" },
-                ],
-            }),
-            new AbortController().signal,
-            RUNTIME,
-        );
-        expect(response.status).toBe(200);
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(await response.json()).toMatchObject({
-            output: [{ type: "message", content: [{ text: "I remember" }] }],
-            usage: { tool_call_counts: {} },
-        });
-        for (const input of [
-            [call],
-            [result],
-            [result, call],
-            [call, call, result],
-            [call, result, result],
-            [
-                call,
-                result,
-                { ...call, id: "fc_new" },
-                { ...result, id: "fco_new" },
-            ],
-            [{ ...call, status: "in_progress" }, result],
-            [call, { ...result, status: "incomplete" }],
-            [call, { ...result, status: "failed" }],
-            [call, { ...result, id: call.id }],
-            [call, { ...result, call_id: "unmatched" }],
-            [call, { role: "user", content: "Too soon" }, result],
-            [{ ...call, arguments: "invalid JSON" }, result],
-            [{ ...call, arguments: "[]" }, result],
-            [{ ...call, name: "" }, result],
-            [call, { ...result, output: "plain text" }],
-            [call, { ...result, output: "{}" }],
-            [{ type: "mcp_call", id: "old", status: "completed" }],
-        ]) {
-            const invalid = await handlePromptAgentResponsesRequest(
-                request({ input }),
+                                ],
+                                usage,
+                            })}\n\n` +
+                            "data: [DONE]\n\n",
+                        { headers: { "content-type": "text/event-stream" } },
+                    );
+                }),
+            );
+
+            const response = await handlePromptAgentResponsesRequest(
+                request({ stream }),
                 new AbortController().signal,
                 RUNTIME,
             );
-            expect(invalid.status).toBe(400);
-        }
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
+            if (!stream) {
+                expect(response.status).toBe(502);
+                await expect(response.json()).resolves.toMatchObject({
+                    error: { code: "agent_error" },
+                });
+                return;
+            }
+            const events = streamEvents(await response.text());
+            expect(events.at(-2)).toMatchObject({
+                type: "error",
+                code: "agent_error",
+                message: expect.any(String),
+                param: null,
+            });
+            expect(events.at(-1)).toMatchObject({
+                type: "response.failed",
+                response: { status: "failed", usage: null },
+            });
+            expect(
+                events.some((event) => event.type === "response.completed"),
+            ).toBe(false);
+        },
+    );
+
+    it.each([false, true])(
+        "replays completed function pairs with isError %j without executing them",
+        async (isError) => {
+            const call = {
+                type: "function_call",
+                id: "fc_prior",
+                call_id: "prior-call",
+                name: "mcp__exa__search",
+                arguments: '{"query":"old question"}',
+                status: "completed",
+            };
+            const result = {
+                type: "function_call_output",
+                id: "fco_prior",
+                call_id: call.call_id,
+                status: "completed",
+                output: JSON.stringify({
+                    content: [
+                        {
+                            type: "text",
+                            text: isError ? "Saved failure" : "Saved answer",
+                        },
+                    ],
+                    ...(isError ? { isError } : {}),
+                }),
+            };
+            const fetchMock = vi.fn(
+                async (input: RequestInfo | URL, init?: RequestInit) => {
+                    const upstream = new Request(input, init);
+                    expect(upstream.url).toBe(
+                        "https://gen.test/v1/chat/completions",
+                    );
+                    const body = (await upstream.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    expect(body.messages).toEqual(
+                        expect.arrayContaining([
+                            expect.objectContaining({
+                                role: "assistant",
+                                tool_calls: [
+                                    {
+                                        id: "prior-call",
+                                        type: "function",
+                                        function: {
+                                            name: "mcp__exa__search",
+                                            arguments: call.arguments,
+                                        },
+                                    },
+                                ],
+                            }),
+                            {
+                                role: "tool",
+                                tool_call_id: "prior-call",
+                                content: JSON.stringify([
+                                    {
+                                        type: "text",
+                                        text: isError
+                                            ? "Saved failure"
+                                            : "Saved answer",
+                                    },
+                                ]),
+                            },
+                            expect.objectContaining({
+                                role: "user",
+                                content: "What happened?",
+                            }),
+                        ]),
+                    );
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "I remember",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 4,
+                            completion_tokens: 2,
+                            total_tokens: 6,
+                        },
+                    });
+                },
+            );
+            vi.stubGlobal("fetch", fetchMock);
+            const response = await handlePromptAgentResponsesRequest(
+                request({
+                    input: [
+                        call,
+                        result,
+                        { role: "user", content: "What happened?" },
+                    ],
+                }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            expect(response.status).toBe(200);
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+            expect(await response.json()).toMatchObject({
+                output: [
+                    { type: "message", content: [{ text: "I remember" }] },
+                ],
+                usage: { tool_call_counts: {} },
+            });
+            for (const input of [
+                [call],
+                [result],
+                [result, call],
+                [call, call, result],
+                [call, result, result],
+                [
+                    call,
+                    result,
+                    { ...call, id: "fc_new" },
+                    { ...result, id: "fco_new" },
+                ],
+                [{ ...call, status: "in_progress" }, result],
+                [call, { ...result, status: "incomplete" }],
+                [call, { ...result, status: "failed" }],
+                [call, { ...result, id: call.id }],
+                [call, { ...result, call_id: "unmatched" }],
+                [call, { role: "user", content: "Too soon" }, result],
+                [{ ...call, arguments: "invalid JSON" }, result],
+                [{ ...call, arguments: "[]" }, result],
+                [{ ...call, name: "" }, result],
+                [call, { ...result, output: "plain text" }],
+                [call, { ...result, output: "{}" }],
+                [{ type: "mcp_call", id: "old", status: "completed" }],
+            ]) {
+                const invalid = await handlePromptAgentResponsesRequest(
+                    request({ input }),
+                    new AbortController().signal,
+                    RUNTIME,
+                );
+                expect(invalid.status).toBe(400);
+            }
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it("preserves parallel function pairs, sanitized results and ordering in JSON, events and replay", async () => {
         const events: Record<string, unknown>[] = [];

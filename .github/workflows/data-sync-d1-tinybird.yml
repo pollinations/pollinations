@@ -2,8 +2,9 @@ name: Data / Sync D1 to Tinybird
 
 on:
   schedule:
-    # Run at 03:00 UTC daily
-    - cron: "0 3 * * *"
+    # Every 4 hours (00:23, 04:23, ... UTC): KPI signups read d1_user, so they
+    # lag D1 by at most about 4 hours plus the KPI Worker's 30-minute cache.
+    - cron: "23 */4 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -58,7 +59,10 @@ jobs:
               '{datasource: $datasource}
                + if $cursor == "" then {} else {cursor: $cursor} end')
 
-            http_code=$(curl -sS --max-time 180 -o "$page_file" -w "%{http_code}" \
+            # A page takes about a second. curl retries a page that hangs or gets
+            # a 5xx (D1 has short error bursts), instead of keeping the old
+            # snapshot until the next run.
+            http_code=$(curl -sS --max-time 60 --retry 2 --retry-delay 5 -o "$page_file" -w "%{http_code}" \
               -X POST "https://enter.pollinations.ai/api/admin/trigger-d1-sync" \
               -H "Authorization: Bearer $EXPORT_TOKEN" \
               -H "Content-Type: application/json" \

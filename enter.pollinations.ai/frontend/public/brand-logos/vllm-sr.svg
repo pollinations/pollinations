@@ -1,0 +1,1 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="11 11 42 42"><defs><mask id="gap"><rect x="0" y="0" width="64" height="64" fill="#fff"/><circle cx="43.67" cy="20.33" r="8.6" fill="#000"/></mask></defs><circle cx="32" cy="32" r="16.5" fill="none" stroke="#000" stroke-width="5" mask="url(#gap)"/><circle cx="43.67" cy="20.33" r="6.2"/></svg>

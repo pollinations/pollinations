@@ -40,10 +40,18 @@ const replyText = (message) =>
         ? message.content.map((part) => part?.text ?? "").join("")
         : (message?.content ?? "");
 
+// gen answers a text request it refuses (empty wallet, key budget used up)
+// with a chat reply that reports no usage and links the enter page that fixes
+// it, instead of an HTTP 402.
+const isRefusal = (text, usage) =>
+    usage.completion_tokens === 0 && /[?&]ref=agent_/.test(text);
+
 /**
- * One chat completion. Never throws: a timeout, HTTP error, or empty reply
- * comes back as `error` so the caller counts it as a failed answer. A 429 is
- * our own per-user limit, not the model's fault, so it is retried slowly.
+ * One chat completion. Never throws: a timeout, HTTP error, refusal, or empty
+ * reply comes back as `error` so the caller counts it as a failed answer. A 429
+ * is our own per-user limit, not the model's fault, so it is retried slowly.
+ * gen maps provider 401/402/403 to 502, so those statuses are gen refusing our
+ * own key or account and come back `fatal`.
  */
 export async function ask({
     baseUrl,
@@ -99,9 +107,15 @@ export async function ask({
                 !Number.isFinite(body.usage?.completion_tokens)
             )
                 return { error: "missing_usage", fatal: true };
-            const text = replyText(body.choices?.[0]?.message);
+            const choice = body.choices?.[0];
+            const text = replyText(choice?.message);
+            if (isRefusal(text, body.usage)) return { error: "refused" };
             return text
-                ? { text, usage: body.usage }
+                ? {
+                      text,
+                      usage: body.usage,
+                      finishReason: choice.finish_reason ?? null,
+                  }
                 : { error: "empty", usage: body.usage };
         } catch (error) {
             return {

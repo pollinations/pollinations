@@ -231,7 +231,7 @@ const hermesInstalled = (ctx: HarnessContext) =>
         join(hermesHome(ctx), "bin", "hermes"),
     ]);
 
-export const hermes: HarnessAdapter = {
+export const hermes = {
     id: ID,
     label: LABEL,
     description: "Configure Hermes Agent to use Pollinations",
@@ -244,8 +244,9 @@ export const hermes: HarnessAdapter = {
                 `Hermes Agent was not found. Install it first: ${INSTALL_HINT}`,
             );
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        await fetchHarnessModels(model);
+        const { model } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
             { browser: options.browser },
@@ -255,4 +256,4 @@ export const hermes: HarnessAdapter = {
 
     off: disableHermes,
     status: result,
-};
+} satisfies HarnessAdapter;

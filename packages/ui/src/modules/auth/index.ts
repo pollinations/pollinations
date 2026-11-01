@@ -14,6 +14,7 @@ export {
 export { DashboardAccountMenu } from "./DashboardAccountMenu.tsx";
 export { DashboardSignIn } from "./DashboardSignIn.tsx";
 export { GitHubSignInButton } from "./GitHubSignInButton.tsx";
+export { GoogleSignInButton } from "./GoogleSignInButton.tsx";
 export {
     PollinationsSignInButton,
     type PollinationsSignInButtonProps,

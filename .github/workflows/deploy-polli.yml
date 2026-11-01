@@ -25,6 +25,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
+          check-latest: true
 
       - name: Deploy Polli containers
         if: vars.POLLI_CONTAINER_DEPLOY_ENABLED == 'true'

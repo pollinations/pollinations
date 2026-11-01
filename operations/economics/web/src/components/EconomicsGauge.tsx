@@ -1,4 +1,4 @@
-import { fmtUnsignedPct, fmtUsd } from "../lib/format";
+import { useAmountDisplay } from "./ReconcilePro";
 
 export type GaugePalette = "wallet" | "neutral";
 
@@ -35,25 +35,28 @@ export function gaugeParts(left: number, right: number) {
 }
 
 export function Gauge({
+    className = "w-24",
     left,
     leftLabel,
     palette = "wallet",
     right,
     rightLabel,
 }: {
+    className?: string;
     left: number;
     leftLabel: string;
     palette?: GaugePalette;
     right: number;
     rightLabel: string;
 }) {
+    const { fmtUnsignedPct } = useAmountDisplay();
     const parts = gaugeParts(left, right);
     if (!parts) return <span className="text-theme-text-soft">–</span>;
     const colors = GAUGE_PALETTE[palette];
     const label = `${leftLabel} ${fmtUnsignedPct(parts.leftPct)} · ${rightLabel} ${fmtUnsignedPct(parts.rightPct)}`;
     return (
         <div
-            className="flex h-2 w-24 overflow-hidden rounded-sm"
+            className={`flex h-2 overflow-hidden rounded-sm ${className}`}
             role="img"
             aria-label={label}
             title={label}
@@ -83,6 +86,7 @@ export function GaugeSummary({
     right: number;
     rightLabel: string;
 }) {
+    const { fmtUsd } = useAmountDisplay();
     const colors = GAUGE_PALETTE[palette];
     return (
         <div className="flex flex-wrap items-center gap-2">

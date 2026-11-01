@@ -81,13 +81,15 @@ function generateUserCode(length: number): string {
  * RFC 8628 §3.1); JSON is accepted for the pre-discovery clients that have
  * always sent it — including without a content-type header.
  */
-export async function parseFormOrJsonBody(
-    c: Context<Env>,
+export async function parseFormOrJsonBody<TEnv extends Env>(
+    c: Context<TEnv>,
 ): Promise<Record<string, string>> {
     const contentType = c.req.header("content-type") ?? "";
     const body = contentType.includes("form")
         ? await c.req.parseBody().catch(() => ({}))
         : await c.req.json<Record<string, unknown>>().catch(() => ({}));
+    // Valid JSON can still be null, a primitive or an array: no fields.
+    if (!body || typeof body !== "object" || Array.isArray(body)) return {};
     return Object.fromEntries(
         Object.entries(body).filter(
             (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -215,7 +217,7 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
-            const body = await c.req.json<{ userCode: string }>();
+            const body = await parseFormOrJsonBody(c);
 
             if (!body.userCode) {
                 throw new HTTPException(400, {
@@ -239,8 +241,8 @@ export const deviceRoutes = new Hono<Env>()
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<DeviceTokenRequest>();
-        return await exchangeDeviceCode(c, body);
+        const body = await parseFormOrJsonBody(c);
+        return await exchangeDeviceCode(c, body as DeviceTokenRequest);
     })
     .get(
         "/userinfo",

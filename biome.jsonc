@@ -48,31 +48,21 @@
             "!**/*.yml",
             "!**/*.md",
             // exclude vendored font OFL license texts (must be distributed verbatim)
-            "!packages/ui/src/licenses/**"
+            "!packages/ui/src/licenses/**",
+            // exclude the fork of Anthropic's Telegram plugin, kept in its
+            // upstream formatting so it can be compared with upstream
+            "!apps/mama-barbara/barbara/telegram/server.ts"
         ]
     },
     "overrides": [
         {
-            "includes": ["apps/chat/**"],
+            // SVG files are image assets shown through <img alt="…">, so a
+            // <title> in each file adds nothing
+            "includes": ["**/*.svg"],
             "linter": {
                 "rules": {
                     "a11y": {
-                        "noSvgWithoutTitle": "off",
-                        "useButtonType": "off",
-                        "noStaticElementInteractions": "off",
-                        "useKeyWithClickEvents": "off",
-                        "useKeyWithMouseEvents": "off",
-                        "noLabelWithoutControl": "off",
-                        "useMediaCaption": "off",
-                        "useSemanticElements": "off"
-                    },
-                    "suspicious": {
-                        "noArrayIndexKey": "off",
-                        "noAssignInExpressions": "off"
-                    },
-                    "correctness": {
-                        "useExhaustiveDependencies": "off",
-                        "noInvalidUseBeforeDeclaration": "off"
+                        "noSvgWithoutTitle": "off"
                     }
                 }
             }

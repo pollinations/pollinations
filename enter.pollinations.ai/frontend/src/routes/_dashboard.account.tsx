@@ -15,6 +15,7 @@ import {
     MailIcon,
     Section,
     SignOutIcon,
+    Surface,
     Text,
     TrashIcon,
 } from "@pollinations/ui";
@@ -39,7 +40,7 @@ type DiscordConnection = {
 
 export const Route = createFileRoute("/_dashboard/account")({
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -81,7 +82,7 @@ function AccountPage() {
     return (
         <>
             <Section title="Profile">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <Surface className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
                         {user.image ? (
                             <img
@@ -119,7 +120,7 @@ function AccountPage() {
                     >
                         {isSigningOut ? "Signing out…" : "Sign out"}
                     </Button>
-                </div>
+                </Surface>
             </Section>
 
             {signOutError && <Alert intent="danger">{signOutError}</Alert>}
@@ -136,10 +137,16 @@ function AccountPage() {
                     details ? (
                         <CommunityConnections
                             discordAvailable={details.discordAvailable}
+                            githubUsername={
+                                user.githubId ? githubUsername : null
+                            }
                         />
                     ) : (
                         <Section title="Community">
-                            <LoadError onRetry={retry}>
+                            <LoadError
+                                onRetry={retry}
+                                paths={["/account/profile"]}
+                            >
                                 Couldn’t load connection settings.
                             </LoadError>
                         </Section>
@@ -152,8 +159,8 @@ function AccountPage() {
             </div>
 
             <Section title="Need help?">
-                <ul className="grid gap-5 text-sm sm:grid-cols-2">
-                    <li className="flex min-w-0 items-start gap-2">
+                <ul className="grid gap-3 text-sm sm:grid-cols-2">
+                    <Surface as="li" className="flex min-w-0 items-start gap-2">
                         <DiscordIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
@@ -164,8 +171,8 @@ function AccountPage() {
                                 Discord
                             </InlineLink>
                         </Text>
-                    </li>
-                    <li className="flex min-w-0 items-start gap-2">
+                    </Surface>
+                    <Surface as="li" className="flex min-w-0 items-start gap-2">
                         <GitHubIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
@@ -176,8 +183,8 @@ function AccountPage() {
                                 GitHub
                             </InlineLink>
                         </Text>
-                    </li>
-                    <li className="flex min-w-0 items-start gap-2">
+                    </Surface>
+                    <Surface as="li" className="flex min-w-0 items-start gap-2">
                         <MailIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
@@ -186,8 +193,8 @@ function AccountPage() {
                             General questions:{" "}
                             <ContactEmail email="hello@pollinations.ai" />
                         </Text>
-                    </li>
-                    <li className="flex min-w-0 items-start gap-2">
+                    </Surface>
+                    <Surface as="li" className="flex min-w-0 items-start gap-2">
                         <MailIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
@@ -196,12 +203,12 @@ function AccountPage() {
                             Billing support:{" "}
                             <ContactEmail email="billing@pollinations.ai" />
                         </Text>
-                    </li>
+                    </Surface>
                 </ul>
             </Section>
 
             <Section title="Delete account">
-                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                <Surface className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                     <Text size="sm" tone="muted">
                         Permanently delete your account, profile, keys, agents
                         and models. All remaining Pollen will be lost. This
@@ -216,7 +223,7 @@ function AccountPage() {
                     >
                         Delete account
                     </Button>
-                </div>
+                </Surface>
             </Section>
 
             <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 text-[13px] text-theme-text-muted sm:px-1">
@@ -258,13 +265,12 @@ function ContactEmail({ email }: { email: string }) {
             value={email}
             aria-label={`Copy ${email}`}
             tooltip="Copy email address"
-            copiedTooltip="Email address copied"
             className="polli-link inline-flex max-w-full items-center gap-1.5 text-left align-baseline"
         >
             {(copied) => (
                 <>
                     <span className="min-w-0 break-all" aria-live="polite">
-                        {copied ? "Copied!" : email}
+                        {copied ? "Copied" : email}
                     </span>
                     <span
                         className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"
@@ -332,7 +338,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                     <p>Deleting your Pollinations account removes:</p>
                     <ul className="list-disc space-y-1 pl-5">
                         <li>
-                            Profile, sessions, GitHub connection, and API keys
+                            Profile, sessions, connected accounts, and API keys
                         </li>
                         <li>
                             Pollen balances, access to reward history, agents,
@@ -341,9 +347,9 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                         <li>Published media listings and tags</li>
                     </ul>
                     <p>
-                        We retain only your immutable GitHub user ID with
-                        records of rewards already issued to prevent duplicate
-                        quest payouts.
+                        We retain only your immutable GitHub or Google user ID
+                        with records of rewards already issued to prevent
+                        duplicate quest payouts.
                     </p>
                     <p>
                         Cached copies of uploaded and generated media may remain
@@ -383,8 +389,10 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
 
 function CommunityConnections({
     discordAvailable,
+    githubUsername,
 }: {
     discordAvailable: boolean;
+    githubUsername: string | null;
 }) {
     const [discordConnection, setDiscordConnection] = useState<
         DiscordConnection | null | undefined
@@ -465,9 +473,51 @@ function CommunityConnections({
         }
     }
 
+    // GitHub stays connected once linked: quests and community models key on it.
+    async function connectGitHub(): Promise<void> {
+        setConnectionPending(true);
+        setConnectionError(null);
+        const { error } = await authClient
+            .linkSocial({ provider: "github", callbackURL: "/account" })
+            .catch(() => ({ error: true }));
+        if (error) {
+            setConnectionError("Could not connect GitHub.");
+            setConnectionPending(false);
+        }
+    }
+
     return (
         <Section title="Community">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Surface className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                    <GitHubIcon className="h-6 w-6 shrink-0" />
+                    <div>
+                        <Text tone="strong" weight="semibold">
+                            GitHub
+                        </Text>
+                        <Text size="sm" tone="muted">
+                            {githubUsername === null
+                                ? "Connect GitHub for GitHub quests, apps, community models, and agents."
+                                : githubUsername
+                                  ? `@${githubUsername}`
+                                  : "Connected"}
+                        </Text>
+                    </div>
+                </div>
+                {githubUsername === null && (
+                    <Button
+                        type="button"
+                        intent="commit"
+                        icon={<GitHubIcon />}
+                        className="shrink-0 self-start sm:self-center"
+                        disabled={connectionPending}
+                        onClick={() => void connectGitHub()}
+                    >
+                        {connectionPending ? "Working..." : "Connect GitHub"}
+                    </Button>
+                )}
+            </Surface>
+            <Surface className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                     {discordConnection?.avatarUrl ? (
                         <img
@@ -524,7 +574,7 @@ function CommunityConnections({
                             ? "Checking..."
                             : "Connect Discord"}
                 </Button>
-            </div>
+            </Surface>
             {connectionError && (
                 <Text size="sm" tone="muted">
                     {connectionError}

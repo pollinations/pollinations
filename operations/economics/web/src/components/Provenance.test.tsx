@@ -12,20 +12,24 @@ const LIVE_CLOUD_SOURCES = [
 ] as const;
 
 describe("SourceCell", () => {
-    it.each(
-        LIVE_CLOUD_SOURCES,
-    )("renders the %s source as %s", (source, badge) => {
-        const html = renderToStaticMarkup(<SourceCell sources={[source]} />);
+    it.each(LIVE_CLOUD_SOURCES)(
+        "renders the %s source as %s",
+        (source, badge) => {
+            const html = renderToStaticMarkup(
+                <SourceCell sources={[source]} />,
+            );
 
-        expect(html).toContain(`>${badge}<`);
-    });
+            expect(html).toContain(`>${badge}<`);
+        },
+    );
 
     it("surfaces source values outside the provenance contract without breaking the tab", () => {
         const html = renderToStaticMarkup(
             <SourceCell sources={["mystery-source"]} />,
         );
 
-        expect(html).toContain("? mystery-source");
-        expect(html).toContain("Unknown source");
+        expect(html).toContain(">mystery-source<");
+        expect(html).not.toContain("Unknown source");
+        expect(html).not.toContain('data-intent="danger"');
     });
 });

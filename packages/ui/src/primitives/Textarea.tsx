@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { cn } from "../lib/cn.ts";
+import { Field } from "./Field.tsx";
 
 export type TextareaProps = React.ComponentPropsWithoutRef<"textarea"> & {
     error?: boolean;
@@ -7,9 +8,10 @@ export type TextareaProps = React.ComponentPropsWithoutRef<"textarea"> & {
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ({ className, error, rows = 4, ...props }, ref) => (
-        <textarea
+        <Field.Textarea
             ref={ref}
             rows={rows}
+            aria-invalid={error || undefined}
             data-error={error ? "true" : undefined}
             className={cn(
                 "polli-textarea polli:w-full polli:rounded-lg polli:border polli:px-3 polli:py-2",

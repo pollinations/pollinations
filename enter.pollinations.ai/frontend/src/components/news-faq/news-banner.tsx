@@ -1,7 +1,22 @@
-import { Button, Chip, InlineLink, Section } from "@pollinations/ui";
+import {
+    Button,
+    Chip,
+    ExternalLinkButton,
+    Eyebrow,
+    GlobeIcon,
+    Heading,
+    IconTile,
+    type IconTileProps,
+    InlineLink,
+    KeyIcon,
+    Surface,
+    TerminalIcon,
+    Text,
+    WalletIcon,
+} from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
-import { type FC, Fragment, type ReactNode, useState } from "react";
+import { type FC, type ReactNode, useState } from "react";
 import {
     API_DOCS_URL,
     type ApiNews,
@@ -9,19 +24,92 @@ import {
     apiDocsAnchor,
     type CardDetail,
     cardDetails,
+    type DailyItem,
     formatNewsDate,
-    highlightLink,
+    itemLink,
     type ModelNews,
-    newsHighlights,
-    useNewsIndex,
+    type NewsIndex,
     visibleModelNews,
 } from "./news-index.ts";
 
-export const NEWS_MORE_URL =
-    "https://github.com/pollinations/pollinations#-latest-news";
-
 /** Rows shown at first and added per "Show older". */
 const PAGE_SIZE = 10;
+
+/** A launch or change pinned by hand, optionally until a UTC day. */
+type Announcement = {
+    /** The day it shipped or takes effect. */
+    date: string;
+    until?: string;
+    label: "New" | "Updated" | "Changing";
+    title: string;
+    text: string;
+    icon: IconTileProps["icon"];
+    cta: { label: string; href: string };
+};
+
+/**
+ * Newest first; only the first four current ones show. Cards share a row, so
+ * keep them even: a title of a few words, one sentence of about 80 characters
+ * and a two- or three-word button.
+ */
+const ANNOUNCEMENTS: Announcement[] = [
+    {
+        date: "2026-11-01",
+        until: "2026-11-15",
+        label: "Updated",
+        title: "App Keys",
+        text: "pk_ keys now identify apps only. API calls require sk_; connect users through Connect User Wallets.",
+        icon: KeyIcon,
+        cta: {
+            label: "Migrate your app",
+            href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        },
+    },
+    {
+        date: "2026-11-01",
+        until: "2026-11-15",
+        label: "Updated",
+        title: "Sandbox launch pricing",
+        text: "Run a 2 vCPU, 2 GB sandbox from 0.0333 pollen/hour.",
+        icon: TerminalIcon,
+        cta: { label: "Open Sandboxes", href: "/sandboxes" },
+    },
+    {
+        date: "2026-10-22",
+        until: "2026-11-05",
+        label: "New",
+        title: "Free site hosting",
+        text: "Publish a static site at your-name.pollinations.app from the CLI, SDK or an agent.",
+        icon: GlobeIcon,
+        cta: {
+            label: "Visit pollinations.app",
+            href: "https://pollinations.app",
+        },
+    },
+    {
+        date: "2026-10-17",
+        label: "Updated",
+        title: "25% off selected Claude models",
+        text: "Sonnet 5.5 and Haiku 5.5: 25% off standard API prices.",
+        icon: WalletIcon,
+        cta: { label: "View models", href: "/models?q=anthropic" },
+    },
+    {
+        date: "2026-10-10",
+        until: "2026-10-24",
+        label: "New",
+        title: "A new pollinations.ai",
+        text: "Redesigned: try models on Play, browse community apps and meet the builders.",
+        icon: GlobeIcon,
+        cta: {
+            label: "Visit the website",
+            href: "https://pollinations.ai",
+        },
+    },
+];
+
+export const currentAnnouncements = (today: string) =>
+    ANNOUNCEMENTS.filter(({ until }) => !until || until >= today).slice(0, 4);
 
 function changeChip(
     { action, date, changes, status }: ModelNews,
@@ -126,7 +214,7 @@ const apiChange = (news: ApiNews): ChangeItem => {
 };
 
 const ChangeRow: FC<{ item: ChangeItem }> = ({ item }) => (
-    <li className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[5.5rem_minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <li className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 first:border-t-0 sm:grid-cols-[5.5rem_minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <Chip
             size="sm"
             intent={item.chip.intent}
@@ -186,21 +274,19 @@ const ShowOlder: FC<{ hidden: boolean; onClick: () => void }> = ({
         </div>
     );
 
-/** Starts each day; the row after it needs no top border. */
-const DayLine: FC<{ date: string; today: string }> = ({ date, today }) => (
-    <li className="flex items-center gap-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted [&+li]:border-t-0">
-        <span className="h-px flex-1 bg-theme-text-strong/30" />
-        {date === today ? "Today" : formatNewsDate(date)}
-        <span className="h-px flex-1 bg-theme-text-strong/30" />
-    </li>
-);
+/** A day card's header: upcoming days say so, since they lead the list. */
+const dayLabel = (date: string, today: string) =>
+    date === today
+        ? "Today"
+        : date > today
+          ? `Upcoming · ${formatNewsDate(date)}`
+          : formatNewsDate(date);
 
 /**
  * Model and API changes from merged PRs (news/index.json), today −30 to +30
  * days: upcoming ones first, then the latest past ones.
  */
-export const Changelog: FC = () => {
-    const index = useNewsIndex();
+export const Changelog: FC<{ index?: NewsIndex }> = ({ index }) => {
     const [visiblePast, setVisiblePast] = useState(PAGE_SIZE);
     if (!index) return null;
     const today = new Date().toISOString().slice(0, 10);
@@ -216,91 +302,107 @@ export const Changelog: FC = () => {
     const past = changes.filter(({ date }) => date <= today);
     const shown = [...upcoming, ...past.slice(0, visiblePast)];
     if (changes.length === 0) return null;
+    // One card per day.
+    const days: { date: string; items: ChangeItem[] }[] = [];
+    for (const item of shown) {
+        const day = days.at(-1);
+        if (day?.date === item.date) day.items.push(item);
+        else days.push({ date: item.date, items: [item] });
+    }
     return (
-        <Section
-            title="Changelog"
-            actionClassName="ml-auto"
-            action={
-                <div className="flex gap-4">
-                    <InlineLink href="/models" size="sm">
-                        Browse models
-                    </InlineLink>
-                    <InlineLink
-                        href="https://gen.pollinations.ai/docs"
-                        size="sm"
-                    >
-                        API docs
-                    </InlineLink>
-                </div>
-            }
-        >
-            <ul className="text-sm text-theme-text-base">
-                {shown.map((item, i) => {
-                    const previous = shown[i - 1]?.date ?? "";
-                    return (
-                        <Fragment key={item.key}>
-                            {/* Marks today even on a day without changes. */}
-                            {item.date < today && previous > today && (
-                                <DayLine date={today} today={today} />
-                            )}
-                            {item.date !== previous && (
-                                <DayLine date={item.date} today={today} />
-                            )}
-                            <ChangeRow item={item} />
-                        </Fragment>
-                    );
-                })}
-            </ul>
+        <>
+            <div className="flex flex-col gap-3">
+                {days.map(({ date, items }) => (
+                    <Surface key={date} className="flex flex-col gap-1">
+                        <Eyebrow>{dayLabel(date, today)}</Eyebrow>
+                        <ul className="text-sm text-theme-text-base">
+                            {items.map((item) => (
+                                <ChangeRow key={item.key} item={item} />
+                            ))}
+                        </ul>
+                    </Surface>
+                ))}
+            </div>
             <ShowOlder
                 hidden={visiblePast >= past.length}
                 onClick={() => setVisiblePast((count) => count + PAGE_SIZE)}
             />
-        </Section>
+        </>
     );
 };
 
-/** The latest highlights picked by the daily summaries, laid out like the Changelog. */
-export const NewsBanner: FC = () => {
-    const index = useNewsIndex();
+/** Hand-picked launches and changes as tinted feature cards that share each row. */
+export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
+    <ul className="flex flex-wrap gap-3">
+        {items.map((item) => (
+            <Surface
+                as="li"
+                key={item.title}
+                className="flex grow basis-72 flex-col gap-3 p-5 sm:p-6"
+            >
+                <div className="flex items-center gap-3">
+                    <IconTile icon={item.icon} />
+                    <Eyebrow>
+                        {item.label} · {formatNewsDate(item.date)}
+                    </Eyebrow>
+                </div>
+                <Heading as="h3" size="subsection">
+                    {item.title}
+                </Heading>
+                <Text size="sm">{item.text}</Text>
+                <div className="mt-auto pt-1">
+                    <ExternalLinkButton href={item.cta.href} size="sm">
+                        {item.cta.label}
+                    </ExternalLinkButton>
+                </div>
+            </Surface>
+        ))}
+    </ul>
+);
+
+/** The daily items as a grid of cards, newest first. */
+export const Updates: FC<{ items: DailyItem[] }> = ({ items }) => {
     const [visible, setVisible] = useState(PAGE_SIZE);
-    const all = index ? newsHighlights(index) : [];
-    const highlights = all.slice(0, visible);
-    if (highlights.length === 0) return null;
+    const updates = items.slice(0, visible);
+    if (updates.length === 0) return null;
     const today = new Date().toISOString().slice(0, 10);
     return (
         <>
-            <ul className="text-sm text-theme-text-base">
-                {highlights.map((item, i) => {
-                    const { text, link } = highlightLink(item.text);
+            <ul className="grid gap-3 sm:grid-cols-2">
+                {updates.map((item) => {
+                    const { text, link } = itemLink(item.text);
                     return (
-                        <Fragment key={`${item.date}-${item.title}`}>
-                            {item.date !== highlights[i - 1]?.date && (
-                                <DayLine date={item.date} today={today} />
+                        <Surface
+                            as="li"
+                            key={`${item.date}-${item.title}`}
+                            className="flex flex-col gap-2"
+                        >
+                            <Eyebrow>
+                                {item.date === today
+                                    ? "Today"
+                                    : formatNewsDate(item.date)}
+                            </Eyebrow>
+                            <strong className="text-sm text-theme-text-strong">
+                                {item.title}
+                            </strong>
+                            <Markdown className="text-xs leading-5 text-theme-text-base">
+                                {text}
+                            </Markdown>
+                            {link && (
+                                <InlineLink
+                                    href={link.href}
+                                    size="sm"
+                                    className="mt-auto self-start pt-1"
+                                >
+                                    {link.label}
+                                </InlineLink>
                             )}
-                            <li className="grid items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                                <div className="flex flex-col items-start gap-0.5">
-                                    <strong className="text-theme-text-strong">
-                                        {item.title}
-                                    </strong>
-                                    {link && (
-                                        <InlineLink
-                                            href={link.href}
-                                            className="text-xs"
-                                        >
-                                            {link.label}
-                                        </InlineLink>
-                                    )}
-                                </div>
-                                <Markdown className="text-xs leading-5 text-theme-text-base">
-                                    {text}
-                                </Markdown>
-                            </li>
-                        </Fragment>
+                        </Surface>
                     );
                 })}
             </ul>
             <ShowOlder
-                hidden={visible >= all.length}
+                hidden={visible >= items.length}
                 onClick={() => setVisible((count) => count + PAGE_SIZE)}
             />
         </>

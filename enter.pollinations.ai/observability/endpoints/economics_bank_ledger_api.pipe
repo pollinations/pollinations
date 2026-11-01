@@ -1,6 +1,7 @@
 DESCRIPTION >
     Effective canonical bank ledger. Corrections re-append the same entry_id;
     this endpoint exposes only the latest complete fact per key.
+    Statement balance confirmations remain in raw history, outside cash facts.
 
 TOKEN "operations_read" READ
 
@@ -40,6 +41,7 @@ SQL >
         FROM economics_bank_ledger
         GROUP BY entry_id
     )
+    WHERE tupleElement(latest, 1) != 'balance_confirmation'
     ORDER BY date DESC, vendor, category
 
 TYPE ENDPOINT

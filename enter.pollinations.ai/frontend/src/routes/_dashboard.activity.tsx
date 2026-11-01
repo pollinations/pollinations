@@ -2,11 +2,13 @@ import { Section } from "@pollinations/ui";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
     type ActivityPeriod,
+    activityTimezone,
     parseActivityPeriod,
 } from "../components/activity/activity-period";
 import { EarningsGraph } from "../components/activity/earnings-graph.tsx";
 import type { Metric } from "../components/activity/types.ts";
 import { UsageSection } from "../components/activity/usage-section.tsx";
+import { CliHint } from "../components/cli-hint.tsx";
 import { LastEventsPanel } from "../components/pollen/last-events-panel.tsx";
 
 function stringArray(value: unknown): string[] | undefined {
@@ -44,6 +46,8 @@ export const Route = createFileRoute("/_dashboard/activity")({
             earningsBucket: earnings.bucket,
             earningsAnchor: earnings.anchor,
             usageMetric: metric(search.usageMetric),
+            usageGroup:
+                search.usageGroup === "key" ? ("key" as const) : undefined,
             usageKeys: stringArray(search.usageKeys),
             usageModels: stringArray(search.usageModels),
             earningsMetric: metric(search.earningsMetric),
@@ -52,7 +56,7 @@ export const Route = createFileRoute("/_dashboard/activity")({
         };
     },
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -99,6 +103,12 @@ function ActivityPage() {
                         })
                     }
                     metric={search.usageMetric ?? "pollen"}
+                    groupBy={search.usageGroup ?? "model"}
+                    onGroupByChange={(group) =>
+                        updateSearch({
+                            usageGroup: group === "key" ? group : undefined,
+                        })
+                    }
                     selectedKeyIds={search.usageKeys ?? []}
                     selectedModels={search.usageModels ?? []}
                     onMetricChange={(metric) =>
@@ -161,8 +171,9 @@ function ActivityPage() {
                 <LastEventsPanel />
             </Section>
             <p className="px-4 text-micro text-theme-text-muted sm:px-0">
-                Times shown in UTC.
+                Times shown in your timezone ({activityTimezone()}).
             </p>
+            <CliHint command="usage --history" />
         </>
     );
 }

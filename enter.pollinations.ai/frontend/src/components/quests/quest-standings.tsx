@@ -36,8 +36,8 @@ function nudge(
     if (rank === null) {
         const first = byReward[0];
         return first
-            ? `Earn any quest to join the race — “${first.title}” is +${formatPollen(first.reward)}.`
-            : "Earn any quest to join the race.";
+            ? `Complete a quest to join the race. “${first.title}” earns ${formatPollen(first.reward)} Pollen.`
+            : "Complete a quest to join the race.";
     }
     if (rank === 1) return `You're leading ${monthName(standings.month)}.`;
     const above = rows.find((row) => row.rank === rank - 1);
@@ -47,7 +47,7 @@ function nudge(
     // A tie still needs the smallest quest reward to pass, not 0.
     const target = `${formatPollen(Math.max(gap, 0.25))} Pollen to pass @${above.githubLogin}`;
     return pass
-        ? `${target} — “${pass.title}” is +${formatPollen(pass.reward)}.`
+        ? `${target}. “${pass.title}” earns ${formatPollen(pass.reward)} Pollen.`
         : `${target}.`;
 }
 
@@ -205,13 +205,13 @@ export function QuestStandings({
                         })}
                     </ol>
                 )}
-                {line && (
-                    <p className="flex items-start gap-1.5 border-theme-border border-t px-3 pt-3 font-medium text-sm leading-snug text-theme-text-strong">
-                        <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>{line}</span>
-                    </p>
-                )}
             </Surface>
+            {line && (
+                <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                    <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>{line}</span>
+                </p>
+            )}
         </Section>
     );
 }

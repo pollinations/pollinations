@@ -19,6 +19,7 @@ import {
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type AgentCatalogConfig,
@@ -47,17 +48,25 @@ const IMAGE_MODEL_ENDPOINTS = [
     "/v1/images/edits",
     "/image/{prompt}",
 ];
+const VIDEO_MODEL_ENDPOINTS = [
+    "/v1/images/generations",
+    "/image/{prompt}",
+    "/video/{prompt}",
+];
+const MODEL3D_ENDPOINTS = ["/3d/{prompt}"];
 const CATEGORY_ORDER: Record<Category, number> = {
     text: 0,
-    image: 1,
-    video: 2,
-    "3d": 3,
-    audio: 4,
-    realtime: 5,
-    embedding: 6,
+    decision: 1,
+    image: 2,
+    video: 3,
+    "3d": 4,
+    audio: 5,
+    realtime: 6,
+    embedding: 7,
 };
 const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
     text: DEFAULT_TEXT_MODEL,
+    decision: DEFAULT_DECISION_MODEL,
     image: DEFAULT_IMAGE_MODEL,
     "3d": DEFAULT_3D_MODEL,
     audio: DEFAULT_AUDIO_MODEL,
@@ -97,28 +106,37 @@ function eventTypeForCategory(category: Category): EventType {
     if (category === "audio") return "generate.audio";
     if (category === "embedding") return "generate.embedding";
     if (category === "realtime") return "generate.realtime";
-    if (category === "text") return "generate.text";
+    // Decision models are billed, cached and tracked as text, the way video
+    // shares image events.
+    if (category === "text" || category === "decision") return "generate.text";
     return "generate.image";
 }
 
-function supportedEndpointsForEventType(eventType: EventType): string[] {
-    if (eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
-    if (eventType === "generate.audio") {
-        return ["/audio/{text}", "/v1/audio/speech"];
+function supportedEndpointsForCategory(category: Category): string[] {
+    if (category === "text" || category === "decision") {
+        return TEXT_MODEL_ENDPOINTS;
     }
-    if (eventType === "generate.embedding") return ["/v1/embeddings"];
-    if (eventType === "generate.realtime") {
-        return ["/realtime", "/v1/realtime"];
-    }
+    if (category === "audio") return ["/audio/{text}", "/v1/audio/speech"];
+    if (category === "embedding") return ["/v1/embeddings"];
+    if (category === "realtime") return ["/realtime", "/v1/realtime"];
+    // Video and 3D models share the image billing event but are served by
+    // their own native routes.
+    if (category === "video") return VIDEO_MODEL_ENDPOINTS;
+    if (category === "3d") return MODEL3D_ENDPOINTS;
     return IMAGE_MODEL_ENDPOINTS;
 }
 
 const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const definition = getRegistryModelDefinition(modelName);
     const eventType = eventTypeForCategory(definition.category);
-    const supportedEndpoints =
+    const endpoints =
         definition.supportedEndpoints ??
-        supportedEndpointsForEventType(eventType);
+        supportedEndpointsForCategory(definition.category);
+    // Only image models can consume a source image, so others must not
+    // advertise `/v1/images/edits`.
+    const supportedEndpoints = definition.inputModalities?.includes("image")
+        ? endpoints
+        : endpoints.filter((endpoint) => endpoint !== "/v1/images/edits");
     const info = modelInfoFromDefinition(modelName, definition);
     return {
         id: modelName,

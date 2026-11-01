@@ -1,6 +1,7 @@
 import { parseScopeList } from "@shared/auth/authorize-config.ts";
 import { createFileRoute } from "@tanstack/react-router";
 import { Authorize } from "../components/auth/authorize.tsx";
+import { pageTitle } from "../page-meta.ts";
 
 function parseList(val: unknown): string[] | null {
     if (!val || typeof val !== "string") return null;
@@ -21,7 +22,9 @@ export const Route = createFileRoute("/authorize")({
     head: ({ match }) => ({
         meta: [
             {
-                title: `${match.search.user_code ? "Allow your device" : "Allow this app"} | pollinations.ai`,
+                title: pageTitle(
+                    match.search.user_code ? "/device" : "/authorize",
+                ),
             },
         ],
     }),

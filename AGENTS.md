@@ -16,7 +16,7 @@ Catalog fields are defined in `operations/app-management/app.js`; categories and
 
 ## Discord
 
-Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-885844321461485618) — use for Discord MCP tools.
+Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discord MCP tools.
 
 ## Repository Structure
 
@@ -37,7 +37,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
-- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai/keys
+- Auth: `sk_` keys authenticate requests; `pk_` App Keys only identify an app (OAuth `client_id`) and get `401` as a key. Keys: https://enter.pollinations.ai/keys
 - Billing: Pollen credits ($1 ≈ 1 Pollen). API reference: `APIDOCS.md`; service operations: `.claude/skills/enter-services/SKILL.md`.
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
@@ -151,7 +151,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 ## Code Style & Workflow
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
-- Run `npx biome check --write <file>` after edits and before commits.
+- Run `npx @biomejs/biome check --write <file>` after edits and before commits. It runs the repo's own Biome once `npm ci` has installed it; a bare `npx biome` can run an unrelated npm package.
 - Before implementing or resuming work: read the latest accepted decision and current code, verify API assumptions on the web, and check related PRs/issues. Before reviving old work, check its discussion, close reason, and remaining user-visible gap; an absent feature alone is not evidence that it is needed.
 - Reuse existing logic: search `shared/` for auth, queue, registry, SSE parsing, and retry utilities before writing new ones.
 - Use environment variables for credentials; validate input.
@@ -165,6 +165,9 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Maintain project skills in `.claude/skills/`. Expose them to Codex through
   relative directory links in `.agents/skills/`; keep command adapters as
   pointers to their maintained instructions, never copied workflows.
+- Skills from other repos (`grill-me`, `grilling`) stay unedited and pinned in
+  `skills-lock.json`; refresh them with `npx -y skills@1.7.2 add
+  mattpocock/skills --skill grill-me --skill grilling --agent claude-code --copy -y`.
 
 - Don't use `cd` in bash; use `cwd` parameter.
 - Don't create `.md` docs unless asked.
@@ -197,10 +200,9 @@ npx vitest run test/file.test.ts
 
 ## Data-processing documentation maintenance
 
-- Maintain `pollinations.ai/public/legal/SUBPROCESSORS.md`, the Privacy Policy, and the internal draft `operations/legal/DATA_PROCESSING_ADDENDUM.md` when model, fallback, GPU host, region, infrastructure, hosted-tool, logging, caching, retention, training-use, or supplier changes affect personal-data processing. Update them in the same change; an unchanged public model name does not exempt a provider or location change. Keep the draft outside website assets and navigation until its commitments can be supported and an effective agreement is approved.
-- Verify the live route and all intermediaries/fallbacks, contracted legal entity, processing countries, data categories, retention/training settings, written processing terms, and transfer safeguards from operational and contractual evidence. Model publishers, supplier headquarters, and endpoint hostnames are not sufficient evidence. Mark unknowns explicitly; do not invent compliance or publish draft entries as approved.
-- Check the Terms, Privacy Policy, and any applicable customer agreement's notice and objection requirements before a sub-processor addition/replacement or material processing change takes effect. A provider-list edit alone is not customer notice. If an incident requires an urgent change, record and escalate the notice/contract impact to the maintainer; do not silently certify the new arrangement.
-- Keep legal documents as the single source of truth, update their version dates and links when applicable, and obtain legal/operator review before introducing or changing contractual commitments. Pricing-only edits and read-only health checks need no legal edit when processing is unchanged.
+- Update the public provider inventory or Privacy Policy and its Last updated date when a change makes their statements inaccurate. Keep routing details, evidence and unresolved provider reviews in the relevant PR or issue. Update the internal DPA only when its proposed terms, annexes or publication blockers change; keep it outside website assets and navigation until approved.
+- Verify affected recipients, locations, data use, retention, processing terms and transfer safeguards from operational and contractual evidence. Record unknowns; do not present them as verified. A model name, hostname or provider headquarters does not establish where processing occurs.
+- Check applicable contract and notice requirements before recipient changes or other material processing changes take effect. Editing a provider list is not customer notice. Obtain operator/legal review before changing contractual commitments; escalate urgent exceptions to the maintainer.
 
 ## Models & API Changes
 
@@ -215,18 +217,19 @@ npx vitest run test/file.test.ts
 
 ## Workflow Orchestration
 
+- For support email, use `.claude/skills/pollinations-support-triage/SKILL.md`.
 - Plan non-trivial work and re-plan when assumptions change.
 - Delegate only large, independent work; handle small tasks and self-verification locally.
 - For competing community quest implementations, read and follow `.claude/skills/quest-solution-review/SKILL.md`.
 - After a correction, check whether existing guidance already covers it. Propose a narrow update for a repeated pattern or material safety failure; keep one-off product decisions in the relevant issue/PR. Replace superseded guidance instead of adding another rule.
 - Fix reported bugs and failing CI; use logs, errors, or failing tests as evidence.
 
-### Design Questions
+### Grill Plans Before Building
 
-- Before committing to a design, surface unresolved choices that could materially change the user outcome, scope, UX, constraints, or architecture. Ask even when the request is executable if the answer could improve it.
-- Investigate facts available in the codebase or documentation yourself. Ask the user about intent and tradeoffs. Prefer one consequential question at a time; group up to three only when their answers are independent. Give a recommendation and its tradeoff, while allowing another answer.
-- Use each answer to revise the design and subsequent questions. Stop when consequential choices are settled; handle routine, reversible details autonomously. Briefly reflect the resulting design before building.
-- Avoid repeating answered questions or asking for permission already given. Existing safety approval requirements still apply.
+- Use the `grilling` skill often (`.claude/skills/grilling/`; users start it with `/grill-me`). Grill every non-trivial feature, design, API or pricing change, quest, and any plan with open choices, even when the request already looks executable.
+- Look facts up yourself in the code, docs, issues and PRs; ask the user only about intent and tradeoffs. Ask every question that is unblocked now in one numbered round, each with your recommended answer, then let the answers shape the next round.
+- Keep working on parts that don't depend on the answers. Decide routine, reversible details yourself, and briefly restate the settled design before building.
+- Don't repeat answered questions or ask for permission already given. Existing approval and safety rules still apply.
 
 ## Compact Instructions
 

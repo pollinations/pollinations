@@ -1,22 +1,12 @@
 import { Dialog } from "@pollinations/ui";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import {
-    adjectives,
-    animals,
-    uniqueNamesGenerator,
-} from "unique-names-generator";
+import { generateFunName } from "../../lib/fun-name.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
+import { DEFAULT_LOCALHOST_REDIRECT } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
-
-/**
- * Pre-filled callback for app keys so local dev works out of the box. Loopback
- * ports are wildcarded (RFC 8252 §7.3), so only the path needs editing. The
- * dev sees it in the editor and should remove it before production.
- */
-const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
@@ -25,15 +15,6 @@ type ApiKeyDialogProps = {
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
     simplified?: boolean;
 };
-
-function generateFunName(): string {
-    return uniqueNamesGenerator({
-        dictionaries: [adjectives, animals],
-        separator: "-",
-        length: 2,
-        style: "lowerCase",
-    });
-}
 
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
@@ -157,7 +138,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             <KeyDialogContent
                 mode="create"
                 app={simplified}
-                publishable={simplified}
                 name={name}
                 onNameChange={setName}
                 permissions={keyPermissions}

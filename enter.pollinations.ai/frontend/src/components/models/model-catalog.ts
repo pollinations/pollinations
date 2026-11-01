@@ -1,5 +1,6 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
+import { trackedFetch } from "../../lib/outage.ts";
 import { formatPriceFlat, formatPricePer1M } from "./formatters.ts";
 import type { ModelCategory, ModelPrice, ModelPriceLine } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
@@ -70,7 +71,7 @@ async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     const catalogUrl = new URL(url);
     // Keep the full accessible catalog so the search bar can offer status:all.
     catalogUrl.searchParams.set("reliability", "all");
-    const response = await fetch(catalogUrl, {
+    const response = await trackedFetch(catalogUrl, {
         cache: "no-store",
         signal: AbortSignal.timeout(15_000),
     });
@@ -119,10 +120,7 @@ export const getCatalogDescriptionWithoutName = (
     if (prefix && description.startsWith(prefix)) {
         return description.slice(prefix.length).trim() || undefined;
     }
-    const parts = description.split(" - ");
-    return parts.length >= 2
-        ? parts.slice(1).join(" - ").trim() || undefined
-        : description;
+    return description;
 };
 
 function priceNumber(pricing: ApiPricing | undefined, field: PriceField) {
@@ -182,6 +180,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         community: model.community,
         health: model.health,
         agent: model.agent,
+        verified: model.verified,
         baseModel: model.base_model,
         perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),

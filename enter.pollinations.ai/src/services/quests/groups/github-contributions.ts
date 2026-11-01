@@ -1,3 +1,5 @@
+import { getLogger } from "@logtape/logtape";
+import { MAX_REWARD_AMOUNT } from "@shared/billing/rewards.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -42,6 +44,18 @@ const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
 // A GitHub user also owns the login "pollinations-ai", so the type must be Bot.
 const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
+
+// The GitHub App's GraphQL budget is 5,000 points an hour, and listing the
+// POLLEN-QUEST issues costs about 10. The catalog and every user's quest check
+// share one copy, fetched at most once per window. When GitHub fails (e.g. rate
+// limited), the last copy keeps serving and the next fetch waits a window.
+// ponytail: refreshes are not coordinated, so a burst or another location can
+// fetch again before the new copy is visible. Move the list to a Durable Object
+// if those refreshes exhaust the budget.
+const QUEST_ISSUES_CACHE_KEY = "quests:github-issues:v1";
+const QUEST_ISSUES_CACHE_MS = 5 * 60 * 1000;
+
+const log = getLogger(["enter", "quests"]);
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
 // Each survey issue form applies its label; responders can rename the title.
@@ -131,6 +145,10 @@ const honeyCensusQuest: QuestDefinition = {
     rewardAmount: 5,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new?template=honey-census.yml`,
+    // Paused on 2026-10-21 after 183 respondents: the form is removed and the
+    // card is off the board; answers already given still pay. To reopen,
+    // restore .github/ISSUE_TEMPLATE/honey-census.yml and delete this line.
+    state: "completed",
 };
 
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
@@ -157,8 +175,9 @@ type ClosingPullRequest = {
 };
 
 type CommitAuthorsData = {
-    repository: {
-        pullRequest: {
+    repository: Record<
+        string,
+        {
             commits: {
                 nodes: {
                     commit: {
@@ -166,8 +185,8 @@ type CommitAuthorsData = {
                     };
                 }[];
             };
-        };
-    };
+        }
+    >;
 };
 
 type GitHubIssueNode = {
@@ -231,15 +250,15 @@ query($query:String!,$after:String){
 }`;
 
 // Asked only for app-publish PRs: adding commit authors to the issue search
-// multiplies its rate-limit cost about 200 times.
-const COMMIT_AUTHORS_QUERY = `
-query($number:Int!){
-  repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){
-    pullRequest(number:$number){
-      commits(first:1){ nodes{ commit{ authors(first:5){ nodes{ user{ databaseId } } } } } }
-    }
-  }
-}`;
+// multiplies its rate-limit cost about 200 times. One aliased query covers
+// every app-publish PR for one point; a query per PR cost a point each.
+function commitAuthorsQuery(numbers: number[]): string {
+    const pullRequests = numbers.map(
+        (number) =>
+            `pr${number}:pullRequest(number:${number}){ commits(first:1){ nodes{ commit{ authors(first:5){ nodes{ user{ databaseId } } } } } } }`,
+    );
+    return `query{ repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){ ${pullRequests.join(" ")} } }`;
+}
 
 const FIRST_MERGED_PR_QUERY = `
 query($query:String!){
@@ -286,7 +305,14 @@ async function githubToken(env: CloudflareBindings): Promise<string> {
 
 function parseReward(body: string): number | null {
     const match = body.match(QUEST_REWARD_REGEX);
-    return match ? Number(match[1]) : null;
+    if (!match) return null;
+    const amount = Number(match[1]);
+    // The body is author-editable. An out-of-range amount must not become a
+    // payable quest: recordRewards throws on amounts outside
+    // (0, MAX_REWARD_AMOUNT], and one throw fails the whole quest check.
+    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_REWARD_AMOUNT)
+        return null;
+    return amount;
 }
 
 // Pull a short human description out of the issue body: prefer a Goal/Scope
@@ -345,15 +371,23 @@ function githubIds(users: (GitHubUser | null)[]): number[] {
 // bot has no Pollinations account, so only the submitter can be paid.
 async function commitAuthorIds(
     token: string,
-    number: number,
-): Promise<number[]> {
-    const data = await graphql<CommitAuthorsData>(token, COMMIT_AUTHORS_QUERY, {
-        number,
-    });
-    return githubIds(
-        data.repository.pullRequest.commits.nodes.flatMap((node) =>
-            node.commit.authors.nodes.map((author) => author.user),
-        ),
+    numbers: number[],
+): Promise<Map<number, number[]>> {
+    if (numbers.length === 0) return new Map();
+    const data = await graphql<CommitAuthorsData>(
+        token,
+        commitAuthorsQuery(numbers),
+        {},
+    );
+    return new Map(
+        numbers.map((number) => [
+            number,
+            githubIds(
+                data.repository[`pr${number}`].commits.nodes.flatMap((node) =>
+                    node.commit.authors.nodes.map((author) => author.user),
+                ),
+            ),
+        ]),
     );
 }
 
@@ -404,21 +438,46 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
             (issue) =>
                 issue.state === "OPEN" || mergedClosers(issue).length > 0,
         );
-    const appPublishPrs = filteredIssues
-        .flatMap(mergedClosers)
-        .filter(isAppPublishPr)
-        .map((pr) => pr.number);
-    const appPublishPayees = new Map(
-        await Promise.all(
-            appPublishPrs.map(
-                async (number) =>
-                    [number, await commitAuthorIds(token, number)] as const,
-            ),
-        ),
+    const appPublishPrs = new Set(
+        filteredIssues
+            .flatMap(mergedClosers)
+            .filter(isAppPublishPr)
+            .map((pr) => pr.number),
     );
+    const appPublishPayees = await commitAuthorIds(token, [...appPublishPrs]);
     return filteredIssues
         .map((issue) => toDerivedQuestIssue(issue, appPublishPayees))
         .filter((issue) => issue.rewardAmount !== null);
+}
+
+async function cachedQuestIssues(
+    env: CloudflareBindings,
+): Promise<DerivedQuestIssue[]> {
+    const cached = await env.KV.get<{
+        issues: DerivedQuestIssue[];
+        checkedAt: number;
+    }>(QUEST_ISSUES_CACHE_KEY, "json");
+    if (cached && Date.now() - cached.checkedAt < QUEST_ISSUES_CACHE_MS) {
+        return cached.issues;
+    }
+
+    let issues: DerivedQuestIssue[];
+    try {
+        issues = await loadQuestIssues(await githubToken(env));
+    } catch (error) {
+        if (!cached) throw error;
+        log.warn("Serving cached quest issues; GitHub failed: {error}", {
+            error,
+        });
+        issues = cached.issues;
+    }
+    await env.KV.put(
+        QUEST_ISSUES_CACHE_KEY,
+        JSON.stringify({ issues, checkedAt: Date.now() }),
+    ).catch((error) =>
+        log.warn("Quest issue cache write failed: {error}", { error }),
+    );
+    return issues;
 }
 
 function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
@@ -440,7 +499,7 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
 export async function listQuestCards(
     ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
-    const issues = await loadQuestIssues(await githubToken(ctx.env));
+    const issues = await cachedQuestIssues(ctx.env);
     return [
         questToCard(firstMergedPrQuest),
         questToCard(reportedIssueQuest),
@@ -568,7 +627,7 @@ export async function evaluateUser(
     const token = await githubToken(ctx.env);
     const [issues, mergedPr, reportedIssues, beeCensus, honeyCensus] =
         await Promise.all([
-            loadQuestIssues(token),
+            cachedQuestIssues(ctx.env),
             hasMergedPr(token, user),
             reportedIssueProposals(token, user),
             answeredSurvey(token, user, BEE_CENSUS),

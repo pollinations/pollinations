@@ -82,8 +82,8 @@ const REQUIRED = {
     revenue: "Revenue (Stripe)",
     dailyRevenue: "Revenue (daily Stripe)",
     dailyRegistrations: "Daily signups (D1 snapshot)",
-    // A failed GitHub call returns an empty list, which is indistinguishable
-    // from a week with no submissions unless we name it here.
+    // An empty list is indistinguishable from weeks with no submissions
+    // unless we name it here.
     appSubmissions: "GitHub (app submissions)",
 };
 
@@ -154,6 +154,7 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                 );
                 mergeInto(weekMap, raw.registrations, (row) => ({
                     registrations: row.registrations,
+                    googleSignups: row.google,
                 }));
                 // WAU counts users we actually served. A 402 is an out-of-Pollen
                 // rejection — no provider ran, nothing was billed — so counting it

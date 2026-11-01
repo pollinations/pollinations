@@ -18,23 +18,17 @@ const modelSchema = (defaultModel: string) =>
                 "Model to use. See /image/models for the current canonical IDs and aliases.",
         });
 
-const GenerateImageRequestQueryParamsBaseSchema = z.object({
+export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: modelSchema(DEFAULT_IMAGE_MODEL),
-    width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
+    width: z.coerce.number().int().positive().optional().default(1024).meta({
         description:
             "Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
     }),
-    height: z.coerce
-        .number()
-        .int()
-        .nonnegative()
-        .optional()
-        .default(1024)
-        .meta({
-            description:
-                "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
-        }),
+    height: z.coerce.number().int().positive().optional().default(1024).meta({
+        description:
+            "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
+    }),
     seed: z.coerce
         .number()
         .int()
@@ -59,9 +53,12 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .string()
         .transform((value: string) => {
             if (!value) return undefined;
-            // Support both pipe (|) and comma (,) separators
-            // Prefer pipe separator if present, otherwise use comma
-            return value.includes("|") ? value.split("|") : value.split(",");
+            // Support both pipe (|) and comma (,) separators. Prefer pipe if
+            // present; otherwise split only on commas that start a new URL, so
+            // commas inside a URL (e.g. Cloudinary transforms) are kept.
+            return value.includes("|")
+                ? value.split("|")
+                : value.split(/,(?=https?:\/\/)/);
         })
         .optional()
         .refine(
@@ -123,7 +120,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     transparent: BooleanQueryParamSchema.optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",
+            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`; other models return 400.",
     }),
 
     // Video-specific params
@@ -136,35 +133,19 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s.",
+            "Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default.",
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`.",
+            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`.",
     }),
     audio: BooleanQueryParamSchema.optional().meta({
         description:
-            "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
+            "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `black-forest-labs/flux-3-max` generates audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
     }),
 });
 
-const validateDuration = (
-    params: z.infer<typeof GenerateImageRequestQueryParamsBaseSchema>,
-    ctx: z.RefinementCtx,
-) => {
-    if (params.duration !== undefined && params.duration > 30) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["duration"],
-            message: "Duration above 30 seconds is not supported.",
-        });
-    }
-};
-
-export const GenerateImageRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.superRefine(validateDuration);
-
 export const GenerateVideoRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.extend({
+    GenerateImageRequestQueryParamsSchema.extend({
         model: modelSchema("google/veo-3.1-fast"),
-    }).superRefine(validateDuration);
+    });

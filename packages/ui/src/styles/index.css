@@ -15,6 +15,11 @@
 @import "../modules/wallet/styles.css";
 @import "./theme.css";
 
+/* Ark keeps closed parts mounted; host apps need not import preflight. */
+[data-scope][hidden]:not([hidden="until-found" i]) {
+    display: none !important;
+}
+
 .polli-scrollbar-subtle {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
@@ -106,8 +111,8 @@
 .polli-textarea:focus,
 .polli-textarea:focus-visible {
     border-color: var(--polli-color-border);
-    outline: none;
-    box-shadow: 0 0 0 1px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: -1px;
 }
 
 .polli-input-shell {
@@ -119,7 +124,8 @@
 
 .polli-input-shell:focus-within {
     border-color: var(--polli-color-border);
-    box-shadow: 0 0 0 1px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: -1px;
 }
 
 .polli-input-shell > .polli-input,
@@ -127,6 +133,7 @@
 .polli-input-shell > .polli-input:focus-visible {
     background-color: transparent;
     border-color: transparent;
+    outline: none;
     box-shadow: none;
 }
 
@@ -135,10 +142,7 @@
 .polli-input[data-error="true"],
 .polli-input[data-invalid],
 .polli-textarea[data-error="true"],
-.polli-textarea[data-invalid] {
-    border-color: var(--polli-color-danger-border);
-}
-
+.polli-textarea[data-invalid],
 .polli-input[data-error="true"]:focus,
 .polli-input[data-error="true"]:focus-visible,
 .polli-input[data-invalid]:focus,
@@ -148,7 +152,7 @@
 .polli-textarea[data-invalid]:focus,
 .polli-textarea[data-invalid]:focus-visible {
     border-color: var(--polli-color-danger-border);
-    box-shadow: 0 0 0 1px var(--polli-color-danger-border);
+    outline-color: var(--polli-color-danger-text);
 }
 
 .polli-textarea {
@@ -187,13 +191,15 @@
     outline: none;
 }
 
+/* A ring outside the shape, so a focused filled button never reads as an
+   outlined one. */
 .polli-control:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: 2px;
 }
 
 .polli-control[data-intent="danger"]:focus-visible {
-    box-shadow: 0 0 0 2px var(--polli-color-danger-border);
+    outline-color: var(--polli-color-danger-text);
 }
 
 /* Touch screens: every control gets at least a 44px tap area, without
@@ -258,11 +264,6 @@
     opacity: 0.6;
 }
 
-.polli-slider:focus-visible {
-    box-shadow: 0 0 0 2px var(--polli-slider-fill-value),
-        0 0 0 4px var(--polli-color-surface-white);
-}
-
 .polli-slider::-webkit-slider-runnable-track {
     height: 0.5rem;
     border-radius: 9999px;
@@ -293,6 +294,27 @@
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
     transition: transform 150ms ease;
+}
+
+/* Focus rings the thumb, not the track. */
+.polli-slider:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+        0 0 0 2px var(--polli-color-surface-block),
+        0 0 0 4px var(--polli-color-focus);
+}
+
+.polli-slider:focus-visible::-moz-range-thumb {
+    box-shadow:
+        0 0 0 2px var(--polli-color-surface-block),
+        0 0 0 4px var(--polli-color-focus);
+}
+
+/* Forced colors drop box-shadow, so outline the slider instead. */
+@media (forced-colors: active) {
+    .polli-slider:focus-visible {
+        outline: 2px solid;
+        outline-offset: 2px;
+    }
 }
 
 .polli-slider:hover::-webkit-slider-thumb {

@@ -183,13 +183,15 @@ def inspect_app(app_url):
     if title:
         evidence["title"] = re.sub(r"\s+", " ", unescape(title.group(1))).strip()[:160]
 
-    origin = urlparse(final_url)
-    script_urls = re.findall(r"<script[^>]+src=[\"']([^\"']+)", html, re.I)
-    for source in script_urls[:3]:
+    origin = normalized_origin(urlparse(final_url))
+    # Keep only the app's own scripts before taking three, so libraries loaded
+    # from a CDN ahead of them don't use up the inspection slots.
+    script_urls = []
+    for source in re.findall(r"<script[^>]+src=[\"']([^\"']+)", html, re.I):
         script_url = urljoin(final_url, unescape(source))
-        parsed = urlparse(script_url)
-        if normalized_origin(parsed) != normalized_origin(origin):
-            continue
+        if normalized_origin(urlparse(script_url)) == origin:
+            script_urls.append(script_url)
+    for script_url in script_urls[:3]:
         try:
             _, script = fetch_public_text(script_url, max_bytes=250_000)
             evidence["scripts_checked"] += 1
@@ -212,14 +214,22 @@ def parse_github_repo(repo_url):
     return f"{parts[0]}/{parts[1].removesuffix('.git')}"
 
 
+def repo_folder(repo_url):
+    # A tree/<branch>/<folder> URL points at one app inside a larger repository.
+    # ponytail: assumes a branch name without slashes; reads the default branch.
+    parts = [part for part in urlparse(repo_url).path.split("/") if part]
+    return "/".join(parts[4:]) if parts[2:3] == ["tree"] else ""
+
+
 def inspect_repo(repo_url):
     repo = parse_github_repo(repo_url)
     if not repo:
         return {"provided": bool(repo_url), "valid_github_repo": False}
+    folder = repo_folder(repo_url)
     details = github_api(f"/repos/{repo}")
     readme_text = ""
     try:
-        readme = github_api(f"/repos/{repo}/readme")
+        readme = github_api(f"/repos/{repo}/readme/{folder}".rstrip("/"))
         download_url = readme.get("download_url")
         if download_url:
             readme_text = session.get(download_url, timeout=15).text[:250_000]
@@ -228,7 +238,8 @@ def inspect_repo(repo_url):
     code_matches = None
     code_search_error = None
     try:
-        search = github_api(f"/search/code?q=pollinations+repo:{repo}")
+        path_filter = f"+path:{folder}" if folder else ""
+        search = github_api(f"/search/code?q=pollinations+repo:{repo}{path_filter}")
         code_matches = search.get("total_count", 0)
     except requests.RequestException as error:
         code_search_error = str(error)[:200]
@@ -236,6 +247,7 @@ def inspect_repo(repo_url):
         "provided": True,
         "valid_github_repo": True,
         "repo": repo,
+        "folder": folder,
         "archived": details.get("archived", False),
         "description": details.get("description") or "",
         "pollinations_markers": marker_hits(readme_text),

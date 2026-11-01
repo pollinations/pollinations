@@ -7,6 +7,7 @@ import {
     firstCommunityVideoBytes,
 } from "@shared/community-media.ts";
 import {
+    createErrorResponseSchema,
     ensureUpstreamOk,
     getErrorCodesForStatus,
     handleError,
@@ -68,126 +69,132 @@ function createTextTestApp() {
 }
 
 describe("error observability", () => {
-    it.each([
-        "error",
-        "string",
-        "long",
-    ])("logs a bounded %s cause only in internal telemetry", async (kind) => {
-        const cause =
-            kind === "string"
-                ? "original failure"
-                : Object.assign(new Error("original failure"), {
-                      retryable: true,
-                      unrelated: "must-not-be-serialized",
-                  });
-        if (cause instanceof Error) {
-            cause.cause = cause;
-            if (kind === "long") cause.stack += "x".repeat(20_000);
-        }
-        const requests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                requests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-        const app = new Hono<Env>();
-        app.use("*", logger);
-        app.get("/", () => {
-            const error = new HTTPException(503, {
-                message: "Temporarily unavailable",
-                cause,
+    it.each(["error", "string", "long"])(
+        "logs a bounded %s cause only in internal telemetry",
+        async (kind) => {
+            const cause =
+                kind === "string"
+                    ? "original failure"
+                    : Object.assign(new Error("original failure"), {
+                          retryable: true,
+                          unrelated: "must-not-be-serialized",
+                      });
+            if (cause instanceof Error) {
+                cause.cause = cause;
+                if (kind === "long") cause.stack += "x".repeat(20_000);
+            }
+            const requests: Request[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    requests.push(new Request(input, init));
+                    return new Response("ok");
+                },
+            );
+            const app = new Hono<Env>();
+            app.use("*", logger);
+            app.get("/", () => {
+                const error = new HTTPException(503, {
+                    message: "Temporarily unavailable",
+                    cause,
+                });
+                error.stack = "wrapper stack".repeat(2_000);
+                throw error;
             });
-            error.stack = "wrapper stack".repeat(2_000);
-            throw error;
-        });
-        app.onError(handleError);
-        const ctx = createExecutionContext();
-        const response = await app.fetch(
-            new Request("https://gen.test/"),
-            {
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "error",
-                LOG_FORMAT: "text",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as unknown as CloudflareBindings,
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        const body = await response.text();
-        expect(response.status).toBe(503);
-        expect(body).toContain("Temporarily unavailable");
-        expect(body).not.toContain("original failure");
-        expect(body).not.toContain("retryable");
-        expect(requests).toHaveLength(1);
-        const event = (await requests[0].json()) as {
-            stack: string;
-            message: string;
-        };
-        expect(event.message).toBe("Temporarily unavailable");
-        expect(event.stack).toContain("original failure");
-        expect(event.stack).not.toContain("must-not-be-serialized");
-        expect(event.stack.length).toBeLessThanOrEqual(12_003);
-        if (kind !== "string") expect(event.stack).toContain("retryable=true");
-    });
+            app.onError(handleError);
+            const ctx = createExecutionContext();
+            const response = await app.fetch(
+                new Request("https://gen.test/"),
+                {
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "error",
+                    LOG_FORMAT: "text",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            const body = await response.text();
+            expect(response.status).toBe(503);
+            expect(body).toContain("Temporarily unavailable");
+            expect(body).not.toContain("original failure");
+            expect(body).not.toContain("retryable");
+            expect(requests).toHaveLength(1);
+            const event = (await requests[0].json()) as {
+                stack: string;
+                message: string;
+            };
+            expect(event.message).toBe("Temporarily unavailable");
+            expect(event.stack).toContain("original failure");
+            expect(event.stack).not.toContain("must-not-be-serialized");
+            expect(event.stack.length).toBeLessThanOrEqual(12_003);
+            if (kind !== "string")
+                expect(event.stack).toContain("retryable=true");
+        },
+    );
 
     it.each([
         ["image", firstCommunityImageBytes],
         ["video", firstCommunityVideoBytes],
-    ] as const)("preserves a retryable community %s failure when its error body cannot be read", async (kind, readMedia) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
-                new ReadableStream({
-                    start(controller) {
-                        controller.error(
-                            new TypeError("invalid compressed data"),
-                        );
-                    },
-                }),
-                { status: 503 },
-            ),
-        );
-        const error = await readMedia(
-            { data: [{ url: "https://assets.test/output" }] },
-            "https://provider.test",
-        ).catch((error) => error);
-        expect(error).toBeInstanceOf(UpstreamError);
-        expect(error).toMatchObject({
-            status: 502,
-            upstreamStatus: 503,
-            requestUrl: new URL("https://assets.test/output"),
-            message: `Endpoint ${kind} URL responded 503`,
-            responseBody: undefined,
-        });
-        expect(isRetryableFallbackError(error)).toBe(true);
-    });
+    ] as const)(
+        "preserves a retryable community %s failure when its error body cannot be read",
+        async (kind, readMedia) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(
+                    new ReadableStream({
+                        start(controller) {
+                            controller.error(
+                                new TypeError("invalid compressed data"),
+                            );
+                        },
+                    }),
+                    { status: 503 },
+                ),
+            );
+            const error = await readMedia(
+                { data: [{ url: "https://assets.test/output" }] },
+                "https://provider.test",
+            ).catch((error) => error);
+            expect(error).toBeInstanceOf(UpstreamError);
+            expect(error).toMatchObject({
+                status: 502,
+                upstreamStatus: 503,
+                requestUrl: new URL("https://assets.test/output"),
+                message: `Endpoint ${kind} URL responded 503`,
+                responseBody: undefined,
+            });
+            expect(isRetryableFallbackError(error)).toBe(true);
+        },
+    );
 
     it.each([
         "ContentModerationError",
         "content_policy_violation",
         "content_safety_violation",
         "The output audio may be related to copyright restrictions",
-    ])("classifies provider code/type %s without rewriting its body", async (type) => {
-        const responseBody = JSON.stringify({
-            error: { type, message: "Request rejected" },
-        });
-        const error = await ensureUpstreamOk(
-            new Response(responseBody, { status: 403 }),
-            "https://provider.test",
-        ).catch((error) => error);
-        expect(isRetryableFallbackError(error)).toBe(false);
-        try {
-            throwImageError(error);
-        } catch (caught) {
-            expect(caught).toMatchObject({
-                status: 422,
-                errorCode: "content_policy_violation",
-                responseBody,
+    ])(
+        "classifies provider code/type %s without rewriting its body",
+        async (type) => {
+            const responseBody = JSON.stringify({
+                error: { type, message: "Request rejected" },
             });
-        }
-    });
+            const error = await ensureUpstreamOk(
+                new Response(responseBody, { status: 403 }),
+                "https://provider.test",
+            ).catch((error) => error);
+            expect(isRetryableFallbackError(error)).toBe(false);
+            try {
+                throwImageError(error);
+            } catch (caught) {
+                expect(caught).toMatchObject({
+                    status: 422,
+                    errorCode: "content_policy_violation",
+                    responseBody,
+                });
+            }
+        },
+    );
 
     it("does not classify echoed prompt words as an image moderation failure", async () => {
         const responseBody = JSON.stringify({
@@ -207,63 +214,66 @@ describe("error observability", () => {
         ["image", throwImageError],
         ["3D", throw3dError],
         ["text", throwTextError],
-    ] as const)("returns complete provider bodies through the %s boundary", async (_name, throwError) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
-        const message = `Provider diagnostic ${"x".repeat(20000)} END`;
-        const body = JSON.stringify(
-            {
-                error: {
-                    message,
-                    diagnostic: {
-                        token: "provider-test-token",
-                        extra: [1, 2, 3],
+    ] as const)(
+        "returns complete provider bodies through the %s boundary",
+        async (_name, throwError) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+            const message = `Provider diagnostic ${"x".repeat(20000)} END`;
+            const body = JSON.stringify(
+                {
+                    error: {
+                        message,
+                        diagnostic: {
+                            token: "provider-test-token",
+                            extra: [1, 2, 3],
+                        },
                     },
                 },
-            },
-            null,
-            2,
-        );
-        const app = new Hono<Env>();
-        app.use("*", logger);
-        app.get("/", async () => {
-            try {
-                await ensureUpstreamOk(
-                    new Response(body, { status: 429 }),
-                    "https://provider.test/generate",
-                );
-            } catch (error) {
-                throwError(error as UpstreamError);
-            }
-            return new Response("unexpected success");
-        });
-        app.onError(handleError);
-        const ctx = createExecutionContext();
-        const response = await app.fetch(
-            new Request("https://gen.test/"),
-            {
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "error",
-                LOG_FORMAT: "text",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as unknown as CloudflareBindings,
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(502);
-        expect(await response.json()).toMatchObject({
-            status: 502,
-            error: {
-                message,
-                details: {
-                    upstreamStatus: 429,
-                    upstreamHost: "provider.test",
-                    upstreamBody: body,
+                null,
+                2,
+            );
+            const app = new Hono<Env>();
+            app.use("*", logger);
+            app.get("/", async () => {
+                try {
+                    await ensureUpstreamOk(
+                        new Response(body, { status: 429 }),
+                        "https://provider.test/generate",
+                    );
+                } catch (error) {
+                    throwError(error as UpstreamError);
+                }
+                return new Response("unexpected success");
+            });
+            app.onError(handleError);
+            const ctx = createExecutionContext();
+            const response = await app.fetch(
+                new Request("https://gen.test/"),
+                {
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "error",
+                    LOG_FORMAT: "text",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(502);
+            expect(await response.json()).toMatchObject({
+                status: 502,
+                error: {
+                    message,
+                    details: {
+                        upstreamStatus: 429,
+                        upstreamHost: "provider.test",
+                        upstreamBody: body,
+                    },
                 },
-            },
-        });
-    });
+            });
+        },
+    );
 
     it.each([
         `plain provider error\n${"x".repeat(20000)}`,
@@ -290,20 +300,23 @@ describe("error observability", () => {
         [429, 502],
         [503, 503],
         [524, 502],
-    ])("maps provider %s to public %s without changing its body", (upstreamStatus, status) => {
-        const responseBody = '{"detail":"original provider detail"}';
-        expect(
-            UpstreamError.fromProvider(upstreamStatus, {
-                message: responseBody,
+    ])(
+        "maps provider %s to public %s without changing its body",
+        (upstreamStatus, status) => {
+            const responseBody = '{"detail":"original provider detail"}';
+            expect(
+                UpstreamError.fromProvider(upstreamStatus, {
+                    message: responseBody,
+                    responseBody,
+                }),
+            ).toMatchObject({
+                status,
+                upstreamStatus,
                 responseBody,
-            }),
-        ).toMatchObject({
-            status,
-            upstreamStatus,
-            responseBody,
-            message: responseBody,
-        });
-    });
+                message: responseBody,
+            });
+        },
+    );
 
     it("preserves raw diagnostics when classifying image validation and moderation", () => {
         for (const [body, expectedStatus, code] of [
@@ -355,32 +368,40 @@ describe("error observability", () => {
         });
     });
 
-    it.each([
-        "KEY_BUDGET_EXHAUSTED",
-        "INSUFFICIENT_BALANCE",
-    ] as const)("preserves the payment reason %s in the 402 envelope", async (code) => {
-        const app = new Hono<Env>();
-        app.use("*", logger);
-        app.get("/", () => {
-            throw new PaymentRequiredError(code, "Actionable payment guidance");
-        });
-        app.onError(handleError);
-        const response = await app.fetch(
-            new Request("https://gen.test/"),
-            {
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "error",
-                LOG_FORMAT: "text",
-            } as unknown as CloudflareBindings,
-            createExecutionContext(),
-        );
-        expect(response.status).toBe(402);
-        expect(await response.json()).toMatchObject({
-            status: 402,
-            error: { code, message: "Actionable payment guidance" },
-        });
-        expect(getErrorCodesForStatus(402)).toContain(code);
-    });
+    it.each(["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"] as const)(
+        "preserves the payment reason %s and its fix link in the 402 envelope",
+        async (code) => {
+            const app = new Hono<Env>();
+            app.use("*", logger);
+            app.get("/", () => {
+                throw new PaymentRequiredError(
+                    code,
+                    "Actionable payment guidance",
+                    "https://enter.test/top-up",
+                );
+            });
+            app.onError(handleError);
+            const response = await app.fetch(
+                new Request("https://gen.test/"),
+                {
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "error",
+                    LOG_FORMAT: "text",
+                } as unknown as CloudflareBindings,
+                createExecutionContext(),
+            );
+            expect(response.status).toBe(402);
+            expect(await response.json()).toMatchObject({
+                status: 402,
+                error: {
+                    code,
+                    message: "Actionable payment guidance",
+                    fixUrl: "https://enter.test/top-up",
+                },
+            });
+            expect(getErrorCodesForStatus(402)).toContain(code);
+        },
+    );
 
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];
@@ -725,7 +746,8 @@ describe("error observability", () => {
             success: false,
             error: {
                 code: "INTERNAL_ERROR",
-                message: "pre-logger failure",
+                message:
+                    "Oh snap, something went wrong on our end. We're on it!",
             },
         });
 
@@ -740,6 +762,64 @@ describe("error observability", () => {
             status: 500,
             error_class: "Error",
         });
+    });
+
+    it("redacts a database error's SQL text and bound params from the 500 body", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        // Drizzle/D1 failures carry the query and its params in the message.
+        const leaked =
+            'Failed query: select "apikey"."key" from "apikey" where "apikey"."key" = ?\nparams: 0123456789abcdef';
+
+        const app = new Hono<Env>();
+        app.get("/db-failure", () => {
+            throw new Error(leaked);
+        });
+        // A text request's agent lookup fails inside the text boundary, which
+        // wraps the same message in an UpstreamError 500.
+        app.get("/wrapped-db-failure", () => throwTextError(new Error(leaked)));
+        app.onError(handleError);
+
+        for (const path of ["/db-failure", "/wrapped-db-failure"]) {
+            const ctx = createExecutionContext();
+            const response = await app.fetch(
+                new Request(`https://gen.pollinations.ai${path}`),
+                {
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+
+            expect(response.status).toBe(500);
+            const body = (await response.json()) as {
+                error: { message: string; code: string };
+            };
+            expect(body.error).toMatchObject({
+                code: "INTERNAL_ERROR",
+                message:
+                    "Oh snap, something went wrong on our end. We're on it!",
+            });
+            expect(JSON.stringify(body)).not.toContain("apikey");
+            expect(JSON.stringify(body)).not.toContain("params:");
+        }
+
+        expect(tinybirdRequests).toHaveLength(2);
+        for (const request of tinybirdRequests) {
+            const payload = (await request.json()) as Record<string, unknown>;
+            expect(payload.message).toBe(leaked);
+        }
     });
 
     it("maps text provider 429 to an actionable server error", async () => {
@@ -1188,5 +1268,45 @@ describe("error observability", () => {
         expect(fetchRequests[0].url).toBe(
             "https://openrouter.ai/api/v1/chat/completions",
         );
+    });
+});
+
+describe("published 400 error schema", () => {
+    it("accepts upstream details", () => {
+        const result = createErrorResponseSchema(400).safeParse({
+            status: 400,
+            success: false,
+            error: {
+                code: "BAD_REQUEST",
+                message:
+                    "The image URL must be a valid and downloadable URL or look like data:<MIMEType>;base64,<YOUR-BASE64-CONTENT>",
+                timestamp: new Date().toISOString(),
+                details: {
+                    name: "UpstreamError",
+                    upstreamStatus: 400,
+                    upstreamHost: "openrouter.ai",
+                    upstreamBody: "{}",
+                },
+            },
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it("accepts validation details", () => {
+        const result = createErrorResponseSchema(400).safeParse({
+            status: 400,
+            success: false,
+            error: {
+                code: "BAD_REQUEST",
+                message: "Validation failed",
+                timestamp: new Date().toISOString(),
+                details: {
+                    name: "ZodError",
+                    formErrors: [],
+                    fieldErrors: { model: ["Required"] },
+                },
+            },
+        });
+        expect(result.success).toBe(true);
     });
 });

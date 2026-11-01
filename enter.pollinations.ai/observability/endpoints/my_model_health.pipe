@@ -1,0 +1,43 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+One community model's own upstream over the last seven UTC days, for its owner.
+One GROUPING SETS pass returns two kinds of row:
+
+- `failure_group` 0: one row per day with the 2xx (`succeeded`) and 5xx
+  (`failed`) calls the model's upstream answered.
+- `failure_group` 1: one row per 5xx status, error code and host, with
+  `counted` (failures that were the final answer to a caller; the rest were
+  retried), calls from Pollinations checks and from the owner, and the latest
+  message.
+
+Fallback attempts are excluded: they ran on another owner's model, whose host
+and errors are not this owner's to see. `host` is the upstream hostname Gen
+recorded, empty when the failure has none. Caller identities are never returned.
+
+NODE endpoint
+SQL >
+    %
+    SELECT
+        toDate(start_time) AS day,
+        response_status AS status,
+        error_response_code AS code,
+        if(error_source = 'undefined', '', error_source) AS host,
+        GROUPING(day) AS failure_group,
+        countIf(response_status < 300) AS succeeded,
+        countIf(response_status >= 500) AS failed,
+        countIf(is_final) AS counted,
+        countIf(traffic_group = 'operations') AS from_pollinations,
+        countIf(user_id = {{String(owner_user_id, required=True)}}) AS from_owner,
+        max(start_time) AS last_at,
+        argMax(substring(error_message, 1, 300), start_time) AS message
+    FROM generation_events_classified
+    WHERE start_time >= toStartOfDay(now() - INTERVAL 6 DAY)
+        AND resolved_model_requested = {{String(model, required=True)}}
+        AND NOT fallback_used
+        AND ((response_status >= 200 AND response_status < 300) OR response_status >= 500)
+    GROUP BY GROUPING SETS ((day), (status, code, host))
+    HAVING failure_group = 0 OR status >= 500
+    ORDER BY failure_group, day, last_at DESC
+
+TYPE endpoint

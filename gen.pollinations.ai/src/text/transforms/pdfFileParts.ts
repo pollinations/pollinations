@@ -29,10 +29,10 @@ type FileShape = (pdf: {
     index: number;
 }) => Record<string, unknown>;
 
-// Portkey maps a Bedrock file part to a Converse document block and sends
-// file_data as its raw bytes; Bedrock rejects a document name with a dot.
+// Portkey maps raw PDF bytes to Anthropic and Bedrock document blocks.
+// Bedrock rejects a document name with a dot.
 // Without a name Portkey sends a random UUID, which breaks prompt caching.
-const bedrockFile: FileShape = ({ data, index }) => ({
+const base64File: FileShape = ({ data, index }) => ({
     file_data: data,
     mime_type: "application/pdf",
     file_name: `document-${index}`,
@@ -49,7 +49,8 @@ const openAIFile: FileShape = ({ data, file }) => {
 };
 
 const FILE_SHAPES: Record<string, FileShape> = {
-    bedrock: bedrockFile,
+    anthropic: base64File,
+    bedrock: base64File,
     "azure-openai": openAIFile,
     openai: openAIFile,
 };

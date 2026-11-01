@@ -28,23 +28,23 @@ describe("community endpoint per-user RPM input", () => {
         expect(isValidPerUserRpm("0")).toBe(false);
     });
 
-    it.each([
-        "responses",
-        "chat_completions",
-    ] as const)("serializes one exact %s text target", (api) => {
-        const payload = toEndpointPayload({
-            ...emptyForm,
-            api,
-            url: " https://example.com/endpoint?version=1 ",
-        });
-        expect(payload).toMatchObject({
-            modality: "text",
-            api,
-            url: "https://example.com/endpoint?version=1",
-        });
-        expect(payload).not.toHaveProperty("baseUrl");
-        expect(payload).not.toHaveProperty("responsesUrl");
-    });
+    it.each(["responses", "chat_completions"] as const)(
+        "serializes one exact %s text target",
+        (api) => {
+            const payload = toEndpointPayload({
+                ...emptyForm,
+                api,
+                url: " https://example.com/endpoint?version=1 ",
+            });
+            expect(payload).toMatchObject({
+                modality: "text",
+                api,
+                url: "https://example.com/endpoint?version=1",
+            });
+            expect(payload).not.toHaveProperty("baseUrl");
+            expect(payload).not.toHaveProperty("responsesUrl");
+        },
+    );
 
     it("keeps media on the base URL contract without a text API choice", () => {
         const payload = toEndpointPayload({

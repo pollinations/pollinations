@@ -46,6 +46,22 @@ const earningsRow = {
 };
 
 describe("accountEarnings", () => {
+    it("preserves the gateway earnings failure message", async () => {
+        // The gateway supplies this diagnostic when its earnings query fails.
+        fetchMock.mockResolvedValue(
+            Response.json(
+                { error: "Failed to fetch earnings data" },
+                { status: 500 },
+            ),
+        );
+
+        await expect(newClient().accountEarnings()).rejects.toMatchObject({
+            name: "PollinationsError",
+            message: "Failed to fetch earnings data",
+            status: 500,
+        });
+    });
+
     it("requests GET /account/earnings and returns the response as-is", async () => {
         const payload = { daily: [earningsRow], perEntity: [earningsRow] };
         fetchMock.mockResolvedValue(makeResponse(payload));

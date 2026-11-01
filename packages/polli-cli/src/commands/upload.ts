@@ -1,4 +1,5 @@
-import { createReadStream } from "node:fs";
+import { createReadStream, statSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { Command } from "commander";
 import { requireKey } from "../lib/api.js";
@@ -47,16 +48,21 @@ export const uploadCommand = new Command("upload")
 
         const size = requireFile(file);
         const mime = mimeTypeFor(file);
+        const body = statSync(file).isFile()
+            ? createReadStream(file)
+            : await readFile(file);
 
         const uploadRequest: RequestInit & { duplex: "half" } = {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${key}`,
                 "Content-Type": mime,
-                "Content-Length": String(size),
+                "Content-Length": String(
+                    Buffer.isBuffer(body) ? body.byteLength : size,
+                ),
                 ...fileNameHeaders(basename(file)),
             },
-            body: createReadStream(file) as unknown as BodyInit,
+            body: body as unknown as BodyInit,
             duplex: "half",
         };
         const res = await fetch(`${MEDIA_URL}/upload`, uploadRequest);

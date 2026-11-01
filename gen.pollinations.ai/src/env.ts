@@ -4,7 +4,6 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
-import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import type { SafetyVariables } from "@/middleware/safety.ts";
 import type { ModelVariables } from "./middleware/model.ts";
 import type { TrackVariables } from "./middleware/track.ts";
@@ -13,13 +12,15 @@ import type { TextVariables } from "./text/types.ts";
 export type Env = {
     Bindings: CloudflareBindings & {
         CODE_AGENTS?: DispatchNamespace;
+        SITES?: DispatchNamespace;
+        SITES_HOST_SUFFIX?: string;
+        DOCS_APP_KEY?: string;
     };
     Variables: RequestIdVariables &
         LoggerVariables &
         ErrorVariables &
         AuthVariables &
         BalanceVariables &
-        FrontendKeyRateLimitVariables &
         GenerationCacheVariables &
         SafetyVariables &
         TrackVariables &

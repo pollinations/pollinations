@@ -84,7 +84,9 @@ export function RetentionTable({ data }) {
                 </Table>
             </div>
             <Text as="p" size="micro" tone="muted">
-                Share of each signup cohort still making requests N weeks later.
+                Users grouped by the UTC week of their first request, including
+                requests rejected for lack of pollen. WN is the share who made a
+                request N weeks later; — until that week ends.
             </Text>
         </Surface>
     );

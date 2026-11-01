@@ -4,7 +4,7 @@ import type { Data } from "../types";
 // month starts. 2025 months are needed because the credit and prepaid-coverage
 // lenses read pre-window rows.
 // Source: https://data-api.ecb.europa.eu/service/data/EXR/M.USD.EUR.SP00.A
-// Verified through August 2026; rounded to four decimal places.
+// Verified through September 2026; rounded to four decimal places.
 const FX_EUR_USD: Record<string, number> = {
     "2025-01": 1.0354,
     "2025-02": 1.0413,
@@ -26,6 +26,7 @@ const FX_EUR_USD: Record<string, number> = {
     "2026-06": 1.1518,
     "2026-07": 1.1417,
     "2026-08": 1.1593,
+    "2026-09": 1.1513,
 };
 
 // CAD→USD cross-rate: ECB monthly USD/EUR divided by monthly CAD/EUR,

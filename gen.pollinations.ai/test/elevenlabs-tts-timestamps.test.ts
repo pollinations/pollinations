@@ -92,69 +92,75 @@ describe("ElevenLabs timestamped TTS", () => {
         it.each([
             ["speech", generateElevenLabsSpeech],
             ["timestamps", generateElevenLabsSpeechWithTimestamps],
-        ] as const)("%s counts Unicode and sends only supported settings", async (_name, generate) => {
-            const fetchMock = vi
-                .spyOn(globalThis, "fetch")
-                .mockResolvedValue(Response.json(providerResponse));
-            const response = await generate({
-                modelName,
-                text: "Hi 😀",
-                voice: "nova",
-                responseFormat: "mp3",
-                seed: 42,
-                apiKey: "test-eleven-key",
-                log,
-            });
-            expect(
-                response.headers.get("x-usage-completion-audio-tokens"),
-            ).toBe("4");
-            const request = new Request(
-                fetchMock.mock.calls[0][0],
-                fetchMock.mock.calls[0][1],
-            );
-            await expect(request.json()).resolves.toEqual({
-                text: "Hi 😀",
-                model_id: modelId,
-                seed: 42,
-                voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-            });
-            await response.arrayBuffer();
-        });
+        ] as const)(
+            "%s counts Unicode and sends only supported settings",
+            async (_name, generate) => {
+                const fetchMock = vi
+                    .spyOn(globalThis, "fetch")
+                    .mockResolvedValue(Response.json(providerResponse));
+                const response = await generate({
+                    modelName,
+                    text: "Hi 😀",
+                    voice: "nova",
+                    responseFormat: "mp3",
+                    seed: 42,
+                    apiKey: "test-eleven-key",
+                    log,
+                });
+                expect(
+                    response.headers.get("x-usage-completion-audio-tokens"),
+                ).toBe("4");
+                const request = new Request(
+                    fetchMock.mock.calls[0][0],
+                    fetchMock.mock.calls[0][1],
+                );
+                await expect(request.json()).resolves.toEqual({
+                    text: "Hi 😀",
+                    model_id: modelId,
+                    seed: 42,
+                    voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+                });
+                await response.arrayBuffer();
+            },
+        );
 
         it.each([
             ["speech", generateElevenLabsSpeech],
             ["timestamps", generateElevenLabsSpeechWithTimestamps],
-        ] as const)("%s classifies provider voice errors without masking missing routes", async (_name, generate) => {
-            const fetchMock = vi.spyOn(globalThis, "fetch");
-            for (const [code, status] of [
-                ["voice_not_found", 400],
-                ["not_found", 502],
-            ] as const) {
-                const body = JSON.stringify({
-                    detail: { status: code, message: "Not found" },
-                });
-                fetchMock.mockResolvedValue(
-                    new Response(body, {
-                        status: 404,
-                        headers: { "content-type": "application/json" },
-                    }),
-                );
-                await expect(
-                    generate({
-                        modelName,
-                        text: "Hi",
-                        voice: "x",
-                        responseFormat: "mp3",
-                        apiKey: "test-eleven-key",
-                        log,
-                    }),
-                ).rejects.toMatchObject({
-                    status,
-                    upstreamStatus: 404,
-                    responseBody: body,
-                });
-            }
-        });
+        ] as const)(
+            "%s classifies provider voice errors without masking missing routes",
+            async (_name, generate) => {
+                const fetchMock = vi.spyOn(globalThis, "fetch");
+                for (const [code, status] of [
+                    ["voice_not_found", 400],
+                    ["not_found", 502],
+                ] as const) {
+                    const body = JSON.stringify({
+                        detail: { status: code, message: "Not found" },
+                    });
+                    fetchMock.mockResolvedValue(
+                        new Response(body, {
+                            status: 404,
+                            headers: { "content-type": "application/json" },
+                        }),
+                    );
+                    await expect(
+                        generate({
+                            modelName,
+                            text: "Hi",
+                            voice: "x",
+                            responseFormat: "mp3",
+                            apiKey: "test-eleven-key",
+                            log,
+                        }),
+                    ).rejects.toMatchObject({
+                        status,
+                        upstreamStatus: 404,
+                        responseBody: body,
+                    });
+                }
+            },
+        );
 
         it("rejects FLAC before calling the speech provider", async () => {
             const fetchMock = vi.spyOn(globalThis, "fetch");

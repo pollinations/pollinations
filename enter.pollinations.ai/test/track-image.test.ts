@@ -200,7 +200,7 @@ test("nanobanana models calculate reasoning token costs", () => {
     );
 });
 
-test("nanobanana image models separate direct costs from public prices", () => {
+test("nanobanana image models are priced at their direct Vertex cost", () => {
     expect(
         requiredCostRate(
             "google/gemini-2.5-flash-image",
@@ -218,13 +218,13 @@ test("nanobanana image models separate direct costs from public prices", () => {
             "google/gemini-2.5-flash-image",
             "completionTextTokens",
         ),
-    ).toBeCloseTo(0.0000025 * 1.055, 12);
+    ).toBeCloseTo(0.0000025, 12);
     expect(
         requiredPriceRate("google/gemini-3-pro-image", "promptTextTokens"),
-    ).toBeCloseTo(0.000002 * 1.055, 12);
+    ).toBeCloseTo(0.000002, 12);
     expect(
         requiredPriceRate("google/gemini-3-pro-image", "promptImageTokens"),
-    ).toBeCloseTo(0.000002 * 1.055, 12);
+    ).toBeCloseTo(0.000002, 12);
 });
 
 test("nanobanana reasoning token event prices use text output rates", () => {

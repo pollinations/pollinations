@@ -19,7 +19,6 @@ const CREDENTIALS_FILE = join(
 
 export interface PolliCredentials {
     apiKey?: string;
-    keyType?: "pk" | "sk";
 }
 
 export const loadCredentials = (): PolliCredentials => {
@@ -58,7 +57,9 @@ export const setKeyOverride = (key: string | undefined) => {
 };
 
 export const resolveApiKey = (flagKey?: string): string | undefined =>
-    flagKey ?? _keyOverride ?? loadCredentials().apiKey;
+    flagKey ??
+    _keyOverride ??
+    (process.env.POLLINATIONS_API_KEY || loadCredentials().apiKey);
 
 export const BASE_URL =
     process.env.POLLINATIONS_BASE_URL ??

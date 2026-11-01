@@ -1,4 +1,3 @@
-import { KeyChip, Surface, Text } from "@pollinations/ui";
 import { AuthModalHeader, AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -12,11 +11,8 @@ import {
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
-import {
-    getKeyAccessContext,
-    isAppKey,
-    isPublishableKey,
-} from "../components/keys/key-type.ts";
+import { KeySubject } from "../components/keys/key-subject.tsx";
+import { getKeyAccessContext, isAppKey } from "../components/keys/key-type.ts";
 import { useAccountBalance } from "../hooks/use-account-balance.ts";
 import {
     parseAppUrl,
@@ -24,6 +20,7 @@ import {
     ReturnToApp,
 } from "../lib/return-to-app.tsx";
 import { updateApiKey } from "../lib/update-api-key.ts";
+import { PAGE_TITLES, pageTitle } from "../page-meta.ts";
 
 type EditKeySearch = {
     id: string;
@@ -37,7 +34,7 @@ type EditKeySearch = {
  */
 export const Route = createFileRoute("/edit-key")({
     head: () => ({
-        meta: [{ title: "Edit access | pollinations.ai" }],
+        meta: [{ title: pageTitle("/edit-key") }],
     }),
     validateSearch: (search: Record<string, unknown>): EditKeySearch => ({
         id: typeof search.id === "string" ? search.id : "",
@@ -56,14 +53,12 @@ function EditKeyPage() {
     const [apiKey, setApiKey] = useState<ApiKey | null | undefined>(undefined);
     const accessContext = apiKey ? getKeyAccessContext(apiKey) : undefined;
     const title = !apiKey
-        ? "Edit access"
+        ? PAGE_TITLES["/edit-key"]
         : accessContext
           ? `Edit ${accessContext} access`
           : isAppKey(apiKey)
-            ? "Edit app key"
-            : isPublishableKey(apiKey)
-              ? "Edit publishable key"
-              : "Edit secret key";
+            ? "Edit app"
+            : "Edit secret key";
     useEffect(() => {
         document.title = `${title} | pollinations.ai`;
     }, [title]);
@@ -99,18 +94,7 @@ function EditKeyPage() {
 
     // The heading follows the loaded key; unknown/loading states stay neutral.
     // The URL only carries the record id, so the card waits for the key row.
-    const subject = apiKey ? (
-        <Surface>
-            <Text size="sm" weight="semibold" tone="strong">
-                {apiKey.name ?? apiKey.id}
-            </Text>
-            {apiKey.start && (
-                <div className="mt-1.5">
-                    <KeyChip prefix={apiKey.start} />
-                </div>
-            )}
-        </Surface>
-    ) : undefined;
+    const subject = apiKey ? <KeySubject apiKey={apiKey} /> : undefined;
 
     if (isPending) return <AuthModalLoading title={title} subject={subject} />;
 
@@ -161,6 +145,7 @@ function EditKeyPage() {
                 title={title}
                 subject={subject}
                 error="Couldn’t load this key. Check that you’re signed in to the account that owns it."
+                errorPaths={["/account/keys"]}
                 balance={balance}
                 topUpHref={topUpHref}
                 actions={

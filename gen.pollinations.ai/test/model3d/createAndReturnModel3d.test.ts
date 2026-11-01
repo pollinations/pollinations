@@ -49,17 +49,20 @@ describe("createAndReturnModel3d dispatch", () => {
         ["microsoft/trellis-2", "api.inferenceport.ai"],
         ["nvidia/asset-harvester", "api.inferenceport.ai"],
         ["hyper3d/rodin-2.5", "queue.fal.run"],
-    ])("routes %s to the expected primary provider host", async (model, expectedHost) => {
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(new Response("{}", { status: 500 }));
+    ])(
+        "routes %s to the expected primary provider host",
+        async (model, expectedHost) => {
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(new Response("{}", { status: 500 }));
 
-        await expect(
-            createAndReturnModel3d("a test prompt", baseParams(model)),
-        ).rejects.toBeTruthy();
+            await expect(
+                createAndReturnModel3d("a test prompt", baseParams(model)),
+            ).rejects.toBeTruthy();
 
-        expect(fetchSpy.mock.calls[0]?.[0]).toContain(expectedHost);
-    });
+            expect(fetchSpy.mock.calls[0]?.[0]).toContain(expectedHost);
+        },
+    );
 
     it("throws for an unrecognized model id", async () => {
         await expect(

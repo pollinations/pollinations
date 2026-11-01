@@ -16,6 +16,8 @@ export type Sandbox = {
     sandboxID: string;
     templateID: string;
     alias?: string;
+    // The dashboard puts the sandbox's name here.
+    metadata?: Record<string, string>;
     state: string;
     cpuCount: number;
     memoryMB: number;
@@ -29,11 +31,13 @@ export interface LogEntry {
     fields: Record<string, string>;
 }
 
-// Paused, not killed, when its paid time runs out.
-export const createSandbox = (templateID: string) =>
+// E2B's largest timeout, about 68 years: polli's "never expires".
+export const KEEP_SECONDS = 2 ** 31 - 1;
+
+export const createSandbox = (templateID: string, timeout = LEASE_SECONDS) =>
     gen<Connection>(`${E2B_PATH}/sandboxes`, {
         method: "POST",
-        body: { templateID, timeout: LEASE_SECONDS, autoPause: true },
+        body: { templateID, timeout, autoPause: true },
     });
 
 // Running and paused ones.
@@ -47,12 +51,28 @@ export const killSandbox = (id: string) =>
     genText(`${E2B_PATH}/sandboxes/${id}`, { method: "DELETE" });
 
 // Resumes a paused sandbox and keeps it running for at least `timeout`
-// seconds, paying in advance for time not yet paid.
+// seconds, paying in advance for time not yet paid. A refusal reads as Gen's
+// sentence, not its JSON, since ssh shows it on one line.
 export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
     gen<Connection>(`${E2B_PATH}/sandboxes/${id}/connect`, {
         method: "POST",
         body: { timeout },
+    }).catch((err) => {
+        let refusal: string | undefined;
+        try {
+            // Gen refuses with E2B's {code, message}.
+            refusal = JSON.parse(err.body).message;
+        } catch {
+            // Not a refusal, such as a network error: keep it as it is.
+        }
+        if (!refusal) throw err;
+        throw new Error(`${refusal}\nSee your sandboxes: polli sandbox list`);
     });
+
+// Paused sandboxes keep their files and memory and cost nothing. A pause ends
+// a timeout over 10 minutes.
+export const pauseSandbox = (id: string) =>
+    genText(`${E2B_PATH}/sandboxes/${id}/pause`, { method: "POST" });
 
 // E2B's system log: sandbox start, and each process started through it.
 export const sandboxLogs = (id: string) =>

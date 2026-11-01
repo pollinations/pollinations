@@ -24,7 +24,10 @@ Account identity:
   its balance transactions.
 - Live accounts: `acct_1SrY3q7rcjS3l7tr` → `pollen`;
   `acct_1QzdqWGHtmCJlpeq` → `kofi`. Verify identities before each collection.
-  The Stripe MCP can read both with explicit `stripe_context` and `livemode: true`.
+  Enumerate the Stripe MCP's currently available contexts before reading. Use
+  explicit `stripe_context` and `livemode: true`; do not assume both accounts
+  are connected. For an unavailable account, use its existing authenticated
+  dashboard and verify the account ID before exporting.
 
 Required credential:
 
@@ -55,7 +58,22 @@ Collection steps:
    `fee` → standalone fees. Include embedded `fee` once (also on reversals and
    FX), including Ko-fi application fees. Exclude payouts and FX principal.
    Reconcile net to included source transactions in integer minor units.
-   Stop on an unreviewed category; never silently omit it.
+   Stop on an unreviewed category; never silently omit it. Fee-category credits
+   reduce fees and may make an account-month-currency fee total negative;
+   preserve that sign and reconcile the result to source net.
+
+Dashboard fallback for calendar-month activity:
+
+- Reports → Balance summary → set the exact date range and UTC timezone.
+- Export Balance change from activity as Itemized CSV, all reporting categories.
+- Include balance transaction ID, Created (UTC), Currency, Gross, Fee, Net,
+  Reporting category and Source ID. Application fee can verify it is already
+  inside Fee; never add it again. Customer names, emails and addresses are not
+  needed for the monthly ledger.
+- Verify the loaded summary totals against the original export and preserve
+  the verified account and period in a sidecar manifest. Archive the original
+  CSV outside Invoices. An EUR-filtered report alone cannot prove other
+  settlement currencies have zero activity.
 
 Known traps:
 
@@ -80,15 +98,27 @@ Economics use:
 
 - Stripe payout cash belongs in `economics_bank_ledger`, category `revenue`, and
   should reconcile to Wise.
-- Reviewed account-month-currency sales belong in `economics_stripe_sales`.
-  Reuse `stripe:<account_id>:<month>:<currency>` as `entry_id` for updates.
+- Staging financial facts belong in `economics_stripe_transactions`, keyed by
+  account and balance-transaction ID. Use `operations/economics/ingest/stripe-sync.mjs`
+  to refresh complete UTC ranges idempotently. Do not append monthly sales summaries.
+  Enter `stripe_event` supplies charge identity, not a second revenue amount.
+  Production still uses the legacy summaries until separately migrated.
 - Set `revenue_stream` to `pollen` or `kofi` from the verified account identity.
 - Set `coverage_end` to the verified exclusive UTC export boundary and
-  `expected_accounts` to the required account count for that month. Record zero
+  `expected_account_ids` in the sync receipt to the required account IDs. Record zero
   activity explicitly; a missing account/export is not a zero. Forecasts require
   complete coverage for every required account through the following month start.
-- Runway P&L separates Pollen/Ko-fi gross sales, refunds, and reversals. Fees
-  belong in Operations. Cash change and balance continue to use Wise payouts.
+- Runway revenue separates Pollen/Ko-fi gross sales, fees, refunds and reversals.
+  Cash change and balance continue to use Wise payouts.
+- For an underlying-performance comparison, classify only explicitly fraudulent
+  refunds/disputes of earlier-month charges and their dispute fees. Keep ordinary
+  fees, current-month fraud and unclassified reversals included. Archive the
+  transaction IDs, reasons and original charge dates; mark the existing
+  `economics_stripe_transactions` rows with `classification=prior_period_fraud`
+  and archived `evidence` links through the named-batch approval gate. Never save
+  a second monthly fraud amount in private configuration. Sync preserves these
+  reviewed fields by account and transaction ID.
+  Sales shows this classification; Trends adds it back without changing actuals.
 - Do not write Stripe activity to `economics_vendor_ledger`.
 
 Official references:

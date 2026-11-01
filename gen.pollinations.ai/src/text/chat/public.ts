@@ -1,10 +1,28 @@
 import { createParser } from "eventsource-parser";
-import type { ChatCompletion } from "../types.ts";
+import type { ChatCompletion, ToolCall } from "../types.ts";
+
+// Gemini signs its tool calls. Clients written for Google's OpenAI-compatible
+// API read and resend the signature from `extra_content.google`.
+function withGoogleSignatures<T extends Record<string, unknown>>(
+    message: T,
+): T {
+    if (!Array.isArray(message.tool_calls)) return message;
+    return {
+        ...message,
+        tool_calls: message.tool_calls.map((call: ToolCall) => {
+            const thought_signature = call?.function?.thought_signature;
+            return typeof thought_signature === "string"
+                ? { ...call, extra_content: { google: { thought_signature } } }
+                : call;
+        }),
+    };
+}
 
 function publicMessage<T extends Record<string, unknown>>(
-    message: T | undefined,
+    input: T | undefined,
 ): T | undefined {
-    if (!message) return message;
+    if (!input) return input;
+    const message = withGoogleSignatures(input);
     const metadata = message.provider_metadata as
         | Record<string, unknown>
         | undefined;
@@ -15,6 +33,34 @@ function publicMessage<T extends Record<string, unknown>>(
         ...message,
         provider_metadata: Object.keys(rest).length ? rest : undefined,
     };
+}
+
+// InferencePort's `payg_*` fields hold its ledger entry, including our account
+// balance.
+export function withoutPayg<T extends object>(value: T): T {
+    return Object.fromEntries(
+        Object.entries(value).filter(([key]) => !key.startsWith("payg_")),
+    ) as T;
+}
+
+// Provider billing fields stay internal: OpenRouter's `cost` and `cost_details`
+// are what it charged us.
+function isPrivateUsageKey(key: string): boolean {
+    return (
+        key === "cost" ||
+        key === "cost_details" ||
+        key === "search_context_size" ||
+        key.startsWith("payg_")
+    );
+}
+
+export function publicUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || !Object.keys(usage).some(isPrivateUsageKey)) return usage;
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => !isPrivateUsageKey(key)),
+    );
 }
 
 // Gateway tool counters stay on the tracking branch, not the client response.
@@ -50,11 +96,14 @@ export function publicChatStream(
                         let data = event.data;
                         if (data.trim() !== "[DONE]") {
                             try {
-                                const chunk = JSON.parse(
-                                    data,
-                                ) as ChatCompletion;
+                                const chunk = withoutPayg(
+                                    JSON.parse(data) as ChatCompletion,
+                                );
                                 data = JSON.stringify({
                                     ...chunk,
+                                    ...(chunk.usage && {
+                                        usage: publicUsage(chunk.usage),
+                                    }),
                                     choices: publicChatChoices(chunk.choices),
                                 });
                             } catch {

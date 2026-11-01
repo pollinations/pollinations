@@ -1,6 +1,6 @@
 /**
  * Zero-dependency SSE stream parser for OpenAI-compatible chat completions.
- * Yields content delta strings as they arrive.
+ * Yields content (or refusal) delta strings as they arrive.
  */
 export async function* streamSSE(
     response: Response,
@@ -18,7 +18,7 @@ export async function* streamSSE(
 
     while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) throw new Error("Stream interrupted before [DONE]");
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
@@ -32,7 +32,7 @@ export async function* streamSSE(
             let parsed: {
                 error?: { message?: string };
                 choices?: {
-                    delta?: { content?: string };
+                    delta?: { content?: string; refusal?: string };
                     finish_reason?: string | null;
                 }[];
                 model?: string;
@@ -49,8 +49,9 @@ export async function* streamSSE(
                 );
             }
             onEvent?.(parsed);
-            const delta = parsed.choices?.[0]?.delta?.content;
-            if (delta) yield delta;
+            const delta = parsed.choices?.[0]?.delta;
+            if (delta?.content) yield delta.content;
+            if (delta?.refusal) yield delta.refusal;
         }
     }
 }

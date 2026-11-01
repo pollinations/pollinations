@@ -48,3 +48,19 @@ Known traps:
   `resource_id` the project, and `resource_sku` the raw line item. Apply the
   central skill's signed `paid`/`credit` convention with funding evidence.
 - Credits/grants can pay usage before cash transactions appear.
+
+## Verified — 2026-10-05
+
+- In the verified organization, Billing → Overview shows the current API
+  balance. Credit grants shows each remaining lot and its displayed expiry;
+  the page title does not establish promotional funding. Match a lot to its
+  original purchase invoice before classifying it as purchased or promotional.
+- Billing history → View opens the original Stripe-hosted invoice. Download
+  both invoice and receipt, verify the billing identity, payment date,
+  currency and card suffix, then archive them before leaving the account.
+- An API-credit purchase is a top-up, not usage expense. Keep the Bank
+  payment, current balance and calendar-month Costs API usage separate.
+- Sum every returned bucket's `results[].amount.value` before declaring a
+  month empty. Early buckets and individual SKUs can be zero while later
+  buckets contain billed usage. Compare the complete export with the
+  effective vendor ledger so collected usage cannot remain unposted unnoticed.

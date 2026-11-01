@@ -1,6 +1,6 @@
 # Data Processing Addendum
 
-**Version: 2026-10-09 — Internal draft; not part of the customer Terms.**
+**Version: 2026-10-15 — Internal draft; not part of the customer Terms.**
 
 This working document is excluded from the website. It is not offered to customers or incorporated into the Terms. Supplier coverage and operational measures have not been established; the public provider disclosure is an inventory, not an approved contractual annex.
 
@@ -14,7 +14,7 @@ This Data Processing Addendum ("DPA") forms part of the [Terms of Service](../..
 
 On publication of the approved version, acceptance of the Terms incorporates this DPA without a separate signature. It applies when Pollinations processes personal data in API prompts, messages, uploaded media, outputs, hosted tools, connected-account actions, sandboxes, or related request data on Customer's behalf ("Customer Data"). Customer is controller, or processor acting on an authorised controller's instructions; Pollinations is processor, or sub-processor respectively. GDPR terms have their GDPR meanings.
 
-Pollinations' independent controller activities, including account administration, payments, accounting, fraud prevention, and its own usage analytics, are described in the [Privacy Policy](../../pollinations.ai/public/legal/PRIVACY_POLICY.md). This DPA does not change those roles. Independently operated community endpoints and customer-selected third-party apps are described separately in the provider register; this DPA does not attest to their practices or establish a processing agreement with them. Pollinations remains responsible for its own processing and for providers it engages as sub-processors.
+Pollinations' independent controller activities, including account administration, payments, accounting, fraud prevention, and its own usage analytics, are described in the [Privacy Policy](../../pollinations.ai/public/legal/PRIVACY_POLICY.md). This DPA does not change those roles. Independently operated community endpoints and customer-selected third-party apps are described in the Privacy Policy; this DPA does not attest to their practices or establish a processing agreement with them. Pollinations remains responsible for its own processing and for providers it engages as sub-processors.
 
 This DPA prevails over conflicting Terms concerning Customer Data. Mandatory law and any applicable transfer clauses prevail over this DPA. The Terms otherwise continue to apply, without restricting statutory rights of data subjects or supervisory authorities.
 
@@ -42,7 +42,7 @@ Pollinations will notify Customer without undue delay after becoming aware of a 
 
 ## 5) Sub-processors
 
-Customer gives general written authorisation for the verified sub-processors listed in the [provider inventory](../../pollinations.ai/public/legal/SUBPROCESSORS.md), for the purposes and locations disclosed there. Entries marked unverified in this draft are an investigation inventory, not an approved list.
+Customer gives general written authorisation for verified sub-processors disclosed before this DPA takes effect, including their purposes and processing locations. The public [provider inventory](../../pollinations.ai/public/legal/SUBPROCESSORS.md) does not establish that verification.
 
 Before engaging a new or replacement sub-processor, Pollinations will give affected Customers at least **14 days' prior notice** through their account contact or an in-product notice that identifies the change and links to its details. Merely editing the register is not notice. Customer may object on reasonable data-protection grounds within that period by contacting **hello@pollinations.ai**. The parties will work to resolve the objection; if they cannot, Customer may stop the affected processing and terminate the affected service before the change takes effect, with a refund of unused prepaid fees attributable to that service.
 
@@ -50,7 +50,7 @@ Pollinations will impose the same data-protection obligations in substance on ea
 
 ## 6) Locations and international transfers
 
-Processing locations depend on the selected route and its fallback chain, as recorded in the provider register. This DPA does not promise EEA-only processing. Customer must confirm that the documented locations meet its requirements before submitting personal data.
+Processing locations depend on the selected route and its fallback chain and must be documented before this DPA takes effect. This DPA does not promise EEA-only processing. Customer must confirm that the documented locations meet its requirements before submitting personal data.
 
 Before transferring Customer Data outside the EEA, Pollinations will establish and document an applicable GDPR Chapter V safeguard, such as an applicable adequacy decision or the European Commission's transfer Standard Contractual Clauses under Decision (EU) 2021/914, with the correct module, completed annexes, transfer assessment, and supplementary measures where required. Pollinations will make relevant safeguard information available to Customer on request, with appropriate redactions.
 
@@ -87,7 +87,7 @@ The following reflects the published Privacy Policy and must be reconciled with 
 - Generated response caches: **typically up to 30 days**. This is not a universal maximum for provider logs or downstream public/browser caches.
 - Uploaded media: a **30-day lifecycle from upload or latest refresh**. A body retrieval refreshes it when the upload is at least 15 days old; actively accessed files can remain longer.
 - Publication blocker: account deletion does not currently identify and purge every untagged media upload. Lifecycle expiry and refresh do not fulfil the termination-deletion obligation in section 7; an effective deletion process is required before this agreement can take effect.
-- Provider prompt, output, safety-review, and request-log retention: **route-specific; verification pending in the register**. No blanket 30-day limit is established.
+- Provider prompt, output, safety-review, and request-log retention: **route-specific; verification pending**. No blanket 30-day limit is established.
 - API usage metadata retained for Pollinations' controller purposes: **typically 24 months**; billing, wallet, and tax records: **up to 7 years where required**. These are not inference-content retention promises.
 - Restricted backups: published policy states a **30–90-day rotation**; coverage and enforcement must be confirmed.
 

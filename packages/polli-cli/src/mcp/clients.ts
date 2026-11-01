@@ -1,5 +1,5 @@
-import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import spawn from "cross-spawn";
 import { isMap, parseDocument } from "yaml";
 import {
     commandExists,
@@ -487,7 +487,7 @@ const jsonClients: McpClientAdapter[] = [
             },
         }),
         preflight: (ctx) => {
-            const result = spawnSync("pi", ["--version"], {
+            const result = spawn.sync("pi", ["--version"], {
                 env: ctx.env,
                 encoding: "utf8",
                 timeout: 5000,
@@ -533,7 +533,7 @@ interface CliTarget {
 }
 
 const run = (command: string, args: string[]) => {
-    const result = spawnSync(command, args, {
+    const result = spawn.sync(command, args, {
         stdio: ["ignore", "pipe", "pipe"],
         encoding: "utf-8",
     });

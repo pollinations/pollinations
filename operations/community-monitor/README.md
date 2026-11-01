@@ -38,7 +38,10 @@ Live-only on the box, never committed:
 - `people_mapping.json` — GitHub↔Discord identity map the agent maintains
   for tagging owners correctly. Contains real Discord user IDs, so it stays
   off git; the agent both reads and appends to it in place on the box.
-- `probe-results.json`, `loop.log` — generated output.
+- `probe-results.json` — generated output.
+- `loop.log` — cycle start/end times and exit status only. Cycles run with
+  `--no-session-persistence` and discard their output, so no transcript or log
+  keeps Discord message text.
 
 ## Provisioning / reproducing the box
 
@@ -211,7 +214,8 @@ success across the latest 50 eligible final requests within seven days. Official
 models, agents, and private owner-only models are unaffected. No minimum sample. No observations
 or unavailable analytics means unknown and visible. Successful fallbacks count
 for the requested model. Final 4xx are excluded; owner requests and monitor
-probes count. The bounded Tinybird query is `model_catalog_health.pipe`.
+probes count. A text answer with prompt tokens but no output
+tokens counts as a failure. The bounded Tinybird query is `model_catalog_health.pipe`.
 Health data is edge-cached for 60 seconds. `reliability=all` (or the
 `Pollinations-Model-Reliability: all` header) bypasses only this filter.
 
@@ -220,7 +224,7 @@ Owners use Private to remove a model from public access; key permissions and
 paid access still apply to public models.
 No stored health flag, daily audit, hide/relist writes or recovery streaks.
 The monitor retains requested diagnostics, protocol warnings, served-model and
-fallback notices, official-model alerts and daily leaderboards. After a daily
+fallback notices, official-model and legacy bridge alerts and daily leaderboards. After a daily
 leaderboard posts, it reports only community models newly filtered from
 discovery and those back in listings since the previous check, with their
 current success rates. The first check records a baseline without posting a

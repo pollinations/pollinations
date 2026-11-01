@@ -428,7 +428,7 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
                 atMs = parcel.expiresMs;
                 reason = "expiry";
             }
-            if (reason) {
+            if (reason && Number.isFinite(new Date(atMs).getTime())) {
                 row.depletionDate = new Date(atMs).toISOString().slice(0, 10);
                 row.depletionReason = reason;
             }
@@ -569,6 +569,8 @@ function balanceFlow(
 
 type ProviderBalanceAnchor = {
     creditTermsKnown: boolean;
+    expiryAssumed: boolean;
+    fundingLots: BalanceFundingLot[];
     cashUsd: number;
     creditUsd: number;
     observedOn: string;
@@ -775,6 +777,10 @@ function providerBalanceAnchors(
             .sort();
         anchors.set(vendor, {
             creditTermsKnown: rows.every((row) => row.termsKnown),
+            expiryAssumed: rows.every(
+                (row) => row.termsKnown || row.expiryAssumed,
+            ),
+            fundingLots: rows.flatMap((row) => row.fundingLots),
             cashUsd: rows.reduce(
                 (sum, row) => sum + toUsd(row.paid, row.currency, row.start),
                 0,
@@ -796,34 +802,58 @@ function providerBalanceAnchors(
 function anchoredCreditDepletion(
     anchor: ProviderBalanceAnchor,
     credit: RunwayRow | null,
-    now: Date,
 ): Pick<ProviderBalanceRow, "creditDepletionDate" | "creditDepletionReason"> {
-    if (anchor.creditUsd <= POOL_EPS_USD || !anchor.creditTermsKnown) {
+    if (
+        anchor.creditUsd <= POOL_EPS_USD ||
+        (!anchor.creditTermsKnown && !anchor.expiryAssumed)
+    ) {
         return { creditDepletionDate: null, creditDepletionReason: null };
     }
-    const candidates: {
-        date: string;
-        reason: "burn" | "expiry";
-    }[] = [];
-    if (credit?.monthlyRateUsd && credit.monthlyRateUsd > 0) {
-        const days =
-            (anchor.creditUsd / credit.monthlyRateUsd) * AVG_DAYS_PER_MONTH;
-        candidates.push({
-            date: new Date(now.getTime() + days * 86_400_000)
-                .toISOString()
-                .slice(0, 10),
-            reason: "burn",
-        });
+    const monthlyRate = credit?.monthlyRateUsd ?? 0;
+    const lots = anchor.fundingLots.map((lot) => ({ ...lot }));
+    const cursor = new Date(`${anchor.observedOn}T00:00:00Z`);
+    const horizon = new Date(cursor);
+    // Cap work and uncertainty: tiny burn must not simulate an unlimited future.
+    // If the checked balance survives ten years, its projected end stays unknown.
+    horizon.setUTCFullYear(horizon.getUTCFullYear() + 10);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+    while (cursor.getTime() <= horizon.getTime()) {
+        const date = cursor.toISOString().slice(0, 10);
+        const daysInMonth = new Date(
+            Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0),
+        ).getUTCDate();
+        const usableBefore = lots.some(
+            (lot) =>
+                lot.creditUsd > 0.005 && (!lot.expiry || lot.expiry >= date),
+        );
+        // The same daily, expiry-aware funding allocation used by Runway.
+        consumeBalanceLots(lots, monthlyRate / daysInMonth, date);
+        if (
+            !lots.some(
+                (lot) =>
+                    lot.creditUsd > 0.005 &&
+                    (!lot.expiry || lot.expiry >= date),
+            )
+        ) {
+            return {
+                creditDepletionDate: usableBefore
+                    ? date
+                    : (lots
+                          .filter(
+                              (lot) =>
+                                  lot.creditUsd > 0.005 &&
+                                  lot.expiry &&
+                                  lot.expiry < date,
+                          )
+                          .map((lot) => lot.expiry)
+                          .sort()
+                          .at(-1) ?? date),
+                creditDepletionReason: usableBefore ? "burn" : "expiry",
+            };
+        }
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
-    if (anchor.creditExpiry) {
-        candidates.push({ date: anchor.creditExpiry, reason: "expiry" });
-    }
-    candidates.sort((a, b) => a.date.localeCompare(b.date));
-    const first = candidates[0];
-    return {
-        creditDepletionDate: first?.date ?? null,
-        creditDepletionReason: first?.reason ?? null,
-    };
+    return { creditDepletionDate: null, creditDepletionReason: null };
 }
 
 // OP Cloud balance snapshots are the only current-balance truth. Ledger flows
@@ -1000,7 +1030,7 @@ export function providerBalanceRows(
         const creditBalanceUsd = anchor?.creditUsd ?? null;
         const anchoredDepletion =
             anchor && balanceCoverage.balanceStatus === "checked"
-                ? anchoredCreditDepletion(anchor, credit, now)
+                ? anchoredCreditDepletion(anchor, credit)
                 : null;
         rows.push({
             vendor,

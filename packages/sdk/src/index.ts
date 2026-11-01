@@ -17,12 +17,11 @@
 
 // Main client class
 export { Pollinations } from "./client.js";
+export { isOutageError } from "./error-response.js";
 // Extra utilities
 export {
     type AudioResponseExt,
     type ChatResponseExt,
-    // Conversation class
-    Conversation,
     // Extended response types with helpers
     type ImageResponseExt,
     type VideoResponseExt,
@@ -39,9 +38,10 @@ export {
     chat,
     chatStream,
     configure,
-    conversation,
     createKey,
     decision,
+    deleteSite,
+    deploySite,
     editImage,
     embeddings,
     generateAudio,
@@ -51,15 +51,14 @@ export {
     generateVideo,
     getBalance,
     getDailyUsage,
-    getImageModels,
     getKeyUsage,
     getModels,
     getProfile,
-    getTextModels,
     getUsage,
     imageGenerate,
     imageUrl,
     listKeys,
+    listSites,
     resetClient,
     revokeKey,
     transcribe,
@@ -73,7 +72,6 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
-
 // Export all types
 export type {
     AccountBalance,
@@ -91,6 +89,8 @@ export type {
     AudioModel,
     AudioResponse,
     AudioSpeechOptions,
+    AudioSpeechWithTimestampsOptions,
+    AudioSpeechWithTimestampsResponse,
     AudioTransformOptions,
     AudioVoice,
     AuthorizeDeviceOptions,
@@ -143,15 +143,24 @@ export type {
     KeyAccountPermission,
     KeyInfo,
     KeyUsageOptions,
+    MediaJobResult,
+    MediaJobStatus,
+    MediaJobSubmission,
     Message,
     MessageContent,
     MessageContentPart,
     MessageRole,
+    Model3dGenerateOptions,
+    Model3dResponse,
     // Models
     ModelCategory,
     ModelInfo,
     ModelInputModality,
+    ModelKind,
     ModelOutputModality,
+    ModelStatusOptions,
+    ModelStatusResponse,
+    ModelStatusRow,
     NoulAnswer,
     NoulQuestion,
     // Config
@@ -162,6 +171,11 @@ export type {
     ResponseFormat,
     ScoreAnswer,
     ScoreQuestion,
+    Site,
+    SiteFile,
+    SitesResponse,
+    SpeechAlignment,
+    SpeechWordTiming,
     TextContentPart,
     TextGenerateOptions,
     // Text
@@ -186,6 +200,5 @@ export type {
     VideoModel,
     VideoResponse,
 } from "./types.js";
-
 // Export runtime constants and the error class
 export { CHAT_ROUTING_CAPABILITIES, PollinationsError } from "./types.js";

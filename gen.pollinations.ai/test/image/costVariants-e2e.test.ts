@@ -27,6 +27,7 @@ type ReplicateCall = {
 function createBillingVariantMocks() {
     const replicateState: { calls: ReplicateCall[] } = { calls: [] };
     const openRouterState: { calls: Record<string, unknown>[] } = { calls: [] };
+    const xaiState: { calls: Record<string, unknown>[] } = { calls: [] };
     const falState = { submissions: 0 };
     return createFetchMock({
         fal: {
@@ -87,6 +88,20 @@ function createBillingVariantMocks() {
             },
             reset: () => {
                 openRouterState.calls = [];
+            },
+        },
+        xai: {
+            state: xaiState,
+            handlerMap: {
+                "api.x.ai": async (request: Request) => {
+                    xaiState.calls.push(
+                        (await request.json()) as Record<string, unknown>,
+                    );
+                    return Response.json({ data: [{ url: OUTPUT_IMAGE_URL }] });
+                },
+            },
+            reset: () => {
+                xaiState.calls = [];
             },
         },
         replicate: {
@@ -265,11 +280,10 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "openrouter");
-    syncImageEnv(
-        { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-        ["OPENROUTER_API_KEY"],
-    );
+    await mocks.enable("tinybird", "xai", "media");
+    syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+        "XAI_API_KEY",
+    ]);
 
     await generate("/v1/images/edits", paidApiKey, {
         method: "POST",
@@ -284,18 +298,12 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
         }),
     });
 
-    expect(mocks.openrouter.state.calls).toEqual([
+    expect(mocks.xai.state.calls).toEqual([
         expect.objectContaining({
-            model: "x-ai/grok-imagine-image-2.0",
+            model: "grok-imagine-image-2.0",
             quality: "low",
-            resolution: "2K",
-            provider: { only: ["xai"], allow_fallbacks: false },
-            input_references: [
-                {
-                    type: "image_url",
-                    image_url: { url: INPUT_IMAGE_URL },
-                },
-            ],
+            resolution: "2k",
+            images: [{ url: INPUT_IMAGE_URL, type: "image_url" }],
         }),
     ]);
     expect(mocks.tinybird.state.events).toHaveLength(1);
@@ -304,11 +312,11 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
         modelUsed: "x-ai/grok-imagine-image-2.0",
         costVariant: "low_2k",
         tokenCountPromptImage: 1,
-        tokenPricePromptImage: 0.01 * 1.055,
+        tokenPricePromptImage: 0.01,
         tokenCountCompletionImage: 1,
-        tokenPriceCompletionImage: 0.06 * 1.055,
-        totalCost: expect.closeTo(0.07 * 1.055, 8),
-        totalPrice: 0.07385,
+        tokenPriceCompletionImage: 0.06,
+        totalCost: expect.closeTo(0.07, 8),
+        totalPrice: 0.07,
     });
 });
 
@@ -335,6 +343,54 @@ test("H3 Max bills reference provider units without inflating video duration", a
         totalPrice: 1.064,
         adjustmentCosts: { "fal.minimax_h3_max.provider_units.v1": 1.064 },
         adjustmentUnits: { "fal.minimax_h3_max.provider_units.v1": 21.28 },
+        isBilledUsage: true,
+    });
+});
+
+// fal's FLUX 3 Max units are resolution-weighted (about 2 per second at 720p,
+// 3.41 at 1080p), so charges use fal's units at fal's live unit price.
+test("FLUX 3 Max bills fal's units at fal's live unit price at 1080p", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal", "media");
+    const response = await generate(
+        `/image/flux-3-max-1080p?model=black-forest-labs/flux-3-max&seed=15392&duration=5&resolution=1080p`,
+        paidApiKey,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-usage-provider-billable-units")).toBe(
+        "21.28",
+    );
+    expect(response.headers.get("x-usage-provider-unit-cost")).toBe("0.05");
+    expect(mocks.fal.state.submissions).toBe(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "black-forest-labs/flux-3-max",
+        costVariant: "1080p",
+        tokenCountCompletionVideoSeconds: 5,
+        totalCost: 1.064,
+        totalPrice: 1.064,
+        isBilledUsage: true,
+    });
+});
+
+test("FLUX 3 Max bills fal's units at the default resolution", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal", "media");
+    const response = await generate(
+        `/image/flux-3-max-720p?model=black-forest-labs/flux-3-max&seed=15392&duration=5`,
+        paidApiKey,
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "black-forest-labs/flux-3-max",
+        tokenCountCompletionVideoSeconds: 5,
+        totalCost: 1.064,
+        totalPrice: 1.064,
         isBilledUsage: true,
     });
 });

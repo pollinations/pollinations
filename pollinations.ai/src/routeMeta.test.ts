@@ -9,23 +9,24 @@ import {
 } from "./routeMeta";
 
 describe("route metadata", () => {
-    test.each(
-        Object.keys(ROUTE_META),
-    )("owns all changing tags for %s", (path) => {
-        const head = routeHead(path);
-        const meta = ROUTE_META[path];
-        const canonical = `https://pollinations.ai${path === "/" ? "" : path}`;
-        expect(head.meta).toEqual([
-            { title: meta.title },
-            { name: "description", content: meta.description },
-            { property: "og:title", content: meta.title },
-            { property: "og:description", content: meta.description },
-            { name: "twitter:title", content: meta.title },
-            { name: "twitter:description", content: meta.description },
-            { property: "og:url", content: canonical },
-        ]);
-        expect(head.links).toEqual([{ rel: "canonical", href: canonical }]);
-    });
+    test.each(Object.keys(ROUTE_META))(
+        "owns all changing tags for %s",
+        (path) => {
+            const head = routeHead(path);
+            const meta = ROUTE_META[path];
+            const canonical = `https://pollinations.ai${path === "/" ? "" : path}`;
+            expect(head.meta).toEqual([
+                { title: meta.title },
+                { name: "description", content: meta.description },
+                { property: "og:title", content: meta.title },
+                { property: "og:description", content: meta.description },
+                { name: "twitter:title", content: meta.title },
+                { name: "twitter:description", content: meta.description },
+                { property: "og:url", content: canonical },
+            ]);
+            expect(head.links).toEqual([{ rel: "canonical", href: canonical }]);
+        },
+    );
 
     test("unknown pages have no canonical URL or stale structured data", () => {
         for (const path of [undefined, "/missing"]) {

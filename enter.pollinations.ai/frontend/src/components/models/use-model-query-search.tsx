@@ -208,6 +208,10 @@ export function useModelQuerySearch({
                 setSearch(cancelledDraft());
                 resetDraft();
             } else if (last) {
+                // Auto-repeat is the tail of a held key that just cleared the
+                // text. It must not arm removal, or clearing a search would
+                // select the last filter.
+                if (event.repeat) return;
                 if (pendingRemoval === last.index) {
                     setSearch(removeModelQueryFilterToken(search, last.index));
                     resetDraft();

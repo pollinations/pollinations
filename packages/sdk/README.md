@@ -229,6 +229,140 @@ inside a `"use client"` component:
   }
   ```
 
+### React generation hooks
+
+`useImageGeneration`, `useTextGeneration`, `useAudioGeneration`,
+`useVideoGeneration`, and `useTranscription` run one request with the signed-in
+user's key and render nothing. Each returns `{ data, isLoading, error, run, rerun, cancel }`.
+Nothing is sent until `run(...)`; calling `run` again cancels the request in
+flight. A logout, a key change, or unmounting cancels it too, so a late response
+never reaches the next user. `cancel()` keeps the last result.
+
+Call `run` from an event handler, not during render.
+
+```tsx
+import { useMemo } from 'react';
+import { useImageGeneration } from '@pollinations/sdk/react';
+
+function ImageButton() {
+  const { data, isLoading, error, run } = useImageGeneration();
+  // Call URL.revokeObjectURL(src) when the result changes to free the blob.
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button disabled={isLoading} onClick={() => run('a red fox', { model: 'black-forest-labs/flux.1-schnell' })}>Generate</button>
+      {error && <p>{error.message}</p>}
+      {src && <img src={src} alt="" />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTextGeneration } from '@pollinations/sdk/react';
+
+function Haiku() {
+  const { data, isLoading, run } = useTextGeneration();
+  return (
+    <>
+      <button disabled={isLoading} onClick={() => run('Write a haiku about rain', { model: 'openai/gpt-5.4-nano' })}>Write</button>
+      <p>{data}</p>
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from 'react';
+import { useAudioGeneration } from '@pollinations/sdk/react';
+
+function Speak() {
+  const { data, run } = useAudioGeneration();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('Hello from Pollinations', { voice: 'nova' })}>Speak</button>
+      {src && <audio src={src} controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from 'react';
+import { useVideoGeneration } from '@pollinations/sdk/react';
+
+function Clip() {
+  const { data, run } = useVideoGeneration();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('a paper boat drifting on a pond', { duration: 4 })}>Render</button>
+      {src && <video src={src} controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTranscription } from '@pollinations/sdk/react';
+
+function Transcribe() {
+  const { data, isLoading, run } = useTranscription();
+  return (
+    <>
+      <input type="file" accept="audio/*" disabled={isLoading} onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) void run(file, { model: 'whisper-large-v3' });
+      }} />
+      <p>{data?.text}</p>
+    </>
+  );
+}
+```
+
+### React chat transport (`useChat`)
+
+`usePollinationsChatTransport` returns a transport for the Vercel AI SDK
+`useChat`. It streams `/v1/responses` from the browser with the signed-in
+user's key. Text arrives as text parts, server-run MCP tool calls arrive as tool
+parts with their results, and `message.metadata.usage` holds the usage of the
+reply. Assistant output is kept in `message.metadata.output` and sent back on
+later turns, preserving server tool results. Stream failures become `error`
+chunks. A rejected request makes the send
+fail, which `useChat` reports as an error. Caller-run function tools are not
+supported.
+
+`ai` is an optional peer dependency; install it, and `@ai-sdk/react`, to use
+`useChat`.
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { usePollinationsChatTransport } from '@pollinations/sdk/react';
+
+function Chat() {
+  const transport = usePollinationsChatTransport({ model: 'openai/gpt-5.4-nano' });
+  const { messages, sendMessage, status } = useChat({ transport });
+  return (
+    <>
+      {messages.map((m) => (
+        <p key={m.id}>{m.role}: {m.parts.map((p) => (p.type === 'text' ? p.text : '')).join('')}</p>
+      ))}
+      <button disabled={status !== 'ready'} onClick={() => sendMessage({ text: 'Hi' })}>Send</button>
+    </>
+  );
+}
+```
+
 ### Managing API keys
 
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
@@ -255,6 +389,26 @@ await revokeKey(created.id);
 
 Without `accountPermissions`, scoped keys can generate media but cannot read account state (balance, usage).
 
+### Hosting static sites
+
+Publish files at `https://<name>.pollinations.app`. Send every file inline, up to 5 MB per request; `index.html` is required. The key needs the `machines` account permission.
+
+```javascript
+import { deploySite, listSites, deleteSite } from '@pollinations/sdk';
+
+const site = await deploySite('my-app', [
+  { file: 'index.html', data: '<h1>Hello</h1><script src="app.js"></script>' },
+  { file: 'app.js', data: 'console.log("hi")' },
+  { file: 'logo.png', data: pngBase64, encoding: 'base64' },
+]);
+console.log(site.url); // https://my-app.pollinations.app
+
+const { data } = await listSites();
+await deleteSite('my-app');
+```
+
+For bigger sites, use `polli sites deploy ./dist --name my-app`.
+
 ## Image Generation
 
 ```javascript
@@ -262,7 +416,7 @@ import { generateImage, imageUrl } from '@pollinations/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
-  model: 'zimage',
+  model: 'tongyi-mai/z-image-turbo',
   width: 1920,
   height: 1080,
 });
@@ -272,7 +426,7 @@ await image.saveToFile('robot.png');
 const base64 = image.toBase64();
 const dataUrl = image.toDataURL();
 
-// Just get the URL (no download)
+// Stored media URL to share, e.g. in <img src>
 const url = await imageUrl('a sunset');
 ```
 
@@ -282,7 +436,7 @@ Defaults are applied by the API; the SDK sends only options you provide.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'zimage'` | Model to use |
+| `model` | string | `'tongyi-mai/z-image-turbo'` | Model to use |
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
@@ -300,7 +454,7 @@ import { editImage } from '@pollinations/sdk';
 
 const result = await editImage('Make the sky purple', {
   image: 'https://example.com/photo.jpg',
-  model: 'flux',
+  model: 'black-forest-labs/flux.1-schnell',
 });
 await result.saveToFile('edited.png');
 
@@ -320,7 +474,7 @@ import { imageGenerate } from '@pollinations/sdk';
 // Single image with OpenAI-style size string
 const img = await imageGenerate('A robot reading a book', {
   size: '1024x1024',
-  model: 'flux',
+  model: 'black-forest-labs/flux.1-schnell',
 });
 await img.saveToFile('robot.png');
 ```
@@ -337,7 +491,7 @@ const text = await generateText('write a poem about coding');
 
 // With options
 const story = await generateText('explain gravity', {
-  model: 'openai',
+  model: 'openai/gpt-5.4-nano',
   systemPrompt: 'You are a physics teacher',
 });
 
@@ -357,7 +511,7 @@ console.log(result.actualModel); // actual model used
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'openai'` | Model to use |
+| `model` | string | `'openai/gpt-5.4-nano'` | Model to use |
 | `systemPrompt` | string | - | System prompt |
 | `temperature` | number | `1` | Creativity (0-2) |
 | `maxTokens` | number | - | Max output tokens |
@@ -371,7 +525,7 @@ console.log(result.actualModel); // actual model used
 ## Chat
 
 ```javascript
-import { chat, chatStream, conversation } from '@pollinations/sdk';
+import { chat, chatStream } from '@pollinations/sdk';
 
 // Single message
 const response = await chat([
@@ -384,16 +538,6 @@ console.log(response.text);
 for await (const chunk of chatStream([{ role: 'user', content: 'Write a poem' }])) {
   process.stdout.write(chunk.choices[0]?.delta?.content || '');
 }
-
-// Conversation (auto-manages history)
-const convo = conversation({ model: 'openai' });
-convo.system('You are a pirate');
-
-const r1 = await convo.say('Hello!');        // "Ahoy, matey!"
-const r2 = await convo.say('Where are we?'); // Remembers context
-
-console.log(convo.getHistory()); // Full message history
-convo.clear(); // Reset conversation
 ```
 
 ## Video Generation
@@ -402,7 +546,7 @@ convo.clear(); // Reset conversation
 import { generateVideo } from '@pollinations/sdk';
 
 const video = await generateVideo('a timelapse of clouds', {
-  model: 'veo',
+  model: 'google/veo-3.1-fast',
   duration: 6,
 });
 await video.saveToFile('clouds.mp4');
@@ -413,7 +557,7 @@ await video.saveToFile('clouds.mp4');
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, etc. |
+| `model` | string | `'google/veo-3.1-fast'` | `'google/veo-3.1-fast'`, `'bytedance/seedance-2.0'`, `'alibaba/wan-2.6'`, etc. |
 | `duration` | number | - | Duration in seconds (supported range varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
@@ -428,6 +572,64 @@ Reference media must use public HTTP(S) URLs. See `video_capabilities` in
 [`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
 controls and guidance media can be combined depends on the selected model.
 
+## 3D Generation
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+import { writeFile } from 'node:fs/promises';
+
+const client = new Pollinations();
+const model = await client.model3d('chair', {
+  referenceImage: 'https://example.com/chair.png',
+  resolution: 'low',
+});
+await writeFile('chair.glb', new Uint8Array(model.buffer));
+```
+
+The default model requires a public reference image and ignores the prompt.
+Use `client.models('3d')` for available models and input requirements. Options
+include `model`, `referenceImage` (one URL or an array), `resolution`, `seed`,
+`safe`, and `signal`. The result contains `buffer`, `contentType` and a URL
+without an API key. The server's MIME type is preserved for GLB and PLY files.
+3D shares video's 20-minute timeout; override it with `videoTimeout` on the client.
+Check each model's `paid_only` flag before using it with Quest Pollen.
+
+## Async media jobs
+
+Leave a slow generation running after disconnecting, then check and download it
+with the same account. Supported by `imageAsync`, `videoAsync`, `audioAsync`,
+and `model3dAsync` on the client.
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+import { writeFile } from 'node:fs/promises';
+
+const client = new Pollinations(); // reads POLLINATIONS_API_KEY from the environment
+const submitted = await client.videoAsync('a paper boat on a river', {
+  model: 'google/veo-3.1-fast',
+});
+let file;
+if ('result' in submitted) {
+  file = submitted.result; // already cached; no job id needed
+} else {
+  let job;
+  do {
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    job = await client.job(submitted.id);
+  } while (job.status === 'pending');
+  if (job.status === 'failed') throw new Error(job.error?.message || 'Generation failed');
+  file = await client.jobResult(submitted.id);
+}
+await writeFile('boat.mp4', new Uint8Array(file.buffer));
+```
+
+Submission returns a job id and 202 response immediately unless a cached file
+is returned directly. Only accounts that submitted the job may poll or download
+it; polling does not charge again. Status records last 24 hours after completion.
+Pass an `AbortSignal` to cancel the HTTP request; this does not cancel a job
+already running in the durable coordinator. The SDK authenticates with a
+header and does not put the credential in a media URL.
+
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
@@ -439,7 +641,7 @@ await speech.saveToFile('welcome.mp3');
 
 // Music generation
 const music = await generateAudio('upbeat jazz piano', {
-  model: 'elevenmusic',
+  model: 'elevenlabs/music-v2',
   duration: 30,
 });
 await music.saveToFile('jazz.mp3');
@@ -458,13 +660,32 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use (see voices below) |
-| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'` |
+| `model` | string | `'elevenlabs/eleven-v3'` | `'elevenlabs/eleven-v3'`, `'elevenlabs/music-v2'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
 
 ### Available Voices
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+### Speech with timestamps
+
+```javascript
+const client = new Pollinations();
+const speech = await client.audioSpeechWithTimestamps('Hello world', {
+  voice: 'nova',
+  responseFormat: 'mp3',
+});
+console.log(speech.words);
+const audio = new Audio(`data:audio/mpeg;base64,${speech.audio_base64}`);
+```
+
+`words` groups the normalized text on whitespace and reports each word's
+`start` and `end` in seconds. Punctuation stays attached to the word.
+`alignment` and `normalized_alignment` preserve the API's character timings.
+When normalized timings are absent or null, `words` is empty; the audio is still returned.
+Other options are `model`, `seed` and `signal`. Use models that advertise
+`/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
 ## Vision (Image Input)
 
@@ -495,7 +716,7 @@ console.log(data[0].embedding); // [0.012, -0.034, ...]
 
 // Batch with options
 const batch = await embeddings(['first document', 'second document'], {
-  model: 'gemini-2',
+  model: 'google/gemini-embedding-2',
   dimensions: 768,
 });
 console.log(batch.data.length, batch.usage.total_tokens);
@@ -537,13 +758,27 @@ See the [API reference](https://gen.pollinations.ai/docs) for `choice`, `score`,
 ## List Available Models
 
 ```javascript
-import { getTextModels, getImageModels } from '@pollinations/sdk';
+import { getModels } from '@pollinations/sdk';
 
-const textModels = await getTextModels();
-const imageModels = await getImageModels();
+const textModels = await getModels('text');
+const imageModels = await getModels('image');
+const videoModels = await getModels('video'); // also 'audio', 'embeddings'
 
 console.log(textModels.map(m => m.name));
 ```
+
+### Model status
+
+```javascript
+const client = new Pollinations();
+const { data } = await client.modelStatus({ traffic: 'regular', minutes: 60 });
+console.log(data.filter(row => row.is_rollup && row.errors_5xx > 0));
+```
+
+This returns the raw `/models/status` response with typed `data`, `meta`,
+`rows` and optional `statistics`. Latency and throughput can be `null`.
+`traffic` accepts `all` or `regular`; `minutes` is a rolling window from 1
+to 10080. Both use server defaults when omitted. Pass `signal` to cancel.
 
 ## Media Upload
 
@@ -619,16 +854,13 @@ import type {
 | `generateTextStream(prompt, options?)` | Stream text |
 | `chat(messages, options?)` | Chat completion |
 | `chatStream(messages, options?)` | Stream chat |
-| `conversation(options?)` | Create conversation |
 | `generateVideo(prompt, options?)` | Generate a video |
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
 | `embeddings(input, options?)` | Vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
-| `getTextModels()` | List text models |
-| `getImageModels()` | List image models |
-| `getModels()` | List all models |
+| `getModels(kind?)` | List all models, or one kind: `text`, `image`, `video`, `audio`, `embeddings` |
 | `configure({ apiKey })` | Set global config |
 
 ## Troubleshooting
@@ -658,10 +890,6 @@ const client = new Pollinations({
 });
 ```
 
-### Rate Limiting
-
-Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimited requests.
-
 ### Network Errors
 
 The SDK returns network and API errors directly and does not retry requests
@@ -674,7 +902,7 @@ rate limits.
 - [Pollinations.AI](https://pollinations.ai)
 - [API Documentation](https://gen.pollinations.ai/docs) - Full API reference
 - [Get API Key](https://enter.pollinations.ai/keys)
-- [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+- [Discord](https://discord.gg/k9F7SyTgqn)
 - [GitHub](https://github.com/pollinations/pollinations)
 
 ## License

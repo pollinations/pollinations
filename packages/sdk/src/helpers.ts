@@ -19,7 +19,6 @@ import { buildTextRequest, Pollinations } from "./client.js";
 import {
     type AudioResponseExt,
     type ChatResponseExt,
-    Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
     wrapAudioResponse,
@@ -52,6 +51,10 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelKind,
+    Site,
+    SiteFile,
+    SitesResponse,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -193,7 +196,7 @@ export async function imageGenerate(
  *
  * @example
  * ```ts
- * const url = await videoUrl('A bird flying', { model: 'veo', duration: 4 });
+ * const url = await videoUrl('A bird flying', { model: 'google/veo-3.1-fast', duration: 4 });
  * ```
  */
 export async function videoUrl(
@@ -308,20 +311,6 @@ export async function* chatStream(
     yield* getClient().chatStream(messages, options);
 }
 
-/**
- * Create a new conversation with the configured client
- *
- * @example
- * ```ts
- * const convo = conversation({ model: 'openai' });
- * convo.system('You are a helpful assistant');
- * const response = await convo.say('Hello!');
- * ```
- */
-export function conversation(options?: ChatOptions): Conversation {
-    return new Conversation(options, getClient());
-}
-
 // ============================================================================
 // Audio Functions
 // ============================================================================
@@ -336,7 +325,7 @@ export function conversation(options?: ChatOptions): Conversation {
  * await audio.saveToFile('speech.mp3');
  *
  * // Music generation
- * const music = await generateAudio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+ * const music = await generateAudio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
  * await music.saveToFile('jazz.mp3');
  *
  * ```
@@ -354,24 +343,10 @@ export async function generateAudio(
 // ============================================================================
 
 /**
- * Get available text models
+ * Get available models, or only one kind of them
  */
-export async function getTextModels(): Promise<ModelInfo[]> {
-    return getClient().textModels();
-}
-
-/**
- * Get available image models
- */
-export async function getImageModels(): Promise<ModelInfo[]> {
-    return getClient().imageModels();
-}
-
-/**
- * Get all available models
- */
-export async function getModels(): Promise<ModelInfo[]> {
-    return getClient().models();
+export async function getModels(kind?: ModelKind): Promise<ModelInfo[]> {
+    return getClient().models(kind);
 }
 
 // ============================================================================
@@ -468,7 +443,7 @@ export function decision(options: DecisionOptions): Promise<DecisionResponse> {
  * ```ts
  * const url = authorizeUrl({
  *   redirectUrl: 'https://myapp.com/callback',
- *   models: ['flux', 'openai'],
+ *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
  *   budget: 10,
  * });
  * ```
@@ -615,4 +590,36 @@ export async function createKey(
  */
 export async function revokeKey(id: string): Promise<void> {
     return getClient().revokeKey(id);
+}
+
+/**
+ * List your static sites and the account's site limits.
+ */
+export async function listSites(): Promise<SitesResponse> {
+    return getClient().listSites();
+}
+
+/**
+ * Publish a static site at `https://<name>.pollinations.app` with inline
+ * files (up to 5 MB per request); `index.html` is required.
+ *
+ * @example
+ * ```ts
+ * const site = await deploySite('my-app', [
+ *   { file: 'index.html', data: '<h1>Hello</h1>' },
+ * ]);
+ * ```
+ */
+export async function deploySite(
+    name: string,
+    files: SiteFile[],
+): Promise<Site> {
+    return getClient().deploySite(name, files);
+}
+
+/**
+ * Take a site offline and free its name.
+ */
+export async function deleteSite(name: string): Promise<void> {
+    return getClient().deleteSite(name);
 }

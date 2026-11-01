@@ -73,6 +73,31 @@ describe("resolveLedgerLabel", () => {
         ).toEqual({ kind: "shared", models: ["veo", "veo-1080p"] });
     });
 
+    it("maps September's reviewed Wan 1080p invoice line to the billed model only", () => {
+        const qualifiers = {
+            month: "2026-09",
+            sku: "Output video duration (seconds): wan-27-i2v-1080p",
+        };
+        expect(
+            resolveLedgerLabel("replicate", "wan-pro-1080p", qualifiers),
+        ).toEqual({
+            kind: "model",
+            model: "alibaba/wan-2.7",
+        });
+        expect(
+            resolveLedgerLabel("replicate", "wan-pro-1080p", {
+                ...qualifiers,
+                month: "2026-08",
+            }).kind,
+        ).toBe("unmapped");
+        expect(
+            resolveLedgerLabel("replicate", "wan-pro-1080p", {
+                ...qualifiers,
+                month: "2026-10",
+            }).kind,
+        ).toBe("unmapped");
+    });
+
     it("applies the dated rule for the row's month when a label changed meaning", () => {
         // Fireworks billed MiniMax M2.7 to the Pollen id `minimax` until May
         // 2026; from June `minimax` ran on M3 and `minimax-m2.7` took over.
@@ -137,5 +162,65 @@ describe("resolveLedgerLabel with a blank model label", () => {
                 month: "2026-06",
             }),
         ).toEqual({ kind: "blank" });
+    });
+});
+
+describe("September billed SKU reconciliation", () => {
+    it("separates text and image output under the same Google billing family", () => {
+        const resolve = (sku: string, month = "2026-09") =>
+            resolveLedgerLabel("google", "", { sku, name: "Vertex AI", month });
+        expect(
+            resolve("Gemini 3.0 / 3.1 Pro Image Output - Predictions"),
+        ).toEqual({ kind: "model", model: "nanobanana-pro" });
+        expect(
+            resolve("Gemini 3.0 / 3.1 Pro Text Output - Predictions"),
+        ).toEqual({ kind: "model", model: "gemini-large" });
+        expect(
+            resolve(
+                "Gemini 3.0 / 3.1 Pro Image Output - Predictions",
+                "2026-08",
+            ).kind,
+        ).toBe("unmapped");
+        // The shared image input SKU does not prove which of the two was used.
+        expect(
+            resolve("Gemini 3.0 / 3.1 Pro Image Input - Predictions").kind,
+        ).toBe("blank");
+    });
+
+    it("uses the billed Veo SKU without changing earlier canonical identities", () => {
+        expect(
+            resolveLedgerLabel("replicate", "", {
+                sku: "Output video duration (seconds): veo-3.1-fast-with-audio",
+                name: "google/veo-3.1-fast",
+                month: "2026-09",
+            }),
+        ).toEqual({ kind: "shared", models: ["veo", "veo-1080p"] });
+        expect(
+            resolveLedgerLabel("replicate", "google/veo-3.1-fast", {
+                month: "2026-01",
+            }),
+        ).toEqual({ kind: "model", model: "google/veo-3.1-fast" });
+    });
+});
+
+describe("retired accounting identities", () => {
+    it("retains explicitly registered historical model IDs after runtime retirement", () => {
+        expect(
+            resolveLedgerLabel("bytedance", "seedance", { month: "2026-02" }),
+        ).toEqual({ kind: "model", model: "seedance" });
+        expect(
+            resolveLedgerLabel("airforce", "grok-video", { month: "2026-03" }),
+        ).toEqual({ kind: "model", model: "grok-video" });
+        expect(
+            resolveLedgerLabel("modal", "ltx-2", { month: "2026-02" }),
+        ).toEqual({ kind: "model", model: "ltx-2" });
+        // A retired model's alias is still not an accounting identity.
+        expect(
+            resolveLedgerLabel("airforce", "imagen", { month: "2026-03" }).kind,
+        ).toBe("unmapped");
+        // A reviewed provider-only label remains provider-only.
+        expect(
+            resolveLedgerLabel("replicate", "bytedance/seedance-1-lite").kind,
+        ).toBe("provider-only");
     });
 });

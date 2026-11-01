@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Data, RevenueShareSourceRow } from "../types";
 import {
     creatorSettlementRows,
-    revenueShareLedgerRows,
     revenueShareRows,
     revenueShareSummary,
 } from "./revenueShareEconomics";
@@ -23,8 +22,12 @@ const share = (
     paid_usage: 100,
     paid_creator_earnings: 35,
     paid_pollinations_profit: 45,
+    paid_community_usage: 0,
+    paid_model_creator_earnings: 0,
     quest_usage: 50,
     quest_creator_earnings: 15,
+    quest_community_usage: 0,
+    quest_model_creator_earnings: 0,
     paid_requests: 10,
     quest_requests: 5,
     ...over,
@@ -75,39 +78,6 @@ describe("revenueShareRows", () => {
     });
 });
 
-describe("revenueShareLedgerRows", () => {
-    it("returns one compact row for each developer source", () => {
-        const rows = revenueShareLedgerRows(
-            {
-                revenueShare: [
-                    share({
-                        row_type: "source",
-                        sources_json: JSON.stringify([
-                            ["app", "app-1", "App One", "openai"],
-                            ["app", "app-1", "App One", "flux"],
-                        ]),
-                    }),
-                ],
-            },
-            "2026-07",
-        );
-
-        expect(rows).toEqual([
-            expect.objectContaining({
-                recipientId: "developer-1",
-                source: {
-                    type: "app",
-                    id: "app-1",
-                    name: "App One",
-                    models: ["flux", "openai"],
-                },
-                paidCreatorEarningsUsd: 35,
-                questCreatorEarningsUsd: 15,
-            }),
-        ]);
-    });
-});
-
 describe("revenueShareSummary", () => {
     it("uses deduplicated summary rows instead of summing developer rows", () => {
         const summary = share({
@@ -119,6 +89,8 @@ describe("revenueShareSummary", () => {
             paid_usage: 100,
             paid_creator_earnings: 95,
             paid_pollinations_profit: 5,
+            paid_community_usage: 0,
+            paid_model_creator_earnings: 0,
             paid_requests: 1,
         });
         const otherDeveloper = share({
@@ -127,6 +99,8 @@ describe("revenueShareSummary", () => {
             recipient_name: "Developer Two",
             paid_usage: 100,
             paid_pollinations_profit: 5,
+            paid_community_usage: 0,
+            paid_model_creator_earnings: 0,
             paid_requests: 1,
         });
 

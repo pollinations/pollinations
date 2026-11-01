@@ -2,24 +2,28 @@ import { Hono } from "hono";
 import type { Env } from "./env.ts";
 
 // Data start date - Oct 1, 2025
-const DATA_START_DATE = "2025-10-01";
-const DATA_START_TIMESTAMP_MS = new Date(DATA_START_DATE).getTime();
-const DATA_START_TIMESTAMP_SEC = Math.floor(DATA_START_TIMESTAMP_MS / 1000);
+const DATA_START_TIMESTAMP_SEC = Date.UTC(2025, 9, 1) / 1000;
 
 const MAX_WEEKS_BACK = 20;
 
 // Helper to fetch from Tinybird with caching, retry, and error logging
 // Uses Cloudflare Cache API to avoid hammering Tinybird on concurrent page loads
 const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
-// Part of the cache key, not the request. A pipe that gains a column keeps
-// serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
-// not clear the cache — bump this in the same commit as the pipe change.
+// A finished week's numbers do not change, and re-scanning it cost ~1 GB per
+// pipe on every cold load. A week counts as finished one day after it ends, so
+// late events have landed.
+const FINISHED_WEEK_CACHE_TTL = 7 * 86400;
+// Part of the cache key, not the request. A changed pipe, or a change to the
+// traffic classification in generation_events_classified, keeps serving old
+// results for up to FINISHED_WEEK_CACHE_TTL because a Worker redeploy does not
+// clear the cache — bump this in the same commit as the change.
 const TINYBIRD_CACHE_VERSION = "8";
 
 async function fetchTinybird(
     env: Env["Bindings"],
     pipe: string,
     params: Record<string, string | number> = {},
+    ttl = TINYBIRD_CACHE_TTL,
 ): Promise<{
     data: unknown[];
     error?: string;
@@ -51,7 +55,7 @@ async function fetchTinybird(
                 // Cache successful responses at the edge
                 const cacheResponse = new Response(JSON.stringify(json), {
                     headers: {
-                        "Cache-Control": `public, max-age=${TINYBIRD_CACHE_TTL}`,
+                        "Cache-Control": `public, max-age=${ttl}`,
                     },
                 });
                 await cache.put(cacheKey, cacheResponse);
@@ -128,9 +132,13 @@ async function fetchTinybirdByWeek(
     const errors: string[] = [];
 
     for (const monday of mondays) {
-        const result = await fetchTinybird(env, pipe, {
-            start_date: monday,
-        });
+        const finished = Date.parse(monday) + 8 * 86400_000 <= Date.now();
+        const result = await fetchTinybird(
+            env,
+            pipe,
+            { start_date: monday },
+            finished ? FINISHED_WEEK_CACHE_TTL : TINYBIRD_CACHE_TTL,
+        );
         if (result.error) {
             errors.push(`${monday}: ${result.error}`);
         }
@@ -348,17 +356,14 @@ kpiRoutes.get("/user-segments", async (c) => {
 });
 
 async function fetchPublicGithub(url: string): Promise<Response> {
-    // These repository stats are public. An expired optional token must not
-    // make them unavailable; cache successes to conserve the public API quota.
+    // Public kpi-data snapshots. Only successes are cached, so a file that is
+    // missing or briefly unreachable shows up as soon as it is back.
     const cache = await caches.open("kpi-public-github");
     const key = new Request(url);
     const cached = await cache.match(key);
     if (cached) return cached;
     const response = await fetch(url, {
-        headers: {
-            "User-Agent": "KPI-Dashboard",
-            Accept: "application/vnd.github+json",
-        },
+        headers: { "User-Agent": "KPI-Dashboard" },
     });
     if (response.ok) {
         const stored = new Response(response.clone().body, {
@@ -372,45 +377,19 @@ async function fetchPublicGithub(url: string): Promise<Response> {
     return response;
 }
 
-// GitHub: App submissions — weekly counts from issue labels
+// Daily authenticated Actions snapshot. Paging the issues API anonymously on
+// every load ran into GitHub's rate limit on Cloudflare's shared IPs.
 kpiRoutes.get("/app-submissions", async (c) => {
-    const repo = "pollinations/pollinations";
-    const since = DATA_START_DATE;
-    const weeklySubmissions: Record<string, number> = {};
-    let page = 1;
-    let itemCount = 0;
-    do {
-        const res = await fetchPublicGithub(
-            `https://api.github.com/repos/${repo}/issues?state=all&labels=APP-SUBMISSION&since=${since}T00:00:00Z&per_page=100&page=${page}`,
+    const res = await fetchPublicGithub(
+        "https://raw.githubusercontent.com/pollinations/pollinations/kpi-data/github-app-submissions.json",
+    );
+    if (!res.ok) {
+        return c.json(
+            { error: "App submission snapshots unavailable", data: [] },
+            502,
         );
-        if (!res.ok) {
-            // Was `break`, which returned an empty list — a dead token, a rate
-            // limit and a quiet week all looked identical on the dashboard.
-            const body = await res.text();
-            const detail = `status=${res.status} body=${body.slice(0, 300)}`;
-            console.error(`[GitHub] app-submissions failed: ${detail}`);
-            return c.json({ error: `GitHub ${res.status}`, data: [] }, 502);
-        }
-        const data = (await res.json()) as Array<{
-            created_at: string;
-            pull_request?: unknown;
-        }>;
-        itemCount = data.length;
-        for (const issue of data) {
-            if (issue.pull_request) continue;
-            const createdAt = new Date(issue.created_at);
-            if (createdAt.getTime() < DATA_START_TIMESTAMP_MS) continue;
-            const week = getWeekStart(createdAt);
-            weeklySubmissions[week] = (weeklySubmissions[week] || 0) + 1;
-        }
-        page++;
-    } while (itemCount === 100);
-
-    const result = Object.entries(weeklySubmissions)
-        .map(([week, submitted]) => ({ week, submitted }))
-        .sort((a, b) => a.week.localeCompare(b.week));
-
-    return c.json({ data: result });
+    }
+    return c.json({ data: await res.json() });
 });
 
 // Daily authenticated Actions snapshots, not anonymous per-visit API reads.

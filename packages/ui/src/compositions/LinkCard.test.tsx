@@ -13,7 +13,7 @@ describe("LinkCard", () => {
         expect(html).toContain('target="_blank"');
         expect(html).toContain('rel="noopener noreferrer"');
         expect(html).toContain("polli:bg-surface-opaque");
-        expect(html).toContain("polli:focus-visible:ring-theme-border");
+        expect(html).toContain("polli-link-surface");
     });
 
     test("a tint replaces the default fill and keeps the caller's style", () => {

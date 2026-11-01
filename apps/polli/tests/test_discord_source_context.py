@@ -3,11 +3,22 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 from src.ai.client import PollinationsClient
-from src.bot import process_message
+from src.bot import fetch_thread_history, process_message
 from src.context import ConversationSession
 
 
 class DiscordSourceContextIntegrationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_history_excludes_current_by_id_and_keeps_newer_bot_reply(self):
+        async def history(**kwargs):
+            for identifier, body, bot in [(30, "latest answer", True), (20, "queued request", False), (10, "earlier", False)]:
+                yield SimpleNamespace(id=identifier, content=body, attachments=[],
+                    author=SimpleNamespace(bot=bot, name="user", display_name="User"))
+
+        thread = SimpleNamespace(id=1, name="test", parent=None, history=history)
+        result = await fetch_thread_history(thread, exclude_message_ids={20})
+        self.assertTrue(any(item.get("content") == "latest answer" for item in result))
+        self.assertFalse(any("queued request" in item.get("content", "") for item in result))
+
     async def test_process_message_preserves_original_source_and_current_thread_location(self):
         class FakeThread:
             id = 222
@@ -31,6 +42,9 @@ class DiscordSourceContextIntegrationTests(unittest.IsolatedAsyncioTestCase):
         thread = FakeThread()
         user = FakeUser()
         source_message = SimpleNamespace(
+            id=555,
+            author=user,
+            reactions=[],
             channel=SimpleNamespace(id=111),
             jump_url="https://discord.example/messages/1",
         )

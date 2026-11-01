@@ -75,8 +75,42 @@ test("requires a screenshot hosted by GitHub", () => {
     );
     for (const value of ["_No response_", "https://imgur.com/app.png"]) {
         assert.deepEqual(validateSubmission(withScreenshot(value)), [
-            "Screenshot is required: upload an image of the app in the Screenshot field.",
+            "Screenshot needs a supported GitHub image URL: upload an image in the Screenshot field or link to a raw.githubusercontent.com repository image.",
         ]);
+    }
+});
+
+test("accepts raw repository screenshots in issue image formats", () => {
+    const url =
+        "https://raw.githubusercontent.com/pollinations/MIDIjourney/eb9bc217826dd05ee0a7d4f77f0167272242a58d/docs/images/midi-journey-2-catalog-artwork.png";
+    for (const value of [url, `![App](${url})`, `<img src="${url}" />`]) {
+        const submission = parseSubmission(
+            BODY.replace(/### Screenshot\n.*\n/, `### Screenshot\n${value}\n`),
+        );
+        assert.equal(submission.screenshotUrl, url);
+        assert.deepEqual(validateSubmission(submission), []);
+    }
+});
+
+test("rejects unsupported screenshot hosts and deceptive GitHub URLs", () => {
+    for (const url of [
+        "https://example.com/app.png",
+        "https://raw.githubusercontent.com.evil.example/a/b/main/app.png",
+        "https://raw.githubusercontent.com@evil.example/a/b/main/app.png",
+        "https://user@raw.githubusercontent.com/a/b/main/app.png",
+        "https://raw.githubusercontent.com:8443/a/b/main/app.png",
+        "http://raw.githubusercontent.com/a/b/main/app.png",
+        "https://raw.githubusercontent.com/a/b/",
+        "https://github.com/a/b/blob/main/app.png",
+    ]) {
+        const submission = parseSubmission(
+            BODY.replace(/### Screenshot\n.*\n/, `### Screenshot\n${url}\n`),
+        );
+        assert.equal(submission.screenshotUrl, "", url);
+        assert.match(
+            validateSubmission(submission)[0],
+            /supported GitHub image URL/,
+        );
     }
 });
 
@@ -141,6 +175,14 @@ test("parses the optional quest reference", () => {
     assert.deepEqual(validateSubmission(withQuest("the Krita one")), [
         "Quest must be a quest issue number such as #15600.",
     ]);
+});
+
+test("parses quest before the trailing credit footer", () => {
+    const submission = parseSubmission(
+        `${BODY}\n\n### Quest\n\n#17246\n\n---\n\n**Made with pollinations.ai**`,
+    );
+    assert.equal(submission.quest, "17246");
+    assert.deepEqual(validateSubmission(submission), []);
 });
 
 test("builds the canonical catalog app", () => {

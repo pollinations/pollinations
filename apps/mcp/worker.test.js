@@ -10,6 +10,8 @@ const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
     "createEmbeddings",
     "createKey",
+    "deleteSite",
+    "deploySite",
     "generate3D",
     "generateAudio",
     "generateImage",
@@ -22,6 +24,7 @@ const EXPECTED_TOOLS = [
     "listKeys",
     "listModels",
     "listQuests",
+    "listSites",
     "revokeKey",
     "transcribeAudio",
 ];
@@ -73,6 +76,35 @@ test("serves health and requires bearer auth", async () => {
         new Request("https://mcp.pollinations.ai/mcp"),
     );
     assert.equal(oldEndpoint.status, 404);
+});
+
+test("caps each client IP before the bearer check", async () => {
+    // Counts per key like the Cloudflare binding, with a limit of 2.
+    const counts = new Map();
+    const env = {
+        IP_RATE_LIMITER: {
+            async limit({ key }) {
+                counts.set(key, (counts.get(key) ?? 0) + 1);
+                return { success: counts.get(key) <= 2 };
+            },
+        },
+    };
+    const send = (ip) =>
+        worker.fetch(
+            new Request("https://mcp.pollinations.ai", {
+                method: "POST",
+                headers: { "CF-Connecting-IP": ip },
+                body: "{}",
+            }),
+            env,
+        );
+    const statuses = [];
+    for (let i = 0; i < 3; i++) {
+        statuses.push((await send("203.0.113.7")).status);
+    }
+    assert.deepEqual(statuses, [401, 401, 429]);
+    assert.equal((await send("203.0.113.7")).headers.get("retry-after"), "10");
+    assert.equal((await send("198.51.100.1")).status, 401);
 });
 
 test("serves current and 2025 Streamable HTTP without sessions", async () => {

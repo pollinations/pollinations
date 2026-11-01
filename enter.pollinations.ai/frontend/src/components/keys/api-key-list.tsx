@@ -8,7 +8,6 @@ import {
     KeyChip,
     KeyIcon,
     PencilIcon,
-    PlusIcon,
     Section,
     Surface,
     TerminalIcon,
@@ -24,7 +23,7 @@ import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
-import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
+import { isAppKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
@@ -41,6 +40,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    onRefresh,
 }) => {
     const [keyCreateOpen, setKeyCreateOpen] = useState(false);
     const [appCreateOpen, setAppCreateOpen] = useState(false);
@@ -48,6 +48,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    async function handleEdit(apiKey: ApiKey): Promise<void> {
+        // The list is as old as the page; API calls since then spent the budget.
+        const latest = await onRefresh?.().catch(() => undefined);
+        setEditingKey(latest?.find((key) => key.id === apiKey.id) ?? apiKey);
+    }
 
     async function handleDelete(): Promise<void> {
         if (!deletingKey || isDeleting) return;
@@ -81,9 +87,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const sortedAppKeys = sortedKeys.filter(isAppKey);
 
     function renderKeyCard(apiKey: ApiKey) {
-        const isPublishable = isPublishableKey(apiKey);
         const isApp = isAppKey(apiKey);
         const keyLabel = isApp ? "app key" : "secret key";
+        // An app key's settings are the app's settings.
+        const editLabel = isApp ? "Edit app" : "Edit secret key";
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
@@ -103,17 +110,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             {isApp ? (
                                 <AppIcon className="h-4 w-4" />
-                            ) : isPublishable ? (
-                                <GlobeIcon className="h-4 w-4" />
                             ) : (
                                 <KeyIcon className="h-4 w-4" />
                             )}
                             <span className="sr-only">
-                                {isApp
-                                    ? "App key"
-                                    : isPublishable
-                                      ? "Publishable key"
-                                      : "Secret key"}
+                                {isApp ? "App key" : "Secret key"}
                             </span>
                         </>
                     }
@@ -122,12 +123,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             <IconButton
                                 intent="info"
-                                title={`Edit ${keyLabel}`}
-                                tooltip={`Edit ${keyLabel}`}
+                                title={editLabel}
+                                tooltip={editLabel}
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
-                                onClick={() => setEditingKey(apiKey)}
+                                onClick={() => handleEdit(apiKey)}
                             >
                                 <PencilIcon className="h-4 w-4" />
                             </IconButton>
@@ -151,8 +152,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 <div className="mt-1 min-w-0">
                     <KeyChip
                         prefix={apiKey.start ?? ""}
-                        value={isPublishable ? plaintextKey : undefined}
-                        label={isApp ? "Copy app key" : "Copy publishable key"}
+                        value={isApp ? plaintextKey : undefined}
+                        label="Copy app key"
                     />
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
@@ -179,7 +180,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 : "never"}
                         </span>
                     </span>
-                    {isPublishable && primaryRedirectUri && (
+                    {isApp && primaryRedirectUri && (
                         <span className="inline-flex min-w-0 items-center gap-1">
                             <span className="text-theme-text-muted">
                                 Redirect:{" "}
@@ -246,7 +247,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                             {apiKey.questPollenOnly && (
                                 <span className="text-theme-text-muted">
-                                    Quest Pollen only
+                                    Quest pollen only
                                 </span>
                             )}
                             <span className="flex items-center gap-1">
@@ -295,28 +296,24 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     const keyAction = (
         <Button
+            intent="commit"
             type="button"
-            className="dashboard-add-button"
-            aria-label="Create secret key"
-            title="Create secret key"
+            icon={<KeyIcon />}
             aria-haspopup="dialog"
             onClick={() => setKeyCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <KeyIcon className="h-5 w-5" />
+            Create
         </Button>
     );
     const appAction = (
         <Button
+            intent="commit"
             type="button"
-            className="dashboard-add-button"
-            aria-label="Create app key"
-            title="Create app key"
+            icon={<AppIcon />}
             aria-haspopup="dialog"
             onClick={() => setAppCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <AppIcon className="h-5 w-5" />
+            Create
         </Button>
     );
 
@@ -370,14 +367,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For apps where users sign in with their own
-                            Pollinations account and spend their own Pollen.
+                            Pollinations account and spend their own pollen.
                             Connect your app with the Pollinations SDK.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Turn on earnings to receive 20% of the Pollen users
+                            Turn on earnings to receive 20% of the pollen users
                             spend in your app.
                         </span>
                     </p>

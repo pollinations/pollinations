@@ -496,6 +496,27 @@ describe("revenue row", () => {
     });
 });
 
+describe("Google signups row", () => {
+    const google = KPIS.find((row) => row.key === "googleSignups");
+    it("shows the count and its share of registrations", () => {
+        const week = { registrations: 400, googleSignups: 100 };
+        const shown = [0, 1].map((i) => {
+            const view = kpiView(google, i);
+            return formatValue(kpiValue(view, week), view.format);
+        });
+        expect(shown).toEqual(["100", "25%"]);
+    });
+
+    it("reads as missing, not zero, before the pipe ships the field", () => {
+        for (const index of [0, 1]) {
+            const view = kpiView(google, index);
+            expect(formatValue(kpiValue(view, { registrations: 400 }))).toBe(
+                "—",
+            );
+        }
+    });
+});
+
 describe("Paid Pollen share", () => {
     it("is a precise percent KPI available to the history graph", () => {
         expect(

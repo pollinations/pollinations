@@ -1,5 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
@@ -10,6 +9,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
@@ -25,7 +25,7 @@ interface AudioOptions {
 async function generateSimple(
     text: string,
     opts: AudioOptions,
-): Promise<Buffer> {
+): Promise<Response> {
     const params = new URLSearchParams();
     if (opts.voice) params.set("voice", opts.voice);
     if (opts.format !== "mp3") params.set("response_format", opts.format);
@@ -34,8 +34,7 @@ async function generateSimple(
     if (opts.instrumental) params.set("instrumental", "true");
     if (opts.seed) params.set("seed", opts.seed);
 
-    const res = await fetchGen(`/audio/${encodeURIComponent(text)}?${params}`);
-    return Buffer.from(await res.arrayBuffer());
+    return fetchGen(`/audio/${encodeURIComponent(text)}?${params}`);
 }
 
 /** Character-level timing needs the JSON+base64 endpoint; writes the
@@ -78,11 +77,11 @@ async function generateWithTimestamps(
 export function createAudioCommand() {
     return new Command("audio")
         .description(
-            "Generate speech or music from text (stdin ok). Discover voices: polli models --type audio --json | jq '.[].voices'",
+            "Generate speech or music from text (stdin ok). Discover voices: polli models --type audio --voices",
         )
         .addHelpText(
             "after",
-            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice callum --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
+            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice nova --play\n  polli gen audio --model elevenlabs --voice callum "the sky today" --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
         )
         .argument("[text]", "Text to speak (or pipe via stdin)")
         .option("--voice <voice>", "Voice name (default: the model's own)")
@@ -98,9 +97,16 @@ export function createAudioCommand() {
             "Also save character-level timing as JSON next to the audio",
         )
         .action(async (textArg, opts) => {
+            if (opts.timestamps && (opts.duration || opts.instrumental)) {
+                printError(
+                    "--timestamps cannot be combined with --duration or --instrumental (timestamps are only available for speech models)",
+                );
+                throw new ExitSignal(1);
+            }
+
             const isHuman = getOutputMode() === "human";
-            const output = opts.output ?? `speech.${opts.format}`;
-            const inputText = textArg || (await readStdin());
+            let output = opts.output ?? `speech.${opts.format}`;
+            const inputText = textArg || (await readStdin()).trim();
             if (!inputText) {
                 printError(
                     "No text provided. Pass as argument or pipe via stdin.",
@@ -109,20 +115,31 @@ export function createAudioCommand() {
             }
 
             // Before the paid request, so a bad --output folder costs nothing.
-            mkdirSync(dirname(output), { recursive: true });
+            prepareOutputPath(output);
             if (isHuman) printInfo("Generating audio...");
 
             try {
                 const alignmentPath = opts.timestamps
                     ? `${output}.json`
                     : undefined;
-                const buffer = alignmentPath
-                    ? await generateWithTimestamps(
-                          inputText,
-                          opts,
-                          alignmentPath,
-                      )
-                    : await generateSimple(inputText, opts);
+                let buffer: Buffer;
+                if (alignmentPath) {
+                    buffer = await generateWithTimestamps(
+                        inputText,
+                        opts,
+                        alignmentPath,
+                    );
+                } else {
+                    const res = await generateSimple(inputText, opts);
+                    const contentType = (res.headers.get("content-type") ?? "")
+                        .split(";")[0]
+                        .trim()
+                        .toLowerCase();
+                    if (!opts.output && contentType === "audio/wav") {
+                        output = "speech.wav";
+                    }
+                    buffer = Buffer.from(await res.arrayBuffer());
+                }
 
                 writeFileSync(output, buffer);
                 printMeta({

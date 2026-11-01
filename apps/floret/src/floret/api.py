@@ -223,6 +223,13 @@ def _sse_frame(
 
 _STREAM_DONE = object()
 
+_STREAM_ERROR = {
+    "message": "Generation failed.",
+    "type": "server_error",
+    "code": "generation_failed",
+}
+_STREAM_ERROR_FRAME = f"data: {json.dumps({'error': _STREAM_ERROR})}\n\n"
+
 
 async def _sse_events(
     messages: list[dict[str, Any]],
@@ -329,6 +336,10 @@ async def _sse_events(
             finish_reason="stop",
             include_usage=include_usage,
         )
+        # A failed run has no success usage to report. An OpenAI-style error
+        # event marks the stream as failed, so the gateway passes this error on
+        # instead of "invalid or omitted terminal usage".
+        yield _STREAM_ERROR_FRAME
     finally:
         pump.cancel()
         try:
@@ -342,7 +353,7 @@ async def _sse_events(
 def _bearer_credential(http_request: Request) -> str | None:
     """Return the Authorization bearer as an opaque credential.
 
-    Accepts gateway `ag_` run tokens and direct `sk_`/`pk_` keys. Gen validates
+    Accepts gateway `ag_` run tokens and direct `sk_` keys. Gen validates
     the credential; Floret must not pre-judge the prefix.
     """
     header = http_request.headers.get("Authorization", "")

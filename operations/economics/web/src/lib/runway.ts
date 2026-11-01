@@ -20,7 +20,10 @@ import {
     forecastLineRule,
     forecastPaymentTiming,
     forecastRuleEntries,
+    RUNWAY_REVIEW,
+    type RunwayReview,
 } from "./forecastTerms";
+import { fmtExactNumber as fmtNumber } from "./format";
 import { canConvertToUsd, toUsd } from "./fx";
 import { monthShift, WINDOW_START } from "./months";
 import {
@@ -28,14 +31,20 @@ import {
     providerAccountBalanceRows,
 } from "./providerBalances";
 import {
+    bankPaymentHasServiceEvidence,
+    coversCalendarMonth,
+} from "./providerClose";
+import {
     canonicalProviderAccountId,
     cashOnlyTransaction,
+    cloudObservationMonths,
     ledgerCategory,
     resolveProvider,
     resolveProviderAccount,
     runwayLineItem,
     transactionCategory,
 } from "./providerRegistry";
+import { salesForecastRows } from "./sales";
 import {
     isVendorLedgerBalanceRow,
     vendorLedgerCreditBurnUsd,
@@ -55,8 +64,16 @@ const STRIPE_LINES = ["stripe sales", "stripe refunds"];
 // every stream (Pollen and Ko-fi). Refunds and reversals are one line.
 function stripeActivityLines(row: StripeSalesRow): [string, string, number][] {
     return [
-        ["stripe sales", "revenue", row.gross_sales - row.stripe_fees],
-        ["stripe refunds", "revenue", -(row.refunds + row.reversals)],
+        [
+            "stripe sales",
+            "revenue",
+            row.gross_sales - row.stripe_fees + row.dispute_fees,
+        ],
+        [
+            "stripe refunds",
+            "revenue",
+            -(row.refunds + row.reversals + row.dispute_fees),
+        ],
     ];
 }
 const RUNWAY_CATEGORY_ORDER = [
@@ -71,6 +88,7 @@ type DerivedForecastFact = {
     vendor: string;
     category: string;
     amount: number;
+    credit?: number;
     currency: string;
     method: ForecastMethod;
     source: "derived";
@@ -85,29 +103,49 @@ export type RunwayAssumption = DerivedForecastFact & {
 
 export type RunwayMatrixRow = {
     forecastIssue?: string;
+    actualIssues?: Record<string, string>;
+    // Components of the parent value; never add to totals again.
+    details?: { label: string; values: Record<string, number> }[];
     category: string;
     vendor: string;
     // "mixed" describes grouped rows, not a calculation method for a fact.
     forecastMethod: ForecastMethod | "mixed" | null;
     forecastPaymentTiming: ForecastPaymentTiming | null;
-    values: Record<string, number>;
+    values: Record<string, number | null>;
     // Usage paid from provider credits, kept beside `values` and never counted
     // as cash: it is not part of `values` or of any column total.
     creditValues?: Record<string, number>;
     assumptions: Record<string, RunwayAssumption[]>;
 };
 
+// A recorded subtotal is absent only when none of its components were recorded.
+export function sumRecorded(
+    values: (number | null | undefined)[],
+): number | null {
+    const known = values.filter((value): value is number => value != null);
+    return known.length ? known.reduce((sum, value) => sum + value, 0) : null;
+}
+
 export type RunwayColumn = {
+    provisional?: boolean;
     forecastComplete?: boolean;
     id: string;
     month: string;
     kind: "actual" | "current" | "forecast";
-    totalExpensesUsd: number;
+    totalExpensesUsd: number | null;
     // Credit-funded usage of the expense lines, shown beside the cash total.
-    totalCreditUsd: number;
-    operatingResultUsd: number;
-    netUsd: number;
+    totalCreditUsd: number | null;
+    operatingResultUsd: number | null;
+    netUsd: number | null;
     runningCashUsd: number | null;
+    cashBridge?: {
+        revenue: number;
+        expenses: number;
+        receiptsDifference: number;
+        paymentsDifference: number;
+        otherCash: number;
+        exchangeRates: number;
+    };
 };
 
 export type RunwayResult = {
@@ -119,13 +157,16 @@ export type RunwayResult = {
     openingBalanceDate: string | null;
     openingBalanceUsd: number | null;
     latestTransactionDate: string | null;
+    forecastTimingNote: string | null;
     currentCashUsd: number | null;
-    remainingCurrentPlanUsd: number | null;
+    review: RunwayReview;
+    fundingProvisional: boolean;
     projectedMonthEndCashUsd: number | null;
     runwayMonths: number | null;
     runwayExhaustedMonth: string | null;
     runwayCapped: boolean;
     flags: string[];
+    billingNotices: string[];
 };
 
 function monthRange(start: string, end: string): string[] {
@@ -146,10 +187,6 @@ function matrixKey(category: string, vendor: string) {
     return `${category}\u0000${vendor}`;
 }
 
-function planMatchKey(vendor: string, amount: number) {
-    return `${vendor}\u0000${amount >= 0 ? "inflow" : "outflow"}`;
-}
-
 function categoryRank(category: string) {
     const rank = RUNWAY_CATEGORY_ORDER.indexOf(category);
     return rank === -1 ? RUNWAY_CATEGORY_ORDER.length : rank;
@@ -162,6 +199,7 @@ function addAmount(map: Map<string, number>, key: string, amount: number) {
 type BalanceAwareForecast = {
     facts: DerivedForecastFact[];
     flags: string[];
+    fundingGaps?: string[];
     notices?: string[];
 };
 
@@ -186,8 +224,9 @@ function ruleBasedForecasts(
     now: Date,
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
     stripeSales: readonly StripeSalesRow[] = [],
+    review: RunwayReview = RUNWAY_REVIEW,
 ): BalanceAwareForecast {
-    const currentMonth = now.toISOString().slice(0, 7);
+    const currentMonth = monthShift(review.baselineMonth, 1);
     const horizon = `${now.getUTCFullYear() + 1}-12`;
     const recordedAt = now.toISOString().replace("T", " ").replace("Z", "");
     const closedTotals = new Map<string, Map<string, Map<string, number>>>();
@@ -195,7 +234,7 @@ function ruleBasedForecasts(
     for (const row of transactions) {
         if (row.kind !== "transaction") continue;
         const month = row.date.slice(0, 7);
-        if (!MONTH_RE.test(month) || month >= currentMonth) continue;
+        if (month !== review.baselineMonth) continue;
         const category = transactionCategory(row);
         const vendor = normalizedVendor(row.vendor);
         if (category === "revenue" && vendor === "stripe") continue;
@@ -238,12 +277,7 @@ function ruleBasedForecasts(
         method: ForecastMethod,
         evidence: string,
     ) => {
-        if (
-            month < currentMonth ||
-            month > horizon ||
-            Math.abs(amount) <= 0.005
-        )
-            return;
+        if (month < currentMonth || month > horizon) return;
         facts.push({
             entry_id: `derived-${month}-${vendor}-${category}-${currency}-${facts.length}`,
             month: `${month}-01`,
@@ -285,17 +319,18 @@ function ruleBasedForecasts(
                         matching.reduce((sum, row) => sum + row.amount, 0) -
                             scheduled.amount,
                     ) < 0.01;
-                if (valid) {
+                if (valid && scheduled.month < currentMonth) {
                     for (const id of ids) settledEntries.add(id);
                     continue;
                 }
-                flags.push(
-                    `Scheduled ${vendor} movement (${scheduled.month}) has invalid settlement links; verify the Bank entries.`,
-                );
+                if (!valid)
+                    flags.push(
+                        `Scheduled ${vendor} movement (${scheduled.month}) has invalid settlement links; verify the Bank entries.`,
+                    );
             }
             if (scheduled.month < currentMonth) {
                 flags.push(
-                    `Scheduled ${vendor} ${scheduled.currency} ${scheduled.amount} (${scheduled.month}) is overdue or unmatched; confirm receipt/payment and link the Bank entry, or reschedule. It is not assumed settled.`,
+                    `Scheduled ${vendor} ${scheduled.currency} ${fmtNumber(scheduled.amount)} (${scheduled.month}) is overdue or unmatched; confirm receipt/payment and link the Bank entry, or reschedule. It is not assumed settled.`,
                 );
                 continue;
             }
@@ -343,16 +378,38 @@ function ruleBasedForecasts(
             month = monthShift(month, 1)
         ) {
             if (!activeInMonth(month, rule)) continue;
+            const projected =
+                vendor === "stripe sales" && !amounts
+                    ? salesForecastRows(
+                          stripeSales,
+                          month,
+                          new Date(`${review.asOf}T23:59:59Z`),
+                          privateRules?.["stripe sales|revenue"]
+                              ?.salesStoppedFrom,
+                      )
+                    : null;
             for (const amount of inferredAmounts) {
+                const projectedAmount = projected
+                    ? projected
+                          .filter((row) => row.currency === amount.currency)
+                          .reduce(
+                              (sum, row) =>
+                                  sum +
+                                  row.gross_sales -
+                                  row.stripe_fees +
+                                  row.dispute_fees,
+                              0,
+                          )
+                    : amount.amount;
                 addFact(
                     vendor,
                     category,
                     month,
-                    amount.amount,
+                    projectedAmount,
                     amount.currency,
                     rule.method,
                     amount.sourceMonth
-                        ? `Calculated from verified ${amount.sourceMonth} ${STRIPE_LINES.includes(vendor) ? "Stripe activity" : "bank total"}`
+                        ? `Calculated from verified ${amount.sourceMonth} ${STRIPE_LINES.includes(vendor) ? "Stripe activity" : "bank total"}${projected && privateRules?.["stripe sales|revenue"]?.salesStoppedFrom ? "; closed sales streams are not projected" : ""}`
                         : "Reviewed fixed amount",
                 );
             }
@@ -363,17 +420,22 @@ function ruleBasedForecasts(
 }
 
 function balanceAwareForecasts(
-    transactions: OpTransactionRow[],
     cloudRows: VendorLedgerRow[],
     now: Date,
-): BalanceAwareForecast & { issues: Map<string, string> } {
+    review: RunwayReview,
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
+): BalanceAwareForecast & {
+    issues: Map<string, string>;
+    fundingGaps: string[];
+} {
     const groups = new Map<string, VendorLedgerRow[]>();
     const facts: DerivedForecastFact[] = [];
     const flags: string[] = [];
     const issues = new Map<string, string>();
+    const fundingGaps: string[] = [];
     const notices: string[] = [];
-    const currentMonth = now.toISOString().slice(0, 7);
-    const previousMonth = monthShift(currentMonth, -1);
+    const currentMonth = monthShift(review.baselineMonth, 1);
+    const previousMonth = review.baselineMonth;
     for (const row of cloudRows) {
         const provider = resolveProvider(row.vendor);
         const account = canonicalProviderAccountId(provider, row.account_id);
@@ -387,11 +449,21 @@ function balanceAwareForecasts(
         const provider = resolveProvider(row.vendor);
         const relevant = rows.some(
             (r) =>
-                !isVendorLedgerBalanceRow(r) &&
-                [previousMonth, currentMonth].includes(r.start.slice(0, 7)) &&
-                automaticForecastRule(r.vendor, cloudCategory(r)),
+                (r.start.slice(0, 7) >= previousMonth ||
+                    isVendorLedgerBalanceRow(r)) &&
+                automaticForecastRule(
+                    r.vendor,
+                    isVendorLedgerBalanceRow(r)
+                        ? (provider?.category ?? "uncategorized")
+                        : cloudCategory(r),
+                    privateRules,
+                ),
         );
         if (!relevant) continue;
+        const definition =
+            provider && resolveProviderAccount(provider, row.account_id);
+        if (definition?.activeTo && definition.activeTo < currentMonth)
+            continue;
         if (
             provider?.accounts?.length &&
             !resolveProviderAccount(provider, row.account_id)
@@ -402,7 +474,7 @@ function balanceAwareForecasts(
             issues.set(row.vendor, "Usage account missing or unrecognized");
             continue;
         }
-        const result = accountBalanceForecasts(rows, now);
+        const result = accountBalanceForecasts(rows, now, review, privateRules);
         const account = canonicalProviderAccountId(provider, row.account_id);
         facts.push(
             ...result.facts.map((fact) => ({
@@ -412,194 +484,71 @@ function balanceAwareForecasts(
             })),
         );
         flags.push(...result.flags);
+        fundingGaps.push(...(result.fundingGaps ?? []));
         notices.push(...(result.notices ?? []));
         if (result.flags.length) issues.set(row.vendor, result.flags.join(" "));
     }
-    // Postpaid plans already include the prior month's expected bill. Bank
-    // payments count toward that vendor-level target, not on top of it. This
-    // forecasts settlement timing; it does not certify invoice reconciliation.
-    const postpaidTargets = new Map<string, number>();
-    for (const fact of facts) {
-        if (
-            fact.month.slice(0, 7) === currentMonth &&
-            fact.amount < 0 &&
-            forecastPaymentTiming(fact.vendor, fact.category) === "postpaid"
-        ) {
-            addAmount(postpaidTargets, fact.vendor, -fact.amount);
-        }
-    }
-    // Prepaid top-up plans cover future shortfalls after the checked balance,
-    // so they still need cash already paid this month added once per vendor.
-    for (const row of transactions) {
-        if (
-            row.kind !== "transaction" ||
-            row.date.slice(0, 7) !== now.toISOString().slice(0, 7)
-        )
-            continue;
-        const category = transactionCategory(row);
-        const rule = automaticForecastRule(row.vendor, category);
-        if (!rule || rule.paymentTiming === "direct") continue;
-        let amount = toUsd(row.amount, row.currency, row.date);
-        if (rule.paymentTiming === "postpaid" && amount < 0) {
-            const target = postpaidTargets.get(row.vendor) ?? 0;
-            postpaidTargets.set(row.vendor, Math.max(0, target + amount));
-            amount = Math.min(0, target + amount);
-            if (amount === 0) continue;
-        }
-        facts.push({
-            entry_id: `derived-bank-${row.entry_id}`,
-            month: `${row.date.slice(0, 7)}-01`,
-            vendor: row.vendor,
-            category,
-            amount,
-            currency: "USD",
-            method: "last",
-            source: "derived",
-            evidence:
-                rule.paymentTiming === "postpaid" && amount < 0
-                    ? "Verified current-month bank cash exceeding the estimated postpaid bill"
-                    : "Verified current-month bank cash",
-            recorded_at: now.toISOString(),
-        });
-    }
-    return { facts, flags: [...new Set(flags)], notices, issues };
+    return { facts, flags: [...new Set(flags)], fundingGaps, notices, issues };
 }
 
 function accountBalanceForecasts(
     cloudRows: VendorLedgerRow[],
     now: Date,
+    review: RunwayReview,
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): BalanceAwareForecast {
-    const currentMonth = now.toISOString().slice(0, 7);
+    const currentMonth = monthShift(review.baselineMonth, 1);
+    const baselineMonth = review.baselineMonth;
     const horizon = `${now.getUTCFullYear() + 1}-12`;
-    if (cloudRows.length === 0) return { facts: [], flags: [] };
-    const unresolved: string[] = [];
-    const notices: string[] = [];
-
-    const balances = new Map(
-        providerAccountBalanceRows({ vendorLedger: cloudRows }, now)
-            .filter((row) => row.active && row.balanceStatus === "checked")
-            .map((row) => [row.vendor, row] as const),
+    const vendor = cloudRows[0].vendor;
+    const usage = cloudRows.filter(
+        (row) => !isVendorLedgerBalanceRow(row) && row.type !== "grant",
     );
-    const burnByKeyMonth = new Map<string, Map<string, number>>();
-    const currentPaidBurnByKey = new Map<string, number>();
-    const previousPaidBurnByKey = new Map<string, number>();
-    const coverageDayByKey = new Map<string, number>();
-    const today = now.toISOString().slice(0, 10);
-
-    const usageCoverageDate = (row: VendorLedgerRow): string | null => {
-        const endDate = row.end.slice(0, 10);
-        let coverageDate: string | null = null;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-            const endIsExclusive = row.end.slice(11, 19) === "00:00:00";
-            coverageDate = endIsExclusive
-                ? new Date(
-                      Date.parse(`${endDate}T00:00:00Z`) - 24 * 60 * 60 * 1_000,
-                  )
-                      .toISOString()
-                      .slice(0, 10)
-                : endDate;
-        }
-        if (coverageDate?.startsWith(currentMonth) && coverageDate <= today) {
-            return coverageDate;
-        }
-
-        return null;
-    };
-
-    for (const row of cloudRows) {
-        if (isVendorLedgerBalanceRow(row)) continue;
-        const category = cloudCategory(row);
-        const rule = automaticForecastRule(row.vendor, category);
-        if (!rule) continue;
-        const month = row.start.slice(0, 7);
-        if (!MONTH_RE.test(month)) continue;
-        const paidBurn = vendorLedgerPaidBurnUsd(row);
-        const burn = paidBurn + vendorLedgerCreditBurnUsd(row);
-        if (Math.abs(burn) <= 0.005) continue;
-        const key = matrixKey(category, row.vendor);
-        const months = burnByKeyMonth.get(key) ?? new Map<string, number>();
-        months.set(month, (months.get(month) ?? 0) + burn);
-        burnByKeyMonth.set(key, months);
-        if (month === monthShift(currentMonth, -1)) {
-            previousPaidBurnByKey.set(
-                key,
-                (previousPaidBurnByKey.get(key) ?? 0) + paidBurn,
-            );
-        }
-        if (month === currentMonth) {
-            currentPaidBurnByKey.set(
-                key,
-                (currentPaidBurnByKey.get(key) ?? 0) + paidBurn,
-            );
-            const coverageDate = usageCoverageDate(row);
-            if (coverageDate) {
-                coverageDayByKey.set(
-                    key,
-                    Math.max(
-                        coverageDayByKey.get(key) ?? 0,
-                        Number(coverageDate.slice(8, 10)),
-                    ),
-                );
-            }
-        }
+    const baseline = usage.filter(
+        (row) => row.start.slice(0, 7) === baselineMonth,
+    );
+    if (!coversCalendarMonth(baseline, baselineMonth)) {
+        return {
+            facts: [],
+            flags: [
+                `${vendor}: complete ${baselineMonth} usage is missing; no monthly forecast baseline is assumed.`,
+            ],
+        };
     }
-
-    const daysThisMonth = daysInUtcMonth(currentMonth);
-    const lastMonth = monthShift(currentMonth, -1);
-    const ratesByVendor = new Map<
+    const rates = new Map<
         string,
         {
-            category: string;
-            currentBurn: number;
-            currentPaidBurn: number;
-            monthlyRate: number;
-            paymentTiming: ForecastPaymentTiming;
-            usageThrough: string | null;
-        }[]
-    >();
-    for (const [key, months] of burnByKeyMonth) {
-        const separator = key.indexOf("\u0000");
-        const category = key.slice(0, separator);
-        const vendor = key.slice(separator + 1);
-        const rule = automaticForecastRule(vendor, category);
-        if (!rule) continue;
-        const currentBurn = Math.max(0, months.get(currentMonth) ?? 0);
-        const lastBurn = Math.max(0, months.get(lastMonth) ?? 0);
-        const coverageDay = coverageDayByKey.get(key) ?? null;
-        if (currentBurn > 0 && coverageDay == null) {
-            unresolved.push(
-                `Usage coverage date missing for ${vendor} (${category}); its forecast is unavailable.`,
-            );
-            continue;
+            total: number;
+            paid: number;
+            timing: ForecastPaymentTiming;
+            activeFrom?: string;
+            activeThrough?: string;
         }
-        const monthlyRate =
-            currentBurn > 0 && coverageDay != null
-                ? (currentBurn / coverageDay) * daysThisMonth
-                : lastBurn;
-        if (monthlyRate <= 0.005) continue;
-        const rates = ratesByVendor.get(vendor) ?? [];
-        rates.push({
-            category,
-            currentBurn,
-            currentPaidBurn: Math.max(0, currentPaidBurnByKey.get(key) ?? 0),
-            monthlyRate,
-            paymentTiming: rule.paymentTiming,
-            usageThrough:
-                coverageDay == null
-                    ? null
-                    : `${currentMonth}-${String(coverageDay).padStart(2, "0")}`,
-        });
-        ratesByVendor.set(vendor, rates);
+    >();
+    for (const row of baseline) {
+        const category = cloudCategory(row);
+        const rule = automaticForecastRule(vendor, category, privateRules);
+        if (!rule) continue;
+        const rate = rates.get(category) ?? {
+            total: 0,
+            paid: 0,
+            timing: rule.paymentTiming,
+            activeFrom: rule.activeFrom,
+            activeThrough: rule.activeThrough,
+        };
+        rate.paid += vendorLedgerPaidBurnUsd(row);
+        rate.total +=
+            vendorLedgerPaidBurnUsd(row) + vendorLedgerCreditBurnUsd(row);
+        rates.set(category, rate);
     }
-
     const facts: DerivedForecastFact[] = [];
-    const missingBalanceVendors = new Set<string>();
-    const recordedAt = now.toISOString().replace("T", " ").replace("Z", "");
-    const addCash = (
-        vendor: string,
+    const fundingGaps: string[] = [];
+    const notices: string[] = [];
+    const add = (
         category: string,
         month: string,
-        amount: number,
+        cash: number,
+        credit: number,
         evidence: string,
     ) => {
         if (month > horizon) return;
@@ -608,210 +557,127 @@ function accountBalanceForecasts(
             month: `${month}-01`,
             vendor,
             category,
-            amount: amount <= 0.005 ? 0 : -amount,
+            amount: -Math.max(0, cash),
+            credit: -Math.max(0, credit),
             currency: "USD",
             method: "last",
             source: "derived",
             evidence,
-            recorded_at: recordedAt,
+            recorded_at: now.toISOString(),
         });
     };
-
-    for (const [vendor, rates] of ratesByVendor) {
-        for (const rate of rates) {
-            if (rate.paymentTiming !== "postpaid") continue;
-            const bill = Math.max(
-                0,
-                previousPaidBurnByKey.get(matrixKey(rate.category, vendor)) ??
-                    0,
-            );
-            if (bill <= 0.005) continue;
-            addCash(
-                vendor,
-                rate.category,
+    // Only opening-day funding supports depletion calculations. Without it,
+    // budget the baseline cash/credit split without consuming a later snapshot.
+    const openingDate = `${currentMonth}-01`;
+    const balance = providerAccountBalanceRows(
+        { vendorLedger: cloudRows },
+        new Date(`${openingDate}T23:59:59Z`),
+    ).find((row) => row.active && row.balanceStatus === "checked");
+    const latestBalanceDate = cloudRows
+        .filter(isVendorLedgerBalanceRow)
+        .map((row) => row.start.slice(0, 10))
+        .sort()
+        .at(-1);
+    const fundedRates = [...rates].filter(
+        ([, rate]) => rate.timing !== "direct" && rate.total > 0,
+    );
+    if (fundedRates.length && !balance) {
+        fundingGaps.push(
+            latestBalanceDate
+                ? `${vendor}: opening balance for ${openingDate} is missing (balance checked ${latestBalanceDate}); funding depletion is unverified; the plan provisionally repeats the baseline cash/credit split.`
+                : `${vendor}: checked account balance missing; funding depletion is unverified; the plan provisionally repeats the baseline cash/credit split.`,
+        );
+    } else if (
+        fundedRates.length &&
+        balance &&
+        !balance.creditTermsKnown &&
+        !balance.expiryAssumed &&
+        (balance.creditBalanceUsd ?? 0) > 0
+    ) {
+        fundingGaps.push(
+            `${vendor}: credit expiry not verified; funding depletion is unverified; the plan provisionally repeats the baseline cash/credit split.`,
+        );
+    }
+    const anchor = balance?.balanceAsOf ?? openingDate;
+    const lots = balance?.fundingLots.map((lot) => ({ ...lot })) ?? [];
+    for (const [category, rate] of rates) {
+        if (
+            rate.timing === "postpaid" &&
+            rate.paid > 0 &&
+            activeInMonth(baselineMonth, rate)
+        ) {
+            add(
+                category,
                 currentMonth,
-                bill,
-                `Estimated ${lastMonth} postpaid bill from recorded cash-funded usage; expected in ${currentMonth}. Current-month vendor payments offset this estimate once. Invoice adjustments and payment matching remain unverified.`,
+                rate.paid,
+                0,
+                `Estimated ${baselineMonth} postpaid bill from recorded cash-funded usage; independent of current bank payments.`,
             );
             notices.push(
-                `${vendor} (${rate.category}): ${currentMonth} includes an estimated $${Math.round(bill).toLocaleString("en-US")} bill for ${lastMonth} usage, less payments recorded this month. Invoice reconciliation pending.`,
-            );
-        }
-        const balance = balances.get(vendor);
-        const directRates = rates.filter(
-            (rate) => rate.paymentTiming === "direct",
-        );
-        const balanceRates = rates.filter(
-            (rate) => rate.paymentTiming !== "direct",
-        );
-        for (const rate of directRates) {
-            addCash(
-                vendor,
-                rate.category,
-                currentMonth,
-                rate.monthlyRate,
-                `Projected current-month run rate ${Math.round(rate.monthlyRate)}; direct${rate.usageThrough ? `; usage through ${rate.usageThrough}` : ""}`,
-            );
-            for (
-                let month = monthShift(currentMonth, 1);
-                month <= horizon;
-                month = monthShift(month, 1)
-            ) {
-                addCash(
-                    vendor,
-                    rate.category,
-                    month,
-                    rate.monthlyRate,
-                    `Run rate ${Math.round(rate.monthlyRate)}; direct${rate.usageThrough ? `; usage through ${rate.usageThrough}` : ""}`,
-                );
-            }
-        }
-        if (!balance || balanceRates.length === 0) {
-            if (!balance && balanceRates.length > 0) {
-                missingBalanceVendors.add(vendor);
-            }
-            continue;
-        }
-        if (
-            !balance.creditTermsKnown &&
-            !balance.expiryAssumed &&
-            (balance.creditBalanceUsd ?? 0) > 0
-        ) {
-            unresolved.push(
-                `Credit expiry not verified for ${vendor} / ${balance.accountLabel}; its cash forecast is unavailable.`,
-            );
-            continue;
-        }
-
-        const fundingLots = balance.fundingLots.map((lot) => ({ ...lot }));
-
-        const scheduleUsage = (
-            usageMonth: string,
-            usageByCategory: {
-                category: string;
-                amount: number;
-                accruedCash: number;
-                usageThrough: string | null;
-            }[],
-        ) => {
-            const totalUsage = usageByCategory.reduce(
-                (sum, item) => sum + item.amount,
-                0,
-            );
-            if (totalUsage <= 0.005) {
-                for (const item of usageByCategory) {
-                    if (item.accruedCash <= 0.005) continue;
-                    const timing = forecastPaymentTiming(vendor, item.category);
-                    if (timing !== "postpaid") continue;
-                    addCash(
-                        vendor,
-                        item.category,
-                        monthShift(usageMonth, 1),
-                        item.accruedCash,
-                        `Accrued postpaid usage; checked balance as of ${balance.balanceAsOf ?? "unknown"}`,
-                    );
-                }
-                return;
-            }
-            // Spread the monthly run rate over service days, not past expiry.
-            const firstDay =
-                usageMonth === currentMonth
-                    ? Math.max(
-                          1,
-                          ...usageByCategory.map((item) =>
-                              item.usageThrough
-                                  ? Number(item.usageThrough.slice(8, 10)) + 1
-                                  : 1,
-                          ),
-                      )
-                    : 1;
-            const lastDay = daysInUtcMonth(usageMonth);
-            const dailyUsage = totalUsage / Math.max(1, lastDay - firstDay + 1);
-            let cashRequired = 0;
-            for (let day = firstDay; day <= lastDay; day += 1) {
-                cashRequired += consumeBalanceLots(
-                    fundingLots,
-                    dailyUsage,
-                    `${usageMonth}-${String(day).padStart(2, "0")}`,
-                );
-            }
-            for (const item of usageByCategory) {
-                const timing = forecastPaymentTiming(vendor, item.category);
-                if (timing !== "prepaid" && timing !== "postpaid") continue;
-                // The reviewed current-month prepaid fact represents only cash
-                // paid to date. The live balance funds the remaining usage;
-                // forecast only the share that the balance cannot cover.
-                if (timing === "prepaid" && usageMonth === currentMonth) {
-                    if (cashRequired > 0.005) {
-                        addCash(
-                            vendor,
-                            item.category,
-                            usageMonth,
-                            cashRequired * (item.amount / totalUsage),
-                            `Remaining current-month prepaid shortfall; checked balance as of ${balance.balanceAsOf ?? "unknown"}`,
-                        );
-                    }
-                    continue;
-                }
-                const paymentMonth =
-                    timing === "postpaid"
-                        ? monthShift(usageMonth, 1)
-                        : usageMonth;
-                const amount =
-                    cashRequired <= 0.005
-                        ? 0
-                        : cashRequired * (item.amount / totalUsage);
-                addCash(
-                    vendor,
-                    item.category,
-                    paymentMonth,
-                    amount + item.accruedCash,
-                    `Run rate ${Math.round(item.amount)}; ${timing}; checked balance ${Math.round((balance.cashBalanceUsd ?? 0) + (balance.creditBalanceUsd ?? 0))} as of ${balance.balanceAsOf ?? "unknown"}${item.usageThrough ? `; usage through ${item.usageThrough}` : ""}${balance.expiryAssumed ? "; user-approved ignore-expiry assumption for this balance snapshot" : ""}`,
-                );
-            }
-        };
-
-        scheduleUsage(
-            currentMonth,
-            balanceRates.map((rate) => ({
-                category: rate.category,
-                amount: Math.max(0, rate.monthlyRate - rate.currentBurn),
-                accruedCash:
-                    rate.paymentTiming === "postpaid"
-                        ? rate.currentPaidBurn
-                        : 0,
-                usageThrough: rate.usageThrough,
-            })),
-        );
-        for (
-            let month = monthShift(currentMonth, 1);
-            month <= horizon;
-            month = monthShift(month, 1)
-        ) {
-            scheduleUsage(
-                month,
-                balanceRates.map((rate) => ({
-                    category: rate.category,
-                    amount: rate.monthlyRate,
-                    accruedCash: 0,
-                    usageThrough: rate.usageThrough,
-                })),
+                `${vendor} (${category}): ${currentMonth} includes the estimated settlement for ${baselineMonth} cash-funded usage.`,
             );
         }
     }
-
-    return {
-        facts,
-        notices,
-        flags: [
-            ...unresolved,
-            ...(missingBalanceVendors.size === 0
-                ? []
-                : [
-                      `Checked balance missing for ${[...missingBalanceVendors].sort().join(", ")}; prepaid or postpaid run-rate cash is not forecast.`,
-                  ]),
-        ],
-    };
+    for (
+        let month = currentMonth;
+        month <= horizon;
+        month = monthShift(month, 1)
+    ) {
+        const days = daysInUtcMonth(month);
+        const totalRate = fundedRates
+            .filter(([, rate]) => activeInMonth(month, rate))
+            .reduce((sum, [, rate]) => sum + rate.total, 0);
+        let newCash = 0;
+        let credits = 0;
+        if (fundingGaps.length === 0 && totalRate > 0) {
+            for (let day = 1; day <= days; day++) {
+                const beforeCredits = lots.reduce(
+                    (sum, lot) => sum + lot.creditUsd,
+                    0,
+                );
+                newCash += consumeBalanceLots(
+                    lots,
+                    totalRate / days,
+                    `${month}-${String(day).padStart(2, "0")}`,
+                );
+                credits +=
+                    beforeCredits -
+                    lots.reduce((sum, lot) => sum + lot.creditUsd, 0);
+            }
+        }
+        for (const [category, rate] of rates) {
+            if (!activeInMonth(month, rate)) continue;
+            const funding =
+                rate.timing === "direct"
+                    ? "direct monthly budget"
+                    : fundingGaps.length
+                      ? "provisional baseline cash/credit split; funding depletion unverified"
+                      : `full-month budget using opening balance checked ${anchor}${balance?.expiryAssumed ? "; approved snapshot expiry assumption" : ""}`;
+            const evidence = `${baselineMonth} complete-month usage baseline ${fmtNumber(rate.total)}; ${rate.timing}; ${funding}`;
+            if (rate.timing === "direct" || rate.total === 0) {
+                add(category, month, rate.total, 0, evidence);
+                continue;
+            }
+            const share = rate.total / totalRate;
+            const cash = fundingGaps.length ? rate.paid : newCash * share;
+            const credit = fundingGaps.length
+                ? rate.total - rate.paid
+                : credits * share;
+            // Credits are consumption in the service month; postpaid cash settles
+            // the following month. Existing prepaid cash is consumed by lots,
+            // never added to the bank-payment forecast a second time.
+            add(
+                category,
+                month,
+                rate.timing === "prepaid" ? cash : 0,
+                credit,
+                evidence,
+            );
+            if (rate.timing === "postpaid")
+                add(category, monthShift(month, 1), cash, 0, evidence);
+        }
+    }
+    return { facts, flags: [], fundingGaps, notices };
 }
 
 function balancesInUsd(balances: Map<string, number>, month: string) {
@@ -822,33 +688,25 @@ function balancesInUsd(balances: Map<string, number>, month: string) {
     );
 }
 
-function remainingPlanUsd(
-    plan: Map<string, number>,
-    actual: Map<string, number> | undefined,
-) {
-    let remaining = 0;
-    for (const [key, target] of plan) {
-        const spent = actual?.get(key) ?? 0;
-        if (target > 0) remaining += Math.max(0, target - spent);
-        if (target < 0) remaining += Math.min(0, target - spent);
-    }
-    return remaining;
-}
-
 export function buildRunway(
     transactions: OpTransactionRow[],
     now: Date = new Date(),
     cloudRows: VendorLedgerRow[] = [],
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
     stripeSales: readonly StripeSalesRow[] = [],
+    review: RunwayReview = RUNWAY_REVIEW,
 ): RunwayResult {
     const currentMonth = now.toISOString().slice(0, 7);
+    const priorMonth = monthShift(currentMonth, -1);
+    const reviewIsCurrent = review.baselineMonth === priorMonth;
     const flags: string[] = [];
+    if (!reviewIsCurrent)
+        flags.push(
+            `Plan baseline ${review.baselineMonth} needs review for ${currentMonth}; close ${priorMonth} before relying on projected cash or runway. Monthly rules have not been changed automatically.`,
+        );
     const actualByMonth = new Map<string, Map<string, number>>();
     const cashActualByMonth = new Map<string, Map<string, number>>();
     const forecastByMonth = new Map<string, Map<string, number>>();
-    const actualPlanMatchByMonth = new Map<string, Map<string, number>>();
-    const forecastPlanMatchByMonth = new Map<string, Map<string, number>>();
     const assumptionsByCell = new Map<string, RunwayAssumption[]>();
     const identities = new Map<string, { category: string; vendor: string }>();
     const observedMonths = new Set<string>([currentMonth]);
@@ -888,6 +746,7 @@ export function buildRunway(
     const relevantStripeSales = stripeSales.filter(
         (row) => row.month >= WINDOW_START,
     );
+    // Refund failures, recovered disputes and returned fees can be net credits.
     const invalidStripeSales = relevantStripeSales.filter(
         (row) =>
             !MONTH_RE.test(row.month) ||
@@ -898,13 +757,11 @@ export function buildRunway(
             !Number.isFinite(row.reversals) ||
             !Number.isFinite(row.net_sales) ||
             !Number.isFinite(row.stripe_fees) ||
+            !Number.isFinite(row.dispute_fees) ||
             !Number.isFinite(row.net_after_fees) ||
             !Number.isFinite(row.payments) ||
             !Number.isFinite(row.refund_count) ||
             row.gross_sales < 0 ||
-            row.refunds < 0 ||
-            row.reversals < 0 ||
-            row.stripe_fees < 0 ||
             row.payments < 0 ||
             row.refund_count < 0 ||
             Math.abs(
@@ -920,7 +777,7 @@ export function buildRunway(
             normalizedVendor(row.vendor) === "stripe" &&
             transactionCategory(row) === "revenue",
     );
-    const latestClosedMonth = monthShift(currentMonth, -1);
+    const latestClosedMonth = review.baselineMonth;
     const latestStripeSales = relevantStripeSales.filter(
         (row) => row.month === latestClosedMonth,
     );
@@ -929,13 +786,13 @@ export function buildRunway(
         latestStripeSales.every((row) => row.coverage_complete === 1);
     const stripeSalesUsable = invalidStripeSales.length === 0;
     const stripeForecastUsable =
-        stripeSalesUsable &&
+        !invalidStripeSales.some((row) => row.month === latestClosedMonth) &&
         ((bankStripeRevenueRows.length === 0 &&
             relevantStripeSales.length === 0) ||
             stripeSalesAreCurrent);
     if (invalidStripeSales.length > 0) {
         flags.push(
-            `${invalidStripeSales.length} Stripe sales ${invalidStripeSales.length === 1 ? "row is" : "rows are"} invalid; Stripe P&L revenue and its forecast are unavailable.`,
+            `${invalidStripeSales.length} Stripe sales ${invalidStripeSales.length === 1 ? "row is" : "rows are"} invalid; recorded Stripe P&L revenue is unavailable. The plan validates its selected baseline separately.`,
         );
     } else if (
         bankStripeRevenueRows.length > 0 &&
@@ -985,26 +842,38 @@ export function buildRunway(
             // Cash-only movements (registry `cashOnly` on the vendor or on
             // its cash rule) change cash without a table line, like Stripe
             // payouts.
+            // An explicit reviewed allocation moves only the expense, never
+            // the bank movement or its USD valuation. Do not infer it from an invoice date.
+            const expenseMonth =
+                category !== "revenue" && category !== "balance_sheet"
+                    ? (row.evidence.match(
+                          /(?:^|;\s*)expense_month=(\d{4}-(?:0[1-9]|1[0-2]))(?=;|$)/,
+                      )?.[1] ?? month)
+                    : month;
             const monthValues =
-                actualByMonth.get(month) ?? new Map<string, number>();
+                actualByMonth.get(expenseMonth) ?? new Map<string, number>();
             addAmount(monthValues, key, amountUsd);
-            actualByMonth.set(month, monthValues);
+            actualByMonth.set(expenseMonth, monthValues);
+            if (expenseMonth !== month) {
+                const paymentMonthValues =
+                    actualByMonth.get(month) ?? new Map<string, number>();
+                if (!paymentMonthValues.has(key))
+                    paymentMonthValues.set(key, 0);
+                actualByMonth.set(month, paymentMonthValues);
+                observedMonths.add(expenseMonth);
+            }
             identities.set(key, { category, vendor: lineItem });
         }
-        const planMatchValues =
-            actualPlanMatchByMonth.get(month) ?? new Map<string, number>();
-        addAmount(planMatchValues, planMatchKey(vendor, amountUsd), amountUsd);
-        actualPlanMatchByMonth.set(month, planMatchValues);
         observedMonths.add(month);
     }
 
     // Ledger categories take their actuals from the vendor ledger by service
     // month: paid usage is the expense; credit-funded usage is kept beside it
     // in `creditValues` and never reaches cash.
-    const ledgerVendorsWithRows = new Set<string>();
-    const ledgerMonthsByVendor = new Map<string, Set<string>>();
+
     for (const row of cloudRows) {
-        if (isVendorLedgerBalanceRow(row)) continue;
+        if (isVendorLedgerBalanceRow(row) || (row.credit > 0 && row.paid === 0))
+            continue;
         const category = ledgerCategory(row);
         if (pnlSource(category) !== "ledger" || category === "uncategorized") {
             continue;
@@ -1013,16 +882,16 @@ export function buildRunway(
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
         if (month > currentMonth) continue;
         const vendor = normalizedVendor(row.vendor);
-        ledgerVendorsWithRows.add(vendor);
         const paidUsd = vendorLedgerPaidBurnUsd(row);
         const creditUsd = vendorLedgerCreditBurnUsd(row);
-        if (Math.abs(paidUsd) <= 0.005 && Math.abs(creditUsd) <= 0.005) {
+        // Zero-only bookkeeping does not introduce an unmodeled forecast line.
+        if (
+            paidUsd === 0 &&
+            creditUsd === 0 &&
+            !forecastLineRule(vendor, category)
+        )
             continue;
-        }
-        const vendorMonths =
-            ledgerMonthsByVendor.get(vendor) ?? new Set<string>();
-        vendorMonths.add(month);
-        ledgerMonthsByVendor.set(vendor, vendorMonths);
+
         const key = matrixKey(category, vendor);
         const monthValues =
             actualByMonth.get(month) ?? new Map<string, number>();
@@ -1034,6 +903,13 @@ export function buildRunway(
         creditFundedByMonth.set(month, creditValues);
         identities.set(key, { category, vendor });
         observedMonths.add(month);
+        for (const zeroMonth of cloudObservationMonths(row)) {
+            if (zeroMonth === month || zeroMonth > currentMonth) continue;
+            const zeroValues =
+                actualByMonth.get(zeroMonth) ?? new Map<string, number>();
+            if (!zeroValues.has(key)) zeroValues.set(key, 0);
+            actualByMonth.set(zeroMonth, zeroValues);
+        }
     }
     // A bank payment still held as cash prepaid on the vendor's latest balance
     // snapshot has nothing to expense yet: the money moved into a prepaid
@@ -1052,43 +928,37 @@ export function buildRunway(
             usd: toUsd(row.paid, row.currency, row.start),
         });
     }
-    // No fallback to cash: a paid vendor without ledger rows stays visible as
-    // a warning line with no amount.
-    const ledgerIssues = new Map<string, string>();
+    // Cash proves a payment, not its service month. Keep unmatched periods open
+    // unless the same-month usage or a retained supplier-invoice match exists.
+    const actualIssuesByCell = new Map<string, string>();
     for (const [vendor, payments] of ledgerVendorPayments) {
         const prepaid = latestPrepaidByVendor.get(vendor);
         if (prepaid && prepaid.usd >= -payments.usd - 0.5) continue;
-        const coveredMonths = ledgerMonthsByVendor.get(vendor);
-        if (coveredMonths) {
-            // A payment usually settles the previous month (postpaid) or the
-            // next one (prepaid); a paid month with no ledger rows around it
-            // is a collection gap, never a cash fallback.
-            const uncovered = [...payments.months]
-                .filter(
-                    (month) =>
-                        !coveredMonths.has(month) &&
-                        !coveredMonths.has(monthShift(month, -1)) &&
-                        !coveredMonths.has(monthShift(month, 1)),
-                )
-                .sort();
-            if (uncovered.length > 0) {
-                flags.push(
-                    `Bank paid ${vendor} (${payments.category}) in ${uncovered.join(", ")}, but the vendor ledger has no invoice or usage rows near those months; the P&L shows nothing for them instead of falling back to cash.`,
-                );
-            }
-            continue;
-        }
-        const months = [...payments.months].sort().join(", ");
+        const unmatched = bankRows.filter(
+            (row) =>
+                row.vendor === vendor &&
+                pnlSource(transactionCategory(row)) === "ledger" &&
+                row.amount < 0 &&
+                row.date.slice(0, 7) >= WINDOW_START &&
+                !bankPaymentHasServiceEvidence(row, cloudRows),
+        );
+        if (!unmatched.length) continue;
+        const months = [
+            ...new Set(unmatched.map((row) => row.date.slice(0, 7))),
+        ].sort();
+        const message =
+            "Service-month costs unavailable; the bank payment has no matched vendor invoice or usage record";
         identities.set(matrixKey(payments.category, vendor), {
             category: payments.category,
             vendor,
         });
-        ledgerIssues.set(
-            vendor,
-            `No invoices in the vendor ledger; bank paid ${Math.round(-payments.usd)} USD in ${months}`,
-        );
+        for (const month of months)
+            actualIssuesByCell.set(
+                `${month}\u0000${matrixKey(payments.category, vendor)}`,
+                message,
+            );
         flags.push(
-            `Bank paid ${vendor} (${payments.category}) ${Math.round(-payments.usd)} USD in ${months}, but the vendor ledger has no invoice or usage rows for it; the P&L shows nothing for ${vendor} instead of falling back to cash.`,
+            `Bank paid ${vendor} (${payments.category}) in ${months.join(", ")}, but the vendor ledger has no same-month usage or explicit supplier-invoice match; the P&L shows nothing for those payments until their service period is reconciled.`,
         );
     }
 
@@ -1115,13 +985,25 @@ export function buildRunway(
         now,
         privateRules,
         stripeForecastUsable ? latestStripeSales : [],
+        review,
     );
-    const balanceAware = balanceAwareForecasts(bankRows, cloudRows, now);
+    const planCloudRows = cloudRows.filter(
+        (row) =>
+            row.start.slice(0, 10) <= review.asOf &&
+            row.recorded_at.slice(0, 10) <= review.asOf,
+    );
+    const balanceAware = balanceAwareForecasts(
+        planCloudRows,
+        now,
+        review,
+        privateRules,
+    );
     flags.push(
         ...ruleBased.flags,
         ...balanceAware.flags,
-        ...(balanceAware.notices ?? []),
+        ...balanceAware.fundingGaps,
     );
+    const forecastCreditsByMonth = new Map<string, Map<string, number>>();
     const effectiveForecastFacts = [...ruleBased.facts, ...balanceAware.facts];
 
     const invalidForecastVendors = new Set<string>();
@@ -1160,6 +1042,12 @@ export function buildRunway(
         }
         const key = matrixKey(category, lineItem);
         const amountUsd = toUsd(fact.amount, fact.currency, fact.month);
+        if (fact.credit != null) {
+            const creditValues =
+                forecastCreditsByMonth.get(month) ?? new Map<string, number>();
+            addAmount(creditValues, key, fact.credit);
+            forecastCreditsByMonth.set(month, creditValues);
+        }
         const assumption = {
             ...fact,
             category,
@@ -1173,18 +1061,6 @@ export function buildRunway(
             forecastByMonth.get(month) ?? new Map<string, number>();
         addAmount(monthValues, key, amountUsd);
         forecastByMonth.set(month, monthValues);
-        const planMatchValues =
-            forecastPlanMatchByMonth.get(month) ?? new Map<string, number>();
-        const cashMatchVendor =
-            category === "revenue" && vendor === "stripe sales"
-                ? "stripe"
-                : vendor;
-        addAmount(
-            planMatchValues,
-            planMatchKey(cashMatchVendor, amountUsd),
-            amountUsd,
-        );
-        forecastPlanMatchByMonth.set(month, planMatchValues);
         const cellKey = `${month}\u0000${key}`;
         const cellAssumptions = assumptionsByCell.get(cellKey) ?? [];
         cellAssumptions.push(assumption);
@@ -1193,38 +1069,104 @@ export function buildRunway(
         observedMonths.add(month);
     }
 
+    const fundedCashLines = new Set(
+        cloudRows
+            .filter(
+                (row) =>
+                    !isVendorLedgerBalanceRow(row) &&
+                    row.start.slice(0, 7) === review.baselineMonth &&
+                    forecastLineRule(
+                        row.vendor,
+                        ledgerCategory(row),
+                        privateRules,
+                    )?.method === "funded" &&
+                    vendorLedgerPaidBurnUsd(row) > 0.005,
+            )
+            .map((row) =>
+                matrixKey(ledgerCategory(row), normalizedVendor(row.vendor)),
+            ),
+    );
     const forecastUsable =
+        reviewIsCurrent &&
         invalidForecastFacts === 0 &&
         stripeForecastUsable &&
-        balanceAware.flags.length === 0;
+        balanceAware.flags.length === 0 &&
+        fundedCashLines.size === 0;
     if (invalidForecastFacts > 0) {
         flags.push(
             `${invalidForecastFacts} forecast ${invalidForecastFacts === 1 ? "fact needs" : "facts need"} correction (${[...invalidForecastReasons].sort().join(", ")}) for ${[...invalidForecastVendors].sort().join(", ")}; month-end cash and runway are unavailable.`,
         );
     }
 
-    const openingRows = transactions.filter(
+    const statementOpeningRows = transactions.filter(
         (row) =>
             row.kind === "opening_balance" &&
             !unsupportedBankRows.includes(row),
     );
-    const openingDates = [
-        ...new Set(openingRows.map((row) => row.date)),
-    ].sort();
-    const openingBalanceDate =
-        openingDates.length === 1 ? openingDates[0] : null;
+    const firstOpeningDate = statementOpeningRows
+        .map((row) => row.date)
+        .sort()[0];
+    const openingRows = statementOpeningRows.filter((row) => {
+        if (
+            row.date === firstOpeningDate ||
+            statementOpeningRows.filter(
+                (other) => other.currency === row.currency,
+            ).length !== 1
+        )
+            return true;
+        const priorMovements = bankRows.filter(
+            (movement) =>
+                movement.currency === row.currency &&
+                movement.date >= firstOpeningDate &&
+                movement.date < row.date,
+        );
+        // A later first-currency anchor can confirm the balance already
+        // reconstructed from recorded movements; it must not hide that history.
+        return (
+            priorMovements.length === 0 ||
+            Math.abs(
+                priorMovements.reduce(
+                    (sum, movement) => sum + Number(movement.amount),
+                    0,
+                ) - Number(row.amount),
+            ) > 1e-8
+        );
+    });
+    const openingDatesByCurrency = new Map<string, string>();
+    const conflictingCurrencies = new Set<string>();
+    for (const row of openingRows) {
+        const previous = openingDatesByCurrency.get(row.currency);
+        if (previous && previous !== row.date) {
+            conflictingCurrencies.add(row.currency);
+        }
+        openingDatesByCurrency.set(row.currency, row.date);
+    }
+    const openingBalanceDate = conflictingCurrencies.size
+        ? null
+        : ([...openingDatesByCurrency.values()].sort().at(-1) ?? null);
     const openingBalances = new Map<string, number>();
-    if (openingDates.length === 0) {
+    if (openingRows.length === 0) {
         flags.push(
             "No opening bank balance; cash balance and runway are unavailable.",
         );
-    } else if (openingDates.length > 1) {
+    } else if (conflictingCurrencies.size) {
         flags.push(
-            `${openingDates.length} opening-balance dates found; keep one statement-backed anchor before calculating cash.`,
+            `Conflicting opening-balance dates for ${[...conflictingCurrencies].sort().join(", ")}; keep one statement-backed anchor per currency before calculating cash.`,
         );
     } else if (openingBalanceDate) {
         for (const row of openingRows) {
             addAmount(openingBalances, row.currency, Number(row.amount));
+        }
+        for (const [currency, date] of openingDatesByCurrency) {
+            for (const row of bankRows) {
+                if (
+                    row.currency === currency &&
+                    row.date >= date &&
+                    row.date < openingBalanceDate
+                ) {
+                    addAmount(openingBalances, currency, Number(row.amount));
+                }
+            }
         }
         observedMonths.add(openingBalanceDate.slice(0, 7));
         if (openingBalanceDate.slice(8, 10) !== "01") {
@@ -1296,7 +1238,7 @@ export function buildRunway(
         )
             continue;
         const category = cloudCategory(row);
-        if (automaticForecastRule(row.vendor, category)) {
+        if (automaticForecastRule(row.vendor, category, privateRules)) {
             identities.set(matrixKey(category, row.vendor), {
                 vendor: row.vendor,
                 category,
@@ -1311,14 +1253,31 @@ export function buildRunway(
                 a.vendor.localeCompare(b.vendor),
         )
         .map(([key, identity]) => {
-            const values: Record<string, number> = {};
+            const values: Record<string, number | null> = {};
+            const actualIssues: Record<string, string> = {};
             const cellAssumptions: Record<string, RunwayAssumption[]> = {};
             for (const column of columnSpecs) {
                 const actual =
                     column.kind === "actual" || column.kind === "current";
                 values[column.id] = actual
-                    ? (actualByMonth.get(column.month)?.get(key) ?? 0)
+                    ? (actualByMonth.get(column.month)?.get(key) ?? null)
                     : (forecastByMonth.get(column.month)?.get(key) ?? 0);
+                if (actual) {
+                    const issue = actualIssuesByCell.get(
+                        `${column.month}\u0000${key}`,
+                    );
+                    if (issue) actualIssues[column.id] = issue;
+                    if (
+                        STRIPE_LINES.includes(identity.vendor) &&
+                        relevantStripeSales.some(
+                            (sale) =>
+                                sale.month === column.month &&
+                                sale.coverage_complete !== 1,
+                        )
+                    )
+                        actualIssues[column.id] =
+                            "Calendar-month sales coverage is incomplete";
+                }
                 if (!actual) {
                     const found = assumptionsByCell.get(
                         `${column.month}\u0000${key}`,
@@ -1346,17 +1305,95 @@ export function buildRunway(
             const reviewedRule = forecastLineRule(
                 identity.vendor,
                 identity.category,
+                privateRules,
             );
             const creditValues: Record<string, number> = {};
             for (const column of columnSpecs) {
-                if (column.kind === "forecast") continue;
-                const credit = creditFundedByMonth.get(column.month)?.get(key);
+                const credit = (
+                    column.kind === "forecast"
+                        ? forecastCreditsByMonth
+                        : creditFundedByMonth
+                )
+                    .get(column.month)
+                    ?.get(key);
                 if (credit != null && Math.abs(credit) > 0.005) {
                     creditValues[column.id] = credit;
                 }
             }
+            const detailFields =
+                identity.category !== "revenue"
+                    ? []
+                    : identity.vendor === "stripe sales"
+                      ? ([
+                            ["Gross customer payments", "gross_sales", 1],
+                            ["Stripe fees", "stripe_fees", -1],
+                        ] as const)
+                      : [];
+            const details =
+                stripeSalesUsable || stripeForecastUsable
+                    ? detailFields.map(([label]) => ({
+                          label,
+                          values: {} as Record<string, number>,
+                      }))
+                    : [];
+            for (const column of columnSpecs) {
+                const source =
+                    column.kind === "forecast"
+                        ? identity.vendor === "stripe sales"
+                            ? salesForecastRows(
+                                  latestStripeSales,
+                                  column.month,
+                                  new Date(`${review.asOf}T23:59:59Z`),
+                                  privateRules?.["stripe sales|revenue"]
+                                      ?.salesStoppedFrom,
+                              )
+                            : latestStripeSales
+                        : relevantStripeSales.filter(
+                              (row) => row.month === column.month,
+                          );
+                if (
+                    !source.length ||
+                    !details.length ||
+                    (column.kind === "forecast"
+                        ? !stripeForecastUsable
+                        : !stripeSalesUsable)
+                )
+                    continue;
+                const amounts = detailFields.map(([, field, sign]) =>
+                    source.reduce(
+                        (sum, row) =>
+                            sum +
+                            toUsd(
+                                sign *
+                                    (row[field] +
+                                        (field === "stripe_fees"
+                                            ? -row.dispute_fees
+                                            : 0)),
+                                row.currency,
+                                column.month,
+                            ),
+                        0,
+                    ),
+                );
+                // A reviewed zero forecast needs no breakdown. Other overrides
+                // must reconcile exactly before showing inferred components.
+                if (column.kind === "forecast" && values[column.id] === 0)
+                    amounts.fill(0);
+                if (
+                    Math.abs(
+                        amounts.reduce((sum, amount) => sum + amount, 0) -
+                            (values[column.id] ?? 0),
+                    ) > 0.005
+                )
+                    continue;
+                details.forEach((detail, index) => {
+                    detail.values[column.id] = amounts[index];
+                });
+            }
             return {
                 ...identity,
+                ...(Object.keys(actualIssues).length ? { actualIssues } : {}),
+                ...(details.length ? { details } : {}),
                 ...(Object.keys(creditValues).length > 0
                     ? { creditValues }
                     : {}),
@@ -1502,14 +1539,25 @@ export function buildRunway(
             a.category.localeCompare(b.category) ||
             a.vendor.localeCompare(b.vendor),
     );
-    const unmodeledRows = rows.filter((row) => row.forecastMethod == null);
+    const unmodeledRows = rows.filter(
+        (row) =>
+            row.forecastMethod == null &&
+            (row.values[`${review.baselineMonth}:actual`] != null ||
+                row.actualIssues?.[`${review.baselineMonth}:actual`]),
+    );
     for (const row of rows) {
+        if (fundedCashLines.has(matrixKey(row.category, row.vendor))) {
+            row.forecastIssue = "Paid usage conflicts with the funded forecast";
+            flags.push(
+                `${row.vendor} (${row.category}) has recent cash-funded usage; review its funded forecast before relying on zero future cash cost.`,
+            );
+            continue;
+        }
         row.forecastIssue =
-            ledgerIssues.get(row.vendor) ??
             balanceAware.issues.get(row.vendor) ??
             (!stripeForecastUsable && STRIPE_LINES.includes(row.vendor)
                 ? "Stripe month coverage is incomplete"
-                : row.forecastMethod == null
+                : unmodeledRows.includes(row)
                   ? "Calculation mode missing"
                   : undefined);
     }
@@ -1523,50 +1571,100 @@ export function buildRunway(
         .map((row) => row.date)
         .sort()
         .at(-1);
-    const currentCashUsd = cashBalanceByMonth.get(currentMonth) ?? null;
-    const currentPlan = forecastPlanMatchByMonth.get(currentMonth);
-    const remainingCurrentPlanUsd =
-        forecastUsable && currentPlan
-            ? remainingPlanUsd(
-                  currentPlan,
-                  actualPlanMatchByMonth.get(currentMonth),
-              )
+    const creditObservationDate = cloudRows
+        .filter(
+            (row) =>
+                isVendorLedgerBalanceRow(row) &&
+                row.credit > 0 &&
+                row.start.slice(0, 10) <= now.toISOString().slice(0, 10),
+        )
+        .map((row) => row.start.slice(0, 10))
+        .sort()
+        .at(-1);
+    const forecastTimingNote =
+        latestTransactionDate &&
+        creditObservationDate &&
+        creditObservationDate > latestTransactionDate.slice(0, 10)
+            ? `Latest recorded Bank entry: ${latestTransactionDate.slice(0, 10)}; credit balances checked through ${creditObservationDate}. The intervening usage and cash movements are not reconciled; the forecast uses the reviewed run-rate assumptions.`
             : null;
+    const currentCashUsd = cashBalanceByMonth.get(currentMonth) ?? null;
+    const currentPlan = forecastByMonth.get(currentMonth);
+    const planComplete = forecastUsable && unmodeledRows.length === 0;
+    // Closed months use recorded cash. Current Wise movements never offset
+    // this full-month plan; a stale review cannot silently replace closed months.
+    const openingPlanCash = cashBalanceByMonth.get(priorMonth);
     const projectedMonthEndCashUsd =
-        currentCashUsd != null && remainingCurrentPlanUsd != null
-            ? currentCashUsd + remainingCurrentPlanUsd
+        planComplete && currentPlan && openingPlanCash != null
+            ? openingPlanCash +
+              [...currentPlan.values()].reduce((sum, value) => sum + value, 0)
             : null;
 
     let projectedCash = projectedMonthEndCashUsd;
     let projectionGap = false;
     const columns: RunwayColumn[] = columnSpecs.map((column) => {
-        const totalExpensesUsd = rows
-            .filter(
-                (row) =>
-                    row.category !== "revenue" &&
-                    row.category !== "balance_sheet",
-            )
-            .reduce((sum, row) => sum + (row.values[column.id] ?? 0), 0);
-        const totalCreditUsd = rows
-            .filter(
-                (row) =>
-                    row.category !== "revenue" &&
-                    row.category !== "balance_sheet",
-            )
-            .reduce(
-                (sum, row) => sum + (row.creditValues?.[column.id] ?? 0),
-                0,
-            );
+        const actual = column.kind !== "forecast";
+        const monthHasBank = cashActualByMonth.has(column.month);
+        const hasCosts = rows.some(
+            (row) =>
+                row.category !== "revenue" &&
+                row.category !== "balance_sheet" &&
+                row.values[column.id] != null,
+        );
+        const missingCosts = rows.some(
+            (row) =>
+                row.category !== "revenue" &&
+                row.category !== "balance_sheet" &&
+                row.actualIssues?.[column.id],
+        );
+        const missingSales =
+            STRIPE_LINES.some((vendor) =>
+                identities.has(matrixKey("revenue", vendor)),
+            ) &&
+            (!stripeSalesUsable ||
+                !relevantStripeSales.some(
+                    (sale) =>
+                        sale.month === column.month &&
+                        sale.coverage_complete === 1,
+                ));
+        const totalExpensesUsd =
+            actual && !hasCosts
+                ? null
+                : sumRecorded(
+                      rows
+                          .filter(
+                              (row) =>
+                                  row.category !== "revenue" &&
+                                  row.category !== "balance_sheet",
+                          )
+                          .map((row) => row.values[column.id]),
+                  );
+        const totalCreditUsd =
+            actual && !hasCosts
+                ? null
+                : rows
+                      .filter(
+                          (row) =>
+                              row.category !== "revenue" &&
+                              row.category !== "balance_sheet",
+                      )
+                      .reduce(
+                          (sum, row) =>
+                              sum + (row.creditValues?.[column.id] ?? 0),
+                          0,
+                      );
         const netUsd =
             column.kind === "forecast"
                 ? rows.reduce(
                       (sum, row) => sum + (row.values[column.id] ?? 0),
                       0,
                   )
-                : [
-                      ...(cashActualByMonth.get(column.month)?.values() ?? []),
-                  ].reduce((sum, amount) => sum + amount, 0) +
-                  (fxRevaluationValues[column.id] ?? 0);
+                : !monthHasBank
+                  ? null
+                  : [
+                        ...(cashActualByMonth.get(column.month)?.values() ??
+                            []),
+                    ].reduce((sum, amount) => sum + amount, 0) +
+                    (fxRevaluationValues[column.id] ?? 0);
         let runningCashUsd: number | null = null;
         if (column.kind === "actual" || column.kind === "current") {
             runningCashUsd = cashBalanceByMonth.get(column.month) ?? null;
@@ -1580,19 +1678,63 @@ export function buildRunway(
             projectionGap = true;
             projectedCash = null;
         } else {
-            projectedCash += netUsd;
+            projectedCash += netUsd ?? 0;
             runningCashUsd = projectedCash;
+        }
+        const operatingResultUsd =
+            actual &&
+            (totalExpensesUsd == null ||
+                !stripeSalesUsable ||
+                !relevantStripeSales.some(
+                    (sale) => sale.month === column.month,
+                ))
+                ? null
+                : rows
+                      .filter((row) => row.category !== "balance_sheet")
+                      .reduce(
+                          (sum, row) => sum + (row.values[column.id] ?? 0),
+                          0,
+                      );
+        let cashBridge: RunwayColumn["cashBridge"];
+        if (
+            actual &&
+            monthHasBank &&
+            bankCurrenciesUsable &&
+            !missingSales &&
+            operatingResultUsd != null &&
+            totalExpensesUsd != null
+        ) {
+            const revenue = operatingResultUsd - totalExpensesUsd;
+            let receipts = 0;
+            let payments = 0;
+            let otherCash = 0;
+            for (const [key, amount] of cashActualByMonth.get(column.month) ??
+                []) {
+                const category = key.split("\u0000")[0];
+                if (category === "revenue") receipts += amount;
+                else if (category === "balance_sheet") otherCash += amount;
+                else payments += amount;
+            }
+            // Explanation only: cash totals still come directly from Bank.
+            cashBridge = {
+                revenue,
+                expenses: totalExpensesUsd,
+                receiptsDifference: receipts - revenue,
+                paymentsDifference: payments - totalExpensesUsd,
+                otherCash,
+                exchangeRates: fxRevaluationValues[column.id] ?? 0,
+            };
         }
         return {
             ...column,
-            forecastComplete:
-                column.kind !== "forecast" ||
-                (forecastUsable && unmodeledRows.length === 0),
+            ...(cashBridge ? { cashBridge } : {}),
+            provisional:
+                actual &&
+                (column.kind === "current" || missingCosts || missingSales),
+            forecastComplete: column.kind !== "forecast" || planComplete,
             totalExpensesUsd,
             totalCreditUsd,
-            operatingResultUsd: rows
-                .filter((row) => row.category !== "balance_sheet")
-                .reduce((sum, row) => sum + (row.values[column.id] ?? 0), 0),
+            operatingResultUsd,
             netUsd,
             runningCashUsd,
         };
@@ -1641,12 +1783,15 @@ export function buildRunway(
         openingBalanceDate,
         openingBalanceUsd,
         latestTransactionDate: latestTransactionDate ?? null,
+        forecastTimingNote,
         currentCashUsd,
-        remainingCurrentPlanUsd,
+        review,
+        fundingProvisional: balanceAware.fundingGaps.length > 0,
         projectedMonthEndCashUsd,
         runwayMonths,
         runwayExhaustedMonth,
         runwayCapped,
-        flags,
+        flags: [...new Set(flags)],
+        billingNotices: [...new Set(balanceAware.notices ?? [])],
     };
 }

@@ -1,6 +1,6 @@
 # Connect User Wallets
 
-Connect User Wallets—also called BYOP (Bring Your Own Pollen)—lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Connect User Wallets, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -8,19 +8,63 @@ Users stay in control of their balance, budgets, and revocation; your app never 
 
 An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
-To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Create New App Key**:
+To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Apps** → **Create**:
 
-<p align="left"><img src="https://media.pollinations.ai/28716f8fb8677eff" alt="Edit App Key" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/80a72314-b119-4017-a98d-17cd177802aa" alt="Create app key dialog with a name and redirect URL" width="560"></p>
 
 Set the **Name** (shows on the consent screen). For web apps, add at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
 When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
-<p align="left"><img src="https://media.pollinations.ai/f9fd70e72156ddec" alt="Authorize — signed out" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/19c61852-9481-4ec8-a3e0-bb33911f2651" alt="Allow this app, signed out: sign in with GitHub" width="360"></p>
 
 Once signed in, they review the requested access and confirm:
 
-<p align="left"><img src="https://media.pollinations.ai/2ab9b5e0a2408e93" alt="Authorize — signed in" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/90c355a1-e7f5-4187-ab78-9b06007bbdd9" alt="Allow this app, signed in: budget, expiry and permissions" width="560"></p>
+
+## 🧩 Drop-in Button (No Build Step)
+
+One script tag adds a Connect button that runs the OAuth code flow below for you.
+Use one `<polli-connect>` per page; additional elements show an error instead of a sign-in button.
+
+```html
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js"></script>
+
+<polli-connect app-key="pk_yourkey" budget="10" expiry="7"></polli-connect>
+
+<script>
+  const connect = document.querySelector('polli-connect');
+  connect.addEventListener('change', () => {
+    // connect.apiKey: the user's sk_ key, or null after Disconnect
+  });
+</script>
+```
+
+Add the page URL, without query or fragment, as a Redirect URI on your App Key. Call Pollinations with `connect.apiKey` as in step 3 below.
+
+| Attribute | What it does |
+|-----------|-------------|
+| `app-key` | Your App Key (required) |
+| `budget` | Pollen cap, as `budget` below |
+| `expiry` | Key lifetime in days |
+| `models` | Comma-separated, as `models` below |
+| `permissions` | Comma-separated scopes: `profile`, `usage` |
+| `hide-buy-pollen` | Hides the top-up menu item; the balance and Disconnect remain available (UI 0.1.0-alpha.20+) |
+| `menu-links` | JSON array of `{ "label": "Dashboard", "href": "https://example.com" }` links shown in the signed-in menu; optional `icon`: `app`, `discord`, or `bug`; only HTTP(S) links are accepted (UI 0.1.0-alpha.20+) |
+
+For custom menu links, use UI `0.1.0-alpha.20` or later and single quotes around the JSON attribute:
+
+```html
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
+<polli-connect
+  app-key="pk_yourkey"
+  menu-links='[{"label":"Help","href":"https://example.com/help"}]'
+></polli-connect>
+```
+
+Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; sign-in still works.
+
+The key stays in `sessionStorage`, so it lasts until the tab closes.
 
 ## Developer Earnings
 
@@ -70,20 +114,20 @@ https://enter.pollinations.ai/authorize
 
 With restrictions:
 ```text
-https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=black-forest-labs/flux.1-schnell,openai/gpt-5.4-nano&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=image,text&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic and developer earnings | `pk_abc123` |
-| `redirect_uri` | Where users return after authorizing — must exactly match a Redirect URI on the App Key, query string included (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
+| `client_id` | Your publishable key. Shows the app name and author on the consent screen and tracks traffic and developer earnings | `pk_abc123` |
+| `redirect_uri` | Where users return after authorizing. Must exactly match a Redirect URI on the App Key, including the query string (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
 | `response_type` | Use `code` for the OAuth authorization-code flow | `code` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
-| `scope` | Account access (space or comma separated) | `usage keys` |
-| `models` | Restrict to specific models | `black-forest-labs/flux.1-schnell,openai/gpt-5.4-nano,openai/gpt-image-1-mini` |
-| `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
+| `scope` | Account access (space or comma separated). `keys` is only offered in the device flow (below) and on redirects to `http://localhost` or `http://127.0.0.1`. `machines` starts unticked on the consent screen; the user ticks it on purpose | `profile usage` |
+| `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
+| `budget` | Numeric Pollen cap. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
 Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.
@@ -113,7 +157,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
 
-Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
+Scopes: `profile` (name + email), `usage` (account balance + usage). `keys` (account admin: create/list/revoke keys) is only offered in the device flow and on redirects to `http://localhost` or `http://127.0.0.1`. The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope. The approved budget and expiry limit spending. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time. Revocation is immediate.
 
 **Browser-only apps.** The same request works from `fetch`:
 
@@ -141,13 +185,13 @@ Use the returned `access_token` as the API key:
 ```javascript
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
-  headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+  headers: { 'Authorization': `Bearer ${access_token}`, 'Content-Type': 'application/json' },
   body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
 
-Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
-[existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)
+Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/packages/examples/oauth-client-demo) ·
+[existing user database](https://github.com/pollinations/pollinations/tree/main/packages/examples/oauth-account-linking-demo)
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 
@@ -163,7 +207,7 @@ User comes back with the key in the URL fragment:
 https://myapp.com/callback#api_key=sk_abc123xyz
 ```
 
-Fragment, not query param — never hits server logs. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
+The key is returned in the URL fragment, which is not sent to the server. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
 
 ### Code
 
@@ -221,6 +265,80 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
   -d 'grant_type=urn:ietf:params:oauth:grant-type:device_code' \
   -d 'device_code=...'
 ```
+
+## 🐍 Python Quickstart (BYOP Device Flow)
+
+For Python scripts, CLI tools, and backend services, use the device flow:
+
+```python
+import requests
+import time
+import os
+
+def device_flow_login(client_id: str) -> str:
+    """Get user-authorized Pollinations key via device flow."""
+    # 1. Request device code
+    resp = requests.post(
+        'https://enter.pollinations.ai/api/device/code',
+        json={'client_id': client_id},
+        headers={'Content-Type': 'application/json'}
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    
+    print(f"🔐 Go to: {data['verification_uri_complete']}")
+    print(f"   User code: {data['user_code']}")
+    print(f"   Waiting for authorization...")
+    
+    # 2. Poll for token
+    while True:
+        time.sleep(data['interval'])
+        resp = requests.post(
+            'https://enter.pollinations.ai/api/device/token',
+            json={'device_code': data['device_code']},
+            headers={'Content-Type': 'application/json'}
+        )
+        if resp.status_code == 200:
+            token_data = resp.json()
+            print("✅ Authorized!")
+            return token_data['access_token']
+        elif resp.json().get('error') == 'authorization_pending':
+            continue
+        else:
+            raise Exception(f"Auth failed: {resp.json()}")
+
+def use_pollinations(api_key: str):
+    """Make authenticated requests to Pollinations API."""
+    headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+    
+    # Generate text
+    resp = requests.post(
+        'https://gen.pollinations.ai/v1/chat/completions',
+        headers=headers,
+        json={
+            'model': 'openai/gpt-5.4-nano',
+            'messages': [{'role': 'user', 'content': 'Hello from BYOP Python!'}]
+        }
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+if __name__ == '__main__':
+    # Replace with your App Key (pk_...) from enter.pollinations.ai/keys
+    APP_KEY = os.environ.get('POLLINATIONS_APP_KEY', 'pk_your_app_key_here')
+    
+    # Get user-authorized key (device flow)
+    user_key = device_flow_login(APP_KEY)
+    
+    # Or use a key directly from environment
+    # user_key = os.environ.get('POLLINATIONS_API_KEY')
+    
+    if user_key:
+        result = use_pollinations(user_key)
+        print(result['choices'][0]['message']['content'])
+```
+
+> **Security**: Never hardcode API keys. Use environment variables (`os.environ.get()`) or a secure credential manager.
 
 ## 👤 Who's Using This Key?
 

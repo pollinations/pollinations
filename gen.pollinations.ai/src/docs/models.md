@@ -31,6 +31,7 @@ To search or narrow a list instead of fetching the whole catalog, add any of:
 | Parameter | Effect |
 |-----------|--------|
 | `query` | Case-insensitive search of the name, aliases, title, description and publisher; every word must match |
+| `category` | Model category (`text`, `image`, `audio`, `video`, `3d`, `embedding`, `realtime`, `decision`) |
 | `capabilities` | Comma-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model needs all of them |
 | `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents |
 | `limit` | At most this many models (1-500), in catalog order |
@@ -60,7 +61,8 @@ Lists default to `reliability=reliable`: public community proxy models need more
 Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.
 Models without observations remain listed. Successful fallbacks count as successes
 for the requested model; final 4xx are excluded, while owner requests and
-monitor probes count. Each entry includes `health` with `status`,
+monitor probes count. A text answer that reports prompt tokens but no output
+tokens counts as a failure. Each entry includes `health` with `status`,
 `success_rate` (null without observations), and `requests` (at most 50 for
 community proxies). Other models keep their 24-hour health window. Health
 refreshes roughly every 60 seconds; unavailable analytics fails open.
@@ -72,7 +74,7 @@ remain available. Authentication, key permissions, paid access and manual
 hiding still apply. Owners can manage all their models in My Models.
 
 Time-windowed traffic, latency and fallback breakdowns are served separately by
-`/models/status`, described in [Public Stats](/docs#tag/public-stats).
+`/models/status`, described in [Public Stats](https://gen.pollinations.ai/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -107,18 +109,18 @@ Newer Claude and Gemini models may omit sampling controls entirely. On
 Sonnet 4.6, `response_format` supports `json_schema`, not `json_object`.
 Reasoning effort levels and forced-tool restrictions remain model-specific.
 
-## Community Models
+## Community model discovery
 
 Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
 
 The old `owner/model` IDs remain generation aliases in each model's `aliases` array.
 
-API key model permissions are model categories: `text`, `image`, `video`, `audio`, `3d`, `embedding` and `realtime`. A key allows every model in its categories, including models added later. Key creation and updates also accept model IDs, and each ID allows its whole category.
+API key model permissions list model categories and model IDs. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime` or `decision`) allows every model in it, including models added later. Decision models need `decision` on `/alpha/decisions`; on chat endpoints `text` also allows them. A model ID or alias allows only that model and is stored as its canonical ID.
 
 The `source=community` and `source=official` filters are equivalent source filters
 for discovery. Source, access, and status filters combine with AND semantics.
 
-For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.
+For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](https://gen.pollinations.ai/docs#tag/community-models) under Resources.
 
 ## Pollinations-imposed limits
 

@@ -1,14 +1,13 @@
 ## 🔐 Authentication
 
-Pollinations recognises two prefixes. Use the right *kind* of `pk_` for the surface you're building.
+Pollinations recognises two prefixes. Only `sk_` keys authenticate requests; a `pk_` key only identifies your app.
 
 | Key type | Prefix | Where it goes | What it can do |
 |---|---|---|---|
-| Secret key | `sk_` | Server-only (env var, secrets manager) | Full account access. Can create child keys, list usage, run any model the account allows. **Never ship to a browser, mobile app, or repo.** |
-| App key (BYOP) | `pk_` with redirect URIs | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user `sk_`. Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). This is the supported client path. |
-| Raw publishable key | `pk_` with no app / OAuth binding | Legacy only | Existing integrations only. Rate-limited to 1 pollen per IP per hour. **Do not mint new raw `pk_` keys, and do not embed them in new browser code.** |
+| Secret key | `sk_` | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). | Secret keys have configurable model permissions, account permissions, and budgets. |
+| App key (BYOP) | `pk_` | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user secret key (`sk_`). Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). A `pk_` sent as a key gets `401`. |
 
-Both forms accept the same transports:
+Authenticate generation requests with a secret key:
 
 ```http
 Authorization: Bearer <key>
@@ -24,23 +23,23 @@ The header is preferred for everything except browser flows that can't set custo
 
 | Endpoint | Auth |
 |---|---|
-| `GET /{id}`, `GET /{id}/metadata`, `HEAD /{id}` | None — media URLs are public reads |
-| `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None — model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
+| `GET /{id}`, `GET /{id}/metadata`, `HEAD /{id}` | None. Media URLs are public reads |
+| `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None. The model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
 | Everything else | Bearer key required unless the endpoint documents `?key=` support |
 
-`401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).
+`401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted. See [Error Responses](#-error-responses).
 
 ## 🔓 Sign in with Pollinations (OAuth 2.1)
 
-Third-party apps can obtain an API key on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
+Third-party apps can obtain a secret key on behalf of a Pollinations user. Use the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
 
-Endpoints are discoverable via RFC 8414 metadata — resolve them from there rather than hardcoding:
+Endpoints are discoverable via RFC 8414 metadata. Resolve them from there:
 
 ```
 GET https://enter.pollinations.ai/.well-known/oauth-authorization-server
 ```
 
-The full integration guide—authorization request, token exchange, device flow, userinfo, scopes, and revocation—is [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
+[Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) covers authorization requests, token exchange, device flow, userinfo, scopes, and revocation.
 
 ## 🧪 Use any OpenAI SDK
 
@@ -80,7 +79,7 @@ const response = await client.chat.completions.create({
 console.log(response.choices[0].message.content);
 ```
 
-Model IDs come from `GET /v1/models`. IDs such as `openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `mistralai/mistral-small-4`, and `deepseek/deepseek-v4-flash` route to the corresponding provider on our side — you don't need separate keys per provider.
+Model IDs come from `GET /v1/models`. IDs such as `openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `mistralai/mistral-small-4`, and `deepseek/deepseek-v4-flash` route to the corresponding provider on our side. You don't need separate keys per provider.
 
 ## ▲ Vercel AI SDK
 
@@ -166,9 +165,24 @@ for chunk in stream:
 
 When `stream: true` is set, usage info still arrives on the final chunk (`stream_options: { include_usage: true }` if your SDK requires opting in).
 
+## ⏳ Asynchronous media jobs
+
+For long image, video, audio or 3D generations, add `Prefer: respond-async` to the normal generation request. An uncached request returns `202 Accepted` with `id`, `status: "pending"`, `status_url`, `Location`, and `Retry-After: 5` without waiting for the provider. For example:
+
+```bash
+job=$(curl -sS "https://gen.pollinations.ai/video/a%20paper%20boat%20on%20a%20river?model=google/veo-3.1-fast" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Prefer: respond-async" | jq -r '.id')
+curl -sS "https://gen.pollinations.ai/v1/jobs/$job" -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl -sS "https://gen.pollinations.ai/v1/jobs/$job/result" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" -o boat.mp4
+```
+
+Wait for `status: "succeeded"` before downloading; the result endpoint returns 409 while pending or failed. Another account sees 404, even if it knows the job id. Resubmitting the identical request joins one durable generation and one charge; an already cached result may return directly as HTTP 200 without an id. Job status records expire 24 hours after completion; media files keep their normal cache lifetime. Polling never charges again. The `Prefer` option is ignored for streaming and non-media routes.
+
 ## 🖼️ Vision: passing images into chat
 
-Models that accept image input (`openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.7-flash`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
+Models that accept image input (`openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.7-flash`, …) use the standard OpenAI multimodal `content` shape: an array of typed parts instead of a plain string.
 
 ```bash
 curl "https://gen.pollinations.ai/v1/chat/completions" \
@@ -186,7 +200,7 @@ curl "https://gen.pollinations.ai/v1/chat/completions" \
   }'
 ```
 
-`image_url.url` accepts either a public URL or a `data:image/...;base64,…` data URI. Use `detail: "high"` for fine-grained reasoning and `"low"` for quick takes — see the [`MessageContentPart`](#messagecontentpart) schema for every supported part.
+`image_url.url` accepts either a public URL or a `data:image/...;base64,…` data URI. Use `detail: "high"` for fine-grained reasoning and `"low"` for quick takes. See the [`MessageContentPart`](#messagecontentpart) schema for every supported part.
 
 For audio or video input, swap in `input_audio` or `video_url` parts on models that advertise the matching capability in their `/v1/models` entry. `video_url.url` accepts a public `https://` URL or a `data:video/...;base64,...` data URI; Gemini models additionally accept YouTube and `gs://` URLs.
 
@@ -194,7 +208,7 @@ For audio or video input, swap in `input_audio` or `video_url` parts on models t
 
 Three endpoints accept `multipart/form-data` request bodies. Each has its own field set.
 
-**Transcribe an audio file** — Whisper-compatible.
+**Transcribe an audio file** (Whisper-compatible).
 
 ```bash
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
@@ -205,16 +219,16 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -F "temperature=0"
 ```
 
-`response_format` accepts `json` (default), `verbose_json` (adds segment timings), `text`, `srt`, `vtt`, depending on the model. `srt` and `vtt` are only supported by the `assemblyai/*` models; an unsupported combination returns 400 naming the formats that model accepts. Transcription models are the `GET /v1/models` entries whose `supported_endpoints` include `/v1/audio/transcriptions`. Max file size 25 MB.
+`response_format` accepts `json` (default), `verbose_json` (adds segment timings), `text`, `srt`, `vtt`, depending on the model. `srt` and `vtt` are only supported by the `assemblyai/*` and `whisper` models; an unsupported combination returns 400 naming the formats that model accepts. Transcription models are the `GET /v1/models` entries whose `supported_endpoints` include `/v1/audio/transcriptions`. Max file size 25 MB.
 
-**Edit an image with a prompt** — OpenAI Images Edits-compatible.
+**Edit an image with a prompt** (OpenAI Images Edits-compatible).
 
 ```bash
 curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "image=@./photo.png" \
   -F "prompt=replace the sky with a sunset" \
-  -F "model=kontext" \
+  -F "model=black-forest-labs/flux.1-kontext-pro" \
   -F "size=1024x1024"
 ```
 
@@ -228,11 +242,11 @@ curl -X POST "https://media.pollinations.ai/upload" \
   -F "file=@./asset.png"
 ```
 
-Each upload gets its own unique id — re-uploading the same bytes yields a new URL. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. An optional `-F "tags=..."` field publishes the upload to those tags' public galleries (`GET https://media.pollinations.ai/media?tag=...`); untagged uploads stay unlisted.
+Each upload gets its own unique id. Re-uploading the same bytes yields a new URL. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. An optional `-F "tags=..."` field publishes the upload to those tags' public galleries (`GET https://media.pollinations.ai/media?tag=...`); untagged uploads stay unlisted.
 
 ## 💡 Tips
 
-- **Do not put raw `pk_` keys in browsers.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`. Raw `pk_` keys are legacy and rate-limited (1 pollen/IP/hour).
-- **One key per app.** Child keys scope budget and permissions independently — easier to audit, easier to revoke without touching production.
+- **`pk_` keys don't authenticate requests.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`.
+- **One key per app.** Child keys have independent budgets and permissions. You can audit and revoke them without touching production.
 - **Retry the same request after a timeout.** Keep the endpoint, body, query parameters, and seed unchanged. Your retry waits for the generation already in progress or receives the completed cached result instead of starting another generation.
-- **Watch `429` and `503`.** A `Retry-After` header tells you how long to back off. `502` from us means upstream provider — usually transient.
+- **Watch `429` and `503`.** A `Retry-After` header tells you how long to back off. `502` indicates an upstream provider error, which is usually transient.

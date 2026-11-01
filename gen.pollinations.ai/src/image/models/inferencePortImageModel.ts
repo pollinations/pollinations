@@ -55,12 +55,6 @@ export async function callInferencePortImage(
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     // Lightning Image Turbo only outputs 1024x1024; other sizes are ignored.
-    if (safeParams.transparent) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
-        });
-    }
-
     const apiKey = getImageEnv("INFERENCEPORT_API_KEY");
     if (!apiKey) {
         throw new Error(

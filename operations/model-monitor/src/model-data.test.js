@@ -133,6 +133,22 @@ test("video aliases use image events while preserving video favorites", () => {
     ]);
 });
 
+test("decision models keep their text health under their own category", () => {
+    const decision = normalizeCatalogModel({
+        name: "respan/span-01-lite",
+        category: "decision",
+    });
+    assert.equal(decision.endpointType, "text");
+    const results = mergeModelHealth(
+        [decision],
+        [{ ...newStats, model: "respan/span-01-lite" }],
+        true,
+    );
+    assert.equal(results.length, 1);
+    assert.equal(results[0].type, "decision");
+    assert.equal(results[0].stats.total_requests, 5);
+});
+
 test("renamed community models keep their catalog category and scope", () => {
     const renamed = normalizeCatalogModel({
         name: "community/owner/seedance",

@@ -1,10 +1,10 @@
 {
     "name": "@pollinations/ui",
-    "version": "0.1.0-alpha.11",
+    "version": "0.1.0-alpha.27",
     "description": "Design primitives and UI modules for Pollinations apps.",
     "license": "MIT",
     "type": "module",
-    "main": "./dist/index.cjs",
+    "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "unpkg": "./dist/index.browser.min.js",
@@ -12,39 +12,32 @@
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "default": "./dist/index.js"
         },
         "./umd": "./dist/index.browser.min.js",
         "./auth": {
             "types": "./dist/auth/index.d.ts",
-            "import": "./dist/auth/index.js",
-            "require": "./dist/auth/index.cjs"
+            "default": "./dist/auth/index.js"
         },
         "./auth/sdk": {
             "types": "./dist/auth/sdk.d.ts",
-            "import": "./dist/auth/sdk.js",
-            "require": "./dist/auth/sdk.cjs"
+            "default": "./dist/auth/sdk.js"
         },
         "./app-user-menu/sdk": {
             "types": "./dist/app-user-menu/sdk.d.ts",
-            "import": "./dist/app-user-menu/sdk.js",
-            "require": "./dist/app-user-menu/sdk.cjs"
+            "default": "./dist/app-user-menu/sdk.js"
         },
         "./gen": {
             "types": "./dist/gen/index.d.ts",
-            "import": "./dist/gen/index.js",
-            "require": "./dist/gen/index.cjs"
+            "default": "./dist/gen/index.js"
         },
         "./markdown": {
             "types": "./dist/markdown.d.ts",
-            "import": "./dist/markdown.js",
-            "require": "./dist/markdown.cjs"
+            "default": "./dist/markdown.js"
         },
         "./wallet": {
             "types": "./dist/wallet/index.d.ts",
-            "import": "./dist/wallet/index.js",
-            "require": "./dist/wallet/index.cjs"
+            "default": "./dist/wallet/index.js"
         },
         "./styles.css": "./dist/styles.css",
         "./app.css": "./dist/app.css",
@@ -61,15 +54,16 @@
     "scripts": {
         "build": "npm run build:palette && npm run build:js && npm run build:css && npm run build:fonts && npm run build:brand && npm run build:licenses",
         "build:palette": "node scripts/gen-theme-palette.mjs",
-        "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
-        "build:brand": "mkdir -p dist/brand && cp -R src/brand/. dist/brand/",
-        "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
+        "build:fonts": "node -e \"require('fs').cpSync('src/fonts','dist/fonts',{recursive:true})\"",
+        "build:brand": "node -e \"require('fs').cpSync('src/brand','dist/brand',{recursive:true})\"",
+        "build:licenses": "node -e \"require('fs').cpSync('src/licenses','dist/licenses',{recursive:true})\"",
         "build:js": "tsup",
-        "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/theme.css dist/theme.css && sed 's|@pollinations/ui/styles.css|./styles.css|' src/styles/app.css > dist/app.css",
+        "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && node -e \"const fs=require('fs');fs.cpSync('src/styles/theme.css','dist/theme.css');fs.writeFileSync('dist/app.css',fs.readFileSync('src/styles/app.css','utf8').replaceAll('@pollinations/ui/styles.css','./styles.css'))\"",
         "brand": "node scripts/brand/generate.mjs",
         "prepublishOnly": "npm run build",
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
+        "test:package": "npm run build:js && node --test scripts/package-exports.test.mjs",
         "test:watch": "vitest"
     },
     "publishConfig": {
@@ -81,7 +75,7 @@
         "directory": "packages/ui"
     },
     "peerDependencies": {
-        "@pollinations/sdk": "^5.1.0-alpha.1",
+        "@pollinations/sdk": "^5.1.0-alpha.25",
         "react": "^19.0.0",
         "react-dom": "^19.0.0"
     },
@@ -103,12 +97,14 @@
         "@tailwindcss/cli": "^4.0.0",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
+        "@types/react-test-renderer": "^19.1.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
+        "react-test-renderer": "^19.2.5",
         "sharp": "^0.34.5",
         "tailwindcss": "^4.0.0",
         "tsup": "^8.3.5",
         "typescript": "^5.6.3",
-        "vitest": "^2.1.0"
+        "vitest": "^4.1.12"
     }
 }

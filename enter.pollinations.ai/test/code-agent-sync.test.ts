@@ -10,14 +10,104 @@ import { publicAgentSyncRoutes } from "../src/routes/agents.ts";
 
 afterEach(() => vi.unstubAllGlobals());
 
+const bindings = {
+    ...env,
+    ENVIRONMENT: "test",
+    CLOUDFLARE_ACCOUNT_ID: "test-account",
+    CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
+    CODE_AGENT_DISPATCH_NAMESPACE: "test-code-agents",
+};
+
 describe("code agent sync", () => {
-    it.each([
-        "Same description",
-        "Updated description",
-    ])("refreshes the platform runtime at the same owner commit (%s)", async (description) => {
+    it.each(["Same description", "Updated description"])(
+        "refreshes the platform runtime at the same owner commit (%s)",
+        async (description) => {
+            const id = crypto.randomUUID();
+            const commit = "a".repeat(40);
+            const repository = "https://github.com/example/agent";
+            await drizzle(env.DB)
+                .insert(communityEndpoint)
+                .values({
+                    id,
+                    ownerUserId: await createTestUser(),
+                    name: "agent",
+                    title: "agent",
+                    description: "Same description",
+                    type: "code_agent",
+                    baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+                    upstreamModel: id,
+                    payload: JSON.stringify({
+                        repository,
+                        deployedCommitSha: commit,
+                    }),
+                    updatedAt: new Date(Date.now() - 60_000),
+                });
+
+            const calls: string[] = [];
+            let uploaded: FormData | undefined;
+            vi.stubGlobal("fetch", async (input, init) => {
+                const url = String(input);
+                calls.push(url);
+                if (url === "https://api.github.com/repos/example/agent") {
+                    return Response.json({
+                        name: "agent",
+                        full_name: "example/agent",
+                        description,
+                        private: false,
+                    });
+                }
+                if (url.endsWith("/commits/HEAD")) {
+                    return Response.json({ sha: commit });
+                }
+                if (url.startsWith("https://raw.githubusercontent.com/")) {
+                    expect(url).toBe(
+                        `https://raw.githubusercontent.com/example/agent/${commit}/agent.ts`,
+                    );
+                    return new Response(
+                        "export default () => new Response('agent');",
+                    );
+                }
+                expect(url).toContain(`/scripts/${id}`);
+                expect(init.method).toBe("PUT");
+                uploaded = init.body;
+                return Response.json({ success: true });
+            });
+
+            const response = await publicAgentSyncRoutes.request(
+                `/${id}/sync`,
+                { method: "POST" },
+                bindings,
+            );
+            expect(response.status).toBe(200);
+            expect(await response.json()).toEqual({
+                updated: true,
+                deployedCommitSha: commit,
+            });
+            expect(calls).toHaveLength(4);
+            expect(
+                await (
+                    uploaded?.get("runtime.mjs") as Blob | undefined
+                )?.text(),
+            ).toBe(runtimeModule);
+            for (const [name, source] of Object.entries(sdkModules)) {
+                expect(
+                    await (uploaded?.get(name) as Blob | undefined)?.text(),
+                ).toBe(source);
+            }
+
+            const throttled = await publicAgentSyncRoutes.request(
+                `/${id}/sync`,
+                { method: "POST" },
+                bindings,
+            );
+            expect(throttled.status).toBe(429);
+            expect(calls).toHaveLength(4);
+        },
+    );
+
+    it("deploys once when one agent is synced concurrently", async () => {
         const id = crypto.randomUUID();
-        const commit = "a".repeat(40);
-        const repository = "https://github.com/example/agent";
+        const commit = "c".repeat(40);
         await drizzle(env.DB)
             .insert(communityEndpoint)
             .values({
@@ -25,78 +115,50 @@ describe("code agent sync", () => {
                 ownerUserId: await createTestUser(),
                 name: "agent",
                 title: "agent",
-                description: "Same description",
                 type: "code_agent",
                 baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
                 upstreamModel: id,
                 payload: JSON.stringify({
-                    repository,
+                    repository: "https://github.com/example/agent",
                     deployedCommitSha: commit,
                 }),
+                updatedAt: new Date(Date.now() - 60_000),
             });
 
-        const calls: string[] = [];
-        let uploaded: FormData | undefined;
-        vi.stubGlobal("fetch", async (input, init) => {
+        let deploys = 0;
+        vi.stubGlobal("fetch", async (input) => {
             const url = String(input);
-            calls.push(url);
-            if (url === "https://api.github.com/repos/example/agent") {
-                return Response.json({
-                    name: "agent",
-                    full_name: "example/agent",
-                    description,
-                    private: false,
-                });
-            }
             if (url.endsWith("/commits/HEAD")) {
                 return Response.json({ sha: commit });
             }
-            if (url.startsWith("https://raw.githubusercontent.com/")) {
-                expect(url).toBe(
-                    `https://raw.githubusercontent.com/example/agent/${commit}/agent.ts`,
-                );
-                return new Response(
-                    "export default () => new Response('agent');",
-                );
+            if (url.startsWith("https://api.github.com/")) {
+                return Response.json({
+                    name: "agent",
+                    full_name: "example/agent",
+                    description: null,
+                    private: false,
+                });
             }
-            expect(url).toContain(`/scripts/${id}`);
-            expect(init.method).toBe("PUT");
-            uploaded = init.body;
+            if (url.startsWith("https://raw.githubusercontent.com/")) {
+                return new Response("export default () => new Response('a');");
+            }
+            deploys++;
             return Response.json({ success: true });
         });
 
-        const bindings = {
-            ...env,
-            ENVIRONMENT: "test",
-            CLOUDFLARE_ACCOUNT_ID: "test-account",
-            CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
-            CODE_AGENT_DISPATCH_NAMESPACE: "test-code-agents",
-        };
-        const response = await publicAgentSyncRoutes.request(
-            `/${id}/sync`,
-            { method: "POST" },
-            bindings,
+        const responses = await Promise.all(
+            Array.from({ length: 5 }, () =>
+                publicAgentSyncRoutes.request(
+                    `/${id}/sync`,
+                    { method: "POST" },
+                    bindings,
+                ),
+            ),
         );
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            updated: true,
-            deployedCommitSha: commit,
-        });
-        expect(calls).toHaveLength(4);
-        expect(await (uploaded?.get("runtime.mjs") as Blob).text()).toBe(
-            runtimeModule,
-        );
-        for (const [name, source] of Object.entries(sdkModules)) {
-            expect(await (uploaded?.get(name) as Blob).text()).toBe(source);
-        }
-
-        const throttled = await publicAgentSyncRoutes.request(
-            `/${id}/sync`,
-            { method: "POST" },
-            bindings,
-        );
-        expect(throttled.status).toBe(429);
-        expect(calls).toHaveLength(4);
+        expect(responses.map((response) => response.status).sort()).toEqual([
+            200, 429, 429, 429, 429,
+        ]);
+        expect(deploys).toBe(1);
     });
 });
 

@@ -23,6 +23,7 @@ SQL >
                 'uzCJ8RSt0ZLYr3WCmuv5sniTRDinO5GM', -- POLLI CODE: GitHub bot
                 '620Mnys8GuzzcCdH58S6sSEdC8IoHzH7', -- PLN_GITHUB_NEWS_KEY
                 '0JUUkMirP86ZkeBs82h721NTajBv51K8', -- PLN_GITHUB_AUTOPOLLY_KEY
+                'A4gLGWxLvjdpbsUoHwFeEZ1rkNfN03hE', -- PLN_GITHUB_EVALS_KEY
                 'BvQo6jDl0VKOSjyidF5dUs5VXd1XangJ', -- discord bot family
                 'KXu9XCPN5uVMpEWxuhipcZgcIs4un2W9', -- PROD__POLLI_DISCORD_BOT__GEN_API
                 'rRB9xb02l4CknB7ywPka4O5kdeiqRH0k', -- polli-harness-pi

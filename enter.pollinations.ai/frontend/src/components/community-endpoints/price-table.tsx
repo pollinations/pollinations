@@ -401,7 +401,10 @@ export function formWithVisiblePrices(
         ).map((field) => field.key),
     );
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-        if (!visiblePriceKeys.has(field.key) || !allowed.has(field.key)) {
+        if (
+            !allowed.has(field.key) ||
+            (form.visibility !== "private" && !visiblePriceKeys.has(field.key))
+        ) {
             next[field.key] = "";
         }
     }

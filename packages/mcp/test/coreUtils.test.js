@@ -37,6 +37,20 @@ test("parseApiError displays staging access restriction 403 message unchanged", 
     );
 });
 
+test("429 errors preserve the gateway cooldown retry duration", () => {
+    const errorJson = JSON.stringify({
+        error: "Rate limit exceeded",
+        message:
+            "Rate limit exceeded. Retry after 37.5s. Use secret keys (sk_*) for unlimited requests.",
+        retryAfterSeconds: 37.5,
+    });
+    const message = parseApiError(429, errorJson);
+    assert.equal(
+        message,
+        "Rate limit exceeded. Retry after 37.5s. Use secret keys (sk_*) for unlimited requests.",
+    );
+});
+
 test("parseApiError provides generic fallback when 403 body has no details", () => {
     const message = parseApiError(403, "");
     assert.equal(

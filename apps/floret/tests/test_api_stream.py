@@ -336,10 +336,48 @@ def test_stream_error_never_emits_success_usage(monkeypatch):
 
     assert response.status_code == 200
     payloads = _stream_payloads(response.text)
-    assert all(payload["usage"] is None for payload in payloads)
-    assert payloads[-1]["choices"][0]["finish_reason"] == "stop"
+    chunks, error_event = payloads[:-1], payloads[-1]
+    assert all(payload["usage"] is None for payload in chunks)
+    assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
     assert "Generation failed." in response.text
     assert "broken" not in response.text
+    # Without terminal usage the gateway accepts the stream only when it has an
+    # error event; otherwise it reports "omitted terminal usage" (#17294).
+    assert error_event == {
+        "error": {
+            "message": "Generation failed.",
+            "type": "server_error",
+            "code": "generation_failed",
+        }
+    }
+    assert response.text.rstrip().endswith("data: [DONE]")
+
+
+@pytest.mark.parametrize("stream_options", [None, {"include_usage": True}])
+def test_stream_error_after_tool_call_ends_with_error_event(
+    monkeypatch, stream_options
+):
+    async def failing_events(messages, **kwargs):
+        yield {
+            "type": "tool_start",
+            "id": "call_1",
+            "name": "generate_video",
+            "arguments": "{}",
+        }
+        raise RuntimeError("broken")
+
+    monkeypatch.setattr(api_mod, "run_agent_events", failing_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options=stream_options),
+        headers=_HEADERS,
+    )
+
+    payloads = _stream_payloads(response.text)
+    assert payloads[-1]["error"]["code"] == "generation_failed"
+    assert not any(payload.get("usage") for payload in payloads)
+    assert "broken" not in response.text
+    assert response.text.rstrip().endswith("data: [DONE]")
 
 
 def test_stream_emits_keepalives_during_silence(monkeypatch):

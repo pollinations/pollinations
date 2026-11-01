@@ -20,6 +20,20 @@ describe("MonthFilter", () => {
         expect(html).not.toContain("July 26");
         expect(html).not.toContain("January");
     });
+    it("shows plain month labels and preserves the selected month", () => {
+        const html = renderToStaticMarkup(
+            <MonthFilter
+                months={months}
+                year="2026"
+                value="2026-08"
+                onChange={() => {}}
+            />,
+        );
+        expect(html).not.toContain("unresolved");
+        expect(html).toContain(">August</button>");
+        expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+        expect(html).not.toContain("ring-amber-500/70");
+    });
 });
 
 describe("YearFilter", () => {

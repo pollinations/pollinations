@@ -4,6 +4,7 @@ import {
     CardIcon,
     Chip,
     SproutIcon,
+    Surface,
     Table,
     TableBody,
     TableCell,
@@ -12,7 +13,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
 import { LoadError, PageStatus } from "../layout/dashboard-loading.tsx";
@@ -35,6 +36,8 @@ type UsageEventRecord = {
 type EarningsEventRecord = {
     timestamp: string;
     cursor_event_id: string;
+    cursor_source: string;
+    cursor_entity_id: string;
     entity_name: string;
     model: string | null;
     meter_source: string | null;
@@ -49,7 +52,21 @@ type LastEvent = {
     secondary: string;
     meterSource: string | null;
     pollen: number;
+    cursor: {
+        before: string;
+        before_event_id: string;
+        before_source?: string;
+        before_entity_id?: string;
+    };
 };
+
+type EventPage = {
+    rows: LastEvent[];
+    cursor?: LastEvent["cursor"];
+    hasMore: boolean;
+};
+
+type FeedPages = Record<LastEvent["kind"], EventPage>;
 
 type FetchState = {
     rows: LastEvent[];
@@ -62,13 +79,8 @@ function parseTimestamp(value: string): Date {
     return new Date(`${value.replace(" ", "T")}Z`);
 }
 
-function timestampMs(value: string): number {
-    return parseTimestamp(value).getTime();
-}
-
 function formatTimestamp(value: string): string {
     return parseTimestamp(value).toLocaleString(undefined, {
-        timeZone: "UTC",
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -138,11 +150,8 @@ function EventPollenChip({ event }: { event: LastEvent }) {
     return <PaidChip {...props}>{content}</PaidChip>;
 }
 
-function mergeLastEvents(
-    usageRows: UsageEventRecord[],
-    earningsRows: EarningsEventRecord[],
-): LastEvent[] {
-    const usageEvents: LastEvent[] = usageRows.map((row) => ({
+function usageEvents(rows: UsageEventRecord[]): LastEvent[] {
+    return rows.map((row) => ({
         kind: "usage",
         id: row.cursor_event_id,
         timestamp: row.timestamp,
@@ -152,54 +161,104 @@ function mergeLastEvents(
             (row.api_key_id ? `${row.api_key_id.slice(0, 8)}…` : "—"),
         meterSource: row.meter_source,
         pollen: row.cost_usd,
+        cursor: { before: row.timestamp, before_event_id: row.cursor_event_id },
     }));
-    const earningsEvents: LastEvent[] = earningsRows.map((row) => ({
+}
+
+function earningsEvents(rows: EarningsEventRecord[]): LastEvent[] {
+    return rows.map((row) => ({
         kind: "earnings",
-        id: row.cursor_event_id,
+        id: JSON.stringify([
+            row.cursor_event_id,
+            row.cursor_source,
+            row.cursor_entity_id,
+        ]),
         timestamp: row.timestamp,
         primary: row.entity_name,
         secondary: row.model || "—",
         meterSource: row.meter_source,
         pollen: row.pollen_earned,
+        cursor: {
+            before: row.timestamp,
+            before_event_id: row.cursor_event_id,
+            before_source: row.cursor_source,
+            before_entity_id: row.cursor_entity_id,
+        },
     }));
-
-    return sortLastEvents([...usageEvents, ...earningsEvents]);
 }
 
-function sortLastEvents(events: LastEvent[]): LastEvent[] {
-    return [...events].sort((a, b) => {
-        const timeDelta = timestampMs(b.timestamp) - timestampMs(a.timestamp);
-        if (timeDelta !== 0) return timeDelta;
-        return `${a.kind}-${a.id}`.localeCompare(`${b.kind}-${b.id}`);
-    });
-}
+const LAST_EVENTS_PATHS = ["/account/usage", "/account/earnings/transactions"];
 
-async function fetchLastEvents(
-    limit: number,
-): Promise<{ rows: LastEvent[]; hasMore: boolean }> {
+async function fillEventPage(
+    kind: LastEvent["kind"],
+    page: EventPage,
+    signal: AbortSignal,
+): Promise<EventPage> {
+    if (page.rows.length > PAGE_SIZE || !page.hasMore) return page;
     const query = {
-        limit: (limit + 1).toString(),
+        limit: (PAGE_SIZE + 1).toString(),
         days: RECENT_WINDOW_DAYS.toString(),
+        ...page.cursor,
     };
-    const [usageResponse, earningsResponse] = await Promise.all([
-        accountClient.usage.$get({ query }),
-        accountClient.earnings.transactions.$get({ query }),
-    ]);
-    if (!usageResponse.ok || !earningsResponse.ok) {
-        throw new Error("Failed to load last events");
+    const response = await (kind === "usage"
+        ? accountClient.usage.$get({ query }, { init: { signal } })
+        : accountClient.earnings.transactions.$get(
+              { query },
+              { init: { signal } },
+          ));
+    if (!response.ok) {
+        throw new Error("Couldn’t load recent activity. Please try again.");
     }
-    const usageData = (await usageResponse.json()) as {
-        usage: UsageEventRecord[];
+    const data = await response.json();
+    const rows =
+        kind === "usage"
+            ? usageEvents((data as { usage: UsageEventRecord[] }).usage)
+            : earningsEvents(
+                  (data as { transactions: EarningsEventRecord[] })
+                      .transactions,
+              );
+    return {
+        rows: [...page.rows, ...rows],
+        cursor: rows.at(-1)?.cursor ?? page.cursor,
+        hasMore: rows.length === PAGE_SIZE + 1,
     };
-    const earningsData = (await earningsResponse.json()) as {
-        transactions: EarningsEventRecord[];
+}
+
+async function fetchLastEvents(pages: FeedPages, signal: AbortSignal) {
+    const [usage, earnings] = await Promise.all([
+        fillEventPage("usage", pages.usage, signal),
+        fillEventPage("earnings", pages.earnings, signal),
+    ]);
+    const next = {
+        usage: { ...usage, rows: [...usage.rows] },
+        earnings: { ...earnings, rows: [...earnings.rows] },
     };
-    const merged = mergeLastEvents(usageData.usage, earningsData.transactions);
-    return { rows: merged.slice(0, limit), hasMore: merged.length > limit };
+    const rows: LastEvent[] = [];
+    // Keep each pipe's ordering, including every same-second reward identity.
+    while (rows.length < PAGE_SIZE) {
+        const spent = next.usage.rows[0];
+        const earned = next.earnings.rows[0];
+        if (!spent && !earned) break;
+        const page =
+            !spent || (earned && earned.timestamp >= spent.timestamp)
+                ? next.earnings
+                : next.usage;
+        const event = page.rows.shift();
+        if (event) rows.push(event);
+    }
+    return {
+        pages: next,
+        rows,
+        hasMore: next.usage.rows.length + next.earnings.rows.length > 0,
+    };
 }
 
 export const LastEventsPanel: FC = () => {
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const pages = useRef<FeedPages>({
+        usage: { rows: [], hasMore: true },
+        earnings: { rows: [], hasMore: true },
+    });
+    const request = useRef<AbortController | null>(null);
     const [state, setState] = useState<FetchState>({
         rows: [],
         hasMore: false,
@@ -207,20 +266,41 @@ export const LastEventsPanel: FC = () => {
         error: null,
     });
 
-    useEffect(() => {
+    const load = useCallback(async () => {
+        request.current?.abort();
+        const controller = new AbortController();
+        request.current = controller;
         setState((prev) => ({ ...prev, loading: true, error: null }));
-        fetchLastEvents(visibleCount)
-            .then(({ rows, hasMore }) =>
-                setState({ rows, hasMore, loading: false, error: null }),
-            )
-            .catch(() =>
-                setState((prev) => ({
-                    ...prev,
-                    loading: false,
-                    error: "Failed to load last events",
-                })),
+        try {
+            const result = await fetchLastEvents(
+                pages.current,
+                controller.signal,
             );
-    }, [visibleCount]);
+            if (controller.signal.aborted) return;
+            pages.current = result.pages;
+            setState((prev) => ({
+                rows: [...prev.rows, ...result.rows],
+                hasMore: result.hasMore,
+                loading: false,
+                error: null,
+            }));
+        } catch (error) {
+            if (controller.signal.aborted) return;
+            setState((prev) => ({
+                ...prev,
+                loading: false,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : "Couldn’t load recent activity. Please try again.",
+            }));
+        }
+    }, []);
+
+    useEffect(() => {
+        load();
+        return () => request.current?.abort();
+    }, [load]);
 
     const loadingMore = state.loading && state.rows.length > 0;
 
@@ -229,20 +309,31 @@ export const LastEventsPanel: FC = () => {
     }
 
     if (state.error && state.rows.length === 0) {
-        return <LoadError>{state.error}</LoadError>;
+        return (
+            <LoadError onRetry={load} paths={LAST_EVENTS_PATHS}>
+                {state.error}
+            </LoadError>
+        );
     }
 
     if (state.rows.length === 0) {
         return (
-            <p className="text-sm text-ink-600">
-                No events yet. API usage and earnings will appear here.
-            </p>
+            <Surface>
+                <p className="text-sm text-ink-600">
+                    No events yet. API usage and earnings will appear here.
+                </p>
+            </Surface>
         );
     }
 
     return (
         <div className="flex flex-col gap-3">
-            {state.error && <LoadError>{state.error}</LoadError>}
+            {loadingMore && <PageStatus />}
+            {state.error && (
+                <LoadError onRetry={load} paths={LAST_EVENTS_PATHS}>
+                    {state.error}
+                </LoadError>
+            )}
             <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2 sm:hidden">
                     {state.rows.map((event) => (
@@ -271,7 +362,7 @@ export const LastEventsPanel: FC = () => {
                     ))}
                 </ul>
 
-                <div className="hidden overflow-x-auto sm:block">
+                <Surface className="hidden overflow-x-auto sm:block">
                     <Table
                         aria-label="Last events"
                         className="text-left text-xs"
@@ -300,7 +391,7 @@ export const LastEventsPanel: FC = () => {
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody divider="neutral">
+                        <TableBody>
                             {state.rows.map((event) => (
                                 <TableRow key={`${event.kind}-${event.id}`}>
                                     <TableCell
@@ -334,15 +425,13 @@ export const LastEventsPanel: FC = () => {
                             ))}
                         </TableBody>
                     </Table>
-                </div>
+                </Surface>
 
                 <div className="mt-4 flex justify-end text-[13px] leading-snug text-theme-text-muted">
                     {state.hasMore && (
                         <Button
                             as="button"
-                            onClick={() =>
-                                setVisibleCount((count) => count + PAGE_SIZE)
-                            }
+                            onClick={load}
                             disabled={state.loading}
                             className="self-start sm:self-auto"
                         >

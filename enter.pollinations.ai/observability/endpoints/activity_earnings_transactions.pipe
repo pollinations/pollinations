@@ -10,6 +10,8 @@ SQL >
     SELECT
         event_timestamp AS timestamp,
         cursor_event_id,
+        source AS cursor_source,
+        entity_id AS cursor_entity_id,
         entity_name,
         model,
         meter_source,
@@ -18,6 +20,8 @@ SQL >
         SELECT
             any(timestamp) AS event_timestamp,
             event_id AS cursor_event_id,
+            source,
+            entity_id,
             any(entity_name) AS entity_name,
             any(model) AS model,
             any(meter_source) AS meter_source,
@@ -25,13 +29,20 @@ SQL >
         FROM activity_earnings_events
         WHERE
             dev_user_id = {{ String(dev_user_id, '') }}
-            {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}
+            {% if defined(since) %} AND timestamp >= toDateTime({{ String(since) }}, {{ String(timezone, 'UTC') }})
             {% else %} AND timestamp >= now() - INTERVAL 30 DAY
             {% end %}
-            {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+            {% if defined(until) %} AND timestamp < toDateTime({{ String(until) }}, {{ String(timezone, 'UTC') }}) {% end %}
+            {% if defined(before) %}
+                AND timestamp <= {{ DateTime(before) }}
+                AND (timestamp, event_id, source, entity_id) < (
+                    {{ DateTime(before) }}, {{ String(before_event_id) }},
+                    {{ String(before_source) }}, {{ String(before_entity_id) }}
+                )
+            {% end %}
         GROUP BY dev_user_id, source, entity_id, event_id
     )
-    ORDER BY event_timestamp DESC, cursor_event_id DESC
+    ORDER BY event_timestamp DESC, cursor_event_id DESC, source DESC, entity_id DESC
     LIMIT {{ Int32(limit, 100) }}
 
 TYPE endpoint

@@ -45,6 +45,7 @@ type UnifiedModelTableProps = {
     videoModels: ModelPrice[];
     model3dModels: ModelPrice[];
     textModels: ModelPrice[];
+    decisionModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
@@ -60,6 +61,7 @@ export const sectionLabels: Record<SectionType, string> = {
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
+    decision: "Decision",
     embedding: "Embedding",
     agent: "Agents",
     mcp: "MCPs",
@@ -224,7 +226,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         capabilityLabel={capabilityLabel}
                         perUserRpm={model.perUserRpm}
                     />
-                    {(model.health || showNew || showAlpha) && (
+                    {(model.health ||
+                        showNew ||
+                        showAlpha ||
+                        (model.agent && model.verified)) && (
                         <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                             <ModelStatusChips
                                 health={model.health}
@@ -233,6 +238,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 )}
                                 showNew={showNew}
                                 showAlpha={showAlpha}
+                                verified={Boolean(
+                                    model.agent && model.verified,
+                                )}
                             />
                         </div>
                     )}
@@ -363,6 +371,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     videoModels,
     model3dModels,
     textModels,
+    decisionModels,
     audioModels,
     realtimeModels,
     embeddingModels,
@@ -378,6 +387,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "audio", models: audioModels },
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
+        { type: "decision", models: decisionModels },
         { type: "embedding", models: embeddingModels },
         { type: "agent", models: agentModels },
     ];

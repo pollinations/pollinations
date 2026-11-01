@@ -52,39 +52,41 @@ describe("client table", () => {
 });
 
 describe("json config clients", () => {
-    it.each([
-        undefined,
-        "~/custom-pi",
-    ])("Pi preserves unrelated config and supports its agent directory (%s)", async (agentDir) => {
-        const ctx = freshCtx();
-        ctx.env.PI_CODING_AGENT_DIR = agentDir;
-        const file = join(
-            ctx.home,
-            agentDir ? "custom-pi" : ".pi/agent",
-            "mcp.json",
-        );
-        const foreign = { url: "https://example.org/mcp" };
-        writeJsonObject(file, {
-            autoEnableCodemode: false,
-            mcpServers: { personal: foreign, ffmpeg: foreign },
-        });
-        const client = findClient("pi");
-        if (!client) throw new Error("Missing Pi adapter");
-        await client.install(ctx, SERVERS, "sk-test");
-        await client.install(ctx, SERVERS, "sk-test");
-        const config = JSON.parse(readFileSync(file, "utf8"));
-        expect(config.mcpServers.pollinations).toEqual({
-            url: SERVERS[0].url,
-            headers: { Authorization: "Bearer sk-test" },
-        });
-        expect(client.status(ctx).installed).toEqual(["pollinations"]);
-        expect(client.existingKey?.(ctx)).toBe("sk-test");
-        expect((await client.remove(ctx)).removed).toEqual(["pollinations"]);
-        expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
-            autoEnableCodemode: false,
-            mcpServers: { personal: foreign, ffmpeg: foreign },
-        });
-    });
+    it.each([undefined, "~/custom-pi"])(
+        "Pi preserves unrelated config and supports its agent directory (%s)",
+        async (agentDir) => {
+            const ctx = freshCtx();
+            ctx.env.PI_CODING_AGENT_DIR = agentDir;
+            const file = join(
+                ctx.home,
+                agentDir ? "custom-pi" : ".pi/agent",
+                "mcp.json",
+            );
+            const foreign = { url: "https://example.org/mcp" };
+            writeJsonObject(file, {
+                autoEnableCodemode: false,
+                mcpServers: { personal: foreign, ffmpeg: foreign },
+            });
+            const client = findClient("pi");
+            if (!client) throw new Error("Missing Pi adapter");
+            await client.install(ctx, SERVERS, "sk-test");
+            await client.install(ctx, SERVERS, "sk-test");
+            const config = JSON.parse(readFileSync(file, "utf8"));
+            expect(config.mcpServers.pollinations).toEqual({
+                url: SERVERS[0].url,
+                headers: { Authorization: "Bearer sk-test" },
+            });
+            expect(client.status(ctx).installed).toEqual(["pollinations"]);
+            expect(client.existingKey?.(ctx)).toBe("sk-test");
+            expect((await client.remove(ctx)).removed).toEqual([
+                "pollinations",
+            ]);
+            expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
+                autoEnableCodemode: false,
+                mcpServers: { personal: foreign, ffmpeg: foreign },
+            });
+        },
+    );
 
     it.each([
         ["0.84.4", 0, false],
@@ -95,10 +97,15 @@ describe("json config clients", () => {
         ["1.0.0", 1, false],
     ])("Pi MCP preflight checks %s (exit %s)", (version, exit, supported) => {
         const ctx = freshCtx();
-        const bin = join(ctx.home, "pi");
+        // npm installs Pi as a .cmd shim on Windows; Node cannot spawn that
+        // directly, so the fixture has to be a shim there too.
+        const windows = process.platform === "win32";
+        const bin = join(ctx.home, windows ? "pi.cmd" : "pi");
         writeFileSync(
             bin,
-            `#!/usr/bin/env node\nprocess.stdout.write(${JSON.stringify(version)}); process.exit(${exit});\n`,
+            windows
+                ? `@echo off\r\n"${process.execPath}" -e "process.stdout.write('${version}');process.exit(${exit})"\r\n`
+                : `#!/usr/bin/env node\nprocess.stdout.write(${JSON.stringify(version)}); process.exit(${exit});\n`,
             { mode: 0o700 },
         );
         ctx.env.PATH = [ctx.home, dirname(process.execPath)].join(delimiter);

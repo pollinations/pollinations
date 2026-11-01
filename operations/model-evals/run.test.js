@@ -238,6 +238,23 @@ describe("runEvals against a real HTTP server", () => {
                             },
                         ],
                     });
+                // gen's own refusal: a chat reply with no usage, not a 402.
+                if (model === "vendor/refused")
+                    return send(200, {
+                        choices: [
+                            {
+                                message: {
+                                    content:
+                                        "The account behind this API key doesn't have enough credits. Please [top up](https://enter.pollinations.ai/top-up?ref=agent_low_balance_topup), then try again.",
+                                },
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 0,
+                            completion_tokens: 0,
+                            total_tokens: 0,
+                        },
+                    });
                 if (model === "vendor/broken")
                     return send(500, { error: "boom" });
                 if (model === "vendor/limited" && !limited.has(seed)) {
@@ -417,5 +434,22 @@ describe("runEvals against a real HTTP server", () => {
         await assert.rejects(run([model("vendor/auth")]), /http_401/);
         await assert.rejects(run([model("vendor/no-balance")]), /http_402/);
         await assert.rejects(run([model("vendor/no-usage")]), /missing_usage/);
+        await assert.rejects(
+            run([model("vendor/refused")]),
+            /vendor\/refused: refused/,
+        );
+    });
+
+    test("a refusal relayed by a community endpoint only fails that model", async () => {
+        const { results } = await run([
+            model("vendor/refused", { community: true }),
+            model("vendor/right"),
+        ]);
+        const byName = Object.fromEntries(
+            results[0].models.map((m) => [m.name, m]),
+        );
+        assert.equal(byName["vendor/refused"].failed, 12);
+        assert.deepEqual(byName["vendor/refused"].errors, { refused: 12 });
+        assert.equal(byName["vendor/right"].correct, 12);
     });
 });

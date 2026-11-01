@@ -93,24 +93,29 @@ describe("media text protocols", () => {
         ["audio/mpeg", `[Audio](${url})\n\n${url}`],
         ["video/mp4", `[Video](${url})\n\n${url}`],
         ["model/gltf-binary", `[3D model](${url})\n\n${url}`],
-    ])("returns schema-valid Markdown in both protocols for %s", (mime, markdown) => {
-        const response = createMediaResponse("media-model", url, mime);
-        expect(MediaResponseSchema.safeParse(response).success).toBe(true);
-        expect(response.output[0].content[0].text).toBe(markdown);
-        expect(response.usage).toBeNull();
-        const chat = responsesToChatCompletion(
-            response,
-            "media-model",
-            requestUrl,
-            { requireUsage: false },
-        );
-        expect(MediaChatCompletionSchema.safeParse(chat).success).toBe(true);
-        expect(chat.choices?.[0].message?.content).toBe(markdown);
-        expect(chat).not.toHaveProperty("usage");
-        expect(() =>
-            responsesToChatCompletion(response, "media-model", requestUrl),
-        ).toThrow(/usage/);
-    });
+    ])(
+        "returns schema-valid Markdown in both protocols for %s",
+        (mime, markdown) => {
+            const response = createMediaResponse("media-model", url, mime);
+            expect(MediaResponseSchema.safeParse(response).success).toBe(true);
+            expect(response.output[0].content[0].text).toBe(markdown);
+            expect(response.usage).toBeNull();
+            const chat = responsesToChatCompletion(
+                response,
+                "media-model",
+                requestUrl,
+                { requireUsage: false },
+            );
+            expect(MediaChatCompletionSchema.safeParse(chat).success).toBe(
+                true,
+            );
+            expect(chat.choices?.[0].message?.content).toBe(markdown);
+            expect(chat).not.toHaveProperty("usage");
+            expect(() =>
+                responsesToChatCompletion(response, "media-model", requestUrl),
+            ).toThrow(/usage/);
+        },
+    );
 
     it("emits ordered Responses events and adapts them to one Chat text delta", async () => {
         const response = createMediaResponse("media-model", url, "image/png");

@@ -28,7 +28,7 @@ async function getModelStatus(params, context) {
 export const discoveryTools = [
     [
         "listModels",
-        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Gen filters the catalog server-side, so narrow with query, capabilities, agent, community and limit instead of fetching every model.",
+        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Agents add no charge of their own: the caller pays for every model and tool call an agent makes, so an agent is free only when those calls are free (for example a prompt agent on a free base_model with free or no tools). An agent without base_model lists only a currency because its cost depends on those calls. Gen filters the catalog server-side, so narrow with query, capabilities, agent, community and limit instead of fetching every model.",
         {
             type: z
                 .enum([

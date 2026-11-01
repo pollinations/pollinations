@@ -6,6 +6,7 @@ import {
     callCohereAzureImageEmbed,
     extractCohereAzureUsage,
 } from "./cohereAzure.ts";
+import { callCohereBedrockEmbed } from "./cohereBedrock.ts";
 import { callHostedEmbed, extractHostedUsage } from "./hosted.ts";
 import {
     applyGeminiTaskInstruction,
@@ -15,7 +16,7 @@ import {
     inputToText,
     normalizeInputs,
 } from "./input.ts";
-import { callAzureOpenAIEmbed, extractOpenAIUsage } from "./openai.ts";
+import { callOpenAIEmbed, extractOpenAIUsage } from "./openai.ts";
 import type { EmbeddingRequest } from "./types.ts";
 import {
     callGeminiEmbed,
@@ -34,9 +35,11 @@ type EmbeddingData = {
 const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
     "google/gemini-embedding-2": "gemini-embedding-2",
     "openai/text-embedding-3-small": "text-embedding-3-small",
+    "openai/text-embedding-3-small:openai": "text-embedding-3-small",
     "openai/text-embedding-3-large": "text-embedding-3-large",
+    "openai/text-embedding-3-large:openai": "text-embedding-3-large",
     "cohere/embed-v4.0": "embed-v-4-0",
-    "cohere/embed-v4.0:azure:sweden": "embed-v-4-0",
+    "cohere/embed-v4.0:aws": "global.cohere.embed-v4:0",
     "qwen/qwen3-embedding-8b": "Qwen/Qwen3-Embedding-8B",
     "qwen/qwen3-embedding-8b:fireworks":
         "accounts/fireworks/models/qwen3-embedding-8b",
@@ -59,9 +62,11 @@ const EMBEDDING_DIMENSIONS: Record<
 > = {
     "google/gemini-embedding-2": { max: 3072 },
     "openai/text-embedding-3-small": { max: 1536 },
+    "openai/text-embedding-3-small:openai": { max: 1536 },
     "openai/text-embedding-3-large": { max: 3072 },
+    "openai/text-embedding-3-large:openai": { max: 3072 },
     "cohere/embed-v4.0": { max: 1536, allowed: [256, 512, 1024, 1536] },
-    "cohere/embed-v4.0:azure:sweden": {
+    "cohere/embed-v4.0:aws": {
         max: 1536,
         allowed: [256, 512, 1024, 1536],
     },
@@ -79,18 +84,26 @@ export async function generateEmbeddings(
         return await generateGeminiEmbeddings(env, request, responseModel);
     }
 
-    if (serviceDef.provider === "azure") {
-        if (
-            responseModel === "openai/text-embedding-3-small" ||
-            responseModel === "openai/text-embedding-3-large"
-        ) {
-            return await generateAzureOpenAIEmbeddings(
-                env,
-                request,
-                responseModel,
-            );
-        }
-        return await generateCohereAzureEmbeddings(env, request, responseModel);
+    if (
+        serviceDef.provider === "openai" ||
+        (serviceDef.provider === "azure" &&
+            (responseModel === "openai/text-embedding-3-small" ||
+                responseModel === "openai/text-embedding-3-large"))
+    ) {
+        return await generateOpenAIEmbeddings(
+            env,
+            request,
+            responseModel,
+            serviceDef.provider,
+        );
+    }
+    if (serviceDef.provider === "azure" || serviceDef.provider === "aws") {
+        return await generateCohereEmbeddings(
+            env,
+            request,
+            responseModel,
+            serviceDef.provider,
+        );
     }
 
     if (
@@ -108,10 +121,11 @@ export async function generateEmbeddings(
     throw new Error(`Unsupported embeddings provider: ${serviceDef.provider}`);
 }
 
-async function generateCohereAzureEmbeddings(
+async function generateCohereEmbeddings(
     env: CloudflareBindings,
     request: EmbeddingRequest,
     responseModel: string,
+    provider: "azure" | "aws",
 ): Promise<Response> {
     validateDimensions(request.dimensions, responseModel);
     if (request.task_type) {
@@ -124,14 +138,22 @@ async function generateCohereAzureEmbeddings(
         inputs.length === 1 ? await inputToCohereImage(inputs[0]) : undefined;
 
     if (imageInput) {
-        const result = await callCohereAzureImageEmbed(
-            env,
-            responseModel,
-            request.model,
-            [imageInput],
-            request.dimensions,
-            request.input_type,
-        );
+        const result =
+            provider === "aws"
+                ? await callCohereBedrockEmbed(
+                      env,
+                      request.model,
+                      imageInput,
+                      request.dimensions,
+                      request.input_type,
+                  )
+                : await callCohereAzureImageEmbed(
+                      env,
+                      request.model,
+                      [imageInput],
+                      request.dimensions,
+                      request.input_type,
+                  );
         return cohereEmbeddingsResponse(
             result,
             request,
@@ -146,14 +168,22 @@ async function generateCohereAzureEmbeddings(
         return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
     }
 
-    const result = await callCohereAzureEmbed(
-        env,
-        responseModel,
-        request.model,
-        textInputs,
-        request.dimensions,
-        request.input_type,
-    );
+    const result =
+        provider === "aws"
+            ? await callCohereBedrockEmbed(
+                  env,
+                  request.model,
+                  textInputs,
+                  request.dimensions,
+                  request.input_type,
+              )
+            : await callCohereAzureEmbed(
+                  env,
+                  request.model,
+                  textInputs,
+                  request.dimensions,
+                  request.input_type,
+              );
     return cohereEmbeddingsResponse(result, request, responseModel, "text");
 }
 
@@ -230,10 +260,11 @@ async function generateGeminiEmbeddings(
     return embeddingsResponse(responseModel, data, aggregatedUsage);
 }
 
-async function generateAzureOpenAIEmbeddings(
+async function generateOpenAIEmbeddings(
     env: CloudflareBindings,
     request: EmbeddingRequest,
     responseModel: string,
+    provider: "azure" | "openai",
 ): Promise<Response> {
     validateDimensions(request.dimensions, responseModel);
     if (request.task_type) {
@@ -248,11 +279,12 @@ async function generateAzureOpenAIEmbeddings(
         return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
     }
 
-    const result = await callAzureOpenAIEmbed(
+    const result = await callOpenAIEmbed(
         env,
         request.model,
         textInputs,
         request.dimensions,
+        provider,
     );
     const usage = extractOpenAIUsage(result);
 

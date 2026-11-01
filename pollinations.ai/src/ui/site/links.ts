@@ -16,7 +16,7 @@ export const SOCIAL = [
         Icon: GitHubIcon,
     },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        href: "https://discord.gg/k9F7SyTgqn",
         label: "Discord",
         Icon: DiscordIcon,
     },

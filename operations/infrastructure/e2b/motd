@@ -1,0 +1,14 @@
+
+  Pollinations sandbox: your Linux computer in the cloud.
+
+  Try:  claude        Claude Code
+        opencode      OpenCode
+        polli --help  images, text, audio and video from the terminal
+        herdr         run agents that keep going after you disconnect
+
+  Unless you set a timeout, it pauses about 10 minutes after the last ssh
+  session ends, and its files stay. To keep it running, run
+  `polli sandbox timeout <id> 0` on your computer, or set it on the dashboard.
+
+  Docs: https://gen.pollinations.ai/docs#tag/sandboxes
+

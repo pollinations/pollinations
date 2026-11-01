@@ -1,10 +1,10 @@
-import type { Data, VendorLedgerRow } from "../types";
-import { cloudCategory } from "./categories";
+import type { Data, OpTransactionRow, VendorLedgerRow } from "../types";
 import {
     driveDocumentLink,
     hasArchivedEvidence,
     hasReconciledTransactionEvidence,
     isAcknowledgedLostTransactionEvidence,
+    supplierInvoiceLinks,
 } from "./documents";
 import {
     type MonthFilterValue,
@@ -15,12 +15,15 @@ import {
 } from "./months";
 import {
     canonicalProviderAccountId,
+    cloudObservationMonths,
+    ledgerCategory,
     providerCheckExplanation,
     providerMeteringBasis,
     providerReviewRows,
     resolveProvider,
 } from "./providerRegistry";
 import {
+    isVendorLedgerBalanceRow,
     vendorLedgerCreditBurnUsd,
     vendorLedgerPaidBurnUsd,
 } from "./vendorLedger";
@@ -51,6 +54,7 @@ export type ProviderCloseEvidence = {
 };
 
 export type ProviderCloseRow = {
+    missingAccounts?: string[];
     coverageStatus:
         | "complete"
         | "partial"
@@ -151,21 +155,28 @@ function providerEvidenceFor(
 ): VendorLedgerRow[] {
     return rows.filter(
         (row) =>
-            ["compute", "infrastructure"].includes(cloudCategory(row)) &&
+            ["compute", "infrastructure"].includes(ledgerCategory(row)) &&
             !(row.credit > 0 && row.paid === 0) &&
-            row.start.slice(0, 7) === month &&
+            cloudObservationMonths(row).includes(month) &&
             row.vendor === vendor,
     );
 }
 
-function coversCalendarMonth(rows: VendorLedgerRow[], month: string): boolean {
+export function coversCalendarMonth(
+    rows: VendorLedgerRow[],
+    month: string,
+): boolean {
     const start = Date.parse(`${month}-01T00:00:00Z`);
     const date = new Date(start);
     date.setUTCMonth(date.getUTCMonth() + 1);
     const end = date.getTime();
     let covered = start;
     const intervals = rows
-        .filter((row) => hasArchivedEvidence(row.evidence))
+        .filter(
+            (row) =>
+                hasArchivedEvidence(row.evidence) &&
+                !row.evidence.includes("calendar_coverage=unverified"),
+        )
         .map((row) => [
             Date.parse(
                 row.start.replace(" ", "T") +
@@ -185,6 +196,41 @@ function coversCalendarMonth(rows: VendorLedgerRow[], month: string): boolean {
         covered = Math.max(covered, to);
     }
     return covered >= end;
+}
+
+// A neighboring service month does not establish which invoice a payment settles.
+// Retained supplier invoice identity can establish an explicit cross-month link.
+export function bankPaymentHasServiceEvidence(
+    payment: OpTransactionRow,
+    rows: readonly VendorLedgerRow[],
+): boolean {
+    const providerRows = rows.filter(
+        (row) =>
+            row.vendor === payment.vendor &&
+            !isVendorLedgerBalanceRow(row) &&
+            ["compute", "infrastructure"].includes(ledgerCategory(row)) &&
+            !(row.credit > 0 && row.paid === 0),
+    );
+    if (
+        providerRows.some(
+            (row) =>
+                !row.evidence.includes("calendar_coverage=unverified") &&
+                cloudObservationMonths(row).includes(payment.date.slice(0, 7)),
+        )
+    )
+        return true;
+    if (!hasReconciledTransactionEvidence(payment)) return false;
+    const invoices = supplierInvoiceLinks(payment.evidence)
+        .map(
+            (link) =>
+                driveDocumentLink(link)?.previewHref?.match(
+                    /\/d\/([^/]+)/,
+                )?.[1],
+        )
+        .filter((id): id is string => !!id);
+    return providerRows.some((row) =>
+        invoices.some((id) => row.evidence.includes(id)),
+    );
 }
 
 function dedupeEvidence(
@@ -271,7 +317,7 @@ export function providerCloseRows(
         const month = row.start.slice(0, 7);
         if (
             month >= WINDOW_START &&
-            ["compute", "infrastructure"].includes(cloudCategory(row)) &&
+            ["compute", "infrastructure"].includes(ledgerCategory(row)) &&
             !(row.credit > 0 && row.paid === 0)
         ) {
             const key = `${month}|${row.vendor}`;
@@ -325,13 +371,12 @@ export function providerCloseRows(
             providerRows.length > 0 &&
             providerRows.every((row) => hasArchivedEvidence(row.evidence));
         const meteringBasis = providerMeteringBasis(plane.vendor);
+        const provider = resolveProvider(plane.vendor);
         const statementRequired =
             productActivityKeys.has(planeKey) &&
             meteringBasis !== "internal" &&
             (meteringBasis !== "not_applicable" ||
-                providerRows.some(
-                    (row) => cloudCategory(row) === "infrastructure",
-                ));
+                provider?.category === "infrastructure");
         const providerCheckResolved =
             providerCheckExplanation(
                 plane.month,
@@ -358,22 +403,23 @@ export function providerCloseRows(
             statementRequired,
         });
         const review = reviewByKey.get(planeKey);
-        const provider = resolveProvider(plane.vendor);
         const accounts = review?.expectedAccounts ?? [];
+        const missingAccounts = accounts.filter(
+            (account) =>
+                !coversCalendarMonth(
+                    providerRows.filter(
+                        (row) =>
+                            canonicalProviderAccountId(
+                                provider,
+                                row.account_id,
+                            ) === account.id,
+                    ),
+                    plane.month,
+                ),
+        );
         const completeCoverage =
             accounts.length > 0
-                ? accounts.every((account) =>
-                      coversCalendarMonth(
-                          providerRows.filter(
-                              (row) =>
-                                  canonicalProviderAccountId(
-                                      provider,
-                                      row.account_id,
-                                  ) === account.id,
-                          ),
-                          plane.month,
-                      ),
-                  )
+                ? missingAccounts.length === 0
                 : coversCalendarMonth(providerRows, plane.month);
         const coverageStatus = !statementRequired
             ? ("not required" as const)
@@ -394,6 +440,7 @@ export function providerCloseRows(
             transactionDocumentMissing: transactionDocumentStatus === "missing",
         });
         return {
+            missingAccounts: missingAccounts.map((account) => account.label),
             coverageStatus,
             month: plane.month,
             vendor: plane.vendor,

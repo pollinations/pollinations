@@ -2,6 +2,10 @@ import { runtimeModule, sdkModules } from "virtual:code-agent-sdk";
 import { HTTPException } from "hono/http-exception";
 import { transform } from "sucrase";
 import { z } from "zod";
+import {
+    dispatchScriptUrl,
+    requireCloudflareSuccess,
+} from "./dispatch-script.ts";
 import { type GitHubApiEnv, githubApiHeaders } from "./github-api.ts";
 
 type CodeAgentDeploymentEnv = {
@@ -152,17 +156,6 @@ function deploymentConfig(env: CodeAgentDeploymentEnv) {
     return { token, namespace };
 }
 
-function scriptUrl(env: CodeAgentDeploymentEnv, namespace: string, id: string) {
-    return `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/workers/dispatch/namespaces/${encodeURIComponent(namespace)}/scripts/${encodeURIComponent(id)}`;
-}
-
-async function requireCloudflareSuccess(response: Response) {
-    if (response.ok) return;
-    throw new HTTPException(502, {
-        message: `Code agent deployment failed (${response.status})`,
-    });
-}
-
 export async function deployCodeAgent(
     env: CodeAgentDeploymentEnv,
     id: string,
@@ -213,19 +206,20 @@ export async function deployCodeAgent(
         }),
         "agent.mjs",
     );
-    const response = await fetch(scriptUrl(env, namespace, id), {
+    const response = await fetch(dispatchScriptUrl(env, namespace, id), {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: form,
     });
-    await requireCloudflareSuccess(response);
+    await requireCloudflareSuccess(env, response, "Code agent deployment");
 }
 
 export async function deleteCodeAgent(env: CodeAgentDeploymentEnv, id: string) {
     const { token, namespace } = deploymentConfig(env);
-    const response = await fetch(scriptUrl(env, namespace, id), {
+    const response = await fetch(dispatchScriptUrl(env, namespace, id), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
     });
-    if (response.status !== 404) await requireCloudflareSuccess(response);
+    if (response.status !== 404)
+        await requireCloudflareSuccess(env, response, "Code agent deployment");
 }

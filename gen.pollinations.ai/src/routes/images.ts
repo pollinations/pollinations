@@ -29,7 +29,13 @@ import { arrayBufferToBase64 } from "@/util.ts";
 // --- Helpers ---
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
-const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
+const PASSTHROUGH_PARAMS = [
+    "safe",
+    "transparent",
+    "guidance_scale",
+    "duration",
+    "audio",
+] as const;
 const CACHE_PARAMS = [
     "image",
     "transparent",
@@ -82,7 +88,7 @@ function responseImageUsage(
 function resolveParams(opts: {
     size?: string;
     quality?: string;
-    seed?: number;
+    seed?: number | null;
 }): {
     width?: number;
     height?: number;
@@ -173,18 +179,29 @@ async function parseEditInput(c: Context): Promise<{
                 message: 'response_format must be "url" or "b64_json"',
             });
 
+        const seedField = formData.get("seed");
+        const seed = CreateImageEditRequestSchema.shape.seed.safeParse(
+            seedField == null || seedField === ""
+                ? undefined
+                : Number(seedField),
+        );
+        if (!seed.success)
+            throw new UpstreamError(400, {
+                message: "seed must be an integer between -1 and 2147483647",
+            });
+
         return {
             prompt,
             imageUrls,
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
+            seed: seed.data ?? undefined,
             safe: formData.get("safe") as string | null,
             response_format: format.data,
-            extra: {
-                ...(formData.has("resolution")
-                    ? { resolution: formData.get("resolution") as string }
-                    : {}),
-            },
+            extra: collectPassthrough(
+                Object.fromEntries(formData.entries()),
+                "resolution",
+            ),
         };
     }
 
@@ -249,7 +266,6 @@ export async function prepareImageEditRequest(
     c.set("generationRequestBody", identity);
     c.set("generationCacheBody", identity);
     c.set("generationRequestContentType", "application/json");
-    if (c.var.track) c.var.track.streamRequested = false;
     return body;
 }
 
@@ -287,9 +303,6 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
 
-        // This endpoint returns a complete image/JSON, never an SSE stream.
-        // A passthrough stream flag must not bypass durable media storage.
-        if (c.var.track) c.var.track.streamRequested = false;
         const resolved = resolveParams(body);
         const safePrompt = await applySafetyToInput(
             c,

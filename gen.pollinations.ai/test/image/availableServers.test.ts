@@ -153,19 +153,22 @@ describe("fetchFromWeightedServer", () => {
         [530, "error code: 10330"],
         [530, "Generation failed for seed 1033"],
         [502, "error code: 1033"],
-    ])("does not retry an unconfirmed tunnel failure: %s %s", async (status, body) => {
-        await registerServer("https://w1", "sana");
-        await registerServer("https://w2", "sana");
-        vi.spyOn(console, "error").mockImplementation(() => undefined);
-        const fetchMock = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(new Response(body, { status }));
+    ])(
+        "does not retry an unconfirmed tunnel failure: %s %s",
+        async (status, body) => {
+            await registerServer("https://w1", "sana");
+            await registerServer("https://w2", "sana");
+            vi.spyOn(console, "error").mockImplementation(() => undefined);
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(new Response(body, { status }));
 
-        await expect(
-            fetchFromWeightedServer("sana", { method: "POST" }),
-        ).rejects.toMatchObject({ status, responseBody: body });
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
+            await expect(
+                fetchFromWeightedServer("sana", { method: "POST" }),
+            ).rejects.toMatchObject({ status, responseBody: body });
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it("tries each disconnected tunnel once and preserves the last error", async () => {
         await registerServer("https://w1", "sana");

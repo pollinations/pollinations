@@ -49,5 +49,9 @@ Known traps:
   and Vercel Agent credit. The billing page states one-year expiry after
   purchase; derive each purchased lot's expiry from its paid invoice date.
   Processing fees and tax do not increase the credit amount.
+- If the invoice page's Stripe `Download` link is blocked by Chrome, search
+  the exact invoice number in the Myceli mailbox. Vercel's receipt email can
+  include the original invoice and receipt PDFs as separate attachments;
+  verify both against the team invoice page and archive them by issue date.
 - Record auto-reload status, threshold, and target without changing them.
   A credit balance is not necessarily a promotional grant.

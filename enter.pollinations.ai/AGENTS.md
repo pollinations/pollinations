@@ -34,11 +34,10 @@
 
 **Two types of API keys available:**
 
-1. **🌐 Publishable Key** (starts with `pk_`) - ⚠️ **Beta: Not yet ready for production use**
+1. **🌐 App Key** (starts with `pk_`)
    - Always visible in dashboard
-   - For client-side apps (React, Vue, etc.)
-   - IP rate-limited: 1 pollen per IP per hour
-   - **Consumes Pollen from your balance** - exposing in public code will drain your wallet if your app gets traffic
+   - The OAuth `client_id` for Connect User Wallets (BYOP)
+   - Never authenticates requests: a `pk_` sent as a key gets `401`
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!
    - For server-side apps only
@@ -117,7 +116,7 @@ curl "$BASE_URL/generate/image/test6?model=flux&image=https://example.com/image.
   -H "Authorization: Bearer $TOKEN"
 
 # Transparent background
-curl "$BASE_URL/generate/image/test7?model=flux&transparent=true" \
+curl "$BASE_URL/generate/image/test7?model=gptimage&transparent=true" \
   -H "Authorization: Bearer $TOKEN"
 
 # Save to file
@@ -476,10 +475,9 @@ echo "✅ Done!"
 ### 401 Unauthorized
 
 - **All models require authentication** - no anonymous access
-- Check your token is correct (starts with `pk_` or `sk_`)
+- Check your token is correct (starts with `sk_`; `pk_` App Keys always get `401`)
 - Verify token exists in database
 - Ensure you're using `Authorization: Bearer $TOKEN` header
-- For paid models, ensure you're using a **Secret Key** (`sk_`), not Publishable Key
 
 ### 403 Forbidden
 
@@ -560,7 +558,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 ### Authentication
 
 - **Use Secret Keys (`sk_`) for testing**: Better rate limits and can spend pollen
-- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (1 pollen per IP per hour)
+- **App Keys (`pk_`)**: OAuth client IDs only; they never authenticate requests
 
 ### Performance
 
@@ -594,7 +592,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CAL
 | `response_type` | `code` for OAuth code flow; omit for legacy fragment flow | `code` |
 | `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
 | `code_challenge_method` | Must be `S256` for code flow | `S256` |
-| `models` | Comma-separated model categories; a model ID allows its whole category | `text,image` |
+| `models` | Comma-separated model categories and model IDs; a model ID allows only that model | `text,image` |
 | `budget` | Pollen budget limit | `10` |
 | `expiry` | Expiry in days (default: 7) | `7` |
 | `scope` | Account permissions; `permissions` is legacy alias | `profile usage` |

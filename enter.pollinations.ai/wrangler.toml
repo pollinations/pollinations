@@ -15,9 +15,13 @@ service = "pollinations-composio-mcp"
 [dev]
 port = 3000
 
+# Never add a `binding` here. Enter is gen's dispatch-namespace outbound Worker:
+# with an assets binding Cloudflare rejects POST /deployments (10013) and live
+# /api/* returns 503 (1105). See #18189 and #18552; checked by
+# scripts/assets-binding.test.mjs.
 [assets]
 directory = "dist/client"
-not_found_handling = "single-page-application"
+not_found_handling = "404-page"
 run_worker_first = [ "/api/*", "/.well-known/*" ]
 
 [[d1_databases]]
@@ -26,9 +30,17 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[send_email]]
+name = "EMAIL"
+
 [[kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
+[[kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [vars]
@@ -52,6 +64,8 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"
 
 [env.local]
+# Same name as `wrangler dev`, so gen's ENTER binding finds `npm run dev` too.
+name = "pollinations-enter"
 
 [[env.local.services]]
 binding = "COMPOSIO_MCP"
@@ -66,9 +80,17 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[env.local.send_email]]
+name = "EMAIL"
+
 [[env.local.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
+[[env.local.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.local.vars]
@@ -123,9 +145,25 @@ database_name = "production-pollinations-enter-db"
 database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "drizzle"
 
+[[env.production.send_email]]
+name = "EMAIL"
+
 [[env.production.kv_namespaces]]
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
+
+[[env.production.kv_namespaces]]
+# production-pollinations-setup-holds: Setup reward holds, shared with
+# infra-watch, which writes domain holds and reads review requests
+binding = "SETUP_HOLDS"
+id = "957b3d13dc2c4142ab22fdf889f27bec"
+
+# Per-key limit before auth; see shared/rate-limit.ts. Separate namespace
+# from gen's 1001 so a request passing through both isn't counted twice.
+[[env.production.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 600, period = 10 }
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -145,6 +183,8 @@ STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
 BETTER_AUTH_URL = "https://enter.pollinations.ai"
 GEN_BASE_URL = "https://gen.pollinations.ai"
 CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-production"
+SITES_DISPATCH_NAMESPACE = "pollinations-hosting"
+SITES_HOST_SUFFIX = ".pollinations.app"
 # Stripe Payment Method Configurations (live)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
@@ -176,10 +216,25 @@ database_name = "staging-pollinations-enter-db"
 database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "drizzle"
 
+[[env.staging.send_email]]
+name = "EMAIL"
+
 [[env.staging.kv_namespaces]]
 # staging-pollinations-enter-kv
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
+
+[[env.staging.kv_namespaces]]
+# Setup reward holds; staging reuses the staging KV namespace
+binding = "SETUP_HOLDS"
+id = "ba22195551794751b9792e4e67eb074a"
+
+# Per-key limit before auth; see shared/rate-limit.ts. Separate namespace
+# from gen's 1001 so a request passing through both isn't counted twice.
+[[env.staging.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 600, period = 10 }
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -199,14 +254,16 @@ STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
 BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
 GEN_BASE_URL = "https://staging.gen.pollinations.ai"
 CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-staging"
+SITES_DISPATCH_NAMESPACE = "pollinations-hosting-staging"
+SITES_HOST_SUFFIX = "--staging.pollinations.app"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"
 # Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
 # team access when the exact GitHub account is unknown. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015,314960022"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid,polli@pollinations.ai"
 [env.dev]
 
 [[env.dev.services]]
@@ -224,9 +281,17 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[env.dev.send_email]]
+name = "EMAIL"
+
 [[env.dev.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
+[[env.dev.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.dev.vars]
@@ -262,9 +327,17 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[env.test.send_email]]
+name = "EMAIL"
+
 [[env.test.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
+id = "84512601e2a44679a4d3b0f7415d90ec"
+
+[[env.test.kv_namespaces]]
+# Setup reward holds; development reuses the development KV namespace
+binding = "SETUP_HOLDS"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.test.vars]
@@ -275,6 +348,8 @@ LOG_FORMAT = "text"
 D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae41f84cb05d"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
+GOOGLE_CLIENT_ID = "test_google_client_id"
+GOOGLE_CLIENT_SECRET = "test_google_client_secret"
 DISCORD_CLIENT_ID = "test_discord_client_id"
 DISCORD_CLIENT_SECRET = "test_discord_client_secret"
 DISCORD_BOT_TOKEN = "test_discord_bot_token"
@@ -298,6 +373,9 @@ STRIPE_WEBHOOK_SECRET = "whsec_not_a_real_secret_workers_test_only"
 BETTER_AUTH_URL = "http://localhost:3000"
 GEN_BASE_URL = "https://gen.pollinations.ai"
 CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-production"
+SITES_DISPATCH_NAMESPACE = "pollinations-hosting-test"
+SITES_HOST_SUFFIX = ".pollinations.app"
+CODE_AGENT_DEPLOY_API_TOKEN = "test-deploy-token-not-a-secret"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"

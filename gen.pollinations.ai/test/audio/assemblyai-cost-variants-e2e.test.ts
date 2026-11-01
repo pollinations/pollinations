@@ -85,7 +85,7 @@ afterEach(async () => {
 });
 
 test("AssemblyAI prompt and diarization select the combined billing sheet", async ({
-    apiKey,
+    paidApiKey,
     mocks,
 }) => {
     await mocks.enable("assemblyai", "tinybird");
@@ -105,7 +105,7 @@ test("AssemblyAI prompt and diarization select the combined billing sheet", asyn
     const response = await worker.fetch(
         new Request("https://gen.pollinations.ai/v1/audio/transcriptions", {
             method: "POST",
-            headers: { authorization: `Bearer ${apiKey}` },
+            headers: { authorization: `Bearer ${paidApiKey}` },
             body: form,
         }),
         withInlineGenerationCoordinator({

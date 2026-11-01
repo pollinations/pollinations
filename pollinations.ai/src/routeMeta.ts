@@ -2,7 +2,7 @@ type RouteMeta = { title: string; description: string };
 
 export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
-        title: "Pollinations.ai — Open infrastructure for AI-natives. Models. Agents. Tools. One API.",
+        title: "Pollinations.ai | Open infrastructure for AI-natives. Models. Agents. Tools. One API.",
         description:
             "The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps.",
     },
@@ -89,7 +89,7 @@ export function getJsonLd(path: string): string | null {
             logo: "https://pollinations.ai/icon-512.png",
             sameAs: [
                 "https://github.com/pollinations",
-                "https://discord.gg/pollinations-ai-885844321461485618",
+                "https://discord.gg/k9F7SyTgqn",
                 "https://x.com/pollinations_ai",
             ],
             description: ROUTE_META["/"].description,

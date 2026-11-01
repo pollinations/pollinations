@@ -33,50 +33,50 @@ describe.each([
     ],
     ["Responses", requireResponsesStreamUsage, responseDelta, responseUsage],
 ] as const)("%s stream usage framing", (_name, validate, content, terminal) => {
-    it.each([
-        "\n",
-        "\r\n",
-        "\r",
-    ])("preserves healthy SSE bytes with %j line endings at every chunk split", async (newline) => {
-        const input = (content + terminal).replaceAll("\n", newline);
-        const bytes = encoder.encode(input);
-        for (let split = 1; split < bytes.length; split++) {
-            expect(
-                await new Response(validate(splitStream(bytes, split))).text(),
-            ).toBe(input);
-        }
-    });
+    it.each(["\n", "\r\n", "\r"])(
+        "preserves healthy SSE bytes with %j line endings at every chunk split",
+        async (newline) => {
+            const input = (content + terminal).replaceAll("\n", newline);
+            const bytes = encoder.encode(input);
+            for (let split = 1; split < bytes.length; split++) {
+                expect(
+                    await new Response(
+                        validate(splitStream(bytes, split)),
+                    ).text(),
+                ).toBe(input);
+            }
+        },
+    );
 
-    it.each([
-        "\n",
-        "\r\n",
-        "\r",
-    ])("returns a complete error event with %j line endings at every chunk split", async (newline) => {
-        const invalidTerminal =
-            _name === "Chat"
-                ? 'data: {"usage":{"prompt_tokens":1}}\n\ndata: [DONE]\n\n'
-                : 'event: response.completed\ndata: {"type":"response.completed","response":{"status":"completed"}}\n\n';
-        const prefix = content.replaceAll("\n", newline);
-        const bytes = encoder.encode(
-            prefix + invalidTerminal.replaceAll("\n", newline),
-        );
-        for (let split = 1; split < bytes.length; split++) {
-            const output = await new Response(
-                validate(splitStream(bytes, split)),
-            ).text();
-            expect(output.startsWith(prefix)).toBe(true);
-            const events = output
-                .split(/\r\n|\r|\n/)
-                .filter((line) => line.startsWith("data:"))
-                .map((line) => JSON.parse(line.slice(5)));
-            // Chat forwards provisional usage and validates it at DONE;
-            // Responses validates its terminal event before forwarding it.
-            expect(events).toHaveLength(_name === "Chat" ? 3 : 2);
-            const error = events.at(-1);
-            expect(error.error?.code ?? error.code).toBe("usage_missing");
-            expect(output).not.toContain("[DONE]");
-        }
-    });
+    it.each(["\n", "\r\n", "\r"])(
+        "returns a complete error event with %j line endings at every chunk split",
+        async (newline) => {
+            const invalidTerminal =
+                _name === "Chat"
+                    ? 'data: {"usage":{"prompt_tokens":1}}\n\ndata: [DONE]\n\n'
+                    : 'event: response.completed\ndata: {"type":"response.completed","response":{"status":"completed"}}\n\n';
+            const prefix = content.replaceAll("\n", newline);
+            const bytes = encoder.encode(
+                prefix + invalidTerminal.replaceAll("\n", newline),
+            );
+            for (let split = 1; split < bytes.length; split++) {
+                const output = await new Response(
+                    validate(splitStream(bytes, split)),
+                ).text();
+                expect(output.startsWith(prefix)).toBe(true);
+                const events = output
+                    .split(/\r\n|\r|\n/)
+                    .filter((line) => line.startsWith("data:"))
+                    .map((line) => JSON.parse(line.slice(5)));
+                // Chat forwards provisional usage and validates it at DONE;
+                // Responses validates its terminal event before forwarding it.
+                expect(events).toHaveLength(_name === "Chat" ? 3 : 2);
+                const error = events.at(-1);
+                expect(error.error?.code ?? error.code).toBe("usage_missing");
+                expect(output).not.toContain("[DONE]");
+            }
+        },
+    );
 
     it("does not splice an error into a truncated terminal JSON event", async () => {
         const bytes = encoder.encode(`${content}data: {"id":"unfinished`);
@@ -109,14 +109,17 @@ describe("Chat token usage followed by accounting metadata", () => {
         "",
         'data: {"usage":{"prompt_tokens":1}}\n\n',
         `${chatUsage}data: {"usage":{"completion_tokens":-1}}\n\n`,
-    ])("does not let a cost-only trailer hide missing or invalid token counts (%j)", async (usage) => {
-        const bytes = encoder.encode(
-            `${delta}${usage}${costTrailer}data: [DONE]\n\n`,
-        );
-        const output = await new Response(
-            requireChatStreamUsage(splitStream(bytes, bytes.length - 5)),
-        ).text();
-        expect(output).toContain('"code":"usage_missing"');
-        expect(output).not.toContain("[DONE]");
-    });
+    ])(
+        "does not let a cost-only trailer hide missing or invalid token counts (%j)",
+        async (usage) => {
+            const bytes = encoder.encode(
+                `${delta}${usage}${costTrailer}data: [DONE]\n\n`,
+            );
+            const output = await new Response(
+                requireChatStreamUsage(splitStream(bytes, bytes.length - 5)),
+            ).text();
+            expect(output).toContain('"code":"usage_missing"');
+            expect(output).not.toContain("[DONE]");
+        },
+    );
 });

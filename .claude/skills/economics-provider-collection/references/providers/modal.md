@@ -2,7 +2,7 @@
 
 Canonical vendor: `modal`
 
-## Verified — 2026-09-04
+## Verified — 2026-10-02
 
 - Status: bounded billing CLI works with the stored token pair.
 - Login: `elliot@myceli.ai` in the Myceli browser workspace.
@@ -56,6 +56,20 @@ Collection steps:
 
 Known traps:
 
+- As of 2026-10-02, the user says Modal is no longer used. Keep historical
+  usage, but do not project new usage from September's last value.
+- The signed-in `myceli-ai` Credits tab showed one exhausted startup grant;
+  the exact award, dates, and balance are in the private close evidence.
+  Its monthly plan credit is separate. The larger balance the user identified
+  belongs to Daytona's `Myceli AI` wallet, not Modal.
+- The `elliot-4` September 1–30 billing cycle showed zero total spend,
+  zero credits used, and zero charges; its Credits tab showed only the
+  monthly plan credit and an `Apply now` invitation for startup credit.
+  `myceli-ai2` also had zero September spend in its bounded CLI report and
+  signed-in billing view.
+- The monthly included plan credit is separate from a startup grant. Check
+  the grant in the exact workspace's Credits view and record each grant lot
+  with its own expiry; a historical monthly-plan balance cannot prove a grant.
 - Modal billing reports are app/deployment oriented; model attribution depends on app naming or an internal deployment map.
 - A successful CLI call can return zero rows for a quiet or still-open period.
 - Record a verified-zero month when a bounded closed-month call succeeds with

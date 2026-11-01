@@ -72,7 +72,7 @@ export const disableBloom = (ctx: HarnessContext): HarnessResult => {
     return { ...result(ctx), configured: false, outcome };
 };
 
-export const bloom: HarnessAdapter = {
+export const bloom = {
     id: ID,
     label: LABEL,
     description: "Create and configure a dedicated Pollinations key for Bloom",
@@ -94,4 +94,4 @@ export const bloom: HarnessAdapter = {
 
     off: disableBloom,
     status: result,
-};
+} satisfies HarnessAdapter;

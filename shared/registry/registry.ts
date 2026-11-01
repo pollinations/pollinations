@@ -30,6 +30,7 @@ export const MODEL_CATEGORIES = [
     "3d",
     "embedding",
     "realtime",
+    "decision",
 ] as const;
 
 export type Category = (typeof MODEL_CATEGORIES)[number];
@@ -146,9 +147,9 @@ export type BillingRules = {
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
-// The model's single priceMultiplier applies uniformly to tokens and
+// The model's effective priceMultiplier applies uniformly to tokens and
 // adjustments alike (there is no per-rule multiplier), so adjustment prices
-// are always derivable from costs: price = cost × svc.priceMultiplier.
+// are always derivable from costs: price = cost × effective multiplier.
 export type BillingAdjustment = {
     ruleId: string;
     kind: string;
@@ -196,6 +197,9 @@ export type ModelDefinition = {
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
+    // Override the multiplier for a named cost variant when customer tiers
+    // differ from the provider's tiers (e.g. flat-cost long-context inference).
+    priceMultiplierVariants?: Record<string, number>;
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
@@ -243,6 +247,7 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    supportsTransparency?: boolean; // Image-only: `transparent=true` returns a PNG with alpha; other models reject it
     /** Output-token limit enforced on public requests and fallback routes. */
     maxCompletionTokens?: number;
     /** False when the model rejects JSON/structured output requests. */
@@ -284,7 +289,7 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-function derivePrice(
+export function derivePrice(
     costDefinition: CostDefinition,
     priceMultiplier: number,
 ): PriceDefinition {
@@ -362,6 +367,7 @@ export function calculateBillingAdjustments(
     output: unknown,
     model: string,
     input?: PricingInput,
+    priceMultiplier = svc.priceMultiplier,
 ): BillingAdjustment[] {
     const adjustments: BillingAdjustment[] = [];
     for (const rule of svc.billing?.adjustments ?? []) {
@@ -377,7 +383,7 @@ export function calculateBillingAdjustments(
             units,
             unitCost,
             cost,
-            price: cost * svc.priceMultiplier,
+            price: cost * priceMultiplier,
         });
     }
     return adjustments;
@@ -443,15 +449,22 @@ function rateAgainst(
     output?: unknown,
     input?: PricingInput,
 ): Omit<UsageBilling, "servedPrice"> {
-    const adjustments = calculateBillingAdjustments(svc, output, model, input);
+    const selection = selectCostVariant(model, usage, svc, input);
+    const costVariant = selection.name;
+    const priceMultiplier = getPriceMultiplier(svc, costVariant);
+    const adjustments = calculateBillingAdjustments(
+        svc,
+        output,
+        model,
+        input,
+        priceMultiplier,
+    );
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
     const adjustmentPrice = adjustments.reduce(
         (total, a) => total + a.price,
         0,
     );
 
-    const selection = selectCostVariant(model, usage, svc, input);
-    const costVariant = selection.name;
     const effectiveCost = costVariant
         ? { ...svc.cost, ...svc.costVariants?.[costVariant] }
         : svc.cost;
@@ -469,7 +482,7 @@ function rateAgainst(
             .filter(([usageType]) => usageType !== "totalCost")
             .map(([usageType, usageTypeCost]) => [
                 usageType,
-                (usageTypeCost as number) * svc.priceMultiplier,
+                (usageTypeCost as number) * priceMultiplier,
             ]),
     ) as Usage;
     const tokenTotalPrice = Object.values(usagePrice).reduce(
@@ -491,11 +504,11 @@ function rateAgainst(
                 ? price
                 : {
                       totalPrice: roundPollenLedgerAmount(
-                          reportedCost * svc.priceMultiplier,
+                          reportedCost * priceMultiplier,
                       ),
                   },
         adjustments,
-        priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
+        priceDefinition: derivePrice(effectiveCost, priceMultiplier),
         costVariant,
         costVariantStatus: selection.status,
     };
@@ -525,7 +538,7 @@ export function calculateUsageBilling({
         served.cost = { totalCost };
         served.price = {
             totalPrice: roundPollenLedgerAmount(
-                totalCost * servedBy.priceMultiplier,
+                totalCost * getPriceMultiplier(servedBy, served.costVariant),
             ),
         };
     }
@@ -628,6 +641,12 @@ function filterVisible<TModelName extends ModelName>(
     );
 }
 
+/** The catalog's flat-rate rule: an explicit `flatRate`, or an image model with no prompt-token rate. */
+export const isFlatRateModel = (definition: ModelDefinition): boolean =>
+    definition.flatRate ??
+    (definition.category === "image" &&
+        definition.cost.promptTextTokens === undefined);
+
 export const isVisibleModelDefinition = (
     definition: ModelDefinition,
 ): boolean => definition.hidden !== true && definition.fallbackOnly !== true;
@@ -658,8 +677,45 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
 
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
+    variant?: string,
 ): PriceDefinition {
-    return derivePrice(svc.cost, svc.priceMultiplier);
+    return derivePrice(
+        variant ? { ...svc.cost, ...svc.costVariants?.[variant] } : svc.cost,
+        getPriceMultiplier(svc, variant),
+    );
+}
+
+function getPriceMultiplier(svc: ModelDefinition, variant?: string): number {
+    return (
+        (variant ? svc.priceMultiplierVariants?.[variant] : undefined) ??
+        svc.priceMultiplier
+    );
+}
+
+/** Every cost sheet a model can bill at: its base cost and each variant over it. */
+export function getCostSheetsForModel(svc: ModelDefinition): CostDefinition[] {
+    return [
+        svc.cost,
+        ...Object.values(svc.costVariants ?? {}).map((variant) => ({
+            ...svc.cost,
+            ...variant,
+        })),
+    ];
+}
+
+/**
+ * True when `target` costs no more than `primary` for every usage type. A
+ * usage type the primary does not price counts as free, so a target that
+ * charges for it is rejected.
+ */
+export function isFallbackPricingAllowed(
+    primary: PriceDefinition,
+    target: PriceDefinition,
+): boolean {
+    return Object.entries(target).every(
+        ([usageType, price]) =>
+            (price ?? 0) <= (primary[usageType as UsageType] ?? 0),
+    );
 }
 
 /**

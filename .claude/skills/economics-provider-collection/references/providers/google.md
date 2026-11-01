@@ -126,3 +126,12 @@ Known traps:
 - If only an aggregate is available, preserve it with the missing split
   stated in evidence; do not label unknown cost as infrastructure.
 - Billing exports never create Bank rows; only actual bank movements do.
+- Reconcile a supplier invoice using the export's `invoice.month`, not only
+  `usage_start_time`. Query the invoice month with a bounded surrounding usage
+  window, group by usage month and `cost_type`, and compare the net sum with the
+  original PDF. A calendar-month usage export can include rows assigned to
+  adjacent invoice months, while an invoice can include usage dated in an
+  adjacent month. Keep invoice rounding adjustments separate from service/SKU
+  usage. The export can acquire late adjustments after the first close-day
+  capture; archive versioned raw queries and refresh draft amounts before
+  staging validation.

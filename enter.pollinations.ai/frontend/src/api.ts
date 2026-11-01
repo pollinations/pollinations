@@ -1,8 +1,10 @@
 import { hc } from "hono/client";
 import type { ApiRoutes } from "./backend-types.ts";
 import { config } from "./config.ts";
+import { trackedFetch } from "./lib/outage.ts";
 
 export const apiClient = hc<ApiRoutes>(config.apiBaseUrl, {
+    fetch: trackedFetch,
     init: { credentials: "include" },
 });
 
@@ -39,15 +41,33 @@ export function forgetSessionToken(): void {
     session = null;
 }
 
+// Signed out, requests go without a token and get the API's 401.
+async function authorization(): Promise<Record<string, string>> {
+    const token = await sessionToken().catch(() => null);
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** Calls gen with the session token, for gen APIs outside the account API. */
+export async function genFetch(
+    path: string,
+    { method = "GET", body }: { method?: string; body?: unknown } = {},
+): Promise<Response> {
+    return trackedFetch(`${config.genBaseUrl}${path}`, {
+        method,
+        headers: {
+            ...(await authorization()),
+            ...(body !== undefined && { "content-type": "application/json" }),
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+    });
+}
+
 /**
  * The public account API on gen.pollinations.ai, called with a short-lived
  * token minted from the dashboard session. Apps and agents call the same
- * routes with their API keys. Signed out, requests go without a token and get
- * the API's 401.
+ * routes with their API keys.
  */
 export const accountClient = hc<ApiRoutes>(config.genBaseUrl, {
-    headers: async (): Promise<Record<string, string>> => {
-        const token = await sessionToken().catch(() => null);
-        return token ? { Authorization: `Bearer ${token}` } : {};
-    },
+    fetch: trackedFetch,
+    headers: authorization,
 }).account;

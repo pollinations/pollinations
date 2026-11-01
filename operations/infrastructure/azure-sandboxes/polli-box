@@ -1,0 +1,27 @@
+#!/bin/sh
+# Starts an Azure sandbox (gen's src/routes/azure-sandboxes.ts) as E2B's
+# orchestrator and systemd start an E2B one. Gen passes envd's /init body,
+# with the sandbox's token. envd lets anyone in until /init, so it listens on
+# a port Azure doesn't publish, and envd's own port opens only afterwards.
+set -eu
+# Azure gives this process the variables that make clients trust its egress
+# proxy's CA, and envd and sshd pass on none of them: /etc/environment reaches
+# ssh logins and cron jobs, /init's envVars every process envd starts.
+env | grep -E '^(SSL_CERT_FILE|REQUESTS_CA_BUNDLE|NODE_EXTRA_CA_CERTS|GRPC_DEFAULT_SSL_ROOTS_FILE_PATH)=' \
+    > /etc/environment || true
+init=$(printf '%s' "$POLLI_ENVD_INIT" | jq -c --rawfile ca /etc/environment '.envVars =
+    ($ca | split("\n") | map(select(. != "") | split("=") | {key: .[0], value: (.[1:] | join("="))})
+        | from_entries) + (.envVars // {})')
+unset POLLI_ENVD_INIT
+envd -isnotfc -no-cgroups -port 49984 >/var/log/envd.log 2>&1 &
+until curl -fsS -o /dev/null http://127.0.0.1:49984/health; do sleep 0.1; done
+printf '%s' "$init" | curl -fsS -X POST -H 'content-type: application/json' \
+    --data-binary @- http://127.0.0.1:49984/init
+# systemd starts cron in E2B's sandboxes.
+cron
+# One process per connection: a single relay process for every client dropped
+# connections after a resume.
+while :; do
+    socat TCP-LISTEN:49983,fork,reuseaddr TCP:127.0.0.1:49984 || true
+    sleep 1
+done

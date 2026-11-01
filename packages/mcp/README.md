@@ -43,6 +43,9 @@ For all Pollinations-hosted MCP servers, see the
 | `listKeys` | List API keys; requires `account:keys` | `/account/keys` |
 | `createKey` | Create a secret or publishable app key; requires `account:keys` | `POST /account/keys` |
 | `revokeKey` | Revoke a key by id; requires `account:keys` | `DELETE /account/keys/{id}` |
+| `listSites` | Static sites and limits; requires `account:machines` | `/account/sites` |
+| `deploySite` | Publish inline files at `https://<name>.pollinations.app`; requires `account:machines` | `PUT /account/sites/{name}` |
+| `deleteSite` | Take a site offline; requires `account:machines` | `DELETE /account/sites/{name}` |
 
 Generated media is returned as an MCP resource link using the API's existing
 public Media URL. No download or re-upload is needed, and binary data does not
@@ -50,6 +53,10 @@ consume model context. Anyone with the link can access it; expired files return 
 
 Models, voices, capabilities, and pricing come from the live registry. Use
 `listModels` before selecting a model or voice.
+
+Agents (`agent: true`) bill the caller for each model and tool call they make;
+`getUsage` lists those charges under the models the agent called. An agent
+without `base_model` lists only `currency` in `pricing`.
 
 ## Development
 

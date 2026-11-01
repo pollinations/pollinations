@@ -1,7 +1,7 @@
 export const SOCIAL_LINKS = {
     discord: {
         label: "Discord",
-        url: "https://discord.gg/pollinations-ai-885844321461485618",
+        url: "https://discord.gg/k9F7SyTgqn",
     },
     github: {
         label: "GitHub",

@@ -26,16 +26,23 @@ export type OpenAIEmbeddingResponse = {
     };
 };
 
-export async function callAzureOpenAIEmbed(
+export async function callOpenAIEmbed(
     env: CloudflareBindings,
     modelId: string,
     input: string[],
-    dimensions?: number,
+    dimensions: number | undefined,
+    provider: "azure" | "openai",
 ): Promise<OpenAIEmbeddingResponse> {
-    const apiKey = env.AZURE_MYCELI_PROD_API_KEY;
+    const keyName =
+        provider === "azure" ? "AZURE_MYCELI_PROD_API_KEY" : "OPENAI_API_KEY";
+    const apiKey = env[keyName];
+    const endpoint =
+        provider === "azure"
+            ? AZURE_OPENAI_EMBEDDINGS_ENDPOINT
+            : "https://api.openai.com/v1/embeddings";
 
     if (!apiKey) {
-        throw new Error("AZURE_MYCELI_PROD_API_KEY is not configured");
+        throw new Error(`${keyName} is not configured`);
     }
 
     const body: OpenAIEmbeddingRequest = {
@@ -44,16 +51,18 @@ export async function callAzureOpenAIEmbed(
         ...(dimensions ? { dimensions } : {}),
     };
 
-    const response = await fetch(AZURE_OPENAI_EMBEDDINGS_ENDPOINT, {
+    const response = await fetch(endpoint, {
         method: "POST",
         headers: {
             "content-type": "application/json",
-            "api-key": apiKey,
+            ...(provider === "azure"
+                ? { "api-key": apiKey }
+                : { authorization: `Bearer ${apiKey}` }),
         },
         body: JSON.stringify(body),
     });
 
-    await ensureUpstreamOk(response, AZURE_OPENAI_EMBEDDINGS_ENDPOINT);
+    await ensureUpstreamOk(response, endpoint);
     return response.json() as Promise<OpenAIEmbeddingResponse>;
 }
 

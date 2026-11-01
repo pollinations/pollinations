@@ -1,9 +1,18 @@
-import { apiKey } from "@better-auth/api-key";
+import { apiKey, defaultKeyHasher } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { eq, getTableColumns } from "drizzle-orm";
+import {
+    and,
+    eq,
+    getTableColumns,
+    isNull,
+    lt,
+    or,
+    type SQL,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
+import { HTTPException } from "hono/http-exception";
 import { byopClientAllowsMarkup } from "../billing/markup.ts";
 import * as schema from "../db/better-auth.ts";
 import {
@@ -17,6 +26,8 @@ import { parseGithubIdList } from "./github-id-list.ts";
 import { SESSION_TOKEN_PREFIX, verifySessionToken } from "./session-token.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
+const PUBLISHABLE_KEY_REFUSAL =
+    "Publishable keys (pk_) only identify your app and can't authenticate requests. Let users pay through Connect User Wallets: https://gen.pollinations.ai/docs#tag/connect-user-wallets. On a server, use a secret key (sk_) from https://enter.pollinations.ai/keys.";
 
 export type AuthUser = typeof schema.user.$inferSelect;
 
@@ -26,6 +37,7 @@ export interface AuthenticatedApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    expiresAt?: Date | null;
     /** Charges never fall through to the owner's paid balance. */
     questPollenOnly?: boolean;
     byopClientKeyId?: string | null;
@@ -112,21 +124,6 @@ function normalizeEmail(value: string | null | undefined): string | null {
     const normalized = value?.trim().toLowerCase();
     return normalized?.includes("@") ? normalized : null;
 }
-
-type VerifyApiKeyResponse = {
-    valid: boolean;
-    key?: {
-        id?: unknown;
-    } | null;
-};
-
-export type VerifyApiKeyClient = {
-    api: {
-        verifyApiKey: (args: {
-            body: { key: string };
-        }) => Promise<VerifyApiKeyResponse>;
-    };
-};
 
 export function createApiKeyPlugin() {
     return apiKey({
@@ -222,14 +219,25 @@ export function assertNotBanned(user: {
     );
 }
 
+// A key that is unknown, disabled or expired stays rejected from the cache for
+// this long, so a flood repeating bad keys stops reaching D1.
+const INVALID_KEY_CACHE_SECONDS = 300;
+// "Last used" is shown to the owner; minute precision is not needed, and a
+// write per request was most of D1's load during the 2026-10-27 floods.
+const LAST_REQUEST_WRITE_INTERVAL_MS = 5 * 60_000;
+
 export async function authenticateApiKeyRequest(opts: {
     request: Request;
     env: ApiKeyAuthBindings;
-    client?: VerifyApiKeyClient;
     ctx?: Pick<ExecutionContext, "waitUntil">;
 }): Promise<ApiKeyAuthResult | null> {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
+
+    // pk_ keys are App Keys: public OAuth client IDs, never credentials.
+    if (rawApiKey.startsWith(`${PUBLISHABLE_KEY_PREFIX}_`)) {
+        throw new HTTPException(401, { message: PUBLISHABLE_KEY_REFUSAL });
+    }
 
     if (rawApiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
         return authenticateAgentRunToken(rawApiKey, opts.env);
@@ -238,23 +246,82 @@ export async function authenticateApiKeyRequest(opts: {
         return authenticateSessionToken(rawApiKey, opts.env);
     }
 
-    const client: VerifyApiKeyClient =
-        opts.client ??
-        (createApiKeyAuth(opts.env, opts.ctx) as unknown as VerifyApiKeyClient);
-    const keyResult = await client.api.verifyApiKey({
-        body: { key: rawApiKey },
-    });
+    // Better Auth's verifyApiKey does this lookup plus two awaited writes per
+    // call (last_request and updated_at). Our keys use none of its quota or
+    // rate-limit features, so look the key up by hash directly.
+    const keyHash = await defaultKeyHasher(rawApiKey);
+    const invalidKeyCacheKey = new Request(
+        new URL(`/__invalid-api-key/${keyHash}`, opts.request.url),
+    );
+    const invalidKeys = await caches.open("invalid-api-keys");
+    if (await invalidKeys.match(invalidKeyCacheKey)) return null;
 
-    if (!keyResult.valid || !keyResult.key) return null;
+    const row = await selectApiKeyRow(opts.env, eq(schema.apikey.key, keyHash));
+    const result = toActiveAuthResult(row, rawApiKey, opts.env);
+    if (!result || !row) {
+        const remember = invalidKeys.put(
+            invalidKeyCacheKey,
+            new Response(null, {
+                headers: {
+                    "Cache-Control": `max-age=${INVALID_KEY_CACHE_SECONDS}`,
+                },
+            }),
+        );
+        runInBackground(remember, opts.ctx);
+        return null;
+    }
 
-    const key = keyResult.key;
-    const keyId = typeof key.id === "string" ? key.id : undefined;
-    if (!keyId) return null;
-    return loadActiveApiKeyAuthResult({
-        apiKeyId: keyId,
-        rawApiKey,
-        env: opts.env,
+    const lastRequest = row.apiKey.lastRequest;
+    const staleBefore = new Date(Date.now() - LAST_REQUEST_WRITE_INTERVAL_MS);
+    if (!lastRequest || lastRequest < staleBefore) {
+        const touch = drizzle(opts.env.DB)
+            .update(schema.apikey)
+            .set({ lastRequest: new Date() })
+            .where(
+                and(
+                    eq(schema.apikey.id, row.apiKey.id),
+                    or(
+                        isNull(schema.apikey.lastRequest),
+                        lt(schema.apikey.lastRequest, staleBefore),
+                    ),
+                ),
+            )
+            .run();
+        runInBackground(touch, opts.ctx);
+    }
+    return result;
+}
+
+function runInBackground(
+    promise: Promise<unknown>,
+    ctx?: Pick<ExecutionContext, "waitUntil">,
+): void {
+    const settled = promise.catch(() => undefined);
+    ctx?.waitUntil(settled);
+}
+
+/**
+ * The key row that a raw key hashes to, if it can be used: Better Auth's
+ * verifyApiKey checks without its per-call writes.
+ */
+export async function findUsableApiKey(
+    env: Pick<ApiKeyAuthBindings, "DB">,
+    rawKey: string,
+): Promise<typeof schema.apikey.$inferSelect | null> {
+    const row = await drizzle(env.DB, { schema }).query.apikey.findFirst({
+        where: eq(schema.apikey.key, await defaultKeyHasher(rawKey)),
     });
+    if (!row || !isUsable(row)) return null;
+    return row;
+}
+
+function isUsable(key: {
+    enabled: boolean | null;
+    expiresAt: Date | null;
+}): boolean {
+    return (
+        key.enabled !== false && !(key.expiresAt && key.expiresAt <= new Date())
+    );
 }
 
 async function authenticateAgentRunToken(
@@ -277,9 +344,17 @@ async function authenticateAgentRunToken(
     });
     if (!parent) return null;
 
-    // The token carries the parent key's permissions unchanged; the owner
-    // limits what an agent can do by limiting the key it is called with.
-    return { ...parent, agentRun: claims };
+    // Agent-run tokens leave our control. Keep the parent's generation limits,
+    // but never let an agent manage the owner's account or keys.
+    const models = parent.apiKey.permissions?.models;
+    return {
+        ...parent,
+        apiKey: {
+            ...parent.apiKey,
+            permissions: models ? { models } : undefined,
+        },
+        agentRun: claims,
+    };
 }
 
 async function authenticateSessionToken(
@@ -312,15 +387,25 @@ async function authenticateSessionToken(
  * This deliberately does not accept the parent key's raw value so delegated
  * credentials never need to contain or recover that secret.
  */
-async function loadActiveApiKeyAuthResult(opts: {
+export async function loadActiveApiKeyAuthResult(opts: {
     apiKeyId: string;
     rawApiKey: string;
     env: ApiKeyAuthBindings;
 }): Promise<(ApiKeyAuthResult & { apiKey: AuthenticatedApiKey }) | null> {
-    const db = drizzle(opts.env.DB, { schema });
+    const row = await selectApiKeyRow(
+        opts.env,
+        eq(schema.apikey.id, opts.apiKeyId),
+    );
+    return toActiveAuthResult(row, opts.rawApiKey, opts.env);
+}
+
+type ApiKeyRow = Awaited<ReturnType<typeof selectApiKeyRow>>;
+
+async function selectApiKeyRow(env: ApiKeyAuthBindings, where: SQL) {
+    const db = drizzle(env.DB, { schema });
     const byopClientKey = alias(schema.apikey, "byop_client_key");
     const byopOwner = alias(schema.user, "byop_owner");
-    const row = await db
+    return db
         .select({
             apiKey: getTableColumns(schema.apikey),
             user: getTableColumns(schema.user),
@@ -341,21 +426,26 @@ async function loadActiveApiKeyAuthResult(opts: {
             byopClientKey,
             eq(byopClientKey.id, schema.apikey.byopClientKeyId),
         )
-        .where(eq(schema.apikey.id, opts.apiKeyId))
+        .where(where)
         .leftJoin(byopOwner, eq(byopOwner.id, byopClientKey.referenceId))
         .get();
+}
 
-    if (
-        !row ||
-        row.apiKey.enabled === false ||
-        (row.apiKey.expiresAt && row.apiKey.expiresAt <= new Date())
-    ) {
-        return null;
+function toActiveAuthResult(
+    row: ApiKeyRow,
+    rawApiKey: string,
+    env: ApiKeyAuthBindings,
+): (ApiKeyAuthResult & { apiKey: AuthenticatedApiKey }) | null {
+    if (!row || !isUsable(row.apiKey)) return null;
+    // The stored type, not the prefix: older App Keys look like plln_pk_….
+    const metadata = normalizeMetadata(parseMetadata(row.apiKey.metadata));
+    if (metadata?.keyType === "publishable") {
+        throw new HTTPException(401, { message: PUBLISHABLE_KEY_REFUSAL });
     }
 
     assertNotBanned(row.user);
     if (row.byopOwner) assertNotBanned(row.byopOwner);
-    assertStagingAccess(opts.env, row.user);
+    assertStagingAccess(env, row.user);
 
     return {
         user: row.user,
@@ -365,8 +455,9 @@ async function loadActiveApiKeyAuthResult(opts: {
             permissions: normalizePermissions(
                 parseMetadata(row.apiKey.permissions),
             ),
-            metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
+            metadata,
             pollenBalance: row.apiKey.pollenBalance ?? null,
+            expiresAt: row.apiKey.expiresAt,
             questPollenOnly: row.apiKey.questPollenOnly,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
@@ -381,9 +472,9 @@ async function loadActiveApiKeyAuthResult(opts: {
                 },
                 row.user.id,
             ),
-            rawKey: opts.rawApiKey,
+            rawKey: rawApiKey,
         },
-        rawApiKey: opts.rawApiKey,
+        rawApiKey,
     };
 }
 

@@ -18,7 +18,8 @@
 ## Official Documentation
 - **API Docs:** https://gen.pollinations.ai/docs
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
-- **React SDK & UI:** https://react.pollinations.ai
+- **React SDK:** https://github.com/pollinations/pollinations/tree/main/packages/sdk#react-auth-provider
+- **React UI:** https://github.com/pollinations/pollinations/tree/main/packages/ui
 - **Connect User Wallets:** https://gen.pollinations.ai/docs#tag/connect-user-wallets
 - **MCP Servers Docs:** https://gen.pollinations.ai/docs#tag/mcp-servers
 - **MCP Protocol (contribute):** https://mcp.sequa.ai/v1/pollinations/contribute
@@ -26,7 +27,7 @@
 ## Apps & Community
 - **Community App Showcase:** https://pollinations.ai
 - **Model Monitor:** https://model-monitor.pollinations.ai
-- **Community Chat:** https://chat.pollinations.ai
+- **Open WebUI Chat:** https://openwebui.pollinations.ai
 
 ## GitHub
 - **Main Repository:** https://github.com/pollinations/pollinations
@@ -39,7 +40,7 @@
 - **NPM CLI (@pollinations/cli):** https://www.npmjs.com/package/@pollinations/cli
 
 ## Socials
-- **Discord:** https://discord.gg/pollinations-ai-885844321461485618
+- **Discord:** https://discord.gg/k9F7SyTgqn
 - **Twitter/X:** https://x.com/pollinations_ai
 - **Reddit:** https://www.reddit.com/r/pollinations_ai/
 - **YouTube:** https://www.youtube.com/channel/UCk4yKnLnYfdOstmxYE_tmHFw

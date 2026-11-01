@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import { accountClient } from "../api.ts";
+import { CliHint } from "../components/cli-hint.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
 import {
     type ApiKey,
@@ -26,7 +27,7 @@ import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/keys")({
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -40,13 +41,13 @@ function KeysPage() {
     const router = useRouter();
     const { apiKeys, user } = useDeferredValue(DashboardRoute.useLoaderData());
 
-    async function refreshKeys(): Promise<void> {
+    async function refreshKeys(): Promise<ApiKey[] | null | undefined> {
         await router.invalidate({
             filter: (match) => match.routeId === DashboardRoute.id,
             sync: true,
         });
         // The dashboard returns this promise without awaiting it.
-        await router.state.matches.find(
+        return await router.state.matches.find(
             (match) => match.routeId === DashboardRoute.id,
         )?.loaderData?.apiKeys;
     }
@@ -105,6 +106,7 @@ function KeysPage() {
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
+                    onRefresh={refreshKeys}
                     onRetry={refreshKeys}
                 />
             )}
@@ -118,7 +120,7 @@ function KeysContent({
     ...actions
 }: Omit<ApiKeyManagerProps, "apiKeys"> & {
     apiKeys: ApiKey[] | null;
-    onRetry: () => Promise<void>;
+    onRetry: () => Promise<unknown>;
 }) {
     const [lastKeys, setLastKeys] = useState(apiKeys);
     // A failed refresh must not unmount the dialog holding a newly created secret.
@@ -130,7 +132,7 @@ function KeysContent({
             <>
                 {["Secrets", "Apps"].map((title) => (
                     <Section key={title} title={title}>
-                        <LoadError onRetry={onRetry}>
+                        <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                             Couldn’t load keys.
                         </LoadError>
                     </Section>
@@ -142,11 +144,12 @@ function KeysContent({
     return (
         <>
             {apiKeys === null && (
-                <LoadError onRetry={onRetry}>
+                <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                     Couldn’t refresh keys. Showing the last loaded list.
                 </LoadError>
             )}
             <ApiKeyList apiKeys={keys} {...actions} />
+            <CliHint command="keys create --name my-app" />
         </>
     );
 }

@@ -1,7 +1,7 @@
 import { AppIcon, InfoTip, Input, KeyIcon } from "@pollinations/ui";
 import { useId } from "react";
 
-/** The key's name, shown in its own full-width card. */
+/** The key's name, aligned with the limit inputs below it. */
 export function KeyNameField({
     app,
     accessContext,
@@ -20,7 +20,7 @@ export function KeyNameField({
     const inputId = useId();
     const label = "Name";
     return (
-        <li className="flex min-h-8 items-center gap-3 font-body text-sm font-semibold leading-5">
+        <li className="grid min-h-8 grid-cols-[1.25rem_4.5rem_minmax(0,1fr)] items-center gap-3 font-body text-sm font-semibold leading-5">
             <span
                 aria-hidden="true"
                 className="flex h-5 w-5 shrink-0 items-center justify-center text-theme-text-strong [&>svg]:h-4 [&>svg]:w-4"

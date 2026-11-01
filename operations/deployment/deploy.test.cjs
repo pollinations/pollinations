@@ -7,11 +7,25 @@ const { tmpdir } = require("node:os");
 const { join } = require("node:path");
 const test = require("node:test");
 
-for (const paths of [["/health"], ["/first", "/last"]]) {
-    test(`deployment verifies every manifest URL: ${paths.join(", ")}`, async (t) => {
+const destination =
+    "https://github.com/pollinations/pollinations/tree/main/packages/ui";
+for (const { paths, redirect } of [
+    { paths: ["/health"] },
+    { paths: ["/first", "/last"] },
+    { paths: ["/health"], redirect: destination },
+]) {
+    test(`deployment verifies ${redirect || "HTTP 200"}: ${paths.join(", ")}`, async (t) => {
         const requests = [];
         const server = createServer((request, response) => {
             requests.push(request.url);
+            if (redirect && requests.length > 1) {
+                response.writeHead(301, {
+                    Location:
+                        requests.length === 2
+                            ? "https://example.com/wrong"
+                            : redirect,
+                });
+            }
             response.end("ok");
         });
         server.listen(0, "127.0.0.1");
@@ -28,6 +42,7 @@ for (const paths of [["/health"], ["/first", "/last"]]) {
             JSON.stringify({
                 target: "script",
                 deploy: ":",
+                verify_redirect: redirect,
                 verify: paths.map(
                     (path) =>
                         `http://127.0.0.1:${server.address().port}${path}`,
@@ -44,6 +59,10 @@ for (const paths of [["/health"], ["/first", "/last"]]) {
         });
         const [code] = await once(child, "close");
         assert.equal(code, 0, output);
-        assert.deepEqual(requests, paths);
+        // A redirect deployment must reject both HTTP 200 and the wrong destination.
+        assert.deepEqual(
+            requests,
+            redirect ? ["/health", "/health", "/health"] : paths,
+        );
     });
 }

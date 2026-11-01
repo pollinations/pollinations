@@ -1,6 +1,7 @@
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
+import { rateLimit } from "@shared/rate-limit.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -9,7 +10,7 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
-import { wellKnownRoutes } from "./routes/well-known.ts";
+import { getCurrentGenOrigin, wellKnownRoutes } from "./routes/well-known.ts";
 import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
 
 function stripTrailingSlash(path: string): string {
@@ -29,13 +30,6 @@ function redirectLegacyDocs(c: Context<Env>): Response {
     url.pathname = url.pathname.replace(/^\/api\/docs(?=\/|$)/, "/docs");
     url.pathname = stripTrailingSlash(url.pathname);
     return c.redirect(url.toString(), 301);
-}
-
-function getCurrentGenOrigin(c: Context<Env>): string {
-    const url = new URL(getPublicOrigin(c));
-    url.protocol = "https:";
-    url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
-    return url.origin;
 }
 
 const app = new Hono<Env>()
@@ -58,6 +52,7 @@ const app = new Hono<Env>()
             c.header("X-Robots-Tag", "noindex, nofollow");
         }
     })
+    .use("/api/*", rateLimit({ byIp: false }))
     .route("/api/docs", createDocsRoutes(api))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)

@@ -22,6 +22,7 @@ services = [
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
+    { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -43,10 +44,6 @@ binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
 [[durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
-[[durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
 class_name = "CommunityModelRateLimiter"
 
@@ -66,6 +63,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
 
+[[migrations]]
+tag = "v4"
+deleted_classes = ["PollenRateLimiter"]
+
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
@@ -79,16 +80,21 @@ port = 8788
 
 [assets]
 directory = "public"
-# Static assets are only icons/images. Keep dynamic SEO routes Worker-owned:
-# `/manifest.webmanifest` is generated from src/routes/seo.ts, and `/` is the
-# docs SEO landing page. No public/index.html is intentionally shipped.
-run_worker_first = ["/", "/manifest.webmanifest"]
+binding = "ASSETS"
+# Static assets are only icons/images, served from the app's notFound handler.
+# The Worker runs first so site hosts (src/sites.ts) serve their own
+# /favicon.ico and other files with the same paths.
+run_worker_first = true
 
 # Production routes
 [env.production]
 
 [env.production.images]
 binding = "IMAGES"
+
+# Renews kept sandboxes (src/routes/e2b.ts).
+[env.production.triggers]
+crons = ["*/5 * * * *"]
 
 [[env.production.routes]]
 pattern = "gen.myceli.ai"
@@ -99,6 +105,17 @@ custom_domain = true
 pattern = "gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
+
+# User sites (src/sites.ts). Cloudflare picks the most specific matching
+# route, so *--staging hosts stay on staging.
+[[env.production.routes]]
+pattern = "*.pollinations.app/*"
+zone_name = "pollinations.app"
+
+# The bare domain's landing page (src/sites-landing.html).
+[[env.production.routes]]
+pattern = "pollinations.app/*"
+zone_name = "pollinations.app"
 
 [[env.production.services]]
 binding = "ENTER"
@@ -128,6 +145,10 @@ service = "pollinations-composio-mcp"
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
 
+[[env.production.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp"
+
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-production"
@@ -135,6 +156,11 @@ namespace = "pollinations-code-agents-production"
 [env.production.dispatch_namespaces.outbound]
 service = "pollinations-enter-production"
 parameters = ["CODE_AGENT_CONTEXT"]
+
+# User sites (src/sites.ts): enter uploads them, gen serves their hosts.
+[[env.production.dispatch_namespaces]]
+binding = "SITES"
+namespace = "pollinations-hosting"
 
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
@@ -164,11 +190,15 @@ bucket_name = "pollinations-text-enter"
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
+simple = { limit = 600, period = 10 }
 
-[[env.production.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts. Oct 20-27 peaks: busiest legitimate IP
+# 472 per 10 s, the shared Workers egress IP 209 per 10 s in one colo.
+[[env.production.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 1000, period = 10 }
 
 [[env.production.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
@@ -190,20 +220,40 @@ new_sqlite_classes = ["GenerationCoordinator"]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
 
+[[env.production.migrations]]
+tag = "v4"
+deleted_classes = ["PollenRateLimiter"]
+
 [env.production.vars]
 ENVIRONMENT = "production"
+SITES_HOST_SUFFIX = ".pollinations.app"
+# Public OAuth app identifier; user credentials stay in their browser tab.
+DOCS_APP_KEY = "pk_zM4Wvtd1rgWXRmLP"
+# Durable Object fetches get a 125 s proxy read timeout; requests through
+# this origin get the zone's 300 s (src/durable-objects/GenerationCoordinator.ts).
+GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
-POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+# Azure sandboxes (src/routes/azure-sandboxes.ts): gen's own login, whose
+# secret is AZURE_SANDBOX_CLIENT_SECRET, its sandbox group, and the image
+# operations/infrastructure/azure-sandboxes/build.mjs imported there.
+AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
+AZURE_SANDBOX_CLIENT_ID = "6917c58e-9b41-45bb-9685-0972f7fbd35f"
+AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscriptions/7725a3f5-6483-4079-ba51-a317aa4fc09e/resourceGroups/rg-pollinations-sandboxes/sandboxGroups/pollisbx-production"
+AZURE_SANDBOX_IMAGE = "bfc9e318-3cb1-4a00-8c3c-eafb1b671ee8"
 # Staging routes
 [env.staging]
 
 [env.staging.images]
 binding = "IMAGES"
+
+# Renews kept sandboxes (src/routes/e2b.ts).
+[env.staging.triggers]
+crons = ["*/5 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"
@@ -214,6 +264,11 @@ custom_domain = true
 pattern = "staging.gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
+
+# User sites (src/sites.ts). Hosts starting with a digit stay with sandbox ports.
+[[env.staging.routes]]
+pattern = "*--staging.pollinations.app/*"
+zone_name = "pollinations.app"
 
 [[env.staging.services]]
 binding = "ENTER"
@@ -243,6 +298,10 @@ service = "pollinations-composio-mcp-staging"
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp-staging"
 
+[[env.staging.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp-staging"
+
 [[env.staging.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-staging"
@@ -250,6 +309,11 @@ namespace = "pollinations-code-agents-staging"
 [env.staging.dispatch_namespaces.outbound]
 service = "pollinations-enter-staging"
 parameters = ["CODE_AGENT_CONTEXT"]
+
+# User sites (src/sites.ts): enter uploads them, gen serves their hosts.
+[[env.staging.dispatch_namespaces]]
+binding = "SITES"
+namespace = "pollinations-hosting-staging"
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -273,11 +337,14 @@ bucket_name = "pollinations-text-enter"
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
+simple = { limit = 600, period = 10 }
 
-[[env.staging.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.staging.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 1000, period = 10 }
 
 [[env.staging.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
@@ -299,18 +366,29 @@ new_sqlite_classes = ["GenerationCoordinator"]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
 
+[[env.staging.migrations]]
+tag = "v4"
+deleted_classes = ["PollenRateLimiter"]
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
+SITES_HOST_SUFFIX = "--staging.pollinations.app"
+GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+# Azure sandboxes: as in production, with staging's own login and group.
+AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
+AZURE_SANDBOX_CLIENT_ID = "e1653f2d-5948-466a-bf34-1addc9f45b15"
+AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscriptions/7725a3f5-6483-4079-ba51-a317aa4fc09e/resourceGroups/rg-pollinations-sandboxes/sandboxGroups/pollisbx-staging"
+AZURE_SANDBOX_IMAGE = "fcab7587-ab59-46ce-932d-5c237c8ac747"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015,314960022"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid,polli@pollinations.ai"
 [env.test]
 
 [env.test.images]
@@ -344,6 +422,10 @@ service = "pollinations-composio-mcp"
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
 
+[[env.test.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp"
+
 [[env.test.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -368,9 +450,12 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.test.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.test.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 10000, period = 10 }
 
 [[env.test.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
@@ -391,6 +476,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[env.test.migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
+
+[[env.test.migrations]]
+tag = "v4"
+deleted_classes = ["PollenRateLimiter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"
@@ -429,7 +518,6 @@ OPENAI_API_KEY = "not-a-secret-workers-test-only"
 PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"
 PLN_ENTER_TOKEN = "not-a-secret-workers-test-only"
 PLN_GPU_TOKEN = "not-a-secret-workers-test-only"
-POLLEN_REFILL_PER_HOUR = 1
 XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"

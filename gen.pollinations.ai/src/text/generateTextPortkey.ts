@@ -13,6 +13,7 @@ import type {
     ChatCompletion,
     ChatMessage,
     OpenAIClientConfig,
+    ToolCall,
     TransformOptions,
     TransformResult,
 } from "./types.js";
@@ -31,6 +32,24 @@ function buildEndpoint(gatewayUrl: unknown): string {
             ? gatewayUrl
             : process.env.PORTKEY_GATEWAY_URL || "https://portkey.myceli.ai";
     return `${base.replace(/\/+$/, "")}/v1/chat/completions`;
+}
+
+// Only Vertex reads Gemini's tool-call signatures. Strict providers such as
+// Mistral and Fireworks reject the extra field when a conversation that
+// started on Gemini continues on another model.
+function withoutThoughtSignatures(messages: ChatMessage[]): ChatMessage[] {
+    return messages.map((message) => {
+        if (!Array.isArray(message.tool_calls)) return message;
+        return {
+            ...message,
+            tool_calls: (message.tool_calls as ToolCall[]).map((call) => {
+                if (call?.function?.thought_signature === undefined)
+                    return call;
+                const { thought_signature: _signature, ...fn } = call.function;
+                return { ...call, function: fn };
+            }),
+        };
+    });
 }
 
 export async function generateTextPortkey(
@@ -55,8 +74,18 @@ export async function generateTextPortkey(
         state = await modelDef.transform(messages, state.options);
     }
 
+    // `voice` is a GET /text shortcut: the audio models' transform has already
+    // folded it into `audio.voice`, and no provider reads it at the top level.
+    delete state.options.voice;
+
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
+        if (state.options.modelConfig?.provider !== "vertex-ai") {
+            state = {
+                ...state,
+                messages: withoutThoughtSignatures(state.messages),
+            };
+        }
         // TypeSafe has its own wire format and does not use Portkey transforms.
         if (modelDef?.useSystemOneApi) {
             return callSystemOne(state.messages, state.options);

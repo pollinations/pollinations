@@ -1,6 +1,6 @@
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import debug from "debug";
-import { UserImageError } from "../userImage.ts";
+import { isRetryableFallbackError } from "../fallback.ts";
 import {
     fetchFromWeightedServer,
     type ServerType,
@@ -29,6 +29,8 @@ import {
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
+    callOpenRouterQwenImage3API,
+    callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
@@ -40,12 +42,15 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callRecraftFlashFalAPI } from "./models/recraftFalModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
+import { callSeedream5ProVercelAPI } from "./models/seedreamVercelModel.ts";
+import { callVercelGeminiImageAPI } from "./models/vercelGeminiImageModel.ts";
 import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
@@ -372,6 +377,22 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
             region: "eastus2",
         },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://westus3.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
+            region: "westus3",
+        },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://polandcentral.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
+            region: "polandcentral",
+        },
     ],
     "openai/gpt-image-1-mini:openai": [
         {
@@ -449,20 +470,6 @@ function gptImageConfigsInTurn(model: string): GPTImageConfig[] {
     const index = (gptImageEndpointIndexes.get(model) ?? 0) % configs.length;
     gptImageEndpointIndexes.set(model, (index + 1) % configs.length);
     return [...configs.slice(index), ...configs.slice(0, index)];
-}
-
-/**
- * Azure refused before generating anything: a rate limit or a missing
- * deployment. Only these are safe to send elsewhere, because Azure bills a
- * generation it completed even when we never saw the response. A reference
- * image host's error is not Azure's and is left to the caller.
- */
-export function isGPTImageRefusedByAzure(error: unknown): boolean {
-    return (
-        error instanceof UpstreamError &&
-        !(error instanceof UserImageError) &&
-        (error.upstreamStatus === 429 || error.upstreamStatus === 404)
-    );
 }
 
 const callGPTImageWithEndpoint = async (
@@ -735,8 +742,9 @@ export const callGPTImage = async (
     userInfo: AuthResult,
     model: string = "openai/gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
-    // The next region refused before generating: try the other one. Timeouts
-    // and 5xx never move on, or a second region would pay for a second image.
+    // Any Azure-side failure, timeouts and 5xx included, moves on to the next
+    // region; only the caller's own request errors stop here. A timeout may
+    // already have been billed, which is accepted to keep the request alive.
     const configs = gptImageConfigsInTurn(model);
     for (const [index, config] of configs.entries()) {
         try {
@@ -753,7 +761,7 @@ export const callGPTImage = async (
             );
             if (
                 index === configs.length - 1 ||
-                !isGPTImageRefusedByAzure(error)
+                !isRetryableFallbackError(error)
             ) {
                 throw error;
             }
@@ -811,6 +819,8 @@ const generateImage = async (
             }
         }
 
+        case "google/gemini-nano-banana-2.1":
+        case "google/gemini-nano-banana-2.1:vercel":
         case "google/gemini-2.5-flash-image":
         case "google/gemini-3.1-flash-image":
         case "google/gemini-3.1-flash-lite-image":
@@ -825,7 +835,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callVertexAIGeminiImageAPI(prompt, safeParams);
+                return safeParams.model ===
+                    "google/gemini-nano-banana-2.1:vercel"
+                    ? await callVercelGeminiImageAPI(prompt, safeParams)
+                    : await callVertexAIGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
                     "Vertex Gemini image generation or safety check failed:",
@@ -838,7 +851,6 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image:openrouter:vertex-global":
         case "google/gemini-3.1-flash-image:openrouter:vertex-global":
-        case "google/gemini-nano-banana-2.1":
         case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
         case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(
@@ -909,6 +921,13 @@ const generateImage = async (
         case "black-forest-labs/flux-3-image":
             return await callOpenRouterFlux3API(prompt, safeParams);
 
+        case "black-forest-labs/flux-3-image-klein":
+            return await callFalQwenImageAPI(
+                prompt,
+                safeParams,
+                "black-forest-labs/flux-3-image-klein",
+            );
+
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {
             try {
@@ -947,6 +966,8 @@ const generateImage = async (
             return await callOpenRouterSeedreamFlashAPI(prompt, safeParams);
 
         case "bytedance/seedream-5.0-pro":
+            return await callSeedream5ProVercelAPI(prompt, safeParams);
+        case "bytedance/seedream-5.0-pro:replicate":
             return await callSeedream5ProAPI(prompt, safeParams);
 
         case "bytedance/seedream-4.0":
@@ -984,12 +1005,22 @@ const generateImage = async (
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image-2.0":
+            return await callXaiImageAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-image-2.0",
+            );
+
+        case "x-ai/grok-imagine-image-2.0:openrouter":
             return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
         case "recraft/recraft-v4.1-flash":
+            return await callRecraftFlashFalAPI(prompt, safeParams);
+
+        case "recraft/recraft-v4.1-flash:openrouter":
             return await callOpenRouterRecraftFlashAPI(prompt, safeParams);
 
         case "prunaai/p-image-edit":
@@ -1021,16 +1052,30 @@ const generateImage = async (
                 "qwen-image-3.0-pro",
             );
 
-        case "qwen/qwen-image-3:fal":
-            return await callFalQwenImageAPI(
+        case "qwen/qwen-image-2.1-turbo":
+            return await callAlibabaImage(
                 prompt,
                 safeParams,
-                "qwen/qwen-image-3:fal",
+                "qwen-image-2.1-turbo",
             );
 
+        case "qwen/qwen-image-2.1-pro":
+            return await callAlibabaImage(
+                prompt,
+                safeParams,
+                "qwen-image-2.1-pro",
+            );
+
+        case "qwen/qwen-image-3:openrouter":
+            return await callOpenRouterQwenImage3API(prompt, safeParams);
+
+        case "qwen/qwen-image-2.1-pro:openrouter":
+            return await callOpenRouterQwenImage21ProAPI(prompt, safeParams);
+
         case "black-forest-labs/flux.1-kontext-pro:replicate":
+        case "black-forest-labs/flux.1.1-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":
-        case "qwen/qwen-image-3:replicate":
+        case "prunaai/p-image:replicate":
         case "prunaai/p-image-edit:replicate":
         case "krea/krea-2-medium:replicate":
             return await callReplicateFallbackImage(prompt, safeParams);

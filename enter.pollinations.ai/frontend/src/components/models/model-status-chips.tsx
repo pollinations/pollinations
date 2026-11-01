@@ -11,6 +11,7 @@ type ModelStatusChipsProps = {
     alphaTooltip?: boolean;
     health?: ModelHealth;
     communityProxy?: boolean;
+    verified?: boolean;
 };
 
 type BalanceAccessChipProps = {
@@ -106,10 +107,11 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     alphaTooltip = true,
     health,
     communityProxy = false,
+    verified = false,
 }) => {
-    if (!showNew && !showAlpha && !health) return null;
+    if (!showNew && !showAlpha && !health && !verified) return null;
 
-    const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
+    const alphaTooltipLabel = "Alpha model. Experimental and may be unstable.";
 
     return (
         <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
@@ -118,6 +120,19 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                     health={health}
                     communityProxy={communityProxy}
                 />
+            )}
+            {verified && (
+                <Tooltip
+                    triggerAs="span"
+                    content="Official Pollinations agent"
+                    ariaLabel="Official Pollinations agent"
+                    tapEnabled
+                    displayContents
+                >
+                    <Chip intent="new" size="sm">
+                        Verified
+                    </Chip>
+                </Tooltip>
             )}
             {showNew && (
                 <Chip intent="new" size="sm">
@@ -132,8 +147,8 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                             <span>
                                 <strong className="font-semibold text-theme-text-strong">
                                     Alpha model
-                                </strong>{" "}
-                                — experimental, may be unstable
+                                </strong>
+                                . Experimental and may be unstable.
                             </span>
                         }
                         ariaLabel={alphaTooltipLabel}

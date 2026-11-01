@@ -49,7 +49,7 @@ export function LinkCard<T extends React.ElementType = "a">({
                 "polli:transition-colors polli:hover:bg-surface-opaque/95",
                 tint &&
                     "polli:bg-(--polli-card-tint) polli:hover:bg-[color-mix(in_oklab,var(--polli-card-tint),var(--polli-color-surface-opaque)_50%)]",
-                "polli:focus-visible:ring-2 polli:focus-visible:ring-theme-border",
+                "polli-link-surface",
                 className,
                 surfaceClassName,
             )}

@@ -54,5 +54,5 @@ Also inspect `/v1/models` or the modality-specific catalog endpoint to verify th
 - Run the existing alias, pricing, permission, usage-header, cache, billing, tracking, safety, and modality-specific tests touched by the change.
 - Extend existing tests rather than introducing mock infrastructure.
 - Run type checks for every touched worker/package.
-- Run `npx biome check --write <changed-files>` before committing.
+- Run `npx @biomejs/biome check --write <changed-files>` before committing.
 - Do not edit tests merely to bless incorrect behavior; fix the implementation.

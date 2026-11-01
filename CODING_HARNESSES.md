@@ -42,20 +42,20 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 
 ## Harnesses
 
-Polli defaults to `openai/gpt-6-sol` unless you pass `--model <id>`. Bloom is key-only: Polli does not change Bloom's model selection.
+Polli defaults to `openai/gpt-6-sol` unless you pass `--model <id>` (a model ID or one of its aliases, such as `deepseek`). Bloom is key-only: Polli does not change Bloom's model selection.
 
 | Harness | Status | What is unique |
 | --- | --- | --- |
-| [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
-| [Claude Code](https://claude.com/claude-code) | **Available now** — `polli harness claude-code on` | Writes a separate settings file for gen's Anthropic Messages API, leaving the native Claude login and settings alone; runs Claude Code itself for a `pong` smoke and verifies dedicated-key usage. |
-| [Codex](https://github.com/openai/codex) + [Codex Router](https://github.com/duolahypercho/codex-router) | **Available now** — `polli harness codex on` | Uses Codex Router's generic-provider/curation path, protected credential storage and compatibility probe; native Codex ChatGPT login is left untouched. |
-| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `openai/gpt-6-sol` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
-| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now** — `polli harness hermes on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, discovering models from the live catalog. Install the hosted MCP servers with `polli mcp install hermes`. Defaults to `openai/gpt-6-sol`. |
-| [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-6-sol`. |
-| [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `openai/gpt-6-sol`. |
-| [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Add hosted MCP servers with `polli mcp install pi --all` (Pi 0.99+). Defaults to `openai/gpt-6-sol`. |
-| [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
-| [tgpt](https://github.com/aandrew-me/tgpt) | **Available now** — `polli harness tgpt on` | Configures tgpt's existing Pollinations provider with a dedicated key and authenticated text model. |
+| [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now**: `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
+| [Claude Code](https://claude.com/claude-code) | **Available now**: `polli harness claude-code on` | Writes a separate settings file for gen's Anthropic Messages API, leaving the native Claude login and settings alone; runs Claude Code itself for a `pong` smoke. |
+| [Codex](https://github.com/openai/codex) + [Codex Router](https://github.com/duolahypercho/codex-router) | **Available now**: `polli harness codex on` | Uses Codex Router's generic-provider/curation path, protected credential storage and compatibility probe; native Codex ChatGPT login is left untouched. |
+| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now**: `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `openai/gpt-6-sol` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now**: `polli harness hermes on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, discovering models from the live catalog. Install the hosted MCP servers with `polli mcp install hermes --all`. Defaults to `openai/gpt-6-sol`. |
+| [OpenCode](https://opencode.ai) | **Available now**: `polli harness opencode on` | Adds the Pollinations provider through `@ai-sdk/openai-compatible`, discovering models from the live catalog. The same config serves OpenCode 1.x and 2.0. Add hosted MCP servers with `polli mcp install opencode --all`. Defaults to `openai/gpt-6-sol`. |
+| [OpenClaw](https://github.com/openclaw/openclaw) | **Available now**: `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `openai/gpt-6-sol`. |
+| [Pi](https://github.com/earendil-works/pi) | **Available now**: `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Add hosted MCP servers with `polli mcp install pi --all` (Pi 0.99+). Defaults to `openai/gpt-6-sol`. |
+| [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now**: `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
+| [tgpt](https://github.com/aandrew-me/tgpt) | **Available now**: `polli harness tgpt on` | Configures tgpt's existing Pollinations provider with a dedicated key and authenticated text model. |
 
 ## Bloom CLI
 
@@ -78,7 +78,7 @@ polli harness claude-code off
 
 Claude Code talks to gen's Anthropic Messages API (`/v1/messages`) directly. `on` writes `~/.pollinations/claude-code.json`, a Claude Code settings file whose `env` sets `ANTHROPIC_BASE_URL`, the dedicated key as `ANTHROPIC_AUTH_TOKEN`, and the model as `ANTHROPIC_MODEL` and every model alias (`haiku`, `sonnet`, `opus`, `fable`), so background requests and subagents also use Pollinations. Claude Code reads the file only when launched with `--settings`; plain `claude` keeps your native login and `~/.claude` settings.
 
-Choose another model with `--model <id>`. Before `on` succeeds, Polli runs `claude -p --settings ~/.pollinations/claude-code.json` with a one-word `pong` prompt and confirms activity for the dedicated key; if that fails, the previous file is restored. `off` deletes only that file.
+Choose another model with `--model <id>`. Before `on` succeeds, Polli runs `claude -p --settings ~/.pollinations/claude-code.json` with a one-word `pong` prompt and checks the reply; if that fails, the previous file is restored. `off` deletes only that file.
 
 gen does not serve `/v1/messages/count_tokens`, so `/context` shows estimated counts. Claude Code warns that a Pollinations model id is not in its catalog and compacts at 200K tokens.
 
@@ -94,7 +94,7 @@ polli harness codex off
 
 `on` requires Codex and Codex Router `>=0.6.0`. Polli drives Codex Router's generic-provider, protected-credential, model-curation, and compatibility-test paths rather than pointing Codex directly at Pollinations. It creates an owned `pollinations` provider, stores the dedicated child key in the router's protected credential store, and curates the selected live Pollinations model. Native Codex ChatGPT login and unrelated Codex/router configuration are preserved.
 
-Choose the routed model with `--model <id>`. Before setup succeeds, Codex Router runs its compatibility smoke and Polli verifies dedicated-key activity. `status` reports client/router/provider/key/model readiness. `off` removes only Polli-owned provider, credential, and routed model state; it never removes Codex Router itself. Foreign provider state is never overwritten.
+Choose the routed model with `--model <id>`. Before setup succeeds, Codex Router runs its compatibility smoke. `status` reports client/router/provider/key/model readiness. `off` removes only Polli-owned provider, credential, and routed model state; it never removes Codex Router itself. Foreign provider state is never overwritten.
 
 ## tgpt
 
@@ -136,7 +136,7 @@ polli harness opencode status
 polli harness opencode off
 ```
 
-`on` requires OpenCode to be installed (`curl -fsSL https://opencode.ai/install | bash`, `npm i -g opencode-ai`, or your package manager). It enables the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) in `~/.config/opencode/opencode.json` (or `$OPENCODE_CONFIG` / `$OPENCODE_CONFIG_DIR`), stores a dedicated Pollinations API key in the plugin's own `config.json` (so no second login inside OpenCode is needed), and sets the default model to `pollinations/enter/openai/gpt-6-sol`. The plugin then serves the current Pollinations model catalog, media tools, usage, and `/poll quests` inside OpenCode. Choose another default with `--model <id>`; `off` removes only the plugin entry, the default model, and the stored key, leaving the rest of your OpenCode configuration untouched.
+`on` requires OpenCode to be installed (`curl -fsSL https://opencode.ai/install | bash`, `npm i -g opencode-ai`, or your package manager). It registers a `pollinations` provider in `~/.config/opencode/opencode.json` (or `$OPENCODE_CONFIG` / `$OPENCODE_CONFIG_DIR`) that points `@ai-sdk/openai-compatible` at `https://gen.pollinations.ai/v1`, listing the current Pollinations models with a dedicated key in that same block, and sets the default model to `pollinations/openai/gpt-6-sol`. OpenCode 2.0 reads the same `provider` block as 1.x, so one config serves both; running `on` again replaces an earlier plugin setup. Choose another default with `--model <id>`; `off` restores the config byte-for-byte, or (if you edited it) removes only the Pollinations provider and default model, leaving the rest of your OpenCode configuration untouched. Add the hosted MCP servers with `polli mcp install opencode --all`.
 
 ## OpenClaw
 

@@ -60,7 +60,10 @@ test("transcribes public audio through the Pollinations API", async (t) => {
             assert.equal(init.body.get("model"), "gpt-transcribe");
             assert.equal(init.body.get("language"), "en");
             assert.equal(init.body.get("file").size, 3);
-            return Response.json({ text: "Hello from the recording." });
+            return Response.json({
+                text: "Hello from the recording.",
+                usage: { type: "duration", seconds: 12.5 },
+            });
         }
         throw new Error(`Unexpected URL: ${url}`);
     };
@@ -74,8 +77,15 @@ test("transcribes public audio through the Pollinations API", async (t) => {
         CONTEXT,
     );
 
-    assert.deepEqual(result, {
-        content: [{ type: "text", text: "Hello from the recording." }],
+    assert.deepEqual(result.content[0], {
+        type: "text",
+        text: "Hello from the recording.",
+    });
+    // Preserve the gateway's metered duration as metadata, like generateText.
+    assert.equal(result.content.length, 2);
+    assert.equal(result.content[1].type, "text");
+    assert.deepEqual(JSON.parse(result.content[1].text), {
+        usage: { type: "duration", seconds: 12.5 },
     });
     assert.equal(calls.length, 2);
 });

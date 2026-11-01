@@ -11,6 +11,7 @@ import {
     type TinybirdErrorEvent,
 } from "./events.ts";
 import { PaymentRequiredError } from "./http/payment-required-error.ts";
+import { PermissionRequiredError } from "./http/permission-required-error.ts";
 import { ValidationError } from "./http/validation-error.ts";
 import {
     collectRequestInputs,
@@ -201,12 +202,21 @@ const ValidationErrorDetailsSchema = z
     })
     .meta({ $id: "ValidationErrorDetails" });
 
+const FixUrlSchema = z
+    .string()
+    .describe(
+        "Page where the API key's owner can fix this error, such as allowing a model, raising the key budget or topping up.",
+    )
+    .optional();
+
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,
 ): z.ZodObject {
+    // An upstream input error keeps its 400 status but carries upstream details,
+    // so a 400 has two possible shapes.
     const errorDetailsSchema =
         status === 400
-            ? ValidationErrorDetailsSchema
+            ? z.union([ValidationErrorDetailsSchema, GenericErrorDetailsSchema])
             : GenericErrorDetailsSchema;
     return z.object({
         status: z.literal(status),
@@ -221,6 +231,7 @@ export function createErrorResponseSchema(
             // Only sent when there are details, e.g. validation or upstream errors.
             details: errorDetailsSchema.optional(),
             requestId: z.string().optional(),
+            fixUrl: FixUrlSchema,
         }),
     });
 }
@@ -234,6 +245,7 @@ export const GenericErrorResponseSchema = z.object({
         timestamp: z.string(),
         details: GenericErrorDetailsSchema.optional(),
         requestId: z.string().optional(),
+        fixUrl: FixUrlSchema,
     }),
 });
 
@@ -275,6 +287,10 @@ const MAX_ERROR_MESSAGE_LENGTH = 2000;
 const MAX_STACK_LENGTH = 12000;
 const MAX_UPSTREAM_BODY_LENGTH = 16000;
 
+// Drizzle/D1 errors embed the failing SQL text and its bound parameters, which
+// include stored API key hashes. They belong in the logs, never in a response.
+const QUERY_ERROR_PATTERN = /Failed query:|\nparams: /;
+
 export async function handleError<TEnv extends ErrorHandlerEnv>(
     err: Error,
     c: Context<TEnv>,
@@ -313,13 +329,17 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
             });
         }
         return c.json(
-            createErrorResponse(
-                err,
-                status,
-                timestamp,
-                undefined,
-                err instanceof PaymentRequiredError ? err.errorCode : undefined,
-            ),
+            createErrorResponse(err, status, timestamp, {
+                code:
+                    err instanceof PaymentRequiredError
+                        ? err.errorCode
+                        : undefined,
+                fixUrl:
+                    err instanceof PaymentRequiredError ||
+                    err instanceof PermissionRequiredError
+                        ? err.fixUrl
+                        : undefined,
+            }),
             status,
         );
     }
@@ -352,19 +372,45 @@ function createErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
     timestamp: string,
-    details?: Record<string, unknown>,
-    code?: string,
+    {
+        details,
+        code,
+        fixUrl,
+        message,
+    }: {
+        details?: Record<string, unknown>;
+        code?: string;
+        fixUrl?: string;
+        message?: string;
+    } = {},
 ): ErrorResponse {
     return {
         success: false,
         error: {
-            message: error.message || getDefaultErrorMessage(status),
+            message: message ?? publicErrorMessage(error, status),
             code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
+            ...(fixUrl && { fixUrl }),
         },
         status,
     };
+}
+
+/**
+ * A 5xx body may carry the error message, but a database failure describes the
+ * query and its bound parameters. `emitServerError` has already logged the full
+ * error, so answer with the generic message instead of leaking the SQL text and
+ * stored API key hashes.
+ */
+function publicErrorMessage(
+    error: Error,
+    status: ContentfulStatusCode,
+): string {
+    const message = error.message || getDefaultErrorMessage(status);
+    return status >= 500 && QUERY_ERROR_PATTERN.test(message)
+        ? getDefaultErrorMessage(status)
+        : message;
 }
 
 function createValidationErrorResponse(
@@ -374,18 +420,20 @@ function createValidationErrorResponse(
 ): ErrorResponse {
     const flatErrors = z.flattenError(error.zodError);
     return createErrorResponse(error, status, timestamp, {
-        name: error.name,
-        ...flatErrors,
+        details: { name: error.name, ...flatErrors },
     });
 }
 
+// Unexpected errors can carry any internal detail, not only query dumps.
+// Callers get the default message; the server_error log keeps the error.
 function createInternalErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
     return createErrorResponse(error, status, timestamp, {
-        name: error.name,
+        details: { name: error.name },
+        message: getDefaultErrorMessage(status),
     });
 }
 
@@ -394,18 +442,15 @@ function createUpstreamErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
-    return createErrorResponse(
-        error,
-        status,
-        timestamp,
-        {
+    return createErrorResponse(error, status, timestamp, {
+        details: {
             name: error.name,
             upstreamStatus: error.upstreamStatus,
             upstreamHost: error.requestUrl?.hostname,
             upstreamBody: error.responseBody,
         },
-        error.errorCode,
-    );
+        code: error.errorCode,
+    });
 }
 
 /**

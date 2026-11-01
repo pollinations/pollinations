@@ -1,15 +1,23 @@
 import chalk from "chalk";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { gen } from "../lib/api.js";
-import { fail, getOutputMode, printResult, printTable } from "../lib/output.js";
+import {
+    fail,
+    getOutputMode,
+    printInfo,
+    printResult,
+    printTable,
+} from "../lib/output.js";
 import { fetchModelStats } from "./stats.js";
 
 const MAX_STATS_WINDOW_MINUTES = 7 * 24 * 60;
 
 interface ModelEntry {
     name: string;
+    category?: string;
+    publisher?: string;
     description?: string;
-    output_modalities?: string[];
+    community?: boolean;
     input_modalities?: string[];
     pricing?: Record<string, string>;
     capabilities?: string[];
@@ -19,38 +27,29 @@ interface ModelEntry {
     video_capabilities?: string[];
 }
 
-function classifyType(m: ModelEntry): string {
-    const out = m.output_modalities ?? [];
-    if (out.includes("3d")) return "3d";
-    if (out.includes("video")) return "video";
-    if (out.includes("embedding")) return "embedding";
-    if (out.includes("audio")) return "audio";
-    if (out.includes("image")) return "image";
-    if (out.includes("text")) return "text";
-    return "unknown";
-}
-
 function capabilities(m: ModelEntry): string {
     const caps = [...(m.capabilities ?? [])];
     if (m.input_modalities?.includes("image")) caps.push("vision");
     if (m.video_capabilities?.length) caps.push(...m.video_capabilities);
     if (m.voices?.length) caps.push("voices");
     if (m.paid_only) caps.push(chalk.dim("paid"));
+    if (m.community) caps.push(chalk.cyan("community"));
     return caps.join(",") || "-";
 }
 
-function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
+function buildRow(m: ModelEntry, verbose: boolean) {
     const name = chalk.level > 0 ? chalk.hex("#a78bfa").bold(m.name) : m.name;
     // Keep full description intact so pipes and redirects preserve data.
     // printTable handles TTY-aware truncation of the last column.
     const row: Record<string, unknown> = {
         name,
-        type: mType,
+        type: m.category ?? "-",
         capabilities: capabilities(m),
         description: m.description ?? "-",
         pricing: m.pricing ?? null,
     };
     if (verbose) {
+        row.publisher = m.publisher ?? "-";
         row.context = m.context_length
             ? `${Math.round(m.context_length / 1000)}k`
             : "-";
@@ -64,35 +63,52 @@ function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
 }
 
 export const modelsCommand = new Command("models")
-    .description("List available models or show model health stats")
-    .option(
-        "--type <type>",
-        "Filter: text, image, audio, video, 3d, embedding, all",
-        "all",
+    .description(
+        "List available models and their voices, or show model health stats",
     )
-    .option("--verbose", "Show additional details (context length)")
+    .argument(
+        "[query]",
+        "Search names, aliases, titles, descriptions and publishers",
+    )
+    .addOption(
+        new Option("--type <type>", "Filter by type")
+            .choices([
+                "text",
+                "decision",
+                "image",
+                "audio",
+                "video",
+                "3d",
+                "embedding",
+                "realtime",
+                "all",
+            ])
+            .default("all"),
+    )
+    .addOption(
+        new Option(
+            "--source <source>",
+            "Only official or community models",
+        ).choices(["official", "community"]),
+    )
+    .addOption(
+        new Option(
+            "--reliability <level>",
+            "all also lists community models failing health checks",
+        ).choices(["reliable", "all"]),
+    )
+    .option("--voices", "List each model's voices")
+    .option(
+        "--verbose",
+        "Show additional details (publisher, context length, pricing)",
+    )
     .option("--stats", "Show model health stats (err% column counts 5xx only)")
     .option(
         "--window <minutes>",
         `Stats window in minutes (1-${MAX_STATS_WINDOW_MINUTES})`,
         "60",
     )
-    .action(async (opts) => {
-        if (
-            ![
-                "text",
-                "image",
-                "audio",
-                "video",
-                "3d",
-                "embedding",
-                "all",
-            ].includes(opts.type)
-        ) {
-            fail(
-                "--type must be one of: text, image, audio, video, 3d, embedding, all",
-            );
-        }
+    .action(async (query: string | undefined, opts) => {
         if (opts.stats) {
             try {
                 const windowMinutes = Number(opts.window);
@@ -108,10 +124,21 @@ export const modelsCommand = new Command("models")
 
                 const rows = await fetchModelStats(windowMinutes);
                 const wantType = opts.type as string;
+                // Decision models record text events, so match them by name.
+                const decisionNames =
+                    wantType === "decision"
+                        ? new Set(
+                              (await gen<ModelEntry[]>("/text/models"))
+                                  .filter((m) => m.category === "decision")
+                                  .map((m) => m.name),
+                          )
+                        : undefined;
                 const valid = rows.filter((r) => {
                     if (r.model === "undefined") return false;
                     if (Number(r.total_requests ?? 0) <= 1) return false;
                     if (wantType === "all") return true;
+                    if (decisionNames)
+                        return decisionNames.has(String(r.model));
                     const t = String(r.event_type ?? "").replace(
                         "generate.",
                         "",
@@ -148,55 +175,44 @@ export const modelsCommand = new Command("models")
             return;
         }
 
-        const type = opts.type as string;
-        const verbose = !!opts.verbose;
+        // Search, source and reliability are /models query parameters.
+        const params = new URLSearchParams();
+        if (query) params.set("query", query);
+        if (opts.source) params.set("source", opts.source);
+        if (opts.reliability) params.set("reliability", opts.reliability);
 
         try {
-            const raw: { model: ModelEntry; type: string }[] = [];
-            if (type === "all" || type === "image" || type === "video") {
-                const imageModels = await gen<ModelEntry[]>("/image/models");
-                for (const m of imageModels) {
-                    const mType = classifyType(m);
-                    if (type !== "all" && mType !== type) continue;
-                    raw.push({ model: m, type: mType });
-                }
-            }
-            if (type === "all" || type === "text") {
-                const textModels = await gen<ModelEntry[]>("/text/models");
-                for (const m of textModels)
-                    raw.push({ model: m, type: "text" });
-            }
-            if (type === "all" || type === "audio") {
-                const audioModels = await gen<ModelEntry[]>("/audio/models");
-                for (const m of audioModels)
-                    raw.push({ model: m, type: "audio" });
-            }
-            if (type === "all" || type === "embedding") {
-                const embeddingModels =
-                    await gen<ModelEntry[]>("/embeddings/models");
-                for (const m of embeddingModels)
-                    raw.push({ model: m, type: "embedding" });
-            }
-            if (type === "all" || type === "3d") {
-                const model3dModels = await gen<ModelEntry[]>("/3d/models");
-                for (const m of model3dModels)
-                    raw.push({ model: m, type: "3d" });
-            }
+            const models = (
+                await gen<ModelEntry[]>(`/models?${params}`)
+            ).filter(
+                (m) =>
+                    (opts.type === "all" || m.category === opts.type) &&
+                    (!opts.voices || m.voices?.length),
+            );
 
             if (getOutputMode() === "json") {
-                printResult(
-                    raw.map(({ model, type: t }) => ({ ...model, type: t })),
-                );
+                printResult(models);
                 return;
             }
 
-            const rows = raw.map(({ model, type: t }) =>
-                buildRow(model, t, verbose),
-            );
-            const cols = verbose
+            if (opts.voices) {
+                // "model: voices" lines; voice lists overflow a table column.
+                if (models.length === 0) printInfo("No results.");
+                else
+                    printResult(
+                        Object.fromEntries(
+                            models.map((m) => [m.name, m.voices?.join(", ")]),
+                        ),
+                    );
+                return;
+            }
+
+            const rows = models.map((m) => buildRow(m, !!opts.verbose));
+            const cols = opts.verbose
                 ? [
                       "name",
                       "type",
+                      "publisher",
                       "capabilities",
                       "context",
                       "pricing",

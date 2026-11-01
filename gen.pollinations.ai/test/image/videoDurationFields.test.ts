@@ -11,14 +11,15 @@ const videoModelIds = getVideoModelIds() as ImageModelName[];
 const nonVideoModelIds = getImageModelIds() as ImageModelName[];
 
 describe("video duration registry fields", () => {
-    it.each(
-        videoModelIds,
-    )("%s has min_duration, max_duration, and default_duration", (name) => {
-        const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
-        expect(info.min_duration).toBeGreaterThan(0);
-        expect(info.max_duration).toBeGreaterThan(0);
-        expect(info.default_duration).toBeGreaterThan(0);
-    });
+    it.each(videoModelIds)(
+        "%s has min_duration, max_duration, and default_duration",
+        (name) => {
+            const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
+            expect(info.min_duration).toBeGreaterThan(0);
+            expect(info.max_duration).toBeGreaterThan(0);
+            expect(info.default_duration).toBeGreaterThan(0);
+        },
+    );
 
     it.each(videoModelIds)("%s satisfies min ≤ default ≤ max", (name) => {
         const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
@@ -65,11 +66,22 @@ describe("video duration registry fields", () => {
         expect(info.allowed_durations).toEqual([5, 10, 15]);
     });
 
-    it("MiniMax H3 Max Turbo exposes allowed_durations", () => {
+    it("MiniMax H3 Max Turbo exposes provider-cost pricing and video options", () => {
         const info = modelInfoFromDefinition(
             "minimax/minimax-h3-max-turbo",
             IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
         );
+        expect(info.pricing_adjustments).toEqual([
+            expect.objectContaining({
+                label: "Provider cost",
+                price: "1",
+                currency: "pollen",
+                quantity: 1,
+                unit: "USD",
+            }),
+        ]);
+        expect(info.resolutions).toEqual(["480p", "768p", "1080p"]);
+        expect(info.output_modalities).toEqual(["video", "audio"]);
         expect(info.allowed_durations).toEqual([5, 10, 15]);
     });
 });

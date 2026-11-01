@@ -188,14 +188,14 @@ async function beeRow(ink, textRatio, gapR, padR, stacked) {
             {
                 input: text,
                 left: pad + bm.width + gap,
-                top: Math.round((H - tm.height) / 2),
+                // Sits near the bee's feet rather than centred on it.
+                top: pad + bm.height - tm.height - Math.round(bm.height * 0.06),
             },
         ])
         .png()
         .toBuffer();
 }
-const beeHorizontal = (ink) =>
-    beeRow(ink, 1 / 1.5, 0.12 / 1.5, 0.35 / 1.5, false);
+const beeHorizontal = (ink) => beeRow(ink, 1 / 1.5, 0.19, 0.35 / 1.5, false);
 const beeStacked = (ink) => beeRow(ink, 0.34, 0.08, 0.08, true);
 
 // --- content → source buffer (svg for vector, png for raster bee) ---
@@ -269,7 +269,10 @@ async function buildKit() {
     ]) {
         writeFileSync(
             join(BRAND, `polli/polli-lockup-horizontal-${tone}.png`),
-            await beeHorizontal(ink),
+            await sharp(await beeHorizontal(ink))
+                .resize({ width: 1024 })
+                .png()
+                .toBuffer(),
         );
         writeFileSync(
             join(BRAND, `polli/polli-lockup-stacked-${tone}.png`),

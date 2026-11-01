@@ -27,6 +27,7 @@ const orientationClasses = {
     inline: "polli:grid polli:grid-cols-[6.5rem_minmax(0,1fr)] polli:items-center polli:gap-x-4 polli:gap-y-2 polli:max-sm:grid-cols-[5.5rem_minmax(0,1fr)] polli:max-sm:gap-x-2 polli:[&>*:not(:first-child)]:col-start-2 polli:[&>*:not(:first-child)]:min-w-0",
 } as const;
 
+/** Use one text control per field; group multiple controls separately. */
 export function FieldStack({
     label,
     children,

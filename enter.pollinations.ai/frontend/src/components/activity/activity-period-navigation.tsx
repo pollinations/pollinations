@@ -10,6 +10,7 @@ import {
     ACTIVITY_MIN_DATE,
     type ActivityPeriod,
     activityDate,
+    activityNow,
     changeActivityPeriod,
     isActivitySelectable,
     shiftActivityPeriod,
@@ -30,7 +31,7 @@ export const ActivityPeriodNavigation: FC<{
     value: ActivityPeriod;
     onChange: (value: ActivityPeriod) => void;
 }> = ({ label, value, onChange }) => {
-    const now = new Date();
+    const now = activityNow();
     const previous = shiftActivityPeriod(value, -1);
     const next = shiftActivityPeriod(value, 1);
     return (
@@ -51,6 +52,7 @@ export const ActivityPeriodNavigation: FC<{
                 <PeriodPicker
                     value={value}
                     minDate={ACTIVITY_MIN_DATE}
+                    maxDate={now}
                     header={
                         <div className="mb-3 grid w-full grid-cols-2 items-center gap-2">
                             {(["day", "month"] as const).map((granularity) => (

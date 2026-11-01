@@ -23,6 +23,11 @@ describe the same traffic, and p50/p95 are computed correctly at each level
 rather than derived from the other (percentiles cannot be combined after the
 fact).
 
+`errors_402` is the part of `errors_4xx` refused for balance or key budget
+before the model was called, so it says nothing about the model itself. Upstream
+402s are stored as 502 (`remapUpstreamStatus`), so every 402 here is our own
+billing check.
+
 Column names match `model_health` so consumers reuse one health rule for both.
 Traffic defaults to all for existing API and catalog consumers. Model Monitor
 requests regular traffic explicitly.
@@ -34,7 +39,10 @@ SQL >
     SELECT
         resolved_model_requested as model,
         event_type,
-        model_used,
+        -- A public model's own private fallback still counts toward its
+        -- totals, under one route that doesn't name it. Qualified for the
+        -- same reason as `events.fallback_used` below.
+        if(events.private_route, 'private', events.model_used) as model_used,
         -- Read through an aggregate rather than as a plain key: provider is a
         -- grouping key only at the route grain, so selecting it directly would
         -- leave every rollup row blank — and consumers read it to tell a
@@ -69,6 +77,11 @@ SQL >
             countIf(is_final AND response_status >= 400 AND response_status < 500),
             countIf(response_status >= 400 AND response_status < 500)
         ) as errors_4xx,
+        if(
+            GROUPING(model_used) = 1,
+            countIf(is_final AND response_status = 402),
+            countIf(response_status = 402)
+        ) as errors_402,
         if(
             GROUPING(model_used) = 1,
             countIf(is_final AND response_status >= 500),
@@ -139,6 +152,8 @@ SQL >
     FROM generation_events_classified AS events
     WHERE start_time >= now() - interval least(greatest({{Int32(minutes, 60)}}, 1), 10080) minute
     AND ({{String(traffic, 'all')}} = 'all' OR traffic_group = {{String(traffic, 'all')}})
+    -- Owner-only models stay out of this public listing.
+    AND NOT private_model
     -- provider is deliberately not a key: a route id already determines it, and
     -- keying on it would make it unaggregatable and leave rollup rows blank.
     GROUP BY GROUPING SETS (

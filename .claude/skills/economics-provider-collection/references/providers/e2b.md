@@ -24,6 +24,8 @@ Collection steps:
 3. Archive each new invoice separately; record explicit invoice-list coverage.
 4. Open Usage, select the complete calendar month in UTC, and record usage cost,
    started and resumed sandboxes, vCPU hours, and RAM hours.
+   The range picker has a `Last month` preset; verify its resulting UTC start
+   and end in the displayed range before recording totals.
 5. Preserve sandbox or template detail when the dashboard or API exposes it.
 6. Record E2B usage in the Compute & Infra ledger as `infrastructure`, never as
    model inference.
@@ -45,3 +47,20 @@ Known traps:
 - Credits apply to usage invoices, not the subscription fee; verify current terms.
 - A balance snapshot is not monthly usage evidence.
 - Do not classify credits as prepaid cash.
+- The Antler approval email links the original program terms:
+  <https://docs.google.com/document/d/1F09dDxQyY12FfVW2SQrVaRF2DWGIuAKCQ8cRe0talOM/edit>.
+  Verified October 6, 2026: program usage credits expire one year after
+  redemption. Verify the redemption date and each separate credit lot before
+  assigning an account expiry; the approval email date alone is insufficient.
+
+## Verified — 2026-10-14
+
+- Project Billing now links to shared workspace Billing. Follow that visible
+  link, verify Pollinations.ai and the signed-in business email, then open
+  **View details for remaining credit**.
+- The workspace credit-grants page exposes remaining and original amounts,
+  granted date, expiry, and expandable activity. Use the displayed expiry;
+  the workspace migration/granted date is not proof of original redemption.
+- Current unbilled usage is deducted at the next invoice. Record the displayed
+  balance without subtracting it again. Preserve the canonical project account
+  for this shared pool; do not add a second workspace-total snapshot.

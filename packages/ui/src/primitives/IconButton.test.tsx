@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, test } from "vitest";
+import { act, create } from "react-test-renderer";
+import { describe, expect, test, vi } from "vitest";
 import { IconButton } from "./IconButton.tsx";
 
 describe("IconButton", () => {
@@ -45,5 +46,49 @@ describe("IconButton", () => {
         expect(html).toContain('aria-label="GitHub"');
         expect(html).toContain("polli-control");
         expect(html).not.toContain('type="button"');
+    });
+
+    test("makes disabled links inert and restores enabled activation", async () => {
+        const onClick = vi.fn();
+        const event = {
+            preventDefault: vi.fn(),
+            stopPropagation: vi.fn(),
+        };
+        const props = {
+            href: "/unavailable",
+            "aria-label": "Open target",
+            onClick,
+            children: "Open",
+        };
+        const html = renderToStaticMarkup(<IconButton {...props} disabled />);
+        expect(html).not.toContain("href=");
+        expect(html).toContain('role="link"');
+        expect(html).toContain('aria-disabled="true"');
+        expect(html).toContain('tabindex="-1"');
+
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        let renderer!: ReturnType<typeof create>;
+        try {
+            await act(async () => {
+                renderer = create(<IconButton {...props} disabled />);
+            });
+            renderer?.root.findByType("a").props.onClick(event);
+            expect(onClick).not.toHaveBeenCalled();
+            expect(event.preventDefault).toHaveBeenCalledOnce();
+            expect(event.stopPropagation).toHaveBeenCalledOnce();
+
+            await act(async () => {
+                renderer?.update(<IconButton {...props} />);
+            });
+            const enabled = renderer.root.findByType("a").props;
+            expect(enabled.href).toBe("/unavailable");
+            expect(enabled["aria-disabled"]).toBeUndefined();
+            expect(enabled.tabIndex).toBeUndefined();
+            enabled.onClick(event);
+            expect(onClick).toHaveBeenCalledOnce();
+        } finally {
+            await act(async () => renderer?.unmount());
+            vi.unstubAllGlobals();
+        }
     });
 });

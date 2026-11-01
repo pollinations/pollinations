@@ -40,11 +40,21 @@ const SOURCE = ((): Record<string, string> => {
 // credited to where the visitor came from rather than to pollinations.ai.
 // Enter reads utm_* from its landing URL; an organic referrer travels as
 // utm_source because the hop replaces document.referrer with this site.
-function tagEnterLink(event: Event) {
+function tagOutboundLink(event: Event) {
     const link = (event.target as Element).closest?.<HTMLAnchorElement>(
         "a[href]",
     );
-    if (!link?.hostname?.endsWith("enter.pollinations.ai")) return;
+    if (!link) return;
+    // GitHub's traffic report is our only count of clicks to the repo, and it
+    // credits pollinations.ai only when the referrer travels. noopener stays.
+    if (
+        /(^|\.)github\.com$/.test(link.hostname) &&
+        link.pathname.startsWith("/pollinations/")
+    ) {
+        link.relList.remove("noreferrer");
+        return;
+    }
+    if (!link.hostname.endsWith("enter.pollinations.ai")) return;
     // Enter still sees referrer_host=pollinations.ai: the site's
     // Referrer-Policy sends only the origin. noopener stays.
     link.relList.remove("noreferrer");
@@ -77,10 +87,10 @@ export function Analytics() {
         // contextmenu "open in new tab".
         const events = ["click", "auxclick", "contextmenu"];
         for (const type of events)
-            document.addEventListener(type, tagEnterLink, true);
+            document.addEventListener(type, tagOutboundLink, true);
         return () => {
             for (const type of events)
-                document.removeEventListener(type, tagEnterLink, true);
+                document.removeEventListener(type, tagOutboundLink, true);
         };
     }, []);
 

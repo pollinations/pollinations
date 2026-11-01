@@ -1,0 +1,23 @@
+{
+  // Mama Barbara. Telegram posts each update to this Worker (webhook.ts sets
+  // that up), and one Durable Object holds her users and does the work.
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "mama-barbara",
+  "account_id": "b6ec751c0862027ba269faf7029b2501",
+  "main": "index.ts",
+  "workers_dev": false,
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "durable_objects": {
+    "bindings": [{ "name": "MAMA", "class_name": "Mama" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Mama"] }],
+  "routes": [
+    {
+      "pattern": "mama-barbara.myceli.ai",
+      "zone_name": "myceli.ai",
+      "custom_domain": true
+    }
+  ]
+}

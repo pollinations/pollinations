@@ -54,11 +54,7 @@ export function MoneyMoves() {
                         {quests ? (
                             <>
                                 {quests.totals.contributors.toLocaleString()}{" "}
-                                builders have earned{" "}
-                                {Math.floor(
-                                    quests.totals.totalPollen,
-                                ).toLocaleString()}{" "}
-                                pollen from GitHub Quests so far.{" "}
+                                people have completed Quests.{" "}
                             </>
                         ) : null}
                         <InlineLink href="https://enter.pollinations.ai/quests">

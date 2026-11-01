@@ -1,13 +1,11 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-    defineWorkersConfig,
-    readD1Migrations,
-} from "@cloudflare/vitest-pool-workers/config";
+import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
+import { defineConfig } from "vitest/config";
 
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 
-export default defineWorkersConfig(async () => {
+export default defineConfig(async () => {
     const migrationsPath = path.join(
         __dirname,
         "../enter.pollinations.ai/drizzle",
@@ -15,26 +13,35 @@ export default defineWorkersConfig(async () => {
     const migrations = await readD1Migrations(migrationsPath);
 
     return {
+        plugins: [
+            cloudflareTest({
+                wrangler: {
+                    configPath: "./wrangler.toml",
+                },
+                miniflare: {
+                    bindings: {
+                        TEST_MIGRATIONS: migrations,
+                    },
+                    // Each test answers Enter's key check itself; see mockAuth.
+                    serviceBindings: {
+                        ENTER: () =>
+                            new Response("Enter is not mocked", {
+                                status: 500,
+                            }),
+                    },
+                },
+            }),
+        ],
         resolve: {
             alias: {
                 "@shared": sharedSrc,
             },
         },
         test: {
+            // Vitest's console interception can deadlock the Workers pool when a
+            // handler logs during a file's last RPC (cloudflare/workers-sdk#15719).
+            disableConsoleIntercept: true,
             setupFiles: ["./test/setup/apply-migrations.ts"],
-            poolOptions: {
-                workers: {
-                    singleWorker: true,
-                    wrangler: {
-                        configPath: "./wrangler.toml",
-                    },
-                    miniflare: {
-                        bindings: {
-                            TEST_MIGRATIONS: migrations,
-                        },
-                    },
-                },
-            },
         },
     };
 });

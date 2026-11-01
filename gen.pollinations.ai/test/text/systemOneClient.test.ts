@@ -69,13 +69,307 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
-    it.each([
-        "typesafe/jev-1.13",
-        "typesafe/jev",
-        "jev",
-    ])("resolves %s to the versioned canonical model", (name) => {
-        expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
+    it("forwards respan/span-01-lite's provider pin on the native wire", async () => {
+        const config = findModelByName("respan/span-01-lite")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["respan"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "respan/span-01-lite",
+                });
+                return Response.json({
+                    model: "respan/span-01-lite",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne(
+            [
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        state: nativeState,
+                        questions: {
+                            urgent: {
+                                type: "noul",
+                                instructions: "Is this urgent?",
+                            },
+                        },
+                    }),
+                },
+            ],
+            {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            },
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
+
+    it.each(["typesafe/jev-1.13", "typesafe/jev-1.13:openrouter:typesafe"])(
+        "forwards Jev route pins without changing native question shapes: %s",
+        async (model) => {
+            const config: Record<string, unknown> = {
+                ...findModelByName(model)?.config(),
+                authKey: "test-key",
+            };
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (input, init) => {
+                    expect(String(input)).toBe(config.directEndpoint);
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        ...(config.defaultOptions as Record<string, unknown>),
+                        model: config.model,
+                        state: nativeState,
+                        questions: nativeQuestions,
+                    });
+                    return Response.json({
+                        model: config.model,
+                        answers,
+                        usage: { input_tokens: 430, output_tokens: 62 },
+                    });
+                });
+            const result = await callSystemOne(
+                [{ role: "user", content: nativeContent }],
+                { modelConfig: config },
+            );
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            expect(
+                JSON.parse(String(result.choices?.[0]?.message?.content)),
+            ).toEqual(answers);
+            expect(result.usage).toMatchObject({
+                prompt_tokens: 430,
+                completion_tokens: 62,
+            });
+        },
+    );
+
+    it.each([
+        "perplexity/pplx-decider-v1.2",
+        "perplexity/pplx-decider-v1.2:perplexity",
+    ])("uses the native PPLX route config for %s", async (model) => {
+        const config = findModelByName(model)?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (url, init) => {
+                expect(String(url)).toBe(config?.directEndpoint);
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    ...(config?.defaultOptions as Record<string, unknown>),
+                    state: nativeState,
+                    questions: nativeQuestions,
+                    model: config?.model,
+                });
+                return Response.json({
+                    model: config?.model,
+                    answers,
+                    usage: { input_tokens: 95, output_tokens: 3 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: { ...config, authKey: "test-key" },
+            providerOptions: { gateway: { only: ["cloudflare"] } },
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects D3 question counts above its local limit before calling upstream", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne(
+                [
+                    {
+                        role: "user",
+                        content: JSON.stringify({
+                            state: "Invoice overdue",
+                            questions: Object.fromEntries(
+                                Array.from({ length: 65 }, (_, index) => [
+                                    `question_${index}`,
+                                    {
+                                        type: "noul",
+                                        instructions: "Is it overdue?",
+                                    },
+                                ]),
+                            ),
+                        }),
+                    },
+                ],
+                {
+                    modelConfig: {
+                        authKey: "d3-test-key",
+                        model: "vllm-sr/d3",
+                        directEndpoint:
+                            "https://decision.vllm-sr.ai/v1/systemone",
+                        decisionsProtocol: "vllm-sr",
+                    },
+                },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+    it("rejects D3 questions without instructions before calling upstream", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne(
+                [
+                    {
+                        role: "user",
+                        content: JSON.stringify({
+                            state: "Invoice overdue",
+                            questions: { overdue: { type: "noul" } },
+                        }),
+                    },
+                ],
+                {
+                    modelConfig: {
+                        authKey: "d3-test-key",
+                        model: "vllm-sr/d3",
+                        directEndpoint:
+                            "https://decision.vllm-sr.ai/v1/systemone",
+                        decisionsProtocol: "vllm-sr",
+                    },
+                },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+    it.each([false, true])(
+        "normalizes structured D3 input and restores the score legend (stream=%s)",
+        async (stream) => {
+            const questions = {
+                ...nativeQuestions,
+                department: {
+                    ...nativeQuestions.department,
+                    criteria: {
+                        billing: { issue: "Payment" },
+                        technical: null,
+                    },
+                },
+                is_urgent: {
+                    ...nativeQuestions.is_urgent,
+                    criteria: {
+                        true: ["Time-sensitive"],
+                        false: { urgent: false },
+                    },
+                },
+            };
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (input, init) => {
+                    expect(String(input)).toBe(
+                        "https://decision.vllm-sr.ai/v1/systemone",
+                    );
+                    expect(
+                        new Headers(init?.headers).get("authorization"),
+                    ).toBe("Bearer d3-test-key");
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        model: "vllm-sr/d3",
+                        state: JSON.stringify(nativeState),
+                        questions: {
+                            department: {
+                                ...questions.department,
+                                criteria: {
+                                    billing: '{"issue":"Payment"}',
+                                    technical: null,
+                                },
+                            },
+                            frustration: {
+                                ...questions.frustration,
+                                instructions: JSON.stringify(
+                                    questions.frustration.instructions,
+                                ),
+                                criteria: [
+                                    "Calm",
+                                    JSON.stringify(
+                                        questions.frustration.criteria[1],
+                                    ),
+                                    "Very angry",
+                                ],
+                            },
+                            is_urgent: {
+                                ...questions.is_urgent,
+                                criteria: {
+                                    true: '["Time-sensitive"]',
+                                    false: '{"urgent":false}',
+                                },
+                            },
+                        },
+                    });
+                    return Response.json({
+                        answers,
+                        usage: { input_tokens: 312, output_tokens: 0 },
+                    });
+                });
+            const result = await generateTextPortkey(
+                [
+                    {
+                        role: "user",
+                        content: JSON.stringify({
+                            state: nativeState,
+                            questions,
+                        }),
+                    },
+                ],
+                {
+                    model: "vllm-sr/d3",
+                    stream,
+                    modelConfig: {
+                        authKey: "d3-test-key",
+                        model: "vllm-sr/d3",
+                        directEndpoint:
+                            "https://decision.vllm-sr.ai/v1/systemone",
+                        decisionsProtocol: "vllm-sr",
+                    },
+                },
+                vi.fn(),
+            );
+            const expected = {
+                ...answers,
+                frustration: {
+                    ...answers.frustration,
+                    legend: Object.fromEntries(
+                        questions.frustration.criteria.map(
+                            (criterion, index) => [index, criterion],
+                        ),
+                    ),
+                },
+            };
+            expect(
+                JSON.parse(String(result.choices?.[0]?.message?.content)),
+            ).toEqual(expected);
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            if (stream) {
+                if (!result.responseStream) throw new Error("Missing stream");
+                const events = (
+                    await new Response(
+                        requireChatStreamUsage(result.responseStream),
+                    ).text()
+                )
+                    .split("\n\n")
+                    .filter(Boolean)
+                    .map((event) => event.replace(/^data: /, ""));
+                expect(
+                    JSON.parse(JSON.parse(events[0]).choices[0].delta.content),
+                ).toEqual(expected);
+                expect(JSON.parse(events.at(-2) as string).usage).toEqual({
+                    prompt_tokens: 312,
+                    completion_tokens: 0,
+                    total_tokens: 312,
+                });
+                expect(events.at(-1)).toBe("[DONE]");
+            }
+        },
+    );
+    it.each(["typesafe/jev-1.13", "typesafe/jev", "jev"])(
+        "resolves %s to the versioned canonical model",
+        (name) => {
+            expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
+        },
+    );
 
     it("resolves Kev 4B only by its OpenRouter id", () => {
         expect(findModelByName("jaredpalmer/kev-4b")?.name).toBe(
@@ -132,58 +426,58 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
-    it.each([
-        false,
-        true,
-    ])("preserves native decisions through the Vercel D1 route (stream=%s)", async (stream) => {
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
-            async (input, init) => {
-                expect(String(input)).toBe(
-                    "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-                );
-                expect(JSON.parse(String(init?.body))).toEqual({
-                    model: "liquid/d1",
-                    state: nativeState,
-                    questions: nativeQuestions,
-                });
-                return Response.json({
-                    model: "liquid/d1",
-                    answers,
-                    usage: { input_tokens: 312, output_tokens: 0 },
-                });
-            },
-        );
-        const result = await generateTextPortkey(
-            [{ role: "user", content: nativeContent }],
-            {
-                model: "liquid/d1:vercel",
-                stream,
-                modelConfig: {
-                    ...modelConfig,
-                    model: "liquid/d1",
-                    directEndpoint:
+    it.each([false, true])(
+        "preserves native decisions through the Vercel D1 route (stream=%s)",
+        async (stream) => {
+            vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+                async (input, init) => {
+                    expect(String(input)).toBe(
                         "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+                    );
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        model: "liquid/d1",
+                        state: nativeState,
+                        questions: nativeQuestions,
+                    });
+                    return Response.json({
+                        model: "liquid/d1",
+                        answers,
+                        usage: { input_tokens: 312, output_tokens: 0 },
+                    });
                 },
-            },
-            vi.fn(),
-        );
-        expect(
-            JSON.parse(String(result.choices?.[0]?.message?.content)),
-        ).toEqual(answers);
-        expect(result.usage).toEqual({
-            prompt_tokens: 312,
-            completion_tokens: 0,
-            total_tokens: 312,
-        });
-        if (stream) {
-            if (!result.responseStream) throw new Error("Missing stream");
-            const body = await new Response(
-                requireChatStreamUsage(result.responseStream),
-            ).text();
-            expect(body).toContain('"prompt_tokens":312');
-            expect(body).toContain("data: [DONE]");
-        }
-    });
+            );
+            const result = await generateTextPortkey(
+                [{ role: "user", content: nativeContent }],
+                {
+                    model: "liquid/d1",
+                    stream,
+                    modelConfig: {
+                        ...modelConfig,
+                        model: "liquid/d1",
+                        directEndpoint:
+                            "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+                    },
+                },
+                vi.fn(),
+            );
+            expect(
+                JSON.parse(String(result.choices?.[0]?.message?.content)),
+            ).toEqual(answers);
+            expect(result.usage).toEqual({
+                prompt_tokens: 312,
+                completion_tokens: 0,
+                total_tokens: 312,
+            });
+            if (stream) {
+                if (!result.responseStream) throw new Error("Missing stream");
+                const body = await new Response(
+                    requireChatStreamUsage(result.responseStream),
+                ).text();
+                expect(body).toContain('"prompt_tokens":312');
+                expect(body).toContain("data: [DONE]");
+            }
+        },
+    );
 
     it("routes openai/gpt-6-luna-decisions:openrouter to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
@@ -194,6 +488,11 @@ describe("System One adapter", () => {
                 );
                 expect(JSON.parse(String(init?.body))).toMatchObject({
                     model: "openai/gpt-6-luna-decisions",
+                    provider: {
+                        only: ["openai"],
+                        ignore: ["cloudflare"],
+                        allow_fallbacks: false,
+                    },
                 });
                 return Response.json({
                     model: "openai/gpt-6-luna-decisions-20261006",
@@ -206,8 +505,10 @@ describe("System One adapter", () => {
             {
                 model: "openai/gpt-6-luna-decisions:openrouter",
                 modelConfig: {
-                    ...modelConfig,
-                    model: "openai/gpt-6-luna-decisions",
+                    ...findModelByName(
+                        "openai/gpt-6-luna-decisions:openrouter",
+                    )?.config(),
+                    authKey: "test-key",
                 },
             },
             vi.fn(),
@@ -215,129 +516,148 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
-    it.each([
-        false,
-        true,
-    ])("translates direct OpenAI decisions without losing confidence or legends (stream=%s)", async (stream) => {
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
-            async (input, init) => {
-                expect(String(input)).toBe(
-                    "https://api.openai.com/v1/decisions",
-                );
-                expect(new Headers(init?.headers).get("authorization")).toBe(
-                    "Bearer test-key",
-                );
-                const request = JSON.parse(String(init?.body));
-                expect(request.model).toBe("gpt-6-luna");
-                expect(request.input).toBe(JSON.stringify(nativeState));
-                expect(request.questions).toEqual([
-                    {
-                        name: "department",
-                        type: "choice",
-                        instructions: nativeQuestions.department.instructions,
-                        choices: [
-                            { value: "billing", description: "Payment issues" },
-                            {
-                                value: "technical",
-                                description: "Product failures",
-                            },
-                        ],
-                    },
-                    {
-                        name: "frustration",
-                        type: "score",
-                        instructions: JSON.stringify(
-                            nativeQuestions.frustration.instructions,
-                        ),
-                        levels: nativeQuestions.frustration.criteria.map(
-                            (criterion, index) => ({
-                                label: String(index),
-                                description:
-                                    typeof criterion === "string"
-                                        ? criterion
-                                        : JSON.stringify(criterion),
-                            }),
-                        ),
-                    },
-                    {
-                        name: "is_urgent",
-                        type: "predicate",
-                        instructions: `${nativeQuestions.is_urgent.instructions}\n${JSON.stringify(nativeQuestions.is_urgent.criteria)}`,
-                    },
-                ]);
-                return Response.json({
-                    model: "gpt-6-luna",
-                    answers: [
+    it.each([false, true])(
+        "translates direct OpenAI decisions without losing confidence or legends (stream=%s)",
+        async (stream) => {
+            vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+                async (input, init) => {
+                    expect(String(input)).toBe(
+                        "https://api.openai.com/v1/decisions",
+                    );
+                    expect(
+                        new Headers(init?.headers).get("authorization"),
+                    ).toBe("Bearer test-key");
+                    const request = JSON.parse(String(init?.body));
+                    expect(request.model).toBe("gpt-6-luna");
+                    expect(request.input).toBe(JSON.stringify(nativeState));
+                    expect(request.questions).toEqual([
                         {
                             name: "department",
                             type: "choice",
-                            choice: "technical",
-                            confidence: 0.85,
-                            probabilities: [
-                                { value: "billing", probability: 0.08 },
-                                { value: "technical", probability: 0.92 },
+                            instructions:
+                                nativeQuestions.department.instructions,
+                            choices: [
+                                {
+                                    value: "billing",
+                                    description: "Payment issues",
+                                },
+                                {
+                                    value: "technical",
+                                    description: "Product failures",
+                                },
                             ],
                         },
                         {
                             name: "frustration",
                             type: "score",
-                            score: 1.6,
-                            confidence: 0.78,
-                            probabilities: [
-                                { value: 0, label: "0", probability: 0.1 },
-                                { value: 1, label: "1", probability: 0.2 },
-                                { value: 2, label: "2", probability: 0.7 },
-                            ],
+                            instructions: JSON.stringify(
+                                nativeQuestions.frustration.instructions,
+                            ),
+                            levels: nativeQuestions.frustration.criteria.map(
+                                (criterion, index) => ({
+                                    label: String(index),
+                                    description:
+                                        typeof criterion === "string"
+                                            ? criterion
+                                            : JSON.stringify(criterion),
+                                }),
+                            ),
                         },
                         {
                             name: "is_urgent",
                             type: "predicate",
-                            probability: 0.98,
+                            instructions: `${nativeQuestions.is_urgent.instructions}\n${JSON.stringify(nativeQuestions.is_urgent.criteria)}`,
                         },
-                    ],
-                    usage: { input_tokens: 61, output_tokens: 0 },
-                });
-            },
-        );
-        const result = await generateTextPortkey(
-            [{ role: "user", content: nativeContent }],
-            {
-                model: "openai/gpt-6-luna-decisions",
-                stream,
-                modelConfig: {
-                    ...findModelByName("openai/gpt-6-luna-decisions")?.config(),
-                    authKey: "test-key",
+                    ]);
+                    return Response.json({
+                        model: "gpt-6-luna",
+                        answers: [
+                            {
+                                name: "department",
+                                type: "choice",
+                                choice: "technical",
+                                confidence: 0.85,
+                                probabilities: [
+                                    { value: "billing", probability: 0.08 },
+                                    { value: "technical", probability: 0.92 },
+                                ],
+                            },
+                            {
+                                name: "frustration",
+                                type: "score",
+                                score: 1.6,
+                                confidence: 0.78,
+                                probabilities: [
+                                    { value: 0, label: "0", probability: 0.1 },
+                                    { value: 1, label: "1", probability: 0.2 },
+                                    { value: 2, label: "2", probability: 0.7 },
+                                ],
+                            },
+                            {
+                                name: "is_urgent",
+                                type: "predicate",
+                                probability: 0.98,
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 61,
+                            output_tokens: 0,
+                            input_tokens_details: {
+                                cached_tokens: 20,
+                                cache_write_tokens: 30,
+                            },
+                        },
+                    });
                 },
-            },
-            vi.fn(),
-        );
-        expect(
-            JSON.parse(String(result.choices?.[0]?.message?.content)),
-        ).toEqual({
-            ...answers,
-            frustration: {
-                ...answers.frustration,
-                legend: Object.fromEntries(
-                    nativeQuestions.frustration.criteria.map(
-                        (criterion, index) => [String(index), criterion],
+            );
+            const result = await generateTextPortkey(
+                [{ role: "user", content: nativeContent }],
+                {
+                    model: "openai/gpt-6-luna-decisions",
+                    stream,
+                    modelConfig: {
+                        ...findModelByName(
+                            "openai/gpt-6-luna-decisions",
+                        )?.config(),
+                        authKey: "test-key",
+                    },
+                },
+                vi.fn(),
+            );
+            expect(
+                JSON.parse(String(result.choices?.[0]?.message?.content)),
+            ).toEqual({
+                ...answers,
+                frustration: {
+                    ...answers.frustration,
+                    legend: Object.fromEntries(
+                        nativeQuestions.frustration.criteria.map(
+                            (criterion, index) => [String(index), criterion],
+                        ),
                     ),
-                ),
-            },
-        });
-        expect(result.usage).toEqual({
-            prompt_tokens: 61,
-            completion_tokens: 0,
-            total_tokens: 61,
-        });
-        if (stream) {
-            if (!result.responseStream) throw new Error("Missing stream");
-            const text = await new Response(
-                requireChatStreamUsage(result.responseStream),
-            ).text();
-            expect(text).toContain('"prompt_tokens":61');
-            expect(text).toContain("data: [DONE]");
-        }
-    });
+                },
+            });
+            expect(result.usage).toEqual({
+                prompt_tokens: 61,
+                completion_tokens: 0,
+                total_tokens: 61,
+                prompt_tokens_details: {
+                    cached_tokens: 20,
+                    cache_write_tokens: 30,
+                },
+            });
+            if (stream) {
+                if (!result.responseStream) throw new Error("Missing stream");
+                const text = await new Response(
+                    requireChatStreamUsage(result.responseStream),
+                ).text();
+                expect(text).toContain('"prompt_tokens":61');
+                expect(text).toContain('"cached_tokens":20');
+                expect(text).toContain('"cache_write_tokens":30');
+                expect(text).toContain("data: [DONE]");
+            }
+        },
+    );
 
     it.each([
         { answers: [] },
@@ -396,6 +716,124 @@ describe("System One adapter", () => {
         );
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
+
+    it.each(["vercel", "openrouter"])(
+        "forwards Microsoft Decision-1's %s pin to its native request",
+        async (provider) => {
+            const config = findModelByName(
+                `microsoft/microsoft-decision-1:${provider}`,
+            )?.config();
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (_input, init) => {
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        ...(config?.defaultOptions as Record<string, unknown>),
+                        state: nativeState,
+                        questions: nativeQuestions,
+                        model: "microsoft/microsoft-decision-1",
+                    });
+                    return Response.json({
+                        model: "microsoft-decision-1",
+                        answers,
+                        usage: { input_tokens: 44, output_tokens: 1 },
+                    });
+                });
+            await callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            });
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it("routes microsoft/microsoft-decision-1 to its Azure deployment with an api-key header", async () => {
+        const azureEndpoint =
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone";
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(azureEndpoint);
+                const headers = new Headers(init?.headers);
+                expect(headers.get("api-key")).toBe("test-key");
+                expect(headers.get("authorization")).toBeNull();
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "decision-1",
+                });
+                return Response.json({
+                    model: "microsoft-decision-1",
+                    answers,
+                    usage: { input_tokens: 126, output_tokens: 3 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "microsoft/microsoft-decision-1",
+                modelConfig: {
+                    ...modelConfig,
+                    directEndpoint: azureEndpoint,
+                    directAuthHeader: "api-key",
+                    model: "decision-1",
+                },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("forwards jaredpalmer/kev-4b's provider pin on the native wire", async () => {
+        const config = findModelByName("jaredpalmer/kev-4b")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["siliconflow/fp8"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "jaredpalmer/kev-4b",
+                });
+                return Response.json({
+                    model: "jaredpalmer/kev-4b",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: { ...config, authKey: "test-key" },
+            provider: { only: ["cloudflare"] },
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(["liquid/d1", "liquid/d1:openrouter"])(
+        "forwards Liquid D1's configured native pin for %s",
+        async (model) => {
+            const config = findModelByName(model)?.config();
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (url, init) => {
+                    expect(String(url)).toBe(config?.directEndpoint);
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        ...(config?.defaultOptions as Record<string, unknown>),
+                        state: nativeState,
+                        questions: nativeQuestions,
+                        model: "liquid/d1",
+                    });
+                    return Response.json({
+                        model: "liquid/d1",
+                        answers,
+                        usage: { input_tokens: 95, output_tokens: 3 },
+                    });
+                });
+            await callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            });
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi
@@ -684,3 +1122,25 @@ describe("System One adapter", () => {
         ).rejects.toMatchObject({ status: 502 });
     });
 });
+
+it.each(["cached_tokens", "cache_write_tokens"])(
+    "rejects negative Decisions %s",
+    async (field) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                model: "gpt-6-luna-decisions",
+                answers,
+                usage: {
+                    input_tokens: 100,
+                    output_tokens: 0,
+                    input_tokens_details: { [field]: -1 },
+                },
+            }),
+        );
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig,
+            }),
+        ).rejects.toMatchObject({ status: 502 });
+    },
+);

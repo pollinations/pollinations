@@ -52,6 +52,13 @@ Primary evidence sources:
 - Invoice PDF: Invoices and documents → exact invoice row → Row actions →
   Download. Usage, credit drawdown, next-cycle subscriptions and subscription
   discounts are separate lines; zero due is not zero usage.
+- Credits distinguishes the last invoice-confirmed balance from an estimated
+  balance today. Preserve both labels; a current estimated snapshot must say
+  that it is estimated. Record the grant expiry and product eligibility caps.
+- Re-fetch closed-month daily exports during reconciliation: later exports
+  can add records absent from an earlier archive. Compare the completed cycle
+  dashboard and daily API separately against the invoice. Do not distribute
+  differences across days or treat complete date coverage as certified invoice cost.
 - API reference: https://developers.cloudflare.com/api/resources/billing/subresources/usage/methods/get_account_usage_v1/
 
 Collection steps:

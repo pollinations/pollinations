@@ -28,6 +28,7 @@ import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
+import { EndpointHealth } from "./endpoint-health.tsx";
 import {
     type CommunityEndpoint,
     type ManagedAgent,
@@ -117,6 +118,7 @@ export function CommunityEndpointCard({
                                 earningsAnchor: undefined,
                                 earningsModels: [endpoint.modelId],
                                 usageMetric: undefined,
+                                usageGroup: undefined,
                                 usageKeys: undefined,
                                 usageModels: undefined,
                                 earningsMetric: undefined,
@@ -246,6 +248,14 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
+
+            <EndpointHealth
+                id={endpoint.id}
+                proxy={endpoint.type === "proxy"}
+                listing={
+                    isPublic && endpoint.type === "proxy" ? health : undefined
+                }
+            />
         </Surface>
     );
 }
@@ -334,7 +344,6 @@ function CommunityDetailRow({
                     <CopyButton
                         value={copyValue}
                         tooltip={copyLabel}
-                        copiedTooltip="Copied"
                         className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
                     >
                         {(copied: boolean) =>

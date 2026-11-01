@@ -1,5 +1,4 @@
 import {
-    AccountIcon,
     AppIcon,
     Button,
     CheckIcon,
@@ -9,20 +8,19 @@ import {
     DialogBody,
     DialogHeader,
     FieldStack,
-    InfoTip,
     InlineLink,
     KeyChip,
     KeyIcon,
     XIcon,
 } from "@pollinations/ui";
 import {
-    AuthAccessItem,
     AuthInfoCard,
     AuthModalFootnote,
     ErrorBanner,
 } from "@pollinations/ui/auth";
 import type { FormEventHandler, ReactNode } from "react";
 import { genDocsUrl } from "../../config.ts";
+import { AppEarningsRow } from "./app-earnings-row.tsx";
 import { KeyNameField } from "./key-name-field.tsx";
 import {
     KeyPermissionsInputs,
@@ -35,7 +33,6 @@ type KeyDialogContentProps = {
     mode: "create" | "edit";
     app: boolean;
     accessContext?: "app" | "device";
-    publishable: boolean;
     name: string;
     onNameChange: (name: string) => void;
     permissions: ReturnType<typeof useKeyPermissions>;
@@ -61,7 +58,6 @@ export function KeyDialogContent({
     mode,
     app,
     accessContext,
-    publishable,
     name,
     onNameChange,
     permissions,
@@ -85,10 +81,8 @@ export function KeyDialogContent({
         edit: accessContext
             ? `Edit ${accessContext} access`
             : app
-              ? "Edit app key"
-              : publishable
-                ? "Edit publishable key"
-                : "Edit secret key",
+              ? "Edit app"
+              : "Edit secret key",
     };
     const title =
         createdKey !== undefined
@@ -101,13 +95,23 @@ export function KeyDialogContent({
             ? app
                 ? "Add this app key to your app. You can copy it again from the Apps section at any time."
                 : "Copy your secret key now. You won’t be able to see it again."
-            : publishable
-              ? "Set the name, earnings, and redirect URLs."
+            : app
+              ? "Set the name, earnings and redirect URLs."
               : accessContext
                 ? `Choose what this ${accessContext} can access and how much it can spend.`
                 : "Choose what this key can access and how much it can spend.";
 
     const KeyTypeIcon = app ? AppIcon : KeyIcon;
+    const nameField = (
+        <KeyNameField
+            app={app}
+            accessContext={accessContext}
+            publishable={app}
+            value={name}
+            onChange={onNameChange}
+            disabled={isSubmitting}
+        />
+    );
     const submitAction =
         createdKey !== undefined ? (
             <CopyButton
@@ -142,8 +146,8 @@ export function KeyDialogContent({
                         ? "Creating…"
                         : "Saving…"
                     : mode === "create"
-                      ? titles.create
-                      : "Save changes"}
+                      ? "Create"
+                      : "Save"}
             </Button>
         );
 
@@ -188,7 +192,7 @@ export function KeyDialogContent({
                                 {description}{" "}
                                 <InlineLink
                                     href={genDocsUrl(
-                                        publishable
+                                        app
                                             ? "#tag/connect-user-wallets"
                                             : "#tag/authentication",
                                     )}
@@ -204,11 +208,7 @@ export function KeyDialogContent({
                             <KeyChip
                                 prefix={existingKey.prefix}
                                 value={existingKey.value}
-                                label={
-                                    app
-                                        ? "Copy app key"
-                                        : "Copy publishable key"
-                                }
+                                label="Copy app key"
                             />
                         </div>
                     )}
@@ -240,36 +240,19 @@ export function KeyDialogContent({
                     </AuthInfoCard>
                 ) : showFields ? (
                     <div className="space-y-3">
-                        <AuthInfoCard>
-                            <ul className="space-y-3 text-sm">
-                                <KeyNameField
-                                    app={app}
-                                    accessContext={accessContext}
-                                    publishable={publishable}
-                                    value={name}
-                                    onChange={onNameChange}
-                                    disabled={isSubmitting}
-                                />
-                                {publishable && (
-                                    <AuthAccessItem
+                        {app && (
+                            <AuthInfoCard title="Settings">
+                                <ul className="grid gap-2 text-sm">
+                                    {nameField}
+                                    <AppEarningsRow
                                         checked={earningsEnabled}
                                         onChange={onEarningsEnabledChange}
                                         disabled={isSubmitting}
-                                        ariaLabel="Receive 20% of the Pollen users spend in your app"
-                                        info={
-                                            <InfoTip
-                                                text="When enabled, your users pay 25% above the base rate. That markup, 20% of what they pay, is credited to your balance. Your own spending does not generate earnings."
-                                                label="App earnings information"
-                                            />
-                                        }
-                                    >
-                                        Receive 20% of the Pollen users spend in
-                                        your app
-                                    </AuthAccessItem>
-                                )}
-                            </ul>
-                        </AuthInfoCard>
-                        {publishable ? (
+                                    />
+                                </ul>
+                            </AuthInfoCard>
+                        )}
+                        {app ? (
                             <PublishableKeySettings
                                 redirectUris={redirectUris}
                                 onRedirectUrisChange={onRedirectUrisChange}
@@ -277,20 +260,10 @@ export function KeyDialogContent({
                             />
                         ) : (
                             <KeyPermissionsInputs
+                                nameField={nameField}
                                 value={permissions}
                                 accessContext={accessContext}
                                 disabled={isSubmitting}
-                                lead={
-                                    <AuthAccessItem icon={<AccountIcon />}>
-                                        <span className="inline-flex items-center">
-                                            Username and picture
-                                            <InfoTip
-                                                text="Anyone using this key can see your username and profile picture."
-                                                label="Username and picture information"
-                                            />
-                                        </span>
-                                    </AuthAccessItem>
-                                }
                             />
                         )}
                     </div>

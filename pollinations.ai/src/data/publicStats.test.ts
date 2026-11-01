@@ -47,28 +47,21 @@ describe("BYOP-only popularity", () => {
         expect(isBuzz(app(flag, "250"))).toBe(true);
     });
 
-    it.each([
-        false,
-        0,
-        "false",
-        "",
-    ])("ignores developer totals for flag %s", (flag) => {
-        expect(byopRequests24h(app(flag, 999999))).toBeNull();
-        expect(isBuzz(app(flag, 999999))).toBe(false);
-    });
+    it.each([false, 0, "false", ""])(
+        "ignores developer totals for flag %s",
+        (flag) => {
+            expect(byopRequests24h(app(flag, 999999))).toBeNull();
+            expect(isBuzz(app(flag, 999999))).toBe(false);
+        },
+    );
 
-    it.each([
-        null,
-        "",
-        " ",
-        "invalid",
-        -1,
-        Infinity,
-        NaN,
-    ])("treats invalid or missing usage %s as unknown", (requests) => {
-        expect(byopRequests24h(app(true, requests))).toBeNull();
-        expect(isBuzz(app(true, requests))).toBe(false);
-    });
+    it.each([null, "", " ", "invalid", -1, Infinity, NaN])(
+        "treats invalid or missing usage %s as unknown",
+        (requests) => {
+            expect(byopRequests24h(app(true, requests))).toBeNull();
+            expect(isBuzz(app(true, requests))).toBe(false);
+        },
+    );
 
     it("preserves measured zero and the popularity threshold", () => {
         expect(byopRequests24h(app(true, "0"))).toBe(0);

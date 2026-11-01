@@ -1,6 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -23,7 +22,12 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
-import { publicChatChoices, publicChatStream } from "./chat/public.ts";
+import {
+    publicChatChoices,
+    publicChatStream,
+    publicUsage,
+    withoutPayg,
+} from "./chat/public.ts";
 import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
@@ -52,29 +56,6 @@ type TextContext = Context<Env>;
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
-}
-
-function prepareRequestParameters(
-    requestParams: RequestData,
-    modelDefinition: ModelDefinition,
-): RequestData {
-    const isAudioModel =
-        modelDefinition.outputModalities?.includes("audio") ?? false;
-    if (!isAudioModel) return requestParams;
-
-    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
-    const audioFormat = requestParams.stream ? "pcm16" : "mp3";
-
-    return {
-        ...requestParams,
-        modalities: requestParams.modalities || ["text", "audio"],
-        audio: requestParams.audio
-            ? {
-                  ...requestParams.audio,
-                  format: requestParams.audio.format || audioFormat,
-              }
-            : { voice, format: audioFormat },
-    };
 }
 
 /**
@@ -157,7 +138,58 @@ export async function generateChatAttempt(
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
     );
-    if (!attemptData.stream) requireChatCompletionUsage(result);
+    if (!attemptData.stream) {
+        requireChatCompletionUsage(result);
+        // Reasoning is not an answer. Tool calls, refusals and media can be
+        // valid without text, but a blank completion must never become a cache hit.
+        const emptyChoices = (result.choices ?? []).filter(
+            ({ message, finish_reason }) =>
+                finish_reason !== "content_filter" &&
+                (!message ||
+                    !(
+                        (typeof message.content === "string"
+                            ? message.content.trim()
+                            : message.content?.length) ||
+                        message.tool_calls?.length ||
+                        message.function_call ||
+                        message.audio ||
+                        (typeof message.refusal === "string" &&
+                            message.refusal.trim())
+                    )),
+        );
+        if (
+            !result.choices?.length ||
+            emptyChoices.length === result.choices.length
+        ) {
+            const tokenLimitReached =
+                (requestData.max_tokens != null ||
+                    requestData.max_completion_tokens != null) &&
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ finish_reason }) => finish_reason === "length",
+                );
+            const { status, ...details } = tokenLimitReached
+                ? {
+                      status: 400 as const,
+                      message:
+                          "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
+                      errorCode: "output_token_limit_exceeded",
+                  }
+                : {
+                      status: 502 as const,
+                      message:
+                          "Chat Completions provider returned an empty response",
+                      errorCode: "empty_response",
+                  };
+            throw new UpstreamError(status, {
+                ...details,
+                requestUrl: result.upstreamRequestUrl,
+                billedUsage: openaiUsageToUsage(
+                    result.usage as Parameters<typeof openaiUsageToUsage>[0],
+                ),
+            });
+        }
+    }
     return buffered ? completionToChatStream(result) : result;
 }
 
@@ -206,34 +238,14 @@ function usageHeaders(
     return headers;
 }
 
-function publicCompletionUsage(
-    usage: ChatCompletion["usage"],
-): ChatCompletion["usage"] {
-    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
-        return usage;
-    }
-
-    const {
-        cost: _cost,
-        search_context_size: _searchContextSize,
-        ...publicUsage
-    } = usage;
-    return publicUsage;
-}
-
-function publicChatCompletion(
-    completion: ChatCompletion,
-    isVercel: boolean,
-): ChatCompletion {
-    const usage = publicCompletionUsage(completion.usage);
-    if (!isVercel && usage === completion.usage) return completion;
-    const publicCompletion = {
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+    // InferencePort also attaches its `payg_*` ledger to the top level of
+    // non-streaming responses; the stream path strips it in public.ts.
+    const publicCompletion = withoutPayg({
         ...completion,
-        usage,
-        choices: isVercel
-            ? publicChatChoices(completion.choices)
-            : completion.choices,
-    };
+        usage: publicUsage(completion.usage),
+        choices: publicChatChoices(completion.choices),
+    });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
             value: completion.fallbackTarget,
@@ -408,7 +420,6 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        const isVercel = candidate.definition?.provider === "vercel";
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -417,9 +428,7 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = isVercel
-                ? publicChatStream(clientBody)
-                : clientBody;
+            completion.responseStream = publicChatStream(clientBody);
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),
@@ -429,7 +438,7 @@ async function generateTextResponse(
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);
-        const publicCompletion = publicChatCompletion(completion, isVercel);
+        const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(
@@ -456,11 +465,7 @@ export async function handleTextContentLocal(
     c: TextContext,
     body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
-        getChatRequestData(body),
-        c.var.model.definition,
-    );
-    return generateTextResponse(c, requestData, true);
+    return generateTextResponse(c, getChatRequestData(body), true);
 }
 
 export async function handleSimpleTextLocal(
@@ -469,9 +474,9 @@ export async function handleSimpleTextLocal(
     model: string,
     query: GenerateTextRequestQueryParams,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
+    return generateTextResponse(
+        c,
         getSimpleTextRequestData(prompt, model, query),
-        c.var.model.definition,
+        true,
     );
-    return generateTextResponse(c, requestData, true);
 }

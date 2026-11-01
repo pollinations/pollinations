@@ -19,10 +19,10 @@ const MEDIA_API = "https://media.pollinations.ai/upload";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const ORIGINAL_CATGPT =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
+    "https://catgpt.pollinations.app/images/original-catgpt.png";
 // must be a durable URL — media.pollinations.ai uploads expire after 30 days (broke twice: #10826 + Jul 2026)
 const SELFIE_CATGPT =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/selfie-catgpt.png";
+    "https://catgpt.pollinations.app/images/selfie-catgpt.png";
 const MODEL = "nanobanana-2-lite";
 
 function log(...args: any[]) {
@@ -85,7 +85,6 @@ function createPrompt(
 
 function buildImageUrl(prompt: string, avatarUrl: string | null): string {
     let url = `${IMAGE_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${MODEL}&nologo=true`;
-    if (API_KEY) url += `&key=${encodeURIComponent(API_KEY)}`;
 
     if (avatarUrl) {
         url += `&enhance=false&image=${encodeURIComponent(`${avatarUrl},${SELFIE_CATGPT}`)}`;
@@ -138,8 +137,8 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     processing.add(msg.id);
     setTimeout(() => processing.delete(msg.id), 300_000);
 
-    const isMentioned = client.user && msg.mentions.users?.has(client.user.id);
-    if (msg.channelId !== CHANNEL_ID && !isMentioned) return;
+    // Without the Message Content intent, Discord only sends the text of messages that mention the bot
+    if (!client.user || !msg.mentions.users.has(client.user.id)) return;
 
     const question = msg.content.replace(/<@!?\d+>/g, "").trim();
     if (!question || question.startsWith("!")) return;
@@ -246,11 +245,7 @@ if (!TOKEN || !CHANNEL_ID) {
 }
 
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-    ],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
     partials: [Partials.Channel, Partials.Message],
 });
 
@@ -292,7 +287,7 @@ client.once(Events.ClientReady, (c) => {
     }
     c.user.setPresence({
         status: "online",
-        activities: [{ name: "Ask me anything 😾" }],
+        activities: [{ name: "Mention me to ask 😾" }],
     });
     catchUpUnanswered(client).catch((err) =>
         logError("Catch-up error:", err.message),

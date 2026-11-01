@@ -1,7 +1,7 @@
-import { FIXTURES } from "../fixtures";
+import { FIXTURES, PLANNING_DOCUMENT_FIXTURE } from "../fixtures";
 import type {
     Data,
-    EconomicsPrivateConfigRow,
+    EconomicsPrivateConfig,
     OpPollenRow,
     OpTransactionRow,
     RevenueShareSourceRow,
@@ -9,7 +9,12 @@ import type {
     UserBalanceSummaryRow,
     VendorLedgerRow,
 } from "../types";
-import { parsePrivateConfig, validatePipeRows } from "./pipeContracts";
+import { validatePipeRows } from "./pipeContracts";
+import {
+    ledgerForecastRules,
+    parsePlanningDocument,
+    validateVendorPlan,
+} from "./planning";
 import {
     canonicalProvider,
     collectProviderObservations,
@@ -33,7 +38,10 @@ export class TbError extends Error {
     }
 }
 
-async function fetchPipe<T>(pipe: string, signal?: AbortSignal): Promise<T[]> {
+export async function fetchPipe<T>(
+    pipe: string,
+    signal?: AbortSignal,
+): Promise<T[]> {
     if (fixturesMode()) {
         const rows = FIXTURES[pipe];
         if (!rows) throw new Error(`Missing fixture for pipe ${pipe}`);
@@ -113,7 +121,13 @@ export function canonicalPollenRows(
     );
 }
 
-export type DataSource = Exclude<keyof Data, "providerObservations">;
+export type DataSource = Exclude<
+    keyof Data,
+    | "providerObservations"
+    | "vendorStatements"
+    | "vendorPlans"
+    | "planningError"
+>;
 
 export const DATA_SOURCES = [
     "opTransactions",
@@ -128,10 +142,13 @@ export const DATA_SOURCES = [
 export async function loadAll(
     sources: readonly DataSource[] = DATA_SOURCES,
     signal?: AbortSignal,
+    journal?: EconomicsPrivateConfig,
 ): Promise<Data> {
     // Every requested source remains required. Unrelated views do not wait
     // for an expensive or unavailable endpoint they do not consume.
     const wanted = new Set(sources);
+    let planningError: string | undefined;
+    if (wanted.has("privateConfig")) wanted.add("vendorLedger");
     const [
         opTransactions,
         vendorLedger,
@@ -139,7 +156,7 @@ export async function loadAll(
         revenueShare,
         stripeSales,
         userBalances,
-        privateConfigRows,
+        planningDocument,
     ] = await Promise.all([
         wanted.has("opTransactions")
             ? fetchPipe<OpTransactionRow>("economics_bank_ledger_api", signal)
@@ -166,35 +183,62 @@ export async function loadAll(
               )
             : undefined,
         wanted.has("privateConfig")
-            ? fetchPipe<EconomicsPrivateConfigRow>(
-                  "economics_private_config_api",
-                  signal,
-              )
+            ? fixturesMode()
+                ? parsePlanningDocument(PLANNING_DOCUMENT_FIXTURE)
+                : journal
             : undefined,
     ]);
-    const privateConfig = privateConfigRows
-        ? parsePrivateConfig(privateConfigRows[0])
-        : undefined;
-
+    if (wanted.has("privateConfig") && !planningDocument)
+        planningError = "Planning document unavailable";
     const canonicalize = <T extends { vendor: string }>(row: T): T => ({
         ...row,
         vendor: canonicalVendor(row.vendor),
     });
 
+    const vendorPlans = vendorLedger
+        ?.filter((row) => row.type === "planned")
+        .map(canonicalize);
+    let privateConfig: Data["privateConfig"];
+    if (planningDocument) {
+        try {
+            for (const row of vendorPlans ?? []) validateVendorPlan(row);
+            privateConfig = {
+                ...planningDocument,
+                forecastRules: ledgerForecastRules(
+                    vendorPlans ?? [],
+                    planningDocument,
+                ),
+            };
+        } catch {
+            planningError = "Vendor planning rows are invalid";
+        }
+    }
+
     const providerObservations = collectProviderObservations({
         opTransactions,
-        vendorLedger,
+        vendorLedger: vendorLedger?.filter(
+            (row) => row.type !== "statement" && row.type !== "planned",
+        ),
         opPollen,
     });
 
     return {
         opTransactions: opTransactions?.map(canonicalize),
-        vendorLedger: vendorLedger?.map(canonicalize),
+        vendorLedger: vendorLedger
+            ?.filter(
+                (row) => row.type !== "statement" && row.type !== "planned",
+            )
+            .map(canonicalize),
+        vendorPlans,
+        vendorStatements: vendorLedger
+            ?.filter((row) => row.type === "statement")
+            .map(canonicalize),
         opPollen: opPollen ? canonicalPollenRows(opPollen) : undefined,
         revenueShare,
         stripeSales,
         userBalances,
         providerObservations,
         privateConfig,
+        ...(planningError ? { planningError } : {}),
     };
 }

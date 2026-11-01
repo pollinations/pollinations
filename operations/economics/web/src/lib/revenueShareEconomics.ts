@@ -38,20 +38,6 @@ export type RevenueShareSummary = Pick<
     | "questRequests"
 >;
 
-export type RevenueShareLedgerRow = {
-    month: string;
-    recipientId: string;
-    githubUsername: string;
-    recipientName: string;
-    source: RevenueShareSource;
-    paidUsageUsd: number;
-    paidCreatorEarningsUsd: number;
-    questUsageUsd: number;
-    questCreatorEarningsUsd: number;
-    paidRequests: number;
-    questRequests: number;
-};
-
 export type CreatorSettlementRow = {
     entryId: string;
     date: string;
@@ -102,47 +88,6 @@ export function revenueShareRows(
                 b.month.localeCompare(a.month) ||
                 b.paidPollinationsProfitUsd - a.paidPollinationsProfitUsd ||
                 a.recipientName.localeCompare(b.recipientName),
-        );
-}
-
-export function revenueShareLedgerRows(
-    data: Data,
-    monthFilter: MonthFilterValue,
-): RevenueShareLedgerRow[] {
-    return (data.revenueShare ?? [])
-        .filter(
-            (row) =>
-                row.row_type === "source" &&
-                row.month >= WINDOW_START &&
-                matchesMonth(row.month, monthFilter),
-        )
-        .map((row) => {
-            const sources = parseSources(row.sources_json);
-            if (sources.length !== 1) {
-                throw new Error(
-                    `Revenue Share ledger row must contain one source, received ${sources.length}`,
-                );
-            }
-            return {
-                month: row.month,
-                recipientId: row.recipient_id,
-                githubUsername: row.github_username,
-                recipientName: row.recipient_name,
-                source: sources[0],
-                paidUsageUsd: row.paid_usage,
-                paidCreatorEarningsUsd: row.paid_creator_earnings,
-                questUsageUsd: row.quest_usage,
-                questCreatorEarningsUsd: row.quest_creator_earnings,
-                paidRequests: row.paid_requests,
-                questRequests: row.quest_requests,
-            };
-        })
-        .sort(
-            (a, b) =>
-                b.month.localeCompare(a.month) ||
-                b.paidCreatorEarningsUsd - a.paidCreatorEarningsUsd ||
-                a.recipientName.localeCompare(b.recipientName) ||
-                a.source.name.localeCompare(b.source.name),
         );
 }
 

@@ -34,8 +34,7 @@ const DEEPINFRA_HOST = "api.deepinfra.com";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "aiplatform.us.rep.googleapis.com";
 const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
-const AZURE_SWEDEN_HOST =
-    "myceli-prod-swedencentral.cognitiveservices.azure.com";
+const BEDROCK_HOST = "bedrock-runtime.us-east-1.amazonaws.com";
 const FIREWORKS_HOST = "api.fireworks.ai";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
 
@@ -72,7 +71,9 @@ function createEmbeddingMocks() {
     env.GOOGLE_PROJECT_ID = "test-project";
     env.OPENAI_API_KEY = "test-openai-api-key";
     env.AZURE_MYCELI_PROD_API_KEY = "test-azure-api-key";
-    env.AZURE_MYCELI_PROD_SWEDEN_API_KEY = "test-azure-sweden-api-key";
+    env.AWS_ACCESS_KEY_ID = "test-aws-access-key";
+    env.AWS_SECRET_ACCESS_KEY = "test-aws-secret-key";
+    env.AWS_REGION = "us-east-1";
     env.DEEPINFRA_API_KEY = "test-deepinfra-api-key";
     env.FIREWORKS_NEO_API_KEY = "test-fireworks-neo-api-key";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
@@ -86,7 +87,8 @@ function createEmbeddingMocks() {
             },
             reset: () => {},
         } satisfies MockAPI<Record<string, never>>,
-        azureOpenAI: createAzureOpenAIMock(),
+        azureOpenAI: createOpenAIMock(),
+        openai: createOpenAIMock("api.openai.com"),
         cohereAzure: createCohereAzureMock(),
         fireworks: createHostedMock(FIREWORKS_HOST),
         deepinfra: createHostedMock(DEEPINFRA_HOST),
@@ -146,10 +148,12 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     };
 }
 
-function createAzureOpenAIMock(): MockAPI<{
+function createOpenAIMock(host = AZURE_HOST): MockAPI<{
     requests: unknown[];
     urls: string[];
     apiKeys: (string | null)[];
+    bedrockRequests: unknown[];
+    bedrockUsage?: string | null;
     authorization: (string | null)[];
     failModel?: string;
 }> {
@@ -157,18 +161,21 @@ function createAzureOpenAIMock(): MockAPI<{
         requests: unknown[];
         urls: string[];
         apiKeys: (string | null)[];
+        bedrockRequests: unknown[];
+        bedrockUsage?: string | null;
         authorization: (string | null)[];
         failModel?: string;
     } = {
         requests: [],
         urls: [],
         apiKeys: [],
+        bedrockRequests: [],
         authorization: [],
     };
     return {
         state,
         handlerMap: {
-            [AZURE_HOST]: async (request) => {
+            [host]: async (request) => {
                 const body = (await request.json()) as {
                     input?: string[];
                     dimensions?: number;
@@ -225,18 +232,23 @@ function createAzureOpenAIMock(): MockAPI<{
 function createCohereAzureMock(): MockAPI<{
     requests: unknown[];
     urls: string[];
-    failPrimary?: boolean;
+    failPrimary?: boolean | "network";
     apiKeys: (string | null)[];
+    bedrockRequests: unknown[];
+    bedrockUsage?: string | null;
 }> {
     const state: {
         requests: unknown[];
         urls: string[];
-        failPrimary?: boolean;
+        failPrimary?: boolean | "network";
         apiKeys: (string | null)[];
+        bedrockRequests: unknown[];
+        bedrockUsage?: string | null;
     } = {
         requests: [],
         urls: [],
         apiKeys: [],
+        bedrockRequests: [],
     };
     const handler = async (request: Request) => {
         const body = (await request.json()) as {
@@ -248,6 +260,8 @@ function createCohereAzureMock(): MockAPI<{
         state.urls.push(request.url);
         state.requests.push(body);
         state.apiKeys.push(request.headers.get("api-key"));
+        if (state.failPrimary === "network")
+            throw new Error("Network connection lost.");
         if (state.failPrimary && new URL(request.url).hostname === AZURE_HOST) {
             return Response.json(
                 { error: { message: "Primary unavailable" } },
@@ -281,13 +295,54 @@ function createCohereAzureMock(): MockAPI<{
         state,
         handlerMap: {
             [AZURE_HOST]: handler,
-            [AZURE_SWEDEN_HOST]: handler,
+            [BEDROCK_HOST]: async (request) => {
+                expect(request.url).toBe(
+                    `https://${BEDROCK_HOST}/model/global.cohere.embed-v4:0/invoke`,
+                );
+                expect(request.headers.get("authorization")).toContain(
+                    "AWS4-HMAC-SHA256",
+                );
+                expect(request.headers.has("api-key")).toBe(false);
+                const body = (await request.json()) as {
+                    texts?: string[];
+                    images?: string[];
+                    inputs?: unknown[];
+                    output_dimension: number;
+                };
+                state.bedrockRequests.push(body);
+                const count = (body.texts ?? body.images ?? body.inputs ?? [])
+                    .length;
+                const usage =
+                    state.bedrockUsage === undefined
+                        ? String(count * 4)
+                        : state.bedrockUsage;
+                return Response.json(
+                    {
+                        embeddings: {
+                            float: Array.from({ length: count }, (_, index) =>
+                                Array.from(
+                                    { length: body.output_dimension },
+                                    (_, coordinate) => index + coordinate / 10,
+                                ),
+                            ),
+                        },
+                    },
+                    {
+                        headers:
+                            usage === null
+                                ? {}
+                                : { "x-amzn-bedrock-input-token-count": usage },
+                    },
+                );
+            },
         },
         reset: () => {
             state.requests = [];
             state.urls = [];
             state.apiKeys = [];
             state.failPrimary = undefined;
+            state.bedrockRequests = [];
+            state.bedrockUsage = undefined;
         },
     };
 }
@@ -409,6 +464,78 @@ describe("POST /v1/embeddings", () => {
         });
     }
 
+    test("keeps the Azure large quote during exact-model OpenAI recovery", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable(
+            "tinybird",
+            "tinybirdStats",
+            "azureOpenAI",
+            "openai",
+        );
+        mocks.azureOpenAI.state.failModel = "text-embedding-3-large";
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: "openai/text-embedding-3-large",
+                input: ["Hello", "World"],
+                dimensions: 256,
+                encoding_format: "base64",
+            }),
+        });
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(
+            "openai/text-embedding-3-large:openai",
+        );
+        const data = await response.json<{
+            model: string;
+            data: { index: number; embedding: string }[];
+            usage: { prompt_tokens: number };
+        }>();
+        // Embedding responses identify the served route, matching existing fallbacks.
+        expect(data.model).toBe("openai/text-embedding-3-large:openai");
+        expect(data.data.map((item) => item.index)).toEqual([0, 1]);
+        for (const [index, item] of data.data.entries()) {
+            const bytes = Uint8Array.from(atob(item.embedding), (char) =>
+                char.charCodeAt(0),
+            );
+            expect(bytes.byteLength).toBe(256 * 4);
+            expect(new DataView(bytes.buffer).getFloat32(0, true)).toBe(index);
+        }
+        expect(data.usage.prompt_tokens).toBe(8);
+        expect(mocks.openai.state.urls).toEqual([
+            "https://api.openai.com/v1/embeddings",
+        ]);
+        expect(mocks.openai.state.authorization).toEqual([
+            "Bearer test-openai-api-key",
+        ]);
+        expect(mocks.openai.state.apiKeys).toEqual([null]);
+        expect(mocks.openai.state.requests).toEqual([
+            {
+                model: "text-embedding-3-large",
+                input: ["Hello", "World"],
+                dimensions: 256,
+            },
+        ]);
+        await wait();
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        expect(billed[0]).toMatchObject({
+            modelRequested: "openai/text-embedding-3-large",
+            modelUsed: "openai/text-embedding-3-large:openai",
+            tokenCountPromptText: 8,
+            totalCost: 1.04e-6,
+            totalPrice: 7.8e-7,
+        });
+    });
+
     test("rejects Gemini task hints without text content", () => {
         expect(() => applyGeminiTaskInstruction([], "RETRIEVAL_QUERY")).toThrow(
             "task_type requires non-empty Gemini text input",
@@ -468,6 +595,78 @@ describe("POST /v1/embeddings", () => {
             isBilledUsage: true,
         });
         expect(events[0].totalPrice).toBeGreaterThan(0);
+    });
+
+    test("keeps the Azure small quote during exact-model OpenAI recovery", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable(
+            "tinybird",
+            "tinybirdStats",
+            "azureOpenAI",
+            "openai",
+        );
+        mocks.azureOpenAI.state.failModel = "text-embedding-3-small";
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: "openai/text-embedding-3-small",
+                input: ["Hello", "World"],
+                dimensions: 256,
+                encoding_format: "base64",
+            }),
+        });
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(
+            "openai/text-embedding-3-small:openai",
+        );
+        const data = await response.json<{
+            model: string;
+            data: { index: number; embedding: string }[];
+            usage: { prompt_tokens: number };
+        }>();
+        // Embedding responses identify the served route, matching existing fallbacks.
+        expect(data.model).toBe("openai/text-embedding-3-small:openai");
+        expect(data.data.map((item) => item.index)).toEqual([0, 1]);
+        for (const [index, item] of data.data.entries()) {
+            const bytes = Uint8Array.from(atob(item.embedding), (char) =>
+                char.charCodeAt(0),
+            );
+            expect(bytes.byteLength).toBe(256 * 4);
+            expect(new DataView(bytes.buffer).getFloat32(0, true)).toBe(index);
+        }
+        expect(data.usage.prompt_tokens).toBe(8);
+        expect(mocks.openai.state.urls).toEqual([
+            "https://api.openai.com/v1/embeddings",
+        ]);
+        expect(mocks.openai.state.authorization).toEqual([
+            "Bearer test-openai-api-key",
+        ]);
+        expect(mocks.openai.state.apiKeys).toEqual([null]);
+        expect(mocks.openai.state.requests).toEqual([
+            {
+                model: "text-embedding-3-small",
+                input: ["Hello", "World"],
+                dimensions: 256,
+            },
+        ]);
+        await wait();
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        expect(billed[0]).toMatchObject({
+            modelRequested: "openai/text-embedding-3-small",
+            modelUsed: "openai/text-embedding-3-small:openai",
+            tokenCountPromptText: 8,
+            totalCost: 1.6e-7,
+            totalPrice: 1.2e-7,
+        });
     });
 
     test("uses the shared fallback loop for embeddings", async ({
@@ -815,81 +1014,106 @@ describe("POST /v1/embeddings", () => {
     });
 
     test.for([
-        "text",
-        "image",
-    ])("rescues Cohere %s embeddings through Sweden without changing the quote", async (modality, {
-        apiKey,
-        mocks,
-    }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
-        mocks.cohereAzure.state.failPrimary = true;
-        const input =
-            modality === "image"
-                ? [
-                      {
-                          type: "image_url",
-                          image_url: {
-                              url: "data:image/png;base64,aGVsbG8=",
-                          },
-                      },
-                  ]
-                : ["Hello", "World"];
-        const { response, wait } = await fetchWorker("/v1/embeddings", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${apiKey}`,
-            },
-            body: buildEmbeddingsBody({
-                model: TEST_COHERE_MODEL,
-                input,
-                dimensions: 256,
-                input_type: "query",
-            }),
-        });
-        expect(response.status).toBe(200);
-        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
-            "config.targets[1]",
-        );
-        const body = (await response.json()) as {
-            model: string;
-            data: { embedding: number[] }[];
-        };
-        expect(body.data[0].embedding).toHaveLength(256);
-        expect(
-            mocks.cohereAzure.state.urls.map((url) => new URL(url).hostname),
-        ).toEqual([AZURE_HOST, AZURE_SWEDEN_HOST]);
-        expect(mocks.cohereAzure.state.apiKeys).toEqual([
-            "test-azure-api-key",
-            "test-azure-sweden-api-key",
-        ]);
-        expect(mocks.cohereAzure.state.requests).toEqual([
-            expect.objectContaining({
-                model: TEST_COHERE_PROVIDER_MODEL,
-                input_type: "query",
-                dimensions: 256,
-            }),
-            expect.objectContaining({
-                model: TEST_COHERE_PROVIDER_MODEL,
-                input_type: "query",
-                dimensions: 256,
-            }),
-        ]);
-        await wait();
-        const events = mocks.tinybird.state.events;
-        const billed = events.filter((event) => event.isBilledUsage);
-        expect(billed).toHaveLength(1);
-        expect(billed[0]).toMatchObject({
-            modelRequested: TEST_COHERE_MODEL,
-            resolvedModelRequested: TEST_COHERE_MODEL,
-            modelUsed: "cohere/embed-v4.0:azure:sweden",
-            totalCost:
+        ["text", true],
+        ["image", true],
+        ["text", "network"],
+        ["image", "network"],
+    ] as const)(
+        "rescues Cohere %s embeddings after %s failure through global AWS without changing the quote",
+        async ([modality, failure], { apiKey, mocks }) => {
+            await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
+            mocks.cohereAzure.state.failPrimary = failure;
+            const input =
                 modality === "image"
-                    ? (4 * 0.47) / 1_000_000
-                    : (8 * 0.12) / 1_000_000,
-            totalPrice: modality === "image" ? 0.00000141 : 0.00000072,
-        });
-    });
+                    ? [
+                          {
+                              type: "image_url",
+                              image_url: {
+                                  url: "data:image/png;base64,aGVsbG8=",
+                              },
+                          },
+                      ]
+                    : ["Hello", "World"];
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({
+                    model: TEST_COHERE_MODEL,
+                    input,
+                    dimensions: 256,
+                    input_type: "query",
+                }),
+            });
+            expect(response.status).toBe(200);
+            expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+                "config.targets[1]",
+            );
+            const body = (await response.json()) as {
+                model: string;
+                data: { embedding: number[] }[];
+            };
+            expect(body.data[0].embedding).toHaveLength(256);
+            expect(mocks.cohereAzure.state.urls).toHaveLength(1);
+            expect(mocks.cohereAzure.state.apiKeys).toEqual([
+                "test-azure-api-key",
+            ]);
+            expect(mocks.cohereAzure.state.bedrockRequests).toEqual([
+                {
+                    input_type:
+                        modality === "image"
+                            ? "search_document"
+                            : "search_query",
+                    embedding_types: ["float"],
+                    output_dimension: 256,
+                    ...(modality === "image"
+                        ? { images: ["data:image/png;base64,aGVsbG8="] }
+                        : { texts: ["Hello", "World"] }),
+                },
+            ]);
+            await wait();
+            const events = mocks.tinybird.state.events;
+            const billed = events.filter((event) => event.isBilledUsage);
+            expect(billed).toHaveLength(1);
+            expect(billed[0]).toMatchObject({
+                modelRequested: TEST_COHERE_MODEL,
+                resolvedModelRequested: TEST_COHERE_MODEL,
+                modelUsed: "cohere/embed-v4.0:aws",
+                totalCost:
+                    modality === "image"
+                        ? (4 * 0.12) / 1_000_000
+                        : (8 * 0.12) / 1_000_000,
+                totalPrice: modality === "image" ? 0.00000141 : 0.00000072,
+            });
+        },
+    );
+
+    test.for([null, "", "bad", "-1", "1.5"])(
+        "rejects invalid Bedrock embedding usage %s without charging",
+        async (usage, { apiKey, mocks }) => {
+            await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
+            mocks.cohereAzure.state.failPrimary = true;
+            mocks.cohereAzure.state.bedrockUsage = usage;
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({ model: TEST_COHERE_MODEL }),
+            });
+            expect(response.status).toBe(502);
+            await response.text();
+            await wait();
+            expect(
+                mocks.tinybird.state.events.filter(
+                    (event) => event.isBilledUsage,
+                ),
+            ).toHaveLength(0);
+        },
+    );
 
     test("passes Cohere query input_type through Azure", async ({
         apiKey,
@@ -1405,7 +1629,7 @@ describe("embedding models", () => {
             context_length?: number;
         }[];
         expect(data.map((model) => model.name)).not.toContain(
-            "cohere/embed-v4.0:azure:sweden",
+            "cohere/embed-v4.0:aws",
         );
         expect(data).toEqual(
             expect.arrayContaining([
@@ -1445,7 +1669,7 @@ describe("embedding models", () => {
         };
         expect(data.object).toBe("list");
         expect(data.data.map((model) => model.id)).not.toContain(
-            "cohere/embed-v4.0:azure:sweden",
+            "cohere/embed-v4.0:aws",
         );
         expect(data.data).toEqual(
             expect.arrayContaining([

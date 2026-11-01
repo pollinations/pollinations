@@ -14,6 +14,7 @@ import {
 } from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
+import { parseBooleanLike } from "@/util.ts";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
@@ -25,7 +26,14 @@ const CACHED_HEADER_NAMES = new Set([
 ]);
 const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+// Part of every stream key since #16911; changing it orphans all cached streams.
+const STREAM_CACHE_VERSION = "stream-output-v1";
 
+/**
+ * Streams are not coordinated, so skipping their write only drops the cache
+ * entry. Non-streaming results must still be written: the generation
+ * coordinator delivers them by reading this entry back.
+ */
 function isStreamingErrorResponse(
     response: Response,
     body: Uint8Array,
@@ -93,6 +101,7 @@ export async function generateCacheKey(
     const hasQuerySafe = url.searchParams.has("safe");
     let hasBodySafe = false;
     let usesSafety = hasActiveSafety(url.searchParams.get("safe"));
+    let streams = parseBooleanLike(url.searchParams.get("stream")) === true;
 
     // Add filtered body for POST/PUT requests
     if (bodyText && (request.method === "POST" || request.method === "PUT")) {
@@ -101,6 +110,7 @@ export async function generateCacheKey(
             const bodyObj = JSON.parse(bodyText);
             hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
+            streams ||= parseBooleanLike(bodyObj.stream) === true;
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
                 if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
@@ -130,6 +140,7 @@ export async function generateCacheKey(
     if (usesSafety) {
         parts.push(SAFETY_CACHE_VERSION);
     }
+    if (streams) parts.push(STREAM_CACHE_VERSION);
     if (partition) parts.push(`partition:${partition}`);
 
     // Generate a hash of all parts using Web Crypto API

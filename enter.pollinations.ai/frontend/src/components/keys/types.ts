@@ -43,7 +43,7 @@ export type CreateApiKey = {
     pollenBudget?: number | null;
     /** Days until expiry. null = no expiry */
     expiryDays?: number | null;
-    /** Account permissions: ["profile", "usage", "keys", "machines"]. null = no permissions */
+    /** Account permissions: ["profile", "usage", "keys", "machines", "sites"]. null = no permissions */
     accountPermissions?: string[] | null;
     /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
     questPollenOnly?: boolean;

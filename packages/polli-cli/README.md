@@ -145,7 +145,7 @@ polli agents delete <id>
 
 Creating an agent also creates its callable model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
 
-`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, `keys`, and `machines`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
+`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, `keys`, `machines`, and `sites`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 
 ## Coding harnesses
 

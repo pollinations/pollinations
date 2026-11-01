@@ -60,8 +60,8 @@ https://enter.pollinations.ai/authorize
 
 Optional restrictions: `models=image,text` (or individual IDs),
 `budget=10` (Pollen cap, default 5, at most 10 from a link), `expiry=7` (days,
-default 7). The user can change these on the consent screen. A requested
-`machines` scope starts unticked there; `keys` is only offered in the device
+default 7). The user can change these on the consent screen. Requested
+`machines` and `sites` scopes start unticked there; `keys` is only offered in the device
 flow and on redirects to `http://localhost` or `http://127.0.0.1`.
 
 Handle the callback — validate `state`, then exchange the single-use code

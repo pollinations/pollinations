@@ -52,9 +52,6 @@ import { serveSite } from "./sites.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
-// Unused since pk_ keys stopped authenticating. Still exported so gen can roll
-// back across that release; a follow-up deletes it with a migration.
-export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 const app = new Hono<Env>();
 

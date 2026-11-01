@@ -75,6 +75,7 @@ type DashboardShellProps = PropsWithChildren<{
     githubAvatarUrl?: string;
     accountArea?: ReactNode;
     accountCard?: ReactNode;
+    listingsStatus?: ReactNode;
     signInBanner?: ReactNode;
     showFooterLinks?: boolean;
     showQuestStatus?: boolean;
@@ -96,6 +97,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     githubAvatarUrl,
     accountArea,
     accountCard,
+    listingsStatus,
     signInBanner,
     showFooterLinks = true,
     showQuestStatus = false,
@@ -173,8 +175,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         <DashboardRail
             activePage={activePage}
             navItems={navItems}
-            avatarUrl={githubAvatarUrl}
             accountCard={accountCard}
+            listingsStatus={listingsStatus}
             accountArea={accountArea}
             questStatus={questStatus}
             showFooterLinks={showFooterLinks}
@@ -320,8 +322,8 @@ function useDashboardShellBodyClass(): void {
 type DashboardRailProps = {
     activePage?: DashboardPage;
     navItems: readonly DashboardNavItem[];
-    avatarUrl?: string;
     accountCard?: ReactNode;
+    listingsStatus?: ReactNode;
     accountArea?: ReactNode;
     questStatus: string | null;
     showFooterLinks: boolean;
@@ -331,8 +333,8 @@ type DashboardRailProps = {
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
     navItems,
-    avatarUrl,
     accountCard,
+    listingsStatus,
     accountArea,
     questStatus,
     showFooterLinks,
@@ -363,6 +365,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             item={item}
                             active={activePage === item.id}
                             questStatus={questStatus}
+                            listingsStatus={listingsStatus}
                             onNavigate={onNavigate}
                         />
                     ))}
@@ -389,6 +392,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 item={item}
                                 active={activePage === item.id}
                                 questStatus={questStatus}
+                                listingsStatus={listingsStatus}
                                 onNavigate={onNavigate}
                             />
                         ))}
@@ -431,8 +435,9 @@ const NavRow: FC<{
     item: DashboardNavItem;
     active: boolean;
     questStatus: string | null;
+    listingsStatus?: ReactNode;
     onNavigate: () => void;
-}> = ({ item, active, questStatus, onNavigate }) => (
+}> = ({ item, active, questStatus, listingsStatus, onNavigate }) => (
     <NavItem
         as={Link}
         to={item.to}
@@ -447,6 +452,7 @@ const NavRow: FC<{
         onClick={onNavigate}
     >
         {item.label}
+        {item.id === "my-models" && listingsStatus}
         {item.id === "quests" && questStatus && (
             <Chip
                 intent="neutral"

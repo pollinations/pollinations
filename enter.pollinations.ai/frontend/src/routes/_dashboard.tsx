@@ -28,7 +28,7 @@ import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { SidebarOutage } from "../components/pollen";
+import { SidebarEarnings, SidebarOutage } from "../components/pollen";
 import {
     BALANCE_PATH,
     fetchAccountBalance,
@@ -199,6 +199,17 @@ function DashboardLayout() {
                 data.user || data.sessionUnavailable ? undefined : (
                     <DashboardSignInBanner />
                 )
+            }
+            listingsStatus={
+                user ? (
+                    <Suspense fallback={null}>
+                        <Await promise={data.earnings}>
+                            {(earnings) =>
+                                earnings && <SidebarEarnings {...earnings} />
+                            }
+                        </Await>
+                    </Suspense>
+                ) : undefined
             }
             accountCard={
                 user ? (

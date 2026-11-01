@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "HTTP_PROBE_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "http-probe",
+        name: "HTTP Probe",
+        description:
+            "Check a public URL's status, redirect chain, response time, and security headers.",
+        binding: "HTTP_PROBE_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free. No Pollinations calls and no MCP fee.",
             rates: [],
         },
     },

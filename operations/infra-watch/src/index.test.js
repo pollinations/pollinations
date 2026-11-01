@@ -373,7 +373,8 @@ it("gives up on a closed card's last edit after a day", async () => {
     expect(await stored(stub, "lines:m1")).toBeUndefined();
 });
 
-const BURST = [{ domain: "farm.com", accounts: 31, since: 1_793_404_800 }];
+const SINCE = 1_793_404_800;
+const BURST = [{ domain: "farm.com", accounts: 31, since: SINCE }];
 
 it("restricts domain accounts once, preserves approvals and purchases, and leaves balances intact", async () => {
     const plan = await env.DB.prepare(
@@ -383,6 +384,13 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
     expect(
         plan.results.filter(({ detail }) => detail.includes("user_id=?")),
     ).toHaveLength(3);
+    // The sweep reads accounts made since the burst, never the whole table.
+    const sweep = await env.DB.prepare(
+        `EXPLAIN QUERY PLAN ${restrictionCandidatesSql("cohort.test", SINCE)}`,
+    ).all();
+    expect(sweep.results.map(({ detail }) => detail).join()).toContain(
+        "USING INDEX idx_user_created_at (created_at>?)",
+    );
     const accounts = [
         ["farm", "a@cohort.test", null],
         ["subdomain", "a@SUB.COHORT.TEST", null],
@@ -393,12 +401,14 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
         ["auto", "auto@cohort.test", null],
         ["failed-auto", "failed-auto@cohort.test", null],
         ["polar", "polar@cohort.test", null],
+        ["at-start", "at-start@cohort.test", null, SINCE],
+        ["before-start", "before-start@cohort.test", null, SINCE - 1],
     ];
     await env.DB.batch(
-        accounts.map(([id, email, restricted]) =>
+        accounts.map(([id, email, restricted, createdAt = SINCE + 60]) =>
             env.DB.prepare(
-                "INSERT INTO user (id, name, email, created_at, updated_at, tier_balance, pack_balance, quest_pollen_restricted) VALUES (?, ?, ?, 1, 1, 5, 3, ?)",
-            ).bind(id, id, email, restricted),
+                "INSERT INTO user (id, name, email, created_at, updated_at, tier_balance, pack_balance, quest_pollen_restricted) VALUES (?, ?, ?, ?, 1, 5, 3, ?)",
+            ).bind(id, id, email, createdAt, restricted),
         ),
     );
     await env.DB.batch([
@@ -413,7 +423,7 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
         ),
     ]);
     await env.SETUP_HOLDS.put("decision:approved", "approved");
-    await restrictDomain(env.DB, env.SETUP_HOLDS, "cohort.test");
+    await restrictDomain(env.DB, env.SETUP_HOLDS, "cohort.test", SINCE);
     const { results } = await env.DB.prepare(
         "SELECT id, quest_pollen_restricted, tier_balance, pack_balance FROM user",
     ).all();
@@ -431,6 +441,8 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
         auto: 0,
         "failed-auto": 1,
         polar: 0,
+        "at-start": 1,
+        "before-start": null,
     });
     expect(
         results.every((r) => r.tier_balance === 5 && r.pack_balance === 3),
@@ -441,9 +453,9 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
         "UPDATE user SET quest_pollen_restricted = 0 WHERE id = 'farm'",
     ).run();
     await env.DB.prepare(
-        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('late', 'late', 'late@cohort.test', 1, 1)",
+        `INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('late', 'late', 'late@cohort.test', ${SINCE + 120}, 1)`,
     ).run();
-    await restrictDomain(env.DB, env.SETUP_HOLDS, "cohort.test");
+    await restrictDomain(env.DB, env.SETUP_HOLDS, "cohort.test", SINCE);
     expect(
         await env.DB.prepare(
             "SELECT quest_pollen_restricted FROM user WHERE id = 'farm'",
@@ -465,8 +477,11 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
         ).first("n"),
     ).toBe(0);
     expect(() =>
-        restrictionCandidatesSql("cohort.test'; DROP TABLE user"),
+        restrictionCandidatesSql("cohort.test'; DROP TABLE user", SINCE),
     ).toThrow("Invalid signup domain");
+    expect(() => restrictionCandidatesSql("cohort.test", "0 OR 1")).toThrow(
+        "burst start",
+    );
     expect(() => restrictionSql([])).toThrow("1–200 user IDs");
     expect(() => restrictionSql(Array(201).fill("farm"))).toThrow(
         "1–200 user IDs",
@@ -479,13 +494,13 @@ it("sweeps each new domain sequentially in bounded batches, then once after KV p
     world.signups = ["sweep-a.test", "sweep-b.test"].map((domain) => ({
         domain,
         accounts: 201,
-        since: 1_793_404_800,
+        since: SINCE,
     }));
     await env.DB.prepare(`WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<201)
         INSERT INTO user (id, name, email, created_at, updated_at)
-        SELECT 'sweep-'||x, 'sweep', x||'@sweep-a.test', 1, 1 FROM n`).run();
+        SELECT 'sweep-'||x, 'sweep', x||'@sweep-a.test', ${SINCE}, 1 FROM n`).run();
     await env.DB.prepare(
-        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('sweep-b', 'sweep', 'a@sweep-b.test', 1, 1)",
+        `INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('sweep-b', 'sweep', 'a@sweep-b.test', ${SINCE}, 1), ('sweep-old', 'old', 'old@sweep-a.test', ${SINCE - 1}, 1)`,
     ).run();
     const queries = [];
     await runInDurableObject(stub, (instance) => {
@@ -510,6 +525,7 @@ it("sweeps each new domain sequentially in bounded batches, then once after KV p
     const pending = await stored(stub, "quest-sweeps");
     expect(Object.keys(pending)).toHaveLength(2);
     expect(pending["sweep-a.test"].followup).toBe(false);
+    expect(pending["sweep-a.test"].since).toBe(SINCE);
     expect(pending["sweep-a.test"].dueAt).toBeGreaterThanOrEqual(
         before + 120_000,
     );
@@ -525,13 +541,13 @@ it("sweeps each new domain sequentially in bounded batches, then once after KV p
         "UPDATE user SET quest_pollen_restricted = 0 WHERE id = 'sweep-1'",
     ).run();
     await env.DB.prepare(
-        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('sweep-late', 'late', 'late@sweep-a.test', 1, 1)",
+        `INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('sweep-late', 'late', 'late@sweep-a.test', ${SINCE + 600}, 1)`,
     ).run();
     await runInDurableObject(stub, async (_, state) => {
         for (const sweep of Object.values(pending)) sweep.dueAt = 0;
         await state.storage.put("quest-sweeps", pending);
     });
-    // The follow-up survives a restart and the burst leaving the 24h window.
+    // The follow-up survives a restart.
     vi.restoreAllMocks();
     await evictDurableObject(stub);
     queries.length = 0;
@@ -542,13 +558,21 @@ it("sweeps each new domain sequentially in bounded batches, then once after KV p
             return prepare(sql);
         });
     });
-    world.signups = [];
+    // The rolling window now starts later; the follow-up keeps the saved start.
+    world.signups = [
+        { domain: "sweep-a.test", accounts: 201, since: SINCE + 3600 },
+    ];
     await stub.check();
     expect(queries.map((sql) => sql.split(" ")[0])).toEqual([
         "SELECT",
         "UPDATE",
         "SELECT",
     ]);
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'sweep-old'",
+        ).first("quest_pollen_restricted"),
+    ).toBeNull();
     expect(await stored(stub, "quest-sweeps")).toEqual({});
     expect(
         await env.DB.prepare(
@@ -576,7 +600,7 @@ it("posts signup cards during D1 failures and retries persisted work after the b
         { domain: "retry.test", accounts: 31, since: 1_793_404_800 },
     ];
     await env.DB.prepare(
-        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('retry', 'retry', 'a@retry.test', 1, 1)",
+        `INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('retry', 'retry', 'a@retry.test', ${SINCE}, 1)`,
     ).run();
     await runInDurableObject(stub, (instance) => {
         vi.spyOn(instance.env.DB, "prepare").mockImplementation(() => {

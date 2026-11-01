@@ -8,8 +8,14 @@ export function domainCondition(domain) {
     return `(lower(email) LIKE '%@${domain}' OR lower(email) LIKE '%.${domain}')`;
 }
 
-export const restrictionCandidatesSql = (domain) =>
-    `SELECT id FROM user WHERE quest_pollen_restricted IS NULL AND ${domainCondition(domain)}`;
+// Only accounts made since the burst began (seconds): older accounts on the
+// domain are left alone, and idx_user_created_at keeps the read to that window.
+export function restrictionCandidatesSql(domain, since) {
+    const condition = domainCondition(domain);
+    if (!Number.isSafeInteger(since))
+        throw new Error("Restriction sweeps require the burst start");
+    return `SELECT id FROM user WHERE created_at >= ${since} AND quest_pollen_restricted IS NULL AND ${condition}`;
+}
 
 // Credit rows, never pack_balance, prove a purchase: earnings also enter it.
 // Use the user index for top-ups; SQLite otherwise chooses the status index
@@ -33,9 +39,9 @@ export function restrictionSql(userIds, approvedIds = []) {
 export const releaseDomainSql = (domain) =>
     `UPDATE user SET quest_pollen_restricted = 0 WHERE ${domainCondition(domain)} AND quest_pollen_restricted IS NOT 0`;
 
-export async function restrictDomain(db, kv, domain) {
+export async function restrictDomain(db, kv, domain, since) {
     const { results } = await db
-        .prepare(restrictionCandidatesSql(domain))
+        .prepare(restrictionCandidatesSql(domain, since))
         .all();
     for (let i = 0; i < results.length; i += 200) {
         const ids = results.slice(i, i + 200).map(({ id }) => id);
@@ -54,6 +60,8 @@ export async function restrictDomain(db, kv, domain) {
 
 // Save work before publishing a new hold, so a restart cannot lose the cohort
 // sweep. Existing domains are covered by the backfill and Enter's signup hook.
+// `since` is the first sign-up in the burst's 24-hour window, saved once so
+// the follow-up and retries sweep from the same start.
 export async function holdDomains(kv, storage, signups, now) {
     const pending = (await storage.get("quest-sweeps")) ?? {};
     const rows = [];
@@ -64,7 +72,11 @@ export async function holdDomains(kv, storage, signups, now) {
         ]);
         if (hold === null) {
             if (release === null && !pending[row.domain]) {
-                pending[row.domain] = { dueAt: now, followup: true };
+                pending[row.domain] = {
+                    dueAt: now,
+                    followup: true,
+                    since: row.since,
+                };
                 await storage.put("quest-sweeps", pending);
             }
             await kv.put(`hold:${row.domain}`, "held");
@@ -86,9 +98,10 @@ export async function sweepDomains(db, kv, storage, now) {
             } else {
                 if ((await kv.get(`hold:${domain}`)) === null)
                     await kv.put(`hold:${domain}`, "held");
-                await restrictDomain(db, kv, domain);
+                await restrictDomain(db, kv, domain, sweep.since);
                 if (sweep.followup)
                     pending[domain] = {
+                        ...sweep,
                         dueAt: now + 2 * 60_000,
                         followup: false,
                     };

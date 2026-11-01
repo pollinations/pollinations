@@ -221,7 +221,7 @@ export const MCP_SERVERS = [
         name: "Machines",
         description:
             "Start, pause, resume, and run commands and file operations in Linux sandboxes.",
-        binding: "MACHINES_MCP",
+        binding: "HTML_EXTRACT_MCP"
         billing: "downstream",
         pricing: {
             description:

@@ -10,11 +10,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import type { FC } from "react";
-import {
-    LoadError,
-    PageStatus,
-    SectionContent,
-} from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { downloadActivityCsv } from "./activity-csv";
 import {
     ActivityEmptyState,
@@ -26,7 +22,7 @@ import {
 } from "./activity-helpers";
 import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
 import { ActivityToolbar } from "./activity-toolbar";
-import { Chart } from "./chart";
+import { CHART_LOADING, Chart } from "./chart";
 import type { Metric } from "./types";
 import { useEarningsData } from "./use-earnings-data";
 
@@ -120,7 +116,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 )
             }
         >
-            {refreshing && <PageStatus />}
             <ActivityToolbar
                 label="Earnings"
                 period={period}
@@ -157,7 +152,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 )}
             </ActivityToolbar>
 
-            <SectionContent loading={loading}>
+            <SectionContent loading={loading} className={CHART_LOADING}>
                 <Surface>
                     {error && (
                         <LoadError

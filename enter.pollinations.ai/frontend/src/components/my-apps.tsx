@@ -17,7 +17,7 @@ import {
     PLATFORM_LABELS,
 } from "../../../../shared/app-catalog.ts";
 import type { ListedApp } from "../backend-types.ts";
-import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
+import { CardLoading, LoadError } from "./layout/dashboard-loading.tsx";
 
 /** The submission form every listed app started as (issue template). */
 /** The public catalog every listing here appears in. */
@@ -227,7 +227,7 @@ export function MyApps({
             action={apps && apps.length > 0 ? submitAction : undefined}
         >
             {apps === undefined ? (
-                <PageStatus />
+                <CardLoading />
             ) : apps === null ? (
                 <LoadError onRetry={onRetry} paths={["/account/apps"]}>
                     Couldn’t load your apps. Please try again.

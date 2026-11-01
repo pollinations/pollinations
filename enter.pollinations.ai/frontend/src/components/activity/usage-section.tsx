@@ -12,11 +12,7 @@ import {
 } from "@pollinations/ui";
 import { type FC, useState } from "react";
 import { accountClient } from "../../api.ts";
-import {
-    LoadError,
-    PageStatus,
-    SectionContent,
-} from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import {
     ActivityEmptyState,
     ActivityFilter,
@@ -32,7 +28,7 @@ import {
     toggleActivityBucket,
 } from "./activity-period";
 import { ActivityToolbar } from "./activity-toolbar";
-import { Chart } from "./chart";
+import { CHART_LOADING, Chart } from "./chart";
 import type { FilterState, Metric, UsageGroupBy } from "./types";
 import { useUsageData } from "./use-usage-data";
 
@@ -123,7 +119,6 @@ export const UsageSection: FC<UsageSectionProps> = ({
                 )
             }
         >
-            {refreshing && <PageStatus />}
             <ActivityToolbar
                 label="Usage"
                 period={period}
@@ -202,7 +197,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
 }) => {
     return (
         <>
-            <SectionContent loading={loading}>
+            <SectionContent loading={loading} className={CHART_LOADING}>
                 <Surface>
                     {error && (
                         <LoadError

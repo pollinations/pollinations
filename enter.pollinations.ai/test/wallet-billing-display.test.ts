@@ -252,7 +252,7 @@ describe("payment logos before checkout", () => {
     );
 });
 
-describe("frozen Quest Pollen display", () => {
+describe("locked Quest pollen display", () => {
     it.each([true, false])(
         "shows spendable funds only when restricted=%s",
         (restricted) => {
@@ -274,10 +274,12 @@ describe("frozen Quest Pollen display", () => {
             );
             if (restricted) {
                 expect(html).toContain("Available");
+                expect(html).toContain("Quest pollen locked");
                 expect(html).not.toContain("37.54");
                 expect(html).not.toContain("/ 7d");
             } else {
                 expect(html).toContain("Total");
+                expect(html).not.toContain("Quest pollen locked");
                 expect(html).toContain("37.54");
                 expect(html).toContain("/ 7d");
             }
@@ -285,17 +287,24 @@ describe("frozen Quest Pollen display", () => {
     );
 
     it("keeps the balance visible with quiet purchase and support links", () => {
+        const router = createRouter({
+            routeTree: createRootRoute(),
+            history: createMemoryHistory(),
+        });
         const html = renderToStaticMarkup(
-            createElement(PollenBalance, {
-                tierBalance: 35.54,
-                packBalance: 2,
-                questPollenRestricted: true,
-                compact: true,
-            }),
+            createElement(
+                RouterContextProvider,
+                { router },
+                createElement(PollenBalance, {
+                    tierBalance: 35.54,
+                    packBalance: 2,
+                    questPollenRestricted: true,
+                }),
+            ),
         );
         expect(html).toContain("35.54");
         expect(html).toContain("Verification needed");
-        expect(html).toContain("to use your Quest Pollen");
+        expect(html).toContain("make your first purchase");
         expect(html).toContain('href="/pollen#buy-pollen"');
         expect(html).toContain('href="mailto:hello@pollinations.ai"');
         expect(html).not.toContain('role="alert"');
@@ -310,6 +319,9 @@ describe("frozen Quest Pollen display", () => {
         );
         expect(sidebar).toContain("35.54");
         expect(sidebar).not.toContain("Frozen");
+        expect(sidebar).toContain(
+            'aria-label="Quest pollen needs verification"',
+        );
     });
 
     it("removes the restriction notice when the account is verified", () => {
@@ -324,6 +336,16 @@ describe("frozen Quest Pollen display", () => {
         expect(html).toContain("35.54");
         expect(html).not.toContain("Verification needed");
         expect(html).not.toContain("couldn’t verify");
+        const sidebar = renderToStaticMarkup(
+            createElement(SidebarWallet, {
+                tierBalance: 35.54,
+                packBalance: 2,
+                questPollenRestricted: false,
+            }),
+        );
+        expect(sidebar).not.toContain(
+            'aria-label="Quest pollen needs verification"',
+        );
     });
 });
 

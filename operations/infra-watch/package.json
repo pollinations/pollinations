@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "wrangler dev --test-scheduled --var DRY_RUN:1",
         "test": "node --test src/rules.test.js src/delivery.test.js src/investigate.test.js src/heartbeat.test.js src/probes.test.js src/community.test.js leaderboard/boards.test.js && vitest run",
-        "deploy": "gh workflow run deploy-cloudflare-production.yml --repo pollinations/pollinations --ref production -f service=infra-watch"
+        "deploy": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --secrets-file {}'"
     },
     "devDependencies": {
         "@cloudflare/vitest-plugin": "^1.4.11",

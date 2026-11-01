@@ -12,7 +12,7 @@ export const PAGE_TITLES: Record<keyof FileRoutesByFullPath, string> = {
     "/keys": "Keys",
     "/my-apps": "My Apps",
     "/my-models": "My Models",
-    "/pollen": "Pollen",
+    "/pollen": "pollen",
     "/sandboxes": "Sandboxes",
     "/sign-in": "Sign in",
     "/app/sign-in": "Sign in",

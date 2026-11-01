@@ -6,21 +6,16 @@ import {
     CheckIcon,
     Chip,
     ClockIcon,
-    DiscordIcon,
     formatCount,
-    GitHubIcon,
     InlineLink,
     LoadingStatus,
     OutageNotice,
-    RocketIcon,
     Section,
     SparkleIcon,
     SproutIcon,
     Surface,
     TargetIcon,
-    TerminalIcon,
     Text,
-    TrendUpIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import {
@@ -29,14 +24,7 @@ import {
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import { useLoaderData, useRouter } from "@tanstack/react-router";
-import {
-    type ComponentType,
-    type FC,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import { type FC, useEffect, useMemo, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
@@ -97,7 +85,6 @@ const INITIAL_STATE: FetchState = {
     anonymous: false,
 };
 
-type IconComponent = ComponentType<{ className?: string }>;
 type RewardIconKind = "paid" | "tier";
 
 // ── Category model ──────────────────────────────────────────────────────────
@@ -108,39 +95,32 @@ type CategoryKey = QuestCatalogItem["category"];
 type CategoryMeta = {
     key: CategoryKey;
     label: string;
-    icon: IconComponent;
 };
 
 const CATEGORIES: CategoryMeta[] = [
     {
         key: "setup",
         label: "Setup",
-        icon: RocketIcon,
     },
     {
         key: "grow",
         label: "Grow",
-        icon: TrendUpIcon,
     },
     {
         key: "build",
         label: "Build",
-        icon: TerminalIcon,
     },
     {
         key: "contribute",
         label: "Contribute",
-        icon: GitHubIcon,
     },
     {
         key: "community",
         label: "Community",
-        icon: DiscordIcon,
     },
     {
         key: "easteregg",
         label: "Easter eggs",
-        icon: SproutIcon,
     },
 ];
 
@@ -174,8 +154,6 @@ function deriveCardStatus(
 
 // Lane ordering rank: claimable first, then claimed, then open, then
 // coming_soon last.
-const BONUS_PAGE_SIZE = 10;
-
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
     switch (card.status) {
@@ -411,51 +389,42 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
     );
 }
 
-// Leading marker for a quest row, a bare icon whose colour is its stage:
-//   open      → section icon in the theme colour ("do this")
-//   claimable → strong check (done, waiting for Claim)
-//   claimed   → muted check (banked already, fully receded)
+// Leading marker for a quest row: one icon per state, so the left column
+// reads as where you stand.
+//   open        → target, theme colour ("go for it")
+//   claimable   → sparkle, strong (matches the Claim button)
+//   claimed     → check, muted
+//   coming soon → clock, muted
 function QuestMarker({
-    icon: Icon,
     status,
     comingSoon,
 }: {
-    icon: IconComponent;
     status: QuestCardStatus;
     comingSoon?: boolean;
 }) {
-    // coming_soon → clock; open → the lane's section icon;
-    // otherwise the earned/banked check.
-    function resolveIcon(): IconComponent {
-        if (comingSoon) return ClockIcon;
-        if (status === "open") return Icon;
-        return CheckIcon;
-    }
-    // coming_soon always renders claimed, so it is muted too.
-    function resolveTone(): string {
-        if (!comingSoon && status === "open") return "text-theme-text-soft";
-        if (status === "claimable") return "text-theme-text-strong";
-        return "text-theme-text-muted";
-    }
-    const MarkerIcon = resolveIcon();
+    const [Icon, tone] = comingSoon
+        ? [ClockIcon, "text-theme-text-muted"]
+        : status === "open"
+          ? [TargetIcon, "text-theme-text-soft"]
+          : status === "claimable"
+            ? [SparkleIcon, "text-theme-text-strong"]
+            : [CheckIcon, "text-theme-text-muted"];
     return (
         <span
             aria-hidden="true"
-            className={`flex h-5 w-5 shrink-0 items-center justify-center ${resolveTone()}`}
+            className={`flex h-5 w-5 shrink-0 items-center justify-center ${tone}`}
         >
-            <MarkerIcon className="h-5 w-5" />
+            <Icon className="h-5 w-5" />
         </span>
     );
 }
 
 export function QuestRow({
     card,
-    icon,
     claiming,
     onClaim,
 }: {
     card: QuestCard;
-    icon: IconComponent;
     claiming: boolean;
     onClaim(rewardId: string): void;
 }) {
@@ -559,11 +528,7 @@ export function QuestRow({
         </div>
     );
     const marker = (
-        <QuestMarker
-            icon={icon}
-            status={card.status}
-            comingSoon={card.comingSoon}
-        />
+        <QuestMarker status={card.status} comingSoon={card.comingSoon} />
     );
 
     return (
@@ -640,8 +605,6 @@ function QuestOverviewContent({
     onRecovered: () => void;
 }) {
     const router = useRouter();
-    // Bonus rewards can run into the hundreds: ten at a time.
-    const [bonusShown, setBonusShown] = useState(BONUS_PAGE_SIZE);
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
@@ -1117,7 +1080,6 @@ function QuestOverviewContent({
                                 <QuestRow
                                     key={card.key}
                                     card={card}
-                                    icon={category.icon}
                                     claiming={state.claimingRewardIds.includes(
                                         card.rewardId ?? "",
                                     )}
@@ -1143,11 +1105,10 @@ function QuestOverviewContent({
                     }
                 >
                     <div className="flex flex-col gap-2">
-                        {bonusRewardCards.slice(0, bonusShown).map((card) => (
+                        {bonusRewardCards.map((card) => (
                             <QuestRow
                                 key={card.key}
                                 card={card}
-                                icon={SparkleIcon}
                                 claiming={state.claimingRewardIds.includes(
                                     card.rewardId ?? "",
                                 )}
@@ -1155,21 +1116,6 @@ function QuestOverviewContent({
                             />
                         ))}
                     </div>
-                    {bonusShown < bonusRewardCards.length && (
-                        // Paging, not an action: quiet grey text, not a button
-                        // that competes with Claim.
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setBonusShown(
-                                    (shown) => shown + BONUS_PAGE_SIZE,
-                                )
-                            }
-                            className="mx-auto mt-3 block text-sm font-medium text-theme-text-muted hover:text-theme-text-strong"
-                        >
-                            Show more
-                        </button>
-                    )}
                 </Section>
             )}
             {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}

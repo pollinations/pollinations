@@ -168,11 +168,17 @@ test("a fallback notice from 10 rescues and 25% of successes, private fallbacks 
         kind: "fallback",
         to: "community",
         model: "community/o/m",
-        rescued: 10,
-        successes: 40,
-        via: [
-            { model: PUBLIC, rescued: 8 },
-            { model: "private", rescued: 2 },
+        snapshots: [
+            {
+                from: new Date(NOW - 4 * HOUR).toISOString(),
+                to: new Date(NOW).toISOString(),
+                rescued: 10,
+                successes: 40,
+                via: [
+                    { model: PUBLIC, rescued: 8 },
+                    { model: "private", rescued: 2 },
+                ],
+            },
         ],
         owners: ["o"],
         quiet: [
@@ -192,13 +198,15 @@ test("a told fallback stays quiet for a week, per model and fallback", () => {
         rows: leaning(10, 40),
         quiet: { [key]: NOW - 7 * DAY + 1 },
     });
-    assert.deepEqual(notice.via, [{ model: "private", rescued: 2 }]);
+    assert.deepEqual(notice.snapshots[0].via, [
+        { model: "private", rescued: 2 },
+    ]);
     const [later] = find({
         catalog,
         rows: leaning(10, 40),
         quiet: { [key]: NOW - 7 * DAY },
     });
-    assert.equal(later.via.length, 2);
+    assert.equal(later.snapshots[0].via.length, 2);
 });
 
 test("listing changes are an incident only when something changed", () => {
@@ -263,7 +271,7 @@ test("a fallback notice is kept from when it qualifies until its fallbacks are t
     // Its rescues leave the 4-hour window: still pending.
     const later = cycle({ catalog, rows: [], pending: first.pending });
     assert.deepEqual(brief(later.found), ["fallback community/o/m"]);
-    assert.equal(later.found[0].rescued, 10);
+    assert.equal(later.found[0].snapshots[0].rescued, 10);
     // Told: gone.
     const quiet = Object.fromEntries(
         later.found[0].quiet.map((key) => [key, NOW]),
@@ -305,7 +313,7 @@ test("a pending fallback notice names a fallback only if it is still public when
         pending: first.pending,
     }).found;
     assert.deepEqual(
-        notice.via.map((v) => v.model),
+        notice.snapshots[0].via.map((v) => v.model),
         ["private", "private"],
     );
     // What the agent reads names it nowhere; only code's quiet keys keep it.
@@ -321,13 +329,39 @@ test("a new fallback joins an untold one instead of replacing it", () => {
     const rows = leaning(12, 40).map((r) =>
         r.model_used === PUBLIC ? { ...r, model_used: OTHER } : r,
     );
-    const [notice] = cycle({ catalog, rows, pending: first.pending }).found;
-    assert.deepEqual(notice.via, [
-        { model: OTHER, rescued: 10 },
-        { model: PUBLIC, rescued: 8 },
-        { model: "private", rescued: 2 },
-    ]);
-    assert.equal(notice.rescued, 12);
+    const [notice] = cycle({
+        catalog,
+        rows,
+        pending: first.pending,
+        now: NOW + 5 * HOUR,
+    }).found;
+    // Each window keeps its own numbers: never one total over both.
+    assert.deepEqual(
+        notice.snapshots.map(({ to, rescued, successes, via }) => ({
+            to,
+            rescued,
+            successes,
+            via,
+        })),
+        [
+            {
+                to: new Date(NOW).toISOString(),
+                rescued: 10,
+                successes: 40,
+                via: [{ model: PUBLIC, rescued: 8 }],
+            },
+            {
+                to: new Date(NOW + 5 * HOUR).toISOString(),
+                rescued: 12,
+                successes: 40,
+                via: [
+                    { model: OTHER, rescued: 10 },
+                    { model: "private", rescued: 2 },
+                ],
+            },
+        ],
+    );
+    assert.equal(notice.rescued, undefined);
 });
 
 // Incidents code found: a broken stream and a fallback for owners o and p,

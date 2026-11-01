@@ -824,7 +824,11 @@ it("keeps a refused fallback notice after its rescues leave the 4-hour window", 
     await later(stub, 0);
     await cycled(stub);
     expect(world.agentFacts[1].incidents).toMatchObject([
-        { kind: "fallback", model: leaning, rescued: 30, successes: 40 },
+        {
+            kind: "fallback",
+            model: leaning,
+            snapshots: [{ rescued: 30, successes: 40 }],
+        },
     ]);
     expect(posts(COMMUNITY)).toHaveLength(1);
     await later(stub, 0);

@@ -27,7 +27,7 @@ export const COMMUNITY_PROMPT = `You write the Pollinations community model moni
 Each line tells the incidents in its "incidents" and goes to the channel their "to" names; one line may group several incidents of the same kind. Keep each line to a sentence or two, with model ids without community/, errors and counts as given. Never add models, numbers or links.
 - stream: a model's own answers broke the same way twice in a row.
 - shared: one broken stream on many owners' models at once, likely gen's own.
-- fallback: a model leans on its fallbacks: rescued of its successes over 4 hours, by each fallback; "private" ones are never named.
+- fallback: a model leans on its fallbacks. Each snapshot is one 4-hour window, from and to: rescued of its successes in it, and each fallback's part; tell each snapshot's numbers on their own and never add numbers across snapshots. "private" fallbacks are never named.
 - listings: models newly filtered out of /models or back, with health and the filtered total; filtered models stay callable by their exact ID.
 Code puts whole lines into each post until it is full; a line that doesn't fit, and its incidents, come next time. Code pings owners and points them to their dashboard.`;
 
@@ -201,20 +201,29 @@ export function incidents({
             kept[key] = p;
     for (const [key, p] of Object.entries(kept))
         if (p.kind === "fallback" && told(key, "fallback")) delete kept[key];
+    // One notice per model, with a snapshot per window its untold pairs come
+    // from: each window's counts stay together, never summed with another's.
     const pairs = Object.entries(kept).filter(([, p]) => p.kind === "fallback");
     for (const [model, own] of Map.groupBy(pairs, ([, p]) => p.model)) {
-        own.sort(([, a], [, b]) => b.rescued - a.rescued);
-        const latest = own.reduce((a, b) => (b[1].at > a[1].at ? b : a))[1];
+        const snapshots = [...Map.groupBy(own, ([, p]) => p.at)]
+            .sort(([a], [b]) => a - b)
+            .map(([at, entries]) => ({
+                from: new Date(at - WINDOW_MINUTES * 60_000).toISOString(),
+                to: new Date(at).toISOString(),
+                rescued: entries[0][1].total,
+                successes: entries[0][1].successes,
+                via: entries
+                    .map(([, p]) => ({
+                        model: named.has(p.via) ? p.via : "private",
+                        rescued: p.rescued,
+                    }))
+                    .sort((a, b) => b.rescued - a.rescued),
+            }));
         add({
             kind: "fallback",
             to: "community",
             model,
-            rescued: latest.total,
-            successes: latest.successes,
-            via: own.map(([, p]) => ({
-                model: named.has(p.via) ? p.via : "private",
-                rescued: p.rescued,
-            })),
+            snapshots,
             owners: [ownerOf(model)],
             quiet: own.map(([key]) => key),
         });

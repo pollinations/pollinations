@@ -373,6 +373,11 @@ export function Authorize() {
                     },
                 });
                 if (!res.ok) {
+                    // As in the code flow: don't leave an undeliverable key
+                    // active in the account.
+                    accountClient.keys[":id"]
+                        .$delete({ param: { id } })
+                        .catch(() => {});
                     const data = await res.json().catch(() => null);
                     throw new Error(
                         (data as { message?: string })?.message ||

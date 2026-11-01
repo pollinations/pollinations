@@ -1,5 +1,15 @@
 import { DurableObject } from "cloudflare:workers";
 import {
+    AGENT_DAILY_LIMIT,
+    COMMUNITY_PROMPT,
+    decision,
+    facts,
+    filteredModels,
+    listingChanges,
+    TOLD_MS,
+    WINDOW_MINUTES,
+} from "./community.js";
+import {
     discordIds,
     edit,
     exclusive,
@@ -18,35 +28,17 @@ import {
     pipe,
     toolsFor,
 } from "./investigate.js";
+import { FORGET_MS, pool, probe, recordProbe } from "./probes.js";
 import {
-    brokenStreams,
-    dueProbes,
-    FORGET_MS,
-    pool,
-    probe,
-    QUIET_MS,
-    recordProbe,
-    streamKey,
-} from "./probes.js";
-import {
-    brokenStreamCard,
+    COLOR,
     conditions,
-    dueFallbacks,
     duration,
     escalates,
     escalation,
-    FALLBACK_MINUTES,
-    fallbackCard,
-    fallbackPairs,
-    fallbackShares,
-    filteredModels,
     legacyDown,
     lineColor,
-    listingChanges,
-    listingsCard,
     noteworthy,
     pings,
-    refusedCard,
     renderCard,
     snapshot,
     step,
@@ -80,15 +72,15 @@ const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
 // once an hour, this long after it, when Tinybird has that hour in full.
 const HOUR_MS = 60 * 60 * 1000;
 const LEGACY_READ_DELAY_MS = 5 * 60 * 1000;
-// Community models leaning on a fallback are looked for this often.
-const FALLBACK_EVERY_MS = 60 * 60 * 1000;
-// Community listing changes are told once a day, from 12:00 UTC: a check's
-// listings day is its UTC date 12 hours earlier.
-const LISTINGS_DAY_STARTS_MS = 12 * 60 * 60 * 1000;
-// Community models due a probe are looked for this often, like the retired
-// monitor's half-hourly cycle, and probed at most this many at a time.
-const PROBE_EVERY_MS = 30 * 60 * 1000;
+// The community agent runs this often, like the retired monitor's
+// half-hourly cycle, and its probes run at most this many at a time.
+const CYCLE_MS = 30 * 60 * 1000;
 const PROBE_POOL = 4;
+// Its answer may list a few hundred models to probe, after its reasoning.
+const AGENT_MAX_TOKENS = 12_000;
+// Community listing changes are given to it once a day, from 12:00 UTC: a
+// check's listings day is its UTC date 12 hours earlier.
+const LISTINGS_DAY_STARTS_MS = 12 * 60 * 60 * 1000;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -156,8 +148,8 @@ export class Watch extends DurableObject {
     // Every card write goes through one queue, in order, so a slow AI edit
     // can never land after a card's closing edit.
     writes = serial();
-    // The probe batch in flight, if any: a check never waits for it.
-    probing = null;
+    // The community cycle in flight, if any: a check never waits for it.
+    cycle = null;
 
     async lastCheck() {
         return (await this.ctx.storage.get("checkedAt")) ?? null;
@@ -421,15 +413,12 @@ export class Watch extends DurableObject {
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", { ...next.state, unposted });
-        if (publicModels) {
-            await this.fallbacks(gen, publicModels, now);
-            await this.listings(gen, now);
-            this.probing ??= this.probes(gen, publicModels, now)
-                .catch((error) => console.error(`probes: ${error.message}`))
+        if (publicModels)
+            this.cycle ??= this.community(gen, publicModels, now)
+                .catch((error) => console.error(`community: ${error.message}`))
                 .finally(() => {
-                    this.probing = null;
+                    this.cycle = null;
                 });
-        }
         // A completed check: what /health reports to the outside heartbeat.
         await this.ctx.storage.put("checkedAt", now);
         for (const note of notes) this.background(() => this.note(note, data));
@@ -465,140 +454,128 @@ export class Watch extends DurableObject {
         }
     }
 
-    // Once a day: the community models gen's reliability filter newly left
-    // out of /models, or listed again, since the last day, told to the
-    // community channel. The first day only keeps the filtered set. A read
-    // or post that fails is tried again on the next check.
-    async listings(gen, now) {
-        const day = new Date(now - LISTINGS_DAY_STARTS_MS)
-            .toISOString()
-            .slice(0, 10);
-        const saved = await this.ctx.storage.get("listings");
-        if (saved?.day === day) return;
-        try {
-            const list = async (query) => {
-                const catalog = await getJson(`${gen}/models?${query}`);
-                return Array.isArray(catalog) ? catalog : catalog.data;
-            };
-            const [shown, all] = await Promise.all([
-                list("community=true"),
-                list("community=true&reliability=all"),
-            ]);
-            const filtered = filteredModels(all, shown);
-            if (!filtered) throw new Error("no community success rates yet");
-            if (saved) {
-                const changes = listingChanges(saved.filtered, filtered, shown);
-                const card = listingsCard(changes, filtered.length);
-                const changed = changes.newly.length || changes.back.length;
-                if (
-                    changed &&
-                    !(await post(this.env, card, "COMMUNITY_WEBHOOK_URL"))
-                )
-                    throw new Error("Discord refused the post");
-            }
-            await this.ctx.storage.put("listings", {
-                day,
-                filtered: filtered.map((m) => m.name),
-            });
-        } catch (error) {
-            console.error(`listings: ${error.message}`);
-        }
-    }
-
-    // Community models leaning on a fallback, looked for hourly over the
-    // last 4 hours and told to the community channel: one post per model
-    // and fallback a week, pinging the model's owner, no AI. A post Discord
-    // refused is tried again the next hour.
-    async fallbacks(gen, catalog, now) {
-        const saved = (await this.ctx.storage.get("fallback")) ?? {};
-        if (now - (saved.checkedAt ?? 0) < FALLBACK_EVERY_MS) return;
-        let told = saved.told;
-        try {
-            const rows = await statusRows(gen, FALLBACK_MINUTES);
-            const next = dueFallbacks(fallbackShares(rows, catalog), told, now);
-            told = next.told;
-            for (const share of next.due) {
-                const card = fallbackCard(share);
-                if (await post(this.env, card, "COMMUNITY_WEBHOOK_URL"))
-                    for (const pair of fallbackPairs(share)) told[pair] = now;
-            }
-        } catch (error) {
-            console.error(`fallbacks: ${error.message}`);
-        }
-        await this.ctx.storage.put("fallback", { checkedAt: now, told });
-    }
-
-    // Every half hour: the community models due a probe, probed with
-    // COMMUNITY_PROBE_KEY, each result's backoff saved as it comes. Once all
-    // are in:
-    // - broken streams go to their owners in one card in the community
-    //   channel; a model the card had no room for, or one Discord refused,
-    //   is told after its next probe;
-    // - one broken stream for many owners, or every probe turned away, goes
-    //   to the maintainers in the infra-watch channel, once a day.
-    // A failure ends the batch, logged where the batch starts.
-    async probes(gen, catalog, now) {
-        const state = (await this.ctx.storage.get("probes")) ?? {};
-        if (now - (state.at ?? 0) < PROBE_EVERY_MS) return;
+    // Every half hour, the community agent (community.js): code reads the
+    // facts, one AI call decides what to probe and what to post, and code
+    // posts within the rails, then probes, each result's backoff saved as it
+    // comes. The results are the next cycle's facts. A failure ends the
+    // cycle, logged where it starts; a post Discord refused is left out of
+    // what the agent told, so it tells it again.
+    async community(gen, catalog, now) {
+        const state = (await this.ctx.storage.get("community")) ?? {};
+        if (now - (state.at ?? 0) < CYCLE_MS) return;
         state.at = now;
-        // A listed model keeps its backoff, streak and when it was told, so
-        // even a long backlog of warnings goes longest-ago first. One gone
-        // from the catalog keeps them a week, longer than any backoff runs,
-        // then is forgotten.
+        // A model gone from the catalog keeps its backoff for a week.
         const listed = new Set(catalog.map((m) => m.name));
-        const kept = (name, at) => listed.has(name) || now - at < FORGET_MS;
-        const pick = (map = {}, keep) =>
-            Object.fromEntries(Object.entries(map).filter(keep));
-        state.schedule = pick(state.schedule, ([name, s]) =>
-            kept(name, s.lastAt),
+        state.schedule = Object.fromEntries(
+            Object.entries(state.schedule ?? {}).filter(
+                ([name, s]) => listed.has(name) || now - s.lastAt < FORGET_MS,
+            ),
         );
-        state.streams = {
-            streaks: pick(
-                state.streams?.streaks,
-                ([name]) => name in state.schedule,
-            ),
-            // A told key starts with its model.
-            told: pick(state.streams?.told, ([key, at]) =>
-                kept(key.split(" ", 1)[0], at),
-            ),
-        };
-        const { schedule } = state;
-        const save = () => this.ctx.storage.put("probes", state);
+        state.told = (state.told ?? []).filter((t) => now - t.at < TOLD_MS);
+        const save = () => this.ctx.storage.put("community", state);
         await save();
         const key = this.env.COMMUNITY_PROBE_KEY;
         if (!key) throw new Error("COMMUNITY_PROBE_KEY missing");
-        const rows = await statusRows(gen, FALLBACK_MINUTES, "regular");
-        const due = dueProbes(catalog, rows, schedule, now);
-        const results = await pool(due, PROBE_POOL, async (model) => {
-            const result = await probe(gen, key, model, schedule[model.name]);
-            schedule[model.name] = recordProbe(schedule[model.name], result);
+        const [rows, listings] = await Promise.all([
+            statusRows(gen, WINDOW_MINUTES, "regular"),
+            this.listingsToday(gen, catalog, now),
+        ]);
+        const input = facts({
+            catalog,
+            rows,
+            schedule: state.schedule,
+            results: state.results ?? [],
+            told: state.told,
+            listings: listings?.changes ?? null,
+            now,
+        });
+        // Nothing to decide: no AI call.
+        if (
+            !input.candidates.length &&
+            !input.results.length &&
+            !input.fallbacks.length &&
+            !input.listings
+        ) {
+            if (listings)
+                await this.ctx.storage.put("listings", listings.saved);
+            return;
+        }
+        const budget = allow(state.ai, now, AGENT_DAILY_LIMIT);
+        if (!budget) throw new Error("daily agent limit reached");
+        state.ai = budget;
+        await save();
+        const plan = decision(
+            await ask(
+                this.env.POLLINATIONS_API_KEY,
+                input,
+                {},
+                {
+                    system: COMMUNITY_PROMPT,
+                    specs: [],
+                    answer: (text) => text,
+                    maxTokens: AGENT_MAX_TOKENS,
+                },
+            ),
+            input.candidates,
+            catalog,
+        );
+        if (!plan) throw new Error("the agent gave no decision");
+        if (listings) await this.ctx.storage.put("listings", listings.saved);
+        const color = COLOR.PRIMARY_WEAK;
+        const delivered =
+            (!plan.community ||
+                (await post(
+                    this.env,
+                    { ...plan.community, color },
+                    "COMMUNITY_WEBHOOK_URL",
+                ))) &&
+            (!plan.maintainers ||
+                (await post(this.env, {
+                    ...plan.maintainers,
+                    ping: true,
+                    color,
+                })));
+        if (delivered)
+            state.told.push(...plan.told.map((note) => ({ at: now, note })));
+        const chosen = catalog.filter((m) => plan.probe.includes(m.name));
+        state.results = await pool(chosen, PROBE_POOL, async (model) => {
+            const previous = state.schedule[model.name];
+            const result = await probe(gen, key, model, previous);
+            state.schedule[model.name] = recordProbe(previous, result);
             await save();
             if (!result.ok)
                 console.log(
                     `probe ${result.model}: ${result.status} ${result.requestId ?? ""}`,
                 );
-            return result;
+            return {
+                ...result,
+                previous: previous && {
+                    status: previous.status,
+                    protocolError: previous.protocolError,
+                },
+            };
         });
-        const at = Date.now();
-        if (
-            results.length &&
-            results.every((r) => r.refused) &&
-            at - (state.refusedAt ?? 0) >= QUIET_MS &&
-            (await post(this.env, refusedCard(results.length)))
-        )
-            state.refusedAt = at;
-        const streams = brokenStreams(state.streams, results, at);
-        const tell = async (models, shared, webhook) => {
-            if (!models.length) return;
-            const card = brokenStreamCard(models, shared);
-            if (!(await post(this.env, card, webhook))) return;
-            for (const { model, error } of card.shown)
-                streams.told[streamKey(model, error)] = at;
-        };
-        await tell(streams.due, false, "COMMUNITY_WEBHOOK_URL");
-        await tell(streams.shared, true, "DISCORD_WEBHOOK_URL");
-        state.streams = { streaks: streams.streaks, told: streams.told };
         await save();
+    }
+
+    // The day's community listing changes for the agent, once a day from
+    // 12:00 UTC, with the filtered set to save once it has read them. The
+    // first day only saves the set. Null when today's are done or can't be
+    // judged yet.
+    async listingsToday(gen, catalog, now) {
+        const day = new Date(now - LISTINGS_DAY_STARTS_MS)
+            .toISOString()
+            .slice(0, 10);
+        const before = await this.ctx.storage.get("listings");
+        if (before?.day === day) return null;
+        const shown = await getJson(`${gen}/models?community=true`);
+        const list = Array.isArray(shown) ? shown : shown.data;
+        const filtered = filteredModels(catalog, list);
+        if (!filtered) return null;
+        return {
+            changes: before && listingChanges(before.filtered, filtered, list),
+            saved: { day, filtered: filtered.map((m) => m.name) },
+        };
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be

@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { inflateSync } from "node:zlib";
 import {
-    brokenStreams,
-    dueProbes,
     hasChatProbeMarker,
     imageProbeRequest,
     imageProbeResult,
@@ -11,7 +9,6 @@ import {
     nextProbeAt,
     parseChatStream,
     recordProbe,
-    streamKey,
     textProbeResult,
 } from "./probes.js";
 
@@ -58,98 +55,6 @@ test("failures back off across restarts, cap below seven days, and fallback succ
     // A broken stream is a failure, like a 5xx.
     previous = recordProbe(previous, { timestamp: now, status: "PROTOCOL" });
     assert.equal(nextProbeAt(previous), now + 8 * HOUR);
-    // Turned away by gen: the failures stay, the interval runs from it.
-    previous = recordProbe(previous, {
-        timestamp: now + HOUR,
-        status: 402,
-        refused: true,
-    });
-    assert.equal(previous.failures, 1);
-    assert.equal(nextProbeAt(previous), now + HOUR + 8 * HOUR);
-});
-
-const text = (name, health, extra) => ({
-    name,
-    category: "text",
-    community: true,
-    health: health === undefined ? undefined : { success_rate: health },
-    ...extra,
-});
-const traffic = (model, ok, errors5xx = 0, errors4xx = 0) => ({
-    model,
-    is_rollup: 1,
-    total_requests: ok + errors5xx + errors4xx,
-    status_2xx: ok,
-    errors_5xx: errors5xx,
-    errors_4xx: errors4xx,
-});
-
-test("probes community text and image proxies at 80% health or less, without real traffic, or at 80% success or less in 4h", () => {
-    const now = Date.parse("2026-11-01T00:00:00Z");
-    const catalog = [
-        text("community/o/weak", 80),
-        text("community/o/healthy", 81),
-        text("community/o/quiet", 100),
-        text("community/o/refused", 100),
-        text("community/o/failing", 0),
-        // No sample: busy with real traffic, so not due.
-        { ...text("community/o/unsampled"), health: { success_rate: null } },
-        text("community/o/backoff", 10),
-        // Healthy in the catalog, failing in the last 4 hours.
-        text("community/o/slipping", 92),
-        text("community/o/edge", 95),
-        // Rescued by its fallback: those are successes.
-        text("community/o/rescued", 95),
-        // Final 4xx are left out of its success.
-        text("community/o/refusing", 95),
-        text("community/o/agent", 10, { agent: true }),
-        text("community/o/voice", 10, { category: "audio" }),
-        { name: "openai", category: "text", health: { success_rate: 10 } },
-        {
-            name: "community/o/image",
-            category: "image",
-            community: true,
-        },
-    ];
-    const rows = [
-        traffic("community/o/weak", 10),
-        traffic("community/o/healthy", 10),
-        // Only 4xx: callers refused, not real traffic for the model.
-        traffic("community/o/refused", 0, 0, 30),
-        traffic("community/o/failing", 0, 12),
-        traffic("community/o/unsampled", 5),
-        traffic("community/o/slipping", 1, 4),
-        traffic("community/o/edge", 4, 1),
-        {
-            ...traffic("community/o/rescued", 9, 1),
-            fallback_rescues: 9,
-        },
-        traffic("community/o/refusing", 5, 0, 20),
-        // A route row is not the model's total.
-        { ...traffic("community/o/quiet", 10), is_rollup: 0 },
-    ];
-    const schedule = {
-        "community/o/backoff": { lastAt: now - 7 * HOUR, failures: 1 },
-        "community/o/weak": { lastAt: now - 4 * HOUR, failures: 0 },
-    };
-    assert.deepEqual(
-        dueProbes(catalog, rows, schedule, now).map((m) => m.name),
-        [
-            "community/o/weak",
-            "community/o/quiet",
-            "community/o/refused",
-            "community/o/failing",
-            "community/o/slipping",
-            "community/o/edge",
-            "community/o/image",
-        ],
-    );
-    // An hour later the backed-off model is due again.
-    assert.ok(
-        dueProbes(catalog, rows, schedule, now + HOUR).some(
-            (m) => m.name === "community/o/backoff",
-        ),
-    );
 });
 
 // Ported from operations/community-monitor/chat-stream.test.mjs.
@@ -234,7 +139,6 @@ test("a text probe passes only with the marker in a valid stream", () => {
     const answer = (body, init) =>
         textProbeResult(new Response(body, init), body, "ok-marker");
     assert.deepEqual(answer(content + counts + done), {
-        refused: false,
         ok: true,
         status: 200,
         protocolError: undefined,
@@ -256,24 +160,6 @@ test("a text probe passes only with the marker in a valid stream", () => {
     const refused = answer('{"error":{"code":"BAD_GATEWAY"}}', { status: 502 });
     assert.equal(refused.status, 502);
     assert.equal(refused.protocolError, undefined);
-    assert.equal(refused.refused, false);
-});
-
-test("gen turning the probe key away is a refusal, not the model's answer", () => {
-    // Gen's balance notice: a chat reply ending in its own sentence.
-    const notice = `data: ${JSON.stringify({ choices: [{ delta: { content: "Please top up, then try again.\n\nIf this isn’t your Pollinations account, contact whoever runs the app or service you’re using." } }] })}\n\n`;
-    const body = notice + counts + done;
-    const result = textProbeResult(new Response(body), body, "ok-marker");
-    assert.equal(result.refused, true);
-    assert.equal(result.status, "INVALID");
-    for (const status of [402, 403]) {
-        const refused = textProbeResult(
-            new Response("{}", { status }),
-            "{}",
-            "x",
-        );
-        assert.equal(refused.refused, true);
-    }
 });
 
 // Ported from operations/community-monitor/image-probe.test.mjs.
@@ -343,7 +229,7 @@ test("a fallback's image is still a success", () => {
     }
 });
 
-test("an image error is its status; only 402 and 403 are gen turning the key away", () => {
+test("an image error is its status, without the upstream body", () => {
     for (const [status, error] of [
         [
             400,
@@ -369,7 +255,6 @@ test("an image error is its status; only 402 and 403 are gen turning the key awa
         const result = imageProbeResult(new Response(body, { status }), body);
         assert.equal(result.ok, false);
         assert.equal(result.status, status);
-        assert.equal(result.refused, status === 402 || status === 403);
         assert.equal(
             JSON.stringify(result).includes("private upstream body"),
             false,
@@ -396,141 +281,6 @@ test("invalid image bodies remain failures even when a fallback answered 200", (
     }
 });
 
-// Broken streams: Thomas's duty 2b.
-const T0 = Date.parse("2026-11-01T00:00:00Z");
-const DAY = 24 * HOUR;
-const MISSING_DONE = "stream is missing [DONE]";
-const result = (model, extra) => ({
-    model,
-    category: "text",
-    status: "PROTOCOL",
-    protocolError: MISSING_DONE,
-    errorCode: null,
-    modelUsed: model,
-    ...extra,
-});
-const A = "community/o/a";
-
-test("a broken stream is due a warning on its second fresh probe in a row", () => {
-    let state = brokenStreams({}, [result(A)], T0);
-    assert.deepEqual(state.due, []);
-    // Another model probed, or none: A keeps its streak.
-    state = brokenStreams(
-        state,
-        [
-            result("community/o/b", {
-                ok: true,
-                status: 200,
-                protocolError: undefined,
-            }),
-        ],
-        T0,
-    );
-    assert.deepEqual(state.streaks[A], { error: MISSING_DONE, streak: 1 });
-    state = brokenStreams(state, [result(A)], T0 + 8 * HOUR);
-    assert.deepEqual(state.due, [
-        { model: A, error: MISSING_DONE, code: null, streak: 2 },
-    ]);
-});
-
-test("a different result ends the streak", () => {
-    for (const other of [
-        { ok: true, status: 200, protocolError: undefined },
-        { status: 502, protocolError: undefined },
-        { protocolError: "stream contained invalid JSON" },
-    ]) {
-        let state = brokenStreams({}, [result(A)], T0);
-        state = brokenStreams(state, [result(A, other)], T0);
-        state = brokenStreams(state, [result(A)], T0);
-        assert.deepEqual(state.due, []);
-    }
-});
-
-test("a model and error told stay quiet for a day; a new error is told", () => {
-    let state = brokenStreams({}, [result(A)], T0);
-    state = brokenStreams(state, [result(A)], T0);
-    state.told[streamKey(A, MISSING_DONE)] = T0;
-    state = brokenStreams(state, [result(A)], T0 + DAY - 1);
-    assert.deepEqual(state.due, []);
-    state = brokenStreams(state, [result(A)], T0 + DAY);
-    assert.equal(state.due.length, 1);
-    // The day's quiet is per error: another broken stream is told at once.
-    const json = "stream contained invalid JSON";
-    state.told[streamKey(A, MISSING_DONE)] = T0 + DAY;
-    state = brokenStreams(
-        state,
-        [result(A, { protocolError: json })],
-        T0 + DAY,
-    );
-    state = brokenStreams(
-        state,
-        [result(A, { protocolError: json })],
-        T0 + DAY,
-    );
-    assert.deepEqual(
-        state.due.map((d) => d.error),
-        [json],
-    );
-});
-
-test("any code inside a broken stream is the provider's", () => {
-    // Gen answers the probe key's own auth, balance and input failures
-    // before the stream: an error event's code came from the provider.
-    for (const errorCode of [
-        "UNAUTHORIZED",
-        "PAYMENT_REQUIRED",
-        "BAD_REQUEST",
-    ]) {
-        const broken = result(A, {
-            protocolError: "stream returned an error event",
-            errorCode,
-        });
-        let state = brokenStreams({}, [broken], T0);
-        state = brokenStreams(state, [broken], T0);
-        assert.equal(state.due[0]?.code, errorCode);
-    }
-});
-
-test("an image probe or a refused one leaves the streak alone", () => {
-    let state = brokenStreams({}, [result(A)], T0);
-    state = brokenStreams(
-        state,
-        [
-            result(A, { category: "image", status: 502 }),
-            result(A, {
-                refused: true,
-                status: "INVALID",
-                protocolError: undefined,
-            }),
-        ],
-        T0,
-    );
-    assert.deepEqual(state.streaks[A], { error: MISSING_DONE, streak: 1 });
-    assert.deepEqual(state.due, []);
-});
-
-test("an answer from a fallback ends the streak, keeping the day's quiet", () => {
-    for (const fallback of [
-        { ok: true, status: 200, protocolError: undefined },
-        // The fallback's own broken stream is not this model's.
-        {},
-    ]) {
-        let state = brokenStreams({}, [result(A)], T0);
-        state.told = { [streamKey("community/o/b", MISSING_DONE)]: T0 };
-        state = brokenStreams(
-            state,
-            [result(A, { ...fallback, modelUsed: "community/o/fallback" })],
-            T0,
-        );
-        assert.equal(state.streaks[A], undefined);
-        assert.deepEqual(Object.keys(state.told), [
-            streamKey("community/o/b", MISSING_DONE),
-        ]);
-        state = brokenStreams(state, [result(A)], T0);
-        assert.deepEqual(state.due, []);
-    }
-});
-
 test("a fallback's success resets the backoff, like a direct one", () => {
     const body = `${content}${counts}${done}`;
     const answer = textProbeResult(
@@ -546,84 +296,4 @@ test("a fallback's success resets the backoff, like a direct one", () => {
         recordProbe(previous, { ...answer, timestamp: HOUR }).failures,
         0,
     );
-});
-
-test("one broken stream on three owners' models at once goes to the maintainers, not the owners", () => {
-    const models = ["community/a/x", "community/b/y", "community/c/z"];
-    let state = brokenStreams(
-        {},
-        models.map((m) => result(m)),
-        T0,
-    );
-    assert.deepEqual(
-        state.shared.map((f) => f.model),
-        models,
-    );
-    assert.deepEqual(state.due, []);
-    // Told to the maintainers: each model named.
-    for (const m of models) state.told[streamKey(m, MISSING_DONE)] = T0;
-    // Their second in a row, within the day, with too few owners probed to
-    // be shared: a model told about is still not its owner's, but another
-    // model with that error is.
-    const other = "community/d/w";
-    state = brokenStreams(state, [result(other)], T0);
-    const two = brokenStreams(
-        state,
-        [models[0], other].map((m) => result(m)),
-        T0 + 8 * HOUR,
-    );
-    assert.deepEqual(
-        two.due.map((f) => f.model),
-        [other],
-    );
-    assert.deepEqual(two.shared, []);
-    state = brokenStreams(
-        state,
-        models.map((m) => result(m)),
-        T0 + 8 * HOUR,
-    );
-    assert.deepEqual(state.due, []);
-    assert.deepEqual(state.shared, []);
-    // A day on, still broken for three owners: the maintainers again.
-    state = brokenStreams(
-        state,
-        models.map((m) => result(m)),
-        T0 + DAY,
-    );
-    assert.equal(state.shared.length, 3);
-});
-
-test("one broken stream on two owners' models goes to the owners", () => {
-    const models = ["community/a/x", "community/a/w", "community/b/y"];
-    let state = brokenStreams(
-        {},
-        models.map((m) => result(m)),
-        T0,
-    );
-    assert.deepEqual(state.shared, []);
-    state = brokenStreams(
-        state,
-        models.map((m) => result(m)),
-        T0,
-    );
-    assert.deepEqual(
-        state.due.map((f) => f.model),
-        models,
-    );
-});
-
-test("models not told yet go first, then those told longest ago", () => {
-    const [x, y, z] = ["community/o/x", "community/o/y", "community/o/z"];
-    const broken = [x, y, z].map((m) => result(m));
-    let state = brokenStreams({}, broken, T0);
-    state.told[streamKey(x, MISSING_DONE)] = T0 - 2 * DAY;
-    state.told[streamKey(y, MISSING_DONE)] = T0 - 3 * DAY;
-    state = brokenStreams(state, broken, T0);
-    assert.deepEqual(
-        state.due.map((f) => f.model),
-        [z, y, x],
-    );
-    // When each was told is kept, however long ago.
-    state = brokenStreams(state, [], T0 + 30 * DAY);
-    assert.equal(state.told[streamKey(y, MISSING_DONE)], T0 - 3 * DAY);
 });

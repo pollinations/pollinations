@@ -3,7 +3,6 @@
 // and probe-schedule.mjs). No Cloudflare imports, so it is testable with
 // plain Node.
 import { withTimeout } from "./delivery.js";
-import { ownerOf } from "./rules.js";
 
 const HOUR_MS = 60 * 60 * 1000;
 const TEXT_TIMEOUT_MS = 45_000;
@@ -20,51 +19,27 @@ export function nextProbeAt(previous) {
 }
 
 // Success, including a fallback's, and inconclusive caller or probe errors
-// reset the backoff. A probe gen turned away keeps the failures as they
-// were: the interval still runs from it, so a model can't be probed more
-// often by answering with gen's refusal.
+// reset the backoff. The probe's status and stream error are kept for the
+// agent to compare with the next one.
 export function recordProbe(previous, result) {
-    const failures = previous?.failures ?? 0;
-    const resets =
-        result.ok ||
-        result.status === "ERR" ||
-        result.status === "INVALID" ||
-        (typeof result.status === "number" && result.status < 500);
     return {
         lastAt: result.timestamp,
-        failures: result.refused ? failures : resets ? 0 : failures + 1,
+        failures:
+            result.ok ||
+            result.status === "ERR" ||
+            result.status === "INVALID" ||
+            (typeof result.status === "number" && result.status < 500)
+                ? 0
+                : (previous?.failures ?? 0) + 1,
         operation: result.operation,
+        status: result.status,
+        protocolError: result.protocolError,
     };
 }
 
-// The community text and image proxies to probe now: public (gen's catalog
-// lists no private model) and not agents, due by their backoff, and either
-// at 80% catalog health or less, or without real traffic or at 80% final
-// success or less in the last 4 hours. `rows` are gen's status rows for
-// regular traffic over those 4 hours, which leaves the probes out, and
-// legacy-API and other internal traffic too. A model's rollup counts
-// final outcomes, so fallback rescues are successes; final 4xx say nothing
-// of the model and are left out.
-export function dueProbes(catalog, rows, schedule, now) {
-    const recent = new Map(
-        rows
-            .filter((r) => r.is_rollup && r.total_requests > r.errors_4xx)
-            .map((r) => [
-                r.model,
-                r.status_2xx / (r.total_requests - r.errors_4xx),
-            ]),
-    );
-    return catalog.filter(
-        (m) =>
-            m.community &&
-            !m.agent &&
-            ["text", "image"].includes(m.category) &&
-            now >= nextProbeAt(schedule[m.name]) &&
-            ((m.health?.success_rate ?? 100) <= 80 ||
-                !recent.has(m.name) ||
-                recent.get(m.name) <= 0.8),
-    );
-}
+// What is kept of a model gone from the catalog, and for how long: a week,
+// longer than any backoff runs.
+export const FORGET_MS = 7 * 24 * 60 * 60 * 1000;
 
 // An error event's code, as text.
 const codeOf = (error) =>
@@ -164,25 +139,15 @@ export const textProbeRequest = (model, marker) => ({
     },
 });
 
-// The sentence that ends gen's own answer when it refuses the key, for
-// balance (402) or permission (403), as a chat reply on text routes
-// (`NOT_YOUR_ACCOUNT` in gen's middleware/text-balance-notice.ts).
-const REFUSAL = "contact whoever runs the app or service you";
-const refusedStatus = (status) => status === 402 || status === 403;
-
 // A text probe passes with the marker in the final answer of a valid
 // stream. A broken stream is PROTOCOL; an answer without the marker is
-// INVALID. `refused` is gen turning the probe key away before the model is
-// called. `modelUsed` is the model that answered, from gen's header.
+// INVALID. `modelUsed` is the model that answered, from gen's header.
 export function textProbeResult(response, body, marker) {
     const { content, protocolError, errorCode } = response.ok
         ? parseChatStream(body)
         : {};
     const marked = hasChatProbeMarker(content, marker);
     return {
-        refused:
-            refusedStatus(response.status) ||
-            (!marked && Boolean(content?.includes(REFUSAL))),
         ok: response.ok && !protocolError && marked,
         status: protocolError
             ? "PROTOCOL"
@@ -248,7 +213,6 @@ export function imageProbeResult(response, body) {
     return {
         ok: response.ok && hasImage,
         status: response.ok && !hasImage ? "INVALID" : response.status,
-        refused: refusedStatus(response.status),
         requestId: response.headers.get("x-request-id"),
     };
 }
@@ -307,59 +271,3 @@ export async function pool(items, size, task) {
     );
     return results;
 }
-
-// A warning told once stays quiet this long, for the same model and broken
-// stream, or the probe key refused.
-export const QUIET_MS = 24 * 60 * 60 * 1000;
-// How long what is kept of a model outlives its leaving the catalog.
-export const FORGET_MS = 7 * QUIET_MS;
-// One broken stream on models of this many owners at once points at gen,
-// not at them: it goes to the maintainers as one incident.
-const SHARED_OWNERS = 3;
-
-// Broken streams from a batch of probe results. `streaks` keeps, per model,
-// its provider's protocol error and how many fresh text probes in a row
-// got it: a model not probed or refused keeps its streak, any other result
-// ends it, an answer from a fallback too. `told` keeps when each model and
-// error was last told. A model told in the last day is quiet; the others go
-// never-told first, then longest ago, so a card that has no room for them
-// all names the rest on the next ones.
-// - `due`: models at their second broken stream in a row, for their owners.
-// - `shared`: models whose error this batch found for 3 or more owners, for
-//   the maintainers instead.
-export function brokenStreams({ streaks = {}, told = {} } = {}, results, now) {
-    const next = { ...streaks };
-    const fresh = [];
-    for (const r of results) {
-        if (r.category !== "text" || r.refused) continue;
-        const own = !r.modelUsed || r.modelUsed === r.model;
-        const error = own && r.status === "PROTOCOL" ? r.protocolError : null;
-        if (!error) {
-            delete next[r.model];
-            continue;
-        }
-        const streak =
-            next[r.model]?.error === error ? next[r.model].streak + 1 : 1;
-        next[r.model] = { error, streak };
-        fresh.push({ model: r.model, error, code: r.errorCode, streak });
-    }
-    const owners = (error) =>
-        new Set(
-            fresh.filter((f) => f.error === error).map((f) => ownerOf(f.model)),
-        ).size;
-    const shared = (f) => owners(f.error) >= SHARED_OWNERS;
-    const toldAt = (f) => told[streamKey(f.model, f.error)] ?? 0;
-    const turn = (list) =>
-        list
-            .filter((f) => now - toldAt(f) >= QUIET_MS)
-            .sort((a, b) => toldAt(a) - toldAt(b));
-    return {
-        streaks: next,
-        told: { ...told },
-        due: turn(fresh.filter((f) => f.streak >= 2 && !shared(f))),
-        shared: turn(fresh.filter(shared)),
-    };
-}
-
-// `told` keys: a model and its broken stream.
-export const streamKey = (model, error) => `${model} ${error}`;

@@ -790,6 +790,37 @@ it("names as many broken streams as a card fits, and the rest after their next p
     for (const n of named) expect(second.text).not.toContain(`${n.slice(10)} `);
 });
 
+it("names the broken streams told longest ago first once their quiet day is over", async () => {
+    const stub = watch();
+    // More than two cards hold.
+    const names = Array.from({ length: 120 }, (_, i) => `community/o/m${i}`);
+    world.catalog = names.map((name) => community(name));
+    world.probe = answers(() => true);
+    const named = (post) =>
+        names.filter((n) => post.text.includes(`${n.slice(10)} `));
+    // The real backoff probes them at hours 0, 8, 24 and 56.
+    await probed(stub);
+    await later(stub, 8 * 60 * 60_000);
+    await probed(stub);
+    await later(stub, 16 * 60 * 60_000);
+    await probed(stub);
+    const [first, second] = communityPosts().map(named);
+    const never = names.filter(
+        (n) => !first.includes(n) && !second.includes(n),
+    );
+    expect(never.length).toBeGreaterThan(0);
+
+    // Hour 55, a check with none due: both quiet days are over. Hour 56:
+    // all are due again, and those never named come first.
+    await later(stub, 31 * 60 * 60_000);
+    await probed(stub);
+    expect(communityPosts()).toHaveLength(2);
+    await later(stub, 60 * 60_000);
+    await probed(stub);
+    const third = named(communityPosts()[2]);
+    for (const n of never) expect(third).toContain(n);
+});
+
 // Posts Discord accepted in the infra-watch channel that contain `text`.
 const infraPosts = (text) =>
     world.writes.filter(

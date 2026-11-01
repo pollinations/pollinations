@@ -6,6 +6,7 @@ import {
     cn,
     InfoTip,
     InlineLink,
+    LockIcon,
     MailIcon,
     ReceiptIcon,
     RefreshIcon,
@@ -132,7 +133,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 />
                 <WalletBalanceCard
                     kind="tier"
-                    tone={questPollenRestricted ? "neutral" : "balance"}
                     label="Quest"
                     value={formatPollen(displayTierBalance)}
                     info={
@@ -146,7 +146,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                         "Pollen earned from completing Quests",
                                         "Earnings credited from your apps",
                                         questPollenRestricted
-                                            ? "Frozen until your account is verified"
+                                            ? "Available after your account is verified"
                                             : "Used first for regular models, when it can cover",
                                     ]}
                                     earned={tierWeek}
@@ -156,8 +156,32 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     }
                     footer={
                         questPollenRestricted ? (
-                            <span className="font-medium text-theme-text-muted">
-                                Frozen
+                            <span className="block text-xs font-normal leading-relaxed text-theme-text-muted">
+                                <span className="flex items-center gap-1.5 font-semibold text-theme-text-strong">
+                                    <LockIcon
+                                        aria-hidden="true"
+                                        className="h-3.5 w-3.5 shrink-0"
+                                    />
+                                    Verification needed
+                                </span>
+                                <span className="mt-1 block">
+                                    <InlineLink
+                                        href="/pollen#buy-pollen"
+                                        tone="quiet"
+                                        showIcon={false}
+                                    >
+                                        Make your first purchase
+                                    </InlineLink>{" "}
+                                    to use your Quest Pollen, or{" "}
+                                    <InlineLink
+                                        href="mailto:hello@pollinations.ai"
+                                        tone="quiet"
+                                        showIcon={false}
+                                    >
+                                        contact us
+                                    </InlineLink>{" "}
+                                    if you think this is a mistake.
+                                </span>
                             </span>
                         ) : tierWeek > 0 ? (
                             <>
@@ -170,28 +194,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     }
                 />
             </div>
-
-            {questPollenRestricted && (
-                <p className="px-1 text-sm leading-relaxed text-theme-text-muted">
-                    We couldn’t verify your account. Quest Pollen is frozen.{" "}
-                    <InlineLink
-                        href="/pollen#buy-pollen"
-                        tone="quiet"
-                        showIcon={false}
-                    >
-                        Make your first purchase
-                    </InlineLink>{" "}
-                    to unlock it, or{" "}
-                    <InlineLink
-                        href="mailto:hello@pollinations.ai"
-                        tone="quiet"
-                        showIcon={false}
-                    >
-                        contact us
-                    </InlineLink>{" "}
-                    if you think this is a mistake.
-                </p>
-            )}
 
             {!compact && (
                 <>
@@ -284,11 +286,6 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
                     <WalletKindIcon kind="tier" />
                     Quest
-                    {questPollenRestricted && (
-                        <span className="text-micro font-medium text-theme-text-muted">
-                            Frozen
-                        </span>
-                    )}
                 </span>
                 <span className="flex items-baseline gap-1.5">
                     <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">

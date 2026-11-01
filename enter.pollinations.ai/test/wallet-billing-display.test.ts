@@ -253,27 +253,36 @@ describe("payment logos before checkout", () => {
 });
 
 describe("frozen Quest Pollen display", () => {
-    it("excludes frozen Quest Pollen from the available total and weekly earnings", () => {
-        const router = createRouter({
-            routeTree: createRootRoute(),
-            history: createMemoryHistory(),
-        });
-        const html = renderToStaticMarkup(
-            createElement(
-                RouterContextProvider,
-                { router },
-                createElement(PollenBalance, {
-                    tierBalance: 35.54,
-                    packBalance: 2,
-                    tierWeek: 12.5,
-                    questPollenRestricted: true,
-                }),
-            ),
-        );
-        expect(html).toContain("Available");
-        expect(html).not.toContain("37.54");
-        expect(html).not.toContain("/ 7d");
-    });
+    it.each([true, false])(
+        "shows spendable funds only when restricted=%s",
+        (restricted) => {
+            const router = createRouter({
+                routeTree: createRootRoute(),
+                history: createMemoryHistory(),
+            });
+            const html = renderToStaticMarkup(
+                createElement(
+                    RouterContextProvider,
+                    { router },
+                    createElement(PollenBalance, {
+                        tierBalance: 35.54,
+                        packBalance: 2,
+                        tierWeek: 12.5,
+                        questPollenRestricted: restricted,
+                    }),
+                ),
+            );
+            if (restricted) {
+                expect(html).toContain("Available");
+                expect(html).not.toContain("37.54");
+                expect(html).not.toContain("/ 7d");
+            } else {
+                expect(html).toContain("Total");
+                expect(html).toContain("37.54");
+                expect(html).toContain("/ 7d");
+            }
+        },
+    );
 
     it("keeps the balance visible with quiet purchase and support links", () => {
         const html = renderToStaticMarkup(
@@ -285,8 +294,8 @@ describe("frozen Quest Pollen display", () => {
             }),
         );
         expect(html).toContain("35.54");
-        expect(html).toContain("Frozen");
-        expect(html).toContain("Quest Pollen is frozen");
+        expect(html).toContain("Verification needed");
+        expect(html).toContain("to use your Quest Pollen");
         expect(html).toContain('href="/pollen#buy-pollen"');
         expect(html).toContain('href="mailto:hello@pollinations.ai"');
         expect(html).not.toContain('role="alert"');
@@ -300,7 +309,7 @@ describe("frozen Quest Pollen display", () => {
             }),
         );
         expect(sidebar).toContain("35.54");
-        expect(sidebar).toContain("Frozen");
+        expect(sidebar).not.toContain("Frozen");
     });
 
     it("removes the restriction notice when the account is verified", () => {
@@ -313,7 +322,7 @@ describe("frozen Quest Pollen display", () => {
             }),
         );
         expect(html).toContain("35.54");
-        expect(html).not.toContain("Frozen");
+        expect(html).not.toContain("Verification needed");
         expect(html).not.toContain("couldn’t verify");
     });
 });

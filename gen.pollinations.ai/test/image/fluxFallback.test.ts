@@ -5,7 +5,10 @@ import {
     registerServer,
     setServerRegistryBinding,
 } from "../../src/image/availableServers.ts";
-import { callSelfHostedServer } from "../../src/image/createAndReturnImages.ts";
+import {
+    callSelfHostedServer,
+    createAndReturnImageCached,
+} from "../../src/image/createAndReturnImages.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 // Minimal in-memory KV stub matching the subset of KVNamespace we use
@@ -132,5 +135,44 @@ describe("Flux primary route", () => {
         expect(calls).toEqual(["https://gpu1.example/generate"]);
         expect(error).toMatchObject({ status: 500 });
         expect(isRetryableFallbackError(error)).toBe(true);
+    });
+});
+
+describe("DreamShaper protected slot", () => {
+    // 1x1 JPEG, so the image survives metadata post-processing.
+    const MINIMAL_JPEG =
+        "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wgARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH8AP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAT8Af//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Af//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Af//Z";
+    const dreamshaperParams: ImageParams = {
+        ...fluxParams,
+        model: "lykon/dreamshaper-8-lcm",
+        width: 512,
+        height: 512,
+    };
+
+    async function protectedSlotHeader(apiKeyId: string | null) {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async () =>
+                Response.json([{ image: MINIMAL_JPEG, width: 1, height: 1 }]),
+            );
+        await createAndReturnImageCached(
+            "a red apple",
+            dreamshaperParams,
+            "a red apple",
+            { tokenAuth: apiKeyId !== null, userId: "user", apiKeyId },
+        );
+        const [, init] = fetchSpy.mock.calls[0];
+        vi.restoreAllMocks();
+        return new Headers(init?.headers).get("x-protected-slot");
+    }
+
+    it("protects every caller except the legacy image bridge key", async () => {
+        await registerServer("https://gpu1.example", "sana");
+
+        expect(await protectedSlotHeader("user-key")).toBe("1");
+        expect(await protectedSlotHeader(null)).toBe("1");
+        expect(
+            await protectedSlotHeader("lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz"),
+        ).toBeNull();
     });
 });

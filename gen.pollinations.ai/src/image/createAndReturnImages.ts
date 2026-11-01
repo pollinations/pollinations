@@ -110,7 +110,13 @@ export type ImageGenerationResult = {
 export type AuthResult = {
     tokenAuth: boolean;
     userId: string | null;
+    apiKeyId: string | null;
 };
+
+// The legacy image API's bridge key (raw-buzzard), as classified in
+// generation_events_classified.pipe. Its DreamShaper requests may not take
+// the GPU slot reserved for everyone else.
+const LEGACY_IMAGE_BRIDGE_API_KEY_ID = "lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz";
 
 function safeTokenCount(value: unknown): number {
     return typeof value === "number" && Number.isFinite(value) ? value : 0;
@@ -197,6 +203,7 @@ export const callSelfHostedServer = async (
     prompt: string,
     safeParams: ImageParams,
     poolType: ServerType = "zimage",
+    protectedSlot = false,
 ): Promise<ImageGenerationResult> => {
     try {
         logOps("safeParams", safeParams);
@@ -238,6 +245,7 @@ export const callSelfHostedServer = async (
                     ...(getImageEnv("PLN_GPU_TOKEN") && {
                         "x-backend-token": getImageEnv("PLN_GPU_TOKEN"),
                     }),
+                    ...(protectedSlot && { "x-protected-slot": "1" }),
                 },
                 body: JSON.stringify(body),
             };
@@ -1082,7 +1090,12 @@ const generateImage = async (
 
         case "lykon/dreamshaper-8-lcm":
             // pool key stays "sana" — see VALID_TYPES in availableServers.ts
-            return await callSelfHostedServer(prompt, safeParams, "sana");
+            return await callSelfHostedServer(
+                prompt,
+                safeParams,
+                "sana",
+                userInfo.apiKeyId !== LEGACY_IMAGE_BRIDGE_API_KEY_ID,
+            );
 
         case "black-forest-labs/flux.1-schnell":
             return await callSelfHostedServer(prompt, safeParams, "flux");

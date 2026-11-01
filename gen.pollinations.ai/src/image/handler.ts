@@ -115,6 +115,7 @@ function createAuthResult(c: ImageContext): AuthResult {
     return {
         tokenAuth: Boolean(c.var.auth?.apiKey),
         userId: c.var.auth?.user?.id || null,
+        apiKeyId: c.var.auth?.apiKey?.id || null,
     };
 }
 

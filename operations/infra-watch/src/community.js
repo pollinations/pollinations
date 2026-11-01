@@ -120,6 +120,11 @@ const printable = (name) =>
 // `rows` read `at`. As in the old monitor, a model with no check that hour
 // keeps its run, however long the gap; a check reporting the asked-for
 // model ends it, and another name starts it again.
+//
+// A conservative first version: a row is each model's most common pair of
+// that hour, so a minority of answers from another model hides behind a
+// matching majority; answers without a reported name, answers from a
+// fallback and image models are never checked.
 export function servedStreaks(rows, seen, names, at) {
     const next = Object.fromEntries(
         Object.entries(seen ?? {}).filter(([model]) => names.has(model)),

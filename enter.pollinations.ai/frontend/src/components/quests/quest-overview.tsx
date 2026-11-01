@@ -528,9 +528,9 @@ export function QuestRow({
             onClick={() => onClaim(claimableRewardId)}
             className="gap-1.5 tabular-nums"
         >
-            {claiming ? "Claiming" : "Claim!"}
-            <WalletKindIcon kind={rewardIcon} className="ml-1 h-4 w-4" />
+            <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
             {rewardLabel}
+            <span className="ml-1">{claiming ? "Claiming" : "Claim!"}</span>
         </Button>
     ) : null;
     // Both layouts pin the reward (or the Claim button) to the right edge.

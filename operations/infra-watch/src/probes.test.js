@@ -179,6 +179,7 @@ test("reports missing usage even after a successful-looking answer", () => {
             ),
             {
                 content: "ok-marker",
+                model: undefined,
                 protocolError:
                     "stream returned usage_missing: missing or invalid token usage",
             },
@@ -238,6 +239,7 @@ test("accepts marker case changes but still requires the nonce in final content"
 test("preserves healthy streams and existing non-error validation", () => {
     assert.deepEqual(parseChatStream(content + counts + done), {
         content: "ok-marker",
+        model: undefined,
     });
     for (const [body, error] of [
         [`data: {}\n\n${done}`, "stream event is missing a choices array"],
@@ -267,8 +269,16 @@ test("a text probe passes only with the marker in a valid stream", () => {
         status: 200,
         protocolError: undefined,
         modelUsed: null,
+        servedModel: undefined,
         requestId: null,
     });
+    // The upstream's own model name: the last one it wrote.
+    const named = (model) =>
+        `data: ${JSON.stringify({ model, choices: [{ delta: { content: "ok-marker" } }] })}\n\n`;
+    assert.equal(
+        answer(named("other") + named(" served ") + counts + done).servedModel,
+        "served",
+    );
     const other = 'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n';
     assert.equal(answer(other + counts + done).status, "INVALID");
     const broken = answer(content + counts, {

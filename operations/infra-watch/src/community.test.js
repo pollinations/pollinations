@@ -497,7 +497,7 @@ const FLASH = "community/o/flash";
 const asked = (served, model = FLASH) => [
     { model, declared: "gemini-3-flash-preview", served },
 ];
-// One hour's reading, with FLASH in the catalog.
+// One cycle's probes, with FLASH in the catalog.
 const read = (rows, seen) => servedStreaks(rows, seen, new Set([FLASH]));
 
 test("names compare as the old monitor compared them", () => {
@@ -515,10 +515,10 @@ test("names compare as the old monitor compared them", () => {
     assert.ok(!agree("gemini-3-flash-preview", "llama-3.1-8b"));
 });
 
-test("a sparse model's run keeps through hours without a check, and a fresh check that disagrees ends it", () => {
+test("a model's run keeps through cycles without a probe, and a fresh probe that disagrees ends it", () => {
     const one = read(asked("llama-3.1-8b"));
     assert.equal(one[FLASH].streak, 1);
-    // Hours without answers, or that couldn't be read, leave the run.
+    // Cycles without a probe, or whose listings couldn't be read, leave the run.
     const gap = read([], read([], one));
     assert.deepEqual(gap, one);
     assert.equal(read(asked("llama-3.1-8b"), gap)[FLASH].streak, 2);
@@ -547,7 +547,7 @@ test("a sparse model's run keeps through hours without a check, and a fresh chec
         assert.equal(shown(name), name);
 });
 
-test("a mismatch at the second check in a row is its publisher's until a fresh check disproves it, then quiet for a week", () => {
+test("a mismatch at the second probe in a row is its publisher's until a fresh probe disproves it, then quiet for a week", () => {
     const catalog = [model(FLASH), model("community/o/agent", { agent: true })];
     const { id } = read(asked("llama-3.1-8b"))[FLASH];
     const seen = (streak, m = FLASH) => ({
@@ -573,8 +573,8 @@ test("a mismatch at the second check in a row is its publisher's until a fresh c
             quiet: [key],
         },
     ]);
-    // Untold, it stays while no check disproves it, however long ago its
-    // last check was; a check reporting the asked-for model, or another
+    // Untold, it stays while no probe disproves it, however long ago its
+    // last probe was; a probe reporting the asked-for model, or another
     // name, withdraws it.
     const again = (served) =>
         cycle({ catalog, served, pending: first.pending }).found;

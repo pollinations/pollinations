@@ -35,7 +35,7 @@ Each line tells the one incident in its "incidents" and goes to the channel its 
 - stream: a model's own answers broke the same way twice in a row; its publisher should fix their endpoint.
 - shared: models that worked broke the same way at once across many publishers, likely gen's own fault.
 - fallback: a model leans on its fallbacks; "private" fallbacks are never named.
-- mismatch: a model's answers reported a different model name than its listing requests, in two of its hourly checks in a row. The name is what the publisher's upstream reported, so word it as evidence, like "the publisher reported this name for requests configured as the requested model", and never say which model actually ran.
+- mismatch: a model's answers reported a different model name than its listing requests, in two of its probes in a row. The name is what the publisher's upstream reported, so word it as evidence, like "the publisher reported this name for requests configured as the requested model", and never say which model actually ran.
 - listings: models newly filtered out of /models for low health, or back; filtered models stay callable by their exact ID.
 Code puts lines into each post until it is full; incidents that don't fit come next time. Code pings publishers and points them to their dashboard.`;
 
@@ -134,16 +134,16 @@ const nameId = (name) => {
 };
 
 // Each model of the catalog's `names` whose upstream last reported a
-// different model than the one asked for, with how many of its checks in a
-// row reported that name, after one hour's `rows`. As in the old monitor, a
-// model with no check that hour keeps its run, however long the gap; a
-// check reporting the asked-for model ends it, and another name starts it
-// again.
+// different model than the one asked for, with how many of its probes in a
+// row reported that name, after one cycle's `rows` (index.js `reported`).
+// As in the old monitor, a model not probed keeps its run, however long the
+// gap; a probe reporting the asked-for model ends it, and another name
+// starts it again.
 //
-// A conservative first version: a row is each model's estimated most
-// common pair of that hour, so a minority of answers from another model
-// hides behind a matching majority; answers without a reported name,
-// answers from a fallback and image models are never checked.
+// Like the old monitor's, only probed models are checked, and probes skip
+// busy models whose traffic succeeds, so such a model reporting another
+// name goes unchecked while it stays busy. Answers from a fallback, answers
+// without a model name and image models are never checked.
 export function servedStreaks(rows, seen, names) {
     const next = Object.fromEntries(
         Object.entries(seen ?? {}).filter(([model]) => names.has(model)),
@@ -332,11 +332,11 @@ export function incidents({
     }
 
     // A listed model whose upstream reported the same other name in two
-    // checks in a row. Its run is the pending state, however old: only a
-    // later check that reports the asked-for model, or another name, or the
+    // probes in a row. Its run is the pending state, however old: only a
+    // later probe that reports the asked-for model, or another name, or the
     // model leaving the list withdraws it. Telling it starts its run over
     // (index.js), so after its quiet week it is told again only on a new
-    // check, never on old evidence.
+    // probe, never on old evidence.
     for (const [model, m] of Object.entries(served)) {
         const key = mismatchKey(model, m.id);
         if (listed.has(model) && m.streak >= 2 && !told(key, "mismatch"))

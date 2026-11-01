@@ -101,12 +101,6 @@ async function fake(input, init = {}) {
             ? Response.json({ data: world.legacy })
             : new Response("unavailable", { status: 503 });
     }
-    if (url.pathname.endsWith("/infra_watch_served_model.json")) {
-        world.servedHours.push(Number(url.searchParams.get("start")));
-        return world.served
-            ? Response.json({ data: world.served })
-            : new Response("unavailable", { status: 503 });
-    }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
@@ -152,8 +146,6 @@ beforeEach(() => {
     world = {
         rows: [],
         regular: [],
-        served: [],
-        servedHours: [],
         probes: [],
         agentFacts: [],
         agentKeys: [],
@@ -943,13 +935,14 @@ const community = (name, extra) => ({
     category: "text",
     ...extra,
 });
-// Each text model answers its probe's marker; streams of the `broken`
-// models never end. Image models answer an image.
-const answers = (broken) => (path, body) => {
+// Each text model answers its probe's marker, naming the `reported` model
+// if given; streams of the `broken` models never end. Image models answer an
+// image.
+const answers = (broken, reported) => (path, body) => {
     if (path !== "/v1/chat/completions")
         return Response.json({ data: [{ b64_json: btoa("x".repeat(200)) }] });
     const marker = body.messages[0].content.split(": ")[1];
-    const answer = `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }] })}\n\n`;
+    const answer = `data: ${JSON.stringify({ model: reported, choices: [{ delta: { content: marker } }] })}\n\n`;
     const done = broken(body.model) ? "" : "data: [DONE]\n\n";
     return new Response(answer + done, {
         headers: { "x-model-used": body.model },
@@ -1215,67 +1208,82 @@ it("keeps a refused fallback notice after its rescues leave the 4-hour window", 
     expect(world.agentFacts).toHaveLength(2);
 }, 15_000);
 
-it("reads the served models once an hour from 5 minutes past; an unread or empty hour leaves every run", async () => {
-    const stub = watch();
-    world.served = [
-        {
-            model: "community/o/m",
-            declared: "gemini-3-flash",
-            served: "llama-3.1-8b",
-        },
-    ];
-    const at = (h, m) => Date.UTC(2026, 10, 1, h, m);
-    let last;
-    const read = async (now) => {
-        last = await runInDurableObject(stub, (instance) =>
-            instance.served(last, new Set(["community/o/m"]), now),
-        );
-        return last.seen["community/o/m"]?.streak;
-    };
-    // Before 12:05 nothing is read.
-    expect(await read(at(12, 1))).toBeUndefined();
-    expect(await read(at(12, 5))).toBe(1);
-    expect(await read(at(12, 40))).toBe(1);
-    expect(await read(at(13, 5))).toBe(2);
-    // 14:05 can't be read and 15:05 has no answers: skipped checks.
-    const reported = world.served;
-    world.served = null;
-    expect(await read(at(14, 5))).toBe(2);
-    world.served = [];
-    expect(await read(at(15, 5))).toBe(2);
-    world.served = reported;
-    expect(await read(at(16, 5))).toBe(3);
-    // Each read names the hour it checks, the one before its cycle started,
-    // so a read that lands after the next hour starts checks it only once.
-    expect(world.servedHours).toEqual(
-        [11, 12, 13, 14, 15].map((h) => at(h, 0) / 1000),
-    );
-});
+// Owner o's text proxies in D1, each asking its upstream for
+// gemini-3-flash.
+const proxies = (names, visibility = "public") =>
+    env.DB.batch([
+        env.DB.prepare(
+            "INSERT OR IGNORE INTO user (id, name, email, github_username, created_at, updated_at) VALUES ('owner-o', 'o', 'o@owner.test', 'o', 1, 1)",
+        ),
+        ...names.map((name) =>
+            env.DB.prepare(
+                "INSERT OR REPLACE INTO community_endpoint (id, owner_user_id, name, title, base_url, upstream_model, visibility) VALUES (?, 'owner-o', ?, ?, 'https://upstream.test', 'gemini-3-flash', ?)",
+            ).bind(name, name, name, visibility),
+        ),
+    ]);
+const runs = async (stub) => (await stored(stub, "community")).served;
 
-it("tells a served-model mismatch to its owner once due, however long delivery fails, and again only on a new check", async () => {
+it("compares only fresh probes of public proxies that answered themselves with a model name", async () => {
     const stub = watch();
     let clock = Date.UTC(2026, 10, 1, 10, 5);
     vi.spyOn(Date, "now").mockImplementation(() => clock);
-    const reported = [
-        {
-            model: "community/o/m",
+    await proxies(["m", "fallback", "anonymous", "unnamed"]);
+    await proxies(["private"], "private");
+    world.catalog = [
+        "m",
+        "fallback",
+        "anonymous",
+        "unnamed",
+        "private",
+        "unlisted",
+    ].map((name) => community(`community/o/${name}`));
+    world.probe = (path, body) => {
+        const name = body.model.split("/").pop();
+        const response = answers(
+            () => false,
+            name === "unnamed" ? undefined : "llama-3.1-8b",
+        )(path, body);
+        if (name === "fallback")
+            response.headers.set("x-model-used", "community/o/other");
+        if (name === "anonymous") response.headers.delete("x-model-used");
+        return response;
+    };
+    await cycled(stub);
+    expect(await runs(stub)).toEqual({
+        "community/o/m": {
             declared: "gemini-3-flash",
             served: "llama-3.1-8b",
+            id: expect.any(String),
+            streak: 1,
         },
-    ];
+    });
+    // Half an hour on, no probe is due: a saved probe never counts again.
+    clock += 30 * 60_000;
+    await cycled(stub);
+    expect((await runs(stub))["community/o/m"].streak).toBe(1);
+    clock += HOURS(4);
+    await cycled(stub);
+    expect((await runs(stub))["community/o/m"].streak).toBe(2);
+});
+
+it("tells a served-model mismatch to its owner once due, however long delivery fails, and again only on a new probe", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 1, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    await proxies(["m"]);
     world.catalog = [community("community/o/m")];
-    world.probe = answers(() => false);
+    world.probe = answers(() => false, "llama-3.1-8b");
     world.agent = tells();
-    world.served = reported;
-    // Two checks in a row report another name while Discord is down.
+    // Two probes in a row report another name while Discord is down.
     world.fails = () => true;
     await cycled(stub);
-    clock += HOURS(1);
+    clock += HOURS(4);
     await cycled(stub);
     expect(posts(COMMUNITY)).toHaveLength(0);
-    // Eight days on, without answers since, it is still due.
+    // Eight days on, busy and healthy so never probed since, it is still
+    // due.
     world.fails = () => false;
-    world.served = [];
+    world.regular = [row(40, 40, "community/o/m")];
     clock += HOURS(8 * 24);
     await cycled(stub);
     expect(world.agentFacts.at(-1).incidents).toEqual([
@@ -1289,11 +1297,11 @@ it("tells a served-model mismatch to its owner once due, however long delivery f
         },
     ]);
     expect(posts(COMMUNITY).map((p) => p.content)).toEqual([OWNER_O]);
-    // After its quiet week it is told again only once a new check reports it.
+    // After its quiet week it is told again only once a new probe reports it.
     clock += HOURS(8 * 24);
     await cycled(stub);
     expect(posts(COMMUNITY)).toHaveLength(1);
-    world.served = reported;
+    world.regular = [];
     clock += HOURS(1);
     await cycled(stub);
     expect(posts(COMMUNITY)).toHaveLength(2);

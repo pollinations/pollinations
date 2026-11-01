@@ -58,11 +58,10 @@ const MAX_LINES = 4;
 // A closed card's last edit is retried each check for this long; after that
 // its message is likely gone.
 const FINAL_RETRY_MS = 24 * 60 * 60 * 1000;
-// The last full UTC hour (legacy bridges, served models) changes on the
-// hour; it is read once an hour, this long after it, when Tinybird has that
-// hour in full.
+// The legacy bridges' last full UTC hour changes on the hour; it is read
+// once an hour, this long after it, when Tinybird has that hour in full.
 const HOUR_MS = 60 * 60 * 1000;
-const LAST_HOUR_READ_DELAY_MS = 5 * 60 * 1000;
+const LEGACY_READ_DELAY_MS = 5 * 60 * 1000;
 // The community agent runs this often, like the retired monitor's
 // half-hourly cycle, and its probes run at most this many at a time.
 const CYCLE_MS = 30 * 60 * 1000;
@@ -505,7 +504,7 @@ export class Watch extends DurableObject {
     async legacy(now) {
         const hour = Math.floor(now / HOUR_MS);
         const saved = await this.ctx.storage.get("legacy");
-        if (saved?.hour === hour || now % HOUR_MS < LAST_HOUR_READ_DELAY_MS)
+        if (saved?.hour === hour || now % HOUR_MS < LEGACY_READ_DELAY_MS)
             return saved?.rows ?? null;
         try {
             const rows = await pipe(
@@ -549,7 +548,7 @@ export class Watch extends DurableObject {
         const key = this.env.COMMUNITY_PROBE_KEY;
         if (!key) throw new Error("COMMUNITY_PROBE_KEY missing");
         const rows = await statusRows(gen, WINDOW_MINUTES, "regular");
-        await pool(
+        const probes = await pool(
             dueProbes(catalog, rows, state.schedule, now),
             PROBE_POOL,
             async (model) => {
@@ -561,18 +560,23 @@ export class Watch extends DurableObject {
                     console.log(
                         `probe ${model.name}: ${result.status} ${result.requestId ?? ""}`,
                     );
+                return result;
             },
         );
 
         const listings = await this.listingsToday(gen, catalog, now);
-        state.served = await this.served(state.served, listed, now);
+        state.served = servedStreaks(
+            await this.reported(probes),
+            state.served,
+            listed,
+        );
         const { found, pending } = incidents({
             catalog,
             rows,
             schedule: state.schedule,
             quiet: state.quiet,
             pending: state.pending,
-            served: state.served.seen,
+            served: state.served,
             listings: listings?.changes ?? null,
             now,
         });
@@ -618,33 +622,39 @@ export class Watch extends DurableObject {
                     await this.ctx.storage.put("listings", listings.saved);
                 // A told mismatch needs a new check before it is due again.
                 if (incident.kind === "mismatch")
-                    state.served.seen[incident.model].streak = 1;
+                    state.served[incident.model].streak = 1;
             }
         }
         await save();
     }
 
-    // The catalog models whose upstream answered with a different model,
-    // read from Tinybird once an hour from 5 minutes past, over the last
-    // full UTC hour, with each one's run of checks. The pipe is given that
-    // hour, so a read that lands after the next hour starts still checks it
-    // once. Until then the last reading stands; an hour that can't be read
-    // is a skipped check, which leaves every run as it is.
-    async served(last, names, now) {
-        const hour = Math.floor(now / HOUR_MS) - 1;
-        if (last?.hour === hour || now % HOUR_MS < LAST_HOUR_READ_DELAY_MS)
-            return last ?? { hour: null, seen: {} };
-        let rows = [];
+    // This cycle's fresh text probes that their model answered itself with
+    // a model name, each beside the upstream model its public proxy listing
+    // asks for, read from D1 as the old monitor read it. A failed read is a
+    // skipped check.
+    async reported(probes) {
+        const own = probes.filter(
+            (p) => p.servedModel && p.modelUsed === p.model,
+        );
+        if (!own.length) return [];
         try {
-            rows = await pipe(
-                "infra_watch_served_model",
-                { start: (hour * HOUR_MS) / 1000 },
-                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
-            );
+            const { results } = await this.env.DB.prepare(
+                `SELECT 'community/' || u.github_username || '/' || ce.name AS model, ce.upstream_model AS declared
+                FROM community_endpoint ce JOIN user u ON ce.owner_user_id = u.id
+                WHERE ce.visibility = 'public' AND ce.type = 'proxy'`,
+            ).all();
+            const declared = new Map(results.map((r) => [r.model, r.declared]));
+            return own
+                .filter((p) => declared.has(p.model))
+                .map((p) => ({
+                    model: p.model,
+                    declared: declared.get(p.model),
+                    served: p.servedModel,
+                }));
         } catch (error) {
             console.error(`served models: ${error.message}`);
+            return [];
         }
-        return { hour, seen: servedStreaks(rows, last?.seen, names) };
     }
 
     // The day's community listing changes for the agent, once a day from

@@ -79,6 +79,8 @@ const CYCLE_MS = 30 * 60 * 1000;
 const PROBE_POOL = 4;
 // Its answer may list a few hundred models to probe, after its reasoning.
 const AGENT_MAX_TOKENS = 12_000;
+// Results waiting to be told about are kept up to this many, the newest.
+const RESULTS_KEPT = 500;
 // Community listing changes are given to it once a day, from 12:00 UTC: a
 // check's listings day is its UTC date 12 hours earlier.
 const LISTINGS_DAY_STARTS_MS = 12 * 60 * 60 * 1000;
@@ -517,28 +519,30 @@ export class Watch extends DurableObject {
                     maxTokens: AGENT_MAX_TOKENS,
                 },
             ),
-            input.candidates,
-            catalog,
+            input,
         );
         if (!plan) throw new Error("the agent gave no decision");
-        if (listings) await this.ctx.storage.put("listings", listings.saved);
-        const color = COLOR.PRIMARY_WEAK;
-        const delivered =
-            (!plan.community ||
-                (await post(
-                    this.env,
-                    { ...plan.community, color },
-                    "COMMUNITY_WEBHOOK_URL",
-                ))) &&
-            (!plan.maintainers ||
-                (await post(this.env, {
-                    ...plan.maintainers,
-                    ping: true,
-                    color,
-                })));
-        if (delivered) state.told = remember(state.told, plan.told, now);
+        // Each post is sent and recorded on its own: what it told counts
+        // only once Discord has it.
+        const send = async (message, webhook) => {
+            if (!message) return true;
+            const color = COLOR.PRIMARY_WEAK;
+            if (!(await post(this.env, { ...message, color }, webhook)))
+                return false;
+            state.told = remember(state.told, message.told, now);
+            return true;
+        };
+        const told = await send(plan.community, "COMMUNITY_WEBHOOK_URL");
+        const escalated = await send(
+            plan.maintainers && { ...plan.maintainers, ping: true },
+        );
+        // The day's listing changes and these results stay facts until the
+        // posts about them are delivered.
+        if (listings && told)
+            await this.ctx.storage.put("listings", listings.saved);
+        const kept = told && escalated ? [] : (state.results ?? []);
         const chosen = catalog.filter((m) => plan.probe.includes(m.name));
-        state.results = await pool(chosen, PROBE_POOL, async (model) => {
+        const fresh = await pool(chosen, PROBE_POOL, async (model) => {
             const previous = state.schedule[model.name];
             const result = await probe(gen, key, model, previous);
             state.schedule[model.name] = recordProbe(previous, result);
@@ -552,9 +556,11 @@ export class Watch extends DurableObject {
                 previous: previous && {
                     status: previous.status,
                     protocolError: previous.protocolError,
+                    modelUsed: previous.modelUsed,
                 },
             };
         });
+        state.results = [...kept, ...fresh].slice(-RESULTS_KEPT);
         await save();
     }
 

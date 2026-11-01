@@ -71,7 +71,7 @@ test("candidates are the due community text and image proxies, with their 4h tra
     ]);
 });
 
-test("results name a fallback only when public, and only plain-word error codes", () => {
+test("results and the probe before each name a fallback only when public", () => {
     const { results } = facts({
         ...base,
         results: [
@@ -80,9 +80,12 @@ test("results name a fallback only when public, and only plain-word error codes"
                 category: "text",
                 status: "PROTOCOL",
                 protocolError: "stream returned an error event",
-                errorCode: "api.private-host.example",
                 modelUsed: "community/o/due",
-                previous: { status: 200 },
+                previous: {
+                    status: "PROTOCOL",
+                    protocolError: "stream returned an error event",
+                    modelUsed: "community/o/later",
+                },
             },
             {
                 model: "community/o/later",
@@ -99,9 +102,13 @@ test("results name a fallback only when public, and only plain-word error codes"
             },
         ],
     });
-    assert.equal(results[0].errorCode, undefined);
     assert.equal(results[0].servedBy, undefined);
-    assert.deepEqual(results[0].previous, { status: 200 });
+    // The probe before was a fallback's answer, not the model's own.
+    assert.deepEqual(results[0].previous, {
+        status: "PROTOCOL",
+        protocolError: "stream returned an error event",
+        servedBy: "community/o/later",
+    });
     assert.equal(results[1].errorCode, "BAD_GATEWAY");
     assert.equal(results[1].servedBy, "private");
     assert.equal(results[2].servedBy, "community/o/later");
@@ -153,38 +160,6 @@ test("fallbacks: listed models with rescues, each fallback's part, private ones 
     ]);
 });
 
-test("the agent's answer is kept within the rails", () => {
-    const candidates = [{ model: "community/o/due" }];
-    const answer = {
-        probe: [
-            "community/o/due",
-            "community/o/due",
-            "community/o/agent",
-            "openai",
-        ],
-        community: { text: "x".repeat(5000), owners: ["o", "p", "everyone"] },
-        maintainers: { text: "  " },
-        told: ["note", 7, "y".repeat(300)],
-    };
-    const plan = decision(JSON.stringify(answer), candidates, CATALOG);
-    assert.deepEqual(plan.probe, ["community/o/due"]);
-    assert.equal(plan.community.text.length, 4096);
-    assert.deepEqual(plan.community.owners, ["o", "p"]);
-    assert.equal(plan.maintainers, null);
-    assert.deepEqual(plan.told, ["note", "y".repeat(200)]);
-    // A fenced answer still reads; anything else is no decision.
-    assert.deepEqual(
-        decision(
-            `\`\`\`json\n${JSON.stringify({ probe: [] })}\n\`\`\``,
-            [],
-            [],
-        ),
-        { probe: [], community: null, maintainers: null, told: [] },
-    );
-    assert.equal(decision("not json", [], []), null);
-    assert.equal(decision(null, [], []), null);
-});
-
 const listed = (name, success_rate) =>
     model(name, {
         health: success_rate == null ? null : { success_rate },
@@ -232,23 +207,6 @@ test("listing changes: newly filtered, and back in the default list", () => {
     });
 });
 
-test("a post keeps only Pollinations links", () => {
-    const text = [
-        "See [My Models](https://enter.pollinations.ai/my-models)",
-        "and https://gen.pollinations.ai/models,",
-        "not [this](https://evil.example/x) or http://pollinations.ai.evil.example/y",
-        // Read as Discord reads them, these point at evil.example.
-        "nor https://pollinations.ai)@evil.example/z",
-        "nor https://pollinations.ai[@evil.example]",
-        "nor https://evil.example\\@pollinations.ai/",
-    ].join(" ");
-    const plan = decision(JSON.stringify({ maintainers: { text } }), [], []);
-    assert.equal(
-        plan.maintainers.text,
-        "See [My Models](https://enter.pollinations.ai/my-models) and https://gen.pollinations.ai/models, not [this]([link removed] or [link removed] nor [link removed] nor [link removed] nor [link removed]",
-    );
-});
-
 test("only the newest 200 notes are kept", () => {
     let told = [];
     for (let i = 0; i < 5; i++)
@@ -260,4 +218,78 @@ test("only the newest 200 notes are kept", () => {
     assert.equal(told.length, 200);
     assert.deepEqual(told[0], { at: 1, note: "n1-0" });
     assert.deepEqual(told.at(-1), { at: 4, note: "n4-49" });
+});
+
+// The facts an answer is judged against: o/due was probed, p/fallback
+// leans on a fallback, o/later is only a candidate.
+const INPUT = {
+    candidates: [{ model: "community/o/due" }, { model: "community/o/later" }],
+    results: [{ model: "community/o/due" }],
+    fallbacks: [{ model: "community/p/fallback" }],
+};
+const answer = (value) => decision(JSON.stringify(value), INPUT);
+
+test("only candidates are probed, and only owners of models in results or fallbacks are pinged", () => {
+    const plan = answer({
+        probe: [
+            "community/o/due",
+            "community/o/due",
+            "community/o/agent",
+            "openai",
+        ],
+        community: { text: "hi", owners: ["o", "p", "q", "everyone"] },
+    });
+    assert.deepEqual(plan.probe, ["community/o/due"]);
+    assert.deepEqual(plan.community.owners, ["o", "p"]);
+    // An owner whose model is only a candidate isn't pinged.
+    const later = decision(
+        JSON.stringify({ community: { text: "hi", owners: ["o"] } }),
+        { ...INPUT, results: [], fallbacks: [] },
+    );
+    assert.deepEqual(later.community.owners, []);
+});
+
+test("each post keeps its own notes, fits Discord, and an empty one is null", () => {
+    const plan = answer({
+        community: {
+            text: "x".repeat(5000),
+            told: ["note", 7, "y".repeat(300)],
+        },
+        maintainers: { text: "  ", told: ["lost"] },
+    });
+    assert.equal(plan.community.text.length, 4096);
+    assert.match(
+        plan.community.text,
+        /My Models\]\(https:\/\/enter\.pollinations\.ai\/my-models\)\.$/,
+    );
+    assert.deepEqual(plan.community.told, ["note", "y".repeat(200)]);
+    assert.equal(plan.maintainers, null);
+    // A fenced answer still reads; anything else is no decision.
+    assert.deepEqual(
+        decision(`\`\`\`json\n${JSON.stringify({ probe: [] })}\n\`\`\``, INPUT),
+        { probe: [], community: null, maintainers: null },
+    );
+    assert.equal(decision("not json", INPUT), null);
+    assert.equal(decision(null, INPUT), null);
+});
+
+test("the agent can write no link; code adds the one to My Models", () => {
+    const text = [
+        "[Owner dashboard](https:\\/\\/evil.example/login)",
+        "[here](https://enter.pollinations.ai/my-models)",
+        "https\\://evil.example/a <https://evil.example/b>",
+        "https://gen.pollinations.ai/models www.evil.example/c done",
+    ].join(" ");
+    const plan = answer({ community: { text }, maintainers: { text } });
+    for (const post of [plan.community.text, plan.maintainers.text]) {
+        const own = post.replace(/\n\nOwners see .*$/s, "");
+        assert.doesNotMatch(own, /https?:|www\.|\]\(/i);
+        assert.match(own, /Owner dashboard here/);
+        assert.match(own, /done$/);
+    }
+    assert.match(
+        plan.community.text,
+        /\n\nOwners see their models' errors on \[My Models\]/,
+    );
+    assert.doesNotMatch(plan.maintainers.text, /My Models/);
 });

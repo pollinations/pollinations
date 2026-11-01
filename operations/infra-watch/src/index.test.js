@@ -602,12 +602,9 @@ const COMMUNITY = "/api/webhooks/2/y";
 const INFRA = "/api/webhooks/1/x";
 const posts = (path) =>
     world.writes.filter((w) => w.ok && w.method === "POST" && w.path === path);
-const nothing = () => ({
-    probe: [],
-    community: null,
-    maintainers: null,
-    told: [],
-});
+const nothing = () => ({ probe: [], community: null, maintainers: null });
+const MAINTAINERS = "<@304378879705874432> <@884468469452656732>";
+const OWNER_O = "<@123456789012345678>";
 
 it("runs the community agent half-hourly: it picks probes among due models, code posts what it says", async () => {
     const stub = watch();
@@ -622,8 +619,8 @@ it("runs the community agent half-hourly: it picks probes among due models, code
         }),
     ];
     world.probe = answers((m) => m === "community/o/broken");
-    // Only due community proxies are probed, whatever it asks for, and only
-    // community model owners are pinged.
+    // Only due community proxies are probed, whatever it asks for. With no
+    // results or fallbacks yet, no owner can be pinged.
     world.agent = () => ({
         probe: [
             "community/o/broken",
@@ -631,9 +628,8 @@ it("runs the community agent half-hourly: it picks probes among due models, code
             "community/o/agent",
             "a/model",
         ],
-        community: { text: "To owners", owners: ["o", "p", "someone"] },
-        maintainers: { text: "To maintainers" },
-        told: ["told once"],
+        community: { text: "To owners", owners: ["o"], told: ["c1"] },
+        maintainers: { text: "To maintainers", told: ["m1"] },
     });
     await cycled(stub);
     expect(world.agentFacts[0].candidates.map((c) => c.model)).toEqual([
@@ -646,23 +642,23 @@ it("runs the community agent half-hourly: it picks probes among due models, code
         "/v1/images/edits community/o/image",
     ]);
     const [owners] = posts(COMMUNITY);
-    expect(owners.text).toBe("To owners");
-    expect(owners.content).toBe("<@123456789012345678> p");
-    expect(owners.users).toEqual(["123456789012345678"]);
+    expect(owners.text).toMatch(/^To owners\n\nOwners see .*My Models/);
+    expect(owners.content).toBe("");
     const [maintainers] = posts(INFRA).filter(
         (w) => w.text === "To maintainers",
     );
-    expect(maintainers.content).toBe(
-        "<@304378879705874432> <@884468469452656732>",
-    );
+    expect(maintainers.content).toBe(MAINTAINERS);
 
     // Within the half hour: no cycle.
     await cycled(stub);
     expect(world.agentFacts).toHaveLength(1);
 
     // The next one reads last cycle's results and what it told; the probed
-    // models aren't due.
-    world.agent = nothing;
+    // models aren't due. o has models in the results, p only a candidate.
+    world.agent = () => ({
+        ...nothing(),
+        community: { text: "Broken", owners: ["o", "p"], told: [] },
+    });
     await later(stub, 0);
     await cycled(stub);
     const second = world.agentFacts[1];
@@ -675,7 +671,8 @@ it("runs the community agent half-hourly: it picks probes among due models, code
         status: "PROTOCOL",
         protocolError: "stream is missing [DONE]",
     });
-    expect(second.told.map((t) => t.note)).toEqual(["told once"]);
+    expect(second.told.map((t) => t.note)).toEqual(["c1", "m1"]);
+    expect(posts(COMMUNITY)[1].content).toBe(OWNER_O);
 
     // After the backoff, a result carries the probe before it.
     world.agent = ({ candidates }) => ({
@@ -695,28 +692,92 @@ it("runs the community agent half-hourly: it picks probes among due models, code
     });
 });
 
-it("skips the agent with nothing to decide, and leaves a refused post out of what it told", async () => {
+it("tells the agent which model answered the probe before, so a fallback's break isn't the model's", async () => {
     const stub = watch();
-    world.catalog = [{ name: "a/model", category: "text" }];
+    world.catalog = [
+        community("community/o/m"),
+        community("community/o/fallback"),
+    ];
+    // First a fallback answers with a broken stream, then the model itself.
+    let served = "community/o/fallback";
+    world.probe = (_path, body) => {
+        const marker = body.messages[0].content.split(": ")[1];
+        return new Response(
+            `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }] })}\n\n`,
+            { headers: { "x-model-used": served } },
+        );
+    };
+    world.agent = () => ({ ...nothing(), probe: ["community/o/m"] });
     await cycled(stub);
-    expect(world.agentFacts).toHaveLength(0);
-
-    world.catalog = [community("community/o/m")];
-    world.agent = () => ({
-        ...nothing(),
-        community: { text: "Hi", owners: [] },
-        told: ["hi"],
-    });
-    // Discord refuses it, after the sender's retries.
-    world.fails = (w) => w.path === COMMUNITY;
-    await later(stub, 0);
+    served = "community/o/m";
+    await later(stub, 8 * 60 * 60_000);
     await cycled(stub);
     world.agent = nothing;
     await later(stub, 0);
     await cycled(stub);
-    expect(world.agentFacts).toHaveLength(2);
-    expect(world.agentFacts[1].told).toEqual([]);
+    const [result] = world.agentFacts.at(-1).results;
+    expect(result.servedBy).toBeUndefined();
+    expect(result.previous).toEqual({
+        status: "PROTOCOL",
+        protocolError: "stream is missing [DONE]",
+        servedBy: "community/o/fallback",
+    });
+});
+
+it("tries both posts on their own, and keeps what a refused one was about", async () => {
+    const stub = watch();
+    const model = (name, success_rate) =>
+        community(name, { health: { success_rate } });
+    world.catalog = [model("community/o/a", 40), model("community/o/b", 95)];
+    world.shown = [model("community/o/b", 95)];
+    world.probe = answers(() => true);
+    world.agent = () => ({ ...nothing(), probe: ["community/o/a"] });
+    await cycled(stub);
+
+    // A new listings day, results to tell about, and Discord refuses the
+    // community post: the maintainers still get theirs.
+    world.catalog = [model("community/o/a", 90), model("community/o/b", 30)];
+    world.shown = [model("community/o/a", 90)];
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("listings");
+        await state.storage.put("listings", { ...saved, day: "2000-01-01" });
+    });
+    world.agent = () => ({
+        ...nothing(),
+        community: { text: "Listings and streams", told: ["community"] },
+        maintainers: { text: "Gen is broken", told: ["maintainers"] },
+    });
+    world.fails = (w) => w.path === COMMUNITY;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(posts(INFRA).filter((w) => w.text === "Gen is broken")).toHaveLength(
+        1,
+    );
+
+    // The next cycle still has the listing changes and the results, and
+    // only the delivered post's notes.
+    world.fails = () => false;
+    world.agent = nothing;
+    await later(stub, 0);
+    await cycled(stub);
+    const third = world.agentFacts[2];
+    expect(third.listings?.newly).toEqual([
+        { model: "community/o/b", health: 30 },
+    ]);
+    expect(third.results.map((r) => r.model)).toEqual(["community/o/a"]);
+    expect(third.told.map((t) => t.note)).toEqual(["maintainers"]);
 }, 15_000);
+
+it("skips the agent with nothing to decide", async () => {
+    const stub = watch();
+    world.catalog = [{ name: "a/model", category: "text" }];
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(0);
+    world.catalog = [community("community/o/m")];
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(1);
+});
 
 it("gives the agent the day's listing changes once, after saving the first day's set", async () => {
     const stub = watch();

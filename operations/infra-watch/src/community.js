@@ -124,25 +124,23 @@ export function incidents({
     // maintainers' incident, and none of those owners'. A model broken
     // before, never probed before, or saved by a fallback (or with no
     // attribution) is never counted: owners' endpoints that stay broken often
-    // fail alike without gen at fault. Each model it counted stays in it
-    // until that model is probed again, whatever the others do; one kept
-    // from an earlier cycle is checked again, so an incident saved under an
-    // older rule can't return.
+    // fail alike without gen at fault. Each model it counted stays in it,
+    // and out of its owner's incidents, while its latest probe breaks the
+    // same way: a long outage stays the maintainers', told again with all
+    // its models after their quiet day. Incidents saved with `probes` came
+    // from a rule that counted models broken before, and are dropped.
     const worked = (model, s) =>
         s?.before?.status === 200 && s.before.modelUsed === model;
     const held = new Map();
     for (const p of Object.values(pending))
         if (p.kind === "shared")
-            for (const [model, at] of Object.entries(p.probes))
+            for (const model of p.models ?? [])
                 if (
                     listed.has(model) &&
-                    schedule[model]?.lastAt === at &&
-                    worked(model, schedule[model])
+                    broken(model, schedule[model]) &&
+                    schedule[model].protocolError === p.error
                 )
-                    held.set(p.error, [
-                        ...(held.get(p.error) ?? []),
-                        [model, at],
-                    ]);
+                    held.set(p.error, [...(held.get(p.error) ?? []), model]);
     const recent = Map.groupBy(
         streams.filter(
             ([model, s]) =>
@@ -152,31 +150,22 @@ export function incidents({
     );
     const gens = new Set();
     for (const error of new Set([...recent.keys(), ...held.keys()])) {
-        const fresh = (recent.get(error) ?? []).map(([m, s]) => [m, s.lastAt]);
-        const formed =
-            new Set(fresh.map(([m]) => ownerOf(m))).size >= SHARED_OWNERS;
-        const members = new Map([
-            ...(held.get(error) ?? []),
-            ...(formed ? fresh : []),
-        ]);
-        if (!members.size) continue;
-        for (const model of members.keys()) gens.add(model);
-        kept[`shared ${error}`] = {
-            kind: "shared",
-            error,
-            probes: Object.fromEntries(members),
-        };
-        const untold = [...members.keys()].filter(
-            (m) => !told(streamKey(m, error), "stream"),
-        );
-        if (untold.length)
+        const fresh = (recent.get(error) ?? []).map(([m]) => m);
+        const formed = new Set(fresh.map(ownerOf)).size >= SHARED_OWNERS;
+        const models = [
+            ...new Set([...(held.get(error) ?? []), ...(formed ? fresh : [])]),
+        ];
+        if (!models.length) continue;
+        for (const model of models) gens.add(model);
+        kept[`shared ${error}`] = { kind: "shared", error, models };
+        if (models.some((m) => !told(streamKey(m, error), "stream")))
             add({
                 kind: "shared",
                 to: "maintainers",
                 error,
-                models: untold,
+                models,
                 owners: [],
-                quiet: untold.map((m) => streamKey(m, error)),
+                quiet: models.map((m) => streamKey(m, error)),
             });
     }
 

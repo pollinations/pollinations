@@ -8,6 +8,7 @@ import {
     listingChanges,
     streamKey,
 } from "./community.js";
+import { nextProbeAt, recordProbe } from "./probes.js";
 
 const NOW = Date.parse("2026-11-01T12:00:00Z");
 const HOUR = 3_600_000;
@@ -117,6 +118,19 @@ test("one broken stream on 3 owners' working models within 4 hours is the mainta
         shared.map((n) => [streamKey(n, ERROR), NOW]),
     );
     assert.deepEqual(find({ ...input, quiet }), []);
+    // A fourth owner's model joins it: told again whole, so the card counts
+    // every model it calls gen's.
+    const four = [...shared, "community/d/w"];
+    const joined = find({
+        catalog: four.map((n) => model(n)),
+        schedule: Object.fromEntries(four.map((n) => [n, fresh(n)])),
+        quiet,
+        pending: cycle(input).pending,
+    });
+    assert.deepEqual(
+        joined.map((i) => [i.models, i.quiet]),
+        [[four, four.map((n) => streamKey(n, ERROR))]],
+    );
     // Two owners: not gen's, and once is not yet any owner's.
     const two = ["community/a/x", "community/a/w", "community/b/y"];
     assert.deepEqual(
@@ -153,8 +167,7 @@ test("3 owners' models broken alike but not working before are never gen's", () 
         ]),
     );
     assert.deepEqual(find({ catalog, schedule: rescued }), []);
-    // A shared incident saved under the old rule, its quiet over, its
-    // models not probed since: checked again, and gone.
+    // A shared incident saved under the old rule, its quiet over: dropped.
     assert.deepEqual(
         find({
             catalog,
@@ -285,7 +298,7 @@ test("listing changes are an incident only when something changed", () => {
     );
 });
 
-test("a shared failure keeps its models until they are probed again, even past 4 hours", () => {
+test("a shared failure keeps its models while they break the same way, even past 4 hours", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));
     const schedule = Object.fromEntries(shared.map((n) => [n, fresh(n)]));
@@ -312,8 +325,7 @@ test("a shared failure keeps its models until they are probed again, even past 4
         }).found,
         [],
     );
-    // A new probe of each is fresh evidence: older than 4 hours, they are
-    // their owners' again.
+    // Probed again and broken the same way: still gen's, never their owners'.
     const reprobed = Object.fromEntries(
         shared.map((n) => [n, twice({ lastAt: NOW - 5 * HOUR })]),
     );
@@ -322,7 +334,7 @@ test("a shared failure keeps its models until they are probed again, even past 4
             cycle({ catalog, schedule: reprobed, pending: first.pending })
                 .found,
         ),
-        shared.map((n) => `stream ${n}`),
+        [`shared ${shared}`],
     );
 });
 
@@ -342,7 +354,7 @@ test("a fallback notice is kept from when it qualifies until its fallbacks are t
     assert.deepEqual(done.pending, {});
 });
 
-test("a shared failure keeps each model until that model is probed again, whatever the others do", () => {
+test("a shared failure keeps each model until that model stops breaking that way, whatever the others do", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));
     const schedule = Object.fromEntries(shared.map((n) => [n, fresh(n)]));
@@ -361,6 +373,57 @@ test("a shared failure keeps each model until that model is probed again, whatev
     assert.deepEqual(brief(later.found), [
         "shared community/b/y,community/c/z",
     ]);
+});
+
+test("a long gen outage stays the maintainers', told again after its quiet day, and never pings a publisher", () => {
+    const shared = ["community/a/x", "community/b/y", "community/c/z"];
+    const catalog = shared.map((n) => model(n));
+    for (const delivered of [true, false]) {
+        // Working 4 hours ago, then broken alike from NOW for 30 hours, each
+        // probed on its own backoff by the half-hourly cycle.
+        const schedule = Object.fromEntries(
+            shared.map((n) => [
+                n,
+                recordProbe(undefined, {
+                    ok: true,
+                    status: 200,
+                    modelUsed: n,
+                    timestamp: NOW - 4 * HOUR,
+                }),
+            ]),
+        );
+        const quiet = {};
+        let pending = {};
+        const told = [];
+        for (let now = NOW; now <= NOW + 30 * HOUR; now += HOUR / 2) {
+            for (const n of shared)
+                if (now >= nextProbeAt(schedule[n]))
+                    schedule[n] = recordProbe(schedule[n], {
+                        ok: false,
+                        status: "PROTOCOL",
+                        protocolError: ERROR,
+                        modelUsed: n,
+                        timestamp: now,
+                    });
+            const result = cycle({ catalog, schedule, quiet, pending, now });
+            pending = result.pending;
+            for (const i of result.found) {
+                told.push(`+${(now - NOW) / HOUR}h ${i.kind} ${i.models}`);
+                if (delivered) for (const k of i.quiet) quiet[k] = now;
+            }
+        }
+        // Delivered: told at the start and again a day on. Undelivered: the
+        // maintainers' incident every cycle, with no publisher's at +8h.
+        assert.deepEqual(
+            told,
+            delivered
+                ? [`+0h shared ${shared}`, `+24h shared ${shared}`]
+                : Array.from(
+                      { length: 61 },
+                      (_, n) => `+${n / 2}h shared ${shared}`,
+                  ),
+        );
+    }
 });
 
 test("a pending fallback notice names a fallback only if it is still public when told", () => {

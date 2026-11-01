@@ -684,16 +684,13 @@ const cycled = async (stub) => {
     await runInDurableObject(stub, (instance) => instance.cycle);
 };
 // Half an hour on, with every saved time `ms` further back: each model's
-// backoff, quiet periods, and the probes a pending shared failure counted.
+// backoff and quiet periods.
 const later = (stub, ms) =>
     runInDurableObject(stub, async (_, state) => {
         const saved = await state.storage.get("community");
         saved.at -= 30 * 60_000;
         for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
         for (const key of Object.keys(saved.quiet)) saved.quiet[key] -= ms;
-        for (const p of Object.values(saved.pending ?? {}))
-            for (const model of Object.keys(p.probes ?? {}))
-                p.probes[model] -= ms;
         await state.storage.put("community", saved);
     });
 const COMMUNITY = "/api/webhooks/2/y";

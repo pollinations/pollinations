@@ -45,6 +45,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "PATCH_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -126,6 +127,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "patch",
+        name: "Patch",
+        description:
+            "Produce unified diffs and apply patches to text, in the worker.",
+        binding: "PATCH_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Plain text operations run inside the worker. No additional MCP fee.",
             rates: [],
         },
     },

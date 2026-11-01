@@ -19,6 +19,9 @@ import type { ListedApp } from "../backend-types.ts";
 import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
 
 /** The submission form every listed app started as (issue template). */
+/** The public catalog every listing here appears in. */
+const APP_CATALOG_URL = "https://pollinations.ai/apps";
+
 const SUBMIT_APP_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml";
 
@@ -115,7 +118,7 @@ function AppCard({ app }: { app: ListedApp }) {
                             className="ml-auto shrink-0 tabular-nums"
                         >
                             <PulseIcon className="h-3 w-3" />
-                            {formatCount(app.requests24h)} requests · 24h
+                            {formatCount(app.requests24h)} req /24h
                         </Chip>
                     )}
                 </div>
@@ -255,14 +258,22 @@ export function MyApps({
                 <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 {githubConnected ? (
                     <span>
-                        A listing is matched to your connected GitHub account,
-                        so submit from that account.
+                        Each app here is listed in the Pollinations{" "}
+                        <InlineLink href={APP_CATALOG_URL}>
+                            app catalog
+                        </InlineLink>
+                        : submitted from your connected GitHub account and
+                        approved by a maintainer.
                     </span>
                 ) : (
                     <span>
-                        Listings are matched to a GitHub account.{" "}
+                        Apps here are listed in the Pollinations{" "}
+                        <InlineLink href={APP_CATALOG_URL}>
+                            app catalog
+                        </InlineLink>{" "}
+                        and matched to the GitHub account that submitted them.{" "}
                         <InlineLink href="/account">Connect GitHub</InlineLink>{" "}
-                        on your account page, then submit from that account.
+                        on your account page to see yours.
                     </span>
                 )}
             </p>

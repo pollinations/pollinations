@@ -249,9 +249,10 @@ def message(pr: dict, text: str, app: dict, fields: dict) -> dict:
     """The post: one card titled with the PR's change, the text's bullets with known links only,
     a line of labels (Area, Work type, PR), the picture, and the author, Source and merge time."""
     title, _, rest = text.strip().partition("\n")
-    allowed = set(links_for(app).values())
-    rest = LINK.sub(lambda m: m[0] if m[2] in allowed else m[1], rest.strip())
-    if app and app["app_url"] not in rest:
+    # A trailing slash added or dropped by the writer still matches.
+    allowed = {url.rstrip("/") for url in links_for(app).values()}
+    rest = LINK.sub(lambda m: m[0] if m[2].rstrip("/") in allowed else m[1], rest.strip())
+    if app and app["app_url"].rstrip("/") not in rest:
         rest += f"\n\n🔗 [{app['app_name']}]({app['app_url']})"
     # Inline code is the only text with a background that Discord gives a card.
     labels = " ".join(f"`{label}`" for label in (fields.get("area"), fields.get("type"), f"PR #{pr['number']}") if label)

@@ -1235,9 +1235,13 @@ class DeploymentReadinessTest(unittest.TestCase):
         self.assertEqual(embed["description"],
                          "- 🔑 Make one on [your keys page](https://enter.pollinations.ai/keys)\n"
                          "- 🧩 See the guide or [Snap](https://snap.test)\n\n`Accounts & keys` `Bug` `PR #7`")
-        # The app is always linked, once.
+        # The app is always linked, once, and a trailing slash on either side still matches.
         linked = deploy_posts.message(pr, "Snap added\n- 🐝 A meme maker", app, {})["embeds"][0]
         self.assertEqual(linked["description"], "- 🐝 A meme maker\n\n🔗 [Snap](https://snap.test)\n\n`PR #7`")
+        slashed = deploy_posts.message(pr, "Snap added\n- 🐝 Try [Snap](https://snap.test) or [keys](https://enter.pollinations.ai/keys/)",
+                                       {**app, "app_url": "https://snap.test/"}, {})["embeds"][0]
+        self.assertEqual(slashed["description"],
+                         "- 🐝 Try [Snap](https://snap.test) or [keys](https://enter.pollinations.ai/keys/)\n\n`PR #7`")
         # Off the Dev project, the card has no labels rather than guessed ones.
         bare = deploy_posts.message(pr, "Keys moved", {}, {"area": None, "type": None, "source": None})["embeds"][0]
         self.assertEqual((bare["description"], bare["footer"]["text"]), ("`PR #7`", "bee"))

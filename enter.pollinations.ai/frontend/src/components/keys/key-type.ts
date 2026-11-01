@@ -22,8 +22,9 @@ export function isAppKey(apiKey: ApiKey): boolean {
 }
 
 /**
- * An App Key with no redirect URIs and no earnings signs nobody in, so the
- * list hides it. `polli keys list` and `polli keys revoke` still reach it.
+ * An App Key with no redirect URIs and no earnings isn't set up as an app, so
+ * the list hides it. Device login could still name it as a client ID;
+ * `polli keys list` and `polli keys revoke` still reach it.
  */
 export function isUnsetAppKey(apiKey: ApiKey): boolean {
     return (

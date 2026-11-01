@@ -79,7 +79,7 @@ These are prompt-level rules, not a runtime sandbox. Runs 01–03 used `file` an
 
 ## Create it
 
-Dashboard: [My Models](https://enter.pollinations.ai/my-models) → **Add Agent** → paste `agent.json`.
+Dashboard: [My Listings](https://enter.pollinations.ai/my-models) → **Create** → paste `agent.json`.
 
 ```bash
 npx @pollinations/cli agents create \

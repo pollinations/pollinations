@@ -80,7 +80,7 @@ const BUILD_FEATURES: Feature[] = [
         links: [
             {
                 label: "Explore agents",
-                href: "https://enter.pollinations.ai/models?category=agent",
+                href: "https://enter.pollinations.ai/agents",
             },
         ],
         icon: RobotIcon,
@@ -119,7 +119,7 @@ const BUILD_FEATURES: Feature[] = [
         links: [
             {
                 label: "Explore MCP servers",
-                href: "https://enter.pollinations.ai/models?category=mcp",
+                href: "https://enter.pollinations.ai/agents?view=mcp",
             },
         ],
         icon: McpIcon,
@@ -269,7 +269,7 @@ const PUBLISH_FEATURES: Feature[] = [
         links: [
             {
                 label: "Add a model",
-                href: "https://enter.pollinations.ai/my-models",
+                href: "https://enter.pollinations.ai/my-models?tab=models",
             },
         ],
         icon: BeakerIcon,

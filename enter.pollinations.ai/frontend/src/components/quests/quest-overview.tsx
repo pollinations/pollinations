@@ -1,7 +1,6 @@
 import {
     Alert,
     BeakerIcon,
-    Button,
     CardIcon,
     CheckIcon,
     Chip,

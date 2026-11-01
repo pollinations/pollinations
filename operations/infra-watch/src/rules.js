@@ -702,14 +702,6 @@ export function renderCard(
     };
 }
 
-// The one new message an open incident can post: it got worse and needs a
-// person. It links to the card instead of repeating it.
-export const escalation = (key, incident, link) => ({
-    text: `↑ \`${subjectOf(key)}\` is now ${LABEL[incident.kind]}: callers are affected. ${link}`,
-    ping: true,
-    color: COLOR[incident.kind],
-});
-
 // Heartbeat: infra-watch's own liveness, judged from outside Cloudflare by
 // heartbeat.mjs (GitHub Actions). A last completed check this old means the
 // watcher is down.

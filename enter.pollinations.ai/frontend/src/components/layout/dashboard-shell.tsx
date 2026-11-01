@@ -4,7 +4,6 @@ import {
     BotIcon,
     BrandMark,
     CheckIcon,
-    Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
@@ -63,9 +62,9 @@ type DashboardNavItem = {
 };
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
-// Docs), and everything about you as one block at the bottom: Pollen and
-// Quests, what you build (My Listings, Sandboxes, Keys), Activity, Settings,
-// then your account card. A thin line opens each part. Signed out, the bottom holds the sign-in
+// Docs), and everything about you as one block at the bottom: Credit and
+// Quest with their balances, what you build (Keys, Sandboxes, My Listings),
+// Activity, Settings, then your account card. A thin line opens each part. Signed out, the bottom holds the sign-in
 // buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
@@ -451,16 +450,18 @@ const NavRow: FC<{
         onClick={onNavigate}
     >
         {item.label}
-        {rowStatus?.[item.id]}
+        {/* Something to claim or a new quest: a dot by the label, the
+            count on hover. */}
         {item.id === "quests" && questStatus && (
-            <Chip
-                intent="neutral"
-                size="sm"
-                className="ml-auto bg-transparent text-theme-text-soft"
+            <span
+                title={questStatus}
+                className="-ml-1 self-start pt-1 text-theme-text-soft"
             >
-                {questStatus}
-            </Chip>
+                <span className="block h-1.5 w-1.5 rounded-full bg-current" />
+                <span className="sr-only">{questStatus}</span>
+            </span>
         )}
+        {rowStatus?.[item.id]}
     </NavItem>
 );
 

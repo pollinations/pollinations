@@ -17,7 +17,11 @@ import {
     WalletIcon,
     WarningIcon,
 } from "@pollinations/ui";
-import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
+import {
+    formatPollen,
+    WalletBalanceCard,
+    WalletKindIcon,
+} from "@pollinations/ui/wallet";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
@@ -230,6 +234,24 @@ export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
         </Chip>
     );
 };
+
+/** One balance on its drawer row: Credit's paid, Quest's Quest Pollen. */
+export const SidebarBalance: FC<{ kind: "paid" | "tier"; balance: number }> = ({
+    kind,
+    balance,
+}) => (
+    <Chip
+        intent="neutral"
+        size="sm"
+        className="ml-auto gap-1 bg-transparent tabular-nums text-theme-text-soft"
+    >
+        <WalletKindIcon kind={kind} />
+        {formatPollen(normalizeDisplayBalance(balance))}
+        <span className="sr-only">
+            {kind === "paid" ? " paid" : " Quest"} pollen
+        </span>
+    </Chip>
+);
 
 /** The drawer wallet while Pollinations is down: two rows, like the balances. */
 export const SidebarOutage: FC = () => {

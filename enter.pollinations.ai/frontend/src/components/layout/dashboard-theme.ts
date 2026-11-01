@@ -18,7 +18,7 @@ import type { ComponentType } from "react";
 
 /**
  * Groups of drawer rows: Pollinations' resources, then your pages (what you
- * your pollen, what you build, then Settings).
+ * your balances, what you build, then Settings).
  */
 export type DashboardNavGroup = "yours" | "resources";
 
@@ -26,15 +26,23 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "pollen",
         to: "/pollen",
-        label: "Pollen",
+        label: "Credit",
         icon: WalletIcon,
         group: "yours",
     },
     {
         id: "quests",
         to: "/quests",
-        label: "Quests",
+        label: "Quest",
         icon: SparkleIcon,
+        group: "yours",
+    },
+    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
+    {
+        id: "sandboxes",
+        to: "/sandboxes",
+        label: "Sandboxes",
+        icon: TerminalIcon,
         group: "yours",
     },
     {
@@ -44,14 +52,6 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: CloudUploadIcon,
         group: "yours",
     },
-    {
-        id: "sandboxes",
-        to: "/sandboxes",
-        label: "Sandboxes",
-        icon: TerminalIcon,
-        group: "yours",
-    },
-    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
     {
         id: "activity",
         to: "/activity",
@@ -65,13 +65,6 @@ export const DASHBOARD_NAV_ITEMS = [
         label: "Settings",
         icon: AccountIcon,
         group: "yours",
-    },
-    {
-        id: "news-faq",
-        to: "/news",
-        label: "News & FAQ",
-        icon: NewspaperIcon,
-        group: "resources",
     },
     {
         id: "models",
@@ -94,6 +87,13 @@ export const DASHBOARD_NAV_ITEMS = [
         search: { view: "mcp" },
         label: "MCP",
         icon: McpIcon,
+        group: "resources",
+    },
+    {
+        id: "news-faq",
+        to: "/news",
+        label: "News & FAQ",
+        icon: NewspaperIcon,
         group: "resources",
     },
 ] as const satisfies readonly {

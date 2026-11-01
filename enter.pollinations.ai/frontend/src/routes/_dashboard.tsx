@@ -28,7 +28,11 @@ import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { SidebarEarnings, SidebarOutage } from "../components/pollen";
+import {
+    SidebarBalance,
+    SidebarEarnings,
+    SidebarOutage,
+} from "../components/pollen";
 import { SidebarSandboxes } from "../components/sandboxes.tsx";
 import {
     BALANCE_PATH,
@@ -204,6 +208,34 @@ function DashboardLayout() {
             rowStatus={
                 user
                     ? {
+                          pollen: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.balance}>
+                                      {(balance) =>
+                                          balance && (
+                                              <SidebarBalance
+                                                  kind="paid"
+                                                  balance={balance.packBalance}
+                                              />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          quests: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.balance}>
+                                      {(balance) =>
+                                          balance && (
+                                              <SidebarBalance
+                                                  kind="tier"
+                                                  balance={balance.tierBalance}
+                                              />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
                           "my-models": (
                               <Suspense fallback={null}>
                                   <Await promise={data.earnings}>
@@ -232,24 +264,20 @@ function DashboardLayout() {
             }
             accountCard={
                 user ? (
-                    // Await adds no boundary for a null fallback; without this
-                    // the whole dashboard would wait for the balance.
-                    <Suspense fallback={<AuthAccountIdentity user={user} />}>
-                        <Await promise={data.balance}>
-                            {(balance) => (
-                                <>
-                                    <AuthAccountIdentity
-                                        user={user}
-                                        balance={balance ?? undefined}
-                                        topUpHref="/pollen"
-                                    />
-                                    {!balance && (
+                    <>
+                        <AuthAccountIdentity user={user} />
+                        {/* Await adds no boundary for a null fallback;
+                            without this the whole dashboard would wait. */}
+                        <Suspense fallback={null}>
+                            <Await promise={data.balance}>
+                                {(balance) =>
+                                    !balance && (
                                         <WalletLoadError onRetry={retry} />
-                                    )}
-                                </>
-                            )}
-                        </Await>
-                    </Suspense>
+                                    )
+                                }
+                            </Await>
+                        </Suspense>
+                    </>
                 ) : undefined
             }
         >

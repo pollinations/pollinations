@@ -3,11 +3,10 @@ import { isPollenPackKey, type PollenPackKey } from "@shared/pollen-packs.ts";
 import {
     Await,
     createFileRoute,
-    redirect,
     useNavigate,
     useRouter,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue } from "react";
+import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import {
     CardLoading,
@@ -20,6 +19,7 @@ import {
     PollenBalance,
 } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import { PrepaidCheckout } from "../components/pollen/prepaid-checkout.tsx";
 import { BALANCE_PATH } from "../hooks/use-account-balance.ts";
 import { checkoutNotice, checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
@@ -36,24 +36,29 @@ export const Route = createFileRoute("/_dashboard/pollen")({
                 : undefined,
         ...checkoutReturnSearch(search),
     }),
-    beforeLoad: ({ context, location }) => {
-        if (!context.user && !context.sessionUnavailable) {
-            throw redirect({
-                to: "/sign-in",
-                search: { next: location.href },
-            });
-        }
-    },
-    loader: () => ({
-        billing: apiClient.stripe.billing
-            .$get()
-            .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null),
+    loader: ({ context }) => ({
+        billing: context.user
+            ? apiClient.stripe.billing
+                  .$get()
+                  .then((r) => (r.ok ? r.json() : null))
+                  .catch(() => null)
+            : Promise.resolve(null),
     }),
     component: PollenPage,
 });
 
 function PollenPage() {
+    const { user } = DashboardRoute.useLoaderData();
+    const [guestCheckoutStarted, setGuestCheckoutStarted] = useState(false);
+    // Session recovery must not unmount a guest payment or its unsaved key.
+    if (!user || guestCheckoutStarted)
+        return (
+            <PrepaidCheckout onStart={() => setGuestCheckoutStarted(true)} />
+        );
+    return <AccountPollenPage />;
+}
+
+function AccountPollenPage() {
     const retry = useDashboardRetry("balance");
     const search = Route.useSearch();
     const { pack, session_id: checkoutSessionId } = search;

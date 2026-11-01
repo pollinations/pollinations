@@ -21,6 +21,7 @@
         "test:code-agent-sdk": "node --test scripts/code-agent-sdk.test.mjs",
         "test:local": "npm run decrypt-vars && cross-env CLOUDFLARE_ENV=local vitest run",
         "test:e2e": "vitest run --config vitest.e2e.config.ts",
+        "test:browser": "playwright test",
         "gen:migrations": "drizzle-kit generate",
         "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output ../shared/db/better-auth.ts",
         "gen:types:runtime": "wrangler types --include-env=false worker-runtime.d.ts",
@@ -77,6 +78,7 @@
         "tailwindcss": "^4.1.12",
         "tldts": "^7.4.19",
         "unique-names-generator": "^4.7.1",
+        "viem": "^2.57.13",
         "zod": "4.5.4"
     },
     "devDependencies": {
@@ -86,6 +88,7 @@
         "@cloudflare/vitest-plugin": "^1.4.3",
         "@drizzle-team/brocli": "^0.11.0",
         "@hono/node-server": "^1.19.6",
+        "@playwright/test": "^1.64.1",
         "@tailwindcss/vite": "^4.1.17",
         "@tanstack/router-plugin": "^1.139.3",
         "@types/node": "^24.10.1",

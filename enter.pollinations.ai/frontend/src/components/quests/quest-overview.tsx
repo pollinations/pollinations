@@ -16,14 +16,17 @@ import {
     Section,
     SparkleIcon,
     SproutIcon,
-    Surface,
     TargetIcon,
     TerminalIcon,
     Text,
     TrendUpIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
+import {
+    formatPollen,
+    WalletBalanceCard,
+    WalletKindIcon,
+} from "@pollinations/ui/wallet";
 import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
     type ComponentType,
@@ -373,6 +376,14 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
     const formatValue = (value: number) =>
         progress.unit === "pollen" ? formatPollen(value) : formatCount(value);
 
+    // Nothing done yet: just the count, an empty bar reads as decoration.
+    if (progress.current <= 0)
+        return (
+            <span className="text-xs tabular-nums text-theme-text-muted">
+                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
+                {progress.unit}
+            </span>
+        );
     return (
         <div className="mt-1 flex max-w-sm items-center gap-2">
             <div
@@ -396,12 +407,10 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
     );
 }
 
-// Leading marker for a quest row, by lifecycle stage:
-//   open      → ambient theme tile + section icon (vanilla amber — the row's
-//                bucket lives on the reward chip; the marker is just "do this")
-//   claimable → muted theme well + check (works in light and dark — receded
-//                relative to the open tile, but readable on either surface)
-//   claimed   → no tile, muted check (banked already, fully receded)
+// Leading marker for a quest row, a bare icon whose colour is its stage:
+//   open      → section icon in the theme colour ("do this")
+//   claimable → strong check (done, waiting for Claim)
+//   claimed   → muted check (banked already, fully receded)
 function QuestMarker({
     icon: Icon,
     status,
@@ -418,21 +427,17 @@ function QuestMarker({
         if (status === "open") return Icon;
         return CheckIcon;
     }
-    // open → ambient active tile; claimable → muted well; claimed (and
-    // coming_soon, which always renders claimed) → no tile, muted glyph.
-    function resolveTile(): string {
-        if (!comingSoon && status === "open")
-            return "bg-theme-bg-active text-theme-text-strong";
-        if (status === "claimable")
-            return "bg-theme-bg-subtle text-theme-text-muted";
+    // coming_soon always renders claimed, so it is muted too.
+    function resolveTone(): string {
+        if (!comingSoon && status === "open") return "text-theme-text-soft";
+        if (status === "claimable") return "text-theme-text-strong";
         return "text-theme-text-muted";
     }
     const MarkerIcon = resolveIcon();
-    const tile = resolveTile();
     return (
         <span
             aria-hidden="true"
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tile}`}
+            className={`flex h-5 w-5 shrink-0 items-center justify-center ${resolveTone()}`}
         >
             <MarkerIcon className="h-5 w-5" />
         </span>
@@ -485,13 +490,9 @@ export function QuestRow({
                 #{card.issueNumber}
             </InlineLink>
         ) : null;
-    // One reward badge in every state, so it holds the same spot on the right —
-    // only its emphasis shifts. Open/claimable show the live bucket chip;
-    // claimed recedes to a transparent, muted-grey badge (no fill, no sign),
-    // so the badge never jumps when a quest is claimed. Raw glyph (not
-    // WalletKindIcon) so the icon inherits the chip's currentColor — bucket
-    // deep when open, muted grey when claimed — instead of being forced to
-    // the bucket hue regardless of state.
+    // One plain reward in every state, so it holds the same spot on the right;
+    // only the bucket icon carries colour, and a claimed reward goes muted grey
+    // (raw glyph, so it inherits the muted text colour).
     const RewardKindIcon = rewardIcon === "paid" ? CardIcon : SproutIcon;
     const rewardChip = card.comingSoon ? (
         <Chip
@@ -503,18 +504,18 @@ export function QuestRow({
             Coming soon
         </Chip>
     ) : (
-        <Chip
-            intent="neutral"
-            size="lg"
-            className={`gap-1.5 tabular-nums ${
-                claimed
-                    ? "bg-transparent text-theme-text-muted"
-                    : BUCKET_CHIP_CLASS[rewardIcon]
+        <span
+            className={`flex items-center gap-1.5 text-sm font-semibold tabular-nums ${
+                claimed ? "text-theme-text-muted" : "text-theme-text-strong"
             }`}
         >
-            <RewardKindIcon className="h-4 w-4 shrink-0" />
+            {claimed ? (
+                <RewardKindIcon className="h-4 w-4 shrink-0" />
+            ) : (
+                <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
+            )}
             {rewardLabel}
-        </Chip>
+        </span>
     );
     const claimButton = claimableRewardId ? (
         <Button
@@ -532,7 +533,7 @@ export function QuestRow({
     // beside the text, chip pinned to the right edge (ml-auto).
 
     return (
-        <Surface variant="card">
+        <div className="py-3">
             {/* Mobile: stacked. Icon centered with the (wrappable) title; the
                 description (issue link at its end) full-width below; action row
                 last, mirroring desktop — Claim on the left, reward chip pinned
@@ -600,7 +601,7 @@ export function QuestRow({
                     {rewardChip}
                 </div>
             </div>
-        </Surface>
+        </div>
     );
 }
 
@@ -1093,7 +1094,7 @@ function QuestOverviewContent({
                             )
                         }
                     >
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col divide-y divide-theme-text-strong/10">
                             {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}
@@ -1123,7 +1124,7 @@ function QuestOverviewContent({
                         </span>
                     }
                 >
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col divide-y divide-theme-text-strong/10">
                         {bonusRewardCards.map((card) => (
                             <QuestRow
                                 key={card.key}

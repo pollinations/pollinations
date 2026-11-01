@@ -525,6 +525,18 @@ test("filtered: in the full list, not the default one, at 80% or less", () => {
     assert.equal(filteredModels([listed("community/a/x", null)], []), null);
 });
 
+test("a big listing change names what fits a post and counts the rest", () => {
+    const filtered = Array.from({ length: 200 }, (_, i) =>
+        listed(`community/owner${i}/a-fairly-long-model-name-${i}`, 20),
+    );
+    const changes = listingChanges([], filtered, []);
+    const names = changes.newly.map((m) => m.model).join("");
+    assert.ok(names.length <= 1200);
+    assert.ok(changes.newly.length > 0);
+    assert.equal(changes.newly.length + changes.newlyMore, 200);
+    assert.equal(changes.backMore, undefined);
+});
+
 test("listing changes: newly filtered, and back in the default list", () => {
     const before = [
         "community/a/back",

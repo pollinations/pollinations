@@ -29,7 +29,7 @@ Each line tells the incidents in its "incidents" and goes to the channel their "
 - stream: a model's own answers broke the same way twice in a row.
 - shared: one broken stream on many owners' models at once, likely gen's own.
 - fallback: a model leans on its fallbacks. Each snapshot is one 4-hour window, from and to: rescued of its successes in it, and each fallback's part; tell each snapshot's numbers on their own and never add numbers across snapshots. "private" fallbacks are never named.
-- listings: models newly filtered out of /models or back, with health and the filtered total; filtered models stay callable by their exact ID.
+- listings: models newly filtered out of /models or back, with health and the filtered total; newlyMore and backMore count those left unnamed ("…and N more"); filtered models stay callable by their exact ID.
 Code puts whole lines into each post until it is full; a line that doesn't fit, and its incidents, come next time. Code pings owners and points them to their dashboard.`;
 
 // The public community models gen's reliability filter leaves out of the
@@ -48,16 +48,33 @@ export function filteredModels(all, shown) {
     );
 }
 
+// A listing change names at most this many characters of model ids per
+// list, so the agent's line fits a post.
+const LISTED_CHARS = 1200;
+
 // Since the last day: the models newly filtered, and those filtered then
-// that are listed again now. One gone from both lists isn't back.
+// that are listed again now. One gone from both lists isn't back. Past
+// LISTED_CHARS, `newlyMore` and `backMore` count those left unnamed, for
+// "…and N more".
 export function listingChanges(before, filtered, shown) {
     const was = new Set(before);
-    const health = (m) => ({ model: m.name, health: m.health?.success_rate });
-    return {
-        filtered: filtered.length,
-        newly: filtered.filter((m) => !was.has(m.name)).map(health),
-        back: shown.filter((m) => was.has(m.name)).map(health),
-    };
+    const changes = { filtered: filtered.length };
+    for (const [list, models] of [
+        ["newly", filtered.filter((m) => !was.has(m.name))],
+        ["back", shown.filter((m) => was.has(m.name))],
+    ]) {
+        const named = [];
+        let size = 0;
+        for (const m of models) {
+            size += m.name.length;
+            if (size > LISTED_CHARS) break;
+            named.push({ model: m.name, health: m.health?.success_rate });
+        }
+        changes[list] = named;
+        if (named.length < models.length)
+            changes[`${list}More`] = models.length - named.length;
+    }
+    return changes;
 }
 
 // A community model's owner: the GitHub username in its id. Posts list

@@ -6,6 +6,9 @@ import {
     filteredModels,
     incidents,
     listingChanges,
+    mismatchKey,
+    servedName,
+    servedStreaks,
     streamKey,
 } from "./community.js";
 import { nextProbeAt, recordProbe } from "./probes.js";
@@ -488,6 +491,124 @@ test("a new fallback joins an untold one instead of replacing it", () => {
     assert.equal(notice.rescued, undefined);
 });
 
+// --- served-model mismatches (the old monitor's duty 2d) ---
+
+const FLASH = "community/o/flash";
+const asked = (served, model = FLASH) => [
+    { model, declared: "gemini-3-flash-preview", served },
+];
+// One cycle's probes, with FLASH in the catalog.
+const read = (rows, seen) => servedStreaks(rows, seen, new Set([FLASH]));
+
+test("names compare as the old monitor compared them", () => {
+    assert.equal(
+        servedName("Google/Gemini-3-Flash-Preview:free"),
+        "gemini-3-flash",
+    );
+    assert.equal(servedName("claude-3-5-sonnet-20241022"), "claude-3-5-sonnet");
+    assert.equal(servedName("gpt-4o-2024-08-06-latest"), "gpt-4o");
+    const agree = (declared, served) =>
+        !read([{ model: FLASH, declared, served }])[FLASH];
+    assert.ok(agree("gemini-3-flash-preview", "models/gemini-3-flash"));
+    // One contains the other: a thinking variant of the same model agrees.
+    assert.ok(agree("poe/DeepSeek-V4.1-Flash-T", "deepseek-v4.1-flash"));
+    assert.ok(!agree("gemini-3-flash-preview", "llama-3.1-8b"));
+});
+
+test("a model's run keeps through cycles without a probe, and a fresh probe that disagrees ends it", () => {
+    const one = read(asked("llama-3.1-8b"));
+    assert.equal(one[FLASH].streak, 1);
+    // Cycles without a probe, or whose listings couldn't be read, leave the run.
+    const gap = read([], read([], one));
+    assert.deepEqual(gap, one);
+    assert.equal(read(asked("llama-3.1-8b"), gap)[FLASH].streak, 2);
+    // The asked-for model ends it; another name starts it again.
+    assert.deepEqual(read(asked("gemini-3-flash"), one), {});
+    assert.equal(read(asked("qwen-3-4b"), one)[FLASH].streak, 1);
+    // A model gone from the catalog loses its run.
+    assert.deepEqual(servedStreaks([], one, new Set()), {});
+    // A name can't break a post, or tell an upstream's address, on either
+    // side.
+    const shown = (served) => read(asked(served))[FLASH].served;
+    assert.equal(shown("x```\n@everyone"), "x@everyone");
+    assert.equal(shown("api.together.xyz/llama-3"), "[host]/llama-3");
+    assert.equal(shown("http://192.0.2.10:8000/llama-3"), "[host]");
+    assert.equal(shown("http://[2001:db8::1]:8000/llama-3"), "[host]");
+    assert.equal(shown("192.0.2.10:8000/llama-3"), "[host]:8000/llama-3");
+    assert.equal(shown("[2001:db8::1]:8000/llama-3"), "[host]:8000/llama-3");
+    assert.equal(shown("2001:db8:0:0:0:0:0:1/llama-3"), "[host]/llama-3");
+    assert.equal(
+        read([{ model: FLASH, declared: "http://10.0.0.1/x", served: "y" }])[
+            FLASH
+        ].declared,
+        "[host]",
+    );
+    for (const name of ["gpt-4.1-mini", "qwen2.5-72b:free", "llama-3.1-8b"])
+        assert.equal(shown(name), name);
+});
+
+test("a mismatch at the second probe in a row is its publisher's until a fresh probe disproves it, then quiet for a week", () => {
+    const catalog = [model(FLASH), model("community/o/agent", { agent: true })];
+    const { id } = read(asked("llama-3.1-8b"))[FLASH];
+    const seen = (streak, m = FLASH) => ({
+        [m]: {
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+            id,
+            streak,
+        },
+    });
+    assert.deepEqual(find({ catalog, served: seen(1) }), []);
+    const first = cycle({ catalog, served: seen(2) });
+    const key = mismatchKey(FLASH, id);
+    assert.deepEqual(first.found, [
+        {
+            id: "1",
+            kind: "mismatch",
+            model: FLASH,
+            declared: "gemini-3-flash-preview",
+            served: "llama-3.1-8b",
+            to: "community",
+            owners: ["o"],
+            quiet: [key],
+        },
+    ]);
+    // Untold, it stays while no probe disproves it, however long ago its
+    // last probe was; a probe reporting the asked-for model, or another
+    // name, withdraws it.
+    const again = (served) =>
+        cycle({ catalog, served, pending: first.pending }).found;
+    assert.equal(again(seen(2)).length, 1);
+    assert.equal(
+        find({ catalog, served: seen(2), now: NOW + 30 * DAY }).length,
+        1,
+    );
+    assert.deepEqual(again(read(asked("gemini-3-flash"), seen(2))), []);
+    assert.deepEqual(again(read(asked("qwen-3-4b"), seen(2))), []);
+    // Told: quiet for a week, even while still reported.
+    const quiet = { [key]: NOW - 7 * DAY + 1 };
+    assert.deepEqual(find({ catalog, served: seen(3), quiet }), []);
+    const after = { [key]: NOW - 7 * DAY };
+    assert.equal(find({ catalog, served: seen(3), quiet: after }).length, 1);
+    // Agents and private (unlisted) models are never named.
+    for (const m of ["community/o/agent", "community/o/private"])
+        assert.deepEqual(find({ catalog, served: seen(2, m) }), []);
+    // Two addresses read the same once hidden, yet are different names: the
+    // second starts a run of its own, under its own quiet key, and neither
+    // address is kept or told.
+    const [one, two] = [
+        "http://192.0.2.10:8000/llama-3",
+        "http://192.0.2.11:8000/qwen-3",
+    ].map((name) => read(asked(name), read(asked(name))));
+    assert.equal(
+        read(asked("http://192.0.2.11:8000/qwen-3"), one)[FLASH].streak,
+        1,
+    );
+    const told = [one, two].map((served) => find({ catalog, served }));
+    assert.notDeepEqual(told[0][0].quiet, told[1][0].quiet);
+    assert.ok(!JSON.stringify([one, two, told]).includes("192.0.2"));
+});
+
 // Incidents code found: a broken stream and a fallback for owners o and p,
 // listing changes, and a shared failure for the maintainers.
 const stream = (id, owner) => ({
@@ -662,6 +783,29 @@ test("a card's title says it is community models and whose fault, and its facts 
         ],
     );
     assert.ok(listing.community.text.includes("│ HIDDEN  q/m (67%)"));
+    // A mismatch's rows line up under its longest label.
+    const mismatch = decision(
+        JSON.stringify({ community: [line(["1"], "Reported.")] }),
+        [
+            {
+                id: "1",
+                kind: "mismatch",
+                to: "community",
+                model: FLASH,
+                declared: "gemini-3-flash-preview",
+                served: "llama-3.1-8b",
+                owners: ["o"],
+                quiet: [],
+            },
+        ],
+    ).community.text;
+    assert.match(mismatch, /COMMUNITY MODEL NAME MISMATCH/);
+    for (const row of [
+        "MODEL     o/flash",
+        "REQUESTED gemini-3-flash-preview",
+        "REPORTED  llama-3.1-8b",
+    ])
+        assert.ok(mismatch.includes(`│ ${row}`), row);
     assert.match(text, /\n```\nCheck gen\.$/);
 });
 

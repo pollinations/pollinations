@@ -13,8 +13,13 @@ export const WINDOW_MINUTES = 240;
 export const AGENT_DAILY_LIMIT = 48;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // A told incident stays quiet this long: a broken stream per model and
-// error, a fallback notice per model and fallback.
-export const QUIET_MS = { stream: DAY_MS, fallback: 7 * DAY_MS };
+// error, a fallback notice per model and fallback, a mismatch per model and
+// reported name.
+export const QUIET_MS = {
+    stream: DAY_MS,
+    fallback: 7 * DAY_MS,
+    mismatch: 7 * DAY_MS,
+};
 // Thomas's thresholds: a model leans on its fallbacks from this many
 // rescues and this share of its successes; one broken stream on this many
 // owners' models at once is gen's. A fallback notice names this many.
@@ -30,6 +35,7 @@ Each line tells the one incident in its "incidents" and goes to the channel its 
 - stream: a model's own answers broke the same way twice in a row; its publisher should fix their endpoint.
 - shared: models that worked broke the same way at once across many publishers, likely gen's own fault.
 - fallback: a model leans on its fallbacks; "private" fallbacks are never named.
+- mismatch: a model's answers reported a different model name than its listing requests, in two of its probes in a row. The name is what the publisher's upstream reported, so word it as evidence, like "the publisher reported this name for requests configured as the requested model", and never say which model actually ran.
 - listings: models newly filtered out of /models for low health, or back; filtered models stay callable by their exact ID.
 Code puts lines into each post until it is full; incidents that don't fit come next time. Code pings publishers and points them to their dashboard.`;
 
@@ -81,23 +87,95 @@ export function listingChanges(before, filtered, shown) {
 const short = (id) => id.replace(/^community\//, "");
 const ownerOf = (id) => short(id).split("/")[0];
 
-// `quiet` keys: a model and its broken stream, or a model and a fallback.
+// `quiet` keys: a model and its broken stream, a model and a fallback, or a
+// model and the id of the name its upstream reported.
 export const streamKey = (model, error) => `stream ${model} ${error}`;
 export const fallbackKey = (model, via) => `fallback ${model} ${via}`;
+export const mismatchKey = (model, id) => `mismatch ${model} ${id}`;
+
+// Names compare as the old monitor compared them: lowercase, without a
+// provider prefix or a trailing :free, :paid, -latest, -preview or date;
+// they agree when one contains the other.
+const NAME_SUFFIX = /(:free|:paid|-latest|-preview|-\d{8}|-\d{4}-\d{2}-\d{2})$/;
+export function servedName(name) {
+    let base = String(name).toLowerCase().split("/").pop();
+    while (NAME_SUFFIX.test(base)) base = base.replace(NAME_SUFFIX, "");
+    return base;
+}
+const agree = (a, b) => {
+    const [x, y] = [servedName(a), servedName(b)];
+    return x.includes(y) || y.includes(x);
+};
+// Both names come from owners' servers: backticks and control characters
+// are dropped, so a name can't break a post, and a URL, an IP address or
+// anything shaped like a hostname is hidden, so an upstream's address is
+// never told.
+const ADDRESS = new RegExp(
+    [
+        String.raw`[a-z][\w+.-]*://\S*`, // a URL
+        String.raw`\[?(?:[\da-f:.]*::[\da-f:.]*|(?:[\da-f]{1,4}:){7}[\da-f]{1,4})\]?`, // IPv6
+        String.raw`\b\d{1,3}(?:\.\d{1,3}){3}\b`, // IPv4
+        String.raw`\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b`, // a hostname
+    ].join("|"),
+    "gi",
+);
+const printable = (name) =>
+    String(name)
+        .replace(/[`\p{Cc}]/gu, "")
+        .replace(ADDRESS, "[host]");
+// A reported name as it came, kept as a short FNV-1a hash: two names that
+// read the same once their addresses are hidden are still different names,
+// and the name itself is never stored.
+const nameId = (name) => {
+    let hash = 0x811c9dc5;
+    for (const c of String(name))
+        hash = Math.imul(hash ^ c.codePointAt(0), 0x01000193);
+    return (hash >>> 0).toString(36);
+};
+
+// Each model of the catalog's `names` whose upstream last reported a
+// different model than the one asked for, with how many of its probes in a
+// row reported that name, after one cycle's `rows` (index.js `reported`).
+// As in the old monitor, a model not probed keeps its run, however long the
+// gap; a probe reporting the asked-for model ends it, and another name
+// starts it again.
+//
+// Like the old monitor's, only probed models are checked, and probes skip
+// busy models whose traffic succeeds, so such a model reporting another
+// name goes unchecked while it stays busy. Answers from a fallback, answers
+// without a model name and image models are never checked.
+export function servedStreaks(rows, seen, names) {
+    const next = Object.fromEntries(
+        Object.entries(seen ?? {}).filter(([model]) => names.has(model)),
+    );
+    for (const { model, declared, served } of rows) {
+        const id = nameId(served);
+        if (agree(declared, served)) delete next[model];
+        else
+            next[model] = {
+                declared: printable(declared),
+                served: printable(served),
+                id,
+                streak: next[model]?.id === id ? next[model].streak + 1 : 1,
+            };
+    }
+    return next;
+}
 
 // This cycle's incidents, each with an id, where it goes, the owners it
 // pings and the quiet keys it starts once told, and the pending shared
 // failures and fallback notices to keep for the next cycle. `schedule` holds
 // each model's last probe and the one before; `rows` gen's status rows for
 // regular traffic over WINDOW_MINUTES; `quiet` when each key was told;
-// `pending` last cycle's pending incidents; `listings` the day's listing
-// changes or null.
+// `pending` last cycle's pending incidents; `served` each model's run of
+// reported names; `listings` the day's listing changes or null.
 export function incidents({
     catalog,
     rows,
     schedule,
     quiet,
     pending = {},
+    served = {},
     listings,
     now,
 }) {
@@ -253,6 +331,26 @@ export function incidents({
         });
     }
 
+    // A listed model whose upstream reported the same other name in two
+    // probes in a row. Its run is the pending state, however old: only a
+    // later probe that reports the asked-for model, or another name, or the
+    // model leaving the list withdraws it. Telling it starts its run over
+    // (index.js), so after its quiet week it is told again only on a new
+    // probe, never on old evidence.
+    for (const [model, m] of Object.entries(served)) {
+        const key = mismatchKey(model, m.id);
+        if (listed.has(model) && m.streak >= 2 && !told(key, "mismatch"))
+            add({
+                kind: "mismatch",
+                to: "community",
+                model,
+                declared: m.declared,
+                served: m.served,
+                owners: [ownerOf(model)],
+                quiet: [key],
+            });
+    }
+
     if (listings?.newly.length || listings?.back.length)
         add({
             kind: "listings",
@@ -275,6 +373,7 @@ const TITLE = {
     stream: "COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT",
     shared: "COMMUNITY MODELS: LIKELY A GEN PROBLEM",
     fallback: "COMMUNITY MODEL RUNNING ON BACKUP",
+    mismatch: "COMMUNITY MODEL NAME MISMATCH",
     listings: "COMMUNITY MODELS HIDDEN OR BACK IN LIST",
 };
 // Up to SHOWN values under one label, then how many more.
@@ -312,6 +411,11 @@ const ROWS = {
                 `${short(v.model)} (${v.rescued})`,
             ]),
         ]),
+    ],
+    mismatch: (i) => [
+        ["MODEL", short(i.model)],
+        ["REQUESTED", i.declared],
+        ["REPORTED", i.served],
     ],
     listings: (i) => [
         ...named("HIDDEN", i.newly.map(health), i.newlyMore),

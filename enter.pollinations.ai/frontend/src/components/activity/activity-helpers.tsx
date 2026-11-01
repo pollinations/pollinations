@@ -9,7 +9,7 @@ import {
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC, KeyboardEvent, ReactNode } from "react";
 import { saveBlob } from "./activity-csv";
-import { formatActivityPollen } from "./format-activity-pollen";
+import { formatActivityPollenThreshold } from "./format-activity-pollen";
 import type { Metric } from "./types";
 
 export function clearActivitySelectionOnEscape(
@@ -130,17 +130,19 @@ export function PollenUsageBadges(usage: {
 }) {
     const isPollen = usage.metric === "pollen";
     const paid = isPollen
-        ? formatActivityPollen(usage.paidPollen)
+        ? formatActivityPollenThreshold(usage.paidPollen)
         : formatCount(usage.paidRequests);
     const quest = isPollen
-        ? formatActivityPollen(usage.tierPollen)
+        ? formatActivityPollenThreshold(usage.tierPollen)
         : formatCount(usage.tierRequests);
     const unit = isPollen ? "Pollen" : "requests";
     return (
-        <div className="ml-auto grid grid-cols-1 items-center justify-items-end gap-1 @[28rem]:min-w-40 @[28rem]:grid-cols-2">
+        // Same-width chips with left-aligned digits, so rows line up; the pair
+        // sits at the right edge.
+        <div className="ml-auto grid w-max grid-cols-1 items-center gap-1 @[32rem]:grid-cols-2">
             <PaidChip
                 size="sm"
-                className="cursor-help gap-2 whitespace-nowrap tabular-nums"
+                className="w-24 cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={`Paid ${unit}`}
                 aria-label={`${paid} Paid ${unit}`}
             >
@@ -149,7 +151,7 @@ export function PollenUsageBadges(usage: {
             </PaidChip>
             <TierChip
                 size="sm"
-                className="cursor-help gap-2 whitespace-nowrap tabular-nums"
+                className="w-24 cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={`Quest ${unit}`}
                 aria-label={`${quest} Quest ${unit}`}
             >

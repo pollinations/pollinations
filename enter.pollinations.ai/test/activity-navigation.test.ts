@@ -12,6 +12,7 @@ import {
     switchActivityView,
     toggleActivityBucket,
 } from "../frontend/src/components/activity/activity-period";
+import { formatActivityPollenThreshold } from "../frontend/src/components/activity/format-activity-pollen";
 import {
     earningsRow,
     usageRow,
@@ -35,6 +36,22 @@ afterEach(() => {
 });
 
 const NO_PICKS = { keys: [], models: [] };
+
+it("shows table amounts with at most 5 digits", () => {
+    expect(
+        [2.2313, 12.34567, 0.203, 0.008307, 0.000833, 0.00002, 0].map(
+            formatActivityPollenThreshold,
+        ),
+    ).toEqual([
+        "2.2313",
+        "12.345",
+        "0.203",
+        "0.0083",
+        "0.0008",
+        "<0.0001",
+        "0",
+    ]);
+});
 
 it("keeps unknown usage in totals without labeling it as Paid or Quest", () => {
     const rows = ["unknown", null, "pack", "tier"].map((meter_source, i) => ({

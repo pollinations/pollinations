@@ -288,8 +288,8 @@ const PAGE_SIZE = 15;
 
 // On a phone-width card both header switches only fit without the Share
 // column and the header cells' side padding.
-const SHARE_CELL = "hidden @[28rem]:table-cell";
-const SWITCH_CELL = "px-0 py-1 font-normal @[28rem]:px-2";
+const SHARE_CELL = "hidden @[32rem]:table-cell";
+const SWITCH_CELL = "px-0 py-1 font-normal @[32rem]:px-2";
 
 type BreakdownTableProps = {
     entries: BreakdownEntry[];

@@ -117,6 +117,14 @@ export const MCP_SERVERS = [
         },
     },
     {
+        id: "pollinations-agent-discovery",
+        name: "Pollinations Agent Discovery",
+        description: "Discover Pollinations models, endpoints, and agent card.",
+        binding: "POLLINATIONS_AGENT_DISCOVERY_MCP",
+        billing: "downstream",
+        pricing: { description: "Discovery tools are free.", rates: [] },
+    },
+    {
         id: "ask-jev",
         name: "Ask Jev",
         description:

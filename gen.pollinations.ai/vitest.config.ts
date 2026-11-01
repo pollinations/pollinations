@@ -207,6 +207,14 @@ export default defineConfig(async ({ mode }) => {
                                 cookie: request.headers.get("cookie"),
                                 payload: await request.json(),
                             }),
+                        JSON_SCHEMA_MCP: async (request: Request) =>
+                            Response.json({
+                                pathname: new URL(request.url).pathname,
+                                authorization:
+                                    request.headers.get("authorization"),
+                                cookie: request.headers.get("cookie"),
+                                payload: await request.json(),
+                            }),
                         MACHINES_MCP: async (request: Request) =>
                             Response.json({
                                 pathname: new URL(request.url).pathname,

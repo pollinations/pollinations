@@ -47,6 +47,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "json-schema",
+                name: "JSON Schema",
+                description:
+                    "Validate JSON against a self-contained Draft 7 schema without model calls.",
+                url: "https://gen.pollinations.ai/mcp/json-schema",
+                pricing: {
+                    description:
+                        "Local validation only. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:
@@ -262,8 +274,42 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
         packBalance: 0,
     });
 });
+test("routes JSON Schema with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "validate_json", arguments: {} },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/json-schema",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "machines", "json-schema"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

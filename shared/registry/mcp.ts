@@ -45,6 +45,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "JSON_SCHEMA_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -126,6 +127,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "json-schema",
+        name: "JSON Schema",
+        description:
+            "Validate JSON against a self-contained Draft 7 schema without model calls.",
+        binding: "JSON_SCHEMA_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Local validation only. No additional MCP fee.",
             rates: [],
         },
     },

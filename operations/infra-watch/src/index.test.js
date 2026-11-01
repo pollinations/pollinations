@@ -28,6 +28,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let world;
 
 async function discord(url, init) {
+    if (init.method === "DELETE") {
+        world.writes.push({ method: "DELETE", path: url.pathname, ok: true });
+        return new Response(null, { status: 204 });
+    }
     const { content, embeds, allowed_mentions } = JSON.parse(init.body);
     const write = {
         method: init.method,
@@ -71,7 +75,7 @@ async function fake(input, init = {}) {
                     requests: 40,
                     failures: 30,
                     callers: 3,
-                    failing_callers: 3,
+                    failing_callers: world.failingCallers,
                     top_caller_failures: 12,
                 },
             ],
@@ -141,6 +145,7 @@ beforeEach(() => {
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
+        failingCallers: 3,
         receipt: true,
         fails: () => false,
         delay: () => 0,
@@ -264,6 +269,37 @@ it("opens a new card when a close was edited but never saved", async () => {
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
     expect(posts).toHaveLength(2);
     expect(posts[1].text).toContain("AGAIN");
+});
+
+it("moves a worsened card to the bottom with its ping and lines", async () => {
+    const stub = watch();
+    world.rows = BAD;
+    // One failing caller: the card opens without a ping.
+    world.failingCallers = 1;
+    await stub.check();
+    await settle(stub);
+    // Several callers now fail, read on the next check.
+    world.failingCallers = 3;
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("state");
+        saved.open[KEY].enriched.at = 0;
+        await state.storage.put("state", saved);
+    });
+    await stub.check();
+    await settle(stub);
+
+    const posts = world.writes.filter((w) => w.ok && w.method === "POST");
+    expect(posts).toHaveLength(2);
+    expect(posts[0].users).toEqual([]);
+    expect(posts[1].users).toHaveLength(2);
+    expect(posts[1].text).toContain("Line 1.");
+    expect(world.writes.at(-1)).toMatchObject({
+        method: "DELETE",
+        path: expect.stringMatching(/\/m1$/),
+    });
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m2");
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+    expect((await stored(stub, "lines:m2")).lines).toHaveLength(1);
 });
 
 it("drops a line lost in a restart instead of checking forever", async () => {

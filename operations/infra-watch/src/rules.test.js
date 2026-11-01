@@ -6,7 +6,6 @@ import {
     conditions,
     duration,
     escalates,
-    escalation,
     heartbeat,
     kvPut,
     legacyDown,
@@ -501,15 +500,6 @@ test("the box title carries the status and full model id, in the card's colour",
     const visible = (l) => [...plain(l)].length;
     const box = lines.filter((l) => /^[│┌└]/.test(l));
     for (const line of box) assert.equal(visible(line), visible(box[0]));
-});
-
-test("an escalation links to the card and pings", () => {
-    const post = escalation("model:a/model", opened(), "https://x.test/m/1");
-    assert.equal(post.ping, true);
-    assert.match(
-        post.text,
-        /`a\/model` is now DEGRADED.*https:\/\/x\.test\/m\/1/,
-    );
 });
 
 test("durations read plainly", () => {

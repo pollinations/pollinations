@@ -120,20 +120,26 @@ export function payload(
     };
 }
 
-// Replaces the content of a message this webhook posted. One try: a failed
-// edit is written again on a later check.
+// Replaces the content of a message this webhook posted, or deletes it when
+// there is no body. One try: a failed edit is written again on a later
+// check.
 export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
     const u = new URL(url);
     u.search = "";
     u.pathname += `/messages/${id}`;
     try {
         const res = await withTimeout(TIMEOUT_MS, (signal) =>
-            fetchImpl(u, {
-                method: "PATCH",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify(body),
-                signal,
-            }),
+            fetchImpl(
+                u,
+                body
+                    ? {
+                          method: "PATCH",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify(body),
+                          signal,
+                      }
+                    : { method: "DELETE", signal },
+            ),
         );
         res.body?.cancel();
         return res.ok;

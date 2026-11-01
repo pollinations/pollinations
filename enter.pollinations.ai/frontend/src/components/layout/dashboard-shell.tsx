@@ -63,7 +63,7 @@ type DashboardNavItem = {
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
 // Docs), and everything about you as one block at the bottom: Credit and
-// Quest with their balances, what you build (Keys, Sandboxes, My Listings),
+// Quest with their balances, what you build (My Listings, Keys, Sandboxes),
 // Activity, Settings, then your account card. A thin line opens each part. Signed out, the bottom holds the sign-in
 // buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";

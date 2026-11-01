@@ -37,19 +37,19 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: SparkleIcon,
         group: "yours",
     },
+    {
+        id: "my-models",
+        to: "/my-models",
+        label: "My Listings",
+        icon: CloudUploadIcon,
+        group: "yours",
+    },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
     {
         id: "sandboxes",
         to: "/sandboxes",
         label: "Sandboxes",
         icon: TerminalIcon,
-        group: "yours",
-    },
-    {
-        id: "my-models",
-        to: "/my-models",
-        label: "My Listings",
-        icon: CloudUploadIcon,
         group: "yours",
     },
     {

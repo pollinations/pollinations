@@ -177,12 +177,13 @@ function deriveCardStatus(
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
     switch (card.status) {
+        // Waiting for Claim, then still to do, then done.
         case "claimable":
             return 0;
         case "claimed":
-            return 1;
-        default:
             return 2;
+        default:
+            return 1;
     }
 }
 
@@ -530,7 +531,9 @@ export function QuestRow({
         >
             <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
             {rewardLabel}
-            <span className="ml-1 font-bold text-theme-text-soft">{claiming ? "Claiming" : "Claim!"}</span>
+            <span className="ml-1 font-bold text-theme-text-soft">
+                {claiming ? "Claiming" : "Claim!"}
+            </span>
         </Button>
     ) : null;
     // Both layouts pin the reward (or the Claim button) to the right edge.
@@ -540,7 +543,12 @@ export function QuestRow({
         // The rest sit flat, padded like a card so their columns line up.
         <Surface
             variant="card"
-            className={claimableRewardId ? undefined : "polli:bg-transparent"}
+            // Done quests fade right back, so what's left stands out.
+            className={
+                claimableRewardId
+                    ? undefined
+                    : `polli:bg-transparent ${claimed ? "opacity-45" : ""}`
+            }
         >
             {/* Mobile: stacked. Icon centered with the (wrappable) title; the
                 description (issue link at its end) full-width below; action row

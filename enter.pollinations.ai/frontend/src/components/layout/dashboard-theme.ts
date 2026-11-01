@@ -27,14 +27,14 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "pollen",
         to: "/pollen",
-        label: "Credit",
+        label: "Credits",
         icon: WalletIcon,
         group: "yours",
     },
     {
         id: "quests",
         to: "/quests",
-        label: "Quest",
+        label: "Quests",
         icon: SparkleIcon,
         group: "yours",
     },

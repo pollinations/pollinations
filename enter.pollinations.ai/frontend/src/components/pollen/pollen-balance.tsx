@@ -235,7 +235,7 @@ export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
     );
 };
 
-/** One balance on its drawer row: Credit's paid, Quest's Quest Pollen. */
+/** One balance on its drawer row: Credits' paid, Quests' Quest Pollen. */
 export const SidebarBalance: FC<{ kind: "paid" | "tier"; balance: number }> = ({
     kind,
     balance,

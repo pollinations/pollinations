@@ -540,14 +540,14 @@ export function QuestRow({
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
-            className="flex flex-col items-end text-sm font-semibold tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
+            className="flex flex-col items-end gap-0.5 pr-3 text-lg font-semibold leading-none tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
         >
             {/* The amount where every reward sits, the action under it. */}
             <span className="flex items-center gap-1.5">
-                <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
+                <WalletKindIcon kind={rewardIcon} className="h-5 w-5" />
                 {rewardLabel}
             </span>
-            <span className="text-xs font-bold">
+            <span className="text-sm font-bold">
                 {claiming ? "Claiming" : "Claim!"}
             </span>
         </button>

@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Chatbot v2",
+    "url": "https://pollinations-chatbot-2.vercel.app",
+    "description": "This app only ai assistant",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "amancrypto12-pixel",
+    "githubUserId": "266838386",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-30",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18740",
+    "approvedDate": "2026-11-01",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/a2c36a6f-0349-4f2e-9028-c65ddfabca1d"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Polli Snap - Text to Image Meme Maker",
     "url": "https://mhmdrizzzki.github.io/polli-snap",
     "description": "A fast text-to-image meme generator. Type a prompt and instantly get a generated image with quick meme presets. Built directly on the Pollinations image API (flux). Live public app, no login required.",

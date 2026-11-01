@@ -1,6 +1,7 @@
 import {
     Alert,
     BeakerIcon,
+    Button,
     CardIcon,
     CheckIcon,
     Chip,
@@ -522,24 +523,26 @@ export function QuestRow({
     );
     // A claimable quest's reward is its Claim button: the amount inside it,
     // in the reward column, so it sits in the same place on every card.
-    // A claimable quest keeps its white card and gains a claim panel in its
-    // balance's colour (green Quest, amber Paid): the panel is the button.
+    // A claimable quest keeps its white card and gains a claim panel: the
+    // action button (outlined commit), card-tall, the amount over "Claim!".
+    // Only the icon carries the balance's colour.
     const claimButton = claimableRewardId ? (
-        <button
+        <Button
             type="button"
+            intent="commit"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
-            className={`flex min-h-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-4 font-semibold tabular-nums transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:cursor-wait ${BUCKET_CHIP_CLASS[rewardIcon]}`}
+            className="h-full min-h-16 w-full flex-col justify-center gap-1 rounded-xl px-4 font-semibold tabular-nums"
         >
             <span className="flex items-center gap-1 text-lg leading-none">
-                <RewardKindIcon className="h-5 w-5 shrink-0" />
+                <WalletKindIcon kind={rewardIcon} className="h-5 w-5" />
                 {rewardLabel}
             </span>
             <span className="text-sm font-bold leading-none">
                 {claiming ? "Claiming" : "Claim!"}
             </span>
-        </button>
+        </Button>
     ) : null;
     const details = (description || issueLink || progress) && (
         <div className="flex min-w-0 flex-col gap-1">

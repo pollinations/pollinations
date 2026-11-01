@@ -28,12 +28,13 @@ type ChartProps = {
     onSelect: (point: DataPoint) => void;
 };
 
-// The y-axis sits on the right, under the unit switch. Its width is fixed so
-// switching unit or period never moves the bars: 6 characters at the 10px
-// label size ("2.5K", "0.0015"), plus the gap to the plot. The plot starts at
-// the table's text inset.
+// The y-axis sits on the right, under the unit switch. It is never narrower
+// than 6 characters at the 10px label size ("2.5K", "0.0015"), so switching
+// unit or period doesn't move the bars; only tiny Pollen scales
+// ("0.00000005") widen it. The plot starts at the table's text inset.
 const AXIS_GAP = 8;
-const AXIS_WIDTH = AXIS_GAP + 6 * 6;
+const AXIS_CHAR_WIDTH = 6;
+const MIN_AXIS_CHARS = 6;
 const PLOT_INSET = 8;
 
 /** A tick step that gives 4–6 ticks with the max at 60–100% of the scale. */
@@ -110,9 +111,31 @@ export const Chart: FC<ChartProps> = ({
     const height = 180;
     const maxDataValue =
         data.length > 0 ? Math.max(...data.map((d) => d.value)) : 0;
+    const scale = useMemo(() => {
+        const tickSpacing = getNiceStep(maxDataValue || 1);
+        // Round up to the next tick.
+        const niceMaxVal =
+            Math.ceil(maxDataValue / tickSpacing) * tickSpacing || tickSpacing;
+        const tickCount = Math.ceil(niceMaxVal / tickSpacing) + 1;
+        const tickValues = Array.from(
+            { length: Math.min(tickCount, 6) },
+            (_, i) => i * tickSpacing,
+        ).filter((value) => value <= niceMaxVal);
+        return { niceMaxVal, tickValues };
+    }, [maxDataValue]);
+
+    const formatVal = (v: number) => {
+        if (metric === "pollen") return formatActivityPollen(v);
+        if (Math.abs(v) >= 1e3) return formatCount(v);
+        return Math.round(v).toString();
+    };
+    const axisChars = Math.max(
+        MIN_AXIS_CHARS,
+        ...scale.tickValues.map((value) => formatVal(value).length),
+    );
     const pad = {
         top: 24,
-        right: AXIS_WIDTH,
+        right: AXIS_GAP + axisChars * AXIS_CHAR_WIDTH,
         bottom: 32,
         left: PLOT_INSET,
     };
@@ -122,10 +145,7 @@ export const Chart: FC<ChartProps> = ({
     const { bars, yTicks } = useMemo(() => {
         if (data.length === 0) return { bars: [], yTicks: [] };
 
-        const tickSpacing = getNiceStep(maxDataValue || 1);
-        // Round up to the next tick.
-        const niceMaxVal =
-            Math.ceil(maxDataValue / tickSpacing) * tickSpacing || tickSpacing;
+        const { niceMaxVal, tickValues } = scale;
         const barWidth = Math.max(4, (cw / data.length) * 0.7);
         const gap = (cw / data.length) * 0.3;
 
@@ -145,23 +165,13 @@ export const Chart: FC<ChartProps> = ({
             };
         });
 
-        const tickCount = Math.ceil(niceMaxVal / tickSpacing) + 1;
-        const ticks = Array.from({ length: Math.min(tickCount, 6) }, (_, i) => {
-            const value = i * tickSpacing;
-            return {
-                value,
-                y: pad.top + ch - (value / niceMaxVal) * ch,
-            };
-        }).filter((t) => t.value <= niceMaxVal);
+        const ticks = tickValues.map((value) => ({
+            value,
+            y: pad.top + ch - (value / niceMaxVal) * ch,
+        }));
 
         return { bars: barData, yTicks: ticks };
-    }, [data, cw, ch, pad.left, pad.top, maxDataValue]);
-
-    const formatVal = (v: number) => {
-        if (metric === "pollen") return formatActivityPollen(v);
-        if (Math.abs(v) >= 1e3) return formatCount(v);
-        return Math.round(v).toString();
-    };
+    }, [data, cw, ch, pad.left, pad.top, scale]);
 
     const formatAccessibleValue = (v: number) => {
         if (metric === "pollen") return formatActivityPollen(v);

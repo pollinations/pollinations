@@ -605,21 +605,18 @@ const posts = (path) =>
     world.writes.filter((w) => w.ok && w.method === "POST" && w.path === path);
 const MAINTAINERS = "<@304378879705874432> <@884468469452656732>";
 const OWNER_O = "<@123456789012345678>";
-// The agent tells every incident it gets, or only those `pick` keeps.
+// The agent tells every incident it gets, or only those `pick` keeps, one
+// line each.
 const tells =
     (pick = () => true) =>
     ({ incidents }) => {
-        const post = (to) => {
-            const ids = incidents
+        const lines = (to) =>
+            incidents
                 .filter((i) => i.to === to && pick(i))
-                .map((i) => i.id);
-            return ids.length
-                ? { text: `${to}: ${ids}`, incidents: ids }
-                : null;
-        };
+                .map((i) => ({ incidents: [i.id], text: `${to}: ${i.id}` }));
         return {
-            community: post("community"),
-            maintainers: post("maintainers"),
+            community: lines("community"),
+            maintainers: lines("maintainers"),
         };
     };
 const HOURS = (n) => n * 60 * 60_000;
@@ -748,7 +745,7 @@ it("tells the day's listing changes once, moving the saved set only once they ar
         const saved = await state.storage.get("listings");
         await state.storage.put("listings", { ...saved, day: "2000-01-01" });
     });
-    world.agent = () => ({ community: null, maintainers: null });
+    world.agent = () => ({ community: [], maintainers: [] });
     await later(stub, 0);
     await cycled(stub);
     expect(world.agentFacts.at(-1).incidents).toEqual([

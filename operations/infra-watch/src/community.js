@@ -22,14 +22,14 @@ const SHARED_OWNERS = 3;
 const VIA_SHOWN = 3;
 
 export const COMMUNITY_PROMPT = `You write the Pollinations community model monitor's Discord posts. You get this cycle's incidents as JSON; code has already decided each one is worth telling. Answer with one JSON object and nothing else:
-{"community": {"text": "...", "incidents": ["id"]} or null, "maintainers": {"text": "...", "incidents": ["id"]} or null}
+{"community": [{"incidents": ["id"], "text": "..."}], "maintainers": [{"incidents": ["id"], "text": "..."}]}
 
-Put each incident in the post its "to" names, and list in "incidents" the ids your text tells. Group them into one short post per channel, with model ids without community/, errors and counts as given. Never add models, numbers or links.
+Each line tells the incidents in its "incidents" and goes to the channel their "to" names; one line may group several incidents of the same kind. Keep each line to a sentence or two, with model ids without community/, errors and counts as given. Never add models, numbers or links.
 - stream: a model's own answers broke the same way twice in a row.
 - shared: one broken stream on many owners' models at once, likely gen's own.
 - fallback: a model leans on its fallbacks: rescued of its successes over 4 hours, by each fallback; "private" ones are never named.
 - listings: models newly filtered out of /models or back, with health and the filtered total; filtered models stay callable by their exact ID.
-Keep each post under 3,500 characters. If not all fit, tell what fits and list only those ids: the rest come next time. Code pings owners and points them to their dashboard.`;
+Code puts whole lines into each post until it is full; a line that doesn't fit, and its incidents, come next time. Code pings owners and points them to their dashboard.`;
 
 // The public community models gen's reliability filter leaves out of the
 // default listing: in the full list but not the default one, with a
@@ -196,10 +196,11 @@ const noLinks = (text) =>
         .replace(/\[([^\]]*)\]\([^)]*\)?/g, "$1")
         .replace(/\S*(?::(?:[\\/]|%2f)|www\.)\S*/gi, "");
 
-// The agent's posts within the rails, or null if its answer isn't one. A
-// post holds only incidents code found for its channel, pings only their
-// owners, carries no link of its own and fits Discord; one that tells no
-// incident is dropped.
+// The agent's posts within the rails, or null if its answer isn't one.
+// Each line tells only incidents code found for its channel, and carries no
+// link of its own. Whole lines go into the post until it is full: a line
+// that doesn't fit is left out with its incidents, which stay pending, so a
+// post never shows less than it pings and acknowledges.
 export function decision(text, found) {
     let answer;
     try {
@@ -210,23 +211,34 @@ export function decision(text, found) {
         return null;
     }
     const byId = new Map(found.map((i) => [i.id, i]));
-    const post = (p, to, footer = "") => {
-        const told = [
-            ...new Set(
-                Array.isArray(p?.incidents) ? p.incidents.map(String) : [],
-            ),
-        ]
-            .map((id) => byId.get(id))
-            .filter((i) => i?.to === to);
-        if (!told.length || typeof p.text !== "string" || !p.text.trim())
-            return null;
-        const body = noLinks(p.text);
-        const room = LIMIT - footer.length;
-        return {
-            text: `${body.length > room ? `${body.slice(0, room - 1)}…` : body}${footer}`,
-            owners: [...new Set(told.flatMap((i) => i.owners))],
-            incidents: told,
-        };
+    const post = (lines, to, footer = "") => {
+        let body = "";
+        const told = [];
+        for (const line of Array.isArray(lines) ? lines : []) {
+            const ids = Array.isArray(line?.incidents)
+                ? [...new Set(line.incidents.map(String))]
+                : [];
+            const items = ids.map((id) => byId.get(id));
+            const words =
+                typeof line?.text === "string" ? noLinks(line.text).trim() : "";
+            if (
+                !words ||
+                !items.length ||
+                items.some((i) => i?.to !== to || told.includes(i))
+            )
+                continue;
+            const next = body ? `${body}\n${words}` : words;
+            if (next.length + footer.length > LIMIT) continue;
+            body = next;
+            told.push(...items);
+        }
+        return told.length
+            ? {
+                  text: `${body}${footer}`,
+                  owners: [...new Set(told.flatMap((i) => i.owners))],
+                  incidents: told,
+              }
+            : null;
     };
     return {
         community: post(answer?.community, "community", MY_MODELS),

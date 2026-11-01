@@ -224,34 +224,57 @@ const FOUND = [
     { id: "4", kind: "shared", to: "maintainers", owners: [], quiet: [] },
 ];
 const answer = (value) => decision(JSON.stringify(value), FOUND);
+const line = (ids, text) => ({ incidents: ids, text });
 
-test("a post holds only incidents code found for its channel, and pings only their owners", () => {
+test("a line tells only incidents code found for its channel, and pings only their owners", () => {
     const plan = answer({
-        community: {
-            text: "Streams and fallbacks",
-            incidents: ["1", "1", "3", "4", "9"],
-            owners: ["p", "everyone"],
-        },
-        maintainers: { text: "Gen", incidents: ["4", "2"] },
+        community: [
+            line(["1"], "Stream"),
+            line(["1"], "Again"),
+            line(["4"], "Wrong channel"),
+            line(["9"], "Made up"),
+            line(["1", "4"], "Mixed"),
+            line(["2", "3"], "Fallback and listings"),
+        ],
+        maintainers: [line(["4"], "Gen")],
     });
     assert.deepEqual(
         plan.community.incidents.map((i) => i.id),
-        ["1", "3"],
+        ["1", "2", "3"],
     );
-    assert.deepEqual(plan.community.owners, ["o"]);
+    assert.match(
+        plan.community.text,
+        /^Stream\nFallback and listings\n\nOwners see/,
+    );
+    assert.deepEqual(plan.community.owners, ["o", "p"]);
     assert.deepEqual(
         plan.maintainers.incidents.map((i) => i.id),
         ["4"],
     );
-    // A post telling no incident code found isn't sent.
-    assert.deepEqual(
-        answer({ community: { text: "Made up", incidents: ["9"] } }),
-        { community: null, maintainers: null },
-    );
+    assert.deepEqual(answer({ community: [line(["9"], "Made up")] }), {
+        community: null,
+        maintainers: null,
+    });
     assert.equal(decision("not json", FOUND), null);
 });
 
-test("a post carries no link of the agent's own, and fits Discord", () => {
+test("a line that doesn't fit is left out with its incident, which isn't pinged", () => {
+    const plan = answer({
+        community: [
+            line(["1"], "x".repeat(3900)),
+            line(["2"], "y".repeat(300)),
+        ],
+    });
+    assert.ok(plan.community.text.length <= 4096);
+    assert.doesNotMatch(plan.community.text, /yyy/);
+    assert.deepEqual(
+        plan.community.incidents.map((i) => i.id),
+        ["1"],
+    );
+    assert.deepEqual(plan.community.owners, ["o"]);
+});
+
+test("a post carries no link of the agent's own", () => {
     const text = [
         "[Owner dashboard](https:\\/\\/evil.example/login)",
         "https\\://evil.example/a <https://evil.example/b>",
@@ -259,8 +282,8 @@ test("a post carries no link of the agent's own, and fits Discord", () => {
         "done",
     ].join(" ");
     const plan = answer({
-        community: { text, incidents: ["1"] },
-        maintainers: { text, incidents: ["4"] },
+        community: [line(["1"], text)],
+        maintainers: [line(["4"], text)],
     });
     for (const post of [plan.community.text, plan.maintainers.text]) {
         const own = post.replace(/\n\nOwners see .*$/s, "");
@@ -272,10 +295,6 @@ test("a post carries no link of the agent's own, and fits Discord", () => {
         /\[My Models\]\(https:\/\/enter\.pollinations\.ai\/my-models\)\.$/,
     );
     assert.doesNotMatch(plan.maintainers.text, /My Models/);
-    const long = answer({
-        community: { text: "x".repeat(5000), incidents: ["1"] },
-    });
-    assert.equal(long.community.text.length, 4096);
 });
 
 const listed = (name, success_rate) =>

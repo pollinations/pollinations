@@ -62,6 +62,13 @@ worker instead of building an unbounded queue on one GPU. `QUEUE_LIMIT` is
 per process, so the default deployment admits at most six in-flight requests
 per GPU.
 
+Each process also keeps one protected slot, three per GPU, that legacy image
+API traffic cannot take. Gen sends `x-protected-slot: 1` for every caller
+except the legacy bridge key; the header only counts with the backend token.
+This reserves admission, not execution order, so protected requests can still
+get `503 Queue full` when every slot is taken. Either side can deploy first:
+older workers ignore the header, and without it every request is shared.
+
 **Rollout order:** do not enable `QUEUE_LIMIT` on production workers until gen
 production contains the cross-worker 503 retry. First sync `main` to
 `production`, deploy gen through GitHub Actions, and verify the retry is live.

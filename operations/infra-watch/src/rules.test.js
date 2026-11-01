@@ -956,6 +956,10 @@ test("a fallback notice gives the total, then each fallback's own part", () => {
     assert.match(lines[4], /│ VIA {5}o\/b \(14\) +│/);
     assert.doesNotMatch(card.text, /community\//);
     assert.match(lines.at(-1), /^Callers still get answers/);
+    assert.match(
+        lines.at(-1),
+        /\[My Models\]\(https:\/\/enter\.pollinations\.ai\/my-models\)\.$/,
+    );
     // Its owner is pinged, outside the embed.
     assert.deepEqual(card.owners, ["o"]);
 });
@@ -1105,7 +1109,7 @@ test("the listings post names each change with its rate, and pings no one", () =
             "**Back in listings**",
             "`a/back` 91%",
             "`a/quiet` no recent sample",
-            "*Filtered models are left out of /models but stay callable by their exact ID.*",
+            "*Filtered models are left out of /models but stay callable by their exact ID. Owners see why on [My Models](https://enter.pollinations.ai/my-models).*",
         ].join("\n"),
     );
     // Only models back: green.

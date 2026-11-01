@@ -794,6 +794,9 @@ const community = (id) => id.replace(/^community\//, "");
 // community channel list them in `owners`, which delivery pings.
 export const ownerOf = (id) => community(id).split("/")[0];
 
+// Where an owner sees their model's failed calls and errors.
+const MY_MODELS = "[My Models](https://enter.pollinations.ai/my-models)";
+
 // A fallback notice for the community channel, pinging the model's owner.
 // The total rescued, then each fallback's part.
 export function fallbackCard({ model, via, rescued, successes }) {
@@ -817,7 +820,7 @@ export function fallbackCard({ model, via, rescued, successes }) {
                 color,
                 Infinity,
             ),
-            "Callers still get answers, but often from a fallback: the model's own upstream is failing.",
+            `Callers still get answers, but often from a fallback: the model's own upstream is failing. Its owner sees the errors on ${MY_MODELS}.`,
         ].join("\n"),
         ping: false,
         color,
@@ -950,7 +953,7 @@ export function listingsCard({ newly, back }, total) {
             `### Community listings · ${total} filtered`,
             ...section("Newly filtered", newly),
             ...section("Back in listings", back),
-            "*Filtered models are left out of /models but stay callable by their exact ID.*",
+            `*Filtered models are left out of /models but stay callable by their exact ID. Owners see why on ${MY_MODELS}.*`,
         ].join("\n"),
         ping: false,
         color: newly.length ? COLOR.PRIMARY_WEAK : GREEN,

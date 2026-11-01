@@ -27,7 +27,7 @@ const broke = (extra) => ({
     ...extra,
 });
 const twice = (extra) => broke({ before: broke(), ...extra });
-const find = (input) =>
+const cycle = (input) =>
     incidents({
         catalog: [],
         rows: [],
@@ -37,6 +37,7 @@ const find = (input) =>
         now: NOW,
         ...input,
     });
+const find = (input) => cycle(input).found;
 const brief = (found) => found.map((i) => `${i.kind} ${i.model ?? i.models}`);
 
 test("a broken stream is its owner's at the second in a row on the model's own answers", () => {
@@ -215,8 +216,65 @@ test("listing changes are an incident only when something changed", () => {
     );
 });
 
+test("a shared failure keeps its models until they are probed again, even past 4 hours", () => {
+    const shared = ["community/a/x", "community/b/y", "community/c/z"];
+    const catalog = shared.map((n) => model(n));
+    const schedule = Object.fromEntries(shared.map((n) => [n, twice()]));
+    const first = cycle({ catalog, schedule });
+    // Undelivered and 5 hours on, with no new probe: still gen's.
+    const later = cycle({
+        catalog,
+        schedule,
+        pending: first.pending,
+        now: NOW + 5 * HOUR,
+    });
+    assert.deepEqual(brief(later.found), [`shared ${shared}`]);
+    // Told, it still keeps them from their owners while unprobed.
+    const quiet = Object.fromEntries(
+        shared.map((n) => [streamKey(n, ERROR), NOW]),
+    );
+    assert.deepEqual(
+        cycle({
+            catalog,
+            schedule,
+            quiet,
+            pending: first.pending,
+            now: NOW + 5 * HOUR,
+        }).found,
+        [],
+    );
+    // A new probe of each is fresh evidence: older than 4 hours, they are
+    // their owners' again.
+    const reprobed = Object.fromEntries(
+        shared.map((n) => [n, twice({ lastAt: NOW - 5 * HOUR })]),
+    );
+    assert.deepEqual(
+        brief(
+            cycle({ catalog, schedule: reprobed, pending: first.pending })
+                .found,
+        ),
+        shared.map((n) => `stream ${n}`),
+    );
+});
+
+test("a fallback notice is kept from when it qualifies until its fallbacks are told", () => {
+    const catalog = [model("community/o/m"), model(PUBLIC)];
+    const first = cycle({ catalog, rows: leaning(10, 40) });
+    // Its rescues leave the 4-hour window: still pending.
+    const later = cycle({ catalog, rows: [], pending: first.pending });
+    assert.deepEqual(brief(later.found), ["fallback community/o/m"]);
+    assert.equal(later.found[0].rescued, 10);
+    // Told: gone.
+    const quiet = Object.fromEntries(
+        later.found[0].quiet.map((key) => [key, NOW]),
+    );
+    const done = cycle({ catalog, rows: [], quiet, pending: later.pending });
+    assert.deepEqual(done.found, []);
+    assert.deepEqual(done.pending, {});
+});
+
 // Incidents code found: a broken stream and a fallback for owners o and p,
-// listing changes, and a shared break for the maintainers.
+// listing changes, and a shared failure for the maintainers.
 const FOUND = [
     { id: "1", kind: "stream", to: "community", owners: ["o"], quiet: [] },
     { id: "2", kind: "fallback", to: "community", owners: ["p"], quiet: [] },

@@ -506,14 +506,17 @@ export class Watch extends DurableObject {
         ) {
             await this.ctx.storage.put("listings", listings.saved);
         }
-        const found = incidents({
+        const { found, pending } = incidents({
             catalog,
             rows,
             schedule: state.schedule,
             quiet: state.quiet,
+            pending: state.pending,
             listings: listings?.changes ?? null,
             now,
         });
+        state.pending = pending;
+        await save();
         if (!found.length) return;
         const agentKey = this.env.COMMUNITY_AGENT_KEY;
         if (!agentKey) throw new Error("COMMUNITY_AGENT_KEY missing");

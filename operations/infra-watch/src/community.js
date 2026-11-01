@@ -64,11 +64,21 @@ export const streamKey = (model, error) => `stream ${model} ${error}`;
 export const fallbackKey = (model, via) => `fallback ${model} ${via}`;
 
 // This cycle's incidents, each with an id, where it goes, the owners it
-// pings and the quiet keys it starts once told. `schedule` holds each
-// model's last probe and the one before; `rows` gen's status rows for
+// pings and the quiet keys it starts once told, and the pending shared
+// failures and fallback notices to keep for the next cycle. `schedule` holds
+// each model's last probe and the one before; `rows` gen's status rows for
 // regular traffic over WINDOW_MINUTES; `quiet` when each key was told;
-// `listings` the day's listing changes or null.
-export function incidents({ catalog, rows, schedule, quiet, listings, now }) {
+// `pending` last cycle's pending incidents; `listings` the day's listing
+// changes or null.
+export function incidents({
+    catalog,
+    rows,
+    schedule,
+    quiet,
+    pending = {},
+    listings,
+    now,
+}) {
     const named = new Set(catalog.map((m) => m.name));
     const listed = new Set(
         catalog.filter((m) => m.community && !m.agent).map((m) => m.name),
@@ -78,6 +88,7 @@ export function incidents({ catalog, rows, schedule, quiet, listings, now }) {
     const found = [];
     const add = (incident) =>
         found.push({ id: String(found.length + 1), ...incident });
+    const kept = {};
 
     // A broken stream counts only when the model answered itself.
     const broken = (model, p) =>
@@ -87,9 +98,19 @@ export function incidents({ catalog, rows, schedule, quiet, listings, now }) {
     );
 
     // One error on 3 or more owners' models probed in the last 4 hours is
-    // gen's: the maintainers' incident, and none of those owners'.
+    // gen's: the maintainers' incident, and none of those owners'. A model
+    // a shared failure counted stays gen's until it is probed again.
+    const held = new Map();
+    for (const p of Object.values(pending))
+        if (p.kind === "shared")
+            for (const [model, at] of Object.entries(p.probes))
+                if (schedule[model]?.lastAt === at) held.set(model, p.error);
     const byError = Map.groupBy(
-        streams.filter(([, s]) => now - s.lastAt < WINDOW_MINUTES * 60_000),
+        streams.filter(
+            ([model, s]) =>
+                now - s.lastAt < WINDOW_MINUTES * 60_000 ||
+                held.get(model) === s.protocolError,
+        ),
         ([, s]) => s.protocolError,
     );
     const gens = new Set();
@@ -97,6 +118,13 @@ export function incidents({ catalog, rows, schedule, quiet, listings, now }) {
         const models = entries.map(([model]) => model);
         if (new Set(models.map(ownerOf)).size < SHARED_OWNERS) continue;
         for (const model of models) gens.add(model);
+        kept[`shared ${error}`] = {
+            kind: "shared",
+            error,
+            probes: Object.fromEntries(
+                entries.map(([model, s]) => [model, s.lastAt]),
+            ),
+        };
         const fresh = models.filter(
             (m) => !told(streamKey(m, error), "stream"),
         );
@@ -131,39 +159,54 @@ export function incidents({ catalog, rows, schedule, quiet, listings, now }) {
         });
     }
 
-    // A listed model whose fallbacks rescued enough of its successes, with
-    // the fallbacks not told about this week; private ones unnamed.
+    // A listed model whose fallbacks rescued enough of its successes. The
+    // notice is kept from when it qualifies until its fallbacks are told,
+    // so it outlives the 4-hour window; private fallbacks are unnamed.
     for (const r of rows) {
         const rescued = r.fallback_rescues;
         if (!r.is_rollup || !listed.has(r.model)) continue;
         if (rescued < MIN_RESCUED || rescued < MIN_RESCUED_SHARE * r.status_2xx)
             continue;
-        const via = rows
-            .filter(
-                (v) =>
-                    v.model === r.model &&
-                    !v.is_rollup &&
-                    v.fallback_used &&
-                    v.fallback_rescues > 0,
-            )
-            .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
-            .slice(0, VIA_SHOWN)
-            .map((v) => ({
-                model: named.has(v.model_used) ? v.model_used : "private",
-                rescued: v.fallback_rescues,
-            }))
-            .filter((v) => !told(fallbackKey(r.model, v.model), "fallback"));
-        if (via.length)
-            add({
-                kind: "fallback",
-                to: "community",
-                model: r.model,
-                rescued,
-                successes: r.status_2xx,
-                via,
-                owners: [ownerOf(r.model)],
-                quiet: via.map((v) => fallbackKey(r.model, v.model)),
-            });
+        kept[`fallback ${r.model}`] = {
+            kind: "fallback",
+            model: r.model,
+            rescued,
+            successes: r.status_2xx,
+            via: rows
+                .filter(
+                    (v) =>
+                        v.model === r.model &&
+                        !v.is_rollup &&
+                        v.fallback_used &&
+                        v.fallback_rescues > 0,
+                )
+                .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
+                .slice(0, VIA_SHOWN)
+                .map((v) => ({
+                    model: named.has(v.model_used) ? v.model_used : "private",
+                    rescued: v.fallback_rescues,
+                })),
+        };
+    }
+    for (const [key, p] of Object.entries(pending))
+        if (p.kind === "fallback" && !(key in kept) && listed.has(p.model))
+            kept[key] = p;
+    for (const [key, p] of Object.entries(kept)) {
+        if (p.kind !== "fallback") continue;
+        const via = p.via.filter(
+            (v) => !told(fallbackKey(p.model, v.model), "fallback"),
+        );
+        if (!via.length) {
+            delete kept[key];
+            continue;
+        }
+        add({
+            ...p,
+            to: "community",
+            via,
+            owners: [ownerOf(p.model)],
+            quiet: via.map((v) => fallbackKey(p.model, v.model)),
+        });
     }
 
     if (listings?.newly.length || listings?.back.length)
@@ -174,7 +217,7 @@ export function incidents({ catalog, rows, schedule, quiet, listings, now }) {
             owners: [],
             quiet: [],
         });
-    return found;
+    return { found, pending: kept };
 }
 
 // What the agent reads of an incident: what it says, not who it pings or

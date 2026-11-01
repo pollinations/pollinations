@@ -589,14 +589,17 @@ const cycled = async (stub) => {
     await stub.check();
     await runInDurableObject(stub, (instance) => instance.cycle);
 };
-// Half an hour on, with each model's backoff and quiet period `ms`
-// further along.
+// Half an hour on, with every saved time `ms` further back: each model's
+// backoff, quiet periods, and the probes a pending shared failure counted.
 const later = (stub, ms) =>
     runInDurableObject(stub, async (_, state) => {
         const saved = await state.storage.get("community");
         saved.at -= 30 * 60_000;
         for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
         for (const key of Object.keys(saved.quiet)) saved.quiet[key] -= ms;
+        for (const p of Object.values(saved.pending ?? {}))
+            for (const model of Object.keys(p.probes ?? {}))
+                p.probes[model] -= ms;
         await state.storage.put("community", saved);
     });
 const COMMUNITY = "/api/webhooks/2/y";
@@ -774,3 +777,57 @@ it("tells the day's listing changes once, moving the saved set only once they ar
     // Listings ping no one.
     expect(posts(COMMUNITY).at(-1).content).toBe("");
 });
+
+it("keeps a shared failure the maintainers didn't get as gen's, past 4 hours and without new probes", async () => {
+    const stub = watch();
+    world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
+        (n) => community(n),
+    );
+    world.probe = answers(() => true);
+    world.agent = tells();
+    world.fails = (w) => w.path === INFRA;
+    await cycled(stub);
+    // 5 hours on, before their backoff ends: still one incident for the
+    // maintainers, none for the owners.
+    world.fails = () => false;
+    await later(stub, HOURS(5));
+    await cycled(stub);
+    expect(world.probes).toHaveLength(3);
+    expect(world.agentFacts[1].incidents.map((i) => i.kind)).toEqual([
+        "shared",
+    ]);
+    expect(posts(COMMUNITY)).toHaveLength(0);
+}, 15_000);
+
+it("keeps a refused fallback notice after its rescues leave the 4-hour window", async () => {
+    const stub = watch();
+    const leaning = "community/o/leaning";
+    world.catalog = [community(leaning), community("community/o/fallback")];
+    world.regular = [
+        { model: leaning, is_rollup: 1, status_2xx: 40, fallback_rescues: 30 },
+        {
+            model: leaning,
+            is_rollup: 0,
+            fallback_used: true,
+            model_used: "community/o/fallback",
+            fallback_rescues: 30,
+        },
+    ];
+    world.probe = answers(() => false);
+    world.agent = tells();
+    world.fails = (w) => w.path === COMMUNITY;
+    await cycled(stub);
+    // The rescues are out of the window; the notice is still pending, and
+    // told once Discord takes it.
+    world.regular = [];
+    world.fails = () => false;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts[1].incidents).toMatchObject([
+        { kind: "fallback", model: leaning, rescued: 30, successes: 40 },
+    ]);
+    expect(posts(COMMUNITY)).toHaveLength(1);
+    await later(stub, 0);
+    await cycled(stub);
+    expect(world.agentFacts).toHaveLength(2);
+}, 15_000);

@@ -41,7 +41,7 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: TerminalIcon,
     },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
-    { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },
+    { id: "pollen", to: "/pollen", label: "pollen", icon: WalletIcon },
     {
         id: "activity",
         to: "/activity",

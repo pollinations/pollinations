@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { BillingOverview } from "../frontend/src/backend-types.ts";
 import { autoTopUpStatus } from "../frontend/src/components/pollen/auto-top-up-status.ts";
 import {
@@ -8,6 +10,19 @@ import {
     paymentMethodDetails,
 } from "../frontend/src/components/pollen/payment-method-format.ts";
 import { paymentMethods } from "../frontend/src/components/pollen/payment-trust-badge.tsx";
+import {
+    PollenBalance,
+    SidebarWallet,
+} from "../frontend/src/components/pollen/pollen-balance.tsx";
+
+vi.hoisted(() => {
+    vi.stubGlobal("window", { location: { origin: "http://localhost:3000" } });
+    vi.stubEnv("MODE", "development");
+});
+afterAll(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+});
 
 function billing(
     overrides: {
@@ -236,3 +251,107 @@ describe("payment logos before checkout", () => {
             expect(paymentMethods(country)).toEqual(paymentMethods(null)),
     );
 });
+
+describe("locked Quest pollen display", () => {
+    it.each([true, false])(
+        "shows spendable funds only when restricted=%s",
+        (restricted) => {
+            const router = createRouter({
+                routeTree: createRootRoute(),
+                history: createMemoryHistory(),
+            });
+            const html = renderToStaticMarkup(
+                createElement(
+                    RouterContextProvider,
+                    { router },
+                    createElement(PollenBalance, {
+                        tierBalance: 35.54,
+                        packBalance: 2,
+                        tierWeek: 12.5,
+                        questPollenRestricted: restricted,
+                    }),
+                ),
+            );
+            if (restricted) {
+                expect(html).toContain("Available");
+                expect(html).toContain("Quest pollen locked");
+                expect(html).not.toContain("37.54");
+                expect(html).not.toContain("/ 7d");
+            } else {
+                expect(html).toContain("Total");
+                expect(html).not.toContain("Quest pollen locked");
+                expect(html).toContain("37.54");
+                expect(html).toContain("/ 7d");
+            }
+        },
+    );
+
+    it("keeps the balance visible with quiet purchase and support links", () => {
+        const router = createRouter({
+            routeTree: createRootRoute(),
+            history: createMemoryHistory(),
+        });
+        const html = renderToStaticMarkup(
+            createElement(
+                RouterContextProvider,
+                { router },
+                createElement(PollenBalance, {
+                    tierBalance: 35.54,
+                    packBalance: 2,
+                    questPollenRestricted: true,
+                }),
+            ),
+        );
+        expect(html).toContain("35.54");
+        expect(html).toContain("Verification needed");
+        expect(html).toContain("make your first purchase");
+        expect(html).toContain('href="/pollen#buy-pollen"');
+        expect(html).toContain('href="mailto:hello@pollinations.ai"');
+        expect(html).not.toContain('role="alert"');
+        expect(html).not.toContain("request a review");
+
+        const sidebar = renderToStaticMarkup(
+            createElement(SidebarWallet, {
+                tierBalance: 35.54,
+                packBalance: 2,
+                questPollenRestricted: true,
+            }),
+        );
+        expect(sidebar).toContain("35.54");
+        expect(sidebar).not.toContain("Frozen");
+        expect(sidebar).toContain(
+            'aria-label="Quest pollen needs verification"',
+        );
+    });
+
+    it("removes the restriction notice when the account is verified", () => {
+        const html = renderToStaticMarkup(
+            createElement(PollenBalance, {
+                tierBalance: 35.54,
+                packBalance: 2,
+                questPollenRestricted: false,
+                compact: true,
+            }),
+        );
+        expect(html).toContain("35.54");
+        expect(html).not.toContain("Verification needed");
+        expect(html).not.toContain("couldn’t verify");
+        const sidebar = renderToStaticMarkup(
+            createElement(SidebarWallet, {
+                tierBalance: 35.54,
+                packBalance: 2,
+                questPollenRestricted: false,
+            }),
+        );
+        expect(sidebar).not.toContain(
+            'aria-label="Quest pollen needs verification"',
+        );
+    });
+});
+
+import {
+    createMemoryHistory,
+    createRootRoute,
+    createRouter,
+    RouterContextProvider,
+} from "@tanstack/react-router";

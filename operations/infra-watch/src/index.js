@@ -30,6 +30,7 @@ import {
     toolsFor,
 } from "./investigate.js";
 import { dueProbes, FORGET_MS, pool, probe, recordProbe } from "./probes.js";
+import { holdDomains, sweepDomains } from "./quest-restrictions.js";
 import {
     conditions,
     duration,
@@ -43,15 +44,6 @@ import {
     step,
     waiting,
 } from "./rules.js";
-import {
-    heldDomains,
-    holdDomains,
-    listAll,
-    pending,
-    REVIEW_PROMPT,
-    reviewEvidence,
-    verdict,
-} from "./setup-holds.js";
 
 const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
@@ -175,13 +167,47 @@ export class Watch extends DurableObject {
         );
     }
 
+    // One-time retirement of the old in-app review queue. Failed Discord
+    // edits stay in storage for retry, apart from the operational alerts.
+    async retireReviews(saved, records) {
+        const retry = {};
+        let complete = true;
+        const retire = (id) =>
+            this.writes(() =>
+                update(this.env, id, {
+                    text: "REVIEW CLOSED: account checks now go through hello@pollinations.ai. Quest spending restrictions are managed on the account.",
+                    color: 0x639922,
+                    ping: false,
+                }),
+            );
+        for (const [key, incident] of Object.entries(saved.open ?? {})) {
+            if (incident.kind !== "REVIEW") continue;
+            if (incident.messageId && !(await retire(incident.messageId))) {
+                retry[key] = incident;
+                complete = false;
+            } else if (incident.messageId)
+                await this.ctx.storage.delete(`lines:${incident.messageId}`);
+            records.delete(`lines:${incident.messageId}`);
+            delete saved.open[key];
+        }
+        for (const [name, record] of records) {
+            if (record.closed?.incident.kind !== "REVIEW") continue;
+            if (await retire(name.slice("lines:".length)))
+                await this.ctx.storage.delete(name);
+            else complete = false;
+            records.delete(name);
+        }
+        for (const key of Object.keys(saved.unposted ?? {}))
+            if (key.startsWith("review:")) delete saved.unposted[key];
+        return { retry, complete };
+    }
+
     async run() {
         const now = Date.now();
         let found;
-        // Sign-up bursts and review requests per email domain; null when
-        // the read failed, so their open cards are left as they are.
+        // Sign-up bursts per email domain; null when the read failed, so
+        // their open cards are left as they are.
         let signups = [];
-        let reviews = new Map();
         // The legacy bridges' last reading; null when none could be read.
         let legacy = [];
         let data = { recent: [], last10: [], last60: [], official: new Set() };
@@ -206,27 +232,38 @@ export class Watch extends DurableObject {
                 );
                 publicModels = models;
                 data = { recent: r15, last10: r10, last60: r60, official };
-                [signups, reviews, legacy] = await Promise.all([
-                    this.signups(),
-                    this.reviews(),
+                [signups, legacy] = await Promise.all([
+                    this.signups(now),
                     this.legacy(now),
                 ]);
                 found = conditions({
                     ...data,
                     hosts,
                     signups: signups ?? [],
-                    reviews: reviews ?? new Map(),
                 });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
 
+        const sweeps = await sweepDomains(
+            this.env.DB,
+            this.env.SETUP_HOLDS,
+            this.ctx.storage,
+            now,
+        );
+        for (const info of Object.values(found))
+            if (info.kind === "SIGNUP_BURST")
+                info.sweepPending = sweeps[info.domain]?.followup === true;
+
         const saved = (await this.ctx.storage.get("state")) ?? {};
         // A card closed by a check whose state save then failed: its record
         // says closed while the saved state still has it open. The record
         // wins, so a new failure opens a new card instead of editing this one.
         const records = await this.ctx.storage.list({ prefix: "lines:" });
+        const retiredReviews = saved.reviewsRetired
+            ? { retry: {}, complete: true }
+            : await this.retireReviews(saved, records);
         const open = { ...saved.open };
         const closed = { ...saved.closed };
         for (const [name, record] of records) {
@@ -239,12 +276,11 @@ export class Watch extends DurableObject {
         // A legacy bridge's open card is judged against the medians it
         // started with.
         if (legacy) Object.assign(found, legacyDown(legacy, open));
-        // Unknown sign-ups, reviews or legacy bridges keep their open cards.
+        // Unknown sign-ups or legacy bridges keep their open cards.
         // A sign-up card Discord hasn't taken yet is retried until it has:
         // its 24-hour window can end first.
         const unknown = [
             signups === null && "signup:",
-            reviews === null && "review:",
             legacy === null && "legacy:",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
@@ -401,18 +437,11 @@ export class Watch extends DurableObject {
             const id = incident.messageId;
             const record = await this.record(id);
             const pending = waiting(record, now);
-            // A review card needs a verdict on exactly the accounts it lists
-            // now, whatever its history; one the budget skipped is tried
-            // again on the next check.
-            const review = incident.kind === "REVIEW";
-            const reason = review
-                ? "the accounts listed for review changed"
-                : noteworthy(incident.noted, current);
-            const wanted = review
-                ? !record.lines.some((l) => l.asking === current.asking)
-                : Boolean(reason) &&
-                  now - incident.notedAt >= NOTE_EVERY_MS &&
-                  record.lines.length < MAX_LINES - 1;
+            const reason = noteworthy(incident.noted, current);
+            const wanted =
+                Boolean(reason) &&
+                now - incident.notedAt >= NOTE_EVERY_MS &&
+                record.lines.length < MAX_LINES - 1;
             const due =
                 wanted && !pending && investigates(incident.kind) && reserve();
             if (due) {
@@ -443,7 +472,12 @@ export class Watch extends DurableObject {
         }
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
-        await this.ctx.storage.put("state", { ...next.state, unposted });
+        await this.ctx.storage.put("state", {
+            ...next.state,
+            open: { ...next.state.open, ...retiredReviews.retry },
+            reviewsRetired: retiredReviews.complete,
+            unposted,
+        });
         if (publicModels)
             this.cycle ??= this.community(gen, publicModels, now)
                 .catch((error) => console.error(`community: ${error.message}`))
@@ -604,66 +638,29 @@ export class Watch extends DurableObject {
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be
-    // read.
-    async signups() {
+    // read. A burst is 20 or more new accounts in 24 hours: the pipe counts
+    // more than `limit`.
+    async signups(now) {
         try {
             const rows = await pipe(
                 "infra_watch_signups",
-                {},
+                { limit: 19 },
                 { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
             );
-            return await holdDomains(this.env.SETUP_HOLDS, rows);
+            return await holdDomains(
+                this.env.SETUP_HOLDS,
+                this.ctx.storage,
+                rows,
+                now,
+            );
         } catch (error) {
             console.error(`signups: ${error.message}`);
             return null;
         }
     }
 
-    // What the AI reads for a review: the domain's sign-ups and the listed
-    // accounts' API use from Tinybird, numbers only. A failed read comes
-    // through as { error }.
-    async reviewFacts(info) {
-        const read = (name, params) =>
-            pipe(name, params, {
-                tinybirdToken: this.env.TINYBIRD_TOKEN,
-                fetchImpl: fetch,
-            }).catch((error) => ({ error: error.message }));
-        const [signups, usage] = await Promise.all([
-            read("infra_watch_review_signups", { domain: info.domain }),
-            read("infra_watch_review_usage", {
-                user_ids: info.accounts.map((a) => a.userId).join(","),
-            }),
-        ]);
-        return reviewEvidence(info, signups, usage, Date.now());
-    }
-
-    // Review requests still waiting for a decision, per domain; null if
-    // they couldn't be read.
-    async reviews() {
-        try {
-            const kv = this.env.SETUP_HOLDS;
-            const [requests, decisions] = await Promise.all([
-                listAll(kv, "review:"),
-                listAll(kv, "decision:"),
-            ]);
-            const domains = new Set(
-                requests.map(({ metadata }) => metadata?.domain),
-            );
-            domains.delete(undefined);
-            return pending(
-                requests,
-                decisions,
-                await heldDomains(kv, [...domains]),
-            );
-        } catch (error) {
-            console.error(`reviews: ${error.message}`);
-            return null;
-        }
-    }
-
-    // Who is failing and the main error, from Tinybird, refreshed at most
-    // every ENRICH_EVERY_MS and carried over in between. At opening, also the
-    // card's frozen start.
+    // Who is failing and the main error, refreshed at most every
+    // ENRICH_EVERY_MS. At opening, also the card's frozen start.
     async enrich(incident, tools, now, opening) {
         const { model } = incident.info;
         if (opening || now - (incident.enriched?.at ?? 0) >= ENRICH_EVERY_MS) {
@@ -699,15 +696,13 @@ export class Watch extends DurableObject {
     // Without a line, "checking why…" just goes. The edit goes through the
     // write queue and only touches the card it was asked for: while open, or
     // by the closing line's last edit.
-    async note({ key, id, moment, reason, info }, data) {
+    async note({ key, id, moment, reason }, data) {
         const closing = moment === "closed";
         const record = await this.record(id);
         const incident = closing
             ? record.closed?.incident
             : (await this.ctx.storage.get("state"))?.open?.[key];
         if (incident?.messageId !== id) return;
-        // A review is about the accounts listed when it was asked for.
-        const review = incident.kind === "REVIEW" && (info ?? incident.info);
         let text = null;
         try {
             const apiKey = this.env.POLLINATIONS_API_KEY;
@@ -718,53 +713,31 @@ export class Watch extends DurableObject {
             };
             const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };
             const previous = record.lines.map((l) => l.text);
-            text = review
-                ? verdict(
-                      await ask(
-                          apiKey,
-                          {
-                              moment,
-                              reason,
-                              previous,
-                              ...(await this.reviewFacts(review)),
-                          },
-                          {},
-                          { system: REVIEW_PROMPT, specs: [] },
-                      ),
-                  )
-                : await ask(
-                      apiKey,
-                      {
-                          moment,
-                          reason,
-                          footprint,
-                          previous,
-                          ...evidence({ info: incident.info }, data),
-                      },
-                      toolsFor(data, tinybird),
-                  );
+            text = await ask(
+                apiKey,
+                {
+                    moment,
+                    reason,
+                    footprint,
+                    previous,
+                    ...evidence({ info: incident.info }, data),
+                },
+                toolsFor(data, tinybird),
+            );
             if (!text) console.error("investigator: no answer");
         } catch (error) {
             console.error(`investigator: ${error.message}`);
         }
         // The line keeps its colour from when the AI looked (green for the
-        // closing line); a verdict, the accounts it examined.
+        // closing line).
         const line = text && {
             at: Date.now(),
             text,
             color: lineColor(incident),
-            ...(review && {
-                asking: review.accounts.map((a) => a.userId).join(","),
-            }),
         };
         const done = await this.writes(async () => {
             const current = await this.record(id);
-            // A review card keeps only its latest verdict.
-            const lines = !line
-                ? current.lines
-                : review
-                  ? [line]
-                  : [...current.lines, line];
+            const lines = line ? [...current.lines, line] : current.lines;
             if (current.closed) {
                 // A closed card's lines wait for its last edit: written now
                 // by the closing line, or by a later check if that fails.

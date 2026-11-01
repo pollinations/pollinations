@@ -70,7 +70,7 @@ function PollenPage() {
 
     return (
         <>
-            <Section title="Pollen">
+            <Section title="pollen">
                 <Await
                     promise={balance}
                     fallback={<CardLoading className="h-52 sm:h-56" />}

@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "FX_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "fx",
+        name: "Exchange Rates",
+        description:
+            "Look up ECB reference exchange rates, list currencies, and convert amounts.",
+        binding: "FX_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Exchange rate lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

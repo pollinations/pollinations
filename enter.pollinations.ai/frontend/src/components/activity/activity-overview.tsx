@@ -314,9 +314,6 @@ export const ActivityOverview: FC<{
 
 const PAGE_SIZE = 15;
 
-// A phone-width card has no room for the Share column.
-const SHARE_CELL = "hidden @[32rem]:table-cell";
-
 type BreakdownTableProps = {
     entries: BreakdownEntry[];
     totals: ActivityAmounts;
@@ -363,7 +360,7 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                             <TableHeaderCell
                                 scope="col"
                                 align="right"
-                                className={`${SHARE_CELL} px-2 py-1 font-normal`}
+                                className="px-2 py-1 font-normal"
                             >
                                 Share
                             </TableHeaderCell>
@@ -400,7 +397,7 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                                 <TableCell
                                     align="right"
                                     numeric
-                                    className={`${SHARE_CELL} text-xs`}
+                                    className="text-xs"
                                 >
                                     {listed > 0
                                         ? (
@@ -425,10 +422,9 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                     </TableBody>
                     <tfoot className="border-t border-divider font-semibold">
                         <TableRow>
-                            <TableHeaderCell scope="row">
+                            <TableHeaderCell scope="row" colSpan={2}>
                                 {selecting ? "Selected" : "Total"}
                             </TableHeaderCell>
-                            <TableCell className={SHARE_CELL} />
                             <TableCell
                                 align="right"
                                 numeric
@@ -446,6 +442,7 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
             {visibleCount < entries.length && (
                 <div data-theme="neutral" className="flex justify-center">
                     <Button
+                        size="sm"
                         onClick={() =>
                             setPage({ ids, limit: visibleCount + PAGE_SIZE })
                         }

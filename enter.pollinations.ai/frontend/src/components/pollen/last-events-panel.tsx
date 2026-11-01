@@ -333,7 +333,12 @@ export const LastEventsPanel: FC = () => {
 
     const showOlder = state.hasMore && (
         <div data-theme="neutral" className="mt-4 flex justify-center">
-            <Button as="button" onClick={load} disabled={state.loading}>
+            <Button
+                as="button"
+                size="sm"
+                onClick={load}
+                disabled={state.loading}
+            >
                 <StableLabel
                     text={loadingMore ? "Loading…" : "Show older"}
                     options={["Show older", "Loading…"]}

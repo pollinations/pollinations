@@ -517,7 +517,7 @@ export function QuestRow({
         </Chip>
     ) : (
         <span
-            className={`flex items-center gap-1.5 text-sm font-semibold tabular-nums ${
+            className={`flex items-center gap-1 text-sm font-semibold tabular-nums ${
                 claimed ? "text-theme-text-muted" : "text-theme-text-strong"
             }`}
         >
@@ -543,7 +543,7 @@ export function QuestRow({
             className="flex flex-col items-end gap-0.5 pr-3 text-lg font-semibold leading-none tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
         >
             {/* The amount where every reward sits, the action under it. */}
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1">
                 <WalletKindIcon kind={rewardIcon} className="h-5 w-5" />
                 {rewardLabel}
             </span>

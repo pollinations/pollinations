@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "AIR_QUALITY_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "air-quality",
+        name: "Air Quality",
+        description:
+            "Current air pollution and AQI readings plus a 5-day forecast for any location.",
+        binding: "AIR_QUALITY_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Air quality lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

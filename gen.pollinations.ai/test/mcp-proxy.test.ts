@@ -150,6 +150,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "air-quality",
+                name: "Air Quality",
+                description:
+                    "Current air pollution and AQI readings plus a 5-day forecast for any location.",
+                url: "https://gen.pollinations.ai/mcp/air-quality",
+                pricing: {
+                    description:
+                        "Air quality lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -263,7 +275,45 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test("routes Air Quality with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+            name: "air_quality",
+            arguments: { latitude: 28.85, longitude: 78.24 },
+        },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/air-quality",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "machines", "air-quality"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

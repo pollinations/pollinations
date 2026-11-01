@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Air Quality | `https://gen.pollinations.ai/mcp/air-quality` | Get current AQI and pollutant readings plus a 5-day forecast for any location | [Source](https://github.com/pollinations/pollinations/tree/main/apps/air-quality-mcp) |
 
 Send the key with every request:
 
@@ -205,6 +206,15 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Air Quality MCP
+
+The Air Quality server answers "how polluted is the air right now?" with
+Open-Meteo. Use `air_quality` for coordinates or `air_quality_by_place` for a
+place name: European and US AQI with plain-language bands, PM2.5, PM10, ozone,
+NO2, SO2 and CO, an optional daily forecast up to 5 days, and optional European
+pollen counts. Air quality lookups are free and need no extra MCP fee. The
+caller's key is never forwarded to Open-Meteo.
 
 ### Billing and permissions
 

@@ -330,12 +330,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     >
         {/* You first: your name (the way to Settings), or the sign-in
             buttons, beside the phone's close button. */}
-        <div
-            className={cn(
-                "flex shrink-0 items-start gap-2 border-b pb-3",
-                NAV_LINE_CLASS,
-            )}
-        >
+        <div className="flex shrink-0 items-start gap-2 pb-1">
             <div className="flex min-w-0 flex-1 flex-col gap-2">
                 {accountName && (
                     <AccountLink

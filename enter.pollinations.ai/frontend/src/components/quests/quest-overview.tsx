@@ -890,27 +890,32 @@ function QuestOverviewContent({
     // no synthetic catalog entry or special balance path.
     const bonusRewardCards = useMemo(() => {
         const catalogIds = new Set(state.catalog.map((quest) => quest.id));
-        return state.rewards
-            .filter(
-                (reward) =>
-                    reward.questId == null || !catalogIds.has(reward.questId),
-            )
-            .map<QuestCard>((reward) => ({
-                key: reward.id,
-                rewardId: reward.id,
-                title: reward.title,
-                description: reward.questId?.startsWith(
-                    "github:reported_issue:",
+        return (
+            state.rewards
+                .filter(
+                    (reward) =>
+                        reward.questId == null ||
+                        !catalogIds.has(reward.questId),
                 )
-                    ? "Your issue was closed by a merged pull request."
-                    : undefined,
-                url: reward.url ?? undefined,
-                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
-                reward: reward.pollenAmount,
-                balanceBucket: reward.balanceBucket,
-                status: reward.claimedAt ? "claimed" : "claimable",
-                earnedAmount: reward.pollenAmount,
-            }));
+                .map<QuestCard>((reward) => ({
+                    key: reward.id,
+                    rewardId: reward.id,
+                    title: reward.title,
+                    description: reward.questId?.startsWith(
+                        "github:reported_issue:",
+                    )
+                        ? "Your issue was closed by a merged pull request."
+                        : undefined,
+                    url: reward.url ?? undefined,
+                    issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                    reward: reward.pollenAmount,
+                    balanceBucket: reward.balanceBucket,
+                    status: reward.claimedAt ? "claimed" : "claimable",
+                    earnedAmount: reward.pollenAmount,
+                }))
+                // Same order as the sections: to claim first, done last.
+                .sort((a, b) => cardSortRank(a) - cardSortRank(b))
+        );
     }, [state.catalog, state.rewards]);
 
     // Logged-out totals show what the public catalog offers, not an owned balance.

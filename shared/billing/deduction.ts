@@ -65,6 +65,8 @@ export async function atomicDeductUserBalance(
             SELECT
                 id,
                 CASE
+                    WHEN quest_pollen_restricted = 1 AND (${questPollenOnly ? 1 : 0} = 1 OR COALESCE(pack_balance, 0) <= 0) THEN NULL
+                    WHEN quest_pollen_restricted = 1 THEN 'pack'
                     WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
                     WHEN ${questPollenOnly ? 1 : 0} = 1 THEN 'tier'
                     WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
@@ -87,6 +89,7 @@ export async function atomicDeductUserBalance(
                 ELSE pack_balance
             END
         WHERE id = (SELECT id FROM decision)
+            AND (SELECT bucket FROM decision) IS NOT NULL
         RETURNING
             (SELECT bucket FROM decision) AS bucket,
             tier_balance AS tierBalance,

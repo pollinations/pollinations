@@ -32,6 +32,7 @@ import { TopUpPanel } from "./top-up-panel.tsx";
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
+    questPollenRestricted?: boolean;
     paidWeek?: number;
     tierWeek?: number;
     /** Only the two balance cards: no total row, no "how it works" footer. */
@@ -79,6 +80,7 @@ const TooltipList: FC<{
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
+    questPollenRestricted = false,
     paidWeek = 0,
     tierWeek = 0,
     compact = false,
@@ -86,9 +88,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
     const totalPollen = normalizeDisplayBalance(
-        displayTierBalance + displayPaidBalance,
+        (questPollenRestricted ? 0 : displayTierBalance) + displayPaidBalance,
     );
-    const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
+    const totalWeek = normalizeDisplayBalance(
+        paidWeek + (questPollenRestricted ? 0 : tierWeek),
+    );
 
     return (
         <div className="flex flex-col gap-3">
@@ -128,6 +132,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 />
                 <WalletBalanceCard
                     kind="tier"
+                    tone={questPollenRestricted ? "neutral" : "balance"}
                     label="Quest"
                     value={formatPollen(displayTierBalance)}
                     info={
@@ -140,7 +145,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     items={[
                                         "Pollen earned from completing Quests",
                                         "Earnings credited from your apps",
-                                        "Used first for regular models, when it can cover",
+                                        questPollenRestricted
+                                            ? "Frozen until your account is verified"
+                                            : "Used first for regular models, when it can cover",
                                     ]}
                                     earned={tierWeek}
                                 />
@@ -148,7 +155,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         />
                     }
                     footer={
-                        tierWeek > 0 ? (
+                        questPollenRestricted ? (
+                            <span className="font-medium text-theme-text-muted">
+                                Frozen
+                            </span>
+                        ) : tierWeek > 0 ? (
                             <>
                                 +{formatPollen(tierWeek)}{" "}
                                 <span className="font-medium text-theme-text-muted">
@@ -160,12 +171,34 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 />
             </div>
 
+            {questPollenRestricted && (
+                <p className="px-1 text-sm leading-relaxed text-theme-text-muted">
+                    We couldn’t verify your account. Quest Pollen is frozen.{" "}
+                    <InlineLink
+                        href="/pollen#buy-pollen"
+                        tone="quiet"
+                        showIcon={false}
+                    >
+                        Make your first purchase
+                    </InlineLink>{" "}
+                    to unlock it, or{" "}
+                    <InlineLink
+                        href="mailto:hello@pollinations.ai"
+                        tone="quiet"
+                        showIcon={false}
+                    >
+                        contact us
+                    </InlineLink>{" "}
+                    if you think this is a mistake.
+                </p>
+            )}
+
             {!compact && (
                 <>
                     {/* Total + 7d earnings below */}
                     <Surface className="flex items-start justify-between gap-3">
                         <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
-                            Total
+                            {questPollenRestricted ? "Available" : "Total"}
                         </span>
                         <div className="flex flex-col items-end leading-tight">
                             <span className="flex items-baseline gap-1.5">
@@ -213,6 +246,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 type SidebarWalletProps = {
     tierBalance: number;
     packBalance: number;
+    questPollenRestricted?: boolean;
     paidWeek?: number;
     tierWeek?: number;
     onClick?: () => void;
@@ -221,6 +255,7 @@ type SidebarWalletProps = {
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
     packBalance,
+    questPollenRestricted = false,
     paidWeek = 0,
     tierWeek = 0,
 }) => {
@@ -249,12 +284,17 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
                     <WalletKindIcon kind="tier" />
                     Quest
+                    {questPollenRestricted && (
+                        <span className="text-micro font-medium text-theme-text-muted">
+                            Frozen
+                        </span>
+                    )}
                 </span>
                 <span className="flex items-baseline gap-1.5">
                     <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
                         {formatPollen(displayTierBalance)}
                     </span>
-                    {tierWeek > 0 && (
+                    {!questPollenRestricted && tierWeek > 0 && (
                         <span className="text-micro font-bold tabular-nums text-intent-success-text">
                             +{formatPollen(tierWeek)}
                         </span>

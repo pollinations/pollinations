@@ -1,7 +1,18 @@
-import { env, evictDurableObject, runInDurableObject } from "cloudflare:test";
+import {
+    applyD1Migrations,
+    env,
+    evictDurableObject,
+    runInDurableObject,
+} from "cloudflare:test";
 import { exports } from "cloudflare:workers";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { DAILY_LIMIT } from "./investigate.js";
+import {
+    holdDomains,
+    releaseDomainSql,
+    restrictionPreviewSql,
+    restrictionSql,
+} from "./quest-restrictions.js";
 import { CHECKING, RECOVER_CHECKS } from "./rules.js";
 
 const GREEN = 0x639922;
@@ -81,8 +92,6 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
-    if (url.pathname.includes("/infra_watch_review_"))
-        return Response.json({ data: [] });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
@@ -91,14 +100,13 @@ async function fake(input, init = {}) {
         await world.aiGate;
         await sleep(world.aiDelay);
         world.answers++;
-        // A review answers as a verdict; any other alert with a plain line.
-        const { messages } = JSON.parse(init.body);
-        const review = messages[0].content.startsWith("You review");
-        const content = `${review ? "APPROVE: " : ""}Line ${world.answers}.`;
+        const content = `Line ${world.answers}.`;
         return Response.json({ choices: [{ message: { content } }] });
     }
     throw new Error(`unexpected fetch ${url}`);
 }
+
+beforeAll(() => applyD1Migrations(env.DB, env.TEST_MIGRATIONS));
 
 beforeEach(() => {
     world = {
@@ -331,6 +339,125 @@ it("gives up on a closed card's last edit after a day", async () => {
 
 const BURST = [{ domain: "farm.com", accounts: 31, since: 1_793_404_800 }];
 
+it("restricts domain accounts once, preserves approvals and purchases, and leaves balances intact", async () => {
+    const accounts = [
+        ["farm", "a@cohort.test", null],
+        ["subdomain", "a@SUB.COHORT.TEST", null],
+        ["unrelated", "a@notcohort.test", null],
+        ["cleared", "cleared@cohort.test", 0],
+        ["approved", "approved@cohort.test", null],
+        ["checkout", "checkout@cohort.test", null],
+        ["auto", "auto@cohort.test", null],
+        ["failed-auto", "failed-auto@cohort.test", null],
+        ["polar", "polar@cohort.test", null],
+    ];
+    await env.DB.batch(
+        accounts.map(([id, email, restricted]) =>
+            env.DB.prepare(
+                "INSERT INTO user (id, name, email, created_at, updated_at, tier_balance, pack_balance, quest_pollen_restricted) VALUES (?, ?, ?, 1, 1, 5, 3, ?)",
+            ).bind(id, id, email, restricted),
+        ),
+    );
+    await env.DB.batch([
+        env.DB.prepare(
+            "INSERT INTO stripe_checkout_credits (session_id, event_id, event_type, user_id, pollen_credited, created_at) VALUES ('checkout', 'checkout', 'checkout.session.completed', 'checkout', 5, 1)",
+        ),
+        env.DB.prepare(
+            "INSERT INTO stripe_auto_top_up_attempt (id, user_id, amount_usd, status, created_at, updated_at) VALUES ('auto', 'auto', 5, 'paid', 1, 1), ('failed-auto', 'failed-auto', 5, 'failed', 1, 1)",
+        ),
+        env.DB.prepare(
+            "INSERT INTO polar_checkout_credits (order_id, event_id, event_type, user_id, pollen_credited, polar_created_at, created_at) VALUES ('polar', 'polar', 'order.paid', 'polar', 5, 1, 1)",
+        ),
+    ]);
+    await env.SETUP_HOLDS.put("decision:approved", "approved");
+    expect(
+        await env.DB.prepare(
+            restrictionPreviewSql("cohort.test", ["approved"]),
+        ).first(),
+    ).toEqual({
+        accounts: 7,
+        restricted: 3,
+        cleared: 4,
+        quest_pollen_to_freeze: 15,
+    });
+    await holdDomains(env.DB, env.SETUP_HOLDS, [
+        { domain: "cohort.test", accounts: 31, since: 1_793_404_800 },
+    ]);
+    const { results } = await env.DB.prepare(
+        "SELECT id, quest_pollen_restricted, tier_balance, pack_balance FROM user",
+    ).all();
+    expect(
+        Object.fromEntries(
+            results.map((r) => [r.id, r.quest_pollen_restricted]),
+        ),
+    ).toEqual({
+        farm: 1,
+        subdomain: 1,
+        unrelated: null,
+        cleared: 0,
+        approved: 0,
+        checkout: 0,
+        auto: 0,
+        "failed-auto": 1,
+        polar: 0,
+    });
+    expect(
+        results.every((r) => r.tier_balance === 5 && r.pack_balance === 3),
+    ).toBe(true);
+
+    // A clear is permanent even while the domain keeps producing signups.
+    await env.DB.prepare(
+        "UPDATE user SET quest_pollen_restricted = 0 WHERE id = 'farm'",
+    ).run();
+    await env.DB.prepare(
+        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('late', 'late', 'late@cohort.test', 1, 1)",
+    ).run();
+    await holdDomains(env.DB, env.SETUP_HOLDS, [
+        { domain: "cohort.test", accounts: 31, since: 1_793_404_800 },
+    ]);
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'farm'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(0);
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'late'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(1);
+
+    // A maintainer's release clears existing accounts explicitly. KV only
+    // controls detection, so later scans cannot undo an account-level decision.
+    await env.SETUP_HOLDS.put("release:cohort.test", "released");
+    await env.DB.prepare(releaseDomainSql("cohort.test")).run();
+    expect(
+        (
+            await holdDomains(env.DB, env.SETUP_HOLDS, [
+                { domain: "cohort.test", accounts: 31, since: 1_793_404_800 },
+            ])
+        )[0].hold,
+    ).toBe("released");
+    expect(
+        await env.DB.prepare(
+            "SELECT count(*) AS n FROM user WHERE quest_pollen_restricted = 1",
+        ).first("n"),
+    ).toBe(0);
+    await env.DB.prepare(
+        "UPDATE user SET quest_pollen_restricted = 1 WHERE id = 'farm'",
+    ).run();
+    await holdDomains(env.DB, env.SETUP_HOLDS, [
+        { domain: "cohort.test", accounts: 31, since: 1_793_404_800 },
+    ]);
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'farm'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(1);
+    expect(() => restrictionSql("cohort.test'; DROP TABLE user")).toThrow(
+        "Invalid signup domain",
+    );
+});
+
 it("keeps a sign-up card open while sign-ups can't be read", async () => {
     const stub = watch();
     world.rows = OK;
@@ -364,58 +491,38 @@ it("posts a sign-up card Discord refused, even after its burst ended", async () 
 
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
     expect(posts).toHaveLength(1);
-    expect(posts[0].text).toContain("SETUP QUESTS LIMITED: domain farm.com");
+    expect(posts[0].text).toContain("QUEST POLLEN RESTRICTED: domain farm.com");
     expect(edits("m1").at(-1).text).toContain("ENDED: domain farm.com");
     expect((await stored(stub, "state")).unposted).toEqual({});
 });
 
-it("a review card lists the oldest requests, follows decisions and closes", async () => {
+it("retires saved review cards, retries failed edits, and keeps checking services", async () => {
     const stub = watch();
     world.rows = OK;
-    const now = Date.now();
-    for (let i = 0; i < 7; i++)
-        await env.SETUP_HOLDS.put(`review:u${i}`, "pending", {
-            metadata: {
-                domain: "farm.com",
-                requestedAt: now + i,
-                createdAt: now,
-                rewards: 1,
-                rewardPollen: 0.25,
+    await runInDurableObject(stub, async (_, state) => {
+        await state.storage.put("state", {
+            open: {
+                "review:farm.com": {
+                    kind: "REVIEW",
+                    messageId: "old-review",
+                    info: { domain: "farm.com" },
+                },
             },
         });
-    await env.SETUP_HOLDS.put("decision:u6", "declined");
-    await env.SETUP_HOLDS.put("hold:farm.com", "held");
+        await state.storage.put("lines:old-review", { lines: [] });
+    });
+    world.fails = (w) => w.method === "PATCH";
     await stub.check();
-    await settle(stub);
-
-    const opened = world.writes.find((w) => w.ok && w.method === "POST");
-    expect(opened.text).toContain("REVIEW: domain farm.com");
-    expect(opened.text).toContain("6 accounts");
-    expect(opened.text).not.toContain("decision:u6");
-    // The AI's verdict lands on the card.
-    expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
-
-    // Each decision changes the accounts listed: the old verdict goes, and
-    // the AI looks again, however many rounds it takes.
-    for (let i = 0; i < 4; i++) {
-        await env.SETUP_HOLDS.put(`decision:u${i}`, "approved");
-        await stub.check();
-        await settle(stub);
-        const card = edits("m1").at(-1).text;
-        expect(card).not.toContain(`Line ${i + 1}.`);
-        expect(card).toContain(`APPROVE: Line ${i + 2}.`);
-    }
-    expect(edits("m1").at(-1).text).toContain("'decision:u5' approved");
-
-    for (let i = 4; i < 6; i++)
-        await env.SETUP_HOLDS.put(`decision:u${i}`, "declined");
+    expect((await stored(stub, "state")).open["review:farm.com"]).toBeDefined();
+    expect(await stored(stub, "checkedAt")).toBeDefined();
+    world.fails = () => false;
     await stub.check();
-    await settle(stub);
-    const last = edits("m1").at(-1);
-    expect(last.color).toBe(GREEN);
-    expect(last.text).toContain("DECIDED: domain farm.com");
-    expect(world.writes.filter((w) => w.method === "POST")).toHaveLength(1);
+    expect(edits("old-review").at(-1).text).toContain("REVIEW CLOSED");
+    expect((await stored(stub, "state")).open).toEqual({});
+    expect(await stored(stub, "lines:old-review")).toBeUndefined();
+    expect(world.answers).toBe(0);
 });
+
 it("serves only /health, which reports the last check and never runs one", async () => {
     const get = (path) =>
         exports.default.fetch(`https://infra-watch.test${path}`);
@@ -429,36 +536,6 @@ it("serves only /health, which reports the last check and never runs one", async
     const before = Date.now();
     await env.WATCH.get(env.WATCH.idFromName("main")).check();
     expect(await checkedAt()).toBeGreaterThanOrEqual(before);
-});
-
-it("a review the daily budget skipped is investigated once the budget resets", async () => {
-    const stub = watch();
-    world.rows = OK;
-    await env.SETUP_HOLDS.put("hold:budget.com", "held");
-    await env.SETUP_HOLDS.put("review:b0", "pending", {
-        metadata: {
-            domain: "budget.com",
-            requestedAt: Date.now(),
-            createdAt: Date.now(),
-            rewards: 1,
-            rewardPollen: 0.25,
-        },
-    });
-    const budget = (day) =>
-        runInDurableObject(stub, (_, state) =>
-            state.storage.put("ai", { day, count: DAILY_LIMIT }),
-        );
-    await budget(new Date().toISOString().slice(0, 10));
-    await stub.check();
-    await settle(stub);
-    expect(world.answers).toBe(0);
-    expect(world.writes.some((w) => w.text.includes("APPROVE"))).toBe(false);
-
-    // A new day: the next check asks for the missing verdict.
-    await budget("2000-01-01");
-    await stub.check();
-    await settle(stub);
-    expect(edits("m1").at(-1).text).toContain("APPROVE: Line 1.");
 });
 
 const TEXT_BRIDGE = {

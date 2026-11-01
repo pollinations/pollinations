@@ -34,6 +34,38 @@ beforeEach(async () => {
 describe("text balance notice", () => {
     const enabled = TEXT_BALANCE_NOTICE_ENABLED;
 
+    it("explains a frozen Quest wallet through the authenticated text route", async () => {
+        const caller = await createTestApiKey();
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ data: [] }),
+        );
+        await drizzle(env.DB)
+            .update(user)
+            .set({ tierBalance: 5, questPollenRestricted: true })
+            .where(eq(user.id, caller.userId));
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                `https://gen.pollinations.ai/text/hello?model=${model}`,
+                {
+                    headers: { Authorization: `Bearer ${caller.key}` },
+                },
+            ),
+            env,
+            ctx,
+        );
+        const text = await response.text();
+        expect(response.status).toBe(enabled ? 200 : 402);
+        expect(text).toContain(
+            enabled ? "Quest Pollen is frozen" : "QUEST_POLLEN_RESTRICTED",
+        );
+        expect(text).toContain("hello@pollinations.ai");
+        expect(
+            (await getUserBalance(drizzle(env.DB), caller.userId)).tierBalance,
+        ).toBe(5);
+        await waitOnExecutionContext(ctx);
+    });
+
     it.each([false, true])("handles HEAD with json=%s", async (json) => {
         const caller = await createTestApiKey();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

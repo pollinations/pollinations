@@ -46,6 +46,18 @@ export async function requireFunds(
         : balance;
     if (canCoverEstimatedCharge(spendable, cost, paidOnly)) return balance;
 
+    if (balance.questPollenRestricted) {
+        const fixUrl = fixLink(c, "/top-up", {
+            ref: "quest_pollen_restricted",
+        });
+        throw new PaymentRequiredError(
+            "QUEST_POLLEN_RESTRICTED",
+            `We couldn't verify your account, so Quest Pollen is frozen. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
+            fixUrl,
+            true,
+        );
+    }
+
     if (questPollenOnly) {
         const fixUrl = fixLink(c, "/edit-key", {
             id: apiKey?.id,

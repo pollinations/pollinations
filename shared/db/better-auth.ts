@@ -42,6 +42,9 @@ export const user = sqliteTable("user", {
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
+  // NULL: not reviewed; true: Quest spending frozen; false: explicitly cleared.
+  // Automatic detection only changes NULL, so it cannot undo a purchase/review.
+  questPollenRestricted: integer("quest_pollen_restricted", { mode: "boolean" }),
   lastTierGrant: integer("last_tier_grant"),
   stripeCustomerId: text("stripe_customer_id").unique(),
   autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })

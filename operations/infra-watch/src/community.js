@@ -160,12 +160,12 @@ const MY_MODELS =
 
 // The agent reads model ids their owners chose, so it may write no link:
 // Markdown escapes are undone as Discord would, Markdown links keep only
-// their text, and anything with a scheme or "www." is dropped.
+// their text, and any word with ":/", ":\\", ":%2f" or "www." is dropped.
 const noLinks = (text) =>
     text
         .replace(/\\(?=[^\w\s])/g, "")
         .replace(/\[([^\]]*)\]\([^)]*\)?/g, "$1")
-        .replace(/<?(?:\b[a-z][a-z\d+.-]*:(?:[\\/]|%2f)|\bwww\.)\S*/gi, "");
+        .replace(/\S*(?::(?:[\\/]|%2f)|www\.)\S*/gi, "");
 
 // What the agent told, kept with when: the newest TOLD_KEPT notes.
 export const remember = (told, notes, now) =>

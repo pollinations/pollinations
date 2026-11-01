@@ -119,10 +119,12 @@ export function incidents({
         ([model, s]) => listed.has(model) && broken(model, s),
     );
 
-    // One error on 3 or more owners' models probed in the last 4 hours is
-    // gen's: the maintainers' incident, and none of those owners'. Each
-    // model it counted stays in it until that model is probed again,
-    // whatever the others do.
+    // One error on 3 or more owners' models probed in the last 4 hours, each
+    // passing the probe before, is gen's: the maintainers' incident, and
+    // none of those owners'. A model broken before, or never probed before,
+    // is never counted: owners' endpoints that stay broken often fail alike
+    // without gen at fault. Each model it counted stays in it until that
+    // model is probed again, whatever the others do.
     const held = new Map();
     for (const p of Object.values(pending))
         if (p.kind === "shared")
@@ -133,7 +135,11 @@ export function incidents({
                         [model, at],
                     ]);
     const recent = Map.groupBy(
-        streams.filter(([, s]) => now - s.lastAt < WINDOW_MINUTES * 60_000),
+        streams.filter(
+            ([, s]) =>
+                s.before?.status === 200 &&
+                now - s.lastAt < WINDOW_MINUTES * 60_000,
+        ),
         ([, s]) => s.protocolError,
     );
     const gens = new Set();

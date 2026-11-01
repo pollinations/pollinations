@@ -27,6 +27,8 @@ const broke = (extra) => ({
     ...extra,
 });
 const twice = (extra) => broke({ before: broke(), ...extra });
+// Broken now, after passing the probe before.
+const fresh = (extra) => broke({ before: { status: 200 }, ...extra });
 const cycle = (input) =>
     incidents({
         catalog: [],
@@ -92,11 +94,11 @@ test("a told broken stream stays quiet for a day, per model and error", () => {
     assert.equal(find({ ...input, quiet: { [other]: NOW } }).length, 1);
 });
 
-test("one broken stream on 3 owners' models within 4 hours is the maintainers', and none of the owners'", () => {
+test("one broken stream on 3 owners' working models within 4 hours is the maintainers', and none of the owners'", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const input = {
         catalog: shared.map((n) => model(n)),
-        schedule: Object.fromEntries(shared.map((n) => [n, twice()])),
+        schedule: Object.fromEntries(shared.map((n) => [n, fresh()])),
     };
     assert.deepEqual(find(input), [
         {
@@ -114,24 +116,34 @@ test("one broken stream on 3 owners' models within 4 hours is the maintainers', 
         shared.map((n) => [streamKey(n, ERROR), NOW]),
     );
     assert.deepEqual(find({ ...input, quiet }), []);
-    // Two owners: each owner's.
+    // Two owners: not gen's, and once is not yet any owner's.
     const two = ["community/a/x", "community/a/w", "community/b/y"];
     assert.deepEqual(
-        brief(
-            find({
-                catalog: two.map((n) => model(n)),
-                schedule: Object.fromEntries(two.map((n) => [n, twice()])),
-            }),
-        ),
-        two.map((n) => `stream ${n}`),
+        find({
+            catalog: two.map((n) => model(n)),
+            schedule: Object.fromEntries(two.map((n) => [n, fresh()])),
+        }),
+        [],
     );
     // Probed over 4 hours ago: not at once.
     const old = Object.fromEntries(
-        shared.map((n) => [n, twice({ lastAt: NOW - 5 * HOUR })]),
+        shared.map((n) => [n, fresh({ lastAt: NOW - 5 * HOUR })]),
     );
+    assert.deepEqual(find({ ...input, schedule: old }), []);
+});
+
+test("3 owners' models broken alike but not working before are never gen's", () => {
+    // 2026-11-01: the first probes found 3 owners' endpoints that had sent
+    // no token usage for over a week, and called it gen's.
+    const owners = ["community/a/x", "community/b/y", "community/c/z"];
+    const catalog = owners.map((n) => model(n));
+    const first = Object.fromEntries(owners.map((n) => [n, broke()]));
+    assert.deepEqual(find({ catalog, schedule: first }), []);
+    // Broken again: each owner's own.
+    const again = Object.fromEntries(owners.map((n) => [n, twice()]));
     assert.deepEqual(
-        brief(find({ ...input, schedule: old })),
-        shared.map((n) => `stream ${n}`),
+        brief(find({ catalog, schedule: again })),
+        owners.map((n) => `stream ${n}`),
     );
 });
 
@@ -250,7 +262,7 @@ test("listing changes are an incident only when something changed", () => {
 test("a shared failure keeps its models until they are probed again, even past 4 hours", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));
-    const schedule = Object.fromEntries(shared.map((n) => [n, twice()]));
+    const schedule = Object.fromEntries(shared.map((n) => [n, fresh()]));
     const first = cycle({ catalog, schedule });
     // Undelivered and 5 hours on, with no new probe: still gen's.
     const later = cycle({
@@ -307,7 +319,7 @@ test("a fallback notice is kept from when it qualifies until its fallbacks are t
 test("a shared failure keeps each model until that model is probed again, whatever the others do", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));
-    const schedule = Object.fromEntries(shared.map((n) => [n, twice()]));
+    const schedule = Object.fromEntries(shared.map((n) => [n, fresh()]));
     const first = cycle({ catalog, schedule });
     // x is probed again and passes: y and z have no new evidence, so they
     // stay the maintainers', not their owners'.

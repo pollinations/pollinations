@@ -324,9 +324,10 @@ export function duration(ms) {
 // shows it, the phone shows plain text. `whole` keeps every value whole,
 // for cards whose rows are model ids and errors.
 export function panel(title, lines, color, { whole = false } = {}) {
+    const width = Math.max(8, ...lines.map(([field]) => field.length + 1));
     const body = lines.map(
         ([field, value]) =>
-            `${field.padEnd(Math.max(8, field.length + 1))}${whole ? value : fit(String(value))}`,
+            `${field.padEnd(width)}${whole ? value : fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
     const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");

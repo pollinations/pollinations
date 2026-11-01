@@ -100,10 +100,11 @@ const coded = (text, error) => {
 // discards or reorders provider output.
 export function parseChatStream(body) {
     let content = "";
+    let model;
     let done = false;
     let dataLines = [];
 
-    const fail = (protocolError) => ({ content, protocolError });
+    const fail = (protocolError) => ({ content, model, protocolError });
     const flushEvent = () => {
         if (!dataLines.length) return;
         const data = dataLines.join("\n");
@@ -140,6 +141,10 @@ export function parseChatStream(body) {
                 content += choice.delta.content;
             }
         }
+        // The upstream writes its own model name into its chunks, capped
+        // like the listing's own upstream name.
+        if (typeof chunk.model === "string" && chunk.model.trim())
+            model = chunk.model.trim().slice(0, 253);
     };
 
     try {
@@ -161,7 +166,7 @@ export function parseChatStream(body) {
             return fail("stream ended with an unterminated SSE event");
         }
         if (!done) return fail("stream is missing [DONE]");
-        return { content };
+        return { content, model };
     } catch (err) {
         return fail(err.message);
     }
@@ -181,9 +186,14 @@ export const textProbeRequest = (model, marker) => ({
 
 // A text probe passes with the marker in the final answer of a valid
 // stream. A broken stream is PROTOCOL; an answer without the marker is
-// INVALID. `modelUsed` is the model that answered, from gen's header.
+// INVALID. `modelUsed` is the model that answered, from gen's header, and
+// `servedModel` the last model name its upstream wrote in the stream.
 export function textProbeResult(response, body, marker) {
-    const { content, protocolError } = response.ok ? parseChatStream(body) : {};
+    const {
+        content,
+        model: servedModel,
+        protocolError,
+    } = response.ok ? parseChatStream(body) : {};
     const marked = hasChatProbeMarker(content, marker);
     return {
         ok: response.ok && !protocolError && marked,
@@ -194,6 +204,7 @@ export function textProbeResult(response, body, marker) {
               : response.status,
         protocolError,
         modelUsed: response.headers.get("x-model-used"),
+        servedModel,
         requestId: response.headers.get("x-request-id"),
     };
 }

@@ -1023,6 +1023,32 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inferenceport-lightning-text-v2"],
     },
     {
+        name: "elorian/elorian-glimpse",
+        config: portkeyConfig["elorian/elorian-glimpse"],
+    },
+    {
+        name: "z-ai/glm-5.3-prime",
+        config: portkeyConfig["z-ai/glm-5.3-prime"],
+    },
+    {
+        name: "upstage/solar-mini4",
+        config: portkeyConfig["upstage/solar-mini4"],
+    },
+    {
+        name: "upstage/solar-pro4",
+        config: portkeyConfig["upstage/solar-pro4"],
+    },
+    {
+        name: "upstage/solar-decide",
+        config: portkeyConfig["upstage/solar-decide"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "upstage/solar-decide-flash",
+        config: portkeyConfig["upstage/solar-decide-flash"],
+        useSystemOneApi: true,
+    },
+    {
         name: "openai/gpt-6-luna-decisions",
         config: portkeyConfig["gpt-6-luna-decisions"],
         useSystemOneApi: true,

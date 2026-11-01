@@ -147,6 +147,30 @@ describe("resolveModelConfig", () => {
         expect(backup.options.modelConfig?.defaultOptions).toBeUndefined();
     });
 
+    it("routes the InferencePort chat and decision models to their exact IDs", () => {
+        for (const [model, upstream] of [
+            ["elorian/elorian-glimpse", "elorian-glimpse"],
+            ["z-ai/glm-5.3-prime", "glm-5.3-prime"],
+            ["upstage/solar-mini4", "solar-mini4"],
+            ["upstage/solar-pro4", "solar-pro4"],
+            ["upstage/solar-decide", "solar-decide"],
+            ["upstage/solar-decide-flash", "solar-decide-flash"],
+        ] as const) {
+            const result = resolveModelConfig(messages, { model });
+            expect(result.options.model).toBe(upstream);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "openai",
+                "custom-host": "https://api.inferenceport.ai/v1",
+            });
+            if (model.includes("solar-decide")) {
+                expect(result.options.modelConfig?.directEndpoint).toBe(
+                    "https://api.inferenceport.ai/v1/systemone",
+                );
+                expect(findModelByName(model)?.useSystemOneApi).toBe(true);
+            }
+        }
+    });
+
     it("lets callers override Anthropic max_tokens", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-sonnet-4.6",

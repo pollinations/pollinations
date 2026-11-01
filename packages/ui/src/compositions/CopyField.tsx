@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
-import { CopyButton, type CopyButtonProps } from "./CopyButton.tsx";
+import {
+    CopyButton,
+    type CopyButtonProps,
+    CopyStateIcon,
+} from "./CopyButton.tsx";
 
 export type CopyFieldProps = Pick<
     CopyButtonProps,
@@ -53,7 +56,7 @@ export function CopyField({
                         aria-hidden="true"
                         className="polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
                     >
-                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                        <CopyStateIcon copied={copied} />
                     </span>
                 </>
             )}

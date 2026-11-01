@@ -52,6 +52,7 @@ export {
 export {
     CopyButton,
     type CopyButtonProps,
+    CopyStateIcon,
 } from "./compositions/CopyButton.tsx";
 export { CopyField, type CopyFieldProps } from "./compositions/CopyField.tsx";
 export {

@@ -113,6 +113,7 @@ function createTestApp(
             JSON.stringify({
                 id: "chatcmpl_test",
                 object: "chat.completion",
+                model: "upstream-reported-model",
                 choices: [
                     {
                         index: 0,
@@ -734,9 +735,13 @@ describe("tracking observability", () => {
                 resolvedModelRequested: endpoint.modelId,
                 isFinal: true,
             });
-            // Only a proxy asks an upstream for a model of its own.
+            // Only a proxy asks an upstream for a model of its own, and
+            // records the name the upstream answered with.
             expect(event.upstreamModel).toBe(
                 type === "proxy" ? endpoint.upstreamModel : undefined,
+            );
+            expect(event.upstreamServedModel).toBe(
+                type === "proxy" ? "upstream-reported-model" : undefined,
             );
         },
     );

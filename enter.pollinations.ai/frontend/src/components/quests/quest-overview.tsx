@@ -178,7 +178,7 @@ const BONUS_PAGE_SIZE = 10;
 // The outlined commit button, card-sized: soft accent fill (outline only in
 // dark), full accent on hover and keyboard focus.
 const CLAIM_CARD_CLASS =
-    "relative cursor-pointer border border-theme-text-soft polli:bg-theme-bg-active/30 transition-colors hover:border-theme-bg-active polli:hover:bg-theme-bg-active has-[button:focus-visible]:border-theme-bg-active polli:has-[button:focus-visible]:bg-theme-bg-active dark:polli:bg-transparent";
+    "relative cursor-pointer polli:bg-theme-bg-active/30 transition-colors polli:hover:bg-theme-bg-active/60 polli:has-[button:focus-visible]:bg-theme-bg-active/60";
 
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
@@ -441,6 +441,10 @@ function QuestMarker({
         if (status === "claimable") return "text-theme-text-strong";
         return "text-theme-text-muted";
     }
+    // An open quest's icon would only repeat its section's: keep the space
+    // so titles line up, show nothing.
+    if (!comingSoon && status === "open")
+        return <span aria-hidden="true" className="h-5 w-5 shrink-0" />;
     const MarkerIcon = resolveIcon();
     return (
         <span
@@ -536,13 +540,11 @@ export function QuestRow({
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
-            className="flex items-center gap-1.5 text-sm font-semibold tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
+            className="flex items-center gap-1.5 rounded-full bg-theme-bg-active px-3 py-1 text-sm font-semibold tabular-nums text-theme-text-strong outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] disabled:cursor-wait"
         >
             <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
             {rewardLabel}
-            <span className="ml-1 font-bold">
-                {claiming ? "Claiming" : "Claim!"}
-            </span>
+            <span className="ml-0.5">{claiming ? "Claiming" : "Claim"}</span>
         </button>
     ) : null;
     // Both layouts pin the reward (or the Claim button) to the right edge.
@@ -576,7 +578,7 @@ export function QuestRow({
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
                     {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted [&_a]:relative [&_a]:z-10">
+                        <div className="text-sm text-theme-text-muted [&_a]:relative [&_a]:z-10 [&_.polli-link-external-icon]:!hidden">
                             {description && (
                                 <QuestDescription>
                                     {description}
@@ -610,7 +612,7 @@ export function QuestRow({
                 <div className="flex min-w-0 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted [&_a]:relative [&_a]:z-10">
+                        <div className="text-sm text-theme-text-muted [&_a]:relative [&_a]:z-10 [&_.polli-link-external-icon]:!hidden">
                             {description && (
                                 <QuestDescription>
                                     {description}
@@ -1126,7 +1128,7 @@ function QuestOverviewContent({
                             )
                         }
                     >
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-2">
                             {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}
@@ -1156,7 +1158,7 @@ function QuestOverviewContent({
                         </span>
                     }
                 >
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-2">
                         {bonusRewardCards.slice(0, bonusShown).map((card) => (
                             <QuestRow
                                 key={card.key}

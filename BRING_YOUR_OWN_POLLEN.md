@@ -1,6 +1,6 @@
 # Pollinations Pay
 
-Pollinations Pay (Bring Your Own Pollen) lets your users authorize your app to spend their own Pollen on Pollinations requests. Users approve your app through Pollinations Connect: your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Pollinations Pay (Bring Your Own Pollen) lets your users authorize your app to spend their own Pollen on Pollinations requests. The key comes from Pollinations Connect, which issues a scoped secret key (`sk_...`) to any client (web or mobile app, CLI, agent, or script) once the account owner approves it. Your publishable App Key (`pk_...`) identifies the app.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -25,7 +25,7 @@ Once signed in, they review the requested access and confirm:
 ## 🧩 Drop-in Button (No Build Step)
 
 One script tag adds the Pollinations Connect button, which runs the OAuth code flow below for you.
-Use one `<polli-connect>` per page; additional elements show an error instead of a sign-in button.
+Use one `<polli-connect>` per page; additional elements show an error instead of a Connect button.
 
 ```html
 <script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js"></script>

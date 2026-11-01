@@ -71,7 +71,7 @@ All traffic remains subject to platform abuse protection and any model-specific 
 
 ## 🔌 What is Pollinations Pay?
 
-Pollinations Pay (Bring Your Own Pollen) lets users authorize an application to spend Pollen from their own wallet. They approve the app through Pollinations Connect.
+Pollinations Pay (Bring Your Own Pollen) lets users authorize an application to spend Pollen from their own wallet. The application gets a scoped secret key through Pollinations Connect, which works the same for web apps, CLIs, agents and scripts.
 
 For app developers:
 

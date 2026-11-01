@@ -58,7 +58,7 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-11-15",
         label: "Updated",
         title: "App Keys",
-        text: "pk_ keys now identify apps only. API calls require sk_; let users pay through Pollinations Pay.",
+        text: "pk_ keys now identify apps only. API calls require sk_ keys; get them through Pollinations Connect.",
         icon: KeyIcon,
         cta: {
             label: "Migrate your app",

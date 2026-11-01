@@ -10,10 +10,10 @@ Use a secret key from [enter.pollinations.ai](https://enter.pollinations.ai/keys
 
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|
-| Secret key | `sk_` | API requests | None | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from [Pollinations Pay](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). Secret keys have configurable model permissions, account permissions, and budgets. |
+| Secret key | `sk_` | API requests | None | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from Pollinations Connect ([guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)). Secret keys have configurable model permissions, account permissions, and budgets. |
 | App key (Pollinations Connect) | `pk_` | Client apps via OAuth / device flow | — | Publishable App Key used as the OAuth `client_id`. Users authorize; your app receives a scoped secret key (`sk_`). |
 
-> **Note:** Since November 1, 2026, a `pk_` key only identifies your app; requests that send one get `401`. Frontend and mobile apps use **Pollinations Pay**: register an App Key at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys), then run the OAuth authorization-code flow with PKCE (or the device flow) to obtain a temporary user-authorized secret key (`sk_`). The legacy fragment redirect and device flow remain supported.
+> **Note:** Since November 1, 2026, a `pk_` key only identifies your app; requests that send one get `401`. Frontend and mobile apps, CLIs and agents get keys through **Pollinations Connect**: register an App Key at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys), then run the OAuth authorization-code flow with PKCE (or the device flow) to obtain a temporary user-authorized secret key (`sk_`). The legacy fragment redirect and device flow remain supported.
 
 Two ways to authenticate generation requests:
 

@@ -179,7 +179,7 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["Pollinations Connect", "Earnings"],
         body: (
             <>
-                Your users sign in and set a spending limit.{" "}
+                Your users approve a key with a spending limit.{" "}
                 <Em>They pay for their own usage.</Em>
             </>
         ),

@@ -1,6 +1,6 @@
 ---
 name: bring-your-own-pollen
-description: Add Pollinations Pay (Bring Your Own Pollen) to an app so each user signs in with Pollinations Connect and pays with their own Pollen instead of the app's key. Use when building an app, CLI, extension or agent tool on Pollinations and you need the user-authorized sk_ key, when you must choose between the OAuth code flow, the fragment flow and the device flow, or when an app key's usage must be attributed and monetized.
+description: Add Pollinations Pay (Bring Your Own Pollen) to an app so each user pays with their own Pollen instead of the app's key, using a scoped secret key from Pollinations Connect. Use when building an app, CLI, extension or agent tool on Pollinations and you need the user-authorized sk_ key, when you must choose between the OAuth code flow, the fragment flow and the device flow, or when an app key's usage must be attributed and monetized.
 ---
 # bring-your-own-pollen — user-paid Pollinations apps
 

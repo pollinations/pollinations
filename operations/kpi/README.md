@@ -3,7 +3,7 @@
 Weekly KPIs for pollinations.ai — `kpi.pollinations.ai` (origin
 `kpi.myceli.ai`), Worker `myceli-kpi` on the Myceli Cloudflare account.
 
-The public app shell shows “Pollinations Connect.” The app uses OAuth
+The public app shell shows “Sign in with Pollinations.” The app uses OAuth
 with PKCE to check identity and admin access, then creates its own signed,
 HttpOnly session cookie. All Tinybird and GitHub reads require that app session;
 no provider token reaches the browser. This identity login does not grant

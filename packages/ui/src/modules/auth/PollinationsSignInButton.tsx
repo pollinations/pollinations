@@ -27,7 +27,7 @@ export function PollinationsSignInButton({
             className={className}
             icon={<BrandMark className="polli:h-5 polli:w-5" />}
         >
-            {children ?? "Pollinations Connect"}
+            {children ?? "Sign in with Pollinations"}
         </ProviderSignInButton>
     );
 }

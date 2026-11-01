@@ -178,7 +178,7 @@ const BONUS_PAGE_SIZE = 10;
 // The outlined commit button, card-sized: soft accent fill (outline only in
 // dark), full accent on hover and keyboard focus.
 const CLAIM_CARD_CLASS =
-    "relative cursor-pointer border border-theme-text-soft polli:bg-theme-bg-active/30 transition-colors hover:border-theme-bg-active polli:hover:bg-theme-bg-active has-[button:focus-visible]:border-theme-bg-active polli:has-[button:focus-visible]:bg-theme-bg-active dark:polli:bg-transparent";
+    "relative cursor-pointer border border-theme-text-soft polli:bg-theme-bg-active/30 transition-colors hover:border-theme-bg-active polli:hover:bg-theme-bg-active has-[button:focus-visible]:border-theme-bg-active has-[button:focus-visible]:!bg-theme-bg-active [.dark_&]:!bg-transparent [.dark_&]:hover:!bg-theme-bg-active [.dark_&]:has-[button:focus-visible]:!bg-theme-bg-active";
 
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
@@ -552,15 +552,15 @@ export function QuestRow({
 
     return (
         // Open quests are white cards; a claimable one is a Claim button the
-        // size of the card (the outlined commit look); done ones sit flat and
-        // faded.
+        // size of the card (the outlined commit look); done ones sit flat, in
+        // their muted colours.
         <Surface
             variant="card"
             className={
                 claimableRewardId
                     ? CLAIM_CARD_CLASS
                     : claimed
-                      ? `polli:bg-transparent ${card.comingSoon ? "" : "opacity-45"}`
+                      ? "polli:bg-transparent"
                       : undefined
             }
         >

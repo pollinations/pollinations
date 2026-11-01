@@ -411,13 +411,21 @@ export function SidebarSandboxes() {
             window.removeEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
     }, []);
     return (
-        <Chip
-            intent="neutral"
-            size="sm"
-            className="ml-auto bg-transparent text-theme-text-soft"
-        >
-            {running > 0 ? `${running} running` : "New!"}
-        </Chip>
+        // A count reads like the other rows' numbers; "New!" is a filled badge
+        // so it doesn't pass for one.
+        running > 0 ? (
+            <Chip
+                intent="neutral"
+                size="sm"
+                className="ml-auto bg-transparent text-theme-text-soft"
+            >
+                {running} running
+            </Chip>
+        ) : (
+            <Chip intent="news" size="sm" className="ml-auto">
+                New!
+            </Chip>
+        )
     );
 }
 

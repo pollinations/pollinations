@@ -285,7 +285,7 @@ export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
 };
 
 /**
- * One balance on its drawer row: pollen's paid, Quests' Quest Pollen. A lock
+ * One balance on its drawer row: Credits' paid, Quests' Quest Pollen. A lock
  * marks Quest Pollen that waits on verification.
  */
 export const SidebarBalance: FC<{

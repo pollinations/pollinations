@@ -20,7 +20,7 @@ import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
-import type { ApiKey } from "../components/keys";
+import { type ApiKey, SidebarKeys } from "../components/keys";
 import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
@@ -216,6 +216,17 @@ function DashboardLayout() {
                               </Suspense>
                           ),
                           sandboxes: <SidebarSandboxes />,
+                          keys: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.apiKeys}>
+                                      {(apiKeys) =>
+                                          apiKeys && (
+                                              <SidebarKeys apiKeys={apiKeys} />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
                       }
                     : undefined
             }

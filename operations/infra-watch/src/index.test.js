@@ -935,13 +935,14 @@ const community = (name, extra) => ({
     category: "text",
     ...extra,
 });
-// Each text model answers its probe's marker; streams of the `broken`
-// models never end. Image models answer an image.
-const answers = (broken) => (path, body) => {
+// Each text model answers its probe's marker, naming the `reported` model
+// if given; streams of the `broken` models never end. Image models answer an
+// image.
+const answers = (broken, reported) => (path, body) => {
     if (path !== "/v1/chat/completions")
         return Response.json({ data: [{ b64_json: btoa("x".repeat(200)) }] });
     const marker = body.messages[0].content.split(": ")[1];
-    const answer = `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }] })}\n\n`;
+    const answer = `data: ${JSON.stringify({ model: reported, choices: [{ delta: { content: marker } }] })}\n\n`;
     const done = broken(body.model) ? "" : "data: [DONE]\n\n";
     return new Response(answer + done, {
         headers: { "x-model-used": body.model },
@@ -1206,3 +1207,158 @@ it("keeps a refused fallback notice after its rescues leave the 4-hour window", 
     await cycled(stub);
     expect(world.agentFacts).toHaveLength(2);
 }, 15_000);
+
+// Owner o's text proxies in D1, each asking its upstream for
+// gemini-3-flash.
+const proxies = (names, visibility = "public") =>
+    env.DB.batch([
+        env.DB.prepare(
+            "INSERT OR IGNORE INTO user (id, name, email, github_username, created_at, updated_at) VALUES ('owner-o', 'o', 'o@owner.test', 'o', 1, 1)",
+        ),
+        ...names.map((name) =>
+            env.DB.prepare(
+                "INSERT OR REPLACE INTO community_endpoint (id, owner_user_id, name, title, base_url, upstream_model, visibility) VALUES (?, 'owner-o', ?, ?, 'https://upstream.test', 'gemini-3-flash', ?)",
+            ).bind(name, name, name, visibility),
+        ),
+    ]);
+const runs = async (stub) => (await stored(stub, "community")).served;
+
+it("compares only fresh probes of listed proxies that answered themselves with a model name", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 1, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    await proxies(["m", "fallback", "anonymous", "unnamed"]);
+    world.catalog = ["m", "fallback", "anonymous", "unnamed", "unlisted"].map(
+        (name) => community(`community/o/${name}`),
+    );
+    world.probe = (path, body) => {
+        const name = body.model.split("/").pop();
+        const response = answers(
+            () => false,
+            name === "unnamed" ? undefined : "llama-3.1-8b",
+        )(path, body);
+        if (name === "fallback")
+            response.headers.set("x-model-used", "community/o/other");
+        if (name === "anonymous") response.headers.delete("x-model-used");
+        return response;
+    };
+    await cycled(stub);
+    expect(await runs(stub)).toEqual({
+        "community/o/m": {
+            declared: "gemini-3-flash",
+            served: "llama-3.1-8b",
+            id: expect.any(String),
+            streak: 1,
+        },
+    });
+    // Half an hour on, no probe is due: a saved probe never counts again.
+    clock += 30 * 60_000;
+    await cycled(stub);
+    expect((await runs(stub))["community/o/m"].streak).toBe(1);
+    clock += HOURS(4);
+    await cycled(stub);
+    expect((await runs(stub))["community/o/m"].streak).toBe(2);
+});
+
+// A public registration is stored private with its publication queued; gen
+// lists it once that takes effect three hours on, and the stored row still
+// says private.
+it("checks a newly published proxy once gen lists it, and tells nothing before", async () => {
+    const { ProxyListingPayloadSchema, resolveEffectiveProxyListing } =
+        await import("../../../shared/community-endpoints.ts");
+    const stub = watch();
+    const queued = Date.UTC(2026, 10, 1, 10, 5);
+    let clock = queued + HOURS(1);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    const payload = ProxyListingPayloadSchema.parse({
+        bearerTokenCiphertext: "fixture-not-a-credential",
+        api: "chat_completions",
+        paidOnly: false,
+        modality: "text",
+        imagePricing: "request",
+        inputModalities: ["text"],
+        perUserRpm: null,
+        fallbacks: [],
+        prices: {},
+    });
+    await proxies(["new"], "private");
+    await env.DB.prepare(
+        "UPDATE community_endpoint SET payload = ?, pending_payload = ?, pending_visibility = 'public', pending_at = ? WHERE id = 'new'",
+    )
+        .bind(JSON.stringify(payload), JSON.stringify(payload), queued / 1000)
+        .run();
+    // Gen's catalog, by gen's own rule for the stored row.
+    const listed = () =>
+        resolveEffectiveProxyListing(
+            {
+                visibility: "private",
+                payload,
+                pendingVisibility: "public",
+                pendingPayload: payload,
+                pendingAt: new Date(queued),
+            },
+            clock,
+        ).visibility === "public"
+            ? [community("community/o/new")]
+            : [];
+    world.probe = answers(() => false, "llama-3.1-8b");
+    world.agent = tells();
+    // Within the delay gen doesn't list it: never probed, nothing told.
+    world.catalog = listed();
+    expect(world.catalog).toEqual([]);
+    await cycled(stub);
+    expect(world.probes).toEqual([]);
+    expect(await runs(stub)).toEqual({});
+    // Listed from three hours on: two probes in a row, then told.
+    clock = queued + HOURS(3);
+    world.catalog = listed();
+    await cycled(stub);
+    clock += HOURS(4);
+    await cycled(stub);
+    expect(world.probes).toEqual([
+        "/v1/chat/completions community/o/new",
+        "/v1/chat/completions community/o/new",
+    ]);
+    expect(posts(COMMUNITY).map((p) => p.content)).toEqual([OWNER_O]);
+});
+
+it("tells a served-model mismatch to its owner once due, however long delivery fails, and again only on a new probe", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 1, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    await proxies(["m"]);
+    world.catalog = [community("community/o/m")];
+    world.probe = answers(() => false, "llama-3.1-8b");
+    world.agent = tells();
+    // Two probes in a row report another name while Discord is down.
+    world.fails = () => true;
+    await cycled(stub);
+    clock += HOURS(4);
+    await cycled(stub);
+    expect(posts(COMMUNITY)).toHaveLength(0);
+    // Eight days on, busy and healthy so never probed since, it is still
+    // due.
+    world.fails = () => false;
+    world.regular = [row(40, 40, "community/o/m")];
+    clock += HOURS(8 * 24);
+    await cycled(stub);
+    expect(world.agentFacts.at(-1).incidents).toEqual([
+        {
+            id: "1",
+            kind: "mismatch",
+            to: "community",
+            model: "community/o/m",
+            declared: "gemini-3-flash",
+            served: "llama-3.1-8b",
+        },
+    ]);
+    expect(posts(COMMUNITY).map((p) => p.content)).toEqual([OWNER_O]);
+    // After its quiet week it is told again only once a new probe reports it.
+    clock += HOURS(8 * 24);
+    await cycled(stub);
+    expect(posts(COMMUNITY)).toHaveLength(1);
+    world.regular = [];
+    clock += HOURS(1);
+    await cycled(stub);
+    expect(posts(COMMUNITY)).toHaveLength(2);
+});

@@ -8,6 +8,7 @@ import {
     incidents,
     listingChanges,
     QUIET_MS,
+    servedStreaks,
     WINDOW_MINUTES,
 } from "./community.js";
 import {
@@ -547,7 +548,7 @@ export class Watch extends DurableObject {
         const key = this.env.COMMUNITY_PROBE_KEY;
         if (!key) throw new Error("COMMUNITY_PROBE_KEY missing");
         const rows = await statusRows(gen, WINDOW_MINUTES, "regular");
-        await pool(
+        const probes = await pool(
             dueProbes(catalog, rows, state.schedule, now),
             PROBE_POOL,
             async (model) => {
@@ -559,16 +560,23 @@ export class Watch extends DurableObject {
                     console.log(
                         `probe ${model.name}: ${result.status} ${result.requestId ?? ""}`,
                     );
+                return result;
             },
         );
 
         const listings = await this.listingsToday(gen, catalog, now);
+        state.served = servedStreaks(
+            await this.reported(probes),
+            state.served,
+            listed,
+        );
         const { found, pending } = incidents({
             catalog,
             rows,
             schedule: state.schedule,
             quiet: state.quiet,
             pending: state.pending,
+            served: state.served,
             listings: listings?.changes ?? null,
             now,
         });
@@ -612,9 +620,43 @@ export class Watch extends DurableObject {
                 for (const k of incident.quiet) state.quiet[k] = now;
                 if (incident.kind === "listings")
                     await this.ctx.storage.put("listings", listings.saved);
+                // A told mismatch needs a new check before it is due again.
+                if (incident.kind === "mismatch")
+                    state.served[incident.model].streak = 1;
             }
         }
         await save();
+    }
+
+    // This cycle's fresh text probes that their model answered itself with
+    // a model name, each beside the upstream model its proxy listing asks
+    // for, read from D1 as the old monitor read it. Which models are public
+    // is gen's call: probes only run on its public catalog, which also lists
+    // a queued publication once it takes effect, while the stored row still
+    // says private. A failed read is a skipped check.
+    async reported(probes) {
+        const own = probes.filter(
+            (p) => p.servedModel && p.modelUsed === p.model,
+        );
+        if (!own.length) return [];
+        try {
+            const { results } = await this.env.DB.prepare(
+                `SELECT 'community/' || u.github_username || '/' || ce.name AS model, ce.upstream_model AS declared
+                FROM community_endpoint ce JOIN user u ON ce.owner_user_id = u.id
+                WHERE ce.type = 'proxy'`,
+            ).all();
+            const declared = new Map(results.map((r) => [r.model, r.declared]));
+            return own
+                .filter((p) => declared.has(p.model))
+                .map((p) => ({
+                    model: p.model,
+                    declared: declared.get(p.model),
+                    served: p.servedModel,
+                }));
+        } catch (error) {
+            console.error(`served models: ${error.message}`);
+            return [];
+        }
     }
 
     // The day's community listing changes for the agent, once a day from

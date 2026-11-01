@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "HTML_EXTRACT_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "html-extract",
+        name: "HTML Extract",
+        description:
+            "Fetch a public HTML/text URL and return cleaned readable text for agent tools.",
+        binding: "HTML_EXTRACT_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Pure text extraction; no additional MCP fee.",
             rates: [],
         },
     },

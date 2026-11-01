@@ -571,6 +571,11 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         .update(user)
         .set({ banned: true })
         .where(eq(user.id, banned.userId));
+    const appKey = await sandboxKey();
+    await db
+        .update(apikey)
+        .set({ metadata: JSON.stringify({ keyType: "publishable" }) })
+        .where(eq(apikey.id, appKey.id));
     const sandbox = (
         sandboxID: string,
         userId: string,
@@ -606,6 +611,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         sandbox("revoked", revoked.userId),
         sandbox("banned", banned.userId),
         sandbox("banned-key", banned.userId),
+        sandbox("app-key", appKey.userId),
     );
     const until = new Date(Date.now() + 450_000);
     const month = new Date(Date.now() + 30 * 86_400_000);
@@ -623,6 +629,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         { sandboxId: "dashboard", apiKeyId: null, until: month },
         { sandboxId: "banned", apiKeyId: null, until: month },
         { sandboxId: "banned-key", apiKeyId: banned.id, until: month },
+        { sandboxId: "app-key", apiKeyId: appKey.id, until: month },
     ]);
     const untouched = structuredClone(e2b.sandboxes.slice(6));
     untouched.unshift(structuredClone(e2b.sandboxes[2]));
@@ -646,7 +653,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     expect([e2b.sandboxes[2], ...e2b.sandboxes.slice(6)]).toEqual(untouched);
 
     // Kept on: the renewed, the waiting; ended: the expired, the gone, those
-    // whose key cannot pay or is revoked, and the banned owner's.
+    // whose key cannot pay, is revoked or is an App Key, and the banned owner's.
     expect((await keeps()).map((keep) => keep.sandboxId).sort()).toEqual([
         "dashboard",
         "due",
@@ -683,6 +690,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     expect(await questPollen(broke.userId)).toBe(0);
     expect(await questPollen(capped.userId)).toBe(10);
     expect(await questPollen(banned.userId)).toBe(10);
+    expect(await questPollen(appKey.userId)).toBe(10);
 });
 
 test("the cron keeps a keep whose key D1 fails to read, and renews it next time", async () => {

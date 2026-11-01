@@ -437,6 +437,11 @@ function toActiveAuthResult(
     env: ApiKeyAuthBindings,
 ): (ApiKeyAuthResult & { apiKey: AuthenticatedApiKey }) | null {
     if (!row || !isUsable(row.apiKey)) return null;
+    // The stored type, not the prefix: older App Keys look like plln_pk_….
+    const metadata = normalizeMetadata(parseMetadata(row.apiKey.metadata));
+    if (metadata?.keyType === "publishable") {
+        throw new HTTPException(401, { message: PUBLISHABLE_KEY_REFUSAL });
+    }
 
     assertNotBanned(row.user);
     if (row.byopOwner) assertNotBanned(row.byopOwner);
@@ -450,7 +455,7 @@ function toActiveAuthResult(
             permissions: normalizePermissions(
                 parseMetadata(row.apiKey.permissions),
             ),
-            metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
+            metadata,
             pollenBalance: row.apiKey.pollenBalance ?? null,
             expiresAt: row.apiKey.expiresAt,
             questPollenOnly: row.apiKey.questPollenOnly,

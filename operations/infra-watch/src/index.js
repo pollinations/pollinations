@@ -623,18 +623,19 @@ export class Watch extends DurableObject {
 
     // The catalog models whose upstream answered with a different model,
     // read from Tinybird once an hour from 5 minutes past, over the last
-    // full UTC hour, with each one's run of checks. Until then the last
-    // reading stands; an hour that can't be read is a skipped check, which
-    // leaves every run as it is.
+    // full UTC hour, with each one's run of checks. The pipe is given that
+    // hour, so a read that lands after the next hour starts still checks it
+    // once. Until then the last reading stands; an hour that can't be read
+    // is a skipped check, which leaves every run as it is.
     async served(last, names, now) {
-        const hour = Math.floor(now / HOUR_MS);
+        const hour = Math.floor(now / HOUR_MS) - 1;
         if (last?.hour === hour || now % HOUR_MS < LAST_HOUR_READ_DELAY_MS)
             return last ?? { hour: null, seen: {} };
         let rows = [];
         try {
             rows = await pipe(
                 "infra_watch_served_model",
-                {},
+                { start: (hour * HOUR_MS) / 1000 },
                 { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
             );
         } catch (error) {

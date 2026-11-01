@@ -2,15 +2,17 @@ TOKEN infra_watch_read READ
 
 DESCRIPTION >
     infra-watch monitor: each community proxy that answered text requests
-    itself in the last full UTC hour, with the model gen asked its upstream
-    for and the name the upstream reported, as its most common pair only:
-    a minority of answers reporting another name hides behind it. Answers
-    without a reported name, fallback answers, private models and image
-    models are left out. The EC2 community monitor's duty 2d served-model
-    check, on real requests instead of probes.
+    itself in the UTC hour starting at `start` (Unix seconds), with the
+    model gen asked its upstream for and the name the upstream reported, as
+    its estimated most common pair only: a minority of answers reporting
+    another name hides behind it. Answers without a reported name, fallback
+    answers, private models and image models are left out. The EC2
+    community monitor's duty 2d served-model check, on real requests
+    instead of probes.
 
 NODE infra_watch_served_model_node
 SQL >
+    %
     SELECT
         model,
         tupleElement(pair, 1) AS declared,
@@ -28,8 +30,8 @@ SQL >
             AND NOT private_model
             AND response_status BETWEEN 200 AND 299
             AND upstream_served_model != ''
-            AND start_time >= toStartOfHour(now()) - INTERVAL 1 HOUR
-            AND start_time < toStartOfHour(now())
+            AND start_time >= toDateTime({{Int64(start, required=True)}})
+            AND start_time < toDateTime({{Int64(start, required=True)}}) + INTERVAL 1 HOUR
         GROUP BY model
     )
     ORDER BY model

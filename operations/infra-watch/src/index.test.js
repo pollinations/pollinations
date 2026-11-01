@@ -101,10 +101,12 @@ async function fake(input, init = {}) {
             ? Response.json({ data: world.legacy })
             : new Response("unavailable", { status: 503 });
     }
-    if (url.pathname.endsWith("/infra_watch_served_model.json"))
+    if (url.pathname.endsWith("/infra_watch_served_model.json")) {
+        world.servedHours.push(Number(url.searchParams.get("start")));
         return world.served
             ? Response.json({ data: world.served })
             : new Response("unavailable", { status: 503 });
+    }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
@@ -151,6 +153,7 @@ beforeEach(() => {
         rows: [],
         regular: [],
         served: [],
+        servedHours: [],
         probes: [],
         agentFacts: [],
         agentKeys: [],
@@ -1242,6 +1245,11 @@ it("reads the served models once an hour from 5 minutes past; an unread or empty
     expect(await read(at(15, 5))).toBe(2);
     world.served = reported;
     expect(await read(at(16, 5))).toBe(3);
+    // Each read names the hour it checks, the one before its cycle started,
+    // so a read that lands after the next hour starts checks it only once.
+    expect(world.servedHours).toEqual(
+        [11, 12, 13, 14, 15].map((h) => at(h, 0) / 1000),
+    );
 });
 
 it("tells a served-model mismatch to its owner through the agent", async () => {

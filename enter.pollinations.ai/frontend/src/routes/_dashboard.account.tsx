@@ -265,13 +265,12 @@ function ContactEmail({ email }: { email: string }) {
             value={email}
             aria-label={`Copy ${email}`}
             tooltip="Copy email address"
-            copiedTooltip="Email address copied"
             className="polli-link inline-flex max-w-full items-center gap-1.5 text-left align-baseline"
         >
             {(copied) => (
                 <>
                     <span className="min-w-0 break-all" aria-live="polite">
-                        {copied ? "Copied!" : email}
+                        {copied ? "Copied" : email}
                     </span>
                     <span
                         className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"

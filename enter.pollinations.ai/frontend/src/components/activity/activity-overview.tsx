@@ -59,6 +59,10 @@ const GROUPS = [
     { value: "key", label: "Keys" },
 ] as const;
 
+// Same width when stacked, so both switches line up.
+const CONTROL_LABEL =
+    "w-10 shrink-0 text-xs text-theme-text-muted @[36rem]:w-auto";
+
 const PICK_NOUNS: Record<ActivityTab, Record<PickList, string>> = {
     usage: { keys: "key", models: "model" },
     earnings: { keys: "app", models: "model" },
@@ -182,6 +186,68 @@ export const ActivityOverview: FC<{
                 />
             </header>
             <Surface className="flex min-w-0 flex-col gap-4">
+                {/* Narrow cards stack Group over Unit with CSV top right;
+                    wide ones put Unit next to CSV. */}
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-col gap-2 @[36rem]:flex-1 @[36rem]:flex-row @[36rem]:items-center @[36rem]:justify-between">
+                        {tab === "usage" && (
+                            <div className="flex items-center gap-2">
+                                <span className={CONTROL_LABEL}>Group</span>
+                                <SegmentedControl
+                                    ariaLabel="Group"
+                                    options={GROUPS}
+                                    value={group}
+                                    onChange={(next) =>
+                                        onChange({
+                                            group:
+                                                next === "key"
+                                                    ? next
+                                                    : undefined,
+                                        })
+                                    }
+                                />
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 @[36rem]:ml-auto">
+                            <span className={CONTROL_LABEL}>Unit</span>
+                            <SegmentedControl
+                                ariaLabel="Unit"
+                                options={METRICS}
+                                value={metric}
+                                onChange={(next) =>
+                                    onChange({
+                                        metric:
+                                            next === "pollen"
+                                                ? undefined
+                                                : next,
+                                    })
+                                }
+                            />
+                        </div>
+                    </div>
+                    {/* Buttons centre themselves; this keeps CSV at the top,
+                        quiet in grey. */}
+                    <div data-theme="neutral" className="shrink-0">
+                        <CsvDownloadButton
+                            disabled={!data.download || data.refreshing}
+                            disabledReason={
+                                data.loading || data.refreshing
+                                    ? `Loading ${tab}`
+                                    : `No ${tab} to download for this period`
+                            }
+                            onClick={() =>
+                                data
+                                    .download?.()
+                                    .catch((error) =>
+                                        console.error(
+                                            "Activity download failed:",
+                                            error,
+                                        ),
+                                    )
+                            }
+                        />
+                    </div>
+                </div>
                 <SectionContent loading={data.loading} className="h-[180px]">
                     {data.error && (
                         <LoadError
@@ -212,32 +278,12 @@ export const ActivityOverview: FC<{
                                 entries={data.entries}
                                 totals={data.totals}
                                 metric={metric}
-                                onMetricChange={(next) =>
-                                    onChange({
-                                        metric:
-                                            next === "pollen"
-                                                ? undefined
-                                                : next,
-                                    })
-                                }
                                 header={
-                                    tab === "usage" ? (
-                                        <SegmentedControl
-                                            ariaLabel="Group usage by"
-                                            options={GROUPS}
-                                            value={group}
-                                            onChange={(next) =>
-                                                onChange({
-                                                    group:
-                                                        next === "key"
-                                                            ? next
-                                                            : undefined,
-                                                })
-                                            }
-                                        />
-                                    ) : (
-                                        "Source"
-                                    )
+                                    tab === "earnings"
+                                        ? "Source"
+                                        : group === "key"
+                                          ? "Key"
+                                          : "Model"
                                 }
                                 selecting={data.selecting}
                                 icon={
@@ -251,24 +297,6 @@ export const ActivityOverview: FC<{
                                         : undefined
                                 }
                                 onToggle={toggle}
-                                actions={
-                                    <CsvDownloadButton
-                                        disabled={
-                                            data.refreshing || !data.download
-                                        }
-                                        disabledReason={`Loading ${tab}`}
-                                        onClick={() =>
-                                            data
-                                                .download?.()
-                                                .catch((error) =>
-                                                    console.error(
-                                                        "Activity download failed:",
-                                                        error,
-                                                    ),
-                                                )
-                                        }
-                                    />
-                                }
                             />
                         </>
                     ) : (
@@ -286,35 +314,29 @@ export const ActivityOverview: FC<{
 
 const PAGE_SIZE = 15;
 
-// On a phone-width card both header switches only fit without the Share
-// column and the header cells' side padding.
+// A phone-width card has no room for the Share column.
 const SHARE_CELL = "hidden @[32rem]:table-cell";
-const SWITCH_CELL = "px-0 py-1 font-normal @[32rem]:px-2";
 
 type BreakdownTableProps = {
     entries: BreakdownEntry[];
     totals: ActivityAmounts;
     metric: Metric;
-    onMetricChange: (metric: Metric) => void;
-    /** First column header: the grouping switch, or a plain name. */
-    header: ReactNode;
+    /** First column header. */
+    header: string;
     /** Rows are selected, so the total covers only those. */
     selecting: boolean;
     icon?: (entry: BreakdownEntry) => ReactNode;
     onToggle: (entry: BreakdownEntry) => void;
-    actions?: ReactNode;
 };
 
 export const BreakdownTable: FC<BreakdownTableProps> = ({
     entries,
     totals,
     metric,
-    onMetricChange,
     header,
     selecting,
     icon,
     onToggle,
-    actions,
 }) => {
     // A new list resets paging; picking a row keeps it.
     const ids = entries.map((entry) => entry.id).join("\n");
@@ -332,7 +354,7 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                         <TableRow>
                             <TableHeaderCell
                                 scope="col"
-                                className={SWITCH_CELL}
+                                className="px-2 py-1 font-normal"
                             >
                                 {header}
                             </TableHeaderCell>
@@ -346,14 +368,9 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                             <TableHeaderCell
                                 scope="col"
                                 align="right"
-                                className={SWITCH_CELL}
+                                className="px-2 py-1 font-normal"
                             >
-                                <SegmentedControl
-                                    ariaLabel="Show Pollen or requests"
-                                    options={METRICS}
-                                    value={metric}
-                                    onChange={onMetricChange}
-                                />
+                                {metric === "pollen" ? "Pollen" : "Requests"}
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -424,8 +441,8 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                     </tfoot>
                 </Table>
             </div>
-            <div className="flex justify-end gap-2">
-                {visibleCount < entries.length && (
+            {visibleCount < entries.length && (
+                <div data-theme="neutral" className="flex justify-center">
                     <Button
                         onClick={() =>
                             setPage({ ids, limit: visibleCount + PAGE_SIZE })
@@ -433,9 +450,8 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                     >
                         Show more
                     </Button>
-                )}
-                {actions}
-            </div>
+                </div>
+            )}
         </div>
     );
 };

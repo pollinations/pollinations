@@ -138,11 +138,11 @@ export function PollenUsageBadges(usage: {
     const unit = isPollen ? "Pollen" : "requests";
     return (
         // Same-width chips with left-aligned digits, so rows line up; the pair
-        // sits at the right edge.
+        // sits at the right edge. 5.5rem fits the widest value, "<0.0001".
         <div className="ml-auto grid w-max grid-cols-1 items-center gap-1 @[32rem]:grid-cols-2">
             <PaidChip
                 size="sm"
-                className="w-24 cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
+                className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={`Paid ${unit}`}
                 aria-label={`${paid} Paid ${unit}`}
             >
@@ -151,7 +151,7 @@ export function PollenUsageBadges(usage: {
             </PaidChip>
             <TierChip
                 size="sm"
-                className="w-24 cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
+                className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={`Quest ${unit}`}
                 aria-label={`${quest} Quest ${unit}`}
             >

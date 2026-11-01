@@ -945,19 +945,40 @@ test("a fallback notice gives the total, then each fallback's own part", () => {
     assert.equal(card.ping, false);
     assert.equal(card.color, 0xef9f27);
     const lines = plain(card.text).split("\n");
-    assert.match(lines[1], /FALLBACK: o\/m/);
-    assert.match(lines[2], /│ RESCUED 30 of 40 successes \(75%\), 4h +│/);
-    // A short model name never cuts a long fallback id.
-    assert.match(
-        lines[3],
-        /│ VIA {5}scriptsnsenses-sys\/diffusiongema-26B-free-long-name \(16\) │/,
-    );
-    assert.match(lines[4], /│ VIA {5}o\/b \(14\) +│/);
+    assert.match(lines[1], /┌─ FALLBACK ─+┐/);
+    assert.match(lines[2], /│ MODEL {3}o\/m +│/);
+    assert.match(lines[3], /│ RESCUED 30 of 40 successes \(75%\), 4h +│/);
+    // A long fallback id moves its name under its owner, never cut.
+    assert.match(lines[4], /│ VIA {5}scriptsnsenses-sys\/ +│/);
+    assert.match(lines[5], /│ {9}diffusiongema-26B-free-long-name \(16\) +│/);
+    assert.match(lines[6], /│ VIA {5}o\/b \(14\) +│/);
     assert.doesNotMatch(card.text, /community\//);
     assert.match(lines.at(-1), /^Callers still get answers/);
     assert.match(
         lines.at(-1),
         /\[My Models\]\(https:\/\/enter\.pollinations\.ai\/my-models\)\.$/,
+    );
+});
+
+test("a fallback notice with long community ids fits a phone, ids whole", () => {
+    // The 2026-11-01 01:12 card whose box broke on a phone.
+    const model = "scriptsnsenses-sys/deepseek-v4-flash-0731";
+    const fallback = "scriptsnsenses-sys/diffusiongema-26B-free";
+    const card = fallbackCard({
+        model: `community/${model}`,
+        via: [{ model: `community/${fallback}`, rescued: 32 }],
+        rescued: 32,
+        successes: 32,
+    });
+    const box = plain(card.text)
+        .split("\n")
+        .filter((line) => /^[┌│└]/.test(line));
+    for (const line of box) assert.ok(line.length <= 49, line);
+    const text = box.map((line) => line.slice(2, -2).trim()).join(" ");
+    assert.match(text, /MODEL +scriptsnsenses-sys\/ +deepseek-v4-flash-0731/);
+    assert.match(
+        text,
+        /VIA +scriptsnsenses-sys\/ +diffusiongema-26B-free \(32\)/,
     );
 });
 

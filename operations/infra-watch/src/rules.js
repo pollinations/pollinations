@@ -791,6 +791,20 @@ export function dueFallbacks(shares, told = {}, now) {
 
 const community = (id) => id.replace(/^community\//, "");
 
+// A phone shows a 49-character box whole, borders included; wider ones
+// wrap and break. A community id longer than this row width moves its name
+// under its owner, so the box stays that narrow and the id is never cut.
+const ID_ROW = 37;
+const idRows = (field, id, after = "") => {
+    const slash = id.indexOf("/");
+    if (`${id}${after}`.length <= ID_ROW || slash < 0)
+        return [[field, `${id}${after}`]];
+    return [
+        [field, id.slice(0, slash + 1)],
+        ["", `${id.slice(slash + 1)}${after}`],
+    ];
+};
+
 // Where an owner sees their model's failed calls and errors.
 const MY_MODELS = "[My Models](https://enter.pollinations.ai/my-models)";
 
@@ -801,18 +815,24 @@ export function fallbackCard({ model, via, rescued, successes }) {
     return {
         text: [
             panel(
-                `FALLBACK: ${community(model)}`,
+                "FALLBACK",
                 [
+                    ...idRows("MODEL", community(model)),
                     [
                         "RESCUED",
                         `${rescued} of ${successes} successes (${percent(rescued / successes)}), 4h`,
                     ],
                     ...via
                         .slice(0, VIA_SHOWN)
-                        .map((v) => [
-                            "VIA",
-                            `${v.model ? community(v.model) : "a private model"} (${v.rescued})`,
-                        ]),
+                        .flatMap((v) =>
+                            v.model
+                                ? idRows(
+                                      "VIA",
+                                      community(v.model),
+                                      ` (${v.rescued})`,
+                                  )
+                                : [["VIA", `a private model (${v.rescued})`]],
+                        ),
                 ],
                 color,
                 Infinity,

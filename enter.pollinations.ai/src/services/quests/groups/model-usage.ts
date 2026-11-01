@@ -56,8 +56,10 @@ const useAudioModelQuest: QuestDefinition = {
 const useVideoModelQuest: QuestDefinition = {
     id: "use_video_model",
     title: "Use a video model",
+    // Every video model is paid-only, so Quest Pollen alone cannot finish this
+    // one. Say so on the card instead of letting the request fail with a 402.
     description:
-        "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models.",
+        "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models. Video models need Paid Pollen, so [top up](https://enter.pollinations.ai/pollen#buy-pollen) first.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,

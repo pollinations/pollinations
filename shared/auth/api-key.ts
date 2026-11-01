@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
+import { HTTPException } from "hono/http-exception";
 import { byopClientAllowsMarkup } from "../billing/markup.ts";
 import * as schema from "../db/better-auth.ts";
 import {
@@ -25,6 +26,8 @@ import { parseGithubIdList } from "./github-id-list.ts";
 import { SESSION_TOKEN_PREFIX, verifySessionToken } from "./session-token.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
+const PUBLISHABLE_KEY_REFUSAL =
+    "Publishable keys (pk_) only identify your app and can't authenticate requests. Let users pay through Connect User Wallets: https://gen.pollinations.ai/docs#tag/connect-user-wallets. On a server, use a secret key (sk_) from https://enter.pollinations.ai/keys.";
 
 export type AuthUser = typeof schema.user.$inferSelect;
 
@@ -231,6 +234,11 @@ export async function authenticateApiKeyRequest(opts: {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
 
+    // pk_ keys are App Keys: public OAuth client IDs, never credentials.
+    if (rawApiKey.startsWith(`${PUBLISHABLE_KEY_PREFIX}_`)) {
+        throw new HTTPException(401, { message: PUBLISHABLE_KEY_REFUSAL });
+    }
+
     if (rawApiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
         return authenticateAgentRunToken(rawApiKey, opts.env);
     }
@@ -429,6 +437,11 @@ function toActiveAuthResult(
     env: ApiKeyAuthBindings,
 ): (ApiKeyAuthResult & { apiKey: AuthenticatedApiKey }) | null {
     if (!row || !isUsable(row.apiKey)) return null;
+    // The stored type, not the prefix: older App Keys look like plln_pk_….
+    const metadata = normalizeMetadata(parseMetadata(row.apiKey.metadata));
+    if (metadata?.keyType === "publishable") {
+        throw new HTTPException(401, { message: PUBLISHABLE_KEY_REFUSAL });
+    }
 
     assertNotBanned(row.user);
     if (row.byopOwner) assertNotBanned(row.byopOwner);
@@ -442,7 +455,7 @@ function toActiveAuthResult(
             permissions: normalizePermissions(
                 parseMetadata(row.apiKey.permissions),
             ),
-            metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
+            metadata,
             pollenBalance: row.apiKey.pollenBalance ?? null,
             expiresAt: row.apiKey.expiresAt,
             questPollenOnly: row.apiKey.questPollenOnly,

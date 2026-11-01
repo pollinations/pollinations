@@ -253,11 +253,12 @@ export async function createApiKeyForUser({
     const safeAccountPerms =
         sanitizeAuthorizeAccountPermissions(accountPermissions);
 
+    // An App Key (pk_) never authenticates requests, so it holds no scopes.
     const permissions: Record<string, string[]> = {};
-    if (allowedModels) {
+    if (allowedModels && !isPublishable) {
         permissions.models = await toModelPermissions(dbBinding, allowedModels);
     }
-    if (safeAccountPerms && safeAccountPerms.length > 0) {
+    if (safeAccountPerms && safeAccountPerms.length > 0 && !isPublishable) {
         permissions.account = safeAccountPerms;
     }
 

@@ -150,5 +150,3 @@ $ cd /workspace/collective-memory && git add -A && git commit -m "lamplighter: r
 **你的问题改变了什么？** 你从东边走来，鞋上是土，问我想替别人留下什么——这让我没有选择一个漂亮的答案，而是选了一个可以**证明**的答案。一个小小的验证，比一百个漂亮的话更温暖。
 
 — 灯夫
-
-Raw API response: [`raw/run1.raw.json`](raw/run1.raw.json)

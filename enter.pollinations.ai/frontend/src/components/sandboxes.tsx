@@ -39,6 +39,7 @@ import { ResourceConfirmationContent } from "./community-endpoints/resource-conf
 import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
+import { Footnotes } from "./pollen/pollen-balance.tsx";
 
 // Gen serves E2B's API here and keeps the sandbox rules and billing.
 const E2B_PATH = "/alpha/e2b";
@@ -128,8 +129,13 @@ const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
     `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
 
-// An always-on sandbox runs about 720 hours a month.
-const HOURS_PER_MONTH = 720;
+// The cheapest size's hourly price, for the card's footnote.
+const cheapestHourly = (pricing: Pricing) =>
+    Math.min(
+        ...Object.entries(pricing.templates).map(
+            ([template, size]) => perSecond(pricing, template, size) * 3600,
+        ),
+    );
 
 const TEMPLATE_LABELS: Record<string, string> = {
     pollinations: "Pollinations (E2B)",
@@ -514,6 +520,7 @@ export function Sandboxes() {
 
     const createAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<TerminalIcon />}
             aria-busy={creating}
@@ -534,7 +541,6 @@ export function Sandboxes() {
     return (
         <Section
             title="Sandboxes"
-            intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
                 <ButtonGroup>
                     <IconButton
@@ -616,7 +622,8 @@ export function Sandboxes() {
                                 <Surface className="p-6 text-center">
                                     <div className="mb-2">{createAction}</div>
                                     <p className="text-sm text-theme-text-muted">
-                                        Run code and agents in your own sandbox.
+                                        A Linux computer in the cloud. Open it
+                                        with ssh or VS Code.
                                     </p>
                                 </Surface>
                             )}
@@ -624,60 +631,64 @@ export function Sandboxes() {
                     </div>
                 )}
             </SectionContent>
-            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>
-                    Pay with{" "}
-                    <span className="inline-flex items-center gap-1 align-middle whitespace-nowrap">
-                        <WalletKindIcon kind="tier" /> Quest Pollen
-                    </span>{" "}
-                    or{" "}
-                    <span className="inline-flex items-center gap-1 align-middle whitespace-nowrap">
-                        <WalletKindIcon kind="paid" /> Paid Pollen
-                    </span>{" "}
-                    in 10-minute steps.
-                    {pricing && (
-                        <>
-                            {" "}
-                            {Object.entries(pricing.templates).map(
-                                ([template, size]) => {
-                                    const hourly =
-                                        perSecond(pricing, template, size) *
-                                        3600;
-                                    return (
-                                        <span key={template}>
-                                            {templateLabel(template)} (
-                                            {sizeLabel(size)}): {pollen(hourly)}{" "}
-                                            an hour, about{" "}
-                                            {pollen(hourly * HOURS_PER_MONTH)} a
-                                            month if always on.{" "}
-                                        </span>
-                                    );
-                                },
-                            )}
-                            Up to {pricing.maxRunning} running at once; pause or
-                            kill one to free a slot.
-                        </>
-                    )}{" "}
-                    Sandboxes pause when time runs out. A paused sandbox costs
-                    nothing and keeps its files. Unused time isn’t refunded.
-                </span>
-            </p>
-            <div className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <p>
-                        Connect to your sandbox with SSH: run this once, then
-                        use the ssh command on its card. A paused sandbox
-                        resumes, and it keeps running while you’re connected,
-                        paid 10 minutes at a time.
-                    </p>
-                    <CopyField
-                        label="Copy the polli setup command"
-                        value={SSH_SETUP}
-                    />
+            {/* The dashboard's footnote block: 8px between lines, as on every
+                other page. */}
+            <Footnotes>
+                <p className="flex items-start gap-1.5">
+                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Pay with{" "}
+                        <span className="whitespace-nowrap">
+                            <WalletKindIcon
+                                kind="tier"
+                                className="mr-1 inline align-[-2px]"
+                            />
+                            Quest Pollen
+                        </span>{" "}
+                        or{" "}
+                        <span className="whitespace-nowrap">
+                            <WalletKindIcon
+                                kind="paid"
+                                className="mr-1 inline align-[-2px]"
+                            />
+                            Paid Pollen
+                        </span>{" "}
+                        in 10-minute steps
+                        {pricing && (
+                            <>
+                                , from {pollen(cheapestHourly(pricing))} an hour
+                            </>
+                        )}
+                        . Each size’s price shows when you create one.
+                    </span>
+                </p>
+                <p className="flex items-start gap-1.5">
+                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        A paused sandbox costs nothing and keeps its files.
+                        Sandboxes pause when their time runs out
+                        {pricing && (
+                            <>; up to {pricing.maxRunning} run at once</>
+                        )}
+                        .
+                    </span>
+                </p>
+                <div className="flex items-start gap-1.5">
+                    <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                        <p>
+                            Connect to your sandbox with SSH: run this once,
+                            then use the ssh command on its card. A paused
+                            sandbox resumes, and it keeps running while you’re
+                            connected, paid 10 minutes at a time.
+                        </p>
+                        <CopyField
+                            label="Copy the polli setup command"
+                            value={SSH_SETUP}
+                        />
+                    </div>
                 </div>
-            </div>
+            </Footnotes>
 
             <ConfirmationDialog
                 open={pending?.action === "kill"}

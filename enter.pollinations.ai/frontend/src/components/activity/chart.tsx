@@ -146,14 +146,16 @@ export const Chart: FC<ChartProps> = ({
         if (data.length === 0) return { bars: [], yTicks: [] };
 
         const { niceMaxVal, tickValues } = scale;
-        const barWidth = Math.max(4, (cw / data.length) * 0.7);
-        const gap = (cw / data.length) * 0.3;
+        // Each bar is centred in its share of the plot, so a 4px minimum
+        // width can never push later bars past the axis.
+        const slot = cw / data.length;
+        const barWidth = Math.max(4, slot * 0.7);
 
         const barData = data.map((d, i) => {
             const tierHeight = (d.tierValue / niceMaxVal) * ch;
             const paidHeight = (d.paidValue / niceMaxVal) * ch;
             return {
-                x: pad.left + i * (barWidth + gap) + gap / 2,
+                x: pad.left + i * slot + (slot - barWidth) / 2,
                 y: pad.top + ch - (d.value / niceMaxVal) * ch,
                 width: barWidth,
                 height: (d.value / niceMaxVal) * ch,

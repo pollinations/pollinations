@@ -12,7 +12,7 @@ import {
     ColorModeToggle,
     CopyButton,
     cn,
-    ExternalLinkIcon,
+    InlineLink,
     LoadingStatus,
     MenuIcon,
     NavItem,
@@ -381,6 +381,9 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             onNavigate={onNavigate}
                         />
                     ))}
+                {/* Docs leaves the dashboard: a thin line sets it apart from
+                    the page rows above. */}
+                <hr className={cn("my-2", NAV_LINE_CLASS)} />
                 <DocsRow />
                 <DocGuides />
             </nav>
@@ -512,22 +515,15 @@ const BrandHeader: FC<{ onClose: () => void }> = ({ onClose }) => (
     </div>
 );
 
-// Docs looks like the other rows; ↗ marks that it opens the API reference, and
-// the quiet icon copies all of it as plain text for an AI chat.
+// Docs opens the docs site, so it is drawn as a link, not a page row: same
+// icon and spacing as the rows, link text with ↗ instead of the row's pill.
+// The quiet icon copies all of it as plain text for an AI chat.
 const DocsRow: FC = () => (
     <div className="flex items-center">
-        <NavItem
-            as="a"
-            href={genDocsUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-theme="accent"
-            icon={BookIcon}
-            className="min-w-0 flex-1"
-        >
-            Docs
-            <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
-        </NavItem>
+        <span className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-sm">
+            <BookIcon className="h-4 w-4 shrink-0 text-ink-800" />
+            <InlineLink href={genDocsUrl()}>Docs</InlineLink>
+        </span>
         <CopyButton
             value={async () => {
                 const res = await fetch(`${genDocsUrl()}/llm.txt`);
@@ -557,30 +553,30 @@ const DOC_GUIDES = [
         label: "Quick Start",
         tag: "quick-start",
         icon: RocketIcon,
-        show: "[@container(min-height:13.625rem)]:flex",
+        show: "[@container(min-height:14.8125rem)]:flex",
     },
     {
         label: "Connect User Wallets",
         tag: "connect-user-wallets",
         icon: WalletIcon,
-        show: "[@container(min-height:14.875rem)]:flex",
+        show: "[@container(min-height:16.0625rem)]:flex",
     },
     {
         label: "Publish an Agent",
         tag: "publish-an-agent",
         icon: BotIcon,
-        show: "[@container(min-height:16.125rem)]:flex",
+        show: "[@container(min-height:17.3125rem)]:flex",
     },
     {
         label: "Publish a Model",
         tag: "publish-a-model",
         icon: BeakerIcon,
-        show: "[@container(min-height:17.375rem)]:flex",
+        show: "[@container(min-height:18.5625rem)]:flex",
     },
 ] as const;
 
 const DocGuides: FC = () => (
-    <SubLines className="hidden flex-col gap-1 text-xs [@container(min-height:13.625rem)]:flex">
+    <SubLines className="hidden flex-col gap-1 text-xs [@container(min-height:14.8125rem)]:flex">
         {DOC_GUIDES.map(({ label, tag, icon: Icon, show }) => (
             <a
                 key={tag}

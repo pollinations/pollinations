@@ -17,7 +17,7 @@ import { Suspense, useDeferredValue, useState } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
-import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
+import type { DeveloperEarningsRow } from "../components/activity/types.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
 import {

@@ -11,7 +11,7 @@ const pageTitles: Record<string, readonly string[]> = {
     "/sandboxes": ["Sandboxes"],
     "/keys": ["Secrets", "Apps"],
     "/pollen": ["Pollen", "Top-up", "Billing"],
-    "/activity": ["Usage", "Earnings", "Last events"],
+    "/activity": ["Overview", "Last events"],
     "/quests": ["Claimed"],
     "/account": [
         "Profile",

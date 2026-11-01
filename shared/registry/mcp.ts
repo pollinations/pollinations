@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "RECIPE_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "recipe",
+        name: "Recipe",
+        description:
+            "Search recipes, look up full ingredients and instructions, and pull a random dish.",
+        binding: "RECIPE_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Recipe lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

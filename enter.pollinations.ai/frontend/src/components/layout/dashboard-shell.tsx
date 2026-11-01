@@ -1,6 +1,8 @@
 import {
     AccountIcon,
+    BeakerIcon,
     BookIcon,
+    BotIcon,
     BrandMark,
     Button,
     CheckIcon,
@@ -14,8 +16,10 @@ import {
     LoadingStatus,
     MenuIcon,
     NavItem,
+    RocketIcon,
     ScrollArea,
     useScrollLock,
+    WalletIcon,
     XIcon,
 } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -356,7 +360,8 @@ const DashboardRail: FC<DashboardRailProps> = ({
     >
         <BrandHeader onClose={onNavigate} />
         <ScrollArea
-            className="-mr-2 min-h-0 flex-1 pt-3"
+            // A size container: the guides under Docs show by its height.
+            className="-mr-2 min-h-0 flex-1 pt-3 [container-type:size]"
             style={
                 {
                     "--polli-color-scrollbar-thumb":
@@ -377,6 +382,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         />
                     ))}
                 <DocsRow />
+                <DocGuides />
             </nav>
         </ScrollArea>
         <div
@@ -544,6 +550,57 @@ const DocsRow: FC = () => (
     </div>
 );
 
+// A few guides straight under Docs. Each line shows only while the drawer has
+// room for it above your section, so the guides never make it scroll.
+const DOC_GUIDES = [
+    {
+        label: "Quick Start",
+        tag: "quick-start",
+        icon: RocketIcon,
+        show: "[@container(min-height:13.625rem)]:flex",
+    },
+    {
+        label: "Connect User Wallets",
+        tag: "connect-user-wallets",
+        icon: WalletIcon,
+        show: "[@container(min-height:14.875rem)]:flex",
+    },
+    {
+        label: "Publish an Agent",
+        tag: "publish-an-agent",
+        icon: BotIcon,
+        show: "[@container(min-height:16.125rem)]:flex",
+    },
+    {
+        label: "Publish a Model",
+        tag: "publish-a-model",
+        icon: BeakerIcon,
+        show: "[@container(min-height:17.375rem)]:flex",
+    },
+] as const;
+
+const DocGuides: FC = () => (
+    <SubLines className="hidden flex-col gap-1 text-xs [@container(min-height:13.625rem)]:flex">
+        {DOC_GUIDES.map(({ label, tag, icon: Icon, show }) => (
+            <a
+                key={tag}
+                href={genDocsUrl(`#tag/${tag}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                    "hidden items-center gap-2 text-theme-text-muted transition-colors hover:text-theme-text-strong",
+                    show,
+                )}
+            >
+                <span className="flex w-4 justify-center">
+                    <Icon className="h-3.5 w-3.5" />
+                </span>
+                {label}
+            </a>
+        ))}
+    </SubLines>
+);
+
 const DashboardFooter: FC<{
     links: readonly FooterLink[];
 }> = ({ links }) => (
@@ -570,11 +627,18 @@ const DashboardFooter: FC<{
     </div>
 );
 
-// Your Paid and Quest numbers indented under the Pollen row, lined up with
-// its label: a readout, not a link (the row above opens the page).
-const SubLines: FC<PropsWithChildren> = ({ children }) => (
+// Lines indented under a row, lined up with its label: your Paid and Quest
+// numbers under Pollen, the guides under Docs.
+const SubLines: FC<PropsWithChildren<{ className?: string }>> = ({
+    className,
+    children,
+}) => (
     <div
-        className={cn("mb-1 ml-5 border-l py-1 pr-3 pl-[15px]", NAV_LINE_CLASS)}
+        className={cn(
+            "mb-1 ml-5 border-l py-1 pr-3 pl-[15px]",
+            NAV_LINE_CLASS,
+            className,
+        )}
     >
         {children}
     </div>

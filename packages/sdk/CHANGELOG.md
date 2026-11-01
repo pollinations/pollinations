@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.27] - 2026-11-01
+
+### Changed
+- Docs and doc comments use the product names: Pollinations Connect for
+  sign-in and `authorizeUrl()`, Pollinations Pay for apps whose users pay with
+  their own Pollen. No API changes.
+
 ## [5.1.0-alpha.26] - 2026-10-31
 
 ### Removed

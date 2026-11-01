@@ -6,12 +6,11 @@ import {
     conditions,
     duration,
     escalates,
-    escalation,
     heartbeat,
-    kvPut,
     legacyDown,
     noteworthy,
     RECOVER_CHECKS,
+    releaseCommands,
     renderCard,
     STALE_MS,
     snapshot,
@@ -503,15 +502,6 @@ test("the box title carries the status and full model id, in the card's colour",
     for (const line of box) assert.equal(visible(line), visible(box[0]));
 });
 
-test("an escalation links to the card and pings", () => {
-    const post = escalation("model:a/model", opened(), "https://x.test/m/1");
-    assert.equal(post.ping, true);
-    assert.match(
-        post.text,
-        /`a\/model` is now DEGRADED.*https:\/\/x\.test\/m\/1/,
-    );
-});
-
 test("durations read plainly", () => {
     assert.equal(duration(20 * 1000), "under 1 min");
     assert.equal(duration(47 * MIN), "47 min");
@@ -565,10 +555,10 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
     const open = renderCard("signup:farm.com", incident, { now: 2 * MIN });
     assert.equal(open.ping, false);
     assert.equal(open.color, 0xe24b4a);
-    assert.match(open.text, /SETUP QUESTS LIMITED: domain farm\.com/);
+    assert.match(open.text, /QUEST POLLEN RESTRICTED: domain farm\.com/);
     assert.match(open.text, /31 in 24h/);
     assert.match(open.text, /2026-10-31 00:00 UTC/);
-    assert.match(open.text, /held until a purchase or review/);
+    assert.match(open.text, /spending frozen; Paid usable/);
     const ended = renderCard("signup:farm.com", r.actions[0].incident);
     assert.match(ended.text, /ENDED: domain farm\.com/);
     assert.match(ended.text, /LASTED +2 min/);
@@ -592,8 +582,8 @@ test("a burst card says the domain is held and shows how to release it", () => {
             },
             { now: 0 },
         ).text;
-    assert.match(card("held"), /SETUP QUESTS LIMITED: domain farm\.com/);
-    assert.match(card("held"), /held until a purchase or review/);
+    assert.match(card("held"), /QUEST POLLEN RESTRICTED: domain farm\.com/);
+    assert.match(card("held"), /spending frozen; Paid usable/);
     assert.match(
         card("held"),
         /kv key put --binding SETUP_HOLDS --env production --remote 'release:farm\.com' released/,
@@ -603,96 +593,14 @@ test("a burst card says the domain is held and shows how to release it", () => {
     assert.doesNotMatch(card("released"), /kv key put/);
 });
 
-const asking = (n) =>
-    new Map([
-        [
-            "farm.com",
-            Array.from({ length: n }, (_, i) => ({
-                userId: `u${i}`,
-                domain: "farm.com",
-                requestedAt: Date.UTC(2026, 9, 31) + i,
-            })),
-        ],
-    ]);
-
-test("a review card lists the five oldest requests, moves on as they're decided, and closes", () => {
-    const found = conditions({ ...quiet(busy), reviews: asking(7) });
-    const info = found["review:farm.com"];
-    assert.equal(info.kind, "REVIEW");
-    assert.equal(info.pending, 7);
-    assert.deepEqual(
-        info.accounts.map((a) => a.userId),
-        ["u0", "u1", "u2", "u3", "u4"],
-    );
-    let r = step({}, found, 0);
-    assert.deepEqual(
-        r.actions.map((a) => a.type),
-        ["open"],
-    );
-    const open = renderCard(
-        "review:farm.com",
-        r.state.open["review:farm.com"],
-        {
-            now: 0,
-        },
-    );
-    assert.equal(open.ping, false);
-    assert.equal(open.color, 0xef9f27);
-    assert.match(open.text, /REVIEW: domain farm\.com/);
-    assert.match(open.text, /ASKING +7 accounts/);
-    assert.match(open.text, /OLDEST +2026-10-31 00:00 UTC/);
-    assert.equal(open.text.match(/'decision:u\d' approved/g).length, 5);
-    assert.equal(open.text.match(/'decision:u\d' declined/g).length, 5);
-    assert.match(open.text, /'release:farm\.com' released/);
-
-    // Two decided: the card shows the next ones, and the AI may look again.
-    const later = new Map([["farm.com", asking(7).get("farm.com").slice(2)]]);
-    const next = conditions({ ...quiet(busy), reviews: later });
-    r = step(r.state, next, MIN);
-    const card = r.state.open["review:farm.com"];
-    assert.match(
-        renderCard("review:farm.com", card, { now: MIN }).text,
-        /'decision:u6' approved/,
-    );
-    // Only the verdict on the accounts listed now is shown.
-    const verdictOn = (accounts, text) => ({
-        at: 0,
-        text,
-        asking: accounts.map((a) => a.userId).join(","),
-    });
-    const stale = verdictOn(info.accounts, "APPROVE: the first five.");
-    const shown = (lines) =>
-        renderCard("review:farm.com", card, { now: MIN, lines }).text;
-    assert.doesNotMatch(shown([stale]), /first five/);
-    assert.match(
-        shown([
-            stale,
-            verdictOn(card.info.accounts, "DECLINE: the next five."),
-        ]),
-        /DECLINE: the next five\./,
-    );
+test("release commands clear existing accounts and reject unsafe domains", () => {
+    const commands = releaseCommands("farm.com").join("\n");
+    assert.match(commands, /release:farm\.com/);
+    assert.match(commands, /UPDATE user SET quest_pollen_restricted = 0/);
+    assert.match(commands, /lower\(email\) LIKE '%@farm\.com'/);
+    assert.match(commands, /lower\(email\) LIKE '%\.farm\.com'/);
     assert.doesNotMatch(
-        shown([
-            stale,
-            verdictOn(card.info.accounts, "DECLINE: the next five."),
-        ]),
-        /first five/,
-    );
-
-    r = step(r.state, {}, 2 * MIN);
-    const closed = renderCard("review:farm.com", r.actions[0].incident);
-    assert.match(closed.text, /DECIDED: domain farm\.com/);
-    assert.doesNotMatch(closed.text, /kv key put/);
-    assert.equal(closed.color, 0x639922);
-});
-
-test("a command is built only for keys of ids and plain domain names", () => {
-    assert.match(
-        kvPut("decision:AbC_1-2", "approved"),
-        /'decision:AbC_1-2' approved$/,
-    );
-    assert.doesNotMatch(
-        kvPut("release:a';rm -rf ~;'.com", "released"),
+        releaseCommands("a';rm -rf ~;'.com").join("\n"),
         /rm -rf/,
     );
 });

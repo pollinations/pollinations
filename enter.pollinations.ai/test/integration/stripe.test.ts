@@ -2664,7 +2664,12 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
 
     await db
         .update(userTable)
-        .set({ packBalance: 1, autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
+        .set({
+            packBalance: 1,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+            questPollenRestricted: true,
+        })
         .where(eq(userTable.id, user.id));
 
     const invoiceId = "in_paid_once";
@@ -2698,6 +2703,15 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
         .first<{ status: string; failureReason: string | null }>();
 
     expect(updatedUser?.packBalance).toBe(11);
+    expect(
+        (
+            await db
+                .select()
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .get()
+        )?.questPollenRestricted,
+    ).toBe(false);
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -3718,7 +3732,7 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
     if (!pack) throw new Error("Expected $10 pollen pack");
 
     await env.DB.prepare(
-        "UPDATE user SET low_balance_notified_at = 1 WHERE id = ?",
+        "UPDATE user SET low_balance_notified_at = 1, quest_pollen_restricted = 1 WHERE id = ?",
     )
         .bind(user.id)
         .run();
@@ -3751,6 +3765,15 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
         .bind(user.id)
         .first<{ lastPackPollen: number | null; notifiedAt: number | null }>();
     expect(credited).toEqual({ lastPackPollen: 10, notifiedAt: null });
+    expect(
+        (
+            await db
+                .select()
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .get()
+        )?.questPollenRestricted,
+    ).toBe(false);
 
     expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({

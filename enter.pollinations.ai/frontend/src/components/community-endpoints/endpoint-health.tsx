@@ -4,6 +4,7 @@ import {
     CheckIcon,
     Collapsible,
     formatCount,
+    LoadingStatus,
     XIcon,
 } from "@pollinations/ui";
 import { isModelReliable } from "@shared/model-health.ts";
@@ -135,7 +136,7 @@ export function EndpointHealth({
                         {loadError}
                     </Alert>
                 ) : !health ? (
-                    <p className="text-theme-text-muted">Loading…</p>
+                    <LoadingStatus>Loading…</LoadingStatus>
                 ) : health.failures.length === 0 ? (
                     <p className="text-theme-text-muted">
                         No failed calls in the last 7 days.

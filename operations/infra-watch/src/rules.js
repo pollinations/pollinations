@@ -1,6 +1,8 @@
 // Plain alert rules over public `/models/status` data, and the incident
 // cards they drive. No AI, no secrets.
 
+import { releaseDomainSql } from "./quest-restrictions.js";
+
 // Analytics for the newest minute lag, so an outage or drop must hold for
 // this many consecutive checks before it opens, and a status change on an
 // open incident must hold as long before it counts.
@@ -79,7 +81,6 @@ export function conditions({
     hosts = { public: true, upstream: true },
     analyticsDown,
     signups = [],
-    reviews = new Map(),
 }) {
     // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
     // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
@@ -115,15 +116,6 @@ export function conditions({
     // while over the limit in the last 24 hours.
     for (const signup of signups)
         found[`signup:${signup.domain}`] = { kind: "SIGNUP_BURST", ...signup };
-    // Held accounts asking for a review, per email domain, oldest first:
-    // open while any waits for a maintainer's decision.
-    for (const [domain, accounts] of reviews)
-        found[`review:${domain}`] = {
-            kind: "REVIEW",
-            domain,
-            pending: accounts.length,
-            accounts: accounts.slice(0, REVIEW_LISTED),
-        };
     return found;
 }
 
@@ -284,10 +276,6 @@ export function snapshot(incident) {
         errorKind: info.errorKind ?? null,
         success: info.success ?? null,
         failingCallers: info.callers?.failing_callers ?? null,
-        asking:
-            incident.kind === "REVIEW"
-                ? info.accounts.map((a) => a.userId).join(",")
-                : null,
     };
 }
 
@@ -333,11 +321,13 @@ export function duration(ms) {
 // A box titled with the alert and what it is about. It is as wide as its
 // title or its longest row needs, so a full model id is never cut. The
 // title is drawn in the card's colour (an ansi block): Discord on desktop
-// shows it, the phone shows plain text.
-function panel(title, lines, color) {
+// shows it, the phone shows plain text. `whole` keeps every value whole,
+// for cards whose rows are model ids and errors.
+export function panel(title, lines, color, { whole = false } = {}) {
+    const width = Math.max(8, ...lines.map(([field]) => field.length + 1));
     const body = lines.map(
         ([field, value]) =>
-            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
+            `${field.padEnd(width)}${whole ? value : fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
     const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
@@ -354,37 +344,30 @@ function panel(title, lines, color) {
 const utc = (ms) =>
     `${new Date(ms).toISOString().slice(0, 16).replace("T", " ")} UTC`;
 
-// The Setup hold commands under an open card: release a held domain, and
-// approve or decline each listed review.
-function commands({ kind, info }) {
-    const block = (intro, lines) =>
-        `${intro}\n\`\`\`\n${lines.join("\n")}\n\`\`\``;
-    const release = kvPut(`release:${info.domain}`, "released");
-    if (kind === "SIGNUP_BURST" && info.hold === "held")
-        return [block("Release the domain:", [release])];
-    if (kind !== "REVIEW") return [];
-    return [
-        block("Approve or decline each account, or release the domain:", [
-            ...info.accounts.flatMap((a) => [
-                kvPut(`decision:${a.userId}`, "approved"),
-                kvPut(`decision:${a.userId}`, "declined"),
-            ]),
-            release,
-        ]),
-    ];
+// A release clears current accounts and prevents restrictions on future signups.
+// Commands run from enter.pollinations.ai/; the validated domain is safe in
+// both shell strings and the SQL predicate.
+export function releaseCommands(domain) {
+    try {
+        const sql = releaseDomainSql(domain);
+        return [
+            `npx wrangler kv key put --binding SETUP_HOLDS --env production --remote 'release:${domain}' released`,
+            `npx wrangler d1 execute DB --env production --remote --command "${sql}"`,
+        ];
+    } catch {
+        return ["(no command: unexpected domain, check it by hand)"];
+    }
 }
 
-// Accounts a review card lists, each with its commands; the card moves on
-// to the next ones as a maintainer decides.
-export const REVIEW_LISTED = 5;
-
-// A maintainer's command on the SETUP_HOLDS store, run from
-// enter.pollinations.ai/ with a Cloudflare login on the account. Keys hold
-// only ids and plain domain names; anything else gets no command.
-export const kvPut = (key, value) =>
-    /^(release|decision):[A-Za-z0-9._-]+$/.test(key)
-        ? `npx wrangler kv key put --binding SETUP_HOLDS --env production --remote '${key}' ${value}`
-        : "(no command: unexpected characters, check the key by hand)";
+function commands({ kind, info }) {
+    if (kind !== "SIGNUP_BURST" || info.hold !== "held") return [];
+    return [
+        `Release the domain and its accounts:
+\`\`\`
+${releaseCommands(info.domain).join("\n")}
+\`\`\``,
+    ];
+}
 
 const LABEL = {
     GEN_DOWN: "DOWN",
@@ -395,8 +378,7 @@ const LABEL = {
     DEGRADED: "DEGRADED",
     PRIMARY_WEAK: "PRIMARY WEAK",
     WATCH_DOWN: "DOWN",
-    SIGNUP_BURST: "SETUP QUESTS LIMITED",
-    REVIEW: "REVIEW",
+    SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
 };
 const SUBJECT = {
@@ -407,8 +389,8 @@ const SUBJECT = {
     platform: "platform-wide",
     watch: "infra-watch",
 };
-// Sign-up and review cards are about an email domain.
-const DOMAIN_KEY = /^(signup|review):/;
+// Sign-up cards are about an email domain.
+const DOMAIN_KEY = /^signup:/;
 const subjectOf = (key) =>
     key.startsWith("model:")
         ? key.slice(6)
@@ -432,7 +414,6 @@ export const COLOR = {
     WATCH_DOWN: RED,
     // A farm signing up stands out like an outage, without the ping.
     SIGNUP_BURST: RED,
-    REVIEW: 0xef9f27,
     LEGACY_DOWN: 0xd85a30,
 };
 const GREEN = 0x639922;
@@ -487,11 +468,7 @@ export const waiting = (record, now) =>
 // hostname neither (users are fine); every other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
-    if (
-        ["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST", "REVIEW"].includes(
-            kind,
-        )
-    )
+    if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
         return false;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
@@ -579,24 +556,17 @@ function openRows(incident, now) {
             ["REQS", `${info.now10} last 10m`],
             ["", `baseline ${Math.round(info.baseline10)}`],
         ];
-    if (kind === "REVIEW")
-        return [
-            [
-                "ASKING",
-                `${info.pending} account${info.pending === 1 ? "" : "s"}`,
-            ],
-            ["OLDEST", utc(info.accounts[0].requestedAt)],
-            ["LISTED", `${info.accounts.length} oldest, below`],
-        ];
     if (kind === "SIGNUP_BURST") {
         return [
             ["ACCOUNTS", `${info.accounts} in 24h`],
             ["SINCE", utc(info.since * 1000)],
             [
-                "SETUP",
+                "QUEST",
                 info.hold === "released"
                     ? "released by a maintainer"
-                    : "held until a purchase or review",
+                    : info.sweepPending
+                      ? "restriction pending; Paid usable"
+                      : "spending frozen; Paid usable",
             ],
         ];
     }
@@ -663,7 +633,7 @@ export function renderCard(
         incident.info.hold === "released" ? "RELEASED" : LABEL[incident.kind];
     // Closed, a domain card says how it ended; an outage keeps the worst
     // status it reached.
-    const ended = { SIGNUP_BURST: "ENDED", REVIEW: "DECIDED" }[incident.kind];
+    const ended = incident.kind === "SIGNUP_BURST" ? "ENDED" : null;
     const status = closed
         ? (ended ?? LABEL[incident.worst ?? incident.kind])
         : label;
@@ -677,14 +647,7 @@ export function renderCard(
         ),
     ];
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
-    // A review card shows only the verdict on the accounts it lists now.
-    const shown =
-        incident.kind === "REVIEW"
-            ? lines
-                  .filter((l) => l.asking === snapshot(incident).asking)
-                  .slice(-1)
-            : lines;
-    for (const line of shown)
+    for (const line of lines)
         parts.push(
             [BADGE[line.color], `<t:${unix(line.at)}:t>`, line.text]
                 .filter(Boolean)
@@ -700,14 +663,6 @@ export function renderCard(
         color,
     };
 }
-
-// The one new message an open incident can post: it got worse and needs a
-// person. It links to the card instead of repeating it.
-export const escalation = (key, incident, link) => ({
-    text: `↑ \`${subjectOf(key)}\` is now ${LABEL[incident.kind]}: callers are affected. ${link}`,
-    ping: true,
-    color: COLOR[incident.kind],
-});
 
 // Heartbeat: infra-watch's own liveness, judged from outside Cloudflare by
 // heartbeat.mjs (GitHub Actions). A last completed check this old means the

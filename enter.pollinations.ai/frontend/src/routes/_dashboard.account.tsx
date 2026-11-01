@@ -23,8 +23,8 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
 import {
+    CardLoading,
     LoadError,
-    PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -128,7 +128,7 @@ function AccountPage() {
                 promise={profile}
                 fallback={
                     <Section title="Community">
-                        <PageStatus />
+                        <CardLoading className="h-80 sm:h-46" />
                     </Section>
                 }
             >

@@ -11,6 +11,7 @@ import {
     servedStreaks,
     streamKey,
 } from "./community.js";
+import { nextProbeAt, recordProbe } from "./probes.js";
 
 const NOW = Date.parse("2026-11-01T12:00:00Z");
 const HOUR = 3_600_000;
@@ -30,6 +31,9 @@ const broke = (extra) => ({
     ...extra,
 });
 const twice = (extra) => broke({ before: broke(), ...extra });
+// Broken now, after its own answer passed the probe before.
+const fresh = (model, extra) =>
+    broke({ before: { status: 200, modelUsed: model }, ...extra });
 const cycle = (input) =>
     incidents({
         catalog: [],
@@ -95,11 +99,11 @@ test("a told broken stream stays quiet for a day, per model and error", () => {
     assert.equal(find({ ...input, quiet: { [other]: NOW } }).length, 1);
 });
 
-test("one broken stream on 3 owners' models within 4 hours is the maintainers', and none of the owners'", () => {
+test("one broken stream on 3 owners' working models within 4 hours is the maintainers', and none of the owners'", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const input = {
         catalog: shared.map((n) => model(n)),
-        schedule: Object.fromEntries(shared.map((n) => [n, twice()])),
+        schedule: Object.fromEntries(shared.map((n) => [n, fresh(n)])),
     };
     assert.deepEqual(find(input), [
         {
@@ -117,24 +121,71 @@ test("one broken stream on 3 owners' models within 4 hours is the maintainers', 
         shared.map((n) => [streamKey(n, ERROR), NOW]),
     );
     assert.deepEqual(find({ ...input, quiet }), []);
-    // Two owners: each owner's.
+    // A fourth owner's model joins it: told again whole, so the card counts
+    // every model it calls gen's.
+    const four = [...shared, "community/d/w"];
+    const joined = find({
+        catalog: four.map((n) => model(n)),
+        schedule: Object.fromEntries(four.map((n) => [n, fresh(n)])),
+        quiet,
+        pending: cycle(input).pending,
+    });
+    assert.deepEqual(
+        joined.map((i) => [i.models, i.quiet]),
+        [[four, four.map((n) => streamKey(n, ERROR))]],
+    );
+    // Two owners: not gen's, and once is not yet any owner's.
     const two = ["community/a/x", "community/a/w", "community/b/y"];
     assert.deepEqual(
-        brief(
-            find({
-                catalog: two.map((n) => model(n)),
-                schedule: Object.fromEntries(two.map((n) => [n, twice()])),
-            }),
-        ),
-        two.map((n) => `stream ${n}`),
+        find({
+            catalog: two.map((n) => model(n)),
+            schedule: Object.fromEntries(two.map((n) => [n, fresh(n)])),
+        }),
+        [],
     );
     // Probed over 4 hours ago: not at once.
     const old = Object.fromEntries(
-        shared.map((n) => [n, twice({ lastAt: NOW - 5 * HOUR })]),
+        shared.map((n) => [n, fresh(n, { lastAt: NOW - 5 * HOUR })]),
     );
+    assert.deepEqual(find({ ...input, schedule: old }), []);
+});
+
+test("3 owners' models broken alike but not working before are never gen's", () => {
+    // 2026-11-01: the first probes found 3 owners' endpoints that had sent
+    // no token usage for over a week, and called it gen's.
+    const owners = ["community/a/x", "community/b/y", "community/c/z"];
+    const catalog = owners.map((n) => model(n));
+    const first = Object.fromEntries(owners.map((n) => [n, broke()]));
+    assert.deepEqual(find({ catalog, schedule: first }), []);
+    // Broken again: each owner's own.
+    const again = Object.fromEntries(owners.map((n) => [n, twice()]));
     assert.deepEqual(
-        brief(find({ ...input, schedule: old })),
-        shared.map((n) => `stream ${n}`),
+        brief(find({ catalog, schedule: again })),
+        owners.map((n) => `stream ${n}`),
+    ); // Passing before only through a fallback proves nothing of their own.
+    const rescued = Object.fromEntries(
+        owners.map((n) => [
+            n,
+            broke({ before: { status: 200, modelUsed: "community/o/f" } }),
+        ]),
+    );
+    assert.deepEqual(find({ catalog, schedule: rescued }), []);
+    // A shared incident saved under the old rule, its quiet over: dropped.
+    assert.deepEqual(
+        find({
+            catalog,
+            schedule: first,
+            pending: {
+                [`shared ${ERROR}`]: {
+                    kind: "shared",
+                    error: ERROR,
+                    probes: Object.fromEntries(
+                        owners.map((n) => [n, NOW - HOUR]),
+                    ),
+                },
+            },
+        }),
+        [],
     );
 });
 
@@ -250,10 +301,10 @@ test("listing changes are an incident only when something changed", () => {
     );
 });
 
-test("a shared failure keeps its models until they are probed again, even past 4 hours", () => {
+test("a shared failure keeps its models while they break the same way, even past 4 hours", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));
-    const schedule = Object.fromEntries(shared.map((n) => [n, twice()]));
+    const schedule = Object.fromEntries(shared.map((n) => [n, fresh(n)]));
     const first = cycle({ catalog, schedule });
     // Undelivered and 5 hours on, with no new probe: still gen's.
     const later = cycle({
@@ -277,8 +328,7 @@ test("a shared failure keeps its models until they are probed again, even past 4
         }).found,
         [],
     );
-    // A new probe of each is fresh evidence: older than 4 hours, they are
-    // their owners' again.
+    // Probed again and broken the same way: still gen's, never their owners'.
     const reprobed = Object.fromEntries(
         shared.map((n) => [n, twice({ lastAt: NOW - 5 * HOUR })]),
     );
@@ -287,7 +337,7 @@ test("a shared failure keeps its models until they are probed again, even past 4
             cycle({ catalog, schedule: reprobed, pending: first.pending })
                 .found,
         ),
-        shared.map((n) => `stream ${n}`),
+        [`shared ${shared}`],
     );
 });
 
@@ -307,10 +357,10 @@ test("a fallback notice is kept from when it qualifies until its fallbacks are t
     assert.deepEqual(done.pending, {});
 });
 
-test("a shared failure keeps each model until that model is probed again, whatever the others do", () => {
+test("a shared failure keeps each model until that model stops breaking that way, whatever the others do", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));
-    const schedule = Object.fromEntries(shared.map((n) => [n, twice()]));
+    const schedule = Object.fromEntries(shared.map((n) => [n, fresh(n)]));
     const first = cycle({ catalog, schedule });
     // x is probed again and passes: y and z have no new evidence, so they
     // stay the maintainers', not their owners'.
@@ -326,6 +376,57 @@ test("a shared failure keeps each model until that model is probed again, whatev
     assert.deepEqual(brief(later.found), [
         "shared community/b/y,community/c/z",
     ]);
+});
+
+test("a long gen outage stays the maintainers', told again after its quiet day, and never pings a publisher", () => {
+    const shared = ["community/a/x", "community/b/y", "community/c/z"];
+    const catalog = shared.map((n) => model(n));
+    for (const delivered of [true, false]) {
+        // Working 4 hours ago, then broken alike from NOW for 30 hours, each
+        // probed on its own backoff by the half-hourly cycle.
+        const schedule = Object.fromEntries(
+            shared.map((n) => [
+                n,
+                recordProbe(undefined, {
+                    ok: true,
+                    status: 200,
+                    modelUsed: n,
+                    timestamp: NOW - 4 * HOUR,
+                }),
+            ]),
+        );
+        const quiet = {};
+        let pending = {};
+        const told = [];
+        for (let now = NOW; now <= NOW + 30 * HOUR; now += HOUR / 2) {
+            for (const n of shared)
+                if (now >= nextProbeAt(schedule[n]))
+                    schedule[n] = recordProbe(schedule[n], {
+                        ok: false,
+                        status: "PROTOCOL",
+                        protocolError: ERROR,
+                        modelUsed: n,
+                        timestamp: now,
+                    });
+            const result = cycle({ catalog, schedule, quiet, pending, now });
+            pending = result.pending;
+            for (const i of result.found) {
+                told.push(`+${(now - NOW) / HOUR}h ${i.kind} ${i.models}`);
+                if (delivered) for (const k of i.quiet) quiet[k] = now;
+            }
+        }
+        // Delivered: told at the start and again a day on. Undelivered: the
+        // maintainers' incident every cycle, with no publisher's at +8h.
+        assert.deepEqual(
+            told,
+            delivered
+                ? [`+0h shared ${shared}`, `+24h shared ${shared}`]
+                : Array.from(
+                      { length: 61 },
+                      (_, n) => `+${n / 2}h shared ${shared}`,
+                  ),
+        );
+    }
 });
 
 test("a pending fallback notice names a fallback only if it is still public when told", () => {
@@ -478,14 +579,58 @@ test("a mismatch two hours in a row is its owner's, pending until told, then qui
 
 // Incidents code found: a broken stream and a fallback for owners o and p,
 // listing changes, and a shared failure for the maintainers.
+const stream = (id, owner) => ({
+    id,
+    kind: "stream",
+    to: "community",
+    model: `community/${owner}/m`,
+    error: ERROR,
+    owners: [owner],
+    quiet: [],
+});
 const FOUND = [
-    { id: "1", kind: "stream", to: "community", owners: ["o"], quiet: [] },
-    { id: "2", kind: "fallback", to: "community", owners: ["p"], quiet: [] },
-    { id: "3", kind: "listings", to: "community", owners: [], quiet: [] },
-    { id: "4", kind: "shared", to: "maintainers", owners: [], quiet: [] },
+    stream("1", "o"),
+    {
+        id: "2",
+        kind: "fallback",
+        to: "community",
+        model: "community/p/m",
+        snapshots: [
+            {
+                from: "2026-11-01T08:00:00.000Z",
+                to: "2026-11-01T12:00:00.000Z",
+                rescued: 12,
+                successes: 40,
+                via: [{ model: "private", rescued: 12 }],
+            },
+        ],
+        owners: ["p"],
+        quiet: [],
+    },
+    {
+        id: "3",
+        kind: "listings",
+        to: "community",
+        filtered: 1,
+        newly: [{ model: "community/q/m", health: 40 }],
+        back: [],
+        owners: [],
+        quiet: [],
+    },
+    {
+        id: "4",
+        kind: "shared",
+        to: "maintainers",
+        error: ERROR,
+        models: ["community/a/x", "community/b/y", "community/c/z"],
+        owners: [],
+        quiet: [],
+    },
 ];
 const answer = (value) => decision(JSON.stringify(value), FOUND);
 const line = (ids, text) => ({ incidents: ids, text });
+// A post's text without its cards: the agent's lines and the footer.
+const words = (text) => text.replace(/```ansi\n[\s\S]*?\n```\n/g, "");
 
 test("a line tells only incidents code found for its channel, and pings only their owners", () => {
     const plan = answer({
@@ -504,8 +649,13 @@ test("a line tells only incidents code found for its channel, and pings only the
         ["1", "2", "3"],
     );
     assert.match(
+        words(plan.community.text),
+        /^Stream\nFallback and listings\n\nPublishers see/,
+    );
+    // Each line goes under its incidents' cards.
+    assert.match(
         plan.community.text,
-        /^Stream\nFallback and listings\n\nOwners see/,
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT[\s\S]*\nStream\n```ansi\n┌─ .*COMMUNITY MODEL RUNNING ON BACKUP[\s\S]*COMMUNITY MODELS HIDDEN OR BACK IN LIST[\s\S]*\nFallback and listings\n/,
     );
     assert.deepEqual(plan.community.owners, ["o", "p"]);
     assert.deepEqual(
@@ -522,7 +672,7 @@ test("a line tells only incidents code found for its channel, and pings only the
 test("a line that doesn't fit is left out with its incident, which isn't pinged", () => {
     const plan = answer({
         community: [
-            line(["1"], "x".repeat(3900)),
+            line(["1"], "x".repeat(3600)),
             line(["2"], "y".repeat(300)),
         ],
     });
@@ -533,6 +683,98 @@ test("a line that doesn't fit is left out with its incident, which isn't pinged"
         ["1"],
     );
     assert.deepEqual(plan.community.owners, ["o"]);
+});
+
+test("a line grouping more incidents than fit goes in with those that fit; the rest stay pending", () => {
+    const streams = Array.from({ length: 20 }, (_, n) => ({
+        ...stream(String(n + 1), `CloudCompile${n}`),
+        model: `community/CloudCompile${n}/nvidia-nemotron-3-ultra-550b-a55b:free`,
+        error: "stream returned usage_missing: missing or invalid token usage",
+    }));
+    const plan = decision(
+        JSON.stringify({
+            community: [
+                line(
+                    streams.map((i) => i.id),
+                    "Their publishers should fix their endpoints.",
+                ),
+            ],
+        }),
+        streams,
+    );
+    const told = plan.community.incidents.length;
+    assert.ok(told > 0 && told < 20, `${told} told`);
+    assert.ok(plan.community.text.length <= 4096);
+    assert.match(
+        words(plan.community.text),
+        /^Their publishers should fix their endpoints\.\n\nPublishers see/,
+    );
+    assert.deepEqual(
+        plan.community.owners,
+        streams.slice(0, told).map((i) => i.owners[0]),
+    );
+});
+
+test("a card's title says it is community models and whose fault, and its facts are never cut", () => {
+    const long =
+        "community/CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free";
+    const models = [
+        long,
+        ...Array.from({ length: 11 }, (_, n) => `community/o${n}/m`),
+    ];
+    const error =
+        "stream returned usage_missing: missing or invalid token usage";
+    const plan = decision(
+        JSON.stringify({ maintainers: [line(["1"], "Check gen.")] }),
+        [{ ...FOUND[3], id: "1", error, models }],
+    );
+    const text = plan.maintainers.text;
+    assert.match(text, /COMMUNITY MODELS: LIKELY A GEN PROBLEM/);
+    for (const row of [
+        "ERROR   usage_missing: missing or invalid token usage",
+        "MODELS  12 from 12 publishers",
+        "        CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free",
+        "        o3/m",
+        "        …and 7 more",
+    ])
+        assert.ok(text.includes(`│ ${row}`), row);
+    assert.doesNotMatch(text, /o4\/m/);
+    // A listing's health is rounded to the nearest percent.
+    const listing = decision(
+        JSON.stringify({ community: [line(["1"], "Hidden.")] }),
+        [
+            {
+                ...FOUND[2],
+                id: "1",
+                newly: [{ model: "community/q/m", health: 67.3469387755102 }],
+            },
+        ],
+    );
+    assert.ok(listing.community.text.includes("│ HIDDEN  q/m (67%)"));
+    // A mismatch's rows line up under its longest label.
+    const mismatch = decision(
+        JSON.stringify({ community: [line(["1"], "Reported.")] }),
+        [
+            {
+                id: "1",
+                kind: "mismatch",
+                to: "community",
+                model: FLASH,
+                declared: "gemini-3-flash-preview",
+                served: "llama-3.1-8b",
+                owners: ["o"],
+                quiet: [],
+            },
+        ],
+    ).community.text;
+    assert.match(mismatch, /COMMUNITY MODEL NAME MISMATCH/);
+    for (const row of [
+        "MODEL     o/flash",
+        "REQUESTED gemini-3-flash-preview",
+        "REPORTED  llama-3.1-8b",
+    ])
+        assert.ok(mismatch.includes(`│ ${row}`), row);
+    assert.match(text, /\n```\nCheck gen\.$/);
 });
 
 test("a post carries no link of the agent's own", () => {
@@ -547,7 +789,7 @@ test("a post carries no link of the agent's own", () => {
         maintainers: [line(["4"], text)],
     });
     for (const post of [plan.community.text, plan.maintainers.text]) {
-        const own = post.replace(/\n\nOwners see .*$/s, "");
+        const own = words(post).replace(/\n\nPublishers see .*$/s, "");
         assert.doesNotMatch(own, /https?:|www\.|\]\(/i);
         assert.match(own, /^Owner dashboard .*done$/);
     }
@@ -563,13 +805,7 @@ test("a post's mentions fit Discord's 2,000 characters; owners that don't stay p
         { length: 100 },
         (_, i) => `owner-${String(i).padStart(24, "0")}`,
     );
-    const found = owners.map((o, i) => ({
-        id: String(i + 1),
-        kind: "stream",
-        to: "community",
-        owners: [o],
-        quiet: [],
-    }));
+    const found = owners.map((o, i) => stream(String(i + 1), o));
     const plan = decision(
         JSON.stringify({
             community: found.map((i) => ({
@@ -614,16 +850,36 @@ test("filtered: in the full list, not the default one, at 80% or less", () => {
     assert.equal(filteredModels([listed("community/a/x", null)], []), null);
 });
 
-test("a big listing change names what fits a post and counts the rest", () => {
-    const filtered = Array.from({ length: 200 }, (_, i) =>
-        listed(`community/owner${i}/a-fairly-long-model-name-${i}`, 20),
+test("a big listing change names 5 models a list and still fits a post at the longest ids", () => {
+    // The longest id gen allows: a 39-character owner, a 120-character name.
+    const longest = (i) =>
+        `community/${String(i).padStart(39, "o")}/${"m".repeat(120)}`;
+    const filtered = Array.from({ length: 20 }, (_, i) =>
+        listed(longest(i), 12.5),
     );
-    const changes = listingChanges([], filtered, []);
-    const names = changes.newly.map((m) => m.model).join("");
-    assert.ok(names.length <= 1200);
-    assert.ok(changes.newly.length > 0);
-    assert.equal(changes.newly.length + changes.newlyMore, 200);
-    assert.equal(changes.backMore, undefined);
+    const shown = Array.from({ length: 20 }, (_, i) =>
+        listed(longest(i + 20), 88.5),
+    );
+    const before = shown.map((m) => m.name);
+    const changes = listingChanges(before, filtered, shown);
+    assert.equal(changes.newly.length, 5);
+    assert.equal(changes.newlyMore, 15);
+    assert.equal(changes.back.length, 5);
+    assert.equal(changes.backMore, 15);
+    const incident = {
+        id: "1",
+        kind: "listings",
+        to: "community",
+        ...changes,
+        owners: [],
+        quiet: [],
+    };
+    const plan = decision(
+        JSON.stringify({ community: [line(["1"], "x".repeat(400))] }),
+        [incident],
+    );
+    assert.ok(plan.community, "the card is delivered");
+    assert.ok(plan.community.text.length <= 4096);
 });
 
 test("listing changes: newly filtered, and back in the default list", () => {

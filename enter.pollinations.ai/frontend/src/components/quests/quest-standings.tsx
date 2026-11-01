@@ -14,7 +14,7 @@ function daysLeft(endsAt: string, now: number): number {
     return Math.max(1, Math.ceil((Date.parse(endsAt) - now) / DAY_MS));
 }
 
-function monthName(month: string): string {
+export function monthName(month: string): string {
     return new Date(`${month}-01T00:00:00Z`).toLocaleString("en", {
         month: "long",
         timeZone: "UTC",

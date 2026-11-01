@@ -33,14 +33,16 @@ test("the text board ranks busy public models by tokens, with totals over all pu
         LISTED,
     );
     const lines = board.markdown.split("\n");
-    assert.equal(lines[0], `# 🏆 COMMUNITY MODEL LEADERBOARD — ${DATE}`);
+    // Worded like the image board's post, line for line.
+    assert.equal(lines[0], `# 💬 COMMUNITY TEXT MODEL LEADERBOARD — ${DATE}`);
     assert.equal(
         lines[2],
-        "**60,000 tokens** served in 24 hours across 3 models.",
+        "**60,000 tokens** served in 24 hours across 3 models (1,009 requests).",
     );
     assert.equal(lines[4], "👑 `b/worker` — 9,000 tokens · 93.07% success");
     // The quiet model counts in the totals, never on the board.
-    assert.match(lines[5], /`a\/chatty` — \*\*50 tokens\/sec\*\*/);
+    assert.equal(lines[5], "⚡ fastest: `a/chatty` — **50 tokens/sec** median");
+    assert.match(board.html, /<h1>TEXT LEADERBOARD<\/h1>/);
     assert.equal(lines[6], "🐝 workhorse: `a/chatty` — 900 requests");
     assert.doesNotMatch(board.html, /c<\/b>\/quiet/);
     assert.doesNotMatch(board.html + board.markdown, /secret/);

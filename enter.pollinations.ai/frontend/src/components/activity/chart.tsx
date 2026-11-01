@@ -1,3 +1,4 @@
+import { formatCount } from "@pollinations/ui";
 import {
     PAID_BALANCE_CHART_COLOR,
     TIER_BALANCE_CHART_COLOR,
@@ -172,22 +173,9 @@ export const Chart: FC<ChartProps> = ({
         return { bars: barData, yTicks: ticks };
     }, [data, cw, ch, pad.left, pad.top, maxDataValue]);
 
-    const formatCompactVal = (v: number): string => {
-        const abs = Math.abs(v);
-        if (abs >= 1e6) {
-            const m = v / 1e6;
-            return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
-        }
-        if (abs >= 1e3) {
-            const k = v / 1e3;
-            return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
-        }
-        return Number.isInteger(v) ? v.toString() : Number(v).toString();
-    };
-
     const formatVal = (v: number) => {
         if (metric === "pollen") return formatActivityPollen(v);
-        if (Math.abs(v) >= 1e3) return formatCompactVal(v);
+        if (Math.abs(v) >= 1e3) return formatCount(v);
         return Math.round(v).toString();
     };
 

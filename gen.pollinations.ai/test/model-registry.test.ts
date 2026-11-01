@@ -119,6 +119,7 @@ describe("getGenerationModelRegistry", () => {
             ["google/gemini-3.7-flash", "stop", true],
             ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
             ["nvidia/nemotron-3.5-lightning", "top_k", true],
+            ["nvidia/nemotron-3.5-lightning", "logprobs", false],
             ["nvidia/nemotron-3-ultra", "top_k", true],
             ["nvidia/nemotron-3.5-super-vl", "tools", true],
             ["nvidia/nemotron-3.5-super-vl", "top_k", true],

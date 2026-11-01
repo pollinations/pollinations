@@ -2878,20 +2878,22 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3.5-lightning": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
         aliases: ["nemotron-3.5-lightning"],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
-            // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
-            promptTextTokens: perMillion(0.05),
-            promptCachedTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.2),
+            // DeepInfra BF16 rates (2026-10-24): $0.06/$0.03/$0.16 per
+            // million. Fireworks drops this model from serverless on
+            // 2026-11-07.
+            promptTextTokens: perMillion(0.06),
+            promptCachedTokens: perMillion(0.03),
+            completionTextTokens: perMillion(0.16),
         },
         title: "Nemotron 3.5 Lightning",
         description:

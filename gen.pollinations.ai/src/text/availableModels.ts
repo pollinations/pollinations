@@ -1145,9 +1145,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3.5-lightning",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
-        ],
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Lightning"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {

@@ -4,7 +4,6 @@ import { inflateSync } from "node:zlib";
 import {
     brokenStreams,
     dueProbes,
-    GEN,
     hasChatProbeMarker,
     imageProbeRequest,
     imageProbeResult,
@@ -561,8 +560,7 @@ test("one broken stream on three owners' models at once goes to the maintainers,
         models,
     );
     assert.deepEqual(state.due, []);
-    // Told to the maintainers: the error, and each model named.
-    state.told[streamKey(GEN, MISSING_DONE)] = T0;
+    // Told to the maintainers: each model named.
     for (const m of models) state.told[streamKey(m, MISSING_DONE)] = T0;
     // Their second in a row, within the day, with too few owners probed to
     // be shared: a model told about is still not its owner's, but another
@@ -612,4 +610,21 @@ test("one broken stream on two owners' models goes to the owners", () => {
         state.due.map((f) => f.model),
         models,
     );
+});
+
+test("models not told yet go first, then those told longest ago", () => {
+    const [x, y, z] = ["community/o/x", "community/o/y", "community/o/z"];
+    const broken = [x, y, z].map((m) => result(m));
+    let state = brokenStreams({}, broken, T0);
+    state.told[streamKey(x, MISSING_DONE)] = T0 - 2 * DAY;
+    state.told[streamKey(y, MISSING_DONE)] = T0 - 3 * DAY;
+    state = brokenStreams(state, broken, T0);
+    assert.deepEqual(
+        state.due.map((f) => f.model),
+        [z, y, x],
+    );
+    // When each was told is kept for a week.
+    assert.equal(state.told[streamKey(y, MISSING_DONE)], T0 - 3 * DAY);
+    state = brokenStreams(state, [], T0 + 5 * DAY);
+    assert.deepEqual(Object.keys(state.told), []);
 });

@@ -667,12 +667,15 @@ const probed = async (stub) => {
     await stub.check();
     await runInDurableObject(stub, (instance) => instance.probing);
 };
-// Half an hour on, with each model's backoff `ms` further along.
+// Half an hour on, with each model's backoff, and when each was told, `ms`
+// further along.
 const later = (stub, ms) =>
     runInDurableObject(stub, async (_, state) => {
         const saved = await state.storage.get("probes");
         saved.at -= 30 * 60_000;
         for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
+        const told = saved.streams?.told ?? {};
+        for (const key of Object.keys(told)) told[key] -= ms;
         await state.storage.put("probes", saved);
     });
 // The posts Discord accepted in the community channel.
@@ -860,4 +863,39 @@ it("tells the maintainers once a day when gen turns every probe away, leaving th
     expect(world.probes).toHaveLength(2);
     expect(infraPosts("PROBES REFUSED")).toHaveLength(1);
     expect(communityPosts()).toHaveLength(0);
+});
+
+it("names every broken stream a card had no room for on the next ones, each once a day", async () => {
+    const stub = watch();
+    const HOUR = 60 * 60_000;
+    // 60 owners' models, each breaking every time: one incident for the
+    // maintainers, probed on the real backoff (hours 0, 8, 24, 56).
+    const names = Array.from({ length: 60 }, (_, i) => `owner${i}/model`);
+    world.catalog = names.map((n) => community(`community/${n}`));
+    world.probe = answers(() => true);
+    const named = new Map(names.map((n) => [n, []]));
+    for (let hour = 0; hour <= 56; hour += 4) {
+        const before = world.writes.length;
+        await probed(stub);
+        for (const card of world.writes.slice(before)) {
+            if (!card.ok || !card.text.includes("BROKEN STREAM")) continue;
+            expect(card.text.length).toBeLessThanOrEqual(4096);
+            for (const n of names)
+                if (card.text.includes(`${n} `)) named.get(n).push(hour);
+        }
+        await later(stub, 4 * HOUR);
+    }
+    const first = [...named.values()].filter((hours) => hours[0] === 0);
+    expect(first.length).toBeGreaterThan(0);
+    expect(first.length).toBeLessThan(60);
+    for (const [n, hours] of named) {
+        // Each named, and never twice within a day.
+        expect(hours.length, n).toBeGreaterThan(0);
+        for (let i = 1; i < hours.length; i++)
+            expect(hours[i] - hours[i - 1], n).toBeGreaterThanOrEqual(24);
+    }
+    // All within the first day's checks, over more than one card.
+    const firsts = [...named.values()].map((hours) => hours[0]);
+    expect(Math.max(...firsts)).toBeLessThanOrEqual(24);
+    expect(new Set(firsts).size).toBeGreaterThan(1);
 });

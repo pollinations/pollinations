@@ -21,7 +21,7 @@ import {
 import {
     brokenStreams,
     dueProbes,
-    GEN,
+    FORGET_MS,
     pool,
     probe,
     QUIET_MS,
@@ -89,7 +89,6 @@ const LISTINGS_DAY_STARTS_MS = 12 * 60 * 60 * 1000;
 // monitor's half-hourly cycle, and probed at most this many at a time.
 const PROBE_EVERY_MS = 30 * 60 * 1000;
 const PROBE_POOL = 4;
-const FORGET_MS = 7 * 24 * 60 * 60 * 1000;
 
 const getJson = (url) =>
     withTimeout(20_000, async (signal) => {
@@ -580,10 +579,8 @@ export class Watch extends DurableObject {
             if (!models.length) return;
             const card = brokenStreamCard(models, shared);
             if (!(await post(this.env, card, webhook))) return;
-            for (const { model, error } of card.shown) {
+            for (const { model, error } of card.shown)
                 streams.told[streamKey(model, error)] = at;
-                if (shared) streams.told[streamKey(GEN, error)] = at;
-            }
         };
         await tell(streams.due, false, "COMMUNITY_WEBHOOK_URL");
         await tell(streams.shared, true, "DISCORD_WEBHOOK_URL");

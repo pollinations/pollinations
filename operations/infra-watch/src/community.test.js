@@ -552,11 +552,11 @@ test("a card's title says it is community models and whose fault, and its facts 
         "ERROR   usage_missing: missing or invalid token usage",
         "MODELS  12 from 12 publishers",
         "        CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free",
-        "        o8/m",
-        "        …and 2 more",
+        "        o3/m",
+        "        …and 7 more",
     ])
         assert.ok(text.includes(`│ ${row}`), row);
-    assert.doesNotMatch(text, /o9\/m/);
+    assert.doesNotMatch(text, /o4\/m/);
     assert.match(text, /\n```\nCheck gen\.$/);
 });
 
@@ -633,14 +633,36 @@ test("filtered: in the full list, not the default one, at 80% or less", () => {
     assert.equal(filteredModels([listed("community/a/x", null)], []), null);
 });
 
-test("a big listing change names 10 models and counts the rest", () => {
-    const filtered = Array.from({ length: 200 }, (_, i) =>
-        listed(`community/owner${i}/a-fairly-long-model-name-${i}`, 20),
+test("a big listing change names 5 models a list and still fits a post at the longest ids", () => {
+    // The longest id gen allows: a 39-character owner, a 120-character name.
+    const longest = (i) =>
+        `community/${String(i).padStart(39, "o")}/${"m".repeat(120)}`;
+    const filtered = Array.from({ length: 20 }, (_, i) =>
+        listed(longest(i), 12.5),
     );
-    const changes = listingChanges([], filtered, []);
-    assert.equal(changes.newly.length, 10);
-    assert.equal(changes.newlyMore, 190);
-    assert.equal(changes.backMore, undefined);
+    const shown = Array.from({ length: 20 }, (_, i) =>
+        listed(longest(i + 20), 88.5),
+    );
+    const before = shown.map((m) => m.name);
+    const changes = listingChanges(before, filtered, shown);
+    assert.equal(changes.newly.length, 5);
+    assert.equal(changes.newlyMore, 15);
+    assert.equal(changes.back.length, 5);
+    assert.equal(changes.backMore, 15);
+    const incident = {
+        id: "1",
+        kind: "listings",
+        to: "community",
+        ...changes,
+        owners: [],
+        quiet: [],
+    };
+    const plan = decision(
+        JSON.stringify({ community: [line(["1"], "x".repeat(400))] }),
+        [incident],
+    );
+    assert.ok(plan.community, "the card is delivered");
+    assert.ok(plan.community.text.length <= 4096);
 });
 
 test("listing changes: newly filtered, and back in the default list", () => {

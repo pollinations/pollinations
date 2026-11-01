@@ -49,9 +49,12 @@ export function filteredModels(all, shown) {
     );
 }
 
-// A card names at most this many models in a list, so it fits a post; the
-// rest are counted.
-const SHOWN = 10;
+// A card names at most this many models in a list; the rest are counted.
+// Ids run up to 160 characters (a 39-character owner and a 120-character
+// name), and every row is as wide as the longest: at 5, the biggest card,
+// a listing of two full lists, stays under 3,000 characters, with room for
+// the agent's sentence and the footer in Discord's 4,096.
+const SHOWN = 5;
 
 // Since the last day: the models newly filtered, and those filtered then
 // that are listed again now. One gone from both lists isn't back. Past

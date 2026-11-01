@@ -116,7 +116,7 @@ function AppCard({ app }: { app: ListedApp }) {
                             className="ml-auto shrink-0 tabular-nums"
                         >
                             <PulseIcon className="h-3 w-3" />
-                            {formatCount(app.requests24h)} requests · 24h
+                            {formatCount(app.requests24h)} req /24h
                         </Chip>
                     )}
                 </div>

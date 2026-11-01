@@ -38,6 +38,7 @@ it("shows 15 rows at a time, keeps paging while picking and resets for new lists
             entries={list}
             totals={totals}
             metric="requests"
+            onMetricChange={() => {}}
             header="Models"
             selecting={false}
             onToggle={onToggle}

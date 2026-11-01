@@ -137,7 +137,7 @@ export function PollenUsageBadges(usage: {
         : formatCount(usage.tierRequests);
     const unit = isPollen ? "Pollen" : "requests";
     return (
-        <div className="ml-auto grid min-w-40 grid-cols-2 items-center justify-items-end gap-1">
+        <div className="ml-auto grid grid-cols-1 items-center justify-items-end gap-1 @[28rem]:min-w-40 @[28rem]:grid-cols-2">
             <PaidChip
                 size="sm"
                 className="cursor-help gap-2 whitespace-nowrap tabular-nums"

@@ -133,18 +133,48 @@ export const ActivityOverview: FC<{
             }
         >
             <header className="flex flex-wrap items-center justify-between gap-3">
-                <SegmentedControl
-                    ariaLabel="Show usage or earnings"
-                    options={TABS}
-                    value={tab}
-                    onChange={(next) =>
-                        onChange({
-                            tab: next === "usage" ? undefined : next,
-                            keys: undefined,
-                            models: undefined,
-                        })
-                    }
-                />
+                {/* Picks narrow the chart and the table, like the date. */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <fieldset
+                        aria-label="Show usage or earnings"
+                        className="flex gap-1"
+                    >
+                        {TABS.map((option) => (
+                            <TabButton
+                                key={option.value}
+                                active={tab === option.value}
+                                onClick={() =>
+                                    onChange({
+                                        tab:
+                                            option.value === "usage"
+                                                ? undefined
+                                                : option.value,
+                                        keys: undefined,
+                                        models: undefined,
+                                    })
+                                }
+                            >
+                                {option.label}
+                            </TabButton>
+                        ))}
+                    </fieldset>
+                    {(["keys", "models"] as const).map(
+                        (list) =>
+                            picks[list].length > 0 && (
+                                <TabButton
+                                    key={list}
+                                    active
+                                    size="xs"
+                                    icon={<XIcon />}
+                                    ariaLabel={`Clear selected ${PICK_NOUNS[tab][list]}s`}
+                                    onClick={() => setPicks(list, [])}
+                                >
+                                    {picks[list].length} {PICK_NOUNS[tab][list]}
+                                    {picks[list].length === 1 ? "" : "s"}
+                                </TabButton>
+                            ),
+                    )}
+                </div>
                 <ActivityPeriodNavigation
                     label="Overview"
                     value={period}
@@ -152,37 +182,6 @@ export const ActivityOverview: FC<{
                 />
             </header>
             <Surface className="flex min-w-0 flex-col gap-4">
-                <div className="flex min-h-8 flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap gap-1">
-                        {(["keys", "models"] as const).map(
-                            (list) =>
-                                picks[list].length > 0 && (
-                                    <TabButton
-                                        key={list}
-                                        active
-                                        size="xs"
-                                        icon={<XIcon />}
-                                        ariaLabel={`Clear selected ${PICK_NOUNS[tab][list]}s`}
-                                        onClick={() => setPicks(list, [])}
-                                    >
-                                        {picks[list].length}{" "}
-                                        {PICK_NOUNS[tab][list]}
-                                        {picks[list].length === 1 ? "" : "s"}
-                                    </TabButton>
-                                ),
-                        )}
-                    </div>
-                    <SegmentedControl
-                        ariaLabel="Show Pollen or requests"
-                        options={METRICS}
-                        value={metric}
-                        onChange={(next) =>
-                            onChange({
-                                metric: next === "pollen" ? undefined : next,
-                            })
-                        }
-                    />
-                </div>
                 <SectionContent loading={data.loading} className="h-[180px]">
                     {data.error && (
                         <LoadError
@@ -213,6 +212,14 @@ export const ActivityOverview: FC<{
                                 entries={data.entries}
                                 totals={data.totals}
                                 metric={metric}
+                                onMetricChange={(next) =>
+                                    onChange({
+                                        metric:
+                                            next === "pollen"
+                                                ? undefined
+                                                : next,
+                                    })
+                                }
                                 header={
                                     tab === "usage" ? (
                                         <SegmentedControl
@@ -279,10 +286,16 @@ export const ActivityOverview: FC<{
 
 const PAGE_SIZE = 15;
 
+// On a phone-width card both header switches only fit without the Share
+// column and the header cells' side padding.
+const SHARE_CELL = "hidden @[28rem]:table-cell";
+const SWITCH_CELL = "px-0 py-1 font-normal @[28rem]:px-2";
+
 type BreakdownTableProps = {
     entries: BreakdownEntry[];
     totals: ActivityAmounts;
     metric: Metric;
+    onMetricChange: (metric: Metric) => void;
     /** First column header: the grouping switch, or a plain name. */
     header: ReactNode;
     /** Rows are selected, so the total covers only those. */
@@ -296,6 +309,7 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
     entries,
     totals,
     metric,
+    onMetricChange,
     header,
     selecting,
     icon,
@@ -308,33 +322,38 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
     const visibleCount = page.ids === ids ? page.limit : PAGE_SIZE;
     const listed = entries.reduce((sum, entry) => sum + entry[metric], 0);
     return (
-        <div className="flex min-w-0 flex-col gap-4 border-t border-divider pt-4">
+        <div className="flex min-w-0 flex-col gap-4">
             <div className="max-w-full overflow-x-auto">
                 <Table
                     aria-label="Breakdown"
-                    className="min-w-[340px] [&_tfoot_tr:hover]:bg-transparent [&_thead_tr:hover]:bg-transparent"
+                    className="[&_tfoot_tr:hover]:bg-transparent [&_thead_tr:hover]:bg-transparent"
                 >
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell
                                 scope="col"
-                                className="px-2 py-1 font-normal"
+                                className={SWITCH_CELL}
                             >
                                 {header}
                             </TableHeaderCell>
                             <TableHeaderCell
                                 scope="col"
                                 align="right"
-                                className="px-2 py-1 font-normal"
+                                className={`${SHARE_CELL} px-2 py-1 font-normal`}
                             >
                                 Share
                             </TableHeaderCell>
                             <TableHeaderCell
                                 scope="col"
                                 align="right"
-                                className="px-2 py-1 font-normal"
+                                className={SWITCH_CELL}
                             >
-                                {metric === "pollen" ? "Pollen" : "Requests"}
+                                <SegmentedControl
+                                    ariaLabel="Show Pollen or requests"
+                                    options={METRICS}
+                                    value={metric}
+                                    onChange={onMetricChange}
+                                />
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -362,7 +381,7 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                                 <TableCell
                                     align="right"
                                     numeric
-                                    className="text-xs"
+                                    className={`${SHARE_CELL} text-xs`}
                                 >
                                     {listed > 0
                                         ? (
@@ -387,9 +406,10 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                     </TableBody>
                     <tfoot className="border-t border-divider font-semibold">
                         <TableRow>
-                            <TableHeaderCell scope="row" colSpan={2}>
+                            <TableHeaderCell scope="row">
                                 {selecting ? "Selected" : "Total"}
                             </TableHeaderCell>
+                            <TableCell className={SHARE_CELL} />
                             <TableCell
                                 align="right"
                                 numeric

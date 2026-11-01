@@ -13,8 +13,69 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18907": {
+      "merge_sha": "996517bd58f0984275be929d3c79566c438a0253",
+      "merged_at": "2026-11-01T13:43:04Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
+    },
+    "18931": {
+      "merge_sha": "4f872abcab5baa6916af1f0ab67b904fa26f50bb",
+      "merged_at": "2026-11-01T12:24:23Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
+    },
+    "18940": {
+      "merge_sha": "3fbc071f274c2ca4f165a6abda505ff0d4cff493",
+      "merged_at": "2026-11-01T12:05:04Z",
+      "required": []
+    },
+    "18941": {
+      "merge_sha": "357d478f021aa1154cd812ab83c7461f22c20626",
+      "merged_at": "2026-11-01T12:28:49Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/economics",
+        "deploy-applications.yml:Deploy operations/kpi",
+        "deploy-applications.yml:Deploy operations/model-monitor",
+        "deploy-applications.yml:Deploy operations/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18942": {
+      "merge_sha": "351207c8d21d1a762dc6e1f1f6cee20bc6f9a81c",
+      "merged_at": "2026-11-01T13:07:33Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/economics",
+        "deploy-applications.yml:Deploy operations/kpi",
+        "deploy-applications.yml:Deploy operations/model-monitor",
+        "deploy-applications.yml:Deploy operations/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18947": {
+      "merge_sha": "da52068e0aff9361ff56237557f86d289cc859b5",
+      "merged_at": "2026-11-01T12:30:15Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "18948": {
+      "merge_sha": "5ed663b8031088d906055a336afc2701b40e2b8c",
+      "merged_at": "2026-11-01T12:24:23Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
     }
   },
-  "production": "852cfa25c907f213dd7f659110fec3edb6a69929",
+  "production": "cfcc285e39b6ebf8ca941e4426392092cb1e3266",
   "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

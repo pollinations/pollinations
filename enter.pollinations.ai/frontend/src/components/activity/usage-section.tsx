@@ -103,6 +103,12 @@ export const UsageSection: FC<UsageSectionProps> = ({
                     period: period.period,
                     timezone: activityTimezone(),
                     limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
+                    ...(selectedKeyIds.length > 0 && {
+                        api_key_ids: selectedKeyIds.join(","),
+                    }),
+                    ...(selectedModels.length > 0 && {
+                        models: selectedModels.join(","),
+                    }),
                 },
             })
             .then(downloadFile)

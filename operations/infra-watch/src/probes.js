@@ -311,7 +311,7 @@ export async function pool(items, size, task) {
 // A warning told once stays quiet this long, for the same model and broken
 // stream, or the probe key refused.
 export const QUIET_MS = 24 * 60 * 60 * 1000;
-// What is kept of a model, or of when it was told, after it is last seen.
+// How long what is kept of a model outlives its leaving the catalog.
 export const FORGET_MS = 7 * QUIET_MS;
 // One broken stream on models of this many owners at once points at gen,
 // not at them: it goes to the maintainers as one incident.
@@ -321,9 +321,9 @@ const SHARED_OWNERS = 3;
 // its provider's protocol error and how many fresh text probes in a row
 // got it: a model not probed or refused keeps its streak, any other result
 // ends it, an answer from a fallback too. `told` keeps when each model and
-// error was last told, for a week. A model told in the last day is quiet;
-// the others go never-told first, then longest ago, so a card that has no
-// room for them all names the rest on the next ones.
+// error was last told. A model told in the last day is quiet; the others go
+// never-told first, then longest ago, so a card that has no room for them
+// all names the rest on the next ones.
 // - `due`: models at their second broken stream in a row, for their owners.
 // - `shared`: models whose error this batch found for 3 or more owners, for
 //   the maintainers instead.
@@ -355,9 +355,7 @@ export function brokenStreams({ streaks = {}, told = {} } = {}, results, now) {
             .sort((a, b) => toldAt(a) - toldAt(b));
     return {
         streaks: next,
-        told: Object.fromEntries(
-            Object.entries(told).filter(([, at]) => now - at < FORGET_MS),
-        ),
+        told: { ...told },
         due: turn(fresh.filter((f) => f.streak >= 2 && !shared(f))),
         shared: turn(fresh.filter(shared)),
     };

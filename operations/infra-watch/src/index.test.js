@@ -763,9 +763,11 @@ it("probes due community models half-hourly and tells a broken stream once a day
     // Gone for over a week, longer than any backoff: forgotten.
     await later(stub, 7 * 24 * 60 * 60_000);
     await probed(stub);
-    const after = (await stored(stub, "probes")).schedule;
-    expect(after["community/o/broken"]).toBeUndefined();
-    expect(after["community/o/quiet"]).toBeDefined();
+    const after = await stored(stub, "probes");
+    expect(after.schedule["community/o/broken"]).toBeUndefined();
+    expect(after.schedule["community/o/quiet"]).toBeDefined();
+    expect(Object.keys(after.streams.told)).toEqual([]);
+    expect(after.streams.streaks["community/o/broken"]).toBeUndefined();
 });
 
 it("names as many broken streams as a card fits, and the rest after their next probe", async () => {
@@ -929,4 +931,40 @@ it("names every broken stream a card had no room for on the next ones, each once
     const firsts = [...named.values()].map((hours) => hours[0]);
     expect(Math.max(...firsts)).toBeLessThanOrEqual(24);
     expect(new Set(firsts).size).toBeGreaterThan(1);
+});
+
+it("drains a backlog of broken streams longer than a week, each named once a day", async () => {
+    const stub = watch();
+    const HOUR = 60 * 60_000;
+    // 200 owners' models breaking every time, probed on the real backoff:
+    // hours 0, 8, 24, 56, 120, 248, then every 144 hours. Long names, so a
+    // card holds about 25.
+    const names = Array.from(
+        { length: 200 },
+        (_, i) => `owner${i}/model-with-a-long-name-so-fewer-fit-on-one-card`,
+    );
+    world.catalog = names.map((n) => community(`community/${n}`));
+    world.probe = answers(() => true);
+    const named = new Map(names.map((n) => [n, []]));
+    for (let hour = 0; hour <= 968; hour += 8) {
+        const before = world.writes.length;
+        await probed(stub);
+        for (const card of world.writes.slice(before)) {
+            if (!card.ok || !card.text.includes("BROKEN STREAM")) continue;
+            expect(card.text.length).toBeLessThanOrEqual(4096);
+            for (const n of names)
+                if (card.text.includes(`${n} `)) named.get(n).push(hour);
+        }
+        await later(stub, 8 * HOUR);
+    }
+    for (const [n, hours] of named) {
+        // Each named, and never twice within a day.
+        expect(hours.length, n).toBeGreaterThan(0);
+        for (let i = 1; i < hours.length; i++)
+            expect(hours[i] - hours[i - 1], n).toBeGreaterThanOrEqual(24);
+    }
+    // Some only after the first week.
+    expect(Math.max(...[...named.values()].map((h) => h[0]))).toBeGreaterThan(
+        7 * 24,
+    );
 });

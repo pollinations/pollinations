@@ -623,8 +623,7 @@ test("models not told yet go first, then those told longest ago", () => {
         state.due.map((f) => f.model),
         [z, y, x],
     );
-    // When each was told is kept for a week.
+    // When each was told is kept, however long ago.
+    state = brokenStreams(state, [], T0 + 30 * DAY);
     assert.equal(state.told[streamKey(y, MISSING_DONE)], T0 - 3 * DAY);
-    state = brokenStreams(state, [], T0 + 5 * DAY);
-    assert.deepEqual(Object.keys(state.told), []);
 });

@@ -541,14 +541,27 @@ export class Watch extends DurableObject {
         const state = (await this.ctx.storage.get("probes")) ?? {};
         if (now - (state.at ?? 0) < PROBE_EVERY_MS) return;
         state.at = now;
-        // A model gone from the catalog keeps its backoff for a week, longer
-        // than any backoff runs, then is forgotten.
+        // A listed model keeps its backoff, streak and when it was told, so
+        // even a long backlog of warnings goes longest-ago first. One gone
+        // from the catalog keeps them a week, longer than any backoff runs,
+        // then is forgotten.
         const listed = new Set(catalog.map((m) => m.name));
-        state.schedule = Object.fromEntries(
-            Object.entries(state.schedule ?? {}).filter(
-                ([name, s]) => listed.has(name) || now - s.lastAt < FORGET_MS,
-            ),
+        const kept = (name, at) => listed.has(name) || now - at < FORGET_MS;
+        const pick = (map = {}, keep) =>
+            Object.fromEntries(Object.entries(map).filter(keep));
+        state.schedule = pick(state.schedule, ([name, s]) =>
+            kept(name, s.lastAt),
         );
+        state.streams = {
+            streaks: pick(
+                state.streams?.streaks,
+                ([name]) => name in state.schedule,
+            ),
+            // A told key starts with its model.
+            told: pick(state.streams?.told, ([key, at]) =>
+                kept(key.split(" ", 1)[0], at),
+            ),
+        };
         const { schedule } = state;
         const save = () => this.ctx.storage.put("probes", state);
         await save();

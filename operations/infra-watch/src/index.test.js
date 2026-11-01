@@ -1252,29 +1252,33 @@ it("reads the served models once an hour from 5 minutes past; an unread or empty
     );
 });
 
-it("tells a served-model mismatch to its owner through the agent", async () => {
+it("tells a served-model mismatch to its owner once due, however long delivery fails, and again only on a new check", async () => {
     const stub = watch();
+    let clock = Date.UTC(2026, 10, 1, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    const reported = [
+        {
+            model: "community/o/m",
+            declared: "gemini-3-flash",
+            served: "llama-3.1-8b",
+        },
+    ];
     world.catalog = [community("community/o/m")];
     world.probe = answers(() => false);
     world.agent = tells();
-    // Read this hour: the same other name at two checks in a row.
-    await runInDurableObject(stub, (_, state) =>
-        state.storage.put("community", {
-            served: {
-                hour: Math.floor(Date.now() / HOURS(1)),
-                seen: {
-                    "community/o/m": {
-                        declared: "gemini-3-flash",
-                        served: "llama-3.1-8b",
-                        streak: 2,
-                        at: Date.now(),
-                    },
-                },
-            },
-        }),
-    );
+    world.served = reported;
+    // Two checks in a row report another name while Discord is down.
+    world.fails = () => true;
     await cycled(stub);
-    expect(world.agentFacts[0].incidents).toEqual([
+    clock += HOURS(1);
+    await cycled(stub);
+    expect(posts(COMMUNITY)).toHaveLength(0);
+    // Eight days on, without answers since, it is still due.
+    world.fails = () => false;
+    world.served = [];
+    clock += HOURS(8 * 24);
+    await cycled(stub);
+    expect(world.agentFacts.at(-1).incidents).toEqual([
         {
             id: "1",
             kind: "mismatch",
@@ -1284,5 +1288,13 @@ it("tells a served-model mismatch to its owner through the agent", async () => {
             served: "llama-3.1-8b",
         },
     ]);
-    expect(posts(COMMUNITY)[0].content).toBe(OWNER_O);
+    expect(posts(COMMUNITY).map((p) => p.content)).toEqual([OWNER_O]);
+    // After its quiet week it is told again only once a new check reports it.
+    clock += HOURS(8 * 24);
+    await cycled(stub);
+    expect(posts(COMMUNITY)).toHaveLength(1);
+    world.served = reported;
+    clock += HOURS(1);
+    await cycled(stub);
+    expect(posts(COMMUNITY)).toHaveLength(2);
 });

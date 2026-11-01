@@ -126,16 +126,16 @@ const printable = (name) =>
 
 // Each model of the catalog's `names` whose upstream last reported a
 // different model than the one asked for, with how many of its checks in a
-// row reported that name and when the last one was read, after one hour's
-// `rows` read `at`. As in the old monitor, a model with no check that hour
-// keeps its run, however long the gap; a check reporting the asked-for
-// model ends it, and another name starts it again.
+// row reported that name, after one hour's `rows`. As in the old monitor, a
+// model with no check that hour keeps its run, however long the gap; a
+// check reporting the asked-for model ends it, and another name starts it
+// again.
 //
-// A conservative first version: a row is each model's most common pair of
-// that hour, so a minority of answers from another model hides behind a
-// matching majority; answers without a reported name, answers from a
-// fallback and image models are never checked.
-export function servedStreaks(rows, seen, names, at) {
+// A conservative first version: a row is each model's estimated most
+// common pair of that hour, so a minority of answers from another model
+// hides behind a matching majority; answers without a reported name,
+// answers from a fallback and image models are never checked.
+export function servedStreaks(rows, seen, names) {
     const next = Object.fromEntries(
         Object.entries(seen ?? {}).filter(([model]) => names.has(model)),
     );
@@ -148,7 +148,6 @@ export function servedStreaks(rows, seen, names, at) {
                 served: name,
                 streak:
                     next[model]?.served === name ? next[model].streak + 1 : 1,
-                at,
             };
     }
     return next;
@@ -324,18 +323,14 @@ export function incidents({
     }
 
     // A listed model whose upstream reported the same other name in two
-    // checks in a row. Its run is the pending state: a later check that
-    // reports the asked-for model, or another name, withdraws it. Told
-    // again after its quiet week only on a check from that week, so a model
-    // without traffic since isn't told again on old evidence.
+    // checks in a row. Its run is the pending state, however old: only a
+    // later check that reports the asked-for model, or another name, or the
+    // model leaving the list withdraws it. Telling it starts its run over
+    // (index.js), so after its quiet week it is told again only on a new
+    // check, never on old evidence.
     for (const [model, m] of Object.entries(served)) {
         const key = mismatchKey(model, m.served);
-        if (
-            listed.has(model) &&
-            m.streak >= 2 &&
-            now - m.at < QUIET_MS.mismatch &&
-            !told(key, "mismatch")
-        )
+        if (listed.has(model) && m.streak >= 2 && !told(key, "mismatch"))
             add({
                 kind: "mismatch",
                 to: "community",

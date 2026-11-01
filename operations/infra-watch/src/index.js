@@ -616,6 +616,9 @@ export class Watch extends DurableObject {
                 for (const k of incident.quiet) state.quiet[k] = now;
                 if (incident.kind === "listings")
                     await this.ctx.storage.put("listings", listings.saved);
+                // A told mismatch needs a new check before it is due again.
+                if (incident.kind === "mismatch")
+                    state.served.seen[incident.model].streak = 1;
             }
         }
         await save();
@@ -641,7 +644,7 @@ export class Watch extends DurableObject {
         } catch (error) {
             console.error(`served models: ${error.message}`);
         }
-        return { hour, seen: servedStreaks(rows, last?.seen, names, now) };
+        return { hour, seen: servedStreaks(rows, last?.seen, names) };
     }
 
     // The day's community listing changes for the agent, once a day from

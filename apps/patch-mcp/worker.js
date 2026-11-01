@@ -1,6 +1,6 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import { applyPatch, diffLines, formatUnified, splitLines } from "./patch.js";
+import { applyPatch, diffText } from "./patch.js";
 
 const MAX_TEXT_CHARS = 200_000;
 const MAX_CONTEXT_LINES = 20;
@@ -85,13 +85,12 @@ function buildServer() {
         async ({ before, after, context = 3, path = "text" }) => {
             limit("before", before);
             limit("after", after);
-            const ops = diffLines(splitLines(before), splitLines(after));
-            const patch = formatUnified(ops, {
+            const patch = diffText(before, after, {
                 context: Math.min(Math.max(context, 0), MAX_CONTEXT_LINES),
                 path: path || "text",
             });
-            const added = ops.filter((op) => op.type === "ins").length;
-            const removed = ops.filter((op) => op.type === "del").length;
+            const added = (patch.match(/^\+(?!\+)/gm) ?? []).length;
+            const removed = (patch.match(/^-(?!--)/gm) ?? []).length;
             return {
                 content: [
                     {

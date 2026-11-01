@@ -119,7 +119,15 @@ function backtrack(trace, a, b) {
  * @param {{type: string, line: string}[]} ops
  * @param {{context?: number, path?: string}} options
  */
-export function formatUnified(ops, { context = 3, path = "text" } = {}) {
+export function formatUnified(
+    ops,
+    {
+        context = 3,
+        path = "text",
+        beforeTrailing = true,
+        afterTrailing = true,
+    } = {},
+) {
     const out = [`--- a/${path}`, `+++ b/${path}`];
 
     const changes = [];
@@ -142,6 +150,10 @@ export function formatUnified(ops, { context = 3, path = "text" } = {}) {
         }
     }
     groups.push([groupStart, groupEnd]);
+
+    const oldTotal = ops.filter((op) => op.type !== "ins").length;
+    const newTotal = ops.filter((op) => op.type !== "del").length;
+    const NO_NEWLINE = "\\ No newline at end of file";
 
     let oldLine = 1;
     let newLine = 1;
@@ -169,10 +181,25 @@ export function formatUnified(ops, { context = 3, path = "text" } = {}) {
         const newStart = newCount === 0 ? newLine - 1 : newLine;
 
         out.push(`@@ -${oldStart},${oldCount} +${newStart},${newCount} @@`);
+        let oldCursor = oldLine;
+        let newCursor = newLine;
         for (const op of body) {
             const prefix =
                 op.type === "eq" ? " " : op.type === "del" ? "-" : "+";
             out.push(prefix + op.line);
+            // The last line of a side that has no trailing newline says so, the
+            // way git does. Only the side it belongs to gets the marker.
+            const endsOld = op.type !== "ins" && oldCursor === oldTotal;
+            const endsNew = op.type !== "del" && newCursor === newTotal;
+            if (endsOld && endsNew) {
+                if (!beforeTrailing || !afterTrailing) out.push(NO_NEWLINE);
+            } else if (endsOld && !beforeTrailing) {
+                out.push(NO_NEWLINE);
+            } else if (endsNew && !afterTrailing) {
+                out.push(NO_NEWLINE);
+            }
+            if (op.type !== "ins") oldCursor += 1;
+            if (op.type !== "del") newCursor += 1;
         }
 
         oldLine += oldCount;
@@ -210,6 +237,17 @@ export function parsePatch(patch) {
         if (!current) continue; // file headers, index lines, prose
         if (line.startsWith("---") || line.startsWith("+++")) continue;
         if (line === "") continue;
+        if (line === "\\ No newline at end of file") {
+            // The marker belongs to the line above it, on whichever side it is.
+            const previous = current.lines[current.lines.length - 1];
+            if (!previous)
+                throw new PatchError(
+                    "A no-newline marker has no line above it.",
+                );
+            if (previous[0] === "-") current.oldNoNewline = true;
+            else current.newNoNewline = true;
+            continue;
+        }
         const marker = line[0];
         if (marker !== " " && marker !== "-" && marker !== "+") {
             throw new PatchError(
@@ -251,6 +289,14 @@ export function applyPatch({ text, patch, searchLines = 200, dryRun = false }) {
     const hunks = parsePatch(patch);
     let drift = 0;
 
+    // A hunk that reaches the end of the new side decides whether the result
+    // ends with a newline; everything else keeps what the input had.
+    const totalNew = hunks.reduce(
+        (total, hunk) => total + (hunk.newCount - hunk.oldCount),
+        lines.length,
+    );
+    let endsWithNewline = hadTrailingNewline;
+
     for (const hunk of hunks) {
         const expected = oldSide(hunk);
         const replacement = newSide(hunk);
@@ -281,6 +327,10 @@ export function applyPatch({ text, patch, searchLines = 200, dryRun = false }) {
 
         lines.splice(at, expected.length, ...replacement);
         drift += replacement.length - expected.length + (at - anchor);
+
+        if (at + replacement.length >= totalNew) {
+            endsWithNewline = !hunk.newNoNewline;
+        }
     }
 
     if (dryRun) {
@@ -290,7 +340,10 @@ export function applyPatch({ text, patch, searchLines = 200, dryRun = false }) {
         applied: true,
         dryRun: false,
         hunks: hunks.length,
-        text: lines.join("\n") + (hadTrailingNewline ? "\n" : ""),
+        text:
+            lines.length === 0
+                ? ""
+                : lines.join("\n") + (endsWithNewline ? "\n" : ""),
     };
 }
 
@@ -314,4 +367,61 @@ function findBlock(lines, block, anchor, searchLines) {
         }
     }
     return -1;
+}
+
+/**
+ * Diff two texts, trailing newline included.
+ * A file that ends with a newline and one that does not are different files,
+ * even when their last line is the same words, so that difference gets its own
+ * change and the standard "no newline" marker.
+ */
+export function diffText(before, after, { context = 3, path = "text" } = {}) {
+    const beforeTrailing = before.endsWith("\n");
+    const afterTrailing = after.endsWith("\n");
+    const ops = diffLines(splitLines(before), splitLines(after));
+
+    // A line cannot be context when it ends one file and not the other: the
+    // two files disagree about what follows it. Split it into a change so each
+    // side gets its own no-newline marker.
+    const oldTotal = ops.filter((op) => op.type !== "ins").length;
+    const newTotal = ops.filter((op) => op.type !== "del").length;
+    const split = [];
+    let oldSeen = 0;
+    let newSeen = 0;
+    for (const op of ops) {
+        const endsOld = op.type !== "ins" && oldSeen + 1 === oldTotal;
+        const endsNew = op.type !== "del" && newSeen + 1 === newTotal;
+        if (op.type === "eq" && endsOld !== endsNew) {
+            split.push(
+                { type: "del", line: op.line },
+                { type: "ins", line: op.line },
+            );
+        } else {
+            split.push(op);
+        }
+        if (op.type !== "ins") oldSeen += 1;
+        if (op.type !== "del") newSeen += 1;
+    }
+
+    // Same words at the end, different newline: that is still a change.
+    if (
+        beforeTrailing !== afterTrailing &&
+        split.length > 0 &&
+        split[split.length - 1].type === "eq"
+    ) {
+        const line = split[split.length - 1].line;
+        split.splice(
+            split.length - 1,
+            1,
+            { type: "del", line },
+            { type: "ins", line },
+        );
+    }
+
+    return formatUnified(split, {
+        context,
+        path,
+        beforeTrailing,
+        afterTrailing,
+    });
 }

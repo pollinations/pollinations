@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyPatch, diffLines, formatUnified, splitLines } from "./patch.js";
+import { applyPatch, diffText } from "./patch.js";
 
 function patchOf(before, after, options) {
-    return formatUnified(
-        diffLines(splitLines(before), splitLines(after)),
-        options,
-    );
+    return diffText(before, after, options);
 }
 
 test("identical texts produce no patch", () => {
@@ -108,4 +105,24 @@ test("a pure insertion at the top applies", () => {
         applyPatch({ text: "first\nsecond\n", patch }).text,
         "header\nfirst\nsecond\n",
     );
+});
+
+test("adding a trailing newline is its own change", () => {
+    const patch = patchOf("a", "a\n");
+    assert.match(patch, /^-a$/m);
+    assert.match(patch, /^\+a$/m);
+    assert.match(patch, /No newline at end of file/);
+    assert.equal(applyPatch({ text: "a", patch }).text, "a\n");
+});
+
+test("removing a trailing newline is its own change", () => {
+    const patch = patchOf("a\n", "a");
+    assert.match(patch, /No newline at end of file/);
+    assert.equal(applyPatch({ text: "a\n", patch }).text, "a");
+});
+
+test("a patch that keeps the trailing newline does not touch it", () => {
+    const patch = patchOf("one\ntwo\n", "one\nTWO\n");
+    assert.doesNotMatch(patch, /No newline/);
+    assert.equal(applyPatch({ text: "one\ntwo\n", patch }).text, "one\nTWO\n");
 });

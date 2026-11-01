@@ -14,18 +14,7 @@ export const CopyValue: FC<CopyValueProps> = ({
 }) => (
     <CopyButton
         value={value}
-        tooltip={
-            showCopyIcon ? null : (
-                <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                    Click to copy
-                </span>
-            )
-        }
-        copiedTooltip={
-            <span className="font-sans text-xs font-semibold text-intent-success-text">
-                Copied
-            </span>
-        }
+        tooltip={showCopyIcon ? null : undefined}
         aria-label={label}
         tooltipAlign="start"
         tooltipMaxWidth={520}

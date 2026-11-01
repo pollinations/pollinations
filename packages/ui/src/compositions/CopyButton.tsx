@@ -8,6 +8,7 @@ import {
 } from "react";
 import { cn } from "../lib/cn.ts";
 import { Button, type ButtonProps } from "../primitives/Button.tsx";
+import { CheckIcon } from "../primitives/icons/index.tsx";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 
 type CopyValue = string | (() => string | Promise<string>);
@@ -37,11 +38,17 @@ export function CopyButton({
     value,
     children,
     copiedTimeoutMs = 2000,
-    tooltip = "📋 Click to copy",
+    tooltip = "Click to copy",
     tooltipAlign,
     tooltipClampToViewport,
     tooltipMaxWidth,
-    copiedTooltip = "✅ Copied!",
+    // Icons, never emoji: the check is the package's own CheckIcon.
+    copiedTooltip = (
+        <span className="polli:inline-flex polli:items-center polli:gap-1 polli:text-intent-success-text">
+            <CheckIcon className="polli:h-3.5 polli:w-3.5" />
+            Copied
+        </span>
+    ),
     tooltipClassName,
     className,
     variant = "plain",

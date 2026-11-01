@@ -5,6 +5,7 @@ interface CloudflareBindings {
     ASK_JEV_MCP: Fetcher;
     FFMPEG_MCP: Fetcher;
     EXA_MCP: Fetcher;
+    OREOLOOK_MCP: Fetcher;
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
     MACHINES_MCP: Fetcher;

@@ -47,6 +47,7 @@ export type McpBindingName =
     | "ASK_JEV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
+    | "OREOLOOK_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
     | "MACHINES_MCP";
@@ -65,6 +66,12 @@ export const FFMPEG_MCP_PRICE_PER_SECOND =
 
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
+// OreoLook reports no per-call cost, so the worker bills flat rates: search/map
+// under Exa, pages at Exa contents parity, research covering its multi-step LLM calls.
+export const OREOLOOK_SEARCH_PRICE_PER_REQUEST = 0.003;
+export const OREOLOOK_SCRAPE_PRICE_PER_PAGE = 0.001;
+export const OREOLOOK_CRAWL_PRICE_PER_PAGE = 0.001;
+export const OREOLOOK_RESEARCH_PRICE_PER_REQUEST = 0.025;
 export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
 export const COMPUTER_TOOL_CALL_PRICE = 0.0002;
 const COMPUTER_MCP_PRICING = {
@@ -187,6 +194,69 @@ export const MCP_SERVERS = [
                         label: "Fetch",
                         quantity: 1,
                         unit: "page",
+                    },
+                },
+            ],
+        },
+    },
+    {
+        id: "oreolook",
+        name: "OreoLook",
+        description:
+            "Search, scrape, map, crawl, and extract from the web, or run cited deep research.",
+        binding: "OREOLOOK_MCP",
+        billing: "usage_receipt",
+        provider: "elixpo",
+        pricing: {
+            rates: [
+                {
+                    id: "oreolook.search.v1",
+                    description: "OreoLook search or map request",
+                    kind: "search_request",
+                    unit: "request",
+                    unitCost: OREOLOOK_SEARCH_PRICE_PER_REQUEST,
+                    publicPricing: {
+                        label: "Search",
+                        quantity: 1,
+                        unit: "request",
+                        suffix: "up to 20 results",
+                    },
+                },
+                {
+                    id: "oreolook.scrape.v1",
+                    description: "OreoLook scraped or extracted page",
+                    kind: "page",
+                    unit: "page",
+                    unitCost: OREOLOOK_SCRAPE_PRICE_PER_PAGE,
+                    publicPricing: {
+                        label: "Scrape",
+                        quantity: 1,
+                        unit: "page",
+                    },
+                },
+                {
+                    id: "oreolook.crawl.page.v1",
+                    description: "OreoLook crawl page limit",
+                    kind: "page",
+                    unit: "page",
+                    unitCost: OREOLOOK_CRAWL_PRICE_PER_PAGE,
+                    publicPricing: {
+                        label: "Crawl",
+                        quantity: 1,
+                        unit: "page",
+                        suffix: "billed on the requested limit",
+                    },
+                },
+                {
+                    id: "oreolook.research.v1",
+                    description: "OreoLook deep research request",
+                    kind: "research_request",
+                    unit: "request",
+                    unitCost: OREOLOOK_RESEARCH_PRICE_PER_REQUEST,
+                    publicPricing: {
+                        label: "Research",
+                        quantity: 1,
+                        unit: "request",
                     },
                 },
             ],

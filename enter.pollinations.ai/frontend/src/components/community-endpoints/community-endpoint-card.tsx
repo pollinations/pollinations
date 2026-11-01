@@ -107,21 +107,10 @@ export function CommunityEndpointCard({
                             data-tone="quiet"
                             to="/activity"
                             search={{
-                                usageGranularity: "day",
-                                usagePeriod: currentPeriod().period,
-                                usageBucket: undefined,
-                                usageAnchor: undefined,
-                                earningsGranularity: "day",
-                                earningsPeriod: currentPeriod().period,
-                                earningsBucket: undefined,
-                                earningsAnchor: undefined,
-                                earningsModels: [endpoint.modelId],
-                                usageMetric: undefined,
-                                usageGroup: undefined,
-                                usageKeys: undefined,
-                                usageModels: undefined,
-                                earningsMetric: undefined,
-                                earningsApps: undefined,
+                                granularity: "day",
+                                period: currentPeriod().period,
+                                tab: "earnings",
+                                models: [endpoint.modelId],
                             }}
                             className="polli-link"
                         >

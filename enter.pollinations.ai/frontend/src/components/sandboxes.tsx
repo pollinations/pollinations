@@ -401,8 +401,12 @@ const SANDBOXES_LOADED_EVENT = "pollinations:sandboxes-loaded";
 export function SidebarSandboxes() {
     const [running, setRunning] = useState(0);
     useEffect(() => {
+        // LOCAL DEMO ONLY - do not commit
         const count = (list: Sandbox[]) =>
-            setRunning(list.filter((s) => s.state === "running").length);
+            setRunning(
+                list.filter((s) => s.state === "running").length ||
+                    (import.meta.env.DEV ? 2 : 0),
+            );
         const onLoaded = (event: Event) =>
             count((event as CustomEvent<Sandbox[]>).detail);
         e2b<Sandbox[]>("/v2/sandboxes").then(count, () => {});

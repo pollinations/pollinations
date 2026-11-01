@@ -81,23 +81,20 @@ describe("billing deduction", () => {
             selectedMeterSlug: "v1:meter:pack",
             balances: { "v1:meter:tier": 0 },
         });
-        expect(
-            await atomicDeductUserBalance(db, userId, 1, false, true),
-        ).toMatchObject({ ok: false, bucket: null });
         expect(await atomicDeductUserBalance(db, userId, 2)).toMatchObject({
             ok: true,
             bucket: "pack",
         });
         expect(await atomicDeductUserBalance(db, userId, 1)).toMatchObject({
-            ok: false,
-            bucket: null,
+            ok: true,
+            bucket: "pack",
         });
         expect(
             await atomicDeductUserBalance(db, userId, 1, true),
-        ).toMatchObject({ ok: false, bucket: null });
+        ).toMatchObject({ ok: true, bucket: "pack" });
         expect(await getUserBalance(db, userId)).toMatchObject({
             tierBalance: 35.5,
-            packBalance: 0,
+            packBalance: -2,
         });
         await db
             .update(userTable)
@@ -109,9 +106,84 @@ describe("billing deduction", () => {
         });
         expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 34.5,
-            packBalance: 0,
+            packBalance: -2,
         });
     });
+
+    it("settles every admitted parallel request even after restricted paid funds run out", async () => {
+        const userId = await createUser({ tierBalance: 35.5, packBalance: 2 });
+        await db
+            .update(userTable)
+            .set({ questPollenRestricted: true })
+            .where(eq(userTable.id, userId));
+        const context = { env, var: {} };
+        // All three requests pass before any provider response settles.
+        await Promise.all(
+            Array.from({ length: 3 }, () =>
+                requireFunds(context, 1, () => getUserBalance(db, userId)),
+            ),
+        );
+        const settled = await Promise.all(
+            Array.from({ length: 3 }, () =>
+                handleBalanceDeduction({
+                    db,
+                    isBilledUsage: true,
+                    totalPrice: 1,
+                    userId,
+                }),
+            ),
+        );
+        expect(
+            settled.map(({ payerBucket, billedPrice }) => ({
+                payerBucket,
+                billedPrice,
+            })),
+        ).toEqual(
+            Array.from({ length: 3 }, () => ({
+                payerBucket: "pack",
+                billedPrice: 1,
+            })),
+        );
+        expect(await getUserBalance(db, userId)).toMatchObject({
+            tierBalance: 35.5,
+            packBalance: -1,
+        });
+        await expect(
+            requireFunds(context, 1, () => getUserBalance(db, userId)),
+        ).rejects.toMatchObject({ status: 402 });
+    });
+
+    it.each([false, true])(
+        "settles a request admitted before restriction, preserving quest-only=%s",
+        async (questPollenOnly) => {
+            const userId = await createUser({
+                tierBalance: 10,
+                packBalance: 0,
+            });
+            await requireFunds({ env, var: {} }, 2, () =>
+                getUserBalance(db, userId),
+            );
+            await db
+                .update(userTable)
+                .set({ questPollenRestricted: true })
+                .where(eq(userTable.id, userId));
+            const settled = await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 2,
+                userId,
+                questPollenOnly,
+            });
+            expect(settled).toMatchObject({
+                billedPrice: 2,
+                payerBucket: questPollenOnly ? "tier" : "pack",
+            });
+            expect(await getUserBalance(db, userId)).toMatchObject({
+                tierBalance: questPollenOnly ? 8 : 10,
+                packBalance: questPollenOnly ? 0 : -2,
+            });
+        },
+    );
 
     it("refills each internal balance at 10 or less without duplicate concurrent grants", async () => {
         await db.insert(userTable).values({

@@ -5,8 +5,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import {
-    restrictionCandidatesSql,
-    restrictionPreviewSql,
+    PURCHASED_SQL,
     restrictionSql,
 } from "../../operations/infra-watch/src/quest-restrictions.js";
 import { registrableDomain } from "../src/services/signup-domains.ts";
@@ -67,25 +66,46 @@ function keys(prefix: string): string[] {
 
 const held = new Set(keys("hold:"));
 for (const domain of keys("release:")) held.delete(domain);
-// Group once so old KV entries without accounts don't cause thousands of D1 scans.
-const domains = [
-    ...new Set(
-        query(`SELECT lower(substr(email, instr(email, '@') + 1)) AS domain
-    FROM user WHERE quest_pollen_restricted IS NULL GROUP BY domain`).map(
-            ({ domain }: { domain: string }) =>
-                registrableDomain(`account@${domain}`),
-        ),
-    ),
-]
-    .filter((domain): domain is string => domain !== null && held.has(domain))
-    .sort();
 const decisions = new Set(keys("decision:"));
-for (const domain of domains) {
+type Candidate = {
+    rowid: number;
+    id: string;
+    email: string;
+    tier_balance: number | null;
+    purchased: number;
+};
+type Summary = {
+    accounts: number;
+    restricted: number;
+    cleared: number;
+    quest_pollen_to_freeze: number;
+};
+const domains = new Map<string, Summary>();
+const totals: Summary = {
+    accounts: 0,
+    restricted: 0,
+    cleared: 0,
+    quest_pollen_to_freeze: 0,
+};
+// A single rowid walk, bounded to accounts present at the start. No OFFSET and
+// no per-domain scans. Each purchase lookup uses its existing user_id index.
+const [{ last }] = query("SELECT COALESCE(max(rowid), 0) AS last FROM user");
+let cursor = 0;
+while (cursor < last) {
+    const page = query(`SELECT rowid, id, email, tier_balance,
+        CASE WHEN ${PURCHASED_SQL} THEN 1 ELSE 0 END AS purchased
+        FROM user WHERE rowid > ${cursor} AND rowid <= ${last}
+        AND quest_pollen_restricted IS NULL ORDER BY rowid LIMIT 1000`) as Candidate[];
+    if (!page.length) break;
+    cursor = page[page.length - 1].rowid;
+    const ids: string[] = [];
     const approved: string[] = [];
-    for (const { id } of query(restrictionCandidatesSql(domain)) as {
-        id: string;
-    }[]) {
-        if (
+    for (const user of page) {
+        const domain = registrableDomain(user.email);
+        if (!domain || !held.has(domain)) continue;
+        ids.push(user.id);
+        const id = user.id;
+        const approvedReview =
             decisions.has(id) &&
             run([
                 "kv",
@@ -94,19 +114,41 @@ for (const domain of domains) {
                 "--binding",
                 "SETUP_HOLDS",
                 `decision:${id}`,
-            ]).trim() === "approved"
-        )
-            approved.push(id);
+            ]).trim() === "approved";
+        if (approvedReview) approved.push(id);
+        const cleared = user.purchased === 1 || approvedReview;
+        const summary = domains.get(domain) ?? {
+            accounts: 0,
+            restricted: 0,
+            cleared: 0,
+            quest_pollen_to_freeze: 0,
+        };
+        for (const counts of [summary, totals]) {
+            counts.accounts++;
+            counts[cleared ? "cleared" : "restricted"]++;
+            if (!cleared)
+                counts.quest_pollen_to_freeze += Math.max(
+                    0,
+                    user.tier_balance ?? 0,
+                );
+        }
+        domains.set(domain, summary);
     }
-    const [preview] = query(restrictionPreviewSql(domain, approved));
-    console.log(
-        JSON.stringify({
-            environment: values.env,
-            mode: values.apply ? "apply" : "preview",
-            domain,
-            ...preview,
-        }),
-    );
-    if (values.apply) query(restrictionSql(domain, approved));
+    // Point lookups by primary key. The UPDATE rechecks purchases and NULL so
+    // a purchase/manual clear during the backfill cannot be overwritten.
+    if (values.apply)
+        for (let i = 0; i < ids.length; i += 200)
+            query(restrictionSql(ids.slice(i, i + 200), approved));
 }
-console.log(JSON.stringify({ domains: domains.length, applied: values.apply }));
+for (const [domain, summary] of domains)
+    console.log(JSON.stringify({ domain, ...summary }));
+console.log(
+    JSON.stringify({
+        environment: values.env,
+        applied: values.apply,
+        domains: domains.size,
+        ...totals,
+        quest_pollen_to_freeze:
+            Math.round(totals.quest_pollen_to_freeze * 1e8) / 1e8,
+    }),
+);

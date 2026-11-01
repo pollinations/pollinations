@@ -22,14 +22,17 @@ const BUCKET_COLUMNS = {
  *
  *   1. paid-only  → `pack` only (never Quest Pollen)
  *   2. quest-only → `tier` only, for keys that never spend paid Pollen
- *   3. tier       → Quest Pollen when it covers the full amount (`>=`)
- *   4. pack       → any positive paid balance when Quest Pollen can't cover
- *   5. tier       → fall back to Quest Pollen when pack is non-positive
+ *   3. restricted → `pack`, including debt for requests already admitted
+ *   4. tier       → Quest Pollen when it covers the full amount (`>=`)
+ *   5. pack       → any positive paid balance when Quest Pollen can't cover
+ *   6. tier       → fall back to Quest Pollen when pack is non-positive
  *
  * The final `tier` fall-through is load-bearing: when Quest Pollen cannot cover
  * the charge and paid balance is non-positive, the charge accrues Quest-Pollen
  * debt instead of reducing paid balance further. Non-positive amounts return
  * without selecting a bucket or writing.
+ * Restrictions reject new Quest-only requests at preflight. Those already in
+ * flight still settle in their permitted bucket; completed work is never free.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
@@ -65,10 +68,9 @@ export async function atomicDeductUserBalance(
             SELECT
                 id,
                 CASE
-                    WHEN quest_pollen_restricted = 1 AND (${questPollenOnly ? 1 : 0} = 1 OR COALESCE(pack_balance, 0) <= 0) THEN NULL
-                    WHEN quest_pollen_restricted = 1 THEN 'pack'
                     WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
                     WHEN ${questPollenOnly ? 1 : 0} = 1 THEN 'tier'
+                    WHEN quest_pollen_restricted = 1 THEN 'pack'
                     WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
                     WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'
                     ELSE 'tier'
@@ -89,7 +91,6 @@ export async function atomicDeductUserBalance(
                 ELSE pack_balance
             END
         WHERE id = (SELECT id FROM decision)
-            AND (SELECT bucket FROM decision) IS NOT NULL
         RETURNING
             (SELECT bucket FROM decision) AS bucket,
             tier_balance AS tierBalance,

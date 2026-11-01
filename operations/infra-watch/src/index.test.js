@@ -8,9 +8,10 @@ import { exports } from "cloudflare:workers";
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { DAILY_LIMIT } from "./investigate.js";
 import {
-    holdDomains,
+    PURCHASED_SQL,
     releaseDomainSql,
-    restrictionPreviewSql,
+    restrictDomain,
+    restrictionCandidatesSql,
     restrictionSql,
 } from "./quest-restrictions.js";
 import { CHECKING, RECOVER_CHECKS } from "./rules.js";
@@ -128,7 +129,10 @@ beforeEach(() => {
     };
     vi.stubGlobal("fetch", fake);
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+});
 
 const watch = () => env.WATCH.get(env.WATCH.idFromName(crypto.randomUUID()));
 const checks = async (stub, n) => {
@@ -340,6 +344,13 @@ it("gives up on a closed card's last edit after a day", async () => {
 const BURST = [{ domain: "farm.com", accounts: 31, since: 1_793_404_800 }];
 
 it("restricts domain accounts once, preserves approvals and purchases, and leaves balances intact", async () => {
+    const plan = await env.DB.prepare(
+        `EXPLAIN QUERY PLAN SELECT id, ${PURCHASED_SQL} FROM user`,
+    ).all();
+    // Each correlated purchase lookup must seek this user, not all paid invoices.
+    expect(
+        plan.results.filter(({ detail }) => detail.includes("user_id=?")),
+    ).toHaveLength(3);
     const accounts = [
         ["farm", "a@cohort.test", null],
         ["subdomain", "a@SUB.COHORT.TEST", null],
@@ -370,19 +381,7 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
         ),
     ]);
     await env.SETUP_HOLDS.put("decision:approved", "approved");
-    expect(
-        await env.DB.prepare(
-            restrictionPreviewSql("cohort.test", ["approved"]),
-        ).first(),
-    ).toEqual({
-        accounts: 7,
-        restricted: 3,
-        cleared: 4,
-        quest_pollen_to_freeze: 15,
-    });
-    await holdDomains(env.DB, env.SETUP_HOLDS, [
-        { domain: "cohort.test", accounts: 31, since: 1_793_404_800 },
-    ]);
+    await restrictDomain(env.DB, env.SETUP_HOLDS, "cohort.test");
     const { results } = await env.DB.prepare(
         "SELECT id, quest_pollen_restricted, tier_balance, pack_balance FROM user",
     ).all();
@@ -412,9 +411,7 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
     await env.DB.prepare(
         "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('late', 'late', 'late@cohort.test', 1, 1)",
     ).run();
-    await holdDomains(env.DB, env.SETUP_HOLDS, [
-        { domain: "cohort.test", accounts: 31, since: 1_793_404_800 },
-    ]);
+    await restrictDomain(env.DB, env.SETUP_HOLDS, "cohort.test");
     expect(
         await env.DB.prepare(
             "SELECT quest_pollen_restricted FROM user WHERE id = 'farm'",
@@ -431,31 +428,193 @@ it("restricts domain accounts once, preserves approvals and purchases, and leave
     await env.SETUP_HOLDS.put("release:cohort.test", "released");
     await env.DB.prepare(releaseDomainSql("cohort.test")).run();
     expect(
-        (
-            await holdDomains(env.DB, env.SETUP_HOLDS, [
-                { domain: "cohort.test", accounts: 31, since: 1_793_404_800 },
-            ])
-        )[0].hold,
-    ).toBe("released");
-    expect(
         await env.DB.prepare(
             "SELECT count(*) AS n FROM user WHERE quest_pollen_restricted = 1",
         ).first("n"),
     ).toBe(0);
+    expect(() =>
+        restrictionCandidatesSql("cohort.test'; DROP TABLE user"),
+    ).toThrow("Invalid signup domain");
+    expect(() => restrictionSql([])).toThrow("1–200 user IDs");
+    expect(() => restrictionSql(Array(201).fill("farm"))).toThrow(
+        "1–200 user IDs",
+    );
+});
+
+it("sweeps each new domain sequentially in bounded batches, then once after KV propagation", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.signups = ["sweep-a.test", "sweep-b.test"].map((domain) => ({
+        domain,
+        accounts: 201,
+        since: 1_793_404_800,
+    }));
+    await env.DB.prepare(`WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<201)
+        INSERT INTO user (id, name, email, created_at, updated_at)
+        SELECT 'sweep-'||x, 'sweep', x||'@sweep-a.test', 1, 1 FROM n`).run();
     await env.DB.prepare(
-        "UPDATE user SET quest_pollen_restricted = 1 WHERE id = 'farm'",
+        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('sweep-b', 'sweep', 'a@sweep-b.test', 1, 1)",
     ).run();
-    await holdDomains(env.DB, env.SETUP_HOLDS, [
-        { domain: "cohort.test", accounts: 31, since: 1_793_404_800 },
+    const queries = [];
+    await runInDurableObject(stub, (instance) => {
+        const prepare = instance.env.DB.prepare.bind(instance.env.DB);
+        vi.spyOn(instance.env.DB, "prepare").mockImplementation((sql) => {
+            queries.push(sql);
+            return prepare(sql);
+        });
+    });
+    const before = Date.now();
+    await stub.check();
+    // A second domain cannot start reading while the first is still updating.
+    expect(queries.map((sql) => sql.split(" ")[0])).toEqual([
+        "SELECT",
+        "UPDATE",
+        "UPDATE",
+        "SELECT",
+        "UPDATE",
     ]);
+    expect(queries[0]).toContain("sweep-a.test");
+    expect(queries[3]).toContain("sweep-b.test");
+    const pending = await stored(stub, "quest-sweeps");
+    expect(Object.keys(pending)).toHaveLength(2);
+    expect(pending["sweep-a.test"].followup).toBe(false);
+    expect(pending["sweep-a.test"].dueAt).toBeGreaterThanOrEqual(
+        before + 120_000,
+    );
+    await checks(stub, 3);
+    expect(queries).toHaveLength(5);
     expect(
         await env.DB.prepare(
-            "SELECT quest_pollen_restricted FROM user WHERE id = 'farm'",
+            "SELECT count(*) AS n FROM user WHERE email LIKE '%@sweep-a.test' AND quest_pollen_restricted = 1",
+        ).first("n"),
+    ).toBe(201);
+
+    await env.DB.prepare(
+        "UPDATE user SET quest_pollen_restricted = 0 WHERE id = 'sweep-1'",
+    ).run();
+    await env.DB.prepare(
+        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('sweep-late', 'late', 'late@sweep-a.test', 1, 1)",
+    ).run();
+    await runInDurableObject(stub, async (_, state) => {
+        for (const sweep of Object.values(pending)) sweep.dueAt = 0;
+        await state.storage.put("quest-sweeps", pending);
+    });
+    // The follow-up survives a restart and the burst leaving the 24h window.
+    vi.restoreAllMocks();
+    await evictDurableObject(stub);
+    queries.length = 0;
+    await runInDurableObject(stub, (instance) => {
+        const prepare = instance.env.DB.prepare.bind(instance.env.DB);
+        vi.spyOn(instance.env.DB, "prepare").mockImplementation((sql) => {
+            queries.push(sql);
+            return prepare(sql);
+        });
+    });
+    world.signups = [];
+    await stub.check();
+    expect(queries.map((sql) => sql.split(" ")[0])).toEqual([
+        "SELECT",
+        "UPDATE",
+        "SELECT",
+    ]);
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'sweep-late'",
         ).first("quest_pollen_restricted"),
     ).toBe(1);
-    expect(() => restrictionSql("cohort.test'; DROP TABLE user")).toThrow(
-        "Invalid signup domain",
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'sweep-1'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(0);
+    const done = queries.length;
+    world.signups = [
+        { domain: "sweep-a.test", accounts: 201, since: 1_793_404_800 },
+    ];
+    await checks(stub, 3);
+    expect(queries).toHaveLength(done);
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+});
+
+it("posts signup cards during D1 failures and retries persisted work after the burst ends", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.signups = [
+        { domain: "retry.test", accounts: 31, since: 1_793_404_800 },
+    ];
+    await env.DB.prepare(
+        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('retry', 'retry', 'a@retry.test', 1, 1)",
+    ).run();
+    await runInDurableObject(stub, (instance) => {
+        vi.spyOn(instance.env.DB, "prepare").mockImplementation(() => {
+            throw new Error("D1 unavailable");
+        });
+    });
+    await stub.check();
+    expect(
+        world.writes.some(
+            (w) => w.ok && w.text.includes("restriction pending; Paid usable"),
+        ),
+    ).toBe(true);
+    expect((await stored(stub, "quest-sweeps"))["retry.test"].followup).toBe(
+        true,
     );
+    expect(await stored(stub, "checkedAt")).toBeDefined();
+    vi.restoreAllMocks();
+    await evictDurableObject(stub);
+    world.signups = [];
+    await stub.check();
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'retry'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(1);
+    const pending = await stored(stub, "quest-sweeps");
+    expect(pending["retry.test"].followup).toBe(false);
+    await runInDurableObject(stub, async (_, state) => {
+        pending["retry.test"].dueAt = 0;
+        await state.storage.put("quest-sweeps", pending);
+    });
+    await stub.check();
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+});
+
+it("cancels released-domain sweeps without overwriting account decisions", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.signups = [
+        { domain: "released.test", accounts: 31, since: 1_793_404_800 },
+    ];
+    await env.DB.prepare(
+        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('released', 'released', 'a@released.test', 1, 1)",
+    ).run();
+    await stub.check();
+    await env.SETUP_HOLDS.put("release:released.test", "released");
+    await env.DB.prepare(releaseDomainSql("released.test")).run();
+    // A subsequent maintainer restriction is independent of the domain release.
+    await env.DB.prepare(
+        "UPDATE user SET quest_pollen_restricted = 1 WHERE id = 'released'",
+    ).run();
+    await runInDurableObject(stub, async (_, state) => {
+        const pending = await state.storage.get("quest-sweeps");
+        pending["released.test"].dueAt = 0;
+        await state.storage.put("quest-sweeps", pending);
+    });
+    await stub.check();
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
+    expect(
+        await env.DB.prepare(
+            "SELECT quest_pollen_restricted FROM user WHERE id = 'released'",
+        ).first("quest_pollen_restricted"),
+    ).toBe(1);
+    expect(edits("m1").at(-1).text).toContain("released by a maintainer");
+    await env.SETUP_HOLDS.put("release:pre-released.test", "released");
+    world.signups = [
+        { domain: "pre-released.test", accounts: 31, since: 1_793_404_800 },
+    ];
+    await stub.check();
+    expect(await stored(stub, "quest-sweeps")).toEqual({});
 });
 
 it("keeps a sign-up card open while sign-ups can't be read", async () => {
@@ -514,6 +673,7 @@ it("retires saved review cards, retries failed edits, and keeps checking service
     world.fails = (w) => w.method === "PATCH";
     await stub.check();
     expect((await stored(stub, "state")).open["review:farm.com"]).toBeDefined();
+    expect((await stored(stub, "state")).reviewsRetired).toBe(false);
     expect(await stored(stub, "checkedAt")).toBeDefined();
     world.fails = () => false;
     await stub.check();
@@ -521,6 +681,13 @@ it("retires saved review cards, retries failed edits, and keeps checking service
     expect((await stored(stub, "state")).open).toEqual({});
     expect(await stored(stub, "lines:old-review")).toBeUndefined();
     expect(world.answers).toBe(0);
+    expect((await stored(stub, "state")).reviewsRetired).toBe(true);
+    await runInDurableObject(stub, (instance) => {
+        vi.spyOn(instance, "retireReviews").mockImplementation(() => {
+            throw new Error("completed retirement must not run again");
+        });
+    });
+    await stub.check();
 });
 
 it("serves only /health, which reports the last check and never runs one", async () => {

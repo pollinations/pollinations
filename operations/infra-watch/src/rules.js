@@ -565,7 +565,9 @@ function openRows(incident, now) {
                 "QUEST",
                 info.hold === "released"
                     ? "released by a maintainer"
-                    : "spending frozen; Paid usable",
+                    : info.sweepPending
+                      ? "restriction pending; Paid usable"
+                      : "spending frozen; Paid usable",
             ],
         ];
     }

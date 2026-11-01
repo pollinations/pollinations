@@ -8,6 +8,7 @@ on:
       - 'enter.pollinations.ai/**'
       - 'gen.pollinations.ai/**'
       - 'media.pollinations.ai/**'
+      - 'operations/infra-watch/**'
       - 'shared/**'
       - 'packages/sdk/**'
       - 'packages/ui/**'
@@ -37,6 +38,7 @@ on:
           - enter
           - gen
           - media
+          - infra-watch
         default: all
 
 concurrency:
@@ -54,6 +56,7 @@ jobs:
       enter: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'enter') || steps.filter.outputs.enter == 'true' }}
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
       media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
+      infra_watch: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'infra-watch') || steps.filter.outputs.infra_watch == 'true' }}
       mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
     steps:
       - name: Checkout code
@@ -70,7 +73,7 @@ jobs:
           # back to the repository default branch and diffs
           # merge-base(main, production)..production. A main -> production
           # promotion makes that diff empty, so every filter reports false and
-          # all three deploy jobs skip while `migrate` still applies the
+          # all deploy jobs skip while `migrate` still applies the
           # schema. Pointing `base` at the pushed ref makes the action compare
           # against the push's `before` SHA — the same semantics the previous
           # top-level `on.push.paths` filters had.
@@ -114,6 +117,10 @@ jobs:
               - 'enter.pollinations.ai/drizzle/**'
               - 'package.json'
               - 'package-lock.json'
+              - '.github/workflows/deploy-cloudflare-production.yml'
+            infra_watch:
+              - 'operations/infra-watch/**'
+              - 'enter.pollinations.ai/drizzle/**'
               - '.github/workflows/deploy-cloudflare-production.yml'
 
       - name: Detect changed MCP applications
@@ -160,7 +167,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck --workspace pollinations-gen
 
-  # One migration for all three workers: they share
+  # One migration for the workers sharing
   # production-pollinations-enter-db, so the schema must move once, before any
   # of them deploys. `d1 migrations apply` is idempotent.
   #
@@ -178,7 +185,8 @@ jobs:
       needs.test-gen.result != 'failure' &&
       (needs.changes.outputs.enter == 'true' ||
        needs.changes.outputs.gen == 'true' ||
-       needs.changes.outputs.media == 'true')
+       needs.changes.outputs.media == 'true' ||
+       needs.changes.outputs.infra_watch == 'true')
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
@@ -364,6 +372,35 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
         run: npm run deploy:production
         working-directory: ./media.pollinations.ai
+
+  deploy-infra-watch:
+    needs: [changes, migrate, deploy-enter, deploy-gen]
+    if: >-
+      !cancelled() && github.ref == 'refs/heads/production' &&
+      needs.changes.outputs.infra_watch == 'true' &&
+      needs.migrate.result == 'success' &&
+      (needs.deploy-enter.result == 'success' || needs.deploy-enter.result == 'skipped') &&
+      (needs.deploy-gen.result == 'success' || needs.deploy-gen.result == 'skipped')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: operations/infra-watch
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          check-latest: true
+      - name: Install dependencies
+        run: npm ci
+      - name: Test
+        run: npm test
+      # Keep the Worker's existing secrets. This deploy does not upload them.
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+        run: npx wrangler deploy
 
   # A Worker must exist before Gen or Enter can deploy a service binding to it.
   # Deploy changed private MCP applications first. The automatic Applications

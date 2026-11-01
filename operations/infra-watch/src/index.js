@@ -17,7 +17,7 @@ import {
     pipe,
     toolsFor,
 } from "./investigate.js";
-import { holdDomains } from "./quest-restrictions.js";
+import { holdDomains, sweepDomains } from "./quest-restrictions.js";
 import {
     conditions,
     dueFallbacks,
@@ -149,6 +149,7 @@ export class Watch extends DurableObject {
     // edits stay in storage for retry, apart from the operational alerts.
     async retireReviews(saved, records) {
         const retry = {};
+        let complete = true;
         const retire = (id) =>
             this.writes(() =>
                 update(this.env, id, {
@@ -159,9 +160,10 @@ export class Watch extends DurableObject {
             );
         for (const [key, incident] of Object.entries(saved.open ?? {})) {
             if (incident.kind !== "REVIEW") continue;
-            if (incident.messageId && !(await retire(incident.messageId)))
+            if (incident.messageId && !(await retire(incident.messageId))) {
                 retry[key] = incident;
-            else if (incident.messageId)
+                complete = false;
+            } else if (incident.messageId)
                 await this.ctx.storage.delete(`lines:${incident.messageId}`);
             records.delete(`lines:${incident.messageId}`);
             delete saved.open[key];
@@ -170,11 +172,12 @@ export class Watch extends DurableObject {
             if (record.closed?.incident.kind !== "REVIEW") continue;
             if (await retire(name.slice("lines:".length)))
                 await this.ctx.storage.delete(name);
+            else complete = false;
             records.delete(name);
         }
         for (const key of Object.keys(saved.unposted ?? {}))
             if (key.startsWith("review:")) delete saved.unposted[key];
-        return retry;
+        return { retry, complete };
     }
 
     async run() {
@@ -208,7 +211,7 @@ export class Watch extends DurableObject {
                 publicModels = models;
                 data = { recent: r15, last10: r10, last60: r60, official };
                 [signups, legacy] = await Promise.all([
-                    this.signups(),
+                    this.signups(now),
                     this.legacy(now),
                 ]);
                 found = conditions({
@@ -221,12 +224,24 @@ export class Watch extends DurableObject {
                 found = conditions({ hosts, analyticsDown: true });
             }
 
+        const sweeps = await sweepDomains(
+            this.env.DB,
+            this.env.SETUP_HOLDS,
+            this.ctx.storage,
+            now,
+        );
+        for (const info of Object.values(found))
+            if (info.kind === "SIGNUP_BURST")
+                info.sweepPending = sweeps[info.domain]?.followup === true;
+
         const saved = (await this.ctx.storage.get("state")) ?? {};
         // A card closed by a check whose state save then failed: its record
         // says closed while the saved state still has it open. The record
         // wins, so a new failure opens a new card instead of editing this one.
         const records = await this.ctx.storage.list({ prefix: "lines:" });
-        const retiredReviews = await this.retireReviews(saved, records);
+        const retiredReviews = saved.reviewsRetired
+            ? { retry: {}, complete: true }
+            : await this.retireReviews(saved, records);
         const open = { ...saved.open };
         const closed = { ...saved.closed };
         for (const [name, record] of records) {
@@ -408,7 +423,8 @@ export class Watch extends DurableObject {
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", {
             ...next.state,
-            open: { ...next.state.open, ...retiredReviews },
+            open: { ...next.state.open, ...retiredReviews.retry },
+            reviewsRetired: retiredReviews.complete,
             unposted,
         });
         if (publicModels) {
@@ -515,14 +531,19 @@ export class Watch extends DurableObject {
 
     // Sign-up bursts, each domain held at once; null if they couldn't be
     // read.
-    async signups() {
+    async signups(now) {
         try {
             const rows = await pipe(
                 "infra_watch_signups",
                 {},
                 { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
             );
-            return await holdDomains(this.env.DB, this.env.SETUP_HOLDS, rows);
+            return await holdDomains(
+                this.env.SETUP_HOLDS,
+                this.ctx.storage,
+                rows,
+                now,
+            );
         } catch (error) {
             console.error(`signups: ${error.message}`);
             return null;

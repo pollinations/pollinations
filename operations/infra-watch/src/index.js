@@ -613,12 +613,13 @@ export class Watch extends DurableObject {
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be
-    // read.
+    // read. A burst is 20 or more new accounts in 24 hours: the pipe counts
+    // more than `limit`.
     async signups(now) {
         try {
             const rows = await pipe(
                 "infra_watch_signups",
-                {},
+                { limit: 19 },
                 { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
             );
             return await holdDomains(

@@ -88,6 +88,13 @@ export function hasChatProbeMarker(content, marker) {
     );
 }
 
+// An error's own code tells one upstream failure from another, so it joins
+// the text when it is a short plain word; anything else is left out.
+const coded = (text, error) => {
+    const code = String(error?.code ?? "");
+    return /^[\w.-]{1,40}$/.test(code) ? `${text} (${code})` : text;
+};
+
 // A valid OpenAI-compatible stream: parseable JSON events with a `choices`
 // array, exactly one terminal [DONE] and nothing after it. Never repairs,
 // discards or reorders provider output.
@@ -116,13 +123,18 @@ export function parseChatStream(body) {
                 chunk?.error?.code === "usage_missing"
                     ? "stream returned usage_missing: missing or invalid token usage"
                     : chunk?.error
-                      ? "stream returned an error event"
+                      ? coded("stream returned an error event", chunk.error)
                       : "stream event is missing a choices array",
             );
         }
         for (const choice of chunk.choices) {
             if (choice?.finish_reason === "error") {
-                throw new Error("stream ended with finish_reason=error");
+                throw new Error(
+                    coded(
+                        "stream ended with finish_reason=error",
+                        choice.error,
+                    ),
+                );
             }
             if (typeof choice?.delta?.content === "string") {
                 content += choice.delta.content;

@@ -9,7 +9,7 @@
  * response body exactly as returned for later analysis. Every run sends the
  * whole 14-day window, so a failed run is covered by the next one.
  *
- * Usage: node operations/github/sync-traffic-to-tinybird.mjs [--dry-run]
+ * Usage: node operations/data-sync/github-traffic-to-tinybird.mjs [--dry-run]
  *
  * Env vars:
  *   GITHUB_TOKEN         Required — needs Administration: read

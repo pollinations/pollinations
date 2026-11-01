@@ -14,6 +14,8 @@ export const WINDOW_MINUTES = 240;
 export const AGENT_DAILY_LIMIT = 48;
 // What it told is kept this long for it to read.
 export const TOLD_MS = 7 * 24 * 60 * 60 * 1000;
+// At most this many of its notes are kept, the newest.
+const TOLD_KEPT = 200;
 
 export const COMMUNITY_PROMPT = `You run the Pollinations community model monitor. Every half hour you get the community models' facts as JSON. Answer with one JSON object and nothing else:
 {"probe": [model ids], "community": {"text": "...", "owners": ["github username"]} or null, "maintainers": {"text": "..."} or null, "told": ["short note"]}
@@ -149,9 +151,24 @@ export function facts({
 // Discord cuts an embed at 4,096 characters.
 const cut = (text) => (text.length > 4096 ? `${text.slice(0, 4095)}…` : text);
 
+// The agent reads model ids that their owners chose, so a post keeps only
+// links to Pollinations itself.
+const ownLinks = (text) =>
+    text.replace(/https?:\/\/[^\s<>()[\]]+/gi, (url) => {
+        try {
+            const host = new URL(url).hostname;
+            if (/(^|\.)pollinations\.ai$/.test(host)) return url;
+        } catch {}
+        return "[link removed]";
+    });
+
+// What the agent told, kept with when: the newest TOLD_KEPT notes.
+export const remember = (told, notes, now) =>
+    [...told, ...notes.map((note) => ({ at: now, note }))].slice(-TOLD_KEPT);
+
 // The agent's answer within the rails, or null if it isn't one: only
 // candidates are probed, only community model owners are pinged, and each
-// post is cut to Discord's limit.
+// post keeps only Pollinations links and is cut to Discord's limit.
 export function decision(text, candidates, catalog) {
     let answer;
     try {
@@ -167,7 +184,9 @@ export function decision(text, candidates, catalog) {
     );
     const list = (value) => (Array.isArray(value) ? value : []);
     const post = (p) =>
-        typeof p?.text === "string" && p.text.trim() ? cut(p.text) : null;
+        typeof p?.text === "string" && p.text.trim()
+            ? cut(ownLinks(p.text))
+            : null;
     const community = post(answer?.community);
     const maintainers = post(answer?.maintainers);
     return {

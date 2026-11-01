@@ -5,6 +5,7 @@ import {
     facts,
     filteredModels,
     listingChanges,
+    remember,
 } from "./community.js";
 
 const NOW = Date.parse("2026-11-01T12:00:00Z");
@@ -229,4 +230,30 @@ test("listing changes: newly filtered, and back in the default list", () => {
         newly: [{ model: "community/a/new", health: 20 }],
         back: [{ model: "community/a/back", health: 92 }],
     });
+});
+
+test("a post keeps only Pollinations links", () => {
+    const text = [
+        "See [My Models](https://enter.pollinations.ai/my-models)",
+        "and https://gen.pollinations.ai/models,",
+        "not [this](https://evil.example/x) or http://pollinations.ai.evil.example/y",
+    ].join(" ");
+    const plan = decision(JSON.stringify({ maintainers: { text } }), [], []);
+    assert.equal(
+        plan.maintainers.text,
+        "See [My Models](https://enter.pollinations.ai/my-models) and https://gen.pollinations.ai/models, not [this]([link removed]) or [link removed]",
+    );
+});
+
+test("only the newest 200 notes are kept", () => {
+    let told = [];
+    for (let i = 0; i < 5; i++)
+        told = remember(
+            told,
+            Array.from({ length: 50 }, (_, j) => `n${i}-${j}`),
+            i,
+        );
+    assert.equal(told.length, 200);
+    assert.deepEqual(told[0], { at: 1, note: "n1-0" });
+    assert.deepEqual(told.at(-1), { at: 4, note: "n4-49" });
 });

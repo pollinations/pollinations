@@ -6,6 +6,7 @@ import {
     facts,
     filteredModels,
     listingChanges,
+    remember,
     TOLD_MS,
     WINDOW_MINUTES,
 } from "./community.js";
@@ -535,8 +536,7 @@ export class Watch extends DurableObject {
                     ping: true,
                     color,
                 })));
-        if (delivered)
-            state.told.push(...plan.told.map((note) => ({ at: now, note })));
+        if (delivered) state.told = remember(state.told, plan.told, now);
         const chosen = catalog.filter((m) => plan.probe.includes(m.name));
         state.results = await pool(chosen, PROBE_POOL, async (model) => {
             const previous = state.schedule[model.name];

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-31T06:13:29.630485+00:00",
+  "generated_at": "2026-11-01T06:16:02.446000+00:00",
   "models": [
     {
       "id": "2026-10-06:elevenlabs/eleven-v4",
@@ -6870,6 +6870,46 @@
   ],
   "daily": [
     {
+      "date": "2026-10-31",
+      "emoji": "📱",
+      "title": "A clearer My Apps view",
+      "text": "Browse your apps in a card grid with 24-hour request counts beside their titles. The grid uses two columns on wider screens and one on phones.",
+      "prs": [
+        18875
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-31",
+      "emoji": "🤖",
+      "title": "Community model leaderboards",
+      "text": "Daily text and image boards show usage, speed, and success rates for public community models over the previous 24 hours. Text rankings require at least 50 requests per model; image rankings require at least 10. [Join Discord](https://discord.gg/k9F7SyTgqn).",
+      "prs": [
+        18880
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-31",
+      "emoji": "💡",
+      "title": "Community model status notices",
+      "text": "Community Watch posts when a listed community model relies substantially on fallbacks or moves in or out of model listings. A filtered model remains callable by its exact ID. [Join Discord](https://discord.gg/k9F7SyTgqn).",
+      "prs": [
+        18879
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-31",
+      "emoji": "🎯",
+      "title": "Request a Setup reward review",
+      "text": "If your Setup Quest rewards are on hold, you can request an account review from the dashboard and see whether it is pending or declined. Other Quest rewards remain claimable.",
+      "prs": [
+        18804
+      ],
+      "kind": "product"
+    },
+    {
       "date": "2026-10-30",
       "emoji": "🚀",
       "title": "Verify a published Site",
@@ -8363,127 +8403,6 @@
       "text": "The rebuilt Community page brings together app listings, model and agent publishing requests, GitHub contributions and Discord. Open votes now reflect reactions on GitHub issues. [Visit pollinations.ai](https://pollinations.ai).",
       "prs": [
         16197
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "🎨",
-      "title": "Generate inside Krita",
-      "text": "A community-made Krita 5+ plug-in generates images into new layers and can edit a layer or selection without changing the source.",
-      "prs": [
-        15578
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "🎵",
-      "title": "HeyGen video with audio",
-      "text": "Use `heygen/heygen-video-1` to make 5–15-second videos with synchronized audio from text or a start-frame image. [Browse the model](https://enter.pollinations.ai/models?q=heygen/heygen-video-1).",
-      "prs": [
-        16128
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "🤖",
-      "title": "Kev joins decisions",
-      "text": "Send state and questions to `jaredpalmer/kev-4b` through the decisions or chat API. Quest Pollen can be used for this model. [Browse the model](https://enter.pollinations.ai/models?q=jaredpalmer/kev-4b).",
-      "prs": [
-        15968
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "🤖",
-      "title": "Span-01 Lite scores behaviour",
-      "text": "Use `respan/span-01-lite` for behaviour-scoring questions through the decisions or chat API, without a paid balance. [Browse the model](https://enter.pollinations.ai/models?q=respan/span-01-lite).",
-      "prs": [
-        15970
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "✨",
-      "title": "Collective-memory writing agents",
-      "text": "Lamplighter writes fact-checked replies to unanswered posts; Pen continues a shared story one short part at a time.",
-      "prs": [
-        15093,
-        15160
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "🚀",
-      "title": "Upload files up to 400 MiB",
-      "text": "Stream larger files through `POST /upload` or `polli upload` without loading the whole file into CLI memory. [Open the media store](https://media.pollinations.ai).",
-      "prs": [
-        15956
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "💡",
-      "title": "Larger text API requests",
-      "text": "Chat Completions, Responses and Messages now accept JSON request bodies up to 32 MiB, leaving more room for inline images. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16186
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "🎯",
-      "title": "Choose models by category",
-      "text": "When creating or editing a key, select whole model categories with one click and see how many models you’ve chosen. App consent offers the same controls. [Manage API keys](https://enter.pollinations.ai/keys).",
-      "prs": [
-        16151
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "💡",
-      "title": "Two Polli starter tasks",
-      "text": "Follow short recipes to connect OpenCode and verify a reply, or generate an image from the terminal and check the saved file. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        16177
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "✨",
-      "title": "Connect Polli, earn Pollen",
-      "text": "A one-time Quest awards 2 Pollen for connecting your account with `polli auth login`. Existing device-login connections qualify. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        16184
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "🌟",
-      "title": "Monthly Quest standings",
-      "text": "See the month’s top Quest contributors, your position and the Pollen gap to the next rank on the Quests page. [Open Enter](https://enter.pollinations.ai/keys).",
-      "prs": [
-        16188
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-01",
-      "emoji": "📱",
-      "title": "Find newer community apps",
-      "text": "The Home app shelf now lets you switch between Most used this week and Newest, alongside fresh community activity numbers. [Explore pollinations](https://pollinations.ai).",
-      "prs": [
-        16185
       ],
       "kind": "product"
     }

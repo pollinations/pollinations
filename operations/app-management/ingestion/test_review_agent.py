@@ -46,3 +46,50 @@ class InspectRepoTest(unittest.TestCase):
         self.assertEqual(evidence["folder"], "apps/npc")
         self.assertTrue(evidence["badge_in_readme"])
         self.assertEqual(evidence["code_search_matches"], 3)
+
+
+class TreeScanTest(unittest.TestCase):
+    def test_zero_code_search_is_verified_against_the_files(self):
+        responses = {
+            "/repos/o/app": {},
+            "/repos/o/app/readme": {"download_url": ""},
+            "/search/code?q=pollinations+repo:o/app": {"total_count": 0},
+            "/repos/o/app/git/trees/HEAD?recursive=1": {
+                "tree": [
+                    {"path": "index.html", "type": "blob", "size": 120},
+                    {"path": "src/api.js", "type": "blob", "size": 900},
+                    {"path": "assets/logo.png", "type": "blob", "size": 4000},
+                ]
+            },
+        }
+        files = {
+            "https://raw.githubusercontent.com/o/app/HEAD/src/api.js": 'const BASE = "https://gen.pollinations.ai";',
+            "https://raw.githubusercontent.com/o/app/HEAD/index.html": "<h1>hi</h1>",
+        }
+        with (
+            patch.object(review_agent, "github_api", side_effect=lambda path: responses[path]),
+            patch.object(
+                review_agent.session,
+                "get",
+                side_effect=lambda url, **_: type("R", (), {"text": files.get(url, "")})(),
+            ),
+        ):
+            evidence = review_agent.inspect_repo("https://github.com/o/app")
+        self.assertEqual(evidence["tree_scan"]["files_checked"], 1)
+        self.assertEqual(
+            evidence["tree_scan"]["markers"],
+            ["gen.pollinations.ai", "pollinations.ai"],
+        )
+        # The index is not authoritative here, so it must not read as a zero.
+        self.assertIsNone(evidence["code_search_matches"])
+
+    def test_matching_code_search_skips_the_tree(self):
+        responses = {
+            "/repos/o/app": {},
+            "/repos/o/app/readme": {"download_url": ""},
+            "/search/code?q=pollinations+repo:o/app": {"total_count": 7},
+        }
+        with patch.object(review_agent, "github_api", side_effect=lambda path: responses[path]):
+            evidence = review_agent.inspect_repo("https://github.com/o/app")
+        self.assertEqual(evidence["code_search_matches"], 7)
+        self.assertIsNone(evidence["tree_scan"])

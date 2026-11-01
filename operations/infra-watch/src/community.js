@@ -1,8 +1,9 @@
 // The community monitor, ported from the retired one
 // (operations/community-monitor/CYCLE.md): code applies Thomas's rules,
-// picks this cycle's incidents and keeps their quiet periods; one AI call
-// only groups them into posts and words them. No Cloudflare imports, so it
-// is testable with plain Node.
+// picks this cycle's incidents and keeps their quiet periods, and draws each
+// one's card; one AI call only sorts them into posts and writes a sentence
+// under each. No Cloudflare imports, so it is testable with plain Node.
+import { COLOR, panel } from "./rules.js";
 
 // Traffic and fallbacks are read over the last 4 hours.
 export const WINDOW_MINUTES = 240;
@@ -25,11 +26,11 @@ const VIA_SHOWN = 3;
 export const COMMUNITY_PROMPT = `You write the Pollinations community model monitor's Discord posts. You get this cycle's incidents as JSON; code has already decided each one is worth telling. Answer with one JSON object and nothing else:
 {"community": [{"incidents": ["id"], "text": "..."}], "maintainers": [{"incidents": ["id"], "text": "..."}]}
 
-Each line tells the incidents in its "incidents" and goes to the channel their "to" names; one line may group several incidents of the same kind. Keep each line to a sentence or two, with model ids without community/, errors and counts as given. Never add models, numbers or links.
-- stream: a model's own answers broke the same way twice in a row.
-- shared: one broken stream on many owners' models at once, likely gen's own.
-- fallback: a model leans on its fallbacks. Each snapshot is one 4-hour window, from and to: rescued of its successes in it, and each fallback's part; tell each snapshot's numbers on their own and never add numbers across snapshots. "private" fallbacks are never named.
-- listings: models newly filtered out of /models or back, with health and the filtered total; newlyMore and backMore count those left unnamed ("…and N more"); filtered models stay callable by their exact ID.
+Each line tells the one incident in its "incidents" and goes to the channel its "to" names. Code draws the incident's card above your line, with its title, models, errors and counts, so never repeat them: write one short sentence on what it means and what to do next. Never add models, numbers or links.
+- stream: a model's own answers broke the same way twice in a row; its owner should fix their endpoint.
+- shared: models that worked broke the same way at once across many owners, likely gen's own fault.
+- fallback: a model leans on its fallbacks; "private" fallbacks are never named.
+- listings: models newly filtered out of /models for low health, or back; filtered models stay callable by their exact ID.
 Code puts whole lines into each post until it is full; a line that doesn't fit, and its incidents, come next time. Code pings owners and points them to their dashboard.`;
 
 // The public community models gen's reliability filter leaves out of the
@@ -48,13 +49,13 @@ export function filteredModels(all, shown) {
     );
 }
 
-// A listing change names at most this many characters of model ids per
-// list, so the agent's line fits a post.
-const LISTED_CHARS = 1200;
+// A card names at most this many models in a list, so it fits a post; the
+// rest are counted.
+const SHOWN = 10;
 
 // Since the last day: the models newly filtered, and those filtered then
 // that are listed again now. One gone from both lists isn't back. Past
-// LISTED_CHARS, `newlyMore` and `backMore` count those left unnamed, for
+// SHOWN, `newlyMore` and `backMore` count those left unnamed, for
 // "…and N more".
 export function listingChanges(before, filtered, shown) {
     const was = new Set(before);
@@ -63,23 +64,19 @@ export function listingChanges(before, filtered, shown) {
         ["newly", filtered.filter((m) => !was.has(m.name))],
         ["back", shown.filter((m) => was.has(m.name))],
     ]) {
-        const named = [];
-        let size = 0;
-        for (const m of models) {
-            size += m.name.length;
-            if (size > LISTED_CHARS) break;
-            named.push({ model: m.name, health: m.health?.success_rate });
-        }
-        changes[list] = named;
-        if (named.length < models.length)
-            changes[`${list}More`] = models.length - named.length;
+        changes[list] = models
+            .slice(0, SHOWN)
+            .map((m) => ({ model: m.name, health: m.health?.success_rate }));
+        if (models.length > SHOWN)
+            changes[`${list}More`] = models.length - SHOWN;
     }
     return changes;
 }
 
-// A community model's owner: the GitHub username in its id. Posts list
-// them in `owners`, which delivery pings.
-const ownerOf = (id) => id.replace(/^community\//, "").split("/")[0];
+// A model id as owners know it, and its owner: the GitHub username in it.
+// Posts list owners in `owners`, which delivery pings.
+const short = (id) => id.replace(/^community\//, "");
+const ownerOf = (id) => short(id).split("/")[0];
 
 // `quiet` keys: a model and its broken stream, or a model and a fallback.
 export const streamKey = (model, error) => `stream ${model} ${error}`;
@@ -271,6 +268,54 @@ export function incidents({
 // how it is kept quiet.
 export const brief = ({ owners, quiet, ...incident }) => incident;
 
+// Each incident's card: a title that says it is about community models and
+// whose fault it likely is, then its facts, never cut.
+const TITLE = {
+    stream: "COMMUNITY MODEL BROKEN: OWNER'S ENDPOINT",
+    shared: "COMMUNITY MODELS: LIKELY A GEN PROBLEM",
+    fallback: "COMMUNITY MODEL RUNNING ON BACKUP",
+    listings: "COMMUNITY MODELS HIDDEN OR BACK IN LIST",
+};
+// Up to SHOWN values under one label, then how many more.
+const named = (label, values, more = values.length - SHOWN) => [
+    ...values.slice(0, SHOWN).map((v, n) => [n ? "" : label, v]),
+    ...(more > 0 ? [["", `…and ${more} more`]] : []),
+];
+const health = (m) =>
+    m.health == null ? short(m.model) : `${short(m.model)} (${m.health}%)`;
+// The error without "stream returned ", so the box stays narrow enough for
+// Discord not to wrap it.
+const error = (i) => i.error.replace(/^stream returned /, "");
+const ROWS = {
+    stream: (i) => [
+        ["MODEL", short(i.model)],
+        ["ERROR", error(i)],
+    ],
+    shared: (i) => [
+        ["ERROR", error(i)],
+        ["OWNERS", new Set(i.models.map(ownerOf)).size],
+        ...named("MODELS", i.models.map(short)),
+    ],
+    fallback: (i) => [
+        ["MODEL", short(i.model)],
+        ...i.snapshots.flatMap((s) => [
+            ["WINDOW", `${s.from.slice(11, 16)}–${s.to.slice(11, 16)} UTC`],
+            ["RESCUED", `${s.rescued} of ${s.successes} answers`],
+            ...s.via.map((v, n) => [
+                n ? "" : "BACKUP",
+                `${short(v.model)} (${v.rescued})`,
+            ]),
+        ]),
+    ],
+    listings: (i) => [
+        ...named("HIDDEN", i.newly.map(health), i.newlyMore),
+        ...named("BACK", i.back.map(health), i.backMore),
+        ["TOTAL", `${i.filtered} hidden now`],
+    ],
+};
+const card = (i) =>
+    panel(TITLE[i.kind], ROWS[i.kind](i), COLOR.PRIMARY_WEAK, { whole: true });
+
 // Discord cuts an embed at 4,096 characters.
 const LIMIT = 4096;
 // Discord takes at most this much message text, where the mentions go. An
@@ -292,10 +337,11 @@ const noLinks = (text) =>
         .replace(/\S*(?::(?:[\\/]|%2f)|www\.)\S*/gi, "");
 
 // The agent's posts within the rails, or null if its answer isn't one.
-// Each line tells only incidents code found for its channel, and carries no
-// link of its own. Whole lines go into the post while it and its mentions
-// fit: a line that doesn't is left out with its incidents, which stay
-// pending, so a post never shows less than it pings and acknowledges.
+// Each line tells only incidents code found for its channel, goes under
+// their cards, and carries no link of its own. Whole lines go into the post
+// while it and its mentions fit: a line that doesn't is left out with its
+// incidents, which stay pending, so a post never shows less than it pings
+// and acknowledges.
 export function decision(text, found) {
     let answer;
     try {
@@ -322,7 +368,8 @@ export function decision(text, found) {
                 items.some((i) => i?.to !== to || told.includes(i))
             )
                 continue;
-            const next = body ? `${body}\n${words}` : words;
+            const block = [...items.map(card), words].join("\n");
+            const next = body ? `${body}\n${block}` : block;
             const owners = new Set(
                 [...told, ...items].flatMap((i) => i.owners),
             );
@@ -339,6 +386,7 @@ export function decision(text, found) {
                   text: `${body}${footer}`,
                   owners: [...new Set(told.flatMap((i) => i.owners))],
                   incidents: told,
+                  color: COLOR.PRIMARY_WEAK,
               }
             : null;
     };

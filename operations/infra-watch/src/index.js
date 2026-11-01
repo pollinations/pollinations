@@ -31,7 +31,6 @@ import {
 } from "./investigate.js";
 import { dueProbes, FORGET_MS, pool, probe, recordProbe } from "./probes.js";
 import {
-    COLOR,
     conditions,
     duration,
     escalates,
@@ -536,7 +535,6 @@ export class Watch extends DurableObject {
             found,
         );
         if (!plan) throw new Error("the agent gave no decision");
-        const color = COLOR.PRIMARY_WEAK;
         for (const [message, webhook] of [
             [plan.community, "COMMUNITY_WEBHOOK_URL"],
             [
@@ -544,11 +542,7 @@ export class Watch extends DurableObject {
                 undefined,
             ],
         ]) {
-            if (
-                !message ||
-                !(await post(this.env, { ...message, color }, webhook))
-            )
-                continue;
+            if (!message || !(await post(this.env, message, webhook))) continue;
             for (const incident of message.incidents) {
                 for (const k of incident.quiet) state.quiet[k] = now;
                 if (incident.kind === "listings")

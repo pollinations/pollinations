@@ -401,14 +401,58 @@ test("a new fallback joins an untold one instead of replacing it", () => {
 
 // Incidents code found: a broken stream and a fallback for owners o and p,
 // listing changes, and a shared failure for the maintainers.
+const stream = (id, owner) => ({
+    id,
+    kind: "stream",
+    to: "community",
+    model: `community/${owner}/m`,
+    error: ERROR,
+    owners: [owner],
+    quiet: [],
+});
 const FOUND = [
-    { id: "1", kind: "stream", to: "community", owners: ["o"], quiet: [] },
-    { id: "2", kind: "fallback", to: "community", owners: ["p"], quiet: [] },
-    { id: "3", kind: "listings", to: "community", owners: [], quiet: [] },
-    { id: "4", kind: "shared", to: "maintainers", owners: [], quiet: [] },
+    stream("1", "o"),
+    {
+        id: "2",
+        kind: "fallback",
+        to: "community",
+        model: "community/p/m",
+        snapshots: [
+            {
+                from: "2026-11-01T08:00:00.000Z",
+                to: "2026-11-01T12:00:00.000Z",
+                rescued: 12,
+                successes: 40,
+                via: [{ model: "private", rescued: 12 }],
+            },
+        ],
+        owners: ["p"],
+        quiet: [],
+    },
+    {
+        id: "3",
+        kind: "listings",
+        to: "community",
+        filtered: 1,
+        newly: [{ model: "community/q/m", health: 40 }],
+        back: [],
+        owners: [],
+        quiet: [],
+    },
+    {
+        id: "4",
+        kind: "shared",
+        to: "maintainers",
+        error: ERROR,
+        models: ["community/a/x", "community/b/y", "community/c/z"],
+        owners: [],
+        quiet: [],
+    },
 ];
 const answer = (value) => decision(JSON.stringify(value), FOUND);
 const line = (ids, text) => ({ incidents: ids, text });
+// A post's text without its cards: the agent's lines and the footer.
+const words = (text) => text.replace(/```ansi\n[\s\S]*?\n```\n/g, "");
 
 test("a line tells only incidents code found for its channel, and pings only their owners", () => {
     const plan = answer({
@@ -427,8 +471,13 @@ test("a line tells only incidents code found for its channel, and pings only the
         ["1", "2", "3"],
     );
     assert.match(
-        plan.community.text,
+        words(plan.community.text),
         /^Stream\nFallback and listings\n\nOwners see/,
+    );
+    // Each line goes under its incidents' cards.
+    assert.match(
+        plan.community.text,
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: OWNER'S ENDPOINT[\s\S]*\nStream\n```ansi\n┌─ .*COMMUNITY MODEL RUNNING ON BACKUP[\s\S]*COMMUNITY MODELS HIDDEN OR BACK IN LIST[\s\S]*\nFallback and listings\n/,
     );
     assert.deepEqual(plan.community.owners, ["o", "p"]);
     assert.deepEqual(
@@ -445,7 +494,7 @@ test("a line tells only incidents code found for its channel, and pings only the
 test("a line that doesn't fit is left out with its incident, which isn't pinged", () => {
     const plan = answer({
         community: [
-            line(["1"], "x".repeat(3900)),
+            line(["1"], "x".repeat(3600)),
             line(["2"], "y".repeat(300)),
         ],
     });
@@ -456,6 +505,33 @@ test("a line that doesn't fit is left out with its incident, which isn't pinged"
         ["1"],
     );
     assert.deepEqual(plan.community.owners, ["o"]);
+});
+
+test("a card's title says it is community models and whose fault, and its facts are never cut", () => {
+    const long =
+        "community/CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free";
+    const models = [
+        long,
+        ...Array.from({ length: 11 }, (_, n) => `community/o${n}/m`),
+    ];
+    const error =
+        "stream returned usage_missing: missing or invalid token usage";
+    const plan = decision(
+        JSON.stringify({ maintainers: [line(["1"], "Check gen.")] }),
+        [{ ...FOUND[3], id: "1", error, models }],
+    );
+    const text = plan.maintainers.text;
+    assert.match(text, /COMMUNITY MODELS: LIKELY A GEN PROBLEM/);
+    for (const row of [
+        "ERROR   usage_missing: missing or invalid token usage",
+        "OWNERS  12",
+        "MODELS  CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free",
+        "        o8/m",
+        "        …and 2 more",
+    ])
+        assert.ok(text.includes(`│ ${row}`), row);
+    assert.doesNotMatch(text, /o9\/m/);
+    assert.match(text, /\n```\nCheck gen\.$/);
 });
 
 test("a post carries no link of the agent's own", () => {
@@ -470,7 +546,7 @@ test("a post carries no link of the agent's own", () => {
         maintainers: [line(["4"], text)],
     });
     for (const post of [plan.community.text, plan.maintainers.text]) {
-        const own = post.replace(/\n\nOwners see .*$/s, "");
+        const own = words(post).replace(/\n\nOwners see .*$/s, "");
         assert.doesNotMatch(own, /https?:|www\.|\]\(/i);
         assert.match(own, /^Owner dashboard .*done$/);
     }
@@ -486,13 +562,7 @@ test("a post's mentions fit Discord's 2,000 characters; owners that don't stay p
         { length: 100 },
         (_, i) => `owner-${String(i).padStart(24, "0")}`,
     );
-    const found = owners.map((o, i) => ({
-        id: String(i + 1),
-        kind: "stream",
-        to: "community",
-        owners: [o],
-        quiet: [],
-    }));
+    const found = owners.map((o, i) => stream(String(i + 1), o));
     const plan = decision(
         JSON.stringify({
             community: found.map((i) => ({
@@ -537,15 +607,13 @@ test("filtered: in the full list, not the default one, at 80% or less", () => {
     assert.equal(filteredModels([listed("community/a/x", null)], []), null);
 });
 
-test("a big listing change names what fits a post and counts the rest", () => {
+test("a big listing change names 10 models and counts the rest", () => {
     const filtered = Array.from({ length: 200 }, (_, i) =>
         listed(`community/owner${i}/a-fairly-long-model-name-${i}`, 20),
     );
     const changes = listingChanges([], filtered, []);
-    const names = changes.newly.map((m) => m.model).join("");
-    assert.ok(names.length <= 1200);
-    assert.ok(changes.newly.length > 0);
-    assert.equal(changes.newly.length + changes.newlyMore, 200);
+    assert.equal(changes.newly.length, 10);
+    assert.equal(changes.newlyMore, 190);
     assert.equal(changes.backMore, undefined);
 });
 

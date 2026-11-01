@@ -664,7 +664,9 @@ it("probes due models by Thomas's rule, and calls the agent only with incidents,
     ]);
     const [told] = posts(COMMUNITY);
     expect(told.content).toBe(OWNER_O);
-    expect(told.text).toMatch(/^community: 1\n\nOwners see .*My Models/);
+    expect(told.text).toMatch(
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: OWNER'S ENDPOINT[\s\S]*│ MODEL {3}o\/broken +│[\s\S]*\n```\ncommunity: 1\n\nOwners see .*My Models/,
+    );
 
     // Told: quiet for a day, so no call even once it breaks again.
     await later(stub, HOURS(16));
@@ -727,7 +729,9 @@ it("sends a stream broken for three owners' working models at once to the mainta
             models: ["community/a/x", "community/b/y", "community/c/z"],
         },
     ]);
-    const [told] = posts(INFRA).filter((w) => w.text.startsWith("maintainers"));
+    const [told] = posts(INFRA).filter((w) =>
+        w.text.includes("COMMUNITY MODELS: LIKELY A GEN PROBLEM"),
+    );
     expect(told.content).toBe(MAINTAINERS);
     expect(posts(COMMUNITY)).toHaveLength(0);
 });

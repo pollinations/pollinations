@@ -18,19 +18,17 @@ import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
+import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
-import {
-    LoadError,
-    PageStatus,
-} from "../components/layout/dashboard-loading.tsx";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { SidebarOutage, SidebarWallet } from "../components/pollen";
+import { SidebarOutage } from "../components/pollen";
 import {
     BALANCE_PATH,
     fetchAccountBalance,
@@ -164,6 +162,7 @@ function DashboardLayout() {
     const router = useRouter();
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
+    const user = data.user;
     const pathname = useRouterState({ select: (s) => s.location.pathname });
     // Pages that need the account wait out the outage; public pages still load.
     const outagePageTitle =
@@ -182,7 +181,6 @@ function DashboardLayout() {
                     ? DASHBOARD_NAV_ITEMS
                     : SIGNED_OUT_NAV_ITEMS
             }
-            accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             accountArea={
                 data.user ? undefined : data.sessionUnavailable ? (
@@ -202,34 +200,24 @@ function DashboardLayout() {
                     <DashboardSignInBanner />
                 )
             }
-            walletArea={
-                data.user ? (
+            accountCard={
+                user ? (
                     // Await adds no boundary for a null fallback; without this
                     // the whole dashboard would wait for the balance.
-                    <Suspense fallback={<PageStatus />}>
+                    <Suspense fallback={<AuthAccountIdentity user={user} />}>
                         <Await promise={data.balance}>
-                            {(balance) =>
-                                balance ? (
-                                    <Await
-                                        promise={data.earnings}
-                                        fallback={
-                                            <>
-                                                <SidebarWallet {...balance} />
-                                                <PageStatus />
-                                            </>
-                                        }
-                                    >
-                                        {(earnings) => (
-                                            <SidebarWallet
-                                                {...balance}
-                                                {...earnings}
-                                            />
-                                        )}
-                                    </Await>
-                                ) : (
-                                    <WalletLoadError onRetry={retry} />
-                                )
-                            }
+                            {(balance) => (
+                                <>
+                                    <AuthAccountIdentity
+                                        user={user}
+                                        balance={balance ?? undefined}
+                                        topUpHref="/pollen"
+                                    />
+                                    {!balance && (
+                                        <WalletLoadError onRetry={retry} />
+                                    )}
+                                </>
+                            )}
                         </Await>
                     </Suspense>
                 ) : undefined

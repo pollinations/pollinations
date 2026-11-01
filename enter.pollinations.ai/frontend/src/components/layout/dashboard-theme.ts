@@ -18,19 +18,11 @@ import type { ComponentType } from "react";
 
 /**
  * Groups of drawer rows: Pollinations' resources, then your pages (what you
- * build, then your pollen). "account" is your name, the button that closes
- * your section.
+ * build, your pollen, then Settings).
  */
-export type DashboardNavGroup = "account" | "yours" | "resources";
+export type DashboardNavGroup = "yours" | "resources";
 
 export const DASHBOARD_NAV_ITEMS = [
-    {
-        id: "account",
-        to: "/account",
-        label: "Account",
-        icon: AccountIcon,
-        group: "account",
-    },
     {
         id: "my-models",
         to: "/my-models",
@@ -65,6 +57,13 @@ export const DASHBOARD_NAV_ITEMS = [
         to: "/pollen",
         label: "Pollen",
         icon: WalletIcon,
+        group: "yours",
+    },
+    {
+        id: "account",
+        to: "/account",
+        label: "Settings",
+        icon: AccountIcon,
         group: "yours",
     },
     {

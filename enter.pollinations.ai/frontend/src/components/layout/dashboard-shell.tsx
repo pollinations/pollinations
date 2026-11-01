@@ -1,12 +1,9 @@
 import {
-    AccountIcon,
     BeakerIcon,
     BookIcon,
     BotIcon,
     BrandMark,
-    Button,
     CheckIcon,
-    ChevronIcon,
     Chip,
     ClipboardIcon,
     ColorModeToggle,
@@ -33,14 +30,7 @@ import type {
     RefObject,
     SetStateAction,
 } from "react";
-import {
-    createContext,
-    Fragment,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { pageMeta } from "../../page-meta.ts";
@@ -82,10 +72,9 @@ const NAV_LINE_CLASS = "border-theme-text-strong/10";
 
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
-    accountName?: string;
     githubAvatarUrl?: string;
     accountArea?: ReactNode;
-    walletArea?: ReactNode;
+    accountCard?: ReactNode;
     signInBanner?: ReactNode;
     showFooterLinks?: boolean;
     showQuestStatus?: boolean;
@@ -104,10 +93,9 @@ const footerLinks: readonly FooterLink[] = [
 
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
-    accountName,
     githubAvatarUrl,
     accountArea,
-    walletArea,
+    accountCard,
     signInBanner,
     showFooterLinks = true,
     showQuestStatus = false,
@@ -185,9 +173,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         <DashboardRail
             activePage={activePage}
             navItems={navItems}
-            accountName={accountName}
             avatarUrl={githubAvatarUrl}
-            walletArea={walletArea}
+            accountCard={accountCard}
             accountArea={accountArea}
             questStatus={questStatus}
             showFooterLinks={showFooterLinks}
@@ -333,9 +320,8 @@ function useDashboardShellBodyClass(): void {
 type DashboardRailProps = {
     activePage?: DashboardPage;
     navItems: readonly DashboardNavItem[];
-    accountName?: string;
     avatarUrl?: string;
-    walletArea?: ReactNode;
+    accountCard?: ReactNode;
     accountArea?: ReactNode;
     questStatus: string | null;
     showFooterLinks: boolean;
@@ -345,9 +331,8 @@ type DashboardRailProps = {
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
     navItems,
-    accountName,
     avatarUrl,
-    walletArea,
+    accountCard,
     accountArea,
     questStatus,
     showFooterLinks,
@@ -399,28 +384,17 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     {navItems
                         .filter((item) => item.group === "yours")
                         .map((item) => (
-                            <Fragment key={item.id}>
-                                <NavRow
-                                    item={item}
-                                    active={activePage === item.id}
-                                    questStatus={questStatus}
-                                    onNavigate={onNavigate}
-                                />
-                                {item.id === "pollen" && walletArea && (
-                                    <SubLines>{walletArea}</SubLines>
-                                )}
-                            </Fragment>
+                            <NavRow
+                                key={item.id}
+                                item={item}
+                                active={activePage === item.id}
+                                questStatus={questStatus}
+                                onNavigate={onNavigate}
+                            />
                         ))}
                 </nav>
             )}
-            {accountName && (
-                <AccountLink
-                    name={accountName}
-                    avatarUrl={avatarUrl}
-                    active={activePage === "account"}
-                    onNavigate={onNavigate}
-                />
-            )}
+            {accountCard}
             {accountArea}
             <DashboardFooter links={showFooterLinks ? footerLinks : []} />
         </div>
@@ -623,8 +597,7 @@ const DashboardFooter: FC<{
     </div>
 );
 
-// Lines indented under a row, lined up with its label: your Paid and Quest
-// numbers under Pollen, the guides under Docs.
+// Lines indented under a row, lined up with its label: the guides under Docs.
 const SubLines: FC<PropsWithChildren<{ className?: string }>> = ({
     className,
     children,
@@ -638,39 +611,4 @@ const SubLines: FC<PropsWithChildren<{ className?: string }>> = ({
     >
         {children}
     </div>
-);
-
-// Who is signed in, under the cards, and the way to Account (profile, sign
-// out). A button rather than a row: the quiet surface pill when Account isn't
-// open, the accent fill when it is.
-const AccountLink: FC<{
-    name: string;
-    avatarUrl?: string;
-    active: boolean;
-    onNavigate: () => void;
-}> = ({ name, avatarUrl, active, onNavigate }) => (
-    <Button
-        as={Link}
-        to="/account"
-        data-theme="accent"
-        intent={active ? undefined : "surface"}
-        aria-current={active ? "page" : undefined}
-        onClick={onNavigate}
-        className="w-full self-stretch justify-start gap-2 py-1.5 pr-3 pl-1.5"
-    >
-        {avatarUrl ? (
-            <img
-                src={avatarUrl}
-                alt=""
-                className="h-8 w-8 shrink-0 rounded-full object-cover"
-            />
-        ) : (
-            <AccountIcon className="h-4 w-4 shrink-0" />
-        )}
-        <span className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate">{name}</span>
-            <span className="text-xs font-normal">Account settings</span>
-        </span>
-        <ChevronIcon className="ml-auto -rotate-90 opacity-60" />
-    </Button>
 );

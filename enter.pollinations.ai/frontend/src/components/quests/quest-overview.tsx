@@ -16,6 +16,7 @@ import {
     Section,
     SparkleIcon,
     SproutIcon,
+    Surface,
     TargetIcon,
     TerminalIcon,
     Text,
@@ -533,7 +534,12 @@ export function QuestRow({
     // beside the text, chip pinned to the right edge (ml-auto).
 
     return (
-        <div className="py-3">
+        // Only a quest waiting for Claim is a card: the one thing to act on.
+        // The rest sit flat, padded like a card so their columns line up.
+        <Surface
+            variant="card"
+            className={claimableRewardId ? undefined : "polli:bg-transparent"}
+        >
             {/* Mobile: stacked. Icon centered with the (wrappable) title; the
                 description (issue link at its end) full-width below; action row
                 last, mirroring desktop — Claim on the left, reward chip pinned
@@ -601,7 +607,7 @@ export function QuestRow({
                     {rewardChip}
                 </div>
             </div>
-        </div>
+        </Surface>
     );
 }
 
@@ -1094,7 +1100,7 @@ function QuestOverviewContent({
                             )
                         }
                     >
-                        <div className="flex flex-col divide-y divide-theme-text-strong/10">
+                        <div className="flex flex-col gap-1">
                             {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}
@@ -1124,7 +1130,7 @@ function QuestOverviewContent({
                         </span>
                     }
                 >
-                    <div className="flex flex-col divide-y divide-theme-text-strong/10">
+                    <div className="flex flex-col gap-1">
                         {bonusRewardCards.map((card) => (
                             <QuestRow
                                 key={card.key}

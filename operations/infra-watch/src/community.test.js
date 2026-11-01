@@ -527,11 +527,24 @@ test("a sparse model's run keeps through hours without a check, and a fresh chec
     assert.equal(read(asked("qwen-3-4b"), one)[FLASH].streak, 1);
     // A model gone from the catalog loses its run.
     assert.deepEqual(servedStreaks([], one, new Set(), NOW), {});
-    // A name can't break a post, or tell an upstream's address.
+    // A name can't break a post, or tell an upstream's address, on either
+    // side.
     const shown = (served) => read(asked(served))[FLASH].served;
     assert.equal(shown("x```\n@everyone"), "x@everyone");
     assert.equal(shown("api.together.xyz/llama-3"), "[host]/llama-3");
-    assert.equal(shown("gpt-4.1-mini"), "gpt-4.1-mini");
+    assert.equal(shown("http://192.0.2.10:8000/llama-3"), "[host]");
+    assert.equal(shown("http://[2001:db8::1]:8000/llama-3"), "[host]");
+    assert.equal(shown("192.0.2.10:8000/llama-3"), "[host]:8000/llama-3");
+    assert.equal(shown("[2001:db8::1]:8000/llama-3"), "[host]:8000/llama-3");
+    assert.equal(shown("2001:db8:0:0:0:0:0:1/llama-3"), "[host]/llama-3");
+    assert.equal(
+        read([{ model: FLASH, declared: "http://10.0.0.1/x", served: "y" }])[
+            FLASH
+        ].declared,
+        "[host]",
+    );
+    for (const name of ["gpt-4.1-mini", "qwen2.5-72b:free", "llama-3.1-8b"])
+        assert.equal(shown(name), name);
 });
 
 test("a mismatch at the second check in a row is its publisher's until a fresh check disproves it, then quiet for a week", () => {

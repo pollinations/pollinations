@@ -107,12 +107,22 @@ const agree = (a, b) => {
     return x.includes(y) || y.includes(x);
 };
 // Both names come from owners' servers: backticks and control characters
-// are dropped, so a name can't break a post, and anything shaped like a
-// hostname is hidden, so an upstream's address is never told.
+// are dropped, so a name can't break a post, and a URL, an IP address or
+// anything shaped like a hostname is hidden, so an upstream's address is
+// never told.
+const ADDRESS = new RegExp(
+    [
+        String.raw`[a-z][\w+.-]*://\S*`, // a URL
+        String.raw`\[?(?:[\da-f:.]*::[\da-f:.]*|(?:[\da-f]{1,4}:){7}[\da-f]{1,4})\]?`, // IPv6
+        String.raw`\b\d{1,3}(?:\.\d{1,3}){3}\b`, // IPv4
+        String.raw`\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b`, // a hostname
+    ].join("|"),
+    "gi",
+);
 const printable = (name) =>
     String(name)
         .replace(/[`\p{Cc}]/gu, "")
-        .replace(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi, "[host]");
+        .replace(ADDRESS, "[host]");
 
 // Each model of the catalog's `names` whose upstream last reported a
 // different model than the one asked for, with how many of its checks in a

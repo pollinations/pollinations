@@ -454,10 +454,13 @@ export const PaymentHelp: FC = () => (
                     </>
                 )}
             </CopyButton>
-            <LinkSeparator />
-            <InlineLink href={TERMS_URL}>Terms</InlineLink>
-            <LinkSeparator />
-            <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+            {/* Terms and Refund wrap as one piece, never split apart. */}
+            <span className="whitespace-nowrap">
+                <LinkSeparator />
+                <InlineLink href={TERMS_URL}>Terms</InlineLink>
+                <LinkSeparator />
+                <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+            </span>
         </span>
     </p>
 );

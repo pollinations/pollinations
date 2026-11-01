@@ -19,7 +19,7 @@
  * Days are Search Console days (Pacific time); countries are ISO alpha-3. A
  * report over 25,000 rows spans several responses (start_row).
  *
- * Usage: node operations/data-sync/search-console-to-tinybird.mjs [--days 3] [--dry-run]
+ * Usage: node operations/data-sync/google-search-console-to-tinybird.mjs [--days 3] [--dry-run]
  *
  * --days syncs the latest N final days (1–7, for a missed run).
  *

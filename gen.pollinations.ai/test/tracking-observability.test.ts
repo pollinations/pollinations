@@ -3641,6 +3641,19 @@ describe("trackResponse modelUsed", () => {
                 },
             ),
         ],
+        [
+            "JSON body with a field of its own named streamEvents",
+            false,
+            Response.json(
+                { model: "served-model", choices: [], streamEvents: {} },
+                {
+                    headers: {
+                        "x-model-used": "openai/gpt-5.4-nano",
+                        "x-usage-prompt-text-tokens": "10",
+                    },
+                },
+            ),
+        ],
     ] as const)(
         "records the name a community proxy answered with (%s)",
         async (_shape, stream, response) => {
@@ -3654,6 +3667,7 @@ describe("trackResponse modelUsed", () => {
                 candidateFixture(),
             );
             expect(tracking).toMatchObject({
+                isBilledUsage: true,
                 upstreamModel: "asked-model",
                 upstreamServedModel: "served-model",
             });

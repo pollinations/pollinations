@@ -1000,11 +1000,12 @@ export async function trackResponse(
 // as the old monitor's probe read it: chat chunks and bodies carry `model`,
 // Responses events carry it on `response`. The owner's server chooses it, so
 // it is evidence for a person to weigh, never proof. Capped like the listing's
-// own upstream name.
+// own upstream name. A JSON body may carry its own `streamEvents` field.
 function answeredModel(output: unknown): string | undefined {
-    const stream = output as { streamEvents?: unknown[] } | undefined;
+    const events = (output as { streamEvents?: unknown } | undefined)
+        ?.streamEvents;
     let model: string | undefined;
-    for (const event of stream?.streamEvents ?? [output]) {
+    for (const event of Array.isArray(events) ? events : [output]) {
         const e = event as {
             model?: unknown;
             response?: { model?: unknown };

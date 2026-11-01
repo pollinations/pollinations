@@ -73,8 +73,6 @@ PAGES = {
     "News": "https://enter.pollinations.ai/news",
 }
 LINK = re.compile(r"\[([^\]]+)\]\(<?([^)>\s]+)>?\)")
-# The card's side colour follows the PR's Work type on the Dev project.
-COLORS = {"Feature": 0x639922, "Bug": 0xD85A30, "Task": 0x888780}
 PROJECT_QUERY = """
 query($owner: String!, $name: String!, $number: Int!) {
   repository(owner: $owner, name: $name) { pullRequest(number: $number) {
@@ -262,7 +260,6 @@ def message(pr: dict, text: str, app: dict, fields: dict) -> dict:
         "title": safe_truncate(title.strip("#* "), 256),
         "url": pr["html_url"],
         "description": "\n\n".join(filter(None, (safe_truncate(rest.strip(), 3900), labels))),
-        "color": COLORS.get(fields.get("type")),
         "image": {"url": "attachment://image.jpg"},  # the picture send_discord uploads, under the text
         "footer": {"text": footer, "icon_url": pr["user"]["avatar_url"]},
         "timestamp": pr["merged_at"],

@@ -1230,18 +1230,16 @@ class DeploymentReadinessTest(unittest.TestCase):
         text = ("## Keys moved\n- 🔑 Make one on [your keys page](https://enter.pollinations.ai/keys)\n"
                 "- 🧩 See [the guide](https://made.up/guide) or [Snap](https://snap.test)")
         embed = deploy_posts.message(pr, text, app, {"area": "Accounts & keys", "type": "Bug", "source": "Team"})["embeds"][0]
-        self.assertEqual((embed["title"], embed["url"], embed["color"], embed["footer"]["text"]),
-                         ("Keys moved", "https://github.com/p/7", deploy_posts.COLORS["Bug"], "bee · Team"))
+        self.assertEqual((embed["title"], embed["url"], embed["footer"]["text"]),
+                         ("Keys moved", "https://github.com/p/7", "bee · Team"))
         self.assertEqual(embed["description"],
                          "- 🔑 Make one on [your keys page](https://enter.pollinations.ai/keys)\n"
                          "- 🧩 See the guide or [Snap](https://snap.test)\n\n`Accounts & keys` `Bug` `PR #7`")
         # The app is always linked, once.
         linked = deploy_posts.message(pr, "Snap added\n- 🐝 A meme maker", app, {})["embeds"][0]
         self.assertEqual(linked["description"], "- 🐝 A meme maker\n\n🔗 [Snap](https://snap.test)\n\n`PR #7`")
-        # Off the Dev project, the card has no label or colour rather than a guessed one.
+        # Off the Dev project, the card has no labels rather than guessed ones.
         bare = deploy_posts.message(pr, "Keys moved", {}, {"area": None, "type": None, "source": None})["embeds"][0]
-        self.assertEqual(sorted(bare.keys() - embed.keys()), [])
-        self.assertEqual(sorted(embed.keys() - bare.keys()), ["color"])
         self.assertEqual((bare["description"], bare["footer"]["text"]), ("`PR #7`", "bee"))
 
     def test_requirements_come_from_the_scanned_production_checkout(self):

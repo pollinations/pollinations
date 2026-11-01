@@ -1266,7 +1266,7 @@ class DeploymentReadinessTest(unittest.TestCase):
                     {"name": "Deploy apps/other", "conclusion": "success"}]}]}
         def api(path, **params):
             if path.startswith("actions/workflows/"):
-                self.assertEqual(params["status"], "completed")  # failed runs too: jobs are judged one by one
+                self.assertNotIn("status", params)  # failed and unfinished runs too: jobs are judged one by one
                 return {"workflow_runs": runs[path.split("/")[2]]}
             if path.startswith("actions/runs/"):
                 return {"jobs": jobs[int(path.split("/")[2])]}

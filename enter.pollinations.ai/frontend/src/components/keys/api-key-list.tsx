@@ -89,6 +89,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     function renderKeyCard(apiKey: ApiKey) {
         const isApp = isAppKey(apiKey);
         const keyLabel = isApp ? "app key" : "secret key";
+        // An app key's settings are the app's settings.
+        const editLabel = isApp ? "Edit app" : "Edit secret key";
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
@@ -121,8 +123,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             <IconButton
                                 intent="info"
-                                title={`Edit ${keyLabel}`}
-                                tooltip={`Edit ${keyLabel}`}
+                                title={editLabel}
+                                tooltip={editLabel}
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
@@ -222,11 +224,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     {isApp && (
                         <Chip
-                            intent="neutral"
+                            intent={earningsEnabled ? "success" : "neutral"}
                             size="sm"
                             className={
                                 earningsEnabled
-                                    ? "text-intent-success-text"
+                                    ? undefined
                                     : "bg-ink-100 text-theme-text-muted"
                             }
                         >
@@ -294,6 +296,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     const keyAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<KeyIcon />}
             aria-haspopup="dialog"
@@ -304,6 +307,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     );
     const appAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<AppIcon />}
             aria-haspopup="dialog"

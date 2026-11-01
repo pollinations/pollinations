@@ -198,10 +198,12 @@ Cancel and the alternative payment-method link on the line below.
   `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
   `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
 - **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
-  `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
+  `CopyButton`, `CopyStateIcon`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
   `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
   `StatCard`.
+  `CopyButton` shows the one copy feedback (a check and "Copied"); a spot that
+  draws its own icon uses `CopyStateIcon`, a clipboard that turns into a check.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label
   rows for compact forms.
   `EditableCombobox.startContent` renders content inside a wrapping input shell

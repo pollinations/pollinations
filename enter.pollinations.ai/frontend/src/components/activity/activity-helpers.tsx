@@ -2,6 +2,7 @@ import {
     Button,
     CardIcon,
     DownloadIcon,
+    formatCount,
     MultiSelect,
     SproutIcon,
     Tooltip,
@@ -191,10 +192,10 @@ export function PollenUsageBadges(usage: {
     const isPollen = usage.metric === "pollen";
     const paid = isPollen
         ? formatActivityPollen(usage.paidPollen)
-        : usage.paidRequests.toLocaleString();
+        : formatCount(usage.paidRequests);
     const quest = isPollen
         ? formatActivityPollen(usage.tierPollen)
-        : usage.tierRequests.toLocaleString();
+        : formatCount(usage.tierRequests);
     const unit = isPollen ? "Pollen" : "requests";
     return (
         <div className="ml-auto grid min-w-40 grid-cols-2 items-center justify-items-end gap-1">

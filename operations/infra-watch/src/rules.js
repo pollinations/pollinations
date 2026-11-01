@@ -319,7 +319,7 @@ export const escalates = (before, now) =>
     (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1);
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
-const fit = (s, width) => (s.length > width ? `${s.slice(0, width - 1)}…` : s);
+const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
 const unix = (ms) => Math.round(ms / 1000);
 
 // "2 h 01 min", "47 min", "under 1 min".
@@ -334,13 +334,10 @@ export function duration(ms) {
 // title or its longest row needs, so a full model id is never cut. The
 // title is drawn in the card's colour (an ansi block): Discord on desktop
 // shows it, the phone shows plain text.
-//
-// A value longer than `width` is cut; a card whose values are model ids
-// passes Infinity, so they show whole.
-function panel(title, lines, color, width = 38) {
+function panel(title, lines, color) {
     const body = lines.map(
         ([field, value]) =>
-            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value), width)}`,
+            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
     const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
@@ -424,7 +421,7 @@ const subjectOf = (key) =>
 // An open card's colour by severity: red down, orange degraded, amber weak
 // primary. A closed card's colour is set by cardColor.
 const RED = 0xe24b4a;
-const COLOR = {
+export const COLOR = {
     GEN_DOWN: RED,
     PUBLIC_DOWN: RED,
     UPSTREAM_DOWN: RED,
@@ -711,265 +708,6 @@ export const escalation = (key, incident, link) => ({
     ping: true,
     color: COLOR[incident.kind],
 });
-
-// A listed community model whose fallback answered at least this many and
-// this share of its successful requests in the window leans on its
-// fallback: callers get answers, but its own upstream fails often.
-export const FALLBACK_MINUTES = 240;
-const MIN_RESCUED = 10;
-const MIN_RESCUED_SHARE = 0.25;
-// Each model and fallback pair is told at most this often.
-const FALLBACK_QUIET_MS = 7 * 24 * 60 * 60 * 1000;
-
-// The listed models leaning on a fallback, each with the fallbacks that
-// rescued its requests, most first. `catalog` is gen's public catalog: a
-// fallback missing from it is private, so it is never named.
-export function fallbackShares(rows, catalog) {
-    const listed = new Set(
-        catalog.filter((m) => m.community && !m.agent).map((m) => m.name),
-    );
-    const named = new Set(catalog.map((m) => m.name));
-    const shares = [];
-    for (const row of rows) {
-        if (!row.is_rollup || !listed.has(row.model)) continue;
-        const rescued = row.fallback_rescues;
-        if (
-            rescued < MIN_RESCUED ||
-            rescued < MIN_RESCUED_SHARE * row.status_2xx
-        )
-            continue;
-        const via = rows
-            .filter(
-                (r) =>
-                    r.model === row.model &&
-                    !r.is_rollup &&
-                    r.fallback_used &&
-                    r.fallback_rescues > 0,
-            )
-            .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
-            .map((r) => ({
-                model: named.has(r.model_used) ? r.model_used : null,
-                rescued: r.fallback_rescues,
-            }));
-        shares.push({
-            model: row.model,
-            via,
-            rescued,
-            successes: row.status_2xx,
-        });
-    }
-    return shares;
-}
-
-// Fallbacks a notice names, each with its own rescues.
-const VIA_SHOWN = 3;
-
-// A share's keys in `told`: the model with each fallback its notice names.
-const pair = (model, v) => `${model} ${v.model ?? "private"}`;
-export const fallbackPairs = (share) =>
-    share.via.slice(0, VIA_SHOWN).map((v) => pair(share.model, v));
-
-// The shares to tell now, each naming only its fallbacks not told about in
-// the last week. `told` keeps when each pair was told; older ones are
-// dropped.
-export function dueFallbacks(shares, told = {}, now) {
-    const recent = Object.fromEntries(
-        Object.entries(told).filter(([, at]) => now - at < FALLBACK_QUIET_MS),
-    );
-    return {
-        due: shares
-            .map((s) => ({
-                ...s,
-                via: s.via
-                    .slice(0, VIA_SHOWN)
-                    .filter((v) => !(pair(s.model, v) in recent)),
-            }))
-            .filter((s) => s.via.length > 0),
-        told: recent,
-    };
-}
-
-const community = (id) => id.replace(/^community\//, "");
-
-// A fallback notice for the community channel: no ping, the owner reads
-// their model's id. The total rescued, then each fallback's part.
-export function fallbackCard({ model, via, rescued, successes }) {
-    const color = COLOR.PRIMARY_WEAK;
-    return {
-        text: [
-            panel(
-                `FALLBACK: ${community(model)}`,
-                [
-                    [
-                        "RESCUED",
-                        `${rescued} of ${successes} successes (${percent(rescued / successes)}), 4h`,
-                    ],
-                    ...via
-                        .slice(0, VIA_SHOWN)
-                        .map((v) => [
-                            "VIA",
-                            `${v.model ? community(v.model) : "a private model"} (${v.rescued})`,
-                        ]),
-                ],
-                color,
-                Infinity,
-            ),
-            "Callers still get answers, but often from a fallback: the model's own upstream is failing.",
-        ].join("\n"),
-        ping: false,
-        color,
-    };
-}
-
-// The old monitor's duty 2d, on real requests: a listed community model
-// whose upstream answers with a different model than the one gen asks it
-// for. Names compare as the monitor compared them: lowercase, without a
-// provider prefix or a trailing :free, :paid, -latest, -preview or date;
-// they agree when one contains the other.
-const NAME_SUFFIX = /(:free|:paid|-latest|-preview|-\d{8}|-\d{4}-\d{2}-\d{2})$/;
-export function servedName(name) {
-    let base = String(name).toLowerCase().split("/").pop();
-    while (NAME_SUFFIX.test(base)) base = base.replace(NAME_SUFFIX, "");
-    return base;
-}
-const agree = (a, b) => {
-    const [x, y] = [servedName(a), servedName(b)];
-    return x.includes(y) || y.includes(x);
-};
-// A notice's key in `told`: the model with the name its upstream reported.
-export const mismatchKey = (m) => `${m.model} ${m.served}`;
-// Models one notice names; the rest are due again the next hour.
-const MISMATCHES_SHOWN = 10;
-const HOUR_MS = 60 * 60 * 1000;
-
-// One hour's reading becomes `seen`: each listed model whose upstream
-// reported a different model this hour, with how many hours in a row it
-// reported that name. A run counts only hours that follow each other: an
-// hour without answers, or one that could not be read, starts it again.
-// Due: reported differently this hour and the hour before, the model and
-// name not told in the last week. Nothing older is kept, so earlier state
-// never posts on its own. Private models are never tracked or named.
-export function servedMismatches(rows, catalog, { seen = {}, told = {} }, now) {
-    const hour = Math.floor(now / HOUR_MS);
-    const listed = new Set(
-        catalog.filter((m) => m.community && !m.agent).map((m) => m.name),
-    );
-    const next = {};
-    for (const { model, declared, served } of rows) {
-        if (!listed.has(model) || agree(declared, served)) continue;
-        const last = seen[model];
-        const streak =
-            last?.hour === hour - 1 && last.served === served
-                ? last.streak + 1
-                : 1;
-        next[model] = { declared, served, streak, hour };
-    }
-    const recent = Object.fromEntries(
-        Object.entries(told).filter(([, at]) => now - at < FALLBACK_QUIET_MS),
-    );
-    return {
-        due: Object.entries(next)
-            .map(([model, m]) => ({ model, ...m }))
-            .filter((m) => m.streak >= 2 && !(mismatchKey(m) in recent))
-            .slice(0, MISMATCHES_SHOWN),
-        seen: next,
-        told: recent,
-    };
-}
-
-// Both names come from owners' servers: backticks and control characters are
-// dropped so a name cannot break out of the panel.
-const printable = (name) => String(name).replace(/[`\p{Cc}]/gu, "");
-
-// One grouped notice for the community channel, as the monitor posted it:
-// each model with the model it asks for and the name its upstream reported.
-// No ping. The provider writes that name, so it proves nothing by itself.
-export function mismatchCard(due) {
-    const color = COLOR.PRIMARY_WEAK;
-    return {
-        text: [
-            panel(
-                "MISMATCH",
-                due.flatMap((m) => [
-                    ["MODEL", community(m.model)],
-                    ["DECLARED", printable(m.declared)],
-                    ["REPORTED", printable(m.served)],
-                ]),
-                color,
-                60,
-            ),
-            "Each model's upstream reported a different model than the one it is asked for.",
-            "The provider writes that name: a person must review it before any conclusion about abuse.",
-        ].join("\n"),
-        ping: false,
-        color,
-    };
-}
-
-// The public community models gen's reliability filter leaves out of the
-// default listing: in the `reliability=all` list but not the default one,
-// with a success rate of 80% or less. Agents aside. Null while no community
-// model has a known rate: then nothing can be judged.
-export function filteredModels(all, shown) {
-    const models = all.filter((m) => m.community && !m.agent);
-    if (!models.some((m) => m.health?.success_rate != null)) return null;
-    const listed = new Set(shown.map((m) => m.name));
-    // A model with no recent sample stays listed.
-    return models.filter(
-        (m) =>
-            !listed.has(m.name) &&
-            m.health?.success_rate != null &&
-            m.health.success_rate <= 80,
-    );
-}
-
-// Since the last daily check: the models newly filtered, and those filtered
-// then that are listed again now. A model gone from both lists was removed
-// or made private, not listed again.
-export function listingChanges(before, filtered, shown) {
-    const was = new Set(before);
-    return {
-        newly: filtered.filter((m) => !was.has(m.name)),
-        back: shown.filter((m) => was.has(m.name)),
-    };
-}
-
-// Discord cuts an embed at 4,096 characters. Model lines stop at this
-// many, leaving room for the headings, the counts and the footer; the rest
-// are counted.
-const LISTINGS_BUDGET = 3800;
-
-// The daily listings post for the community channel: the filtered total,
-// then each change with its success rate. No ping.
-export function listingsCard({ newly, back }, total) {
-    const rate = (m) =>
-        m.health?.success_rate == null
-            ? "no recent sample"
-            : `${Math.round(m.health.success_rate)}%`;
-    let size = 0;
-    const section = (heading, models) => {
-        if (!models.length) return [];
-        const lines = [`**${heading}**`];
-        for (const [i, m] of models.entries()) {
-            const line = `\`${community(m.name)}\` ${rate(m)}`;
-            size += line.length + 1;
-            if (size > LISTINGS_BUDGET)
-                return [...lines, `…and ${models.length - i} more`];
-            lines.push(line);
-        }
-        return lines;
-    };
-    return {
-        text: [
-            `### Community listings · ${total} filtered`,
-            ...section("Newly filtered", newly),
-            ...section("Back in listings", back),
-            "*Filtered models are left out of /models but stay callable by their exact ID.*",
-        ].join("\n"),
-        ping: false,
-        color: newly.length ? COLOR.PRIMARY_WEAK : GREEN,
-    };
-}
 
 // Heartbeat: infra-watch's own liveness, judged from outside Cloudflare by
 // heartbeat.mjs (GitHub Actions). A last completed check this old means the

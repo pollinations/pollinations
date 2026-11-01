@@ -1,8 +1,7 @@
 import {
     CardIcon,
-    CheckIcon,
-    ClipboardIcon,
     CopyButton,
+    CopyStateIcon,
     cn,
     InfoTip,
     InlineLink,
@@ -372,8 +371,8 @@ export const PaymentHelp: FC = () => (
         <span>
             Payment help:{" "}
             {/* Styled like Terms and Refund; a copy icon where theirs has
-                the arrow. The icon says copy and the text says email
-                copied, so no tooltip. */}
+                the arrow. The icon says copy and the text says Copied,
+                so no tooltip. */}
             <CopyButton
                 value="billing@pollinations.ai"
                 className="polli-link"
@@ -382,18 +381,12 @@ export const PaymentHelp: FC = () => (
             >
                 {(copied) => (
                     <>
-                        {copied ? "email copied" : "billing@pollinations.ai"}
-                        {copied ? (
-                            <CheckIcon
-                                aria-hidden="true"
-                                className="polli-link-external-icon"
-                            />
-                        ) : (
-                            <ClipboardIcon
-                                aria-hidden="true"
-                                className="polli-link-external-icon"
-                            />
-                        )}
+                        {copied ? "Copied" : "billing@pollinations.ai"}
+                        <CopyStateIcon
+                            copied={copied}
+                            aria-hidden="true"
+                            className="polli-link-external-icon"
+                        />
                     </>
                 )}
             </CopyButton>

@@ -1,4 +1,11 @@
-import { Alert, Button, CheckIcon, Collapsible, XIcon } from "@pollinations/ui";
+import {
+    Alert,
+    Button,
+    CheckIcon,
+    Collapsible,
+    formatCount,
+    XIcon,
+} from "@pollinations/ui";
 import { isModelReliable } from "@shared/model-health.ts";
 import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { InferResponseType } from "hono/client";
@@ -242,7 +249,7 @@ function HealthSummary({
                     <span className="text-xs text-theme-text-muted">
                         {listingRate !== null
                             ? `last ${listing?.requests} calls`
-                            : `${calls.toLocaleString()} calls in 7 days`}
+                            : `${formatCount(calls)} calls in 7 days`}
                     </span>
                 </>
             )}
@@ -314,8 +321,8 @@ function FailureRow({ failure }: { failure: Health["failures"][number] }) {
                     {failure.host && ` · from ${failure.host}`}
                 </span>
                 <span className="text-xs text-theme-text-muted">
-                    {failure.failures.toLocaleString()} failed ·{" "}
-                    {failure.counted.toLocaleString()} final
+                    {formatCount(failure.failures)} failed ·{" "}
+                    {formatCount(failure.counted)} final
                 </span>
             </div>
             {failure.message && (

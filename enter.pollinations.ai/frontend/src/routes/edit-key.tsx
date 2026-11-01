@@ -57,7 +57,7 @@ function EditKeyPage() {
         : accessContext
           ? `Edit ${accessContext} access`
           : isAppKey(apiKey)
-            ? "Edit app key"
+            ? "Edit app"
             : "Edit secret key";
     useEffect(() => {
         document.title = `${title} | pollinations.ai`;

@@ -262,8 +262,8 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"
 # Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
 # team access when the exact GitHub account is unknown. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015,314960022"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid,polli@pollinations.ai"
 [env.dev]
 
 [[env.dev.services]]

@@ -270,6 +270,15 @@ export const track = (eventType: EventType) =>
             communityModelReward?: CommunityModelRewardResolution | null;
             billedPrice?: number;
         }): Promise<InsertGenerationEvent> => {
+            // Owner-only models stay out of public stats. A private model asked
+            // for drops the row; a private fallback that served a public model
+            // keeps the row in that model's totals, with its route unnamed.
+            const isPrivate = (id: string | undefined) =>
+                fallbackCandidates(modelInfo).some(
+                    (candidate) =>
+                        candidate.communityEndpoint?.visibility === "private" &&
+                        candidate.id === id,
+                );
             const event = createTrackingEvent({
                 id: generateRandomId(),
                 requestId: c.get("requestId"),
@@ -291,6 +300,8 @@ export const track = (eventType: EventType) =>
                 markup: row.markup ?? null,
                 communityModelReward: row.communityModelReward ?? null,
                 billedPrice: row.billedPrice ?? 0,
+                privateModel: isPrivate(requestTracking.resolvedModelRequested),
+                privateRoute: isPrivate(row.responseTracking.modelUsed),
             });
             await sendToTinybird(
                 event,
@@ -1318,6 +1329,8 @@ type TrackingEventInput = {
     communityModelReward: CommunityModelRewardResolution | null;
     billedPrice: number;
     errorTracking?: ErrorData;
+    privateModel: boolean;
+    privateRoute: boolean;
 };
 
 // Reduce the per-rule adjustment breakdown into the two Map columns the event
@@ -1361,6 +1374,8 @@ function createTrackingEvent({
     communityModelReward,
     billedPrice,
     errorTracking,
+    privateModel,
+    privateRoute,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id,
@@ -1391,6 +1406,8 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         communityEndpointType: requestTracking.communityEndpointType,
+        privateModel,
+        privateRoute,
         upstreamModel: responseTracking.upstreamModel,
         upstreamServedModel: responseTracking.upstreamServedModel,
         modelProviderUsed:

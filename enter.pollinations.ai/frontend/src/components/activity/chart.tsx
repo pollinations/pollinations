@@ -20,9 +20,6 @@ const CHART_COLORS = {
     grid: "var(--polli-color-divider)",
 } as const;
 
-/** A chart card's loading size: the 180px chart plus the card's padding. */
-export const CHART_LOADING = "h-[208px] sm:h-[212px]";
-
 type ChartProps = {
     data: DataPoint[];
     metric: Metric;
@@ -31,15 +28,23 @@ type ChartProps = {
     onSelect: (point: DataPoint) => void;
 };
 
-function getYAxisPadding({
-    isCompact,
-    needsPrecisePollenScale,
-}: {
-    isCompact: boolean;
-    needsPrecisePollenScale: boolean;
-}): number {
-    if (needsPrecisePollenScale) return isCompact ? 58 : 68;
-    return isCompact ? 36 : 55;
+// The y-axis sits on the right, under the unit switch. Its width is fixed so
+// switching unit or period never moves the bars: 6 characters at the 10px
+// label size ("2.5K", "0.0015"), plus the gap to the plot. The plot starts at
+// the table's text inset.
+const AXIS_GAP = 8;
+const AXIS_WIDTH = AXIS_GAP + 6 * 6;
+const PLOT_INSET = 8;
+
+/** A tick step that gives 4–6 ticks with the max at 60–100% of the scale. */
+function getNiceStep(maxVal: number): number {
+    if (maxVal <= 0) return 1;
+    const magnitude = 10 ** Math.floor(Math.log10(maxVal));
+    const normalized = maxVal / magnitude;
+    if (normalized <= 1.2) return magnitude * 0.2;
+    if (normalized <= 2.5) return magnitude * 0.5;
+    if (normalized <= 6) return magnitude;
+    return magnitude * 2;
 }
 
 export const Chart: FC<ChartProps> = ({
@@ -103,16 +108,13 @@ export const Chart: FC<ChartProps> = ({
     }, []);
 
     const height = 180;
-    const isCompact = width < 480;
     const maxDataValue =
         data.length > 0 ? Math.max(...data.map((d) => d.value)) : 0;
-    const needsPrecisePollenScale =
-        metric === "pollen" && maxDataValue > 0 && maxDataValue < 0.0001;
     const pad = {
         top: 24,
-        right: isCompact ? 10 : 20,
+        right: AXIS_WIDTH,
         bottom: 32,
-        left: getYAxisPadding({ isCompact, needsPrecisePollenScale }),
+        left: PLOT_INSET,
     };
     const cw = width - pad.left - pad.right;
     const ch = height - pad.top - pad.bottom;
@@ -120,30 +122,10 @@ export const Chart: FC<ChartProps> = ({
     const { bars, yTicks } = useMemo(() => {
         if (data.length === 0) return { bars: [], yTicks: [] };
 
-        const max = maxDataValue;
-
-        // Calculate nice tick spacing based on data max
-        const getNiceStep = (maxVal: number): number => {
-            if (maxVal <= 0) return 1;
-            const magnitude = 10 ** Math.floor(Math.log10(maxVal));
-            const normalized = maxVal / magnitude;
-            // Pick step that gives 4-6 ticks and uses range well
-            // For normalized values (1-10), pick step that results in max being 60-100% of scale
-            if (normalized <= 1.2) return magnitude * 0.2;
-            if (normalized <= 1.5) return magnitude * 0.5;
-            if (normalized <= 2.5) return magnitude * 0.5;
-            if (normalized <= 3.5) return magnitude;
-            if (normalized <= 6) return magnitude;
-            if (normalized <= 8) return magnitude * 2;
-            return magnitude * 2;
-        };
-
-        // Calculate nice scale with tight fit
-        const tickSpacing = getNiceStep(max || 1);
-        // Round up to next tick, then add just one more tick for headroom
+        const tickSpacing = getNiceStep(maxDataValue || 1);
+        // Round up to the next tick.
         const niceMaxVal =
-            Math.ceil(max / tickSpacing) * tickSpacing || tickSpacing;
-
+            Math.ceil(maxDataValue / tickSpacing) * tickSpacing || tickSpacing;
         const barWidth = Math.max(4, (cw / data.length) * 0.7);
         const gap = (cw / data.length) * 0.3;
 
@@ -163,7 +145,6 @@ export const Chart: FC<ChartProps> = ({
             };
         });
 
-        // Generate nice Y ticks
         const tickCount = Math.ceil(niceMaxVal / tickSpacing) + 1;
         const ticks = Array.from({ length: Math.min(tickCount, 6) }, (_, i) => {
             const value = i * tickSpacing;
@@ -228,9 +209,9 @@ export const Chart: FC<ChartProps> = ({
                             strokeDasharray="4 4"
                         />
                         <text
-                            x={pad.left - 8}
+                            x={width - pad.right + AXIS_GAP}
                             y={t.y}
-                            textAnchor="end"
+                            textAnchor="start"
                             alignmentBaseline="middle"
                             className="text-micro fill-theme-text-muted font-medium"
                         >

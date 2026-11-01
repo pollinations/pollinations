@@ -1189,7 +1189,7 @@ class DeliverTest(unittest.TestCase):
             state = json.loads(self.store[deploy_posts.HELD_PATH])
             self.assertEqual(list(state["held"]), ["2"])
             self.assertEqual((state["production"], state["master"]), ("production", "master"))
-            self.assertEqual(picture.call_args_list, [call("a bee racing a snail", "test")] * 2)
+            self.assertEqual(picture.call_args_list, [call("a bee racing a snail", "test", 1344, 768)] * 2)
             record = json.loads(self.store[f"{NEWS_REL_DIR}/posts/discord/prs/2026-10/delivery.json"])
             self.assertEqual((record["pr-1"]["state"], record["pr-3"]["state"]), ("done", "done"))
             deploy_posts.main()  # no new deploy: Gen stays held, docs are not sent twice
@@ -1213,8 +1213,8 @@ class DeliverTest(unittest.TestCase):
         self.assertEqual(len(sent), 3)
         payload = json.loads(sent[0][2]["payload_json"][1])
         (embed,) = payload["embeds"]
-        self.assertEqual((embed["footer"]["text"], embed["thumbnail"]["url"]),
-                         ("Models · Feature · PR #1 · bee · Team", "attachment://image.jpg"))
+        self.assertEqual((embed["description"], embed["footer"]["text"], embed["image"]["url"]),
+                         ("`Models` `Feature` `PR #1`", "bee · Team", "attachment://image.jpg"))
         self.assertEqual((payload["allowed_mentions"], sent[0][2]["files[0]"][1]), ({"parse": []}, b"jpeg"))
         deploy_posts.includes.cache_clear()
 
@@ -1231,19 +1231,18 @@ class DeploymentReadinessTest(unittest.TestCase):
                 "- 🧩 See [the guide](https://made.up/guide) or [Snap](https://snap.test)")
         embed = deploy_posts.message(pr, text, app, {"area": "Accounts & keys", "type": "Bug", "source": "Team"})["embeds"][0]
         self.assertEqual((embed["title"], embed["url"], embed["color"], embed["footer"]["text"]),
-                         ("Keys moved", "https://github.com/p/7", deploy_posts.COLORS["Bug"],
-                          "Accounts & keys · Bug · PR #7 · bee · Team"))
+                         ("Keys moved", "https://github.com/p/7", deploy_posts.COLORS["Bug"], "bee · Team"))
         self.assertEqual(embed["description"],
                          "- 🔑 Make one on [your keys page](https://enter.pollinations.ai/keys)\n"
-                         "- 🧩 See the guide or [Snap](https://snap.test)")
+                         "- 🧩 See the guide or [Snap](https://snap.test)\n\n`Accounts & keys` `Bug` `PR #7`")
         # The app is always linked, once.
         linked = deploy_posts.message(pr, "Snap added\n- 🐝 A meme maker", app, {})["embeds"][0]
-        self.assertEqual(linked["description"], "- 🐝 A meme maker\n\n🔗 [Snap](https://snap.test)")
+        self.assertEqual(linked["description"], "- 🐝 A meme maker\n\n🔗 [Snap](https://snap.test)\n\n`PR #7`")
         # Off the Dev project, the card has no label or colour rather than a guessed one.
         bare = deploy_posts.message(pr, "Keys moved", {}, {"area": None, "type": None, "source": None})["embeds"][0]
         self.assertEqual(sorted(bare.keys() - embed.keys()), [])
-        self.assertEqual(sorted(embed.keys() - bare.keys()), ["color", "description"])
-        self.assertEqual(bare["footer"]["text"], "PR #7 · bee")
+        self.assertEqual(sorted(embed.keys() - bare.keys()), ["color"])
+        self.assertEqual((bare["description"], bare["footer"]["text"]), ("`PR #7`", "bee"))
 
     def test_requirements_come_from_the_scanned_production_checkout(self):
         source = Path(deploy_posts.get_repo_root())

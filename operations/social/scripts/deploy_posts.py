@@ -249,20 +249,21 @@ def links_for(app: dict) -> dict:
 
 def message(pr: dict, text: str, app: dict, fields: dict) -> dict:
     """The post: one card titled with the PR's change, the text's bullets with known links only,
-    the picture, and the PR's Area, Work type and authorship in the footer."""
+    a line of labels (Area, Work type, PR), the picture, and the author, Source and merge time."""
     title, _, rest = text.strip().partition("\n")
     allowed = set(links_for(app).values())
     rest = LINK.sub(lambda m: m[0] if m[2] in allowed else m[1], rest.strip())
     if app and app["app_url"] not in rest:
         rest += f"\n\n🔗 [{app['app_name']}]({app['app_url']})"
-    footer = " · ".join(filter(None, (fields.get("area"), fields.get("type"), f"PR #{pr['number']}",
-                                      pr["user"]["login"], fields.get("source"))))
+    # Inline code is the only text with a background that Discord gives a card.
+    labels = " ".join(f"`{label}`" for label in (fields.get("area"), fields.get("type"), f"PR #{pr['number']}") if label)
+    footer = " · ".join(filter(None, (pr["user"]["login"], fields.get("source"))))
     embed = {
         "title": safe_truncate(title.strip("#* "), 256),
         "url": pr["html_url"],
-        "description": safe_truncate(rest.strip(), 4096),
+        "description": "\n\n".join(filter(None, (safe_truncate(rest.strip(), 3900), labels))),
         "color": COLORS.get(fields.get("type")),
-        "thumbnail": {"url": "attachment://image.jpg"},  # the picture send_discord uploads
+        "image": {"url": "attachment://image.jpg"},  # the picture send_discord uploads, under the text
         "footer": {"text": footer, "icon_url": pr["user"]["avatar_url"]},
         "timestamp": pr["merged_at"],
     }
@@ -293,7 +294,7 @@ def prepare_post(pr: dict, token: str, webhook: str):
     )
     if not text:
         raise ValueError("the reply has no text")
-    picture, _ = generate_image(note["image_prompt"], token)
+    picture, _ = generate_image(note["image_prompt"], token, 1344, 768)  # 16:9, full card width
     if not picture:
         raise ValueError("the picture failed")
     post = message(pr, text, app, fields)

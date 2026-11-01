@@ -172,8 +172,11 @@ const OVERRIDE_ERROR_CODES: Record<number, readonly string[]> = {
         "invalid_image_url",
         "image_too_large",
         "unsupported_image_media_type",
+        "output_token_limit_exceeded",
     ],
     422: ["content_policy_violation"],
+    429: ["community_model_rate_limit"],
+    502: ["empty_response"],
 };
 
 export function getErrorCodesForStatus(status: number): [string, ...string[]] {

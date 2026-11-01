@@ -403,6 +403,47 @@ describe("error observability", () => {
         },
     );
 
+    it.each([
+        [400, "output_token_limit_exceeded"],
+        [429, "community_model_rate_limit"],
+        [502, "empty_response"],
+    ] as const)("documents the %s %s error code", async (status, code) => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () => new Response("ok"),
+        );
+        expect(getErrorCodesForStatus(status)).toContain(code);
+
+        const app = new Hono<Env>();
+        app.get("/documented-code", () => {
+            throw new UpstreamError(status, {
+                message: "documented code check",
+                errorCode: code,
+            });
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/documented-code"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "error",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(status);
+        const body = await response.json();
+        expect(createErrorResponseSchema(status).safeParse(body).success).toBe(
+            true,
+        );
+    });
+
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -797,7 +838,7 @@ describe("error observability", () => {
                     TINYBIRD_INGEST_URL:
                         "https://tinybird.test/v0/events?name=generation_event_v2",
                     TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-                } as CloudflareBindings,
+                } as unknown as CloudflareBindings,
                 ctx,
             );
             await waitOnExecutionContext(ctx);

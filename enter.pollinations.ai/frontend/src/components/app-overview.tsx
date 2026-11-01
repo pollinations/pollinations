@@ -94,11 +94,7 @@ function summarize(
         });
     }
     for (const site of sites) {
-        // Redirect URLs name the live address, <name>.pollinations.app; on
-        // staging the site itself is served at <name>--staging.pollinations.app.
-        const live = `${site.name}.pollinations.app`;
-        const found = apps.find((app) => app.hosts.includes(live));
-        (found ?? appFor(hostOf(site.url), site.name)).site = site;
+        appFor(hostOf(site.url), site.name).site = site;
     }
     return apps;
 }

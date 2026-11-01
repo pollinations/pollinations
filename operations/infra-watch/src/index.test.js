@@ -28,6 +28,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let world;
 
 async function discord(url, init) {
+    if (init.method === "DELETE") {
+        const write = { method: "DELETE", path: url.pathname, text: "" };
+        write.ok = !world.fails(write);
+        world.writes.push(write);
+        return new Response(null, { status: write.ok ? 204 : 503 });
+    }
     const { content, embeds, allowed_mentions } = JSON.parse(init.body);
     const write = {
         method: init.method,
@@ -71,7 +77,7 @@ async function fake(input, init = {}) {
                     requests: 40,
                     failures: 30,
                     callers: 3,
-                    failing_callers: 3,
+                    failing_callers: world.failingCallers,
                     top_caller_failures: 12,
                 },
             ],
@@ -141,6 +147,7 @@ beforeEach(() => {
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
+        failingCallers: 3,
         receipt: true,
         fails: () => false,
         delay: () => 0,
@@ -264,6 +271,93 @@ it("opens a new card when a close was edited but never saved", async () => {
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
     expect(posts).toHaveLength(2);
     expect(posts[1].text).toContain("AGAIN");
+});
+
+// A card opened with one failing caller, then several fail, read on the
+// next check. `also` runs in the object first, e.g. to break its storage.
+const worsen = async (stub, also = () => {}) => {
+    world.rows = BAD;
+    world.failingCallers = 1;
+    await stub.check();
+    await settle(stub);
+    world.failingCallers = 3;
+    await runInDurableObject(stub, async (_, state) => {
+        const saved = await state.storage.get("state");
+        saved.open[KEY].enriched.at = 0;
+        await state.storage.put("state", saved);
+        also(state);
+    });
+};
+const posted = () => world.writes.filter((w) => w.ok && w.method === "POST");
+const deleted = () =>
+    world.writes
+        .filter((w) => w.ok && w.method === "DELETE")
+        .map((w) => w.path.split("/").at(-1));
+
+it("moves a worsened card to the bottom with its ping and lines", async () => {
+    const stub = watch();
+    await worsen(stub);
+    await stub.check();
+    await settle(stub);
+
+    const posts = posted();
+    expect(posts).toHaveLength(2);
+    expect(posts[0].users).toEqual([]);
+    expect(posts[1].users).toHaveLength(2);
+    expect(posts[1].text).toContain("Line 1.");
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m2");
+    expect((await stored(stub, "lines:m2")).lines).toHaveLength(1);
+    // The next check deletes the old card, then its lines.
+    await stub.check();
+    expect(deleted()).toEqual(["m1"]);
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+});
+
+it("tries a failed delete of a moved card again", async () => {
+    const stub = watch();
+    await worsen(stub);
+    await stub.check();
+    world.fails = (w) => w.method === "DELETE";
+    await stub.check();
+    expect(await stored(stub, "lines:m1")).toBeDefined();
+    world.fails = () => false;
+    await stub.check();
+    expect(deleted()).toEqual(["m1"]);
+    expect(await stored(stub, "lines:m1")).toBeUndefined();
+});
+
+it("pings a worsened card once when its post has no readable receipt", async () => {
+    const stub = watch();
+    await worsen(stub);
+    world.receipt = false;
+    await checks(stub, 3);
+    await settle(stub);
+    expect(posted()).toHaveLength(2);
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m1");
+});
+
+it("keeps a worsened card's lines when the move's save fails", async () => {
+    const stub = watch();
+    // The check that moves the card fails to save its state.
+    await worsen(stub, (state) => {
+        const put = state.storage.put.bind(state.storage);
+        state.storage.put = async (key, value) => {
+            if (key === "state") throw new Error("storage unavailable");
+            return put(key, value);
+        };
+    });
+    const failure = await stub.check().catch((error) => error);
+    expect(failure.message).toContain("storage unavailable");
+
+    await evictDurableObject(stub);
+    await checks(stub, 2);
+    await settle(stub);
+    // The old card stayed until a move was saved, and the saved one carries
+    // its line. The card the failed save left behind goes, then the old one.
+    expect(posted().at(-1).text).toContain("Line 1.");
+    expect((await stored(stub, "state")).open[KEY].messageId).toBe("m3");
+    expect((await stored(stub, "lines:m3")).lines).toHaveLength(1);
+    expect(deleted()).toEqual(["m2", "m1"]);
 });
 
 it("drops a line lost in a restart instead of checking forever", async () => {
@@ -590,16 +684,13 @@ const cycled = async (stub) => {
     await runInDurableObject(stub, (instance) => instance.cycle);
 };
 // Half an hour on, with every saved time `ms` further back: each model's
-// backoff, quiet periods, and the probes a pending shared failure counted.
+// backoff and quiet periods.
 const later = (stub, ms) =>
     runInDurableObject(stub, async (_, state) => {
         const saved = await state.storage.get("community");
         saved.at -= 30 * 60_000;
         for (const s of Object.values(saved.schedule)) s.lastAt -= ms;
         for (const key of Object.keys(saved.quiet)) saved.quiet[key] -= ms;
-        for (const p of Object.values(saved.pending ?? {}))
-            for (const model of Object.keys(p.probes ?? {}))
-                p.probes[model] -= ms;
         await state.storage.put("community", saved);
     });
 const COMMUNITY = "/api/webhooks/2/y";
@@ -664,7 +755,9 @@ it("probes due models by Thomas's rule, and calls the agent only with incidents,
     ]);
     const [told] = posts(COMMUNITY);
     expect(told.content).toBe(OWNER_O);
-    expect(told.text).toMatch(/^community: 1\n\nOwners see .*My Models/);
+    expect(told.text).toMatch(
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT[\s\S]*│ MODEL {3}o\/broken +│[\s\S]*\n```\ncommunity: 1\n\nPublishers see .*My Models/,
+    );
 
     // Told: quiet for a day, so no call even once it breaks again.
     await later(stub, HOURS(16));
@@ -706,13 +799,17 @@ it("starts quiet periods only for incidents in a delivered post; the rest stay p
     expect(world.agentFacts).toHaveLength(3);
 }, 15_000);
 
-it("sends a stream broken for three owners at once to the maintainers, pinging no owner", async () => {
+it("sends a stream broken for three owners' working models at once to the maintainers, pinging no owner", async () => {
     const stub = watch();
     world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
         (n) => community(n),
     );
-    world.probe = answers(() => true);
+    world.probe = answers(() => false);
     world.agent = tells();
+    await cycled(stub);
+    // Working, then 4 hours on all three break the same way.
+    world.probe = answers(() => true);
+    await later(stub, HOURS(4));
     await cycled(stub);
     expect(world.agentFacts[0].incidents).toEqual([
         {
@@ -723,7 +820,9 @@ it("sends a stream broken for three owners at once to the maintainers, pinging n
             models: ["community/a/x", "community/b/y", "community/c/z"],
         },
     ]);
-    const [told] = posts(INFRA).filter((w) => w.text.startsWith("maintainers"));
+    const [told] = posts(INFRA).filter((w) =>
+        w.text.includes("COMMUNITY MODELS: LIKELY A GEN PROBLEM"),
+    );
     expect(told.content).toBe(MAINTAINERS);
     expect(posts(COMMUNITY)).toHaveLength(0);
 });
@@ -783,16 +882,19 @@ it("keeps a shared failure the maintainers didn't get as gen's, past 4 hours and
     world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
         (n) => community(n),
     );
-    world.probe = answers(() => true);
+    world.probe = answers(() => false);
     world.agent = tells();
+    await cycled(stub);
+    world.probe = answers(() => true);
     world.fails = (w) => w.path === INFRA;
+    await later(stub, HOURS(4));
     await cycled(stub);
     // 5 hours on, before their backoff ends: still one incident for the
     // maintainers, none for the owners.
     world.fails = () => false;
     await later(stub, HOURS(5));
     await cycled(stub);
-    expect(world.probes).toHaveLength(3);
+    expect(world.probes).toHaveLength(6);
     expect(world.agentFacts[1].incidents.map((i) => i.kind)).toEqual([
         "shared",
     ]);

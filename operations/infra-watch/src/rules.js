@@ -333,11 +333,12 @@ export function duration(ms) {
 // A box titled with the alert and what it is about. It is as wide as its
 // title or its longest row needs, so a full model id is never cut. The
 // title is drawn in the card's colour (an ansi block): Discord on desktop
-// shows it, the phone shows plain text.
-function panel(title, lines, color) {
+// shows it, the phone shows plain text. `whole` keeps every value whole,
+// for cards whose rows are model ids and errors.
+export function panel(title, lines, color, { whole = false } = {}) {
     const body = lines.map(
         ([field, value]) =>
-            `${field.padEnd(Math.max(8, field.length + 1))}${fit(String(value))}`,
+            `${field.padEnd(Math.max(8, field.length + 1))}${whole ? value : fit(String(value))}`,
     );
     const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
     const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
@@ -700,14 +701,6 @@ export function renderCard(
         color,
     };
 }
-
-// The one new message an open incident can post: it got worse and needs a
-// person. It links to the card instead of repeating it.
-export const escalation = (key, incident, link) => ({
-    text: `↑ \`${subjectOf(key)}\` is now ${LABEL[incident.kind]}: callers are affected. ${link}`,
-    ping: true,
-    color: COLOR[incident.kind],
-});
 
 // Heartbeat: infra-watch's own liveness, judged from outside Cloudflare by
 // heartbeat.mjs (GitHub Actions). A last completed check this old means the

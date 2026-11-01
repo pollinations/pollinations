@@ -70,7 +70,7 @@ export function MoneyMoves() {
                         and{" "}
                         {/* Keep the link's arrow and the full stop on its line. */}
                         <span className="whitespace-nowrap">
-                            <InlineLink href="https://gen.pollinations.ai/docs#tag/connect-user-wallets">
+                            <InlineLink href="https://gen.pollinations.ai/docs#tag/pollinations-pay">
                                 apps
                             </InlineLink>
                             .

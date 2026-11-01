@@ -21,8 +21,8 @@ import type { DeveloperEarningsRow } from "../components/activity/use-earnings-d
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
 import {
+    CardLoading,
     LoadError,
-    PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
@@ -220,17 +220,14 @@ function DashboardLayout() {
                 data.user ? (
                     // Await adds no boundary for a null fallback; without this
                     // the whole dashboard would wait for the balance.
-                    <Suspense fallback={<PageStatus />}>
+                    <Suspense fallback={<CardLoading className="h-11" />}>
                         <Await promise={data.balance}>
                             {(balance) =>
                                 balance ? (
                                     <Await
                                         promise={data.earnings}
                                         fallback={
-                                            <>
-                                                <SidebarWallet {...balance} />
-                                                <PageStatus />
-                                            </>
+                                            <SidebarWallet {...balance} />
                                         }
                                     >
                                         {(earnings) => (

@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "2048 AI Edition",
+    "url": "https://boofan126.github.io/mini2048-ai",
+    "description": "2048 AI Edition is a single-file browser game that integrates Pollinations AI. The \"AI Skin\" button calls the flux-2-dev-free image model to generate custom game themes on demand; the \"AI Hint\" button",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "boofan126",
+    "githubUserId": "264810778",
+    "repositoryUrl": "https://github.com/boofan126/mini2048-ai",
+    "repositoryStars": null,
+    "discordUsername": "boofan126",
+    "other": null,
+    "submittedDate": "2026-11-01",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18954",
+    "approvedDate": "2026-11-01",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/87e9e443-5e0a-4a68-bc08-751d2de2c012"
+  },
+  {
     "emoji": "🖼️",
     "name": "Chatbot v2",
     "url": "https://pollinations-chatbot-2.vercel.app",

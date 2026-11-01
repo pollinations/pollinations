@@ -31,11 +31,9 @@ import {
 } from "./investigate.js";
 import { dueProbes, FORGET_MS, pool, probe, recordProbe } from "./probes.js";
 import {
-    COLOR,
     conditions,
     duration,
     escalates,
-    escalation,
     legacyDown,
     lineColor,
     noteworthy,
@@ -57,8 +55,6 @@ import {
 
 const PUBLIC = "https://gen.pollinations.ai";
 const UPSTREAM = "https://gen.myceli.ai";
-// The pollinations.ai Discord server, for links to a card.
-const GUILD = "885844321461485618";
 // Who is failing and the main error, for an open model incident, are read
 // from Tinybird at most this often.
 const ENRICH_EVERY_MS = 5 * 60 * 1000;
@@ -135,6 +131,11 @@ async function update(env, id, message) {
         return true;
     }
     return edit(env.DISCORD_WEBHOOK_URL, id, body);
+}
+
+async function remove(env, id) {
+    if (env.DRY_RUN === "1") return true;
+    return edit(env.DISCORD_WEBHOOK_URL, id, null);
 }
 
 const modelOf = (key) => (key.startsWith("model:") ? key.slice(6) : null);
@@ -269,8 +270,18 @@ export class Watch extends DurableObject {
         // the saved state no longer holds the card open: until then a late
         // AI line would take the card for open and edit it back.
         for (const [name, record] of records) {
-            if (!record.closed) continue;
             const id = name.slice("lines:".length);
+            if (!record.closed) {
+                // A card no open incident points to: moved to the bottom, or
+                // posted by a check whose save failed. It goes, then its
+                // lines; a failed delete is tried again next check.
+                const kept = Object.values(open).some(
+                    (i) => i.messageId === id,
+                );
+                if (!kept && (await this.writes(() => remove(this.env, id))))
+                    await this.ctx.storage.delete(name);
+                continue;
+            }
             if (record.done) {
                 if (saved.open?.[record.closed.key]?.messageId !== id)
                     await this.ctx.storage.delete(name);
@@ -362,11 +373,30 @@ export class Watch extends DurableObject {
             // Update: the card changes only when its text does, gets an AI
             // line only on a real change, and pings again only if worse.
             const current = snapshot(incident);
-            if (escalates(incident.alerted, current)) {
-                const link = `https://discord.com/channels/${GUILD}/${incident.channelId}/${incident.messageId}`;
-                const notice = escalation(key, incident, link);
-                if (await this.writes(() => post(this.env, notice)))
-                    incident.alerted = current;
+            // Worse: an edit never pings, so the card is posted again at the
+            // bottom with the ping and all its lines; the next check deletes
+            // the old one. It waits while an AI line is still on its way to
+            // the old card.
+            const old = await this.record(incident.messageId);
+            if (escalates(incident.alerted, current) && !waiting(old, now)) {
+                const card = renderCard(
+                    key,
+                    { ...incident, pinged: true },
+                    { lines: old.lines, now },
+                );
+                const saved = await this.writes(() => post(this.env, card));
+                // Accepted, it never pings twice. Without a readable receipt
+                // the old card stays the one kept up to date.
+                if (saved) incident.alerted = current;
+                if (saved?.id) {
+                    await this.ctx.storage.put(`lines:${saved.id}`, old);
+                    Object.assign(incident, {
+                        pinged: true,
+                        messageId: saved.id,
+                        channelId: saved.channel_id,
+                        text: card.text,
+                    });
+                } else if (!saved) failed++;
             }
             const id = incident.messageId;
             const record = await this.record(id);
@@ -536,7 +566,6 @@ export class Watch extends DurableObject {
             found,
         );
         if (!plan) throw new Error("the agent gave no decision");
-        const color = COLOR.PRIMARY_WEAK;
         for (const [message, webhook] of [
             [plan.community, "COMMUNITY_WEBHOOK_URL"],
             [
@@ -544,11 +573,7 @@ export class Watch extends DurableObject {
                 undefined,
             ],
         ]) {
-            if (
-                !message ||
-                !(await post(this.env, { ...message, color }, webhook))
-            )
-                continue;
+            if (!message || !(await post(this.env, message, webhook))) continue;
             for (const incident of message.incidents) {
                 for (const k of incident.quiet) state.quiet[k] = now;
                 if (incident.kind === "listings")

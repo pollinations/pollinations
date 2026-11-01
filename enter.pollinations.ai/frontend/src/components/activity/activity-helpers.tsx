@@ -11,7 +11,6 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { Await, useLoaderData } from "@tanstack/react-router";
 import type { FC, KeyboardEvent, ReactNode } from "react";
 import { useDeferredValue } from "react";
-import { PageStatus } from "../layout/dashboard-loading.tsx";
 import { saveBlob } from "./activity-csv";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric } from "./types";
@@ -234,12 +233,8 @@ export function ActivityKeyFilter({
     return (
         <Await
             promise={apiKeys}
-            fallback={
-                <>
-                    <ActivityFilter {...props} />
-                    <PageStatus />
-                </>
-            }
+            // Key names only label selections; the filter works without them.
+            fallback={<ActivityFilter {...props} />}
         >
             {(keys) => {
                 const options = [...props.options];

@@ -1213,8 +1213,8 @@ class DeliverTest(unittest.TestCase):
         self.assertEqual(len(sent), 3)
         payload = json.loads(sent[0][2]["payload_json"][1])
         (embed,) = payload["embeds"]
-        self.assertEqual((embed["author"]["name"], embed["footer"]["text"], embed["thumbnail"]["url"]),
-                         ("Models · Feature", "PR #1 · bee · Team", "attachment://image.jpg"))
+        self.assertEqual((embed["footer"]["text"], embed["thumbnail"]["url"]),
+                         ("Models · Feature · PR #1 · bee · Team", "attachment://image.jpg"))
         self.assertEqual((payload["allowed_mentions"], sent[0][2]["files[0]"][1]), ({"parse": []}, b"jpeg"))
         deploy_posts.includes.cache_clear()
 
@@ -1230,8 +1230,9 @@ class DeploymentReadinessTest(unittest.TestCase):
         text = ("## Keys moved\n- 🔑 Make one on [your keys page](https://enter.pollinations.ai/keys)\n"
                 "- 🧩 See [the guide](https://made.up/guide) or [Snap](https://snap.test)")
         embed = deploy_posts.message(pr, text, app, {"area": "Accounts & keys", "type": "Bug", "source": "Team"})["embeds"][0]
-        self.assertEqual((embed["title"], embed["url"], embed["color"], embed["author"]["name"]),
-                         ("Keys moved", "https://github.com/p/7", deploy_posts.COLORS["Bug"], "Accounts & keys · Bug"))
+        self.assertEqual((embed["title"], embed["url"], embed["color"], embed["footer"]["text"]),
+                         ("Keys moved", "https://github.com/p/7", deploy_posts.COLORS["Bug"],
+                          "Accounts & keys · Bug · PR #7 · bee · Team"))
         self.assertEqual(embed["description"],
                          "- 🔑 Make one on [your keys page](https://enter.pollinations.ai/keys)\n"
                          "- 🧩 See the guide or [Snap](https://snap.test)")
@@ -1241,7 +1242,7 @@ class DeploymentReadinessTest(unittest.TestCase):
         # Off the Dev project, the card has no label or colour rather than a guessed one.
         bare = deploy_posts.message(pr, "Keys moved", {}, {"area": None, "type": None, "source": None})["embeds"][0]
         self.assertEqual(sorted(bare.keys() - embed.keys()), [])
-        self.assertEqual(sorted(embed.keys() - bare.keys()), ["author", "color", "description"])
+        self.assertEqual(sorted(embed.keys() - bare.keys()), ["color", "description"])
         self.assertEqual(bare["footer"]["text"], "PR #7 · bee")
 
     def test_requirements_come_from_the_scanned_production_checkout(self):

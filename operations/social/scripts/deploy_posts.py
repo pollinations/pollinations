@@ -248,17 +248,16 @@ def links_for(app: dict) -> dict:
 
 
 def message(pr: dict, text: str, app: dict, fields: dict) -> dict:
-    """The post: one card titled with the PR's change, its Area and Work type on top,
-    the text's bullets with known links only, the picture and the PR in the footer."""
+    """The post: one card titled with the PR's change, the text's bullets with known links only,
+    the picture, and the PR's Area, Work type and authorship in the footer."""
     title, _, rest = text.strip().partition("\n")
     allowed = set(links_for(app).values())
     rest = LINK.sub(lambda m: m[0] if m[2] in allowed else m[1], rest.strip())
     if app and app["app_url"] not in rest:
         rest += f"\n\n🔗 [{app['app_name']}]({app['app_url']})"
-    label = " · ".join(filter(None, (fields.get("area"), fields.get("type"))))
-    footer = " · ".join(filter(None, (f"PR #{pr['number']}", pr["user"]["login"], fields.get("source"))))
+    footer = " · ".join(filter(None, (fields.get("area"), fields.get("type"), f"PR #{pr['number']}",
+                                      pr["user"]["login"], fields.get("source"))))
     embed = {
-        "author": label and {"name": label},
         "title": safe_truncate(title.strip("#* "), 256),
         "url": pr["html_url"],
         "description": safe_truncate(rest.strip(), 4096),

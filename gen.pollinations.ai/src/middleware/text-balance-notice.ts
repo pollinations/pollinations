@@ -39,7 +39,7 @@ function balanceNoticeMessage(
 ): string {
     if (error.errorCode === "QUEST_POLLEN_RESTRICTED") {
         return (
-            "We couldn’t verify the account behind this API key. Its Quest Pollen is frozen. " +
+            "We couldn’t verify the account behind this API key. Its Quest pollen is locked. " +
             `Please ${mdLink("make your first purchase", error.fixUrl)} to unlock it, or ${mdLink("contact us", "mailto:hello@pollinations.ai")} if you think this is a mistake.\n\n` +
             NOT_YOUR_ACCOUNT
         );

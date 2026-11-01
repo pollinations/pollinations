@@ -20,6 +20,9 @@ const CHART_COLORS = {
     grid: "var(--polli-color-divider)",
 } as const;
 
+/** A chart card's loading size: the 180px chart plus the card's padding. */
+export const CHART_LOADING = "h-[208px] sm:h-[212px]";
+
 type ChartProps = {
     data: DataPoint[];
     metric: Metric;

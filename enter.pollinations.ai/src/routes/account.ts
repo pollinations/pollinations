@@ -951,18 +951,18 @@ const accountBalanceSchema = z.object({
     tier: z
         .number()
         .describe(
-            "Spendable Quest Pollen, never below 0; zero while restricted",
+            "Spendable Quest pollen, never below 0; zero while restricted",
         ),
     paid: z.number().describe("Paid Pollen remaining, never below 0"),
     heldTier: z
         .number()
         .optional()
-        .describe("Frozen Quest Pollen, excluded from total and tier"),
+        .describe("Locked Quest pollen, excluded from total and tier"),
     questPollenRestricted: z
         .boolean()
         .optional()
         .describe(
-            "Whether Quest Pollen spending is frozen until a purchase or account review",
+            "Whether Quest pollen spending is locked until a purchase or account review",
         ),
 });
 

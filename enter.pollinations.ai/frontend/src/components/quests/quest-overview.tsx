@@ -10,6 +10,7 @@ import {
     formatCount,
     GitHubIcon,
     InlineLink,
+    LoadingStatus,
     OutageNotice,
     RocketIcon,
     Section,
@@ -40,12 +41,12 @@ import type {
 } from "../../backend-types.ts";
 import { isOutageStatus, useOutage, useOutageRetry } from "../../lib/outage.ts";
 import {
+    CardLoading,
     LoadError,
-    PageStatus,
     SectionContent,
 } from "../layout/dashboard-loading.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
-import { QuestStandings } from "./quest-standings.tsx";
+import { monthName, QuestStandings } from "./quest-standings.tsx";
 import { RedeemCode } from "./redeem-code.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
@@ -987,8 +988,16 @@ function QuestOverviewContent({
                 still explains how quests work. */}
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
+                action={
+                    state.checking && (
+                        <LoadingStatus>Checking quests…</LoadingStatus>
+                    )
+                }
             >
-                <SectionContent loading={state.loading}>
+                <SectionContent
+                    loading={state.loading}
+                    className="h-22 sm:h-28"
+                >
                     {state.error && (
                         <LoadError
                             onRetry={refreshRewards}
@@ -1009,7 +1018,6 @@ function QuestOverviewContent({
                             claimable={claimable}
                         />
                     )}
-                    {state.checking && <PageStatus />}
                     {/* The preview counts available quests and their possible rewards. */}
                     {showSummary && state.anonymous && (
                         <QuestSummary
@@ -1049,6 +1057,12 @@ function QuestOverviewContent({
                     standings={state.standings}
                     openQuests={openQuests}
                 />
+            ) : state.loading ? (
+                <Section
+                    title={`${monthName(new Date().toISOString().slice(0, 7))} leaderboard`}
+                >
+                    <CardLoading className="h-49.5 sm:h-50.5" />
+                </Section>
             ) : (
                 standingsUnavailable && (
                     <Section title="Leaderboard">

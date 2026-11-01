@@ -4,49 +4,50 @@ import {
     OutageNotice,
     RefreshIcon,
     Section,
+    Skeleton,
     useOnline,
 } from "@pollinations/ui";
-import { type ReactNode, useContext, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 import {
     useOutage,
     useOutageRetry,
     useRequestTimeout,
 } from "../../lib/outage.ts";
-import { PendingCount } from "./dashboard-shell.tsx";
 
-/** Render while something on the page is still loading; the shell shows one status until none remain. */
-export function PageStatus() {
-    const setPendingCount = useContext(PendingCount);
-    useEffect(() => {
-        setPendingCount((count) => count + 1);
-        return () => setPendingCount((count) => count - 1);
-    }, [setPendingCount]);
-    return null;
+/**
+ * Holds a card's place while its content loads: a quiet block about the size
+ * of what replaces it (`className` sets the size), so nothing jumps.
+ */
+export function CardLoading({ className = "h-24" }: { className?: string }) {
+    return (
+        <output className="block">
+            <Skeleton className={className} />
+            <span className="sr-only">Loading…</span>
+        </output>
+    );
 }
 
 /** Keep section headings and controls outside the content that waits for data. */
 export function SectionContent({
     loading,
+    className,
     children,
 }: {
     loading: boolean;
+    /** The loading block's size. */
+    className?: string;
     children?: ReactNode;
 }) {
-    return loading ? <PageStatus /> : children;
+    return loading ? <CardLoading className={className} /> : children;
 }
 
-/** Every card title of a page that is still loading, with the page status. */
+/** Every card of a page that is still loading, each holding its place. */
 export function PageLoading({ titles }: { titles: readonly string[] }) {
-    return (
-        <>
-            <PageStatus />
-            {titles.map((title) => (
-                <Section key={title} title={title}>
-                    {null}
-                </Section>
-            ))}
-        </>
-    );
+    return titles.map((title) => (
+        <Section key={title} title={title}>
+            <CardLoading />
+        </Section>
+    ));
 }
 
 /**

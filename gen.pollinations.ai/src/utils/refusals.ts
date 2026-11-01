@@ -52,7 +52,7 @@ export async function requireFunds(
         });
         throw new PaymentRequiredError(
             "QUEST_POLLEN_RESTRICTED",
-            `We couldn't verify your account, so Quest Pollen is frozen. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
+            `We couldn't verify your account, so Quest pollen is locked. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
             fixUrl,
             true,
         );

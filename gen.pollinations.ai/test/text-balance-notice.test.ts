@@ -35,7 +35,7 @@ describe("text balance notice", () => {
     const enabled = TEXT_BALANCE_NOTICE_ENABLED;
 
     it.each([false, true])(
-        "refuses frozen Quest spending through the authenticated text route, quest-only=%s",
+        "refuses locked Quest spending through the authenticated text route, quest-only=%s",
         async (questPollenOnly) => {
             const caller = await createTestApiKey();
             await drizzle(env.DB)
@@ -67,7 +67,7 @@ describe("text balance notice", () => {
             const text = await response.text();
             expect(response.status).toBe(enabled ? 200 : 402);
             expect(text).toContain(
-                enabled ? "Quest Pollen is frozen" : "QUEST_POLLEN_RESTRICTED",
+                enabled ? "Quest pollen is locked" : "QUEST_POLLEN_RESTRICTED",
             );
             expect(text).toContain("hello@pollinations.ai");
             expect(

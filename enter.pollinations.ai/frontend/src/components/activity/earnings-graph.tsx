@@ -10,7 +10,11 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import type { FC } from "react";
-import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
 import { downloadActivityCsv } from "./activity-csv";
 import {
     ActivityEmptyState,
@@ -116,6 +120,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 )
             }
         >
+            {refreshing && <PageStatus />}
             <ActivityToolbar
                 label="Earnings"
                 period={period}

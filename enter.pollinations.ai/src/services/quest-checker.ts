@@ -3,7 +3,7 @@ import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { QUEST_GROUPS } from "./quests/index.ts";
+import { listSetupQuestIds, QUEST_GROUPS } from "./quests/index.ts";
 import {
     type QuestEvaluation,
     type QuestEvaluationContext,
@@ -12,6 +12,7 @@ import {
     type QuestUser,
     toReward,
 } from "./quests/types.ts";
+import { setupHold } from "./setup-reward-holds.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
@@ -101,8 +102,16 @@ export async function checkQuestsForUser(
                     eq(schema.rewards.questId, AUTO_CLAIM_QUEST_ID),
                 ),
             );
+        // A held account's Setup rewards wait for a purchase or a review.
+        const lockedQuestIds = (await setupHold(env, ctx.db, user))
+            ? await listSetupQuestIds(ctx)
+            : undefined;
         for (const reward of pending) {
-            await claimReward(ctx.db, { rewardId: reward.id, userId: user.id });
+            await claimReward(ctx.db, {
+                rewardId: reward.id,
+                userId: user.id,
+                lockedQuestIds,
+            });
         }
     }
 
@@ -123,13 +132,14 @@ export async function checkQuestsForUser(
 async function loadQuestUser(
     db: ReturnType<typeof drizzle<typeof schema>>,
     userId: string,
-): Promise<QuestUser | null> {
+): Promise<(QuestUser & { email: string }) | null> {
     const rows = await db
         .select({
             id: schema.user.id,
             githubId: schema.user.githubId,
             githubUsername: schema.user.githubUsername,
             googleId: schema.account.accountId,
+            email: schema.user.email,
         })
         .from(schema.user)
         .leftJoin(

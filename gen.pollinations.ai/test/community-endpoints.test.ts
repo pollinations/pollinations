@@ -577,6 +577,7 @@ async function createCommunityFallbackPair({
     fallbackName = "cheap",
     primaryPerUserRpm,
     fallbackPerUserRpm,
+    privateFallback = false,
 }: {
     prefix: string;
     modality?: CommunityEndpointModality;
@@ -584,20 +585,26 @@ async function createCommunityFallbackPair({
     fallbackName?: string;
     primaryPerUserRpm?: number;
     fallbackPerUserRpm?: number;
+    // The primary owner's own private model, the only private fallback allowed.
+    privateFallback?: boolean;
 }) {
     const primaryToken = "sk_primary_token";
     const fallbackToken = "sk_fallback_token";
     const suffix = crypto.randomUUID().slice(0, 8);
     const primaryOwner = `${prefix}-primary-${suffix}`;
-    const fallbackOwner = `${prefix}-fallback-${suffix}`;
     const primaryUserId = await createTestUser({
         githubId: nextAllowedGithubId(),
         githubUsername: primaryOwner,
     });
-    const fallbackUserId = await createTestUser({
-        githubId: nextAllowedGithubId(),
-        githubUsername: fallbackOwner,
-    });
+    const fallbackOwner = privateFallback
+        ? primaryOwner
+        : `${prefix}-fallback-${suffix}`;
+    const fallbackUserId = privateFallback
+        ? primaryUserId
+        : await createTestUser({
+              githubId: nextAllowedGithubId(),
+              githubUsername: fallbackOwner,
+          });
     const primaryModelId = communityModelId(primaryOwner, primaryName);
     const fallbackModelId = communityModelId(fallbackOwner, fallbackName);
     const primaryHostname = `${prefix}-primary.example.com`;
@@ -641,7 +648,7 @@ async function createCommunityFallbackPair({
         {
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId: fallbackUserId,
-            visibility: "public",
+            visibility: privateFallback ? "private" : "public",
             perUserRpm: fallbackPerUserRpm,
             name: fallbackName,
             modality,
@@ -3576,6 +3583,11 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
+        const tinybirdEvents: Record<string, unknown>[] = [];
+        const privateModelFlags = () =>
+            tinybirdEvents
+                .filter((event) => event.resolvedModelRequested === modelId)
+                .map((event) => event.privateModel);
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             if (isChatCompletionsRequest(request)) {
@@ -3597,7 +3609,14 @@ fixtureTest(
                     },
                 });
             }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    tinybirdEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
             throw new Error(`Unexpected fetch: ${request.url}`);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -3637,6 +3656,8 @@ fixtureTest(
         await expect(ownerResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
         });
+        // Public health and stats pipes skip rows flagged as private.
+        expect(privateModelFlags()).toEqual([true]);
 
         const catalogIncludesModel = async (authorization?: string) => {
             const modelsResponse = await fetchGen(
@@ -3711,6 +3732,95 @@ fixtureTest(
         expect(freePublicResponse.status).toBe(200);
         await expect(freePublicResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
+        });
+        expect(privateModelFlags().at(-1)).toBe(false);
+    },
+);
+
+fixtureTest(
+    "public model status and stats leave private community models out",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const privateId = communityModelId(ownerGithubUsername, "hidden");
+        const publicId = communityModelId(ownerGithubUsername, "listed");
+        const deletedId = communityModelId(ownerGithubUsername, "deleted");
+        const endpoint = {
+            ownerUserId,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        await insertCommunityEndpoints([
+            {
+                ...endpoint,
+                id: `endpoint-${crypto.randomUUID()}`,
+                name: "hidden",
+                visibility: "private",
+            },
+            {
+                ...endpoint,
+                id: `endpoint-${crypto.randomUUID()}`,
+                name: "listed",
+                visibility: "public",
+            },
+        ]);
+        await env.KV.delete("model-stats-v3");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input) => {
+                const { pathname } = new URL(String(input));
+                if (pathname === "/v0/pipes/model_route_health.json") {
+                    return Response.json({
+                        data: [
+                            { model: privateId, model_used: "" },
+                            // A public model that fell back to a private one:
+                            // an older row naming it, and the unnamed route
+                            // Tinybird returns now.
+                            { model: publicId, model_used: privateId },
+                            { model: publicId, model_used: "private" },
+                            { model: publicId, model_used: publicId },
+                            { model: deletedId, model_used: "" },
+                            { model: "openai", model_used: "" },
+                        ],
+                    });
+                }
+                if (pathname === "/v0/pipes/public_model_stats.json") {
+                    return Response.json({
+                        data: [privateId, publicId, deletedId, "openai"].map(
+                            (model) => ({ model, avg_cost_usd: 0 }),
+                        ),
+                    });
+                }
+                throw new Error(`Unexpected fetch: ${pathname}`);
+            }),
+        );
+
+        const status = await fetchGen(
+            "https://gen.pollinations.ai/models/status",
+        );
+        expect(status.status).toBe(200);
+        await expect(status.json()).resolves.toEqual({
+            data: [
+                { model: publicId, model_used: "private" },
+                { model: publicId, model_used: publicId },
+                { model: "openai", model_used: "" },
+            ],
+        });
+
+        const stats = await fetchGen(
+            "https://gen.pollinations.ai/models/stats",
+        );
+        expect(stats.status).toBe(200);
+        await expect(stats.json()).resolves.toEqual({
+            data: [
+                { model: publicId, avg_cost_usd: 0 },
+                { model: "openai", avg_cost_usd: 0 },
+            ],
         });
     },
 );
@@ -7730,7 +7840,6 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
         const { key, userId } = await createTestApiKey({
-            type: "publishable",
             accountPermissions: ["keys"],
             user: {
                 githubId: nextAllowedGithubId(),
@@ -10286,6 +10395,91 @@ fixtureTest(
         expect(gatewayCalls).toHaveLength(3);
         expect(gatewayCalls[2]?.url).toBe(
             communityChatCompletionsUrl(primaryHost),
+        );
+    },
+);
+
+fixtureTest(
+    "a public model rescued by its owner's private fallback keeps the rescue in public stats, unnamed",
+    async ({ apiKey }) => {
+        const { primaryModelId, fallbackModelId, primaryHost } =
+            await createCommunityFallbackPair({
+                prefix: "private-rescue",
+                privateFallback: true,
+            });
+        const ingestedEvents: Record<string, unknown>[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isChatCompletionsRequest(request)) {
+                    if (
+                        request.url === communityChatCompletionsUrl(primaryHost)
+                    ) {
+                        return Response.json(
+                            { error: { message: "rate limited" } },
+                            { status: 429 },
+                        );
+                    }
+                    return Response.json({
+                        id: "chatcmpl_private_fallback",
+                        object: "chat.completion",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) {
+                    if (new URL(request.url).pathname === "/v0/events") {
+                        ingestedEvents.push(
+                            ...parseIngestedEvents(await request.text()),
+                        );
+                    }
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+
+        // Neither row is dropped from the public model's totals; only the
+        // private route is marked, so public pipes count it without its name.
+        await vi.waitFor(() => expect(ingestedEvents).toHaveLength(2));
+        expect(
+            ingestedEvents.map((event) => [
+                event.modelUsed,
+                event.privateModel,
+                event.privateRoute,
+            ]),
+        ).toEqual(
+            expect.arrayContaining([
+                [primaryModelId, false, false],
+                [fallbackModelId, false, true],
+            ]),
         );
     },
 );

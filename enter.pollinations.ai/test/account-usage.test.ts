@@ -713,3 +713,39 @@ test("GET /api/account/usage?format=csv neutralizes spreadsheet formulas", async
     expect(lines[1]).toContain(",'=1+1,");
     expect(lines[1]).toContain(`"'+SUM(1,1)"`);
 });
+
+test("analytics timeouts stay 504 across activity routes instead of becoming generic 500s", async ({
+    accountToken,
+    mocks,
+}) => {
+    for (const [host, handler] of Object.entries(mocks.tinybird.handlerMap)) {
+        mocks.tinybird.handlerMap[host] = async (request) =>
+            new URL(request.url).pathname.startsWith("/v0/pipes/")
+                ? Response.json(
+                      { error: "Timeout exceeded: maximum 20000 ms" },
+                      { status: 408 },
+                  )
+                : handler(request);
+    }
+    await mocks.enable("tinybird");
+    for (const path of [
+        "usage/daily",
+        "usage",
+        "earnings",
+        "earnings/transactions",
+    ]) {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/${path}`,
+            {
+                headers: authHeaders(accountToken),
+            },
+        );
+        expect(response.status).toBe(504);
+        expect(await response.json()).toMatchObject({
+            error: {
+                code: "GATEWAY_TIMEOUT",
+                message: "Analytics query timed out. Please try again.",
+            },
+        });
+    }
+});

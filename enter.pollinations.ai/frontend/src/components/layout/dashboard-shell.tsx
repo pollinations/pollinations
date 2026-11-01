@@ -409,7 +409,13 @@ function useQuestNavStatus(enabled: boolean): string | null {
                     rewardsResponse.json(),
                 ]);
                 if (!cancelled && currentRequest === requestId) {
-                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
+                    setLabel(
+                        questNavLabel(
+                            catalog.quests,
+                            rewards.rewards,
+                            rewards.setupHold !== null,
+                        ),
+                    );
                 }
             } catch {
                 if (!cancelled && currentRequest === requestId) setLabel(null);

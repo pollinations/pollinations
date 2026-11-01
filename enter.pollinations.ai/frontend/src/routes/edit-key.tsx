@@ -12,11 +12,7 @@ import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
 import { KeySubject } from "../components/keys/key-subject.tsx";
-import {
-    getKeyAccessContext,
-    isAppKey,
-    isPublishableKey,
-} from "../components/keys/key-type.ts";
+import { getKeyAccessContext, isAppKey } from "../components/keys/key-type.ts";
 import { useAccountBalance } from "../hooks/use-account-balance.ts";
 import {
     parseAppUrl,
@@ -61,10 +57,8 @@ function EditKeyPage() {
         : accessContext
           ? `Edit ${accessContext} access`
           : isAppKey(apiKey)
-            ? "Edit app key"
-            : isPublishableKey(apiKey)
-              ? "Edit publishable key"
-              : "Edit secret key";
+            ? "Edit app"
+            : "Edit secret key";
     useEffect(() => {
         document.title = `${title} | pollinations.ai`;
     }, [title]);

@@ -1,0 +1,16 @@
+{
+    "name": "infra-watch",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "wrangler dev --test-scheduled --var DRY_RUN:1",
+        "test": "node --test src/rules.test.js src/delivery.test.js src/investigate.test.js src/heartbeat.test.js src/setup-holds.test.js leaderboard/boards.test.js && vitest run",
+        "deploy": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --secrets-file {}'"
+    },
+    "devDependencies": {
+        "@cloudflare/vitest-plugin": "^1.4.11",
+        "puppeteer-core": "^25.14.0",
+        "vitest": "^5.0.5",
+        "wrangler": "^4.156.0"
+    }
+}

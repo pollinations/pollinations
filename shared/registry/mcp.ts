@@ -45,6 +45,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "CSV_INSPECTOR_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -126,6 +127,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "csv-inspector",
+        name: "CSV Inspector",
+        description:
+            "Inspect CSV structure, inconsistent rows and column summaries without model calls.",
+        binding: "CSV_INSPECTOR_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Local parsing only. No additional MCP fee.",
             rates: [],
         },
     },

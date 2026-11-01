@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Feeds | `https://gen.pollinations.ai/mcp/feeds` | Read RSS and Atom feeds: titles, links, dates, and summaries | [Source](https://github.com/pollinations/pollinations/tree/main/apps/feeds-mcp) |
 
 Send the key with every request:
 
@@ -205,6 +206,12 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Feeds MCP
+
+`feed_read` fetches an RSS or Atom feed and returns its title and link with
+the latest entries: title, link, date and a plain-text summary. Reading feeds
+is free and requires a Pollinations key. The key is not sent to the feed.
 
 ### Billing and permissions
 

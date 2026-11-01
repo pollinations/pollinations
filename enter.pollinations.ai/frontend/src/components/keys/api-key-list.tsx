@@ -413,3 +413,27 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         </>
     );
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Secret keys used in the last 24 hours, on the drawer's Keys row; nothing at zero. */
+export const SidebarKeys: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
+    const since = Date.now() - DAY_MS;
+    const used = apiKeys.filter(
+        (k) =>
+            !isAppKey(k) &&
+            k.lastRequest &&
+            new Date(k.lastRequest).getTime() > since,
+    ).length;
+    if (used === 0) return null;
+    return (
+        <Chip
+            intent="neutral"
+            size="sm"
+            title="Secret keys used in the last 24 hours"
+            className="ml-auto bg-transparent text-theme-text-soft"
+        >
+            {used} used in 24h
+        </Chip>
+    );
+};

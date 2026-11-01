@@ -4,7 +4,6 @@ import {
     BookIcon,
     BrandMark,
     BugIcon,
-    Chip,
     ColorModeToggle,
     CopyButton,
     CopyStateIcon,
@@ -62,6 +61,7 @@ type DashboardShellProps = PropsWithChildren<{
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    rowStatus?: Partial<Record<DashboardPage, ReactNode>>;
     signInBanner?: ReactNode;
     showFooterLinks?: boolean;
     showQuestStatus?: boolean;
@@ -145,6 +145,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     onSignOut,
     accountArea,
     walletArea,
+    rowStatus,
     signInBanner,
     showFooterLinks = true,
     showQuestStatus = false,
@@ -278,6 +279,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            rowStatus={rowStatus}
             questStatus={questStatus}
             showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
@@ -422,6 +424,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    rowStatus?: Partial<Record<DashboardPage, ReactNode>>;
     questStatus: string | null;
     showFooterLinks: boolean;
     onNavigate: () => void;
@@ -434,6 +437,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    rowStatus,
     questStatus,
     showFooterLinks,
     onNavigate,
@@ -468,16 +472,18 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "sandboxes" ||
-                            (item.id === "quests" && questStatus)) && (
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                className="ml-auto bg-transparent text-theme-text-soft"
+                        {/* Something to claim or a new quest: a dot by the
+                            label, the count on hover. */}
+                        {item.id === "quests" && questStatus && (
+                            <span
+                                title={questStatus}
+                                className="-ml-1 self-start pt-1 text-theme-text-soft"
                             >
-                                {item.id === "quests" ? questStatus : "New!"}
-                            </Chip>
+                                <span className="block h-1.5 w-1.5 rounded-full bg-current" />
+                                <span className="sr-only">{questStatus}</span>
+                            </span>
                         )}
+                        {rowStatus?.[item.id]}
                     </NavItem>
                 ))}
                 <DashboardSupport action={supportAction} links={supportLinks} />

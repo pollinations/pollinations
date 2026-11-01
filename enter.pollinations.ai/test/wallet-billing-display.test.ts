@@ -12,7 +12,7 @@ import {
 import { paymentMethods } from "../frontend/src/components/pollen/payment-trust-badge.tsx";
 import {
     PollenBalance,
-    SidebarWallet,
+    SidebarBalance,
 } from "../frontend/src/components/pollen/pollen-balance.tsx";
 
 vi.hoisted(() => {
@@ -311,10 +311,10 @@ describe("locked Quest pollen display", () => {
         expect(html).not.toContain("request a review");
 
         const sidebar = renderToStaticMarkup(
-            createElement(SidebarWallet, {
-                tierBalance: 35.54,
-                packBalance: 2,
-                questPollenRestricted: true,
+            createElement(SidebarBalance, {
+                kind: "tier",
+                balance: 35.54,
+                restricted: true,
             }),
         );
         expect(sidebar).toContain("35.54");
@@ -337,10 +337,10 @@ describe("locked Quest pollen display", () => {
         expect(html).not.toContain("Verification needed");
         expect(html).not.toContain("couldn’t verify");
         const sidebar = renderToStaticMarkup(
-            createElement(SidebarWallet, {
-                tierBalance: 35.54,
-                packBalance: 2,
-                questPollenRestricted: false,
+            createElement(SidebarBalance, {
+                kind: "tier",
+                balance: 35.54,
+                restricted: false,
             }),
         );
         expect(sidebar).not.toContain(

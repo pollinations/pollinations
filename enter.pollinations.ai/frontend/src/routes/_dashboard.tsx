@@ -19,18 +19,20 @@ import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
-import type { ApiKey } from "../components/keys";
-import {
-    CardLoading,
-    LoadError,
-} from "../components/layout/dashboard-loading.tsx";
+import { type ApiKey, SidebarKeys } from "../components/keys";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { SidebarOutage, SidebarWallet } from "../components/pollen";
+import {
+    SidebarBalance,
+    SidebarEarnings,
+    SidebarOutage,
+} from "../components/pollen";
+import { SidebarSandboxes } from "../components/sandboxes.tsx";
 import {
     BALANCE_PATH,
     fetchAccountBalance,
@@ -216,30 +218,74 @@ function DashboardLayout() {
                     <DashboardSignInBanner />
                 )
             }
+            rowStatus={
+                data.user
+                    ? {
+                          pollen: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.balance}>
+                                      {(balance) =>
+                                          balance && (
+                                              <SidebarBalance
+                                                  kind="paid"
+                                                  balance={balance.packBalance}
+                                              />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          quests: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.balance}>
+                                      {(balance) =>
+                                          balance && (
+                                              <SidebarBalance
+                                                  kind="tier"
+                                                  balance={balance.tierBalance}
+                                                  restricted={
+                                                      balance.questPollenRestricted
+                                                  }
+                                              />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          "my-models": (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.earnings}>
+                                      {(earnings) =>
+                                          earnings && (
+                                              <SidebarEarnings {...earnings} />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          keys: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.apiKeys}>
+                                      {(apiKeys) =>
+                                          apiKeys && (
+                                              <SidebarKeys apiKeys={apiKeys} />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          sandboxes: <SidebarSandboxes />,
+                      }
+                    : undefined
+            }
             walletArea={
                 data.user ? (
                     // Await adds no boundary for a null fallback; without this
                     // the whole dashboard would wait for the balance.
-                    <Suspense fallback={<CardLoading className="h-11" />}>
+                    <Suspense fallback={null}>
                         <Await promise={data.balance}>
                             {(balance) =>
-                                balance ? (
-                                    <Await
-                                        promise={data.earnings}
-                                        fallback={
-                                            <SidebarWallet {...balance} />
-                                        }
-                                    >
-                                        {(earnings) => (
-                                            <SidebarWallet
-                                                {...balance}
-                                                {...earnings}
-                                            />
-                                        )}
-                                    </Await>
-                                ) : (
-                                    <WalletLoadError onRetry={retry} />
-                                )
+                                !balance && <WalletLoadError onRetry={retry} />
                             }
                         </Await>
                     </Suspense>

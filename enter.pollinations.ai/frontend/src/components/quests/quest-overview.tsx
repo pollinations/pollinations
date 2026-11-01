@@ -490,8 +490,6 @@ export function QuestRow({
             {rewardLabel}
         </span>
     );
-    // A claimable quest's reward is its Claim button: the amount inside it,
-    // in the reward column, so it sits in the same place on every card.
     // A claimable quest keeps its white card and gains a claim panel: the
     // action button (outlined commit), card-tall, the amount over "Claim!".
     // Only the icon carries the balance's colour.

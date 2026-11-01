@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Holidays | `https://gen.pollinations.ai/mcp/holidays` | List public holidays for any country and year, for planning and scheduling | [Source](https://github.com/pollinations/pollinations/tree/main/apps/holidays-mcp) |
 
 Send the key with every request:
 
@@ -205,6 +206,16 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Holidays MCP
+
+The Holidays server answers "when is the next public holiday?" with Nager.Date.
+Use `holidays_for_year` for one country and year, or `holidays_for_country` for
+the current and next year merged, deduped, and sorted, with an optional explicit
+year. Both return dates, local and English names, global/regional scope, fixed
+status, and holiday types. Holiday lookups are free and need no extra MCP fee;
+the caller's key is never forwarded to Nager.Date. Coverage depends on
+Nager.Date, so some countries return no data.
 
 ### Billing and permissions
 

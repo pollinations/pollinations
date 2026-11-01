@@ -366,12 +366,16 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialPack,
 }) => (
     <>
-        <TopUpPanel
-            initialBilling={initialBilling}
-            returnToTopUp={returnToTopUp}
-            onWalletChange={onWalletChange}
-            initialPack={initialPack}
-        />
+        {/* The packs and their choices in an inner card, the small print
+            under it, as in every other section. */}
+        <Surface variant="card">
+            <TopUpPanel
+                initialBilling={initialBilling}
+                returnToTopUp={returnToTopUp}
+                onWalletChange={onWalletChange}
+                initialPack={initialPack}
+            />
+        </Surface>
         <Footnotes>
             {/* When auto top-up charges, stated before anyone turns it on.
                 "Paid": Quest Pollen doesn't trigger it. */}

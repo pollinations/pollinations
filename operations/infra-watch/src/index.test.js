@@ -665,7 +665,7 @@ it("probes due models by Thomas's rule, and calls the agent only with incidents,
     const [told] = posts(COMMUNITY);
     expect(told.content).toBe(OWNER_O);
     expect(told.text).toMatch(
-        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: OWNER'S ENDPOINT[\s\S]*│ MODEL {3}o\/broken +│[\s\S]*\n```\ncommunity: 1\n\nOwners see .*My Models/,
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT[\s\S]*│ MODEL {3}o\/broken +│[\s\S]*\n```\ncommunity: 1\n\nPublishers see .*My Models/,
     );
 
     // Told: quiet for a day, so no call even once it breaks again.

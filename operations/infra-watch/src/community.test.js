@@ -472,12 +472,12 @@ test("a line tells only incidents code found for its channel, and pings only the
     );
     assert.match(
         words(plan.community.text),
-        /^Stream\nFallback and listings\n\nOwners see/,
+        /^Stream\nFallback and listings\n\nPublishers see/,
     );
     // Each line goes under its incidents' cards.
     assert.match(
         plan.community.text,
-        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: OWNER'S ENDPOINT[\s\S]*\nStream\n```ansi\n┌─ .*COMMUNITY MODEL RUNNING ON BACKUP[\s\S]*COMMUNITY MODELS HIDDEN OR BACK IN LIST[\s\S]*\nFallback and listings\n/,
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT[\s\S]*\nStream\n```ansi\n┌─ .*COMMUNITY MODEL RUNNING ON BACKUP[\s\S]*COMMUNITY MODELS HIDDEN OR BACK IN LIST[\s\S]*\nFallback and listings\n/,
     );
     assert.deepEqual(plan.community.owners, ["o", "p"]);
     assert.deepEqual(
@@ -524,8 +524,8 @@ test("a card's title says it is community models and whose fault, and its facts 
     assert.match(text, /COMMUNITY MODELS: LIKELY A GEN PROBLEM/);
     for (const row of [
         "ERROR   usage_missing: missing or invalid token usage",
-        "OWNERS  12",
-        "MODELS  CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free",
+        "MODELS  12 from 12 publishers",
+        "        CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free",
         "        o8/m",
         "        …and 2 more",
     ])
@@ -546,7 +546,7 @@ test("a post carries no link of the agent's own", () => {
         maintainers: [line(["4"], text)],
     });
     for (const post of [plan.community.text, plan.maintainers.text]) {
-        const own = words(post).replace(/\n\nOwners see .*$/s, "");
+        const own = words(post).replace(/\n\nPublishers see .*$/s, "");
         assert.doesNotMatch(own, /https?:|www\.|\]\(/i);
         assert.match(own, /^Owner dashboard .*done$/);
     }

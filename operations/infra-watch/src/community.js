@@ -27,11 +27,11 @@ export const COMMUNITY_PROMPT = `You write the Pollinations community model moni
 {"community": [{"incidents": ["id"], "text": "..."}], "maintainers": [{"incidents": ["id"], "text": "..."}]}
 
 Each line tells the one incident in its "incidents" and goes to the channel its "to" names. Code draws the incident's card above your line, with its title, models, errors and counts, so never repeat them: write one short sentence on what it means and what to do next. Never add models, numbers or links.
-- stream: a model's own answers broke the same way twice in a row; its owner should fix their endpoint.
-- shared: models that worked broke the same way at once across many owners, likely gen's own fault.
+- stream: a model's own answers broke the same way twice in a row; its publisher should fix their endpoint.
+- shared: models that worked broke the same way at once across many publishers, likely gen's own fault.
 - fallback: a model leans on its fallbacks; "private" fallbacks are never named.
 - listings: models newly filtered out of /models for low health, or back; filtered models stay callable by their exact ID.
-Code puts whole lines into each post until it is full; a line that doesn't fit, and its incidents, come next time. Code pings owners and points them to their dashboard.`;
+Code puts whole lines into each post until it is full; a line that doesn't fit, and its incidents, come next time. Code pings publishers and points them to their dashboard.`;
 
 // The public community models gen's reliability filter leaves out of the
 // default listing: in the full list but not the default one, with a
@@ -269,9 +269,10 @@ export function incidents({
 export const brief = ({ owners, quiet, ...incident }) => incident;
 
 // Each incident's card: a title that says it is about community models and
-// whose fault it likely is, then its facts, never cut.
+// whose fault it likely is, then its facts, never cut. Posts call a model's
+// owner its publisher, as the product does.
 const TITLE = {
-    stream: "COMMUNITY MODEL BROKEN: OWNER'S ENDPOINT",
+    stream: "COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT",
     shared: "COMMUNITY MODELS: LIKELY A GEN PROBLEM",
     fallback: "COMMUNITY MODEL RUNNING ON BACKUP",
     listings: "COMMUNITY MODELS HIDDEN OR BACK IN LIST",
@@ -293,8 +294,11 @@ const ROWS = {
     ],
     shared: (i) => [
         ["ERROR", error(i)],
-        ["OWNERS", new Set(i.models.map(ownerOf)).size],
-        ...named("MODELS", i.models.map(short)),
+        [
+            "MODELS",
+            `${i.models.length} from ${new Set(i.models.map(ownerOf)).size} publishers`,
+        ],
+        ...named("", i.models.map(short)),
     ],
     fallback: (i) => [
         ["MODEL", short(i.model)],
@@ -325,7 +329,7 @@ const mentionSize = (owners) =>
     owners.reduce((size, o) => size + Math.max(o.length, 23) + 1, 0);
 // Every community post ends here, the one link it carries.
 const MY_MODELS =
-    "\n\nOwners see their models' errors on [My Models](https://enter.pollinations.ai/my-models).";
+    "\n\nPublishers see their models' errors on [My Models](https://enter.pollinations.ai/my-models).";
 
 // The agent reads model ids their owners chose, so it may write no link:
 // Markdown escapes are undone as Discord would, Markdown links keep only

@@ -184,6 +184,12 @@ const messageSchema = z.object({
         .string()
         .optional()
         .describe("Participant name for multi-user conversations"),
+    function_call: z
+        .object({ name: z.string(), arguments: z.string() })
+        .optional()
+        .describe(
+            "Legacy function call from assistant (for continuing function use)",
+        ),
     tool_call_id: z
         .string()
         .optional()

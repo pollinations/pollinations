@@ -264,9 +264,6 @@ export class Watch extends DurableObject {
             return Boolean(reserved);
         };
         const notes = [];
-        // Cards moved this check: they and their lines go only once the
-        // state that points to the new cards is saved.
-        const moved = [];
         let failed = 0;
 
         // A closed card whose last edit failed, or whose closing line a
@@ -274,8 +271,18 @@ export class Watch extends DurableObject {
         // the saved state no longer holds the card open: until then a late
         // AI line would take the card for open and edit it back.
         for (const [name, record] of records) {
-            if (!record.closed) continue;
             const id = name.slice("lines:".length);
+            if (!record.closed) {
+                // A card no open incident points to: moved to the bottom, or
+                // posted by a check whose save failed. It goes, then its
+                // lines; a failed delete is tried again next check.
+                const kept = Object.values(open).some(
+                    (i) => i.messageId === id,
+                );
+                if (!kept && (await this.writes(() => remove(this.env, id))))
+                    await this.ctx.storage.delete(name);
+                continue;
+            }
             if (record.done) {
                 if (saved.open?.[record.closed.key]?.messageId !== id)
                     await this.ctx.storage.delete(name);
@@ -368,8 +375,9 @@ export class Watch extends DurableObject {
             // line only on a real change, and pings again only if worse.
             const current = snapshot(incident);
             // Worse: an edit never pings, so the card is posted again at the
-            // bottom with the ping and all its lines, and the old one goes.
-            // It waits while an AI line is still on its way to the old card.
+            // bottom with the ping and all its lines; the next check deletes
+            // the old one. It waits while an AI line is still on its way to
+            // the old card.
             const old = await this.record(incident.messageId);
             if (escalates(incident.alerted, current) && !waiting(old, now)) {
                 const card = renderCard(
@@ -378,17 +386,18 @@ export class Watch extends DurableObject {
                     { lines: old.lines, now },
                 );
                 const saved = await this.writes(() => post(this.env, card));
+                // Accepted, it never pings twice. Without a readable receipt
+                // the old card stays the one kept up to date.
+                if (saved) incident.alerted = current;
                 if (saved?.id) {
-                    moved.push(incident.messageId);
                     await this.ctx.storage.put(`lines:${saved.id}`, old);
                     Object.assign(incident, {
                         pinged: true,
                         messageId: saved.id,
                         channelId: saved.channel_id,
                         text: card.text,
-                        alerted: current,
                     });
-                } else failed++;
+                } else if (!saved) failed++;
             }
             const id = incident.messageId;
             const record = await this.record(id);
@@ -436,11 +445,6 @@ export class Watch extends DurableObject {
 
         if (notes.length) await this.ctx.storage.put("ai", ai);
         await this.ctx.storage.put("state", { ...next.state, unposted });
-        for (const id of moved) {
-            await this.ctx.storage.delete(`lines:${id}`);
-            if (!(await this.writes(() => remove(this.env, id))))
-                console.error(`could not delete moved card ${id}`);
-        }
         if (publicModels)
             this.cycle ??= this.community(gen, publicModels, now)
                 .catch((error) => console.error(`community: ${error.message}`))

@@ -121,8 +121,8 @@ export function payload(
 }
 
 // Replaces the content of a message this webhook posted, or deletes it when
-// there is no body. One try: a failed edit is written again on a later
-// check.
+// there is no body; a message already gone counts as deleted. One try: a
+// failed edit is written again on a later check.
 export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
     const u = new URL(url);
     u.search = "";
@@ -142,7 +142,7 @@ export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
             ),
         );
         res.body?.cancel();
-        return res.ok;
+        return res.ok || (!body && res.status === 404);
     } catch {
         return false;
     }

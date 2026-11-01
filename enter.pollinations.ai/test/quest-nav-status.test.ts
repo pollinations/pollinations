@@ -14,7 +14,7 @@ describe("questNavLabel", () => {
                 [available("new-quest")],
                 [reward("done", null), reward("other", null)],
             ),
-        ).toBe("2 claimable!");
+        ).toBe("2 claimable");
     });
 
     it("counts available quests the account has not completed", () => {
@@ -35,7 +35,7 @@ describe("questNavLabel", () => {
         const setup = { ...available("done"), category: "setup" };
         expect(questNavLabel([setup], [reward("done", null)], true)).toBeNull();
         expect(questNavLabel([setup], [reward("done", null)])).toBe(
-            "1 claimable!",
+            "1 claimable",
         );
     });
 

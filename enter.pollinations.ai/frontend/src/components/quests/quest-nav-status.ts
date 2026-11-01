@@ -27,7 +27,7 @@ export function questNavLabel(
         (reward) =>
             reward.claimedAt == null && !locked.has(reward.questId ?? ""),
     ).length;
-    if (claimable > 0) return `${claimable} claimable!`;
+    if (claimable > 0) return `${claimable} claimable`;
 
     const completed = new Set(
         rewards

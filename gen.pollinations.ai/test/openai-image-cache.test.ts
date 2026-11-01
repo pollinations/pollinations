@@ -5,7 +5,10 @@ import {
 import type { Logger } from "@logtape/logtape";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
+import {
+    CreateImageEditRequestSchema,
+    CreateImageRequestSchema,
+} from "@shared/schemas/openai.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
@@ -65,6 +68,65 @@ describe("OpenAI image cache", () => {
             expect(response.status).toBe(400);
         },
     );
+    it.each(["json", "multipart"])(
+        "rejects an unparseable size instead of falling back to the default",
+        async (encoding) => {
+            const app = new Hono<Env>().post(
+                "/v1/images/edits",
+                prepareOpenAIImageEdit,
+                () => new Response("unexpected"),
+            );
+            const form = new FormData();
+            form.set("prompt", "make it blue");
+            form.set("size", "1024 by 1024");
+            form.append(
+                "image",
+                new Blob(["first"], { type: "image/png" }),
+                "one.png",
+            );
+            const input = {
+                prompt: "make it blue",
+                image: "https://example.com/one.png",
+                size: "1024 by 1024",
+            };
+            const response = await app.fetch(
+                new Request("https://gen.pollinations.ai/v1/images/edits", {
+                    method: "POST",
+                    ...(encoding === "json"
+                        ? {
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(input),
+                          }
+                        : { body: form }),
+                }),
+                {} as CloudflareBindings,
+            );
+            expect(response.status).toBe(400);
+        },
+    );
+
+    it("accepts a well-formed size on generation and edit requests", () => {
+        for (const size of ["512x512", "1024x1024", "512 x 768", "auto"]) {
+            expect(
+                CreateImageRequestSchema.safeParse({ prompt: "x", size })
+                    .success,
+            ).toBe(true);
+            expect(
+                CreateImageEditRequestSchema.safeParse({
+                    prompt: "x",
+                    image: "https://example.com/image.png",
+                    size,
+                }).success,
+            ).toBe(true);
+        }
+        for (const size of ["abc", "1024 by 1024", "1024", "x", ""]) {
+            expect(
+                CreateImageRequestSchema.safeParse({ prompt: "x", size })
+                    .success,
+            ).toBe(false);
+        }
+    });
+
     it.each(["json", "multipart"])(
         "passes an explicit seed through %s edits",
         async (encoding) => {

@@ -98,44 +98,49 @@ export function incidents({
     );
 
     // One error on 3 or more owners' models probed in the last 4 hours is
-    // gen's: the maintainers' incident, and none of those owners'. A model
-    // a shared failure counted stays gen's until it is probed again.
+    // gen's: the maintainers' incident, and none of those owners'. Each
+    // model it counted stays in it until that model is probed again,
+    // whatever the others do.
     const held = new Map();
     for (const p of Object.values(pending))
         if (p.kind === "shared")
             for (const [model, at] of Object.entries(p.probes))
-                if (schedule[model]?.lastAt === at) held.set(model, p.error);
-    const byError = Map.groupBy(
-        streams.filter(
-            ([model, s]) =>
-                now - s.lastAt < WINDOW_MINUTES * 60_000 ||
-                held.get(model) === s.protocolError,
-        ),
+                if (listed.has(model) && schedule[model]?.lastAt === at)
+                    held.set(p.error, [
+                        ...(held.get(p.error) ?? []),
+                        [model, at],
+                    ]);
+    const recent = Map.groupBy(
+        streams.filter(([, s]) => now - s.lastAt < WINDOW_MINUTES * 60_000),
         ([, s]) => s.protocolError,
     );
     const gens = new Set();
-    for (const [error, entries] of byError) {
-        const models = entries.map(([model]) => model);
-        if (new Set(models.map(ownerOf)).size < SHARED_OWNERS) continue;
-        for (const model of models) gens.add(model);
+    for (const error of new Set([...recent.keys(), ...held.keys()])) {
+        const fresh = (recent.get(error) ?? []).map(([m, s]) => [m, s.lastAt]);
+        const formed =
+            new Set(fresh.map(([m]) => ownerOf(m))).size >= SHARED_OWNERS;
+        const members = new Map([
+            ...(held.get(error) ?? []),
+            ...(formed ? fresh : []),
+        ]);
+        if (!members.size) continue;
+        for (const model of members.keys()) gens.add(model);
         kept[`shared ${error}`] = {
             kind: "shared",
             error,
-            probes: Object.fromEntries(
-                entries.map(([model, s]) => [model, s.lastAt]),
-            ),
+            probes: Object.fromEntries(members),
         };
-        const fresh = models.filter(
+        const untold = [...members.keys()].filter(
             (m) => !told(streamKey(m, error), "stream"),
         );
-        if (fresh.length)
+        if (untold.length)
             add({
                 kind: "shared",
                 to: "maintainers",
                 error,
-                models: fresh,
+                models: untold,
                 owners: [],
-                quiet: fresh.map((m) => streamKey(m, error)),
+                quiet: untold.map((m) => streamKey(m, error)),
             });
     }
 
@@ -159,53 +164,59 @@ export function incidents({
         });
     }
 
-    // A listed model whose fallbacks rescued enough of its successes. The
-    // notice is kept from when it qualifies until its fallbacks are told,
-    // so it outlives the 4-hour window; private fallbacks are unnamed.
+    // A listed model whose fallbacks rescued enough of its successes. Each
+    // of its fallbacks is kept as a pending pair from when it qualifies
+    // until it is told, so a notice outlives the 4-hour window and a new
+    // fallback joins an untold one. A fallback that isn't public when the
+    // notice goes out is unnamed.
     for (const r of rows) {
         const rescued = r.fallback_rescues;
         if (!r.is_rollup || !listed.has(r.model)) continue;
         if (rescued < MIN_RESCUED || rescued < MIN_RESCUED_SHARE * r.status_2xx)
             continue;
-        kept[`fallback ${r.model}`] = {
-            kind: "fallback",
-            model: r.model,
-            rescued,
-            successes: r.status_2xx,
-            via: rows
-                .filter(
-                    (v) =>
-                        v.model === r.model &&
-                        !v.is_rollup &&
-                        v.fallback_used &&
-                        v.fallback_rescues > 0,
-                )
-                .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
-                .slice(0, VIA_SHOWN)
-                .map((v) => ({
-                    model: named.has(v.model_used) ? v.model_used : "private",
+        rows.filter(
+            (v) =>
+                v.model === r.model &&
+                !v.is_rollup &&
+                v.fallback_used &&
+                v.fallback_rescues > 0,
+        )
+            .sort((a, b) => b.fallback_rescues - a.fallback_rescues)
+            .slice(0, VIA_SHOWN)
+            .forEach((v) => {
+                const via = named.has(v.model_used) ? v.model_used : "private";
+                kept[fallbackKey(r.model, via)] = {
+                    kind: "fallback",
+                    model: r.model,
+                    via,
                     rescued: v.fallback_rescues,
-                })),
-        };
+                    total: rescued,
+                    successes: r.status_2xx,
+                    at: now,
+                };
+            });
     }
     for (const [key, p] of Object.entries(pending))
         if (p.kind === "fallback" && !(key in kept) && listed.has(p.model))
             kept[key] = p;
-    for (const [key, p] of Object.entries(kept)) {
-        if (p.kind !== "fallback") continue;
-        const via = p.via.filter(
-            (v) => !told(fallbackKey(p.model, v.model), "fallback"),
-        );
-        if (!via.length) {
-            delete kept[key];
-            continue;
-        }
+    for (const [key, p] of Object.entries(kept))
+        if (p.kind === "fallback" && told(key, "fallback")) delete kept[key];
+    const pairs = Object.entries(kept).filter(([, p]) => p.kind === "fallback");
+    for (const [model, own] of Map.groupBy(pairs, ([, p]) => p.model)) {
+        own.sort(([, a], [, b]) => b.rescued - a.rescued);
+        const latest = own.reduce((a, b) => (b[1].at > a[1].at ? b : a))[1];
         add({
-            ...p,
+            kind: "fallback",
             to: "community",
-            via,
-            owners: [ownerOf(p.model)],
-            quiet: via.map((v) => fallbackKey(p.model, v.model)),
+            model,
+            rescued: latest.total,
+            successes: latest.successes,
+            via: own.map(([, p]) => ({
+                model: named.has(p.via) ? p.via : "private",
+                rescued: p.rescued,
+            })),
+            owners: [ownerOf(model)],
+            quiet: own.map(([key]) => key),
         });
     }
 

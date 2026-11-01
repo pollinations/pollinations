@@ -273,6 +273,63 @@ test("a fallback notice is kept from when it qualifies until its fallbacks are t
     assert.deepEqual(done.pending, {});
 });
 
+test("a shared failure keeps each model until that model is probed again, whatever the others do", () => {
+    const shared = ["community/a/x", "community/b/y", "community/c/z"];
+    const catalog = shared.map((n) => model(n));
+    const schedule = Object.fromEntries(shared.map((n) => [n, twice()]));
+    const first = cycle({ catalog, schedule });
+    // x is probed again and passes: y and z have no new evidence, so they
+    // stay the maintainers', not their owners'.
+    const later = cycle({
+        catalog,
+        schedule: {
+            ...schedule,
+            "community/a/x": { lastAt: NOW, status: 200 },
+        },
+        pending: first.pending,
+        now: NOW + 5 * HOUR,
+    });
+    assert.deepEqual(brief(later.found), [
+        "shared community/b/y,community/c/z",
+    ]);
+});
+
+test("a pending fallback notice names a fallback only if it is still public when told", () => {
+    const first = cycle({
+        catalog: [model("community/o/m"), model(PUBLIC)],
+        rows: leaning(10, 40),
+    });
+    // The fallback is made private before the notice goes out.
+    const [notice] = cycle({
+        catalog: [model("community/o/m")],
+        pending: first.pending,
+    }).found;
+    assert.deepEqual(
+        notice.via.map((v) => v.model),
+        ["private", "private"],
+    );
+    // What the agent reads names it nowhere; only code's quiet keys keep it.
+    const { owners, quiet, ...read } = notice;
+    assert.doesNotMatch(JSON.stringify(read), /community\/o\/public/);
+});
+
+test("a new fallback joins an untold one instead of replacing it", () => {
+    const OTHER = "community/o/other";
+    const catalog = [model("community/o/m"), model(PUBLIC), model(OTHER)];
+    const first = cycle({ catalog, rows: leaning(10, 40) });
+    // A new window leans on another fallback; the first is still untold.
+    const rows = leaning(12, 40).map((r) =>
+        r.model_used === PUBLIC ? { ...r, model_used: OTHER } : r,
+    );
+    const [notice] = cycle({ catalog, rows, pending: first.pending }).found;
+    assert.deepEqual(notice.via, [
+        { model: OTHER, rescued: 10 },
+        { model: PUBLIC, rescued: 8 },
+        { model: "private", rescued: 2 },
+    ]);
+    assert.equal(notice.rescued, 12);
+});
+
 // Incidents code found: a broken stream and a fallback for owners o and p,
 // listing changes, and a shared failure for the maintainers.
 const FOUND = [

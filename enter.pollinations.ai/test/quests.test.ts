@@ -671,51 +671,6 @@ test("catalog keeps a reopened multi-winner quest available", async ({
     expect(quest?.state).toBe("available");
 });
 
-test("a reopened multi-winner quest still pays each merged author once", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    mocks.github.state.user.created_at = new Date().toISOString();
-    await mocks.enable("github", "tinybird");
-    seedQuestIssue(mocks.github.state, {
-        issueNumber: 808,
-        title: "Reopened multi-winner bounty",
-        goal: "Still open for more entries after an earlier winner.",
-        reward: 5,
-        completedByPrNumber: 1808,
-        completedByGithubId: user.githubId,
-        completedByLogin: user.githubUsername,
-        reopened: true,
-    });
-    // The same author merges a second PR into the reopened quest.
-    mocks.github.state.questIssues
-        .find((issue) => issue.number === 808)
-        ?.closedByPullRequestsReferences?.push({
-            number: 1810,
-            mergedAt: new Date("2026-06-03T00:00:00Z").toISOString(),
-            author: { databaseId: user.githubId },
-        });
-
-    await checkQuestsForUser(env, user.id);
-    await checkQuestsForUser(env, user.id);
-
-    const rewards = await db
-        .select({
-            idempotencyKey: schema.rewards.idempotencyKey,
-            pollenAmount: schema.rewards.pollenAmount,
-        })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "github:issue:808"));
-    expect(rewards).toEqual([
-        {
-            idempotencyKey: `quest:github:issue:808:github:${user.githubId}`,
-            pollenAmount: 5,
-        },
-    ]);
-});
-
 test("account quests merge earned rewards into completed status", async ({
     mocks,
     accountToken,

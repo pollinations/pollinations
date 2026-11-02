@@ -2173,7 +2173,7 @@ export class Pollinations {
 
     /**
      * List your static sites and the account's site limits.
-     * Needs a key with the `machines` account permission.
+     * Needs a key with the `sites` account permission.
      *
      * @example
      * ```ts

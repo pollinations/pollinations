@@ -32,6 +32,7 @@ describe("RFC 9728 protected resource metadata", () => {
                 "usage",
                 "keys",
                 "machines",
+                "sites",
             ],
             bearer_methods_supported: ["header"],
             resource_name: "Pollinations API",

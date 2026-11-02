@@ -8,7 +8,7 @@ import {
 } from "../utils/coreUtils.js";
 
 // Permissions are enforced by the API: the read tools need `account:usage`, the
-// key tools `account:keys`, the site tools `account:machines`. Its error
+// key tools `account:keys`, the site tools `account:sites`. Its error
 // message is returned unchanged.
 async function callAccount(
     path,
@@ -251,7 +251,7 @@ export const accountTools = [
     [
         "listSites",
         "List the account's static sites at https://<name>.pollinations.app and the site limits (`polli sites list`). " +
-            "Requires 'account:machines' permission.",
+            "Requires 'account:sites' permission.",
         {},
         listSites,
     ],
@@ -259,7 +259,7 @@ export const accountTools = [
         "deploySite",
         "Publish a static site at https://<name>.pollinations.app, replacing what was there (`polli sites deploy`). " +
             "Send every file inline; index.html is required, up to 5 MB per request. The first deploy claims the name. " +
-            "Requires 'account:machines' permission.",
+            "Requires 'account:sites' permission.",
         {
             name: siteName,
             files: z
@@ -283,7 +283,7 @@ export const accountTools = [
     ],
     [
         "deleteSite",
-        "Take a site offline and free its name (`polli sites delete`). Requires 'account:machines' permission.",
+        "Take a site offline and free its name (`polli sites delete`). Requires 'account:sites' permission.",
         { name: siteName },
         deleteSite,
     ],

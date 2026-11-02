@@ -391,7 +391,7 @@ Without `accountPermissions`, scoped keys can generate media but cannot read acc
 
 ### Hosting static sites
 
-Publish files at `https://<name>.pollinations.app`. Send every file inline, up to 5 MB per request; `index.html` is required. The key needs the `machines` account permission.
+Publish files at `https://<name>.pollinations.app`. Send every file inline, up to 5 MB per request; `index.html` is required. The key needs the `sites` account permission.
 
 ```javascript
 import { deploySite, listSites, deleteSite } from '@pollinations/sdk';

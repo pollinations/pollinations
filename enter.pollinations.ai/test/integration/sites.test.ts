@@ -7,7 +7,7 @@ import { site as siteTable } from "@shared/db/sites.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import { test } from "../fixtures.ts";
+import { createApiKeyViaApi, test } from "../fixtures.ts";
 
 const MiB = 1024 * 1024;
 const manifest = {
@@ -310,19 +310,27 @@ describe("/api/account/sites", () => {
         expect(await drizzle(env.DB).select().from(siteTable)).toEqual([]);
     });
 
-    test("API keys need account:machines", async ({ apiKey }) => {
-        const response = await sites(apiKey, "GET");
+    // A sandbox key must not publish or delete the owner's sites.
+    test("API keys need account:sites, not account:machines", async ({
+        accountToken,
+    }) => {
+        const sandboxKey = await createApiKeyViaApi(accountToken, {
+            name: "sandbox-key",
+            accountPermissions: ["machines"],
+        });
+        const response = await sites(sandboxKey.key, "GET");
         expect(response.status).toBe(403);
-        const { id } = await (
-            await SELF.fetch("http://localhost:3000/api/account/key", {
-                headers: { Authorization: `Bearer ${apiKey}` },
-            })
-        ).json();
-        const grant = `https://enter.pollinations.ai/grant?id=${id}&permission=machines&ref=agent_grant`;
+        const grant = `https://enter.pollinations.ai/grant?id=${sandboxKey.id}&permission=sites&ref=agent_grant`;
         expect((await response.json()).error).toMatchObject({
-            message: `API key does not have 'account:machines' permission. Allow it at ${grant}`,
+            message: `API key does not have 'account:sites' permission. Allow it at ${grant}`,
             fixUrl: grant,
         });
+
+        const sitesKey = await createApiKeyViaApi(accountToken, {
+            name: "sites-key",
+            accountPermissions: ["sites"],
+        });
+        expect((await sites(sitesKey.key, "GET")).status).toBe(200);
     });
 
     test("deleting the account deletes its sites but keeps takedowns reserved", async ({

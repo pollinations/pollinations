@@ -1,5 +1,8 @@
 import { getLogger } from "@logtape/logtape";
-import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
+import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "@shared/auth/account-permissions.ts";
 import {
     BannedAccountError,
     extractApiKey,
@@ -105,7 +108,8 @@ const LOGGED_IN_TEMPLATES = [
 ];
 // What `polli auth login` asks for, except `keys`: every process in the box can
 // read the login, and `keys` would let it raise any key's budget. polli's
-// harnesses then use the login itself instead of keys of their own.
+// harnesses then use the login itself instead of keys of their own. `sites`
+// only when the caller has it: a key can only grant account permissions it has.
 const POLLI_PERMISSIONS = ["profile", "usage", "machines"];
 // E2B takes a timeout as 32-bit seconds.
 const MAX_TIMEOUT_SECONDS = 2 ** 31 - 1;
@@ -433,7 +437,12 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
             body: JSON.stringify({
                 name: `polli-sandbox-${sandbox.sandboxID}`,
                 type: "secret",
-                accountPermissions: POLLI_PERMISSIONS,
+                accountPermissions: hasAccountPermission(
+                    c.var.auth.apiKey,
+                    "sites",
+                )
+                    ? [...POLLI_PERMISSIONS, "sites"]
+                    : POLLI_PERMISSIONS,
             }),
         },
     );

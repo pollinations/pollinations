@@ -73,12 +73,14 @@ export const PKCE_S256_CHALLENGE_REGEX = /^[A-Za-z0-9_-]{43}$/;
  * - `keys`: account admin; create, list, and revoke API keys, plus My Models
  *   access where enabled.
  * - `machines`: create and run hosted sandboxes.
+ * - `sites`: publish and delete sites at `<name>.pollinations.app`.
  */
 export const CONSENT_PERMISSIONS = [
     "profile",
     "usage",
     "keys",
     "machines",
+    "sites",
 ] as const;
 
 export const OAUTH_SCOPES = ["generate", ...CONSENT_PERMISSIONS] as const;
@@ -114,10 +116,15 @@ export function sanitizeAuthorizeAccountPermissions(
 }
 
 /**
- * Most people click "Allow" without reading, so a link can request `keys` and
- * `machines` but never tick them: the user has to grant those on purpose.
+ * Most people click "Allow" without reading, so a link can request `keys`,
+ * `machines` and `sites` but never tick them: the user has to grant those on
+ * purpose.
  */
-const DELIBERATE_CONSENT_PERMISSIONS: readonly string[] = ["keys", "machines"];
+const DELIBERATE_CONSENT_PERMISSIONS: readonly string[] = [
+    "keys",
+    "machines",
+    "sites",
+];
 
 /** The requested account permissions the consent screen starts with ticked. */
 export function getPreselectedConsentPermissions(

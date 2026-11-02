@@ -156,12 +156,12 @@ describe("getAuthorizeInitialPermissions", () => {
         });
     });
 
-    // A link can ask for key management or sandboxes, but the user must tick
-    // them: people tend to click "Allow" without reading.
-    it("leaves keys and machines unticked when a link requests them", () => {
+    // A link can ask for key management, sandboxes or sites, but the user must
+    // tick them: people tend to click "Allow" without reading.
+    it("leaves keys, machines and sites unticked when a link requests them", () => {
         expect(
             getAuthorizeInitialPermissions({
-                permissions: ["usage", "keys", "machines"],
+                permissions: ["usage", "keys", "machines", "sites"],
             }).accountPermissions,
         ).toEqual(["usage"]);
         expect(

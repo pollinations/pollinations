@@ -79,6 +79,7 @@ describe("OAuth authorization server metadata", () => {
             "usage",
             "keys",
             "machines",
+            "sites",
         ]);
         expect(meta.response_types_supported).toEqual(["code"]);
         expect(meta.grant_types_supported).toEqual([

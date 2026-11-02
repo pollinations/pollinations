@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.27] - 2026-11-01
+
+### Changed
+- `listSites()`, `deploySite()` and `deleteSite()` need the new `sites`
+  account permission instead of `machines`, and `AccountPermission` includes
+  `sites`. Keys that had `machines` also got `sites`.
+
 ## [5.1.0-alpha.26] - 2026-10-31
 
 ### Removed

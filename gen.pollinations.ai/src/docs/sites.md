@@ -28,7 +28,7 @@ curl -X PUT https://gen.pollinations.ai/account/sites/my-app \
 
 - Binary files take `"encoding": "base64"`. Bigger sites upload in two steps; see the site endpoints under [Account](#tag/account).
 - The SDK's `deploySite(name, files)` and the `deploySite` tool of the [Pollinations MCP server](#tag/mcp-servers) send the same request.
-- API keys need the `machines` account permission.
+- API keys need the `sites` account permission.
 
 ### Rules and limits
 

@@ -29,12 +29,13 @@ export const requireKey = (): string => {
 const PERMISSION_HINTS: Record<string, string> = {
     keys: 'Your login didn\'t allow managing keys, agents and models. Run `polli auth login` again and tick "Manage keys, agents and models".',
     machines:
-        'Your login didn\'t allow sandboxes or sites. Run `polli auth login` again and tick "Run hosted sandboxes".',
+        'Your login didn\'t allow sandboxes. Run `polli auth login` again and tick "Run hosted sandboxes".',
+    sites: 'Your login didn\'t allow sites. Run `polli auth login` again and tick "Publish sites on pollinations.app".',
 };
 
 const permissionHint = (status: number, text: string) => {
     const permission =
-        status === 403 && text.match(/'account:(keys|machines)'/)?.[1];
+        status === 403 && text.match(/'account:(keys|machines|sites)'/)?.[1];
     if (!permission) return undefined;
     // Gen's sandbox refusal also links a page that adds it to this key.
     const grant = text.match(/https:\/\/[^\s"]+\/grant\?[^\s"]+/)?.[0];

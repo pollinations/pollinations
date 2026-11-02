@@ -125,7 +125,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
-| `scope` | Account access (space or comma separated). `keys` is only offered in the device flow (below) and on redirects to `http://localhost` or `http://127.0.0.1`. `machines` starts unticked on the consent screen; the user ticks it on purpose | `profile usage` |
+| `scope` | Account access (space or comma separated). `keys` is only offered in the device flow (below) and on redirects to `http://localhost` or `http://127.0.0.1`. `machines` and `sites` start unticked on the consent screen; the user ticks them on purpose | `profile usage` |
 | `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |

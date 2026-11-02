@@ -565,10 +565,10 @@ export class Watch extends DurableObject {
 
     // Every half hour, the community monitor (community.js): code probes the
     // due models and finds the incidents worth telling, by Thomas's rules;
-    // one AI call with COMMUNITY_AGENT_KEY groups them into posts and words
-    // them. Each post is sent on its own, and only a delivered one starts
-    // its incidents' quiet periods: anything else stays pending. A failure
-    // ends the cycle, logged where it starts.
+    // one AI call with COMMUNITY_AGENT_KEY words them. Each incident is its
+    // own message, and only a delivered one starts its quiet periods:
+    // anything else stays pending. A failure ends the cycle, logged where it
+    // starts.
     async community(gen, catalog, now) {
         const state = (await this.ctx.storage.get("community")) ?? {};
         if (now - (state.at ?? 0) < CYCLE_MS) return;
@@ -669,23 +669,23 @@ export class Watch extends DurableObject {
             found,
         );
         if (!plan) throw new Error("the agent gave no decision");
-        // A post Discord rejects stays pending and fails the cycle.
-        const rejected = [];
-        const linked = plan.community ? await this.linkedDiscord() : [];
-        for (const [message, webhook, channel] of [
+        // A message Discord rejects stays pending and fails the cycle.
+        const rejected = new Set();
+        const linked = plan.community.length ? await this.linkedDiscord() : [];
+        for (const [messages, webhook, channel] of [
             [plan.community, "COMMUNITY_WEBHOOK_URL", "community"],
             [
-                plan.maintainers && { ...plan.maintainers, ping: true },
+                plan.maintainers.map((m) => ({ ...m, ping: true })),
                 undefined,
                 "maintainers",
             ],
-        ]) {
-            if (!message) continue;
-            if (!(await post(this.env, message, webhook, linked))) {
-                rejected.push(channel);
-                continue;
-            }
-            for (const incident of message.incidents) {
+        ])
+            for (const message of messages) {
+                if (!(await post(this.env, message, webhook, linked))) {
+                    rejected.add(channel);
+                    continue;
+                }
+                const [incident] = message.incidents;
                 for (const k of incident.quiet) state.quiet[k] = now;
                 if (incident.kind === "listings")
                     await this.ctx.storage.put("listings", listings.saved);
@@ -693,11 +693,10 @@ export class Watch extends DurableObject {
                 if (incident.kind === "mismatch")
                     state.served[incident.model].streak = 1;
             }
-        }
-        if (rejected.length) {
+        if (rejected.size) {
             await save();
             throw new Error(
-                `Discord rejected the ${rejected.join(" and ")} post`,
+                `Discord rejected a ${[...rejected].join(" and a ")} message`,
             );
         }
         await done();

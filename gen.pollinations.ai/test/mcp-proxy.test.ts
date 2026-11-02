@@ -46,6 +46,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "dns",
+                name: "DNS",
+                description:
+                    "Look up live DNS records and reverse-resolve IP addresses.",
+                url: "https://gen.pollinations.ai/mcp/dns",
+                pricing: {
+                    description:
+                        "Lookups run on Cloudflare's public resolver and add no MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:

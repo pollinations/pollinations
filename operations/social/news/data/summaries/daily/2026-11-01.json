@@ -1,0 +1,129 @@
+{
+  "date": "2026-11-01",
+  "period_start": "2026-11-01",
+  "period_end": "2026-11-01",
+  "title": "Activity brings usage and earnings together",
+  "summary": "Activity got a better view of usage and earnings, Quests got easier to claim, and community models got closer monitoring.\n\nThe Activity page combines Usage and Earnings in one Overview card. A shared date control, chart, table, filters, and CSV controls make it easier to inspect the numbers. Dashboard loading now stays inside the cards waiting for data, while copy feedback and compact count labels are more consistent.\n\nClaimable Quests move to the top with a more prominent Claim button. The wallet separates spendable funds from locked Quest pollen for restricted accounts. Legacy publishable App Keys are refused consistently, and the Pollen and top-up pages received smaller layout and wording fixes.\n\nScheduled probes and owner warnings were added for struggling public community models. Notices point owners to My Models, and Gen's public model status and stats routes filter private community models. Fallback cards fit narrow screens, and the text and image leaderboards post as separate Discord messages.",
+  "pr_count": 22,
+  "prs": [
+    {
+      "number": 18753,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18892,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18907,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18927,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18931,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18933,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18936,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18939,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18941,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18942,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18947,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18948,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18949,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18950,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18953,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18957,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18966,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18968,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18970,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18976,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18977,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18980,
+      "date": "2026-11-01"
+    }
+  ],
+  "generated_at": "2026-11-02T06:09:22.124318+00:00",
+  "daily": [
+    {
+      "emoji": "📱",
+      "title": "Usage and earnings together",
+      "text": "Explore Usage and Earnings in one Activity view. Switch metrics, filter by model or key, inspect chart and table data, and export CSV.",
+      "prs": [
+        18980
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Claimable Quests come first",
+      "text": "Claimable Quests now appear at the top with a prominent Claim button. Open and completed Quests follow in that order.",
+      "prs": [
+        18970
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Community model checks",
+      "text": "Scheduled probes check public community text and image models with little traffic or poor health. Owners can get warnings for repeated model errors or frequent fallback rescues.",
+      "prs": [
+        18907
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

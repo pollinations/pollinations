@@ -158,7 +158,8 @@ type DerivedQuestIssue = {
     description: string;
     url: string;
     rewardAmount: number | null;
-    // "completed" issues stay off the open board once assigned or merged.
+    // "completed" issues stay off the open board once assigned or closed.
+    // Multi-winner quests are reopened after each merge and stay available.
     state: "available" | "completed";
     completedByGithubIds: number[];
 };
@@ -398,7 +399,7 @@ function toDerivedQuestIssue(
     const body = issue.body ?? "";
     const closers = mergedClosers(issue);
     const state: DerivedQuestIssue["state"] =
-        closers.length > 0 || issue.assignees.nodes.length > 0
+        issue.state === "CLOSED" || issue.assignees.nodes.length > 0
             ? "completed"
             : "available";
     return {

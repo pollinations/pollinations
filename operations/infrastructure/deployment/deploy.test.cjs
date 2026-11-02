@@ -33,8 +33,13 @@ for (const { paths, redirect } of [
         t.after(() => new Promise((resolve) => server.close(resolve)));
         const root = await mkdtemp(join(tmpdir(), "deployment-health-test-"));
         t.after(() => rm(root, { recursive: true, force: true }));
-        const script = join(root, "operations/deployment/deploy.sh");
-        await mkdir(join(root, "operations/deployment"), { recursive: true });
+        const script = join(
+            root,
+            "operations/infrastructure/deployment/deploy.sh",
+        );
+        await mkdir(join(root, "operations/infrastructure/deployment"), {
+            recursive: true,
+        });
         await mkdir(join(root, "apps/test"), { recursive: true });
         await copyFile(join(__dirname, "deploy.sh"), script);
         await writeFile(

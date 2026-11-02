@@ -219,7 +219,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | `news_index.py` | `data/index.json`: model news, API changes and daily items for Enter `/news` |
 | `readme.py` | The README's Latest News: the index's 10 newest daily items except apps (Recent Apps lists those), each with a category badge (Model, API, Feature), linked title, date and text |
 | `common.py` | Shared: prompt loading and brand injection, the model and picture calls, file builders, note helpers |
-| `test_news.py` | Tests (`python3 -m unittest operations/social/scripts/test_news.py`) |
+| `test_news.py` | Tests (`python3 -m unittest operations/news/scripts/test_news.py`) |
 
 ---
 
@@ -289,7 +289,7 @@ Sunday adds 5 calls and 6 pictures, the 1st 1 call, Wednesday 2 calls.
 ## Prompts
 
 ```
-operations/social/prompts/
+operations/news/prompts/
   brand/                    injected into any prompt by placeholder
     about.md                {about}          who we are
     visual.md               {visual_style}   the look of every picture, the cast

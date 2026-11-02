@@ -16,8 +16,8 @@ batch. Check the workflow output and registry before retrying.
 Local preview (Node 24, no dependencies or login):
 
 ```sh
-node --test operations/mcp-registry/generate-server-json.test.ts
-node operations/mcp-registry/generate-server-json.ts /tmp/mcp-registry 1.0.0
+node --test operations/infrastructure/mcp-registry/generate-server-json.test.ts
+node operations/infrastructure/mcp-registry/generate-server-json.ts /tmp/mcp-registry 1.0.0
 ```
 
 Publishing here does not submit to the directories below. Use the Pollinations

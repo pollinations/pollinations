@@ -6,7 +6,7 @@ const test = require("node:test");
 const { parse } = require("yaml");
 const { discover, selectChanged } = require("./discover.cjs");
 
-const root = path.join(__dirname, "../..");
+const root = path.join(__dirname, "../../..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const workflow = parse(read(".github/workflows/deploy-applications.yml"));
 const manifest = JSON.parse(read("apps/floret/deploy.json"));
@@ -48,7 +48,7 @@ test("Applications selects Floret on promotion and manual retry", () => {
         ),
     );
     const deploy = workflow.jobs.deploy.steps.find((step) =>
-        step.run?.includes("operations/deployment/deploy.sh"),
+        step.run?.includes("operations/infrastructure/deployment/deploy.sh"),
     );
     assert.ok(
         deploy.env.CLOUDFLARE_API_TOKEN.includes(

@@ -5,8 +5,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { MCP_SERVERS } from "../../shared/registry/mcp.ts";
-import { buildServerEntry } from "../../shared/registry/mcp-server-json.ts";
+import { MCP_SERVERS } from "../../../shared/registry/mcp.ts";
+import { buildServerEntry } from "../../../shared/registry/mcp-server-json.ts";
 
 function main() {
     const [outDir, version] = process.argv.slice(2);

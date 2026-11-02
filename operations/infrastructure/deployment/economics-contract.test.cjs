@@ -5,7 +5,7 @@ const { resolve } = require("node:path");
 const { test } = require("node:test");
 
 test("Economics deployment checker loads TypeScript before requesting credentials", () => {
-    const economics = resolve(__dirname, "../dashboards/economics");
+    const economics = resolve(__dirname, "../../dashboards/economics");
     const manifest = JSON.parse(
         readFileSync(resolve(economics, "deploy.json"), "utf8"),
     );

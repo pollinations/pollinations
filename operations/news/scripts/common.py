@@ -35,6 +35,8 @@ LINKEDIN_MAX_CHARS = 1248
 OWNER = "pollinations"
 REPO = "pollinations"
 NEWS_BRANCH = "news"  # Unprotected branch for news data (avoids main branch protection)
+# The news branch keeps its layout from before the folder was renamed: the
+# website and Enter's News page read these paths.
 NEWS_REL_DIR = "operations/social/news"
 # What we keep and read back: the summaries, the /models record, the monthly
 # contributor counts and Enter's index.
@@ -242,7 +244,7 @@ def get_env(key: str, required: bool = True) -> Optional[str]:
 
 
 def load_prompt(name: str) -> str:
-    """Load a prompt file from operations/social/prompts/{name}.md
+    """Load a prompt file from operations/news/prompts/{name}.md
 
     Automatically injects brand components:
     - {about} -> content from brand/about.md
@@ -370,7 +372,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
         "quality": "hd",
         "seed": seed,
         "key": token,
-        "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/characters-ref.jpg",
+        "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/news/prompts/brand/characters-ref.jpg",
     }
     # One attempt: a failed picture stops the run, and a person reruns it.
     try:

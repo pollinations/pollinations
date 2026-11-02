@@ -24,6 +24,7 @@ import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import { acceptsMarkdown } from "@/middleware/agent-discovery.ts";
 import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
 import { authenticateDocsRequest } from "../docs-client/request-auth.ts";
@@ -1136,7 +1137,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 return c.redirect(publicUrl.href, 302);
             }
             c.header("Vary", "Accept", { append: true });
-            if (c.req.header("accept")?.includes("text/markdown")) {
+            if (acceptsMarkdown(c.req.header("accept") ?? "")) {
                 // Cloudflare ignores Vary on cached responses: keep it private.
                 c.header("Cache-Control", "private, max-age=3600");
                 return c.body(LLM_DOC_TEXT, 200, {

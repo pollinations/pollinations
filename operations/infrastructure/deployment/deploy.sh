@@ -4,10 +4,10 @@ set -euo pipefail
 
 APP_PATH=${1:-}
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
+REPO_ROOT=$(cd "$SCRIPT_DIR/../../.." && pwd)
 
 if [[ -z "$APP_PATH" || ! -f "$REPO_ROOT/$APP_PATH/deploy.json" ]]; then
-    echo "Usage: operations/deployment/deploy.sh <app-path>" >&2
+    echo "Usage: operations/infrastructure/deployment/deploy.sh <app-path>" >&2
     exit 1
 fi
 

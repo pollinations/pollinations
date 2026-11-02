@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { MCP_SERVERS } from "../../shared/registry/mcp.ts";
-import { buildServerEntry } from "../../shared/registry/mcp-server-json.ts";
+import { MCP_SERVERS } from "../../../shared/registry/mcp.ts";
+import { buildServerEntry } from "../../../shared/registry/mcp-server-json.ts";
 
 // Mirrors the registry's actual server.schema.json constraints (checked
 // against the live schema for all six entries — see the PR description).

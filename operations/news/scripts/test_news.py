@@ -1254,7 +1254,7 @@ class DeploymentReadinessTest(unittest.TestCase):
                 path = Path(".github/workflows") / name
                 (production / path).parent.mkdir(parents=True, exist_ok=True)
                 (production / path).write_bytes((source / path).read_bytes())
-            discovery = Path("operations/deployment/discover.cjs")
+            discovery = Path("operations/infrastructure/deployment/discover.cjs")
             (production / discovery).parent.mkdir(parents=True)
             (production / discovery).write_bytes((source / discovery).read_bytes())
             app = production / "apps/still-live"
@@ -1269,7 +1269,7 @@ class DeploymentReadinessTest(unittest.TestCase):
         for target in ("deploy-enter", "deploy-gen", "deploy-media"):
             self.assertIn(f"deploy-cloudflare-production.yml:{target}", targets)
         self.assertIn("deploy-website-cloudflare.yml:deploy", targets)
-        self.assertEqual(deploy_posts.required_targets(["operations/social/scripts/posts.py"]), [])
+        self.assertEqual(deploy_posts.required_targets(["operations/news/scripts/posts.py"]), [])
         self.assertEqual(deploy_posts.required_targets(["apps/mcp/src/main.ts"]),
                          ["deploy-applications.yml:Deploy apps/mcp"])
         self.assertEqual(deploy_posts.required_targets(["apps/ask-jev-mcp/src/main.ts"]),

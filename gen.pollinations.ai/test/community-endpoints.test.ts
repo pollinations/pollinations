@@ -3546,7 +3546,7 @@ fixtureTest.each([{ api: "chat_completions" }, { api: "responses" }] as const)(
 );
 
 fixtureTest(
-    "a private model is owner-only and a zero-priced public model is free for funded callers",
+    "a private model is owner-only and a zero-priced public model is free for funded callers, even with no key budget left",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `private-${crypto.randomUUID().slice(0, 8)}`;
@@ -3686,7 +3686,10 @@ fixtureTest(
             .set({ visibility: "public" })
             .where(eq(communityEndpointTable.id, endpointId));
         await resetGenerationModelRegistryCache(env);
-        const callFreePublicModel = async (callerKey: string) =>
+        const callFreePublicModel = async (
+            callerKey: string,
+            prompt = "free public",
+        ) =>
             fetchGen(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
                     method: "POST",
@@ -3696,7 +3699,7 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         model: modelId,
-                        messages: [{ role: "user", content: "free public" }],
+                        messages: [{ role: "user", content: prompt }],
                     }),
                 }),
             );
@@ -3734,6 +3737,20 @@ fixtureTest(
             choices: [{ message: { content: "ok" } }],
         });
         expect(privateModelFlags().at(-1)).toBe(false);
+        // Its charge is known to be 0, so a key with no budget left may call
+        // it; a new prompt keeps the text cache out of it.
+        const { key: noBudgetKey } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 0 },
+            pollenBudget: 0,
+        });
+        const noBudgetResponse = await callFreePublicModel(
+            noBudgetKey,
+            "free public, no key budget",
+        );
+        expect(noBudgetResponse.status).toBe(200);
+        await expect(noBudgetResponse.json()).resolves.toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+        });
     },
 );
 

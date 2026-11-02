@@ -647,6 +647,13 @@ export const isFlatRateModel = (definition: ModelDefinition): boolean =>
     (definition.category === "image" &&
         definition.cost.promptTextTokens === undefined);
 
+/** No request can bill: every rate sheet is zero and no billing rule adds a charge. */
+export const isFreeModel = (definition: ModelDefinition): boolean =>
+    !definition.billing &&
+    getCostSheetsForModel(definition).every((sheet) =>
+        Object.values(sheet).every((rate) => rate === 0),
+    );
+
 export const isVisibleModelDefinition = (
     definition: ModelDefinition,
 ): boolean => definition.hidden !== true && definition.fallbackOnly !== true;

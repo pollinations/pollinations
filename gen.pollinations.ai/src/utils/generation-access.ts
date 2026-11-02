@@ -5,6 +5,7 @@ import {
 } from "@shared/billing/deduction.ts";
 import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { withByopMarkup } from "@shared/billing/markup.ts";
+import { isFreeModel } from "@shared/registry/registry.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -49,6 +50,7 @@ export async function checkBalance(
         estimatedCost,
         () => balance.getBalance(userId),
         isPaidOnly,
+        isFreeModel(model.definition),
     );
 
     balance.balanceCheckResult = createBalanceCheckResult(

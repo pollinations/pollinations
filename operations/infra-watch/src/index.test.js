@@ -140,6 +140,9 @@ async function fake(input, init = {}) {
         const content = `Line ${world.answers}.`;
         return Response.json({ choices: [{ message: { content } }] });
     }
+    // The weekly eval's index: no run unless a test sets one.
+    if (url.hostname === "raw.githubusercontent.com")
+        return Response.json(world.evals ?? { runs: [] });
     throw new Error(`unexpected fetch ${url}`);
 }
 
@@ -1107,6 +1110,40 @@ it("keeps a stuck cycle's card open until a cycle works, even when the stuck one
     clock += 60_000;
     await stub.check();
     expect(await open()).toBeNull();
+});
+
+it("posts the weekly eval's score gaps to the maintainers once per run", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/a")];
+    world.probe = answers(() => false, "x");
+    world.agent = tells();
+    world.evals = {
+        runs: [
+            {
+                id: "2026-11-02",
+                date: "2026-11-02T03:00:00Z",
+                gaps: [
+                    {
+                        model: "community/o/a",
+                        rate: 0.1,
+                        twin: "a",
+                        twinRate: 0.6,
+                    },
+                ],
+            },
+        ],
+    };
+    await cycled(stub);
+    const [card] = posts(INFRA);
+    expect(card.content).toBe(MAINTAINERS);
+    expect(card.text).toContain("COMMUNITY MODELS: SCORE GAP");
+    expect(card.text).toContain("o/a 10% vs a 60%");
+    expect(posts(COMMUNITY)).toHaveLength(0);
+    clock += 30 * 60_000;
+    await cycled(stub);
+    expect(posts(INFRA)).toHaveLength(1);
 });
 
 it("probes due models by Thomas's rule, and calls the agent only with incidents, through its own key", async () => {

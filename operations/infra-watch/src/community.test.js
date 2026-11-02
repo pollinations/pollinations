@@ -301,6 +301,52 @@ test("listing changes are an incident only when something changed", () => {
     );
 });
 
+test("the weekly eval's score gaps go to the maintainers once per run, in its first week", () => {
+    const evals = {
+        id: "2026-10-26",
+        date: "2026-10-26T03:00:00Z",
+        gaps: [
+            {
+                model: "community/m/minimax-m3:paid",
+                rate: 0.13,
+                twin: "minimax-m3",
+                twinRate: 0.57,
+            },
+        ],
+    };
+    const [gaps] = find({ evals });
+    assert.equal(gaps.kind, "gaps");
+    assert.equal(gaps.to, "maintainers");
+    assert.deepEqual(gaps.owners, []);
+    assert.deepEqual(gaps.quiet, ["gaps 2026-10-26"]);
+    // Told: quiet for the rest of the run's week.
+    assert.deepEqual(
+        find({ evals, quiet: { "gaps 2026-10-26": NOW - DAY } }),
+        [],
+    );
+    // A run older than a week, or one without gaps, tells nothing.
+    assert.deepEqual(
+        find({ evals: { ...evals, date: "2026-10-24T00:00:00Z" } }),
+        [],
+    );
+    assert.deepEqual(find({ evals: { ...evals, gaps: [] } }), []);
+    assert.deepEqual(find({ evals: null }), []);
+    // Its card names each model, both scores and how to confirm.
+    const plan = decision(
+        JSON.stringify({
+            maintainers: [{ incidents: ["1"], text: "Check it." }],
+        }),
+        [gaps],
+    );
+    assert.match(plan.maintainers.text, /COMMUNITY MODELS: SCORE GAP/);
+    assert.match(
+        plan.maintainers.text,
+        /m\/minimax-m3:paid 13% vs minimax-m3 57%/,
+    );
+    assert.match(plan.maintainers.text, /fingerprint\.js compare/);
+    assert.deepEqual(plan.maintainers.owners, []);
+});
+
 test("a shared failure keeps its models while they break the same way, even past 4 hours", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));

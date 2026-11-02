@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
+// The Trust tab's rule for a gap, so the page and infra-watch's card agree.
+import { scoreGaps } from "../model-monitor/src/eval-data.js";
 import { EVALS } from "./evals/index.js";
 import {
     ask,
@@ -238,7 +240,7 @@ export function formatTable(evalResult) {
     return lines.join("\n");
 }
 
-function saveRun(outDir, run) {
+export function saveRun(outDir, run) {
     mkdirSync(join(outDir, "runs"), { recursive: true });
     writeFileSync(
         join(outDir, "runs", `${run.id}.json`),
@@ -256,6 +258,15 @@ function saveRun(outDir, run) {
             evals: run.evals.map((entry) => entry.id),
             scored: run.evals[0].models.filter((m) => m.status === "scored")
                 .length,
+            // Read by infra-watch, which tells the maintainers once per run.
+            gaps: scoreGaps(run.evals[0].models).map(
+                ({ community, official }) => ({
+                    model: community.name,
+                    rate: community.rate,
+                    twin: official.name,
+                    twinRate: official.rate,
+                }),
+            ),
         },
         ...index.runs.filter((entry) => entry.id !== run.id),
     ];

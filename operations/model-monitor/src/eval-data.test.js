@@ -5,6 +5,7 @@ import {
     buildLeaderboard,
     compareToTwin,
     officialTwin,
+    scoreGaps,
 } from "./eval-data.js";
 
 const model = (name, rate, margin, extra = {}) => ({
@@ -74,6 +75,41 @@ describe("compareToTwin", () => {
             model("openai/x", 0, 0.562),
         );
         assert.ok(!tiny.significant);
+    });
+
+    test("never flags a model that errored on most questions: its endpoint is broken", () => {
+        const official = model("openai/x", 0.9, 0.1);
+        const broken = compareToTwin(
+            model("community/a/x", 0.1, 0.1, { questions: 30, failed: 16 }),
+            official,
+        );
+        assert.ok(broken.errored);
+        assert.ok(!broken.significant);
+        const answering = compareToTwin(
+            model("community/a/x", 0.1, 0.1, { questions: 30, failed: 15 }),
+            official,
+        );
+        assert.ok(!answering.errored);
+        assert.ok(answering.significant);
+    });
+});
+
+describe("scoreGaps", () => {
+    test("keeps community models clearly below their namesake only", () => {
+        const gaps = scoreGaps([
+            model("openai/x", 0.9, 0.1),
+            model("openai/y", 0.2, 0.1),
+            model("community/a/x", 0.2, 0.1),
+            model("community/b/y", 0.9, 0.1),
+            model("community/c/x:free", 0.2, 0.1, {
+                questions: 30,
+                failed: 20,
+            }),
+        ]);
+        assert.deepEqual(
+            gaps.map((pair) => [pair.community.name, pair.official.name]),
+            [["community/a/x", "openai/x"]],
+        );
     });
 });
 

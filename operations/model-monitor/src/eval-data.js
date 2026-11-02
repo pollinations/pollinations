@@ -30,13 +30,17 @@ export function officialTwin(model, officialModels) {
 
 /**
  * Community score against its official twin. The gap is significant when it
- * exceeds the 95% Wilson intervals, so noise is not flagged.
+ * exceeds the 95% Wilson intervals, so noise is not flagged. A community
+ * model that errored on more than half its questions is a broken endpoint,
+ * not a different model: its gap is never flagged.
  */
 export function compareToTwin(community, official) {
     const gap = community.rate - official.rate;
+    const errored = community.failed * 2 > community.questions;
     const significant =
-        community.lower > official.upper || official.lower > community.upper;
-    return { gap, significant };
+        !errored &&
+        (community.lower > official.upper || official.lower > community.upper);
+    return { gap, significant, errored };
 }
 
 /** Scored models best first, plus every community model next to its twin. */
@@ -67,3 +71,13 @@ export function buildLeaderboard(models) {
         unscored: models.filter((model) => model.status === "unscored"),
     };
 }
+
+/**
+ * Community models clearly below the official model they are named after,
+ * the Trust tab's red rows. The weekly run saves them for infra-watch to
+ * show the maintainers; a person confirms before anyone is told.
+ */
+export const scoreGaps = (models) =>
+    buildLeaderboard(models).pairs.filter(
+        (pair) => pair.significant && pair.gap < 0,
+    );

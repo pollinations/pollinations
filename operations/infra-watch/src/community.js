@@ -14,11 +14,12 @@ export const AGENT_DAILY_LIMIT = 48;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // A told incident stays quiet this long: a broken stream per model and
 // error, a fallback notice per model and fallback, a mismatch per model and
-// reported name.
+// reported name, score gaps per weekly eval run.
 export const QUIET_MS = {
     stream: DAY_MS,
     fallback: 7 * DAY_MS,
     mismatch: 7 * DAY_MS,
+    gaps: 7 * DAY_MS,
 };
 // Thomas's thresholds: a model leans on its fallbacks from this many
 // rescues and this share of its successes; one broken stream on this many
@@ -37,6 +38,7 @@ Each line tells the one incident in its "incidents" and goes to the channel its 
 - fallback: a model leans on its fallbacks; "private" fallbacks are never named.
 - mismatch: a model's answers reported a different model name than its listing requests, in two of its probes in a row. The name is what the publisher's upstream reported, so word it as evidence, like "the publisher reported this name for requests configured as the requested model", and never say which model actually ran.
 - listings: models newly filtered out of /models for low health, or back; filtered models stay callable by their exact ID.
+- gaps: in this week's eval, community models scored clearly below the official model they are named after. It is statistical evidence, not proof: say a maintainer should confirm each with the fingerprint tool before anyone else is told.
 Code puts lines into each post until it is full; incidents that don't fit come next time. Code pings publishers and points them to their dashboard.`;
 
 // The public community models gen's reliability filter leaves out of the
@@ -177,6 +179,7 @@ export function incidents({
     pending = {},
     served = {},
     listings,
+    evals = null,
     now,
 }) {
     const named = new Set(catalog.map((m) => m.name));
@@ -359,6 +362,25 @@ export function incidents({
             owners: [],
             quiet: [],
         });
+
+    // The weekly eval's latest run (operations/model-evals): community
+    // models scored clearly below their namesake, by the Trust tab's rule.
+    // Told to the maintainers once per run, in its first week, never to a
+    // publisher: a score is statistical, so a person confirms first.
+    const gapsKey = `gaps ${evals?.id}`;
+    if (
+        evals?.gaps?.length &&
+        now - Date.parse(evals.date) < QUIET_MS.gaps &&
+        !told(gapsKey, "gaps")
+    )
+        add({
+            kind: "gaps",
+            to: "maintainers",
+            run: evals.id,
+            gaps: evals.gaps,
+            owners: [],
+            quiet: [gapsKey],
+        });
     return { found, pending: kept };
 }
 
@@ -375,6 +397,7 @@ const TITLE = {
     fallback: "COMMUNITY MODEL RUNNING ON BACKUP",
     mismatch: "COMMUNITY MODEL NAME MISMATCH",
     listings: "COMMUNITY MODELS HIDDEN OR BACK IN LIST",
+    gaps: "COMMUNITY MODELS: SCORE GAP",
 };
 // Up to SHOWN values under one label, then how many more.
 const named = (label, values, more = values.length - SHOWN) => [
@@ -385,6 +408,8 @@ const health = (m) =>
     m.health == null
         ? short(m.model)
         : `${short(m.model)} (${Math.round(m.health)}%)`;
+// An eval score, 0 to 1, as a whole percent.
+const percent = (rate) => `${Math.round(rate * 100)}%`;
 // The error without "stream returned ", so the box stays narrow enough for
 // Discord not to wrap it.
 const error = (i) => i.error.replace(/^stream returned /, "");
@@ -421,6 +446,16 @@ const ROWS = {
         ...named("HIDDEN", i.newly.map(health), i.newlyMore),
         ...named("BACK", i.back.map(health), i.backMore),
         ["TOTAL", `${i.filtered} hidden now`],
+    ],
+    gaps: (i) => [
+        ...named(
+            "MODEL",
+            i.gaps.map(
+                (g) =>
+                    `${short(g.model)} ${percent(g.rate)} vs ${g.twin} ${percent(g.twinRate)}`,
+            ),
+        ),
+        ["CHECK", "model-evals/fingerprint.js compare"],
     ],
 };
 const card = (i) =>

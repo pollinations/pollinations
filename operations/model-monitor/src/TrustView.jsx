@@ -146,7 +146,7 @@ function TwinPairs({ pairs, titles }) {
                         />
                         <SortableTh
                             label={
-                                <span title="Community minus official. Red when clearly lower, amber when clearly higher: the two 95% confidence ranges do not overlap">
+                                <span title="Community minus official. Red when clearly lower, amber when clearly higher: the two 95% confidence ranges do not overlap. Endpoint errors when the community model errored on most questions">
                                     Difference
                                 </span>
                             }
@@ -186,7 +186,9 @@ function TwinPairs({ pairs, titles }) {
                         sorted.map((pair) => {
                             const { community, official } = pair;
                             const intent = highlight(pair);
-                            const difference = signed(shownGap(pair));
+                            const difference = pair.errored
+                                ? "endpoint errors"
+                                : signed(shownGap(pair));
                             return (
                                 <TableRow key={community.name} intent={intent}>
                                     <ModelCell

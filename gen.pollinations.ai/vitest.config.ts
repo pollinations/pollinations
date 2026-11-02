@@ -12,6 +12,7 @@ const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const genAliases = [
     "content-filter.ts",
     "cache",
+    "durable-objects/PollenRateLimiter.ts",
     "durable-objects/GenerationCoordinator.ts",
     "env.ts",
     "error.ts",
@@ -200,6 +201,14 @@ export default defineConfig(async ({ mode }) => {
                             });
                         },
                         ASK_JEV_MCP: async (request: Request) =>
+                            Response.json({
+                                pathname: new URL(request.url).pathname,
+                                authorization:
+                                    request.headers.get("authorization"),
+                                cookie: request.headers.get("cookie"),
+                                payload: await request.json(),
+                            }),
+                        HN_MCP: async (request: Request) =>
                             Response.json({
                                 pathname: new URL(request.url).pathname,
                                 authorization:

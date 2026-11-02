@@ -8,6 +8,7 @@ interface CloudflareBindings {
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
     MACHINES_MCP: Fetcher;
+    FX_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
@@ -97,6 +98,8 @@ interface CloudflareBindings {
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
     XAI_API_KEY: string;
+    POLLEN_REFILL_PER_HOUR?: number;
+    POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
     EDGE_IP_RATE_LIMITER?: RateLimit;
@@ -104,4 +107,4 @@ interface CloudflareBindings {
 
 declare namespace Cloudflare {
     interface Env extends CloudflareBindings {}
-}
+    }

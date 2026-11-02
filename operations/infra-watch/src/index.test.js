@@ -1384,6 +1384,42 @@ const proxies = (names, visibility = "public") =>
     ]);
 const runs = async (stub) => (await stored(stub, "community")).served;
 
+it("pings an owner by the Discord account linked on Enter ahead of the list, and by the list when D1 can't be read", async () => {
+    await proxies(["broken"]);
+    await env.DB.prepare(
+        "INSERT INTO account (id, account_id, provider_id, user_id, created_at, updated_at) VALUES ('discord-o', '987654321098765432', 'discord', 'owner-o', 1, 1)",
+    ).run();
+    world.catalog = [community("community/o/broken")];
+    world.probe = answers(() => true);
+    world.agent = tells();
+    // The second broken stream in a row is told.
+    const told = async (stub) => {
+        await cycled(stub);
+        await later(stub, HOURS(8));
+        await cycled(stub);
+        return posts(COMMUNITY).at(-1);
+    };
+    // The list has o as 123456789012345678; the account o linked wins.
+    const linked = await told(watch());
+    expect([linked.content, linked.users]).toEqual([
+        "<@987654321098765432>",
+        ["987654321098765432"],
+    ]);
+    const stub = watch();
+    await runInDurableObject(stub, (instance) => {
+        const prepare = instance.env.DB.prepare.bind(instance.env.DB);
+        vi.spyOn(instance.env.DB, "prepare").mockImplementation((sql) => {
+            if (sql.includes("'discord'")) throw new Error("D1 unavailable");
+            return prepare(sql);
+        });
+    });
+    const listed = await told(stub);
+    expect([listed.content, listed.users]).toEqual([
+        OWNER_O,
+        ["123456789012345678"],
+    ]);
+});
+
 it("compares only fresh probes of listed proxies that answered themselves with a model name", async () => {
     const stub = watch();
     let clock = Date.UTC(2026, 10, 1, 10, 5);

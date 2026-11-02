@@ -286,6 +286,9 @@ test("a told fallback stays quiet for a week, per model and fallback", () => {
     assert.equal(later.snapshots[0].via.length, 2);
 });
 
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI codes start with ESC
+const plain = (text) => text.replace(/\u001b\[[\d;]*m/g, "");
+
 test("community cards fit a phone: long names continue on rows of their own, never cut", () => {
     // The listing posted on 2026-11-02, too wide for a phone.
     const changes = {
@@ -312,8 +315,7 @@ test("community cards fit a phone: long names continue on rows of their own, nev
         find({ listings: changes }),
     );
     const box = plan.community.text.split("```")[1].split("\n").slice(1, -1);
-    for (const line of box)
-        assert.ok([...line.replace(/\u001b\[[\d;]*m/g, "")].length <= 49, line);
+    for (const line of box) assert.ok([...plain(line)].length <= 49, line);
     // The longest title fits too.
     const broken = decision(
         JSON.stringify({ community: [{ incidents: ["1"], text: "Broken." }] }),
@@ -330,7 +332,7 @@ test("community cards fit a phone: long names continue on rows of their own, nev
         ],
     ).community.text;
     for (const line of broken.split("```")[1].split("\n").slice(1, -1))
-        assert.ok([...line.replace(/\u001b\[[\d;]*m/g, "")].length <= 49, line);
+        assert.ok([...plain(line)].length <= 49, line);
     // Joined back, every name is whole.
     const text = box
         .map((l) =>

@@ -6,6 +6,7 @@ import {
 } from "@x402/core/http";
 import type { PaymentPayload } from "@x402/core/types";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
+import stableStringify from "fast-json-stable-stringify";
 import { Hono } from "hono";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { describe, expect, vi } from "vitest";
@@ -655,6 +656,94 @@ describe("x402 prepaid API keys", () => {
                 ).toBe(false);
             } finally {
                 clock.mockRestore();
+            }
+        });
+
+        test("final review: a proven buyer can recover a credited legacy purchase", async ({
+            accountToken,
+        }) => {
+            const owner = await holdingOwner(accountToken, "legacy-recovery");
+            const buyer = await buyerPayment(owner, "p2");
+            const digest = await crypto.subtle.digest(
+                "SHA-256",
+                new TextEncoder().encode(stableStringify(buyer.payment)),
+            );
+            const legacyId = Array.from(new Uint8Array(digest), (byte) =>
+                byte.toString(16).padStart(2, "0"),
+            ).join("");
+            expect(legacyId).not.toBe(buyer.id);
+            const issued = await preparePurchase(
+                env,
+                undefined,
+                legacyId,
+                owner,
+                "p2",
+            );
+            await creditPurchase(env.DB, legacyId, owner, issued.id);
+            const before = await ledger(owner);
+            const calls = stubFacilitator(buyer.account.address);
+            const facilitatorFetch = globalThis.fetch;
+            vi.stubGlobal(
+                "fetch",
+                async (input: RequestInfo | URL, init?: RequestInit) => {
+                    const url = new URL(
+                        input instanceof Request ? input.url : String(input),
+                    );
+                    const result = await facilitatorFetch(input, init);
+                    if (
+                        url.origin === facilitator &&
+                        url.pathname === "/verify"
+                    ) {
+                        return Response.json({
+                            isValid: false,
+                            invalidReason:
+                                "invalid_exact_evm_nonce_already_used",
+                            payer: buyer.account.address,
+                        });
+                    }
+                    return result;
+                },
+            );
+            try {
+                const response = await send(owner, "p2", {
+                    "payment-signature": buyer.signature,
+                    ...(await proof(buyer.account, buyer.payment)),
+                });
+                console.info(
+                    "LEGACY_RECOVERY",
+                    JSON.stringify({
+                        status: response.status,
+                        verifyCalls: calls.filter((path) => path === "/verify")
+                            .length,
+                        settleCalls: calls.filter((path) => path === "/settle")
+                            .length,
+                        legacyRowCredited:
+                            (await getPurchase(env.DB, legacyId))
+                                ?.credited_at !== null,
+                        canonicalRowFound: Boolean(
+                            await getPurchase(env.DB, buyer.id),
+                        ),
+                        ledgerUnchanged:
+                            JSON.stringify(await ledger(owner)) ===
+                            JSON.stringify(before),
+                    }),
+                );
+                expect(response.status).toBe(200);
+                expect(((await response.json()) as { id: string }).id).toBe(
+                    issued.id,
+                );
+                expect(calls).not.toContain("/verify");
+                expect(calls).not.toContain("/settle");
+                // Without the proof, a legacy payment is refused before verify.
+                const replay = await send(owner, "p2", {
+                    "payment-signature": buyer.signature,
+                });
+                expect(replay.status).toBe(409);
+                expect(await replay.text()).not.toContain("sk_");
+                expect(calls).not.toContain("/verify");
+                expect(await ledger(owner)).toEqual(before);
+            } finally {
+                vi.unstubAllGlobals();
             }
         });
 

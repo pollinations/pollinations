@@ -11,7 +11,7 @@ import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
 import {
     creditPurchase,
-    getPurchase,
+    findPurchase,
     isBuyer,
     paymentId,
     preparePurchase,
@@ -107,7 +107,7 @@ export const x402KeysRoutes = new Hono<Env>()
                         message: "Invalid x402 payment signature",
                     });
                 }
-                const previous = await getPurchase(c.env.DB, id);
+                const previous = await findPurchase(c.env.DB, signature);
                 if (previous) {
                     if (
                         previous.user_id !== holdingUserId ||

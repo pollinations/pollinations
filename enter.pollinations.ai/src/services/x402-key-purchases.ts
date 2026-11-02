@@ -3,6 +3,7 @@ import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { decodePaymentSignatureHeader } from "@x402/core/http";
 import type { PaymentPayload } from "@x402/core/types";
+import stableStringify from "fast-json-stable-stringify";
 import { HTTPException } from "hono/http-exception";
 import { CompactEncrypt, compactDecrypt } from "jose";
 import { getAddress, verifyMessage } from "viem";
@@ -73,17 +74,31 @@ export function transferOf(payment: PaymentPayload) {
     };
 }
 
+async function sha256Hex(text: string): Promise<string> {
+    const digest = await crypto.subtle.digest("SHA-256", encoder.encode(text));
+    return Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+    ).join("");
+}
+
 export async function paymentIdForPayload(
     payment: PaymentPayload,
 ): Promise<string> {
     const { network, asset, payer, nonce } = transferOf(payment);
-    const digest = await crypto.subtle.digest(
-        "SHA-256",
-        encoder.encode(`${network}:${asset}:${payer}:${nonce}`.toLowerCase()),
+    return sha256Hex(`${network}:${asset}:${payer}:${nonce}`.toLowerCase());
+}
+
+// Purchases recorded before transfer ids are keyed by a hash of the whole
+// payment. Their rows store no payer or nonce, so they cannot be migrated.
+export async function findPurchase(
+    db: D1Database,
+    signature: string,
+): Promise<Purchase | null> {
+    const payment = decodePaymentSignatureHeader(signature);
+    return (
+        (await getPurchase(db, await paymentIdForPayload(payment))) ??
+        (await getPurchase(db, await sha256Hex(stableStringify(payment))))
     );
-    return Array.from(new Uint8Array(digest), (byte) =>
-        byte.toString(16).padStart(2, "0"),
-    ).join("");
 }
 
 export async function getPurchase(

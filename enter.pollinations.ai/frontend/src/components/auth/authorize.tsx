@@ -589,7 +589,7 @@ export function Authorize() {
                     <Alert intent="warning" className="mb-4">
                         Access goes to a program on this computer, and any
                         program can use this app's name. Only allow it if you
-                        just started this sign-in yourself.
+                        just started this request yourself.
                     </Alert>
                 )}
             <form

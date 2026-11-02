@@ -44,8 +44,8 @@ function AppSignals({ app }: { app: DirectoryApp }) {
             {isPollen(app) ? (
                 <span
                     role="img"
-                    title="pollinations pay"
-                    aria-label="pollinations pay"
+                    title="Pollinations Pay"
+                    aria-label="Pollinations Pay"
                 >
                     <WalletIcon className="size-4" />
                 </span>

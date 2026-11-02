@@ -59,7 +59,7 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /.github/workflows/
-            /operations/deployment/
+            /operations/infrastructure/deployment/
             /apps/*/deploy.json
             /operations/*/deploy.json
             /operations/*/*/deploy.json

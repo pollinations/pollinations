@@ -7,7 +7,7 @@ trap cleanup EXIT
 SCRIPT="$(cd "$(dirname "$0")" && pwd)/polli-container-deploy.sh"
 BIN="$ROOT/bin"
 mkdir -p "$ROOT/repo/apps/polli" "$BIN"
-cp "$(dirname "$SCRIPT")/../../apps/polli/compose.yaml" "$ROOT/repo/apps/polli/compose.yaml"
+cp "$(dirname "$SCRIPT")/../../../apps/polli/compose.yaml" "$ROOT/repo/apps/polli/compose.yaml"
 touch "$ROOT/repo/apps/polli/Dockerfile" "$ROOT/repo/apps/polli/Dockerfile.visual-studio" "$ROOT/repo/apps/polli/seccomp_profile.json"
 git -C "$ROOT/repo" init -q
 git -C "$ROOT/repo" config user.email test@example.invalid

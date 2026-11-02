@@ -128,7 +128,7 @@ def required_targets(files: list[str], root: Path | None = None) -> list[str]:
             if any(fnmatchcase(file, pattern) for file in files for pattern in patterns):
                 required.append(f"{workflow}:{target}")
     # Reuse the exact manifest/watch matching that deploy-applications and Cloudflare run.
-    script = """const {discover, selectChanged} = require('./operations/deployment/discover.cjs');
+    script = """const {discover, selectChanged} = require('./operations/infrastructure/deployment/discover.cjs');
 const files = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
 process.stdout.write(JSON.stringify(selectChanged(discover('all'), files)));"""
     apps = json.loads(subprocess.run(["node", "-e", script], input=json.dumps(files),

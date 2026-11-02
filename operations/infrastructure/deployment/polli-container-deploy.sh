@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-REPO_ROOT=${POLLI_REPO_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}
+REPO_ROOT=${POLLI_REPO_ROOT:-$(cd "$SCRIPT_DIR/../../.." && pwd)}
 POLLI_DIR="$REPO_ROOT/apps/polli"
 SHA=${1:-}
 MODE=${2:-deploy}

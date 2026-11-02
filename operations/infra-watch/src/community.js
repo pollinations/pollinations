@@ -59,9 +59,8 @@ export function filteredModels(all, shown) {
 
 // A card names at most this many models in a list; the rest are counted.
 // Ids run up to 160 characters (a 39-character owner and a 120-character
-// name), and every row is as wide as the longest: at 5, the biggest card,
-// a listing of two full lists, stays under 3,000 characters, with room for
-// the agent's sentence and the footer in Discord's 4,096.
+// name) and wrap onto rows of their own, so a card names fewer when they
+// would take it past CARD_MAX.
 const SHOWN = 5;
 
 // Since the last day: the models newly filtered, and those filtered then
@@ -315,8 +314,14 @@ export function incidents({
         if (p.kind === "fallback" && told(key, "fallback")) delete kept[key];
     // One notice per model, with a snapshot per window its untold pairs come
     // from: each window's counts stay together, never summed with another's.
+    // It holds the VIA_SHOWN oldest pairs, as many as one configuration has,
+    // so its card fits a post; pairs piled up while delivery failed and the
+    // configuration changed stay pending for the next notice.
     const pairs = Object.entries(kept).filter(([, p]) => p.kind === "fallback");
-    for (const [model, own] of Map.groupBy(pairs, ([, p]) => p.model)) {
+    for (const [model, all] of Map.groupBy(pairs, ([, p]) => p.model)) {
+        const own = all
+            .sort(([, a], [, b]) => a.at - b.at || b.rescued - a.rescued)
+            .slice(0, VIA_SHOWN);
         const snapshots = [...Map.groupBy(own, ([, p]) => p.at)]
             .sort(([a], [b]) => a - b)
             .map(([at, entries]) => ({
@@ -388,6 +393,7 @@ export function incidents({
                 to: "maintainers",
                 run: run.id,
                 gaps: run.gaps,
+                link: `${EVALS_RUNS}/${run.id}.json`,
                 owners: [],
                 quiet: [key],
             });
@@ -397,7 +403,7 @@ export function incidents({
 
 // What the agent reads of an incident: what it says, not who it pings or
 // how it is kept quiet.
-export const brief = ({ owners, quiet, ...incident }) => incident;
+export const brief = ({ owners, quiet, link, ...incident }) => incident;
 
 // Each incident's card: a title that says it is about community models and
 // whose fault it likely is, then its facts, never cut. Posts call a model's
@@ -410,18 +416,22 @@ const TITLE = {
     listings: "COMMUNITY MODELS HIDDEN OR BACK IN LIST",
     gaps: "COMMUNITY MODELS: SCORE GAP",
 };
-// Up to SHOWN values under one label, then how many more.
-const named = (label, values, more = values.length - SHOWN) => [
-    ...values.slice(0, SHOWN).map((v, n) => [n ? "" : label, v]),
-    ...(more > 0 ? [["", `…and ${more} more`]] : []),
-];
+// Up to `shown` values under one label, then how many more: the rest, and
+// the `unnamed` the incident only counts.
+const named = (label, values, shown, unnamed = 0) => {
+    const more = unnamed + Math.max(0, values.length - shown);
+    return [
+        ...values.slice(0, shown).map((v, n) => [n ? "" : label, v]),
+        ...(more > 0 ? [["", `…and ${more} more`]] : []),
+    ];
+};
 const health = (m) =>
     m.health == null
         ? short(m.model)
         : `${short(m.model)} (${Math.round(m.health)}%)`;
 // An eval score, 0 to 1, as a whole percent.
 const percent = (rate) => `${Math.round(rate * 100)}%`;
-// Each run's results, linked from its card, hold all its gaps.
+// Each run's results, linked under its card, hold all its gaps.
 const EVALS_RUNS =
     "https://github.com/pollinations/pollinations/blob/evals/data/runs";
 // The error without "stream returned ", so the box stays narrow enough for
@@ -432,13 +442,13 @@ const ROWS = {
         ["MODEL", short(i.model)],
         ["ERROR", error(i)],
     ],
-    shared: (i) => [
+    shared: (i, shown) => [
         ["ERROR", error(i)],
         [
             "MODELS",
             `${i.models.length} from ${new Set(i.models.map(ownerOf)).size} publishers`,
         ],
-        ...named("", i.models.map(short)),
+        ...named("", i.models.map(short), shown),
     ],
     fallback: (i) => [
         ["MODEL", short(i.model)],
@@ -456,27 +466,41 @@ const ROWS = {
         ["REQUESTED", i.declared],
         ["REPORTED", i.served],
     ],
-    listings: (i) => [
-        ...named("HIDDEN", i.newly.map(health), i.newlyMore),
-        ...named("BACK", i.back.map(health), i.backMore),
+    listings: (i, shown) => [
+        ...named("HIDDEN", i.newly.map(health), shown, i.newlyMore),
+        ...named("BACK", i.back.map(health), shown, i.backMore),
         ["TOTAL", `${i.filtered} hidden now`],
     ],
-    // Up to SHOWN models, like every card, so it always fits; the run's
-    // results, linked, have them all.
-    gaps: (i) => [
+    // Some models, like every card, so it always fits; the run's results,
+    // linked, have them all.
+    gaps: (i, shown) => [
         ...named(
             "MODEL",
             i.gaps.map(
                 (g) =>
                     `${short(g.model)} ${percent(g.rate)} vs ${g.twin} ${percent(g.twinRate)}`,
             ),
+            shown,
         ),
-        ["RESULTS", `${EVALS_RUNS}/${i.run}.json`],
         ["CHECK", "model-evals/fingerprint.js compare"],
     ],
 };
-const card = (i) =>
-    panel(TITLE[i.kind], ROWS[i.kind](i), COLOR.PRIMARY_WEAK, { whole: true });
+// Room for the agent's sentence and the footer in Discord's 4,096.
+const CARD_MAX = 3500;
+// A card names SHOWN models in a list, or fewer while it is over CARD_MAX.
+// Its link, such as a run's full results, goes under its box, where Discord
+// makes it clickable.
+const card = (i) => {
+    for (let shown = SHOWN; ; shown--) {
+        const text = [
+            panel(TITLE[i.kind], ROWS[i.kind](i, shown), COLOR.PRIMARY_WEAK, {
+                whole: true,
+            }),
+            ...(i.link ? [`[Full results](${i.link})`] : []),
+        ].join("\n");
+        if (text.length <= CARD_MAX || shown === 1) return text;
+    }
+};
 
 // Discord cuts an embed at 4,096 characters.
 const LIMIT = 4096;
@@ -497,6 +521,13 @@ const noLinks = (text) =>
         .replace(/\\(?=[^\w\s])/g, "")
         .replace(/\[([^\]]*)\]\([^)]*\)?/g, "$1")
         .replace(/\S*(?::(?:[\\/]|%2f)|www\.)\S*/gi, "");
+
+// The agent's sentence stays under the old monitor's 250 characters.
+const SENTENCE_MAX = 250;
+const clip = (text) =>
+    text.length > SENTENCE_MAX
+        ? `${text.slice(0, SENTENCE_MAX - 1).trimEnd()}…`
+        : text;
 
 // The agent's posts within the rails, or null if its answer isn't one.
 // Each line tells only incidents code found for its channel, goes under
@@ -523,7 +554,9 @@ export function decision(text, found) {
                 : [];
             let items = ids.map((id) => byId.get(id));
             const words =
-                typeof line?.text === "string" ? noLinks(line.text).trim() : "";
+                typeof line?.text === "string"
+                    ? clip(noLinks(line.text).trim())
+                    : "";
             if (
                 !words ||
                 !items.length ||

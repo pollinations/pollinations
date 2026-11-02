@@ -181,6 +181,9 @@ const CONFIRMED = new Set([
     "platform",
 ]);
 const HOSTS = { gen: true, public: true, upstream: true };
+// A model incident's model, from its key; null for any other incident.
+export const modelOf = (key) =>
+    key.startsWith("model:") ? key.slice(6) : null;
 
 // One incident per key: a model (`model:<id>`), or gen, a hostname, the
 // status data or the platform. It opens once confirmed, updates on every
@@ -251,7 +254,7 @@ export function step(state, found, now, recent = []) {
         if (found.analytics && !HOSTS[key]) continue;
         // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
         // sample neither counts nor resets the run.
-        const model = key.startsWith("model:") ? key.slice(6) : null;
+        const model = modelOf(key);
         if (model) {
             const fresh = (health[model]?.nonClient ?? 0) >= MIN_REQUESTS;
             clears[key] = (state.clears?.[key] ?? 0) + (fresh ? 1 : 0);
@@ -339,18 +342,46 @@ export function duration(ms) {
     return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
 }
 
+// A phone shows about 49 characters of a code block: a row's text fits in
+// ROW_MAX inside the box's borders.
+const ROW_MAX = 45;
+// `text` in pieces of at most `size`, each cut after a /, -, :, _ or space
+// where there is one, so ids and errors break where they read well.
+function wrap(text, size) {
+    const rows = [];
+    while (text.length > size) {
+        const head = text.slice(0, size);
+        const at = Math.max(
+            ...["/", "-", ":", "_", " "].map((c) => head.lastIndexOf(c)),
+        );
+        const cut = at > 0 ? at + 1 : size;
+        rows.push(text.slice(0, cut).trimEnd());
+        text = text.slice(cut).trimStart();
+    }
+    return [...rows, text];
+}
+
 // A box titled with the alert and what it is about. It is as wide as its
-// title or its longest row needs, so a full model id is never cut. The
-// title is drawn in the card's colour (an ansi block): Discord on desktop
-// shows it, the phone shows plain text. `whole` keeps every value whole,
-// for cards whose rows are model ids and errors.
+// title or its longest row needs. The title is drawn in the card's colour
+// (an ansi block): Discord on desktop shows it, the phone shows plain text.
+// `whole` keeps every value whole, for cards whose rows are model ids and
+// errors: a value too long for a phone continues on rows of its own.
 export function panel(title, lines, color, { whole = false } = {}) {
     const width = Math.max(8, ...lines.map(([field]) => field.length + 1));
-    const body = lines.map(
-        ([field, value]) =>
-            `${field.padEnd(width)}${whole ? value : fit(String(value))}`,
+    const body = lines.flatMap(([field, value]) =>
+        whole
+            ? wrap(String(value), ROW_MAX - width).map(
+                  (piece, i) => `${(i ? "" : field).padEnd(width)}${piece}`,
+              )
+            : [`${field.padEnd(width)}${fit(String(value))}`],
     );
-    const inner = Math.max(30, title.length + 2, ...body.map((t) => t.length));
+    // A whole card needs no dash after its title, so its longest title fits
+    // a phone too.
+    const inner = Math.max(
+        30,
+        title.length + (whole ? 1 : 2),
+        ...body.map((t) => t.length),
+    );
     const rgb = [color >> 16, (color >> 8) & 255, color & 255].join(";");
     return [
         "```ansi",

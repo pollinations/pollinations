@@ -1,5 +1,5 @@
-// Webhook delivery and state commits. No Cloudflare imports, so it is
-// testable with plain Node.
+// Discord webhook delivery, and the timeout, write queue and run lease the
+// Worker runs on. No Cloudflare imports, so it is testable with plain Node.
 
 const TIMEOUT_MS = 10_000;
 
@@ -88,7 +88,7 @@ export function discordIds(json) {
 
 // Owners above a community post: one with a known Discord id is pinged,
 // anyone else is named by GitHub username.
-export function mention(owners, ids) {
+function mention(owners, ids) {
     // Own keys only: a name like "constructor" is no id.
     const id = (name) =>
         Object.hasOwn(ids, name.toLowerCase()) ? ids[name.toLowerCase()] : null;

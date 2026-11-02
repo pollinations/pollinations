@@ -174,7 +174,7 @@ export function parseChatStream(body) {
 
 // A cache-busted chat request with a unique marker. No max_tokens, so
 // reasoning models have room for their answer; the timeout is the bound.
-export const textProbeRequest = (model, marker) => ({
+const textProbeRequest = (model, marker) => ({
     requestPath: "/v1/chat/completions",
     body: {
         model: model.name,

@@ -346,6 +346,39 @@ test("community cards fit a phone: long names continue on rows of their own, nev
         assert.ok(text.includes(m.model.replace(/^community\//, "")), m.model);
 });
 
+test("a card too long for a post names fewer models and counts the rest", () => {
+    // Full-length ids with hyphens that end every other row early: five in
+    // each list made a card no post could hold, so it was never posted.
+    const list = (prefix, health) =>
+        [0, 1, 2, 3, 4].map((n) => ({
+            model: `community/o-${"o".repeat(35)}${prefix}${n}/${"-".padEnd(39, "m").repeat(4).slice(0, 120)}`,
+            health,
+        }));
+    const listings = {
+        filtered: 900,
+        newly: list("n", 12),
+        newlyMore: 50,
+        back: list("b", 34),
+        backMore: 50,
+    };
+    const { text } = decision(
+        JSON.stringify({
+            community: [{ incidents: ["1"], text: "s".repeat(250) }],
+        }),
+        find({ listings }),
+    ).community;
+    const more = [...text.matchAll(/…and (\d+) more/g)].map(([, n]) => +n);
+    assert.ok(more[0] > 50 && more[1] > 50, more);
+    // Each list's 55 models are named or counted.
+    assert.deepEqual(
+        [
+            text.split("(12%)").length - 1 + more[0],
+            text.split("(34%)").length - 1 + more[1],
+        ],
+        [55, 55],
+    );
+});
+
 test("listing changes are an incident only when something changed", () => {
     const changes = {
         filtered: 1,

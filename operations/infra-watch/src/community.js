@@ -59,9 +59,8 @@ export function filteredModels(all, shown) {
 
 // A card names at most this many models in a list; the rest are counted.
 // Ids run up to 160 characters (a 39-character owner and a 120-character
-// name), and every row is as wide as the longest: at 5, the biggest card,
-// a listing of two full lists, stays under 3,000 characters, with room for
-// the agent's sentence and the footer in Discord's 4,096.
+// name) and wrap onto rows of their own, so a card names fewer when they
+// would take it past CARD_MAX.
 const SHOWN = 5;
 
 // Since the last day: the models newly filtered, and those filtered then
@@ -411,11 +410,15 @@ const TITLE = {
     listings: "COMMUNITY MODELS HIDDEN OR BACK IN LIST",
     gaps: "COMMUNITY MODELS: SCORE GAP",
 };
-// Up to SHOWN values under one label, then how many more.
-const named = (label, values, more = values.length - SHOWN) => [
-    ...values.slice(0, SHOWN).map((v, n) => [n ? "" : label, v]),
-    ...(more > 0 ? [["", `…and ${more} more`]] : []),
-];
+// Up to `shown` values under one label, then how many more: the rest, and
+// the `unnamed` the incident only counts.
+const named = (label, values, shown, unnamed = 0) => {
+    const more = unnamed + Math.max(0, values.length - shown);
+    return [
+        ...values.slice(0, shown).map((v, n) => [n ? "" : label, v]),
+        ...(more > 0 ? [["", `…and ${more} more`]] : []),
+    ];
+};
 const health = (m) =>
     m.health == null
         ? short(m.model)
@@ -433,13 +436,13 @@ const ROWS = {
         ["MODEL", short(i.model)],
         ["ERROR", error(i)],
     ],
-    shared: (i) => [
+    shared: (i, shown) => [
         ["ERROR", error(i)],
         [
             "MODELS",
             `${i.models.length} from ${new Set(i.models.map(ownerOf)).size} publishers`,
         ],
-        ...named("", i.models.map(short)),
+        ...named("", i.models.map(short), shown),
     ],
     fallback: (i) => [
         ["MODEL", short(i.model)],
@@ -457,33 +460,41 @@ const ROWS = {
         ["REQUESTED", i.declared],
         ["REPORTED", i.served],
     ],
-    listings: (i) => [
-        ...named("HIDDEN", i.newly.map(health), i.newlyMore),
-        ...named("BACK", i.back.map(health), i.backMore),
+    listings: (i, shown) => [
+        ...named("HIDDEN", i.newly.map(health), shown, i.newlyMore),
+        ...named("BACK", i.back.map(health), shown, i.backMore),
         ["TOTAL", `${i.filtered} hidden now`],
     ],
-    // Up to SHOWN models, like every card, so it always fits; the run's
-    // results, linked, have them all.
-    gaps: (i) => [
+    // Some models, like every card, so it always fits; the run's results,
+    // linked, have them all.
+    gaps: (i, shown) => [
         ...named(
             "MODEL",
             i.gaps.map(
                 (g) =>
                     `${short(g.model)} ${percent(g.rate)} vs ${g.twin} ${percent(g.twinRate)}`,
             ),
+            shown,
         ),
         ["CHECK", "model-evals/fingerprint.js compare"],
     ],
 };
-// A card's link, such as a run's full results, goes under its box, where
-// Discord makes it clickable.
-const card = (i) =>
-    [
-        panel(TITLE[i.kind], ROWS[i.kind](i), COLOR.PRIMARY_WEAK, {
-            whole: true,
-        }),
-        ...(i.link ? [`[Full results](${i.link})`] : []),
-    ].join("\n");
+// Room for the agent's sentence and the footer in Discord's 4,096.
+const CARD_MAX = 3500;
+// A card names SHOWN models in a list, or fewer while it is over CARD_MAX.
+// Its link, such as a run's full results, goes under its box, where Discord
+// makes it clickable.
+const card = (i) => {
+    for (let shown = SHOWN; ; shown--) {
+        const text = [
+            panel(TITLE[i.kind], ROWS[i.kind](i, shown), COLOR.PRIMARY_WEAK, {
+                whole: true,
+            }),
+            ...(i.link ? [`[Full results](${i.link})`] : []),
+        ].join("\n");
+        if (text.length <= CARD_MAX || shown === 1) return text;
+    }
+};
 
 // Discord cuts an embed at 4,096 characters.
 const LIMIT = 4096;

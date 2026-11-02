@@ -65,3 +65,53 @@ test("converts screenshots to 1280×720 WebP", async () => {
         },
     );
 });
+
+// Regression: a linked screenshot URL is untrusted input. The size cap has to be
+// enforced while streaming, not only after the whole body is buffered in memory.
+test("refuses an oversized screenshot before buffering the whole body", async () => {
+    const { downloadScreenshot } = require("./screenshot.js");
+    const realFetch = globalThis.fetch;
+    let pulled = 0;
+    try {
+        globalThis.fetch = async () =>
+            new Response(
+                new ReadableStream({
+                    pull(controller) {
+                        // 1 MB per chunk, keep producing until cancelled
+                        pulled += 1;
+                        if (pulled > 20) return controller.close();
+                        controller.enqueue(new Uint8Array(1024 * 1024));
+                    },
+                }),
+                { status: 200, headers: { "content-type": "image/png" } },
+            );
+        await assert.rejects(
+            () => downloadScreenshot("https://example.com/huge.png"),
+            /larger than|must be PNG/,
+        );
+        assert.ok(
+            pulled <= 7,
+            `should stop reading shortly after 5 MB, pulled ${pulled} chunks`,
+        );
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+});
+
+test("refuses when content-length already exceeds the cap", async () => {
+    const { downloadScreenshot } = require("./screenshot.js");
+    const realFetch = globalThis.fetch;
+    try {
+        globalThis.fetch = async () =>
+            new Response(new Uint8Array(16), {
+                status: 200,
+                headers: { "content-length": String(6 * 1024 * 1024) },
+            });
+        await assert.rejects(
+            () => downloadScreenshot("https://example.com/big.png"),
+            /6\.0 MB; it must be PNG, JPEG, or WebP/,
+        );
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+});

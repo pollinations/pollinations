@@ -11,7 +11,41 @@ async function downloadScreenshot(url) {
     });
     if (!response.ok)
         throw new Error(`Screenshot download returned HTTP ${response.status}`);
-    return Buffer.from(await response.arrayBuffer());
+
+    // Refuse oversized bodies before buffering them: a linked URL is untrusted
+    // input, and reading an unlimited body into memory can exhaust the worker
+    // long before screenshotErrors() gets to reject it for exceeding 5 MB.
+    const declared = Number(response.headers.get("content-length"));
+    if (Number.isFinite(declared) && declared > MAX_BYTES) {
+        throw new Error(
+            `Screenshot is ${(declared / 1024 / 1024).toFixed(1)} MB; it must be ${RULES}`,
+        );
+    }
+    if (!response.body) return Buffer.from(await response.arrayBuffer());
+
+    const chunks = [];
+    let total = 0;
+    const reader = response.body.getReader();
+    try {
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            total += value.byteLength;
+            if (total > MAX_BYTES) {
+                await reader.cancel().catch(() => {});
+                throw new Error(
+                    `Screenshot is larger than ${RULES}; refusing to buffer it`,
+                );
+            }
+            chunks.push(value);
+        }
+    } finally {
+        reader.releaseLock?.();
+    }
+    return Buffer.concat(
+        chunks.map((c) => Buffer.from(c)),
+        total,
+    );
 }
 
 async function screenshotErrors(buffer) {

@@ -60,6 +60,11 @@ function section(body, label) {
     return match ? match[1].trim() : "";
 }
 
+// Single-line fields: ignore notes or footers added below the value.
+function line(body, label) {
+    return section(body, label).split(/\r?\n/, 1)[0];
+}
+
 function normalizeUrl(value) {
     const input = clean(value, 500);
     if (!input) return "";
@@ -74,14 +79,7 @@ function normalizeUrl(value) {
 }
 
 function normalizeLanguage(value) {
-    // The language field is a single-line form input, so anything after the first
-    // line is parser noise: a trailing note, a horizontal rule or a footer that
-    // the section() capture picks up when "App Language" is the last section.
-    // Split before clean(), because clean() collapses all whitespace into spaces.
-    const firstLine = String(value || "")
-        .split(/\r?\n/)[0]
-        .trim();
-    const language = clean(firstLine, 15) || "en";
+    const language = clean(value, 15) || "en";
     return /^[a-z]{2,3}(?:-[A-Za-z]{2,4})?$/.test(language) ? language : "";
 }
 
@@ -108,26 +106,15 @@ function parseScreenshotUrl(value) {
 }
 
 function parseSubmission(body) {
-    const name = clean(section(body, "App Name"), 80);
+    const name = clean(line(body, "App Name"), 80);
     const description = clean(section(body, "App Description"), 200);
-    const appUrl = normalizeUrl(section(body, "App URL"));
-    const repoUrl = normalizeUrl(section(body, "GitHub Repository URL"));
-    // Dropdown fields are single-line, so anything after the first line is parser
-    // noise captured by section() when the field is followed by a note or rule.
-    const category = clean(
-        section(body, "App Category").split(/\r?\n/, 1)[0],
-        30,
-    ).toLowerCase();
-    const platform = clean(
-        section(body, "Platform").split(/\r?\n/, 1)[0],
-        30,
-    ).toLowerCase();
-    const language = normalizeLanguage(section(body, "App Language"));
-    const discord = clean(section(body, "Discord Username"), 80);
-    const quest = clean(
-        section(body, "Quest").split(/\r?\n/, 1)[0],
-        20,
-    ).replace(/^#/, "");
+    const appUrl = normalizeUrl(line(body, "App URL"));
+    const repoUrl = normalizeUrl(line(body, "GitHub Repository URL"));
+    const category = clean(line(body, "App Category"), 30).toLowerCase();
+    const platform = clean(line(body, "Platform"), 30).toLowerCase();
+    const language = normalizeLanguage(line(body, "App Language"));
+    const discord = clean(line(body, "Discord Username"), 80);
+    const quest = clean(line(body, "Quest"), 20).replace(/^#/, "");
     const screenshotUrl = parseScreenshotUrl(section(body, "Screenshot"));
 
     return {

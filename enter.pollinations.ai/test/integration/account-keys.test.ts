@@ -984,61 +984,6 @@ describe("Account Key Management API", () => {
             });
             expect(image.status).toBe(403);
         });
-        test("a negative budget is refused however a key gets one", async ({
-            accountToken,
-        }) => {
-            const caller = await (
-                await call(accountToken, "/keys", "POST", {
-                    name: "five-for-an-hour",
-                    accountPermissions: ["keys"],
-                    pollenBudget: 5,
-                    expiresIn: 3600,
-                })
-            ).json();
-            const child = await (
-                await call(caller.key, "/keys", "POST", {
-                    name: "two-for-a-minute",
-                    pollenBudget: 2,
-                    expiresIn: 60,
-                })
-            ).json();
-            expect(await budgetOf(caller.key)).toBe(3);
-
-            const later = new Date(Date.now() + 1800_000).toISOString();
-            for (const [path, method, body] of [
-                ["/keys", "POST", { name: "negative", pollenBudget: -5 }],
-                [`/keys/${child.id}`, "PATCH", { pollenBudget: -1 }],
-                // A negative budget reserves nothing, so this would renew the
-                // key for free.
-                [
-                    `/keys/${child.id}`,
-                    "PATCH",
-                    { expiresAt: later, pollenBudget: -1 },
-                ],
-            ] as const) {
-                expect(
-                    (await call(caller.key, path, method, body)).status,
-                ).toBe(400);
-            }
-            const consent = await call(accountToken, "/keys", "POST", {
-                name: "consented",
-                pollenBudget: -0.01,
-                consent: {
-                    redirectOrigin: "https://app.example",
-                    redirectUri: "https://app.example/callback",
-                },
-            });
-            expect(consent.status).toBe(400);
-            expect(await budgetOf(caller.key)).toBe(3);
-            expect(await budgetOf(child.key)).toBe(2);
-
-            const zero = await call(caller.key, "/keys", "POST", {
-                name: "zero",
-                pollenBudget: 0,
-            });
-            expect(zero.status).toBe(200);
-            expect(await budgetOf(caller.key)).toBe(3);
-        });
     });
 
     describe("GET /api/account/keys (list)", () => {

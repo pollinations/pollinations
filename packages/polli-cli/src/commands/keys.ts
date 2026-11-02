@@ -48,11 +48,10 @@ interface SingleKeyInfo {
     permissions: { models?: string[]; account?: string[] } | null;
     pollenBudget: number | null;
     questPollenOnly?: boolean;
-    rateLimitEnabled: boolean;
 }
 
 const MODELS_HELP =
-    "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
+    "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime, decision) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
 
 const formatPerms = (p: KeyInfo["permissions"]) => {
     if (!p) return "-";
@@ -143,7 +142,6 @@ const info = new Command("info")
                 expires: keyInfo.expiresAt ?? "never",
                 budget: keyInfo.pollenBudget ?? "unlimited",
                 quest_pollen_only: keyInfo.questPollenOnly ?? false,
-                rate_limited: keyInfo.rateLimitEnabled,
                 model_restrictions:
                     keyInfo.permissions?.models?.join(", ") ??
                     "none (all models)",

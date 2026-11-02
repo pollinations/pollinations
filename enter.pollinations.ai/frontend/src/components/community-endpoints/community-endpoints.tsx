@@ -10,7 +10,6 @@ import {
     InfoTip,
     InlineLink,
     Input,
-    PlusIcon,
     Section,
     Surface,
     TokensIcon,
@@ -110,7 +109,12 @@ export function DeploymentsPlaceholder({
         <>
             {titles.map((title) => (
                 <Section key={title} title={title}>
-                    <LoadError onRetry={onRetry}>{error}</LoadError>
+                    <LoadError
+                        onRetry={onRetry}
+                        paths={["/account/my-models", "/account/agents"]}
+                    >
+                        {error}
+                    </LoadError>
                 </Section>
             ))}
         </>
@@ -406,26 +410,24 @@ export function CommunityEndpoints({
 
     const agentAction = (
         <Button
+            intent="commit"
             type="button"
-            className="dashboard-add-button"
+            icon={<BotIcon />}
             aria-haspopup="dialog"
             onClick={() => setAgentCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <BotIcon className="h-5 w-5" />
-            <span className="ml-1">Create agent</span>
+            Create
         </Button>
     );
     const modelAction = (
         <Button
+            intent="commit"
             type="button"
-            className="dashboard-add-button"
+            icon={<BeakerIcon />}
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <BeakerIcon className="h-5 w-5" />
-            <span className="ml-1">Create model</span>
+            Create
         </Button>
     );
 

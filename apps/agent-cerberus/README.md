@@ -21,7 +21,7 @@ Invalid or failed decisions stop the run before an explanation is requested.
 
 ## Try it
 
-Register the public source repository in My Models → Create agent → Code agent.
+Register the public source repository in My Models → Agents → Create → Code agent.
 The owner can use the private deployment immediately. Public use needs publisher
 approval. Callers need generation access; no account-administration scopes.
 

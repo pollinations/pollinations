@@ -311,7 +311,18 @@ describe("/api/account/sites", () => {
     });
 
     test("API keys need account:machines", async ({ apiKey }) => {
-        expect((await sites(apiKey, "GET")).status).toBe(403);
+        const response = await sites(apiKey, "GET");
+        expect(response.status).toBe(403);
+        const { id } = await (
+            await SELF.fetch("http://localhost:3000/api/account/key", {
+                headers: { Authorization: `Bearer ${apiKey}` },
+            })
+        ).json();
+        const grant = `https://enter.pollinations.ai/grant?id=${id}&permission=machines&ref=agent_grant`;
+        expect((await response.json()).error).toMatchObject({
+            message: `API key does not have 'account:machines' permission. Allow it at ${grant}`,
+            fixUrl: grant,
+        });
     });
 
     test("deleting the account deletes its sites but keeps takedowns reserved", async ({

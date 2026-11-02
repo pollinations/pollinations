@@ -74,6 +74,10 @@ export function resolveModelConfig(
         options: {
             ...defaults,
             ...definedOptions,
+            // A priced route's processing tier cannot be upgraded by the caller.
+            ...(typeof config.serviceTier === "string"
+                ? { service_tier: config.serviceTier }
+                : {}),
             model: usedModel,
             modelConfig: config,
             modelDef,

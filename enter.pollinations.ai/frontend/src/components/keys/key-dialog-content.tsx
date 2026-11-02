@@ -1,10 +1,9 @@
 import {
     AppIcon,
     Button,
-    CheckIcon,
-    ClipboardIcon,
     CopyButton,
     CopyField,
+    CopyStateIcon,
     DialogBody,
     DialogHeader,
     FieldStack,
@@ -33,7 +32,6 @@ type KeyDialogContentProps = {
     mode: "create" | "edit";
     app: boolean;
     accessContext?: "app" | "device";
-    publishable: boolean;
     name: string;
     onNameChange: (name: string) => void;
     permissions: ReturnType<typeof useKeyPermissions>;
@@ -59,7 +57,6 @@ export function KeyDialogContent({
     mode,
     app,
     accessContext,
-    publishable,
     name,
     onNameChange,
     permissions,
@@ -83,10 +80,8 @@ export function KeyDialogContent({
         edit: accessContext
             ? `Edit ${accessContext} access`
             : app
-              ? "Edit app key"
-              : publishable
-                ? "Edit publishable key"
-                : "Edit secret key",
+              ? "Edit app"
+              : "Edit secret key",
     };
     const title =
         createdKey !== undefined
@@ -99,7 +94,7 @@ export function KeyDialogContent({
             ? app
                 ? "Add this app key to your app. You can copy it again from the Apps section at any time."
                 : "Copy your secret key now. You won’t be able to see it again."
-            : publishable
+            : app
               ? "Set the name, earnings and redirect URLs."
               : accessContext
                 ? `Choose what this ${accessContext} can access and how much it can spend.`
@@ -110,7 +105,7 @@ export function KeyDialogContent({
         <KeyNameField
             app={app}
             accessContext={accessContext}
-            publishable={publishable}
+            publishable={app}
             value={name}
             onChange={onNameChange}
             disabled={isSubmitting}
@@ -132,7 +127,7 @@ export function KeyDialogContent({
                             aria-hidden="true"
                             className="flex size-4 shrink-0 [&>svg]:size-full"
                         >
-                            {copied ? <CheckIcon /> : <ClipboardIcon />}
+                            <CopyStateIcon copied={copied} />
                         </span>
                         {copied ? "Copied" : "Copy and close"}
                     </span>
@@ -150,8 +145,8 @@ export function KeyDialogContent({
                         ? "Creating…"
                         : "Saving…"
                     : mode === "create"
-                      ? titles.create
-                      : "Save changes"}
+                      ? "Create"
+                      : "Save"}
             </Button>
         );
 
@@ -196,8 +191,8 @@ export function KeyDialogContent({
                                 {description}{" "}
                                 <InlineLink
                                     href={genDocsUrl(
-                                        publishable
-                                            ? "#tag/connect-user-wallets"
+                                        app
+                                            ? "#tag/pollinations-pay"
                                             : "#tag/authentication",
                                     )}
                                 >
@@ -212,11 +207,7 @@ export function KeyDialogContent({
                             <KeyChip
                                 prefix={existingKey.prefix}
                                 value={existingKey.value}
-                                label={
-                                    app
-                                        ? "Copy app key"
-                                        : "Copy publishable key"
-                                }
+                                label="Copy app key"
                             />
                         </div>
                     )}
@@ -248,7 +239,7 @@ export function KeyDialogContent({
                     </AuthInfoCard>
                 ) : showFields ? (
                     <div className="space-y-3">
-                        {publishable && (
+                        {app && (
                             <AuthInfoCard title="Settings">
                                 <ul className="grid gap-2 text-sm">
                                     {nameField}
@@ -260,7 +251,7 @@ export function KeyDialogContent({
                                 </ul>
                             </AuthInfoCard>
                         )}
-                        {publishable ? (
+                        {app ? (
                             <PublishableKeySettings
                                 redirectUris={redirectUris}
                                 onRedirectUrisChange={onRedirectUrisChange}

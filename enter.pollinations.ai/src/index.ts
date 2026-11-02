@@ -1,7 +1,7 @@
-import type { FileRouteTypes } from "@frontend/routeTree.gen.ts";
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
+import { rateLimit } from "@shared/rate-limit.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -19,41 +19,6 @@ function stripTrailingSlash(path: string): string {
 
 function isApiDocsPath(path: string): boolean {
     return path === "/api/docs" || path.startsWith("/api/docs/");
-}
-
-// Every dashboard page. Typed by the router's route tree, so tsc fails when a
-// page is added to the frontend but not here.
-const DASHBOARD_PAGES: Record<FileRouteTypes["fullPaths"], true> = {
-    "/": true,
-    "/account": true,
-    "/activity": true,
-    "/app/sign-in": true,
-    "/authorize": true,
-    "/device": true,
-    "/edit-key": true,
-    "/error": true,
-    "/grant": true,
-    "/keys": true,
-    "/models": true,
-    "/my-apps": true,
-    "/my-models": true,
-    "/news": true,
-    "/pollen": true,
-    "/privacy": true,
-    "/quests": true,
-    "/refunds": true,
-    "/sandboxes": true,
-    "/sign-in": true,
-    "/terms": true,
-    "/top-up": true,
-};
-
-// The router matches paths in any case and with a trailing slash.
-function isDashboardPage(path: string): boolean {
-    return Object.hasOwn(
-        DASHBOARD_PAGES,
-        stripTrailingSlash(path).toLowerCase(),
-    );
 }
 
 function redirectLegacyDocs(c: Context<Env>): Response {
@@ -87,6 +52,7 @@ const app = new Hono<Env>()
             c.header("X-Robots-Tag", "noindex, nofollow");
         }
     })
+    .use("/api/*", rateLimit({ byIp: false }))
     .route("/api/docs", createDocsRoutes(api))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
@@ -106,18 +72,7 @@ const app = new Hono<Env>()
         return c.redirect(url.toString(), 308);
     })
     .route("/.well-known", wellKnownRoutes)
-    .route("/api", api)
-    // Asset files and dashboard pages come from the asset layer. Anything else
-    // got the dashboard shell from its SPA fallback, so it is a real 404 and
-    // agents can tell a missing file such as /auth.md from a page (#17787).
-    .get("*", async (c) => {
-        const response = await c.env.ASSETS.fetch(c.req.raw);
-        const isShell = response.headers
-            .get("content-type")
-            ?.includes("text/html");
-        if (!isShell || isDashboardPage(c.req.path)) return response;
-        return c.notFound();
-    });
+    .route("/api", api);
 
 app.notFound(async (c: Context<Env>) => {
     return await handleError(new HTTPException(404), c);

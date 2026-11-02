@@ -67,6 +67,7 @@ import { useModelStats } from "./use-model-stats.ts";
 const MODEL_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
+    "decision",
     "image",
     "video",
     "3d",
@@ -108,6 +109,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
+    decision: "decision",
     embedding: "embedding",
     agent: "agent",
     mcp: "MCP server",
@@ -124,6 +126,7 @@ function categorizeModels(
         audio: [],
         realtime: [],
         text: [],
+        decision: [],
         embedding: [],
         agent: [],
         mcp: [],
@@ -664,10 +667,8 @@ export const Models: FC = () => {
                     <SectionContent loading={catalogLoading}>
                         {catalogError ? (
                             <LoadError
-                                onRetry={() => {
-                                    setCatalogLoading(true);
-                                    void loadModelCatalog();
-                                }}
+                                paths={["/models"]}
+                                onRetry={loadModelCatalog}
                             >
                                 {catalogError}
                             </LoadError>
@@ -690,6 +691,7 @@ export const Models: FC = () => {
                                     audioModels={sectionModels.audio}
                                     realtimeModels={sectionModels.realtime}
                                     textModels={sectionModels.text}
+                                    decisionModels={sectionModels.decision}
                                     embeddingModels={sectionModels.embedding}
                                     agentModels={sectionModels.agent}
                                     activeTab={activeTab}

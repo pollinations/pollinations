@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "EMOJI_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -126,6 +127,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "emoji",
+        name: "Emoji",
+        description:
+            "Find emoji by word, name or feeling, with keywords for each character.",
+        binding: "EMOJI_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Lookups run in the worker against a bundled set, so no model usage is billed.",
             rates: [],
         },
     },

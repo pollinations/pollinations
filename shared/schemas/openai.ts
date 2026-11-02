@@ -880,31 +880,21 @@ const imageNField = z
 const imageSizeMeta = {
     description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
 };
-const imageSizeField = z
+const imageSizeValueField = z
     .string()
     .regex(/^\d+x\d+$/, "size must be WIDTHxHEIGHT (e.g. 1024x1024)")
     .refine(
-        (s) => {
-            const [w, h] = s.split("x").map(Number);
-            return w >= 1 && h >= 1;
-        },
-        { message: "size dimensions must be >= 1" },
-    )
+        (s) =>
+            s
+                .split("x")
+                .every((n) => Number.isSafeInteger(Number(n)) && Number(n) > 0),
+        { message: "size dimensions must be positive integers" },
+    );
+const imageSizeField = imageSizeValueField
     .optional()
     .default("1024x1024")
     .meta(imageSizeMeta);
-const imageEditSizeField = z
-    .string()
-    .regex(/^\d+x\d+$/, "size must be WIDTHxHEIGHT (e.g. 1024x1024)")
-    .refine(
-        (s) => {
-            const [w, h] = s.split("x").map(Number);
-            return w >= 1 && h >= 1;
-        },
-        { message: "size dimensions must be >= 1" },
-    )
-    .optional()
-    .meta(imageSizeMeta);
+const imageEditSizeField = imageSizeValueField.optional().meta(imageSizeMeta);
 // Same bounds as the GET image route and the chat route: out-of-range seeds
 // are rejected here instead of being silently replaced with seed 42 by the
 // generation pipeline.

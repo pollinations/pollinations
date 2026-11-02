@@ -5,7 +5,10 @@ import {
 import type { Logger } from "@logtape/logtape";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
+import {
+    CreateImageEditRequestSchema,
+    CreateImageRequestSchema,
+} from "@shared/schemas/openai.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
@@ -34,6 +37,60 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
+    it.each([
+        "foo",
+        "1024x",
+        "-1x100",
+        "0x512",
+        "512x0",
+        "512x512garbage",
+        `${"9".repeat(400)}x512`,
+    ])("rejects malformed image size %s on generations and edits", (size) => {
+        expect(
+            CreateImageRequestSchema.safeParse({ prompt: "flower", size })
+                .success,
+        ).toBe(false);
+        expect(
+            CreateImageEditRequestSchema.safeParse({
+                prompt: "add flowers",
+                image: "https://example.com/source.png",
+                size,
+            }).success,
+        ).toBe(false);
+    });
+
+    it.each(["json", "multipart"])(
+        "rejects invalid %s edit size before generation",
+        async (encoding) => {
+            const app = new Hono<Env>().post(
+                "/v1/images/edits",
+                prepareOpenAIImageEdit,
+                () => new Response("unexpected"),
+            );
+            const input = {
+                prompt: "edit",
+                image: "https://example.com/image.png",
+                size: "0x512",
+            };
+            const form = new FormData();
+            for (const [name, value] of Object.entries(input))
+                form.set(name, value);
+            const response = await app.fetch(
+                new Request("https://gen.pollinations.ai/v1/images/edits", {
+                    method: "POST",
+                    ...(encoding === "json"
+                        ? {
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(input),
+                          }
+                        : { body: form }),
+                }),
+                {} as CloudflareBindings,
+            );
+            expect(response.status).toBe(400);
+        },
+    );
+
     it.each(["json", "multipart"])(
         "rejects an invalid %s edit response format",
         async (encoding) => {

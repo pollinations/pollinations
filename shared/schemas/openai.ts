@@ -865,8 +865,28 @@ const imageSizeField = z
     .string()
     .optional()
     .default("1024x1024")
+    .refine(
+        (v) =>
+            v === "auto" ||
+            (/^\d+x\d+$/.test(v) &&
+                Number(v.split("x")[0]) >= 1 &&
+                Number(v.split("x")[1]) >= 1),
+        { message: "size must be 'auto' or WIDTHxHEIGHT with both dimensions >= 1" },
+    )
     .meta(imageSizeMeta);
-const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+const imageEditSizeField = z
+    .string()
+    .optional()
+    .refine(
+        (v) =>
+            v === undefined ||
+            v === "auto" ||
+            (/^\d+x\d+$/.test(v) &&
+                Number(v.split("x")[0]) >= 1 &&
+                Number(v.split("x")[1]) >= 1),
+        { message: "size must be 'auto' or WIDTHxHEIGHT with both dimensions >= 1" },
+    )
+    .meta(imageSizeMeta);
 // Same bounds as the GET image route and the chat route: out-of-range seeds
 // are rejected here instead of being silently replaced with seed 42 by the
 // generation pipeline.

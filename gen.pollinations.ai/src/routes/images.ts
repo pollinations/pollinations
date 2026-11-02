@@ -16,7 +16,6 @@ import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
     type CreateImageRequest,
-    isValidImageSize,
 } from "@shared/schemas/openai.ts";
 import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
@@ -191,17 +190,18 @@ async function parseEditInput(c: Context): Promise<{
                 message: "seed must be an integer between -1 and 2147483647",
             });
 
-        const size = (formData.get("size") as string) || undefined;
-        if (size && !isValidImageSize(size)) {
+        const size = CreateImageEditRequestSchema.shape.size.safeParse(
+            (formData.get("size") as string) || undefined,
+        );
+        if (!size.success)
             throw new UpstreamError(400, {
-                message: "size must be `auto` or WIDTHxHEIGHT, e.g. 1024x1024",
+                message: size.error.issues.map((i) => i.message).join(", "),
             });
-        }
 
         return {
             prompt,
             imageUrls,
-            size,
+            size: size.data,
             quality: (formData.get("quality") as string) || undefined,
             seed: seed.data ?? undefined,
             safe: formData.get("safe") as string | null,

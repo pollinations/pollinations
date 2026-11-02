@@ -76,7 +76,7 @@ test("starts every linear time-series y-axis at zero", () => {
 
 test("never reads internal Tinybird pipes, which Grafana's token cannot read", () => {
     const pipesDir = new URL(
-        "../../../enter.pollinations.ai/observability/pipes/",
+        "../../../../enter.pollinations.ai/observability/pipes/",
         import.meta.url,
     );
     // No internal pipes left means nothing to guard, not a broken deploy.

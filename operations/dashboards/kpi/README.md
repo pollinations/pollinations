@@ -30,7 +30,7 @@ North star: weekly active paying customers.
 ## Run
 
 ```bash
-npm ci --prefix ../.. && npm ci
+npm ci --prefix ../../.. && npm ci
 npm run dev  # http://localhost:3457
 ```
 

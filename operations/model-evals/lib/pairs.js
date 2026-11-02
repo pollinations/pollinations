@@ -1,8 +1,8 @@
-// Results are published by .github/workflows/evals-run-weekly.yml to the
-// `evals` data branch of the repository; no service sits in between.
-export const EVALS_DATA_URL =
-    import.meta.env?.VITE_EVALS_DATA_URL ??
-    "https://raw.githubusercontent.com/pollinations/pollinations/evals/data";
+// How a community model compares with the official model it is named
+// after: one rule for the weekly run's score gaps (run.js, read by
+// infra-watch) and the Trust tab on model-monitor, which imports this file.
+
+import { scoreOf } from "./stats.js";
 
 /**
  * The name a model is known by, without publisher, tag, or release suffix, so
@@ -28,15 +28,34 @@ export function officialTwin(model, officialModels) {
     );
 }
 
+// A model's score on the questions it answered: an error says its endpoint
+// failed, not how well it answers.
+const answered = (model) =>
+    model.failed > 0
+        ? scoreOf(model.correct, model.questions - model.failed)
+        : model;
+// 1 when `a` is clearly above `b`, -1 when clearly below, beyond both 95%
+// Wilson intervals; 0 when they overlap.
+const side = (a, b) => (a.lower > b.upper ? 1 : b.lower > a.upper ? -1 : 0);
+
 /**
- * Community score against its official twin. The gap is significant when it
- * exceeds the 95% Wilson intervals, so noise is not flagged.
+ * Community score against its official twin. `gap` is the difference of the
+ * scores as published. It is significant only when the published scores and
+ * the scores on the questions each answered agree that one is clearly
+ * higher: errors are not random (a model can fail a whole hard family), so
+ * neither measure alone decides, and errors can neither make a gap nor turn
+ * one around. A community model that errored on more than half its
+ * questions is a broken endpoint, not a different model.
  */
 export function compareToTwin(community, official) {
     const gap = community.rate - official.rate;
+    const errored = community.failed * 2 > community.questions;
+    const published = side(community, official);
     const significant =
-        community.lower > official.upper || official.lower > community.upper;
-    return { gap, significant };
+        !errored &&
+        published !== 0 &&
+        published === side(answered(community), answered(official));
+    return { gap, significant, errored };
 }
 
 /** Scored models best first, plus every community model next to its twin. */
@@ -67,3 +86,13 @@ export function buildLeaderboard(models) {
         unscored: models.filter((model) => model.status === "unscored"),
     };
 }
+
+/**
+ * Community models clearly below the official model they are named after,
+ * the Trust tab's red rows. The weekly run saves them for infra-watch to
+ * show the maintainers; a person confirms before anyone is told.
+ */
+export const scoreGaps = (models) =>
+    buildLeaderboard(models).pairs.filter(
+        (pair) => pair.significant && pair.gap < 0,
+    );

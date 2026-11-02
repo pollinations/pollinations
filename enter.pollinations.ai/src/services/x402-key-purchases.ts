@@ -3,10 +3,8 @@ import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { decodePaymentSignatureHeader } from "@x402/core/http";
 import type { PaymentPayload } from "@x402/core/types";
-import stableStringify from "fast-json-stable-stringify";
 import { HTTPException } from "hono/http-exception";
-import { CompactEncrypt, compactDecrypt } from "jose";
-import { getAddress, verifyMessage } from "viem";
+import { CompactEncrypt } from "jose";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 
@@ -44,14 +42,6 @@ async function encryptKey(key: string, secret: string): Promise<string> {
         .encrypt(await encryptionKey(secret));
 }
 
-async function decryptKey(ciphertext: string, secret: string): Promise<string> {
-    const { plaintext } = await compactDecrypt(
-        ciphertext,
-        await encryptionKey(secret),
-    );
-    return new TextDecoder().decode(plaintext);
-}
-
 export async function paymentId(signature: string): Promise<string> {
     return paymentIdForPayload(decodePaymentSignatureHeader(signature));
 }
@@ -59,46 +49,32 @@ export async function paymentId(signature: string): Promise<string> {
 // One purchase per signed transfer. The EIP-3009 nonce is unique per token
 // and payer; unsigned envelope fields (resource, extensions) are left out so
 // they cannot mint a second purchase for the same transfer.
-export function transferOf(payment: PaymentPayload) {
-    const { authorization } = payment.payload as {
-        authorization?: { from?: string; nonce?: string };
-    };
-    const nonce = authorization?.nonce ?? "";
-    if (!/^0x[0-9a-fA-F]{64}$/.test(nonce))
-        throw new Error("x402 payment has no EIP-3009 nonce");
-    return {
-        network: payment.accepted.network,
-        asset: getAddress(payment.accepted.asset),
-        payer: getAddress(authorization?.from ?? ""),
-        nonce: nonce.toLowerCase(),
-    };
-}
-
-async function sha256Hex(text: string): Promise<string> {
-    const digest = await crypto.subtle.digest("SHA-256", encoder.encode(text));
-    return Array.from(new Uint8Array(digest), (byte) =>
-        byte.toString(16).padStart(2, "0"),
-    ).join("");
-}
-
 export async function paymentIdForPayload(
     payment: PaymentPayload,
 ): Promise<string> {
-    const { network, asset, payer, nonce } = transferOf(payment);
-    return sha256Hex(`${network}:${asset}:${payer}:${nonce}`.toLowerCase());
-}
-
-// Purchases recorded before transfer ids are keyed by a hash of the whole
-// payment. Their rows store no payer or nonce, so they cannot be migrated.
-export async function findPurchase(
-    db: D1Database,
-    signature: string,
-): Promise<Purchase | null> {
-    const payment = decodePaymentSignatureHeader(signature);
-    return (
-        (await getPurchase(db, await paymentIdForPayload(payment))) ??
-        (await getPurchase(db, await sha256Hex(stableStringify(payment))))
+    const { authorization } = payment.payload as {
+        authorization?: { from?: string; nonce?: string };
+    };
+    if (
+        !authorization?.from ||
+        !/^0x[0-9a-fA-F]{64}$/.test(authorization.nonce ?? "")
+    )
+        throw new Error("x402 payment has no EIP-3009 authorization");
+    const transfer = [
+        payment.accepted.network,
+        payment.accepted.asset,
+        authorization.from,
+        authorization.nonce,
+    ]
+        .join(":")
+        .toLowerCase();
+    const digest = await crypto.subtle.digest(
+        "SHA-256",
+        encoder.encode(transfer),
     );
+    return Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+    ).join("");
 }
 
 export async function getPurchase(
@@ -115,7 +91,11 @@ export async function getPurchase(
 
 // Settlement publishes the signed payment on-chain, so anyone can rebuild a
 // PAYMENT-SIGNATURE header. Only the request that records the payment gets
-// the new key; later requests must prove they hold the paying wallet.
+// its key; a stored key is never returned and a recorded payment never
+// resumed. Support checks wallet ownership and payment terms instead.
+export const PAYMENT_USED =
+    "x402 payment already used. If it was charged and you have no key, contact hello@pollinations.ai with the transaction.";
+
 export async function preparePurchase(
     env: Env["Bindings"],
     ctx: ExecutionContext | undefined,
@@ -151,57 +131,9 @@ export async function preparePurchase(
             .bind(created.id)
             .run();
         if (!(await getPurchase(env.DB, id))) throw error;
-        throw new HTTPException(409, {
-            message: "x402 payment already used",
-        });
+        throw new HTTPException(409, { message: PAYMENT_USED });
     }
     return { id: created.id, key: created.key };
-}
-
-export async function storedKey(
-    env: Env["Bindings"],
-    purchase: Purchase,
-): Promise<{ id: string; key: string }> {
-    return {
-        id: purchase.key_id,
-        key: await decryptKey(purchase.encrypted_key, env.BETTER_AUTH_SECRET),
-    };
-}
-
-export const recoveryMessage = (
-    origin: string,
-    transfer: ReturnType<typeof transferOf>,
-    issuedAt: string,
-) =>
-    [
-        "Recover Pollinations x402 key",
-        `Origin: ${origin}`,
-        `Network: ${transfer.network}`,
-        `Asset: ${transfer.asset}`,
-        `Payer: ${transfer.payer}`,
-        `Nonce: ${transfer.nonce}`,
-        `Issued at: ${issuedAt}`,
-    ].join("\n");
-
-// The paying wallet personal_signs recoveryMessage. issuedAt must be a whole
-// unix second from 120 s before to 30 s after the server clock; the proof is
-// reusable inside that window. EOA wallets only: smart-wallet buyers recover
-// through support.
-export async function isBuyer(
-    origin: string,
-    paymentHeader: string,
-    signature: string | undefined,
-    issuedAt: string | undefined,
-): Promise<boolean> {
-    if (!signature || !issuedAt || !/^\d{1,12}$/.test(issuedAt)) return false;
-    const age = Math.floor(Date.now() / 1000) - Number(issuedAt);
-    if (age < -30 || age > 120) return false;
-    const transfer = transferOf(decodePaymentSignatureHeader(paymentHeader));
-    return verifyMessage({
-        address: transfer.payer,
-        message: recoveryMessage(origin, transfer, issuedAt),
-        signature: signature as `0x${string}`,
-    }).catch(() => false);
 }
 
 export async function creditPurchase(

@@ -1,14 +1,10 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
-import { x402Client } from "@x402/core/client";
 import {
     decodePaymentRequiredHeader,
     encodePaymentSignatureHeader,
 } from "@x402/core/http";
 import type { PaymentPayload } from "@x402/core/types";
-import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import stableStringify from "fast-json-stable-stringify";
 import { Hono } from "hono";
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { describe, expect, vi } from "vitest";
 import type { Env } from "../../src/env.ts";
 import { logger } from "../../src/middleware/logger.ts";
@@ -16,13 +12,15 @@ import { x402KeysRoutes } from "../../src/routes/x402-keys.ts";
 import {
     creditPurchase,
     getPurchase,
-    isBuyer,
     paymentId,
     preparePurchase,
-    recoveryMessage,
-    transferOf,
 } from "../../src/services/x402-key-purchases.ts";
 import { createApiKeyViaApi, test } from "../fixtures.ts";
+
+const randomHex = (bytes: number) =>
+    `0x${Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+    ).join("")}`;
 
 describe("x402 prepaid API keys", () => {
     test("lists the existing fixed Pollen packs", async () => {
@@ -265,10 +263,7 @@ describe("x402 prepaid API keys", () => {
                 asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
             },
             payload: {
-                authorization: {
-                    from: privateKeyToAccount(generatePrivateKey()).address,
-                    nonce: generatePrivateKey(),
-                },
+                authorization: { from: randomHex(20), nonce: randomHex(32) },
             },
         } as unknown as Parameters<typeof encodePaymentSignatureHeader>[0]);
         const id = await paymentId(signature);
@@ -281,38 +276,32 @@ describe("x402 prepaid API keys", () => {
         );
         await creditPurchase(env.DB, id, owner.user_id, issued.id);
 
-        const replay = (pack: string) =>
-            x402KeysRoutes.request(
-                `http://localhost/${pack}`,
-                { method: "POST", headers: { "payment-signature": signature } },
-                {
-                    ...env,
-                    X402_HOLDING_USER_ID: owner.user_id,
-                    WEFT_SELLER_API_KEY: "ax_test",
-                    WEFT_FACILITATOR_URL: "https://x402.staging.weft.network",
-                    WEFT_NETWORK: "eip155:84532",
-                    WEFT_PAY_TO: "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
-                },
-                createExecutionContext(),
-            );
-
-        expect((await replay("p2")).status).toBe(409);
-        const other = await replay("p5");
-        expect(other.status).toBe(409);
-        expect(await other.text()).toContain("another purchase");
+        const response = await x402KeysRoutes.request(
+            "http://localhost/p5",
+            { method: "POST", headers: { "payment-signature": signature } },
+            {
+                ...env,
+                X402_HOLDING_USER_ID: owner.user_id,
+                WEFT_SELLER_API_KEY: "ax_test",
+                WEFT_FACILITATOR_URL: "https://x402.staging.weft.network",
+                WEFT_NETWORK: "eip155:84532",
+                WEFT_PAY_TO: "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
+            },
+            createExecutionContext(),
+        );
+        expect(response.status).toBe(409);
     });
 
-    describe("replays and buyer recovery", () => {
+    describe("replays and races", () => {
         const facilitator = "https://x402.staging.weft.network";
-        const testApp = new Hono<Env>()
-            .use("*", logger)
-            .route("/", x402KeysRoutes);
+        // Mounted with the app logger, which the credit-failure branch uses.
+        const app = new Hono<Env>().use("*", logger).route("/", x402KeysRoutes);
         const send = (
             holdingUserId: string,
             pack: string,
             headers: Record<string, string> = {},
         ) =>
-            testApp.request(
+            app.request(
                 `http://localhost/${pack}`,
                 { method: "POST", headers },
                 {
@@ -351,20 +340,22 @@ describe("x402 prepaid API keys", () => {
                 number
             >;
 
-        // Facilitator stand-in that logs every call. A repeat settle answers
-        // with the original receipt, as Weft does for settlement replay.
-        function stubFacilitator(payer: string) {
+        // Facilitator stand-in that logs every call. It verifies and settles
+        // everything, so the route alone must keep payments single-use.
+        function stubFacilitator(onVerify?: () => Promise<void>) {
             const calls: string[] = [];
             const originalFetch = globalThis.fetch;
             vi.stubGlobal(
                 "fetch",
-                (input: RequestInfo | URL, init?: RequestInit) => {
+                async (input: RequestInfo | URL, init?: RequestInit) => {
                     const url = new URL(
                         input instanceof Request ? input.url : String(input),
                     );
                     if (url.origin !== facilitator)
                         return originalFetch(input, init);
                     calls.push(url.pathname);
+                    if (url.pathname === "/verify") await onVerify?.();
+                    const payer = "0x1111111111111111111111111111111111111111";
                     const body = {
                         "/supported": {
                             kinds: [
@@ -385,375 +376,143 @@ describe("x402 prepaid API keys", () => {
                             payer,
                         },
                     }[url.pathname];
-                    return Promise.resolve(
-                        body
-                            ? Response.json(body)
-                            : Response.json({}, { status: 500 }),
-                    );
+                    return body
+                        ? Response.json(body)
+                        : Response.json({}, { status: 500 });
                 },
             );
             return calls;
         }
 
-        async function challenge(holdingUserId: string, pack: string) {
+        // A payment for the route's own terms. The facilitator is stubbed,
+        // so the transfer needs no real signature.
+        async function payment(holdingUserId: string, pack: string) {
+            stubFacilitator();
             const terms = (await send(holdingUserId, pack)).headers.get(
                 "payment-required",
             );
-            if (!terms) throw new Error("Missing x402 payment terms");
-            return decodePaymentRequiredHeader(terms);
-        }
-
-        async function buyerPayment(holdingUserId: string, pack: string) {
-            const account = privateKeyToAccount(generatePrivateKey());
-            stubFacilitator(account.address);
-            const payment = await registerExactEvmScheme(
-                new x402Client().setSpendControls(false),
-                { signer: account },
-            ).createPaymentPayload(await challenge(holdingUserId, pack));
             vi.unstubAllGlobals();
-            const signature = encodePaymentSignatureHeader(payment);
-            return {
-                account,
-                payment,
-                signature,
-                id: await paymentId(signature),
+            if (!terms) throw new Error("Missing x402 payment terms");
+            const challenge = decodePaymentRequiredHeader(terms);
+            const accepted = challenge.accepts[0];
+            const payload: PaymentPayload = {
+                x402Version: 2,
+                resource: challenge.resource,
+                accepted,
+                payload: {
+                    authorization: {
+                        from: randomHex(20),
+                        to: accepted.payTo,
+                        value: accepted.amount,
+                        validAfter: "0",
+                        validBefore: "9999999999",
+                        nonce: randomHex(32),
+                    },
+                    signature: randomHex(65),
+                },
             };
+            const signature = encodePaymentSignatureHeader(payload);
+            return { payload, signature, id: await paymentId(signature) };
         }
 
-        async function proof(
-            account: ReturnType<typeof privateKeyToAccount>,
-            payment: PaymentPayload,
-            issuedAt = Math.floor(Date.now() / 1000),
-            origin = "http://localhost",
-        ) {
-            return {
-                "x402-buyer-issued-at": String(issuedAt),
-                "x402-buyer-signature": await account.signMessage({
-                    message: recoveryMessage(
-                        origin,
-                        transferOf(payment),
-                        String(issuedAt),
-                    ),
-                }),
-            };
-        }
-
-        test("second review: changing unsigned metadata must not create another purchase", async ({
-            accountToken,
-        }) => {
-            const owner = await holdingOwner(accountToken, "metadata-race");
-            const buyer = await buyerPayment(owner, "p2");
-            const variant = {
-                ...buyer.payment,
+        // Same signed transfer, other unsigned metadata.
+        const variant = ({ payload }: { payload: PaymentPayload }) =>
+            encodePaymentSignatureHeader({
+                ...payload,
                 resource: {
-                    ...(buyer.payment.resource as PaymentPayload["resource"] & {
-                        url: string;
-                    }),
-                    description: "Same signed transfer, other description",
+                    url: payload.resource?.url ?? "",
+                    description: "Same transfer, other description",
                 },
-            };
-            const variantHeader = encodePaymentSignatureHeader(variant);
-            expect(
-                JSON.stringify(variant.payload) ===
-                    JSON.stringify(buyer.payment.payload),
-            ).toBe(true);
-            expect(await paymentId(variantHeader)).toBe(buyer.id);
-            const before = await ledger(owner);
-            const calls = stubFacilitator(buyer.account.address);
-            const facilitatorFetch = globalThis.fetch;
-            let verified = 0;
-            let release!: () => void;
-            const bothVerified = new Promise<void>((resolve) => {
-                release = resolve;
             });
-            vi.stubGlobal(
-                "fetch",
-                async (input: RequestInfo | URL, init?: RequestInit) => {
-                    const url = new URL(
-                        input instanceof Request ? input.url : String(input),
-                    );
-                    const response = await facilitatorFetch(input, init);
-                    if (
-                        url.origin === facilitator &&
-                        url.pathname === "/verify"
-                    ) {
-                        verified++;
-                        if (verified === 2) release();
-                        await bothVerified;
-                    }
-                    return response;
-                },
-            );
-            try {
-                const responses = await Promise.all(
-                    [buyer.signature, variantHeader].map((signature) =>
-                        send(owner, "p2", { "payment-signature": signature }),
-                    ),
-                );
-                const statuses = responses
-                    .map((response) => response.status)
-                    .sort();
-                const after = await ledger(owner);
-                console.info(
-                    "METADATA_RACE",
-                    JSON.stringify({
-                        statuses,
-                        verified,
-                        settles: calls.filter((path) => path === "/settle")
-                            .length,
-                        newKeys: after.keys - before.keys,
-                        newPurchases: after.purchases - before.purchases,
-                        credit: after.paid - before.paid,
-                        keyCredit: after.key_pollen - before.key_pollen,
-                    }),
-                );
-                expect(statuses).toEqual([200, 409]);
-                expect(after.paid - before.paid).toBe(2);
-            } finally {
-                vi.unstubAllGlobals();
-            }
-        });
 
-        test("second review: a failed credit returns no key; once support activates it the buyer recovers it", async ({
+        test("never returns a key for a recorded payment", async ({
             accountToken,
         }) => {
-            const owner = await holdingOwner(accountToken, "credit-failure");
-            const buyer = await buyerPayment(owner, "p2");
-            const before = await ledger(owner);
-            const calls = stubFacilitator(buyer.account.address);
-            const facilitatorFetch = globalThis.fetch;
-            let settlementSucceeded = false;
-            let failedCredit = false;
-            vi.stubGlobal(
-                "fetch",
-                async (input: RequestInfo | URL, init?: RequestInit) => {
-                    const response = await facilitatorFetch(input, init);
-                    const url = new URL(
-                        input instanceof Request ? input.url : String(input),
-                    );
-                    if (
-                        url.origin === facilitator &&
-                        url.pathname === "/settle"
-                    )
-                        settlementSucceeded = true;
-                    return response;
-                },
-            );
-            const originalBatch = env.DB.batch.bind(env.DB);
-            const batch = vi
-                .spyOn(env.DB, "batch")
-                .mockImplementation(async (statements) => {
-                    if (settlementSucceeded && !failedCredit) {
-                        failedCredit = true;
-                        throw new Error(
-                            "Injected local credit failure after mocked settlement",
-                        );
-                    }
-                    return originalBatch(statements);
-                });
-            try {
-                const headers = { "payment-signature": buyer.signature };
-                const first = await send(owner, "p2", headers);
-                const firstStatus = first.status;
-                const firstBody = (await first.json()) as { key?: string };
-                const returnedKey = typeof firstBody.key === "string";
-                expect(failedCredit).toBe(true);
-                const pending = await getPurchase(env.DB, buyer.id);
-                expect(pending?.credited_at).toBeNull();
-                expect((await ledger(owner)).paid).toBe(before.paid);
-                expect((await send(owner, "p2", headers)).status).toBe(409);
-                expect(calls.filter((path) => path === "/settle")).toHaveLength(
-                    1,
-                );
-                const signedHeaders = {
-                    ...headers,
-                    ...(await proof(buyer.account, buyer.payment)),
-                };
-                // A pending purchase is never resumed, even for the buyer.
-                expect((await send(owner, "p2", signedHeaders)).status).toBe(
-                    409,
-                );
-                expect((await ledger(owner)).paid).toBe(before.paid);
-                // Support checks the transaction on-chain, then credits it.
-                await creditPurchase(
-                    env.DB,
-                    buyer.id,
-                    owner,
-                    pending?.key_id as string,
-                );
-                const recovered = await send(owner, "p2", signedHeaders);
-                expect(recovered.status).toBe(200);
-                expect(((await recovered.json()) as { id: string }).id).toBe(
-                    pending?.key_id,
-                );
-                expect(calls.filter((path) => path === "/settle")).toHaveLength(
-                    1,
-                );
-                const after = await ledger(owner);
-                expect(after.paid - before.paid).toBe(2);
-                expect(after.key_pollen - before.key_pollen).toBe(2);
-                expect(after.keys - before.keys).toBe(1);
-                expect(after.purchases - before.purchases).toBe(1);
-                console.info(
-                    "CREDIT_FAILURE",
-                    JSON.stringify({
-                        firstStatus,
-                        returnedKey,
-                        recoveryStatus: recovered.status,
-                        settles: calls.filter((path) => path === "/settle")
-                            .length,
-                        credit: after.paid - before.paid,
-                        keyCredit: after.key_pollen - before.key_pollen,
-                    }),
-                );
-                expect(firstStatus).toBe(503);
-                expect(returnedKey).toBe(false);
-            } finally {
-                batch.mockRestore();
-                vi.unstubAllGlobals();
-            }
-        });
-
-        test("a recovery proof is reusable from 120 s old to 30 s ahead, for its own origin", async ({
-            accountToken,
-        }) => {
-            const owner = await holdingOwner(accountToken, "proof-window");
-            const buyer = await buyerPayment(owner, "p2");
-            const issuedAt = 1_800_000_000;
-            const headers = await proof(buyer.account, buyer.payment, issuedAt);
-            const check = (origin = "http://localhost") =>
-                isBuyer(
-                    origin,
-                    buyer.signature,
-                    headers["x402-buyer-signature"],
-                    headers["x402-buyer-issued-at"],
-                );
-            const clock = vi.spyOn(Date, "now");
-            try {
-                for (const [offset, accepted] of [
-                    [-31, false],
-                    [-30, true],
-                    [0, true],
-                    [120, true],
-                    [120.999, true],
-                    [121, false],
-                ] as const) {
-                    clock.mockReturnValue((issuedAt + offset) * 1000);
-                    expect(await check(), `${offset}s`).toBe(accepted);
-                }
-                clock.mockReturnValue(issuedAt * 1000);
-                expect(await check()).toBe(true);
-                expect(await check("https://enter.pollinations.ai")).toBe(
-                    false,
-                );
-                expect(
-                    await isBuyer(
-                        "http://localhost",
-                        buyer.signature,
-                        headers["x402-buyer-signature"],
-                        `${issuedAt}.0`,
-                    ),
-                ).toBe(false);
-            } finally {
-                clock.mockRestore();
-            }
-        });
-
-        test("final review: a proven buyer can recover a credited legacy purchase", async ({
-            accountToken,
-        }) => {
-            const owner = await holdingOwner(accountToken, "legacy-recovery");
-            const buyer = await buyerPayment(owner, "p2");
-            const digest = await crypto.subtle.digest(
-                "SHA-256",
-                new TextEncoder().encode(stableStringify(buyer.payment)),
-            );
-            const legacyId = Array.from(new Uint8Array(digest), (byte) =>
-                byte.toString(16).padStart(2, "0"),
-            ).join("");
-            expect(legacyId).not.toBe(buyer.id);
+            const owner = await holdingOwner(accountToken, "replay-recorded");
+            const pending = await payment(owner, "p2");
+            await preparePurchase(env, undefined, pending.id, owner, "p2");
+            const done = await payment(owner, "p5");
             const issued = await preparePurchase(
                 env,
                 undefined,
-                legacyId,
+                done.id,
                 owner,
-                "p2",
+                "p5",
             );
-            await creditPurchase(env.DB, legacyId, owner, issued.id);
+            await creditPurchase(env.DB, done.id, owner, issued.id);
+            expect(await paymentId(variant(done))).toBe(done.id);
             const before = await ledger(owner);
-            const calls = stubFacilitator(buyer.account.address);
-            const facilitatorFetch = globalThis.fetch;
-            vi.stubGlobal(
-                "fetch",
-                async (input: RequestInfo | URL, init?: RequestInit) => {
-                    const url = new URL(
-                        input instanceof Request ? input.url : String(input),
-                    );
-                    const result = await facilitatorFetch(input, init);
-                    if (
-                        url.origin === facilitator &&
-                        url.pathname === "/verify"
-                    ) {
-                        return Response.json({
-                            isValid: false,
-                            invalidReason:
-                                "invalid_exact_evm_nonce_already_used",
-                            payer: buyer.account.address,
-                        });
-                    }
-                    return result;
-                },
+            const calls = stubFacilitator();
+
+            const responses = await Promise.all(
+                [
+                    [pending.signature, "p2"],
+                    [done.signature, "p5"],
+                    [variant(done), "p5"],
+                    [done.signature, "p2"],
+                ].map(([signature, pack]) =>
+                    send(owner, pack, { "payment-signature": signature }),
+                ),
             );
-            try {
-                const response = await send(owner, "p2", {
-                    "payment-signature": buyer.signature,
-                    ...(await proof(buyer.account, buyer.payment)),
-                });
-                console.info(
-                    "LEGACY_RECOVERY",
-                    JSON.stringify({
-                        status: response.status,
-                        verifyCalls: calls.filter((path) => path === "/verify")
-                            .length,
-                        settleCalls: calls.filter((path) => path === "/settle")
-                            .length,
-                        legacyRowCredited:
-                            (await getPurchase(env.DB, legacyId))
-                                ?.credited_at !== null,
-                        canonicalRowFound: Boolean(
-                            await getPurchase(env.DB, buyer.id),
-                        ),
-                        ledgerUnchanged:
-                            JSON.stringify(await ledger(owner)) ===
-                            JSON.stringify(before),
-                    }),
-                );
-                expect(response.status).toBe(200);
-                expect(((await response.json()) as { id: string }).id).toBe(
-                    issued.id,
-                );
-                expect(calls).not.toContain("/verify");
-                expect(calls).not.toContain("/settle");
-                // Without the proof, a legacy payment is refused before verify.
-                const replay = await send(owner, "p2", {
-                    "payment-signature": buyer.signature,
-                });
-                expect(replay.status).toBe(409);
-                expect(await replay.text()).not.toContain("sk_");
-                expect(calls).not.toContain("/verify");
-                expect(await ledger(owner)).toEqual(before);
-            } finally {
-                vi.unstubAllGlobals();
+            vi.unstubAllGlobals();
+
+            for (const response of responses) {
+                expect(response.status).toBe(409);
+                const body = await response.text();
+                expect(body).not.toContain("sk_");
+                expect(body).toContain("hello@pollinations.ai");
             }
+            expect(calls).not.toContain("/verify");
+            expect(calls).not.toContain("/settle");
+            expect(await ledger(owner)).toEqual(before);
+            expect(
+                (await getPurchase(env.DB, pending.id))?.credited_at,
+            ).toBeNull();
         });
 
-        test("hands a new key out once when one payment races", async ({
+        test("one transfer in two envelopes verified at once is one purchase", async ({
             accountToken,
         }) => {
-            const owner = await holdingOwner(accountToken, "race-new");
-            const buyer = await buyerPayment(owner, "p2");
+            const owner = await holdingOwner(accountToken, "race-envelopes");
+            const buyer = await payment(owner, "p2");
             const before = await ledger(owner);
-            const calls = stubFacilitator(buyer.account.address);
+            let verified = 0;
+            let release = () => {};
+            const bothVerified = new Promise<void>((resolve) => {
+                release = resolve;
+            });
+            const calls = stubFacilitator(async () => {
+                if (++verified === 2) release();
+                await bothVerified;
+            });
+
+            const responses = await Promise.all(
+                [buyer.signature, variant(buyer)].map((signature) =>
+                    send(owner, "p2", { "payment-signature": signature }),
+                ),
+            );
+            vi.unstubAllGlobals();
+
+            expect(verified).toBe(2);
+            expect(
+                responses
+                    .map((response) => response.status)
+                    .sort((a, b) => a - b),
+            ).toEqual([200, 409]);
+            expect(calls.filter((path) => path === "/settle")).toHaveLength(1);
+            expect(await ledger(owner)).toEqual({
+                paid: before.paid + 2,
+                keys: before.keys + 1,
+                key_pollen: before.key_pollen + 2,
+                purchases: before.purchases + 1,
+            });
+        });
+
+        test("credits a racing payment once", async ({ accountToken }) => {
+            const owner = await holdingOwner(accountToken, "race-duplicate");
+            const buyer = await payment(owner, "p2");
+            const before = await ledger(owner);
+            const calls = stubFacilitator();
 
             const responses = await Promise.all(
                 Array.from({ length: 4 }, () =>
@@ -767,11 +526,6 @@ describe("x402 prepaid API keys", () => {
                     .map((response) => response.status)
                     .sort((a, b) => a - b),
             ).toEqual([200, 409, 409, 409]);
-            const winner = responses.find((response) => response.ok);
-            const body = (await winner?.json()) as { id: string };
-            const purchase = await getPurchase(env.DB, buyer.id);
-            expect(body.id).toBe(purchase?.key_id);
-            expect(purchase?.credited_at).not.toBeNull();
             expect(calls.filter((path) => path === "/settle")).toHaveLength(1);
             expect(await ledger(owner)).toEqual({
                 paid: before.paid + 2,
@@ -781,178 +535,41 @@ describe("x402 prepaid API keys", () => {
             });
         });
 
-        test("refuses rebuilt replays that do not prove the paying wallet", async ({
+        test("a failed credit answers 503 without a key", async ({
             accountToken,
         }) => {
-            const owner = await holdingOwner(accountToken, "race-replays");
-            // Recorded and settling (or settled with a failed credit).
-            const pending = await buyerPayment(owner, "p2");
-            await preparePurchase(env, undefined, pending.id, owner, "p2");
-            const done = await buyerPayment(owner, "p5");
-            const issued = await preparePurchase(
-                env,
-                undefined,
-                done.id,
-                owner,
-                "p5",
-            );
-            await creditPurchase(env.DB, done.id, owner, issued.id);
-
-            // A third party rebuilds each header from a fresh public
-            // challenge and the authorization published by settlement.
-            const calls = stubFacilitator(pending.account.address);
-            const rebuild = async (
-                pack: string,
-                { payload }: PaymentPayload,
-            ) => {
-                const terms = await challenge(owner, pack);
-                return encodePaymentSignatureHeader({
-                    x402Version: 2,
-                    resource: terms.resource,
-                    accepted: terms.accepts[0],
-                    extensions: terms.extensions,
-                    payload,
-                } as PaymentPayload);
-            };
-            const pendingHeader = await rebuild("p2", pending.payment);
-            const doneHeader = await rebuild("p5", done.payment);
-            expect(await paymentId(pendingHeader)).toBe(pending.id);
-            expect(await paymentId(doneHeader)).toBe(done.id);
-            const stranger = privateKeyToAccount(generatePrivateKey());
-            const now = Math.floor(Date.now() / 1000);
-            const attempts: [string, string, Record<string, string>][] = [
-                [pendingHeader, "p2", {}],
-                [pendingHeader, "p2", {}],
-                [doneHeader, "p5", {}],
-                [pendingHeader, "p2", await proof(stranger, pending.payment)],
-                [
-                    pendingHeader,
-                    "p2",
-                    await proof(pending.account, done.payment),
-                ],
-                [
-                    doneHeader,
-                    "p5",
-                    await proof(done.account, done.payment, now - 600),
-                ],
-                [
-                    doneHeader,
-                    "p5",
-                    await proof(done.account, done.payment, now + 600),
-                ],
-                [
-                    doneHeader,
-                    "p5",
-                    await proof(
-                        done.account,
-                        done.payment,
-                        now,
-                        "https://elsewhere.example",
-                    ),
-                ],
-            ];
+            const owner = await holdingOwner(accountToken, "credit-failure");
+            const buyer = await payment(owner, "p2");
             const before = await ledger(owner);
-            const responses = await Promise.all(
-                attempts.map(([signature, pack, headers]) =>
-                    send(owner, pack, {
-                        "payment-signature": signature,
-                        ...headers,
-                    }),
-                ),
-            );
-            vi.unstubAllGlobals();
-
-            for (const response of responses) {
-                expect(response.status).toBe(409);
-                expect(await response.text()).not.toContain("sk_");
-            }
-            expect(calls).not.toContain("/verify");
-            expect(calls).not.toContain("/settle");
-            expect(await ledger(owner)).toEqual(before);
-            expect(
-                (await getPurchase(env.DB, pending.id))?.credited_at,
-            ).toBeNull();
-        });
-
-        test("the paying wallet recovers an activated key; a pending one is never resumed", async ({
-            accountToken,
-        }) => {
-            const owner = await holdingOwner(accountToken, "race-recover");
-            const buyer = await buyerPayment(owner, "p2");
-            const issued = await preparePurchase(
-                env,
-                undefined,
-                buyer.id,
-                owner,
-                "p2",
-            );
-            const before = await ledger(owner);
-            const calls = stubFacilitator(buyer.account.address);
-            const headers = {
-                "payment-signature": buyer.signature,
-                ...(await proof(buyer.account, buyer.payment)),
-            };
-
-            const pending = await Promise.all([
-                send(owner, "p2", headers),
-                send(owner, "p2", headers),
-            ]);
-            expect(pending.map((response) => response.status)).toEqual([
-                409, 409,
-            ]);
-            expect(await ledger(owner)).toEqual(before);
-
-            // Activated: the proof returns the key without any settlement.
-            await creditPurchase(env.DB, buyer.id, owner, issued.id);
-            const recovered = await Promise.all([
-                send(owner, "p2", headers),
-                send(owner, "p2", headers),
-            ]);
-            vi.unstubAllGlobals();
-            for (const response of recovered) {
-                expect(response.status).toBe(200);
-                expect(((await response.json()) as { key: string }).key).toBe(
-                    issued.key,
+            const calls = stubFacilitator();
+            const batch = env.DB.batch.bind(env.DB);
+            let failed = false;
+            const failCredit = vi
+                .spyOn(env.DB, "batch")
+                .mockImplementation((statements) => {
+                    if (!calls.includes("/settle") || failed)
+                        return batch(statements);
+                    failed = true;
+                    return Promise.reject(new Error("Injected credit failure"));
+                });
+            try {
+                const headers = { "payment-signature": buyer.signature };
+                const first = await send(owner, "p2", headers);
+                expect(failed).toBe(true);
+                expect(first.status).toBe(503);
+                expect(await first.text()).not.toContain("sk_");
+                expect(
+                    (await getPurchase(env.DB, buyer.id))?.credited_at,
+                ).toBeNull();
+                expect((await send(owner, "p2", headers)).status).toBe(409);
+                expect(calls.filter((path) => path === "/settle")).toHaveLength(
+                    1,
                 );
+                expect((await ledger(owner)).paid).toBe(before.paid);
+            } finally {
+                failCredit.mockRestore();
+                vi.unstubAllGlobals();
             }
-            expect(calls).not.toContain("/verify");
-            expect(calls).not.toContain("/settle");
-            expect(await ledger(owner)).toEqual({
-                ...before,
-                paid: before.paid + 2,
-                key_pollen: before.key_pollen + 2,
-            });
-        });
-
-        test("a proven buyer cannot resume a pending purchase with a cheaper transfer", async ({
-            accountToken,
-        }) => {
-            const owner = await holdingOwner(accountToken, "resume-swap");
-            const buyer = await buyerPayment(owner, "p2");
-            await preparePurchase(env, undefined, buyer.id, owner, "p2");
-            // Same payer and nonce, so the same purchase, cut to $0.01.
-            const cheap = structuredClone(buyer.payment) as PaymentPayload;
-            cheap.accepted.amount = "10000";
-            (
-                cheap.payload as { authorization: { value: string } }
-            ).authorization.value = "10000";
-            const cheapHeader = encodePaymentSignatureHeader(cheap);
-            expect(await paymentId(cheapHeader)).toBe(buyer.id);
-            const before = await ledger(owner);
-            const calls = stubFacilitator(buyer.account.address);
-
-            const response = await send(owner, "p2", {
-                "payment-signature": cheapHeader,
-                ...(await proof(buyer.account, cheap)),
-            });
-            vi.unstubAllGlobals();
-
-            expect(response.status).toBe(409);
-            expect(calls).not.toContain("/settle");
-            expect(await ledger(owner)).toEqual(before);
-            expect(
-                (await getPurchase(env.DB, buyer.id))?.credited_at,
-            ).toBeNull();
         });
     });
 });

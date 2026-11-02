@@ -11,12 +11,11 @@ import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
 import {
     creditPurchase,
-    findPurchase,
-    isBuyer,
+    getPurchase,
+    PAYMENT_USED,
     paymentId,
     preparePurchase,
     purchaseAmountUsd,
-    storedKey,
 } from "../services/x402-key-purchases.ts";
 
 function paymentSignature(c: {
@@ -57,7 +56,7 @@ export const x402KeysRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Buy a prepaid API key with x402",
             description:
-                'GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Each payment (one signed EIP-3009 transfer) returns its key once; other requests with it get 409. To get the key again, repeat the request with X402-BUYER-ISSUED-AT (unix seconds, from 120 s old to 30 s ahead) and X402-BUYER-SIGNATURE, the paying wallet\'s personal_sign of these lines joined by newlines: "Recover Pollinations x402 key", "Origin: {origin}", "Network: {network}", "Asset: {checksummed asset}", "Payer: {checksummed payer}", "Nonce: {lowercase authorization nonce}", "Issued at: {X402-BUYER-ISSUED-AT}".',
+                "GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Each payment returns its key once; any later request with it gets 409.",
             responses: {
                 200: { description: "Prepaid API key" },
                 402: { description: "x402 payment required" },
@@ -107,38 +106,10 @@ export const x402KeysRoutes = new Hono<Env>()
                         message: "Invalid x402 payment signature",
                     });
                 }
-                const previous = await findPurchase(c.env.DB, signature);
-                if (previous) {
-                    if (
-                        previous.user_id !== holdingUserId ||
-                        previous.pack_key !== purchaseKey
-                    )
-                        throw new HTTPException(409, {
-                            message:
-                                "Payment already belongs to another purchase",
-                        });
-                    if (
-                        !(await isBuyer(
-                            new URL(c.req.url).origin,
-                            signature,
-                            c.req.header("x402-buyer-signature"),
-                            c.req.header("x402-buyer-issued-at"),
-                        ))
-                    )
-                        throw new HTTPException(409, {
-                            message:
-                                "x402 payment already used. Sign the recovery message with the paying wallet to get its key again.",
-                        });
-                    // Never resume a recorded payment: the same nonce can carry
-                    // other terms, and resuming skips verification.
-                    if (previous.credited_at === null)
-                        throw new HTTPException(409, {
-                            message:
-                                "x402 payment is not activated. If it was charged, contact hello@pollinations.ai with the transaction.",
-                        });
-                    const issued = await storedKey(c.env, previous);
-                    return c.json({ ...issued, pollen: amountUsd });
-                }
+                // Settlement publishes the signed payment, so anyone can
+                // rebuild this header: never return a stored key or resume.
+                if (await getPurchase(c.env.DB, id))
+                    throw new HTTPException(409, { message: PAYMENT_USED });
             }
 
             let issued: { id: string; key: string } | undefined;

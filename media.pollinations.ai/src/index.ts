@@ -1,3 +1,4 @@
+import { AGENT_RUN_TOKEN_PREFIX } from "@shared/auth/agent-run-token.ts";
 import { extractApiKey } from "@shared/auth/api-key.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
@@ -47,9 +48,11 @@ import {
 export { MediaUpload } from "./media-upload.ts";
 
 const DOMAIN = "media.pollinations.ai";
-// gen.pollinations.ai proxies /account/* to enter — using the public path
-// keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+// Enter's key check, reached over the ENTER service binding (the host is not
+// used for routing). A public fetch through Gen would leave from the Workers
+// egress IP that every Worker shares, so it would count against Gen's per-IP
+// limit and a bad-key flood could turn valid uploads into 503s.
+const KEY_VERIFY_URL = "https://enter.pollinations.ai/api/account/key";
 // Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
 // IDs can be reused after expiry; neither should remain in downstream caches.
 const UNCACHED_CACHE_CONTROL = "no-store";
@@ -75,10 +78,11 @@ interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
+    ENTER: Fetcher;
 }
 
 /**
- * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
+ * Wire shape of `GET /api/account/key`. BYOP attribution arrives nested under
  * `byopApp`, which is null for keys not minted through the BYOP flow.
  */
 interface KeyVerifyResponse {
@@ -91,7 +95,6 @@ interface KeyVerifyResponse {
 }
 
 interface AuthResult {
-    valid: boolean;
     type: string;
     name: string | null;
     keyId: string | null;
@@ -99,25 +102,33 @@ interface AuthResult {
     byopClientKeyId: string | null;
 }
 
-async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    const res = await fetch(KEY_VERIFY_URL, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    }).catch(() => undefined);
-    // Only a 4xx means a bad key. A throttled or failing check must not tell
-    // the owner of a valid key that it is invalid.
-    if (!res || res.status === 429 || res.status >= 500) {
+async function verifyApiKey(
+    enter: Fetcher,
+    apiKey: string,
+): Promise<AuthResult | null> {
+    const res = await enter
+        .fetch(KEY_VERIFY_URL, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        })
+        .catch(() => undefined);
+    // Only a 4xx means a bad key. A throttled, failing or malformed check must
+    // not tell the owner of a valid key that it is invalid.
+    if (res && res.status >= 400 && res.status < 500 && res.status !== 429) {
+        return null;
+    }
+    const data = res?.ok
+        ? await res.json<KeyVerifyResponse>().catch(() => null)
+        : null;
+    if (typeof data?.valid !== "boolean") {
         throw new HTTPException(503, {
             message: "API key check unavailable. Please retry.",
         });
     }
-    if (!res.ok) return null;
-    const data = await res.json<KeyVerifyResponse>();
     if (!data.valid) return null;
     // Normalize: an enter deployment that predates the identity fields
     // omits them, and `undefined` would slip past the `=== null` guards
     // downstream — never treat an unattested key as user-attached.
     return {
-        valid: true,
         type: data.type,
         name: data.name ?? null,
         keyId: data.id ?? null,
@@ -306,8 +317,8 @@ const MediaListQuerySchema = z.object({
 
 const api = new Hono<{ Bindings: Env }>();
 
-// Every key check is a D1 lookup in Enter, so cap each key and client IP
-// before it; wrangler.toml sets the limits.
+// Every key check and gallery read is a D1 lookup in Enter, so cap each key
+// and client IP before it; wrangler.toml sets the limits.
 const keyCheckRateLimit = rateLimit({ byIp: true });
 const RateLimitedResponse = {
     description:
@@ -449,7 +460,7 @@ api.post(
                 401,
             );
         }
-        const authResult = await verifyApiKey(apiKey);
+        const authResult = await verifyApiKey(c.env.ENTER, apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
@@ -883,8 +894,10 @@ api.get(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
         },
     }),
+    keyCheckRateLimit,
     validator("query", MediaListQuerySchema, (result, c) => {
         // Emit validation failures in the same {error} shape as every other
         // error response instead of the validator's default body.
@@ -965,7 +978,7 @@ api.delete(
             },
             403: {
                 description:
-                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
+                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else. Agent run tokens (`ag_`) can't delete media",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -991,7 +1004,7 @@ api.delete(
                 401,
             );
         }
-        const auth = await verifyApiKey(apiKey);
+        const auth = await verifyApiKey(c.env.ENTER, apiKey);
         if (!auth) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
@@ -1003,8 +1016,12 @@ api.delete(
         }
         // Publishable keys ship inside public clients — anyone holding one
         // could delete the owner's published media, so deletion is
-        // secret-key only.
-        if (auth.type !== "secret") {
+        // secret-key only. Agent run tokens report their parent key's type,
+        // but they're handed to generated code, so they can't delete either.
+        if (
+            auth.type !== "secret" ||
+            apiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)
+        ) {
             return c.json(
                 { error: "Deleting media requires a secret (sk_) API key" },
                 403,

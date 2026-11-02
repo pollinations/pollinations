@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { defaultKeyHasher } from "@better-auth/api-key";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -127,16 +128,15 @@ test("GET /api/account/key - returns key status for secret key", {
     expect(data).toHaveProperty("expiresIn");
     expect(data).toHaveProperty("permissions");
     expect(data).toHaveProperty("pollenBudget");
-    expect(data).toHaveProperty("rateLimitEnabled");
 });
 
-test("GET /api/account/key - accepts an agent run token", {
+test("GET /api/account/key - agent run token has no account permissions", {
     timeout: 30000,
 }, async ({ accountToken, mocks }) => {
     await mocks.enable("tinybird");
     const { key } = await createApiKeyViaApi(accountToken, {
         name: "agent-parent",
-        accountPermissions: ["usage"],
+        accountPermissions: ["usage", "keys"],
     });
     const parent = await authenticateApiKeyRequest({
         request: new Request("http://localhost", {
@@ -163,11 +163,29 @@ test("GET /api/account/key - accepts an agent run token", {
         userId: parent?.user?.id,
         byopApp: null,
     });
-    // A run token carries the parent key's account permissions.
-    expect(data.permissions.account).toEqual(["usage"]);
+    expect(data.permissions.account).toBeNull();
+
+    const createResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${runToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name: "agent-created-key" }),
+        },
+    );
+    expect(createResponse.status).toBe(403);
+    // No grant link: granting it to the parent key wouldn't let the agent in.
+    const refusal = await createResponse.json();
+    expect(refusal.error).toMatchObject({
+        message: "Agent runs can't use 'account:keys'.",
+    });
+    expect(refusal.error).not.toHaveProperty("fixUrl");
 });
 
-test("GET /api/account/key - returns key status for publishable key", {
+test("GET /api/account/key - refuses a publishable key", {
     timeout: 30000,
 }, async ({ pubApiKey, mocks }) => {
     await mocks.enable("tinybird");
@@ -177,12 +195,34 @@ test("GET /api/account/key - returns key status for publishable key", {
             Authorization: `Bearer ${pubApiKey}`,
         },
     });
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(401);
+    const body = (await response.json()) as { error: { message: string } };
+    expect(body.error.message).toContain("only identify your app");
+});
 
-    const data = await response.json();
-    expect(data.valid).toBe(true);
-    expect(data.type).toBe("publishable");
-    expect(data.rateLimitEnabled).toBe(true);
+test("GET /api/account/key - refuses an App Key in the old plln_pk_ format", {
+    timeout: 30000,
+}, async ({ pubApiKey, mocks }) => {
+    await mocks.enable("tinybird");
+    const legacyKey = `plln_${pubApiKey}`;
+    const row = await drizzle(env.DB)
+        .select({ id: schema.apikey.id })
+        .from(schema.apikey)
+        .where(eq(schema.apikey.key, await defaultKeyHasher(pubApiKey)))
+        .get();
+    await updateKey(row?.id ?? "", {
+        key: await defaultKeyHasher(legacyKey),
+        prefix: "plln_pk",
+    });
+
+    const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+        headers: {
+            Authorization: `Bearer ${legacyKey}`,
+        },
+    });
+    expect(response.status).toBe(401);
+    const body = (await response.json()) as { error: { message: string } };
+    expect(body.error.message).toContain("only identify your app");
 });
 
 test("GET /api/account/key - shows permissions for restricted key", {

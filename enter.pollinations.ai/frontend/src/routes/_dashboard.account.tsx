@@ -1,10 +1,9 @@
 import {
     Alert,
     Button,
-    CheckIcon,
-    ClipboardIcon,
     ConfirmationDialog,
     CopyButton,
+    CopyStateIcon,
     DiscordIcon,
     Field,
     FieldStack,
@@ -24,8 +23,8 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
 import {
+    CardLoading,
     LoadError,
-    PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -40,7 +39,7 @@ type DiscordConnection = {
 
 export const Route = createFileRoute("/_dashboard/account")({
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -129,7 +128,7 @@ function AccountPage() {
                 promise={profile}
                 fallback={
                     <Section title="Community">
-                        <PageStatus />
+                        <CardLoading className="h-80 sm:h-46" />
                     </Section>
                 }
             >
@@ -143,7 +142,10 @@ function AccountPage() {
                         />
                     ) : (
                         <Section title="Community">
-                            <LoadError onRetry={retry}>
+                            <LoadError
+                                onRetry={retry}
+                                paths={["/account/profile"]}
+                            >
                                 Couldn’t load connection settings.
                             </LoadError>
                         </Section>
@@ -262,19 +264,18 @@ function ContactEmail({ email }: { email: string }) {
             value={email}
             aria-label={`Copy ${email}`}
             tooltip="Copy email address"
-            copiedTooltip="Email address copied"
             className="polli-link inline-flex max-w-full items-center gap-1.5 text-left align-baseline"
         >
             {(copied) => (
                 <>
                     <span className="min-w-0 break-all" aria-live="polite">
-                        {copied ? "Copied!" : email}
+                        {copied ? "Copied" : email}
                     </span>
                     <span
                         className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"
                         aria-hidden="true"
                     >
-                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                        <CopyStateIcon copied={copied} />
                     </span>
                 </>
             )}

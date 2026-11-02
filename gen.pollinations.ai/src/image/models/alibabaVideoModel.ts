@@ -44,7 +44,8 @@ export async function callAlibabaVideo(
         });
     }
     const ratio =
-        version === "2.6" && ["16:9", "9:16"].includes(params.aspectRatio ?? "")
+        params.aspectRatio &&
+        (version === "3.0" || ["16:9", "9:16"].includes(params.aspectRatio))
             ? params.aspectRatio
             : closestRatioLogSpace(
                   params.width,

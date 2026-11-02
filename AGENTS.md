@@ -29,7 +29,7 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Applications maintained in this repository
 - `operations/app-management/` — Community app catalog and automation
-- `operations/` — Internal dashboards, monitoring, economics, and infrastructure
+- `operations/` — Internal dashboards, monitoring, data sync, news, app management and infrastructure; folder map in `operations/README.md`
 - `operations/social/` — Discord/Reddit/GitHub automation
 - `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 
@@ -37,7 +37,7 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
-- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai/keys
+- Auth: `sk_` keys authenticate requests; `pk_` App Keys only identify an app (OAuth `client_id`) and get `401` as a key. Keys: https://enter.pollinations.ai/keys
 - Billing: Pollen credits ($1 ≈ 1 Pollen). API reference: `APIDOCS.md`; service operations: `.claude/skills/enter-services/SKILL.md`.
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
@@ -134,11 +134,11 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Economics Environment Safety
 
-- `operations/economics/web` local development must read Tinybird staging
+- `operations/dashboards/economics/web` local development must read Tinybird staging
   (`pollinations_enter_staging`) through
-  `operations/economics/secrets/web.dev.json`.
+  `operations/dashboards/economics/secrets/web.dev.json`.
 - Production Economics deployments read
-  `operations/economics/secrets/web.json`. Never decrypt that production file
+  `operations/dashboards/economics/secrets/web.json`. Never decrypt that production file
   directly into the local `.dev.vars` file.
 - After switching, merging, or rebasing an Economics branch, rerun
   `npm run decrypt-vars` before trusting the local dashboard. The generated

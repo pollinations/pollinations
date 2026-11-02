@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-01T06:16:02.446000+00:00",
+  "generated_at": "2026-11-02T06:10:23.572646+00:00",
   "models": [
     {
       "id": "2026-10-06:elevenlabs/eleven-v4",
@@ -5254,17 +5254,6 @@
   ],
   "api": [
     {
-      "id": "pr-16262:POST /account/polli/harness-on",
-      "endpoint": "POST /account/polli/harness-on",
-      "summary": "postAccountPolliHarnessOn",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-02",
-      "pr": 16262,
-      "url": "https://github.com/pollinations/pollinations/pull/16262"
-    },
-    {
       "id": "pr-16488:GET /3d/models",
       "endpoint": "GET /3d/models",
       "summary": "List 3D Models",
@@ -6870,6 +6859,36 @@
   ],
   "daily": [
     {
+      "date": "2026-11-01",
+      "emoji": "📱",
+      "title": "Usage and earnings together",
+      "text": "Explore Usage and Earnings in one Activity view. Switch metrics, filter by model or key, inspect chart and table data, and export CSV.",
+      "prs": [
+        18980
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-01",
+      "emoji": "🎯",
+      "title": "Claimable Quests come first",
+      "text": "Claimable Quests now appear at the top with a prominent Claim button. Open and completed Quests follow in that order.",
+      "prs": [
+        18970
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-01",
+      "emoji": "🤖",
+      "title": "Community model checks",
+      "text": "Scheduled probes check public community text and image models with little traffic or poor health. Owners can get warnings for repeated model errors or frequent fallback rescues.",
+      "prs": [
+        18907
+      ],
+      "kind": "product"
+    },
+    {
       "date": "2026-10-31",
       "emoji": "📱",
       "title": "A clearer My Apps view",
@@ -8352,57 +8371,6 @@
       "prs": [
         16164,
         16312
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-02",
-      "emoji": "🤖",
-      "title": "Alpha coding sandboxes",
-      "text": "Create Linux sandboxes with Polli, inspect their logs and connect over SSH. Sandbox time is paid from your Pollinations wallet in advance. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15656
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-02",
-      "emoji": "🔗",
-      "title": "Pi gets MCP setup",
-      "text": "Use `polli mcp install pi --all` to configure hosted MCP servers in Pi while preserving your other server settings. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        16218
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-02",
-      "emoji": "✨",
-      "title": "Larger inline-media chats",
-      "text": "Send chat requests up to 100 MiB with supported inline image, video or file data URIs. Large media is converted to URLs for the provider; which URL types work depends on the model. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16199,
-        16267
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-02",
-      "emoji": "🎯",
-      "title": "Text models get evals",
-      "text": "Compare text models, including community models, in Model Monitor’s new Evals tab. Rankings show past runs and confidence intervals, starting with puzzle-based evaluations. [Open Model Monitor](https://model-monitor.pollinations.ai).",
-      "prs": [
-        15674
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-02",
-      "emoji": "🌟",
-      "title": "Find your community route",
-      "text": "The rebuilt Community page brings together app listings, model and agent publishing requests, GitHub contributions and Discord. Open votes now reflect reactions on GitHub issues. [Visit pollinations.ai](https://pollinations.ai).",
-      "prs": [
-        16197
       ],
       "kind": "product"
     }

@@ -107,4 +107,4 @@ interface CloudflareBindings {
 
 declare namespace Cloudflare {
     interface Env extends CloudflareBindings {}
-    }
+}

@@ -23,15 +23,22 @@ async function fetchJson(url) {
 }
 
 function stripHtml(html) {
-    return html
-        .replace(/<p>/g, "\n\n")
-        .replace(/<[^>]+>/g, "")
+    // Decode entities first so an encoded "<" cannot survive the tag strip.
+    let text = html
         .replace(/&gt;/g, ">")
         .replace(/&lt;/g, "<")
         .replace(/&quot;/g, '"')
         .replace(/&#x27;/g, "'")
-        .replace(/&amp;/g, "&")
-        .trim();
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, "&");
+    // Strip to a fixpoint: nested fragments like "<scr<script>ipt>" only
+    // become a full tag after an inner tag is removed.
+    let prev;
+    do {
+        prev = text;
+        text = text.replace(/<p>/g, "\n\n").replace(/<[^>]+>/g, "");
+    } while (text !== prev);
+    return text.trim();
 }
 
 function mapHit(hit) {

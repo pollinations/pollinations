@@ -388,6 +388,7 @@ export function incidents({
                 to: "maintainers",
                 run: run.id,
                 gaps: run.gaps,
+                link: `${EVALS_RUNS}/${run.id}.json`,
                 owners: [],
                 quiet: [key],
             });
@@ -397,7 +398,7 @@ export function incidents({
 
 // What the agent reads of an incident: what it says, not who it pings or
 // how it is kept quiet.
-export const brief = ({ owners, quiet, ...incident }) => incident;
+export const brief = ({ owners, quiet, link, ...incident }) => incident;
 
 // Each incident's card: a title that says it is about community models and
 // whose fault it likely is, then its facts, never cut. Posts call a model's
@@ -421,7 +422,7 @@ const health = (m) =>
         : `${short(m.model)} (${Math.round(m.health)}%)`;
 // An eval score, 0 to 1, as a whole percent.
 const percent = (rate) => `${Math.round(rate * 100)}%`;
-// Each run's results, linked from its card, hold all its gaps.
+// Each run's results, linked under its card, hold all its gaps.
 const EVALS_RUNS =
     "https://github.com/pollinations/pollinations/blob/evals/data/runs";
 // The error without "stream returned ", so the box stays narrow enough for
@@ -471,12 +472,18 @@ const ROWS = {
                     `${short(g.model)} ${percent(g.rate)} vs ${g.twin} ${percent(g.twinRate)}`,
             ),
         ),
-        ["RESULTS", `${EVALS_RUNS}/${i.run}.json`],
         ["CHECK", "model-evals/fingerprint.js compare"],
     ],
 };
+// A card's link, such as a run's full results, goes under its box, where
+// Discord makes it clickable.
 const card = (i) =>
-    panel(TITLE[i.kind], ROWS[i.kind](i), COLOR.PRIMARY_WEAK, { whole: true });
+    [
+        panel(TITLE[i.kind], ROWS[i.kind](i), COLOR.PRIMARY_WEAK, {
+            whole: true,
+        }),
+        ...(i.link ? [`[Full results](${i.link})`] : []),
+    ].join("\n");
 
 // Discord cuts an embed at 4,096 characters.
 const LIMIT = 4096;

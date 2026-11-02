@@ -286,6 +286,64 @@ test("a told fallback stays quiet for a week, per model and fallback", () => {
     assert.equal(later.snapshots[0].via.length, 2);
 });
 
+test("community cards fit a phone: long names continue on rows of their own, never cut", () => {
+    // The listing posted on 2026-11-02, too wide for a phone.
+    const changes = {
+        filtered: 184,
+        newly: [
+            ["Saauf/mistral-large-4", 66],
+            ["CloudCompile/reflection-beam-free", 58],
+            ["sharktide/inferenceport-ai-gpt-6-luna", 38],
+            ["ZapGaming/mix-router", 40],
+            ["chigwell/gpt-6.1-sol", 36],
+        ].map(([m, health]) => ({ model: `community/${m}`, health })),
+        newlyMore: 9,
+        back: [
+            ["rekty/rekty-dev-4", 81],
+            ["scriptsnsenses-sys/minimax-m3.1-flash-free", 86],
+            ["Saauf/nemotron-3.5-super-vl", 100],
+            ["Saauf/grok-4.20-fast", 90],
+            [`${"o".repeat(39)}/${"m".repeat(120)}`, 90],
+        ].map(([m, health]) => ({ model: `community/${m}`, health })),
+        backMore: 5,
+    };
+    const plan = decision(
+        JSON.stringify({ community: [{ incidents: ["1"], text: "Changed." }] }),
+        find({ listings: changes }),
+    );
+    const box = plan.community.text.split("```")[1].split("\n").slice(1, -1);
+    for (const line of box)
+        assert.ok([...line.replace(/\u001b\[[\d;]*m/g, "")].length <= 49, line);
+    // The longest title fits too.
+    const broken = decision(
+        JSON.stringify({ community: [{ incidents: ["1"], text: "Broken." }] }),
+        [
+            {
+                id: "1",
+                kind: "stream",
+                to: "community",
+                model: "community/o/m",
+                error: "stream returned an error event",
+                owners: ["o"],
+                quiet: [],
+            },
+        ],
+    ).community.text;
+    for (const line of broken.split("```")[1].split("\n").slice(1, -1))
+        assert.ok([...line.replace(/\u001b\[[\d;]*m/g, "")].length <= 49, line);
+    // Joined back, every name is whole.
+    const text = box
+        .map((l) =>
+            l
+                .slice(2, -2)
+                .trim()
+                .replace(/^(HIDDEN|BACK|TOTAL)\s+/, ""),
+        )
+        .join("");
+    for (const m of [...changes.newly, ...changes.back])
+        assert.ok(text.includes(m.model.replace(/^community\//, "")), m.model);
+});
+
 test("listing changes are an incident only when something changed", () => {
     const changes = {
         filtered: 1,
@@ -381,6 +439,11 @@ test("the weekly eval's score gaps go to the maintainers once per run, in its fi
     );
     assert.ok(big.maintainers.text.length <= 4096);
     assert.match(big.maintainers.text, /evals\/data\/runs\/2026-10-26\.json/);
+    // The link sits under the box, where Discord makes it clickable.
+    assert.match(
+        big.maintainers.text,
+        /```\n\[Full results\]\(https:\/\/github\.com\/pollinations\/pollinations\/blob\/evals\/data\/runs\/2026-10-26\.json\)\n/,
+    );
 });
 
 test("a shared failure keeps its models while they break the same way, even past 4 hours", () => {
@@ -852,10 +915,14 @@ test("a card's title says it is community models and whose fault, and its facts 
     );
     const text = plan.maintainers.text;
     assert.match(text, /COMMUNITY MODELS: LIKELY A GEN PROBLEM/);
+    // Too long for a phone, the error and the id continue on rows of their
+    // own, never cut.
     for (const row of [
-        "ERROR   usage_missing: missing or invalid token usage",
+        "ERROR   usage_missing: missing or invalid ",
+        "        token usage",
         "MODELS  12 from 12 publishers",
-        "        CloudCompile/nvidia-nemotron-3-ultra-550b-a55b:free",
+        "        CloudCompile/nvidia-nemotron-3-ultra-",
+        "        550b-a55b:free",
         "        o3/m",
         "        …and 7 more",
     ])

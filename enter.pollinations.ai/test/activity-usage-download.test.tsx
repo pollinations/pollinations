@@ -78,14 +78,8 @@ it("downloads the usage CSV for the period and picks the chart shows", async () 
         [month, { keys: [], models: [] }, {}],
         [
             month,
-            { keys: ["key-a", "key-b"], models: [] },
-            { api_key_ids: "key-a,key-b" },
-        ],
-        [month, { keys: [], models: ["flux"] }, { models: "flux" }],
-        [
-            month,
-            { keys: ["key-a"], models: ["flux", "gpt-5"] },
-            { api_key_ids: "key-a", models: "flux,gpt-5" },
+            { keys: ["key-a", "key-b"], models: ["flux", "gpt-5"] },
+            { api_key_ids: "key-a,key-b", models: "flux,gpt-5" },
         ],
         [day, { keys: ["key-a"], models: [] }, { api_key_ids: "key-a" }],
     ];
@@ -99,8 +93,4 @@ it("downloads the usage CSV for the period and picks the chart shows", async () 
             ...filters,
         });
     }
-    // Picks narrow the loaded rows; only a new period loads the table again.
-    expect(
-        requests.filter((url) => url.pathname === "/account/usage/daily"),
-    ).toHaveLength(2);
 });

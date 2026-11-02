@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     CHECKING,
+    COMMUNITY_FAILURES,
+    COMMUNITY_STUCK_MS,
     CONFIRM_CHECKS,
+    communityDown,
     conditions,
     duration,
     escalates,
@@ -456,6 +459,43 @@ test("each AI line keeps the colour its card had when it was written", () => {
         text,
         /🟡 <t:3600:t> Primary weak\.\n🟠 <t:5400:t> Worse\.\n🟢 <t:10860:t> Closed\./,
     );
+});
+
+test("the community monitor is down after 3 failed cycles in a row, or one stuck for 3 hours", () => {
+    const at = 1_000_000;
+    const hours = (n) => at + n * 60 * 60_000;
+    assert.deepEqual(communityDown(undefined, at, false), {});
+    // Fewer failures, or a pause with nothing running, tell nothing.
+    assert.deepEqual(
+        communityDown(
+            { at, failures: COMMUNITY_FAILURES - 1 },
+            hours(1),
+            false,
+        ),
+        {},
+    );
+    assert.deepEqual(communityDown({ at }, hours(24), false), {});
+    // A slow but healthy cycle right after a pause is no failure.
+    assert.deepEqual(communityDown({ at: hours(24) }, hours(24.5), true), {});
+    const { community } = communityDown(
+        { at, failures: COMMUNITY_FAILURES, error: "probe key refused (402)" },
+        hours(1.5),
+        false,
+    );
+    assert.equal(community.error, "probe key refused (402)");
+    // Still running long after it started, even the first cycle, is stuck.
+    assert.equal(
+        communityDown({ at }, at + COMMUNITY_STUCK_MS, true).community.error,
+        "a cycle has run for 3+ hours",
+    );
+    const card = renderCard(
+        "community",
+        { kind: "COMMUNITY_DOWN", openedAt: at, info: community },
+        { now: at },
+    );
+    assert.match(plain(card.text), /┌─ DOWN: community monitor ─/);
+    assert.match(plain(card.text), /ERROR {3}probe key refused \(402\)/);
+    assert.equal(card.ping, true);
 });
 
 test("infrastructure cards follow the same life and stay red when closed", () => {

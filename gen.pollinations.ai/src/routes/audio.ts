@@ -4131,6 +4131,14 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         temperatureRaw !== null && temperatureRaw !== ""
             ? Number(temperatureRaw)
             : undefined;
+    if (
+        temperature !== undefined &&
+        (!Number.isFinite(temperature) || temperature < 0 || temperature > 1)
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "temperature must be a number between 0 and 1",
+        });
+    }
     const speakersExpected = parsePositiveInt(
         formData.get("speakers_expected"),
         "speakers_expected",

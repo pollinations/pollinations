@@ -20,9 +20,6 @@ const CHART_COLORS = {
     grid: "var(--polli-color-divider)",
 } as const;
 
-/** A chart card's loading size: the 180px chart plus the card's padding. */
-export const CHART_LOADING = "h-[208px] sm:h-[212px]";
-
 type ChartProps = {
     data: DataPoint[];
     metric: Metric;
@@ -31,15 +28,24 @@ type ChartProps = {
     onSelect: (point: DataPoint) => void;
 };
 
-function getYAxisPadding({
-    isCompact,
-    needsPrecisePollenScale,
-}: {
-    isCompact: boolean;
-    needsPrecisePollenScale: boolean;
-}): number {
-    if (needsPrecisePollenScale) return isCompact ? 58 : 68;
-    return isCompact ? 36 : 55;
+// The y-axis sits on the right, under the unit switch. It is never narrower
+// than 6 characters at the 10px label size ("2.5K", "0.0015"), so switching
+// unit or period doesn't move the bars; only tiny Pollen scales
+// ("0.00000005") widen it. The plot starts at the table's text inset.
+const AXIS_GAP = 8;
+const AXIS_CHAR_WIDTH = 6;
+const MIN_AXIS_CHARS = 6;
+const PLOT_INSET = 8;
+
+/** A tick step that gives 4–6 ticks with the max at 60–100% of the scale. */
+function getNiceStep(maxVal: number): number {
+    if (maxVal <= 0) return 1;
+    const magnitude = 10 ** Math.floor(Math.log10(maxVal));
+    const normalized = maxVal / magnitude;
+    if (normalized <= 1.2) return magnitude * 0.2;
+    if (normalized <= 2.5) return magnitude * 0.5;
+    if (normalized <= 6) return magnitude;
+    return magnitude * 2;
 }
 
 export const Chart: FC<ChartProps> = ({
@@ -103,16 +109,35 @@ export const Chart: FC<ChartProps> = ({
     }, []);
 
     const height = 180;
-    const isCompact = width < 480;
     const maxDataValue =
         data.length > 0 ? Math.max(...data.map((d) => d.value)) : 0;
-    const needsPrecisePollenScale =
-        metric === "pollen" && maxDataValue > 0 && maxDataValue < 0.0001;
+    const scale = useMemo(() => {
+        const tickSpacing = getNiceStep(maxDataValue || 1);
+        // Round up to the next tick.
+        const niceMaxVal =
+            Math.ceil(maxDataValue / tickSpacing) * tickSpacing || tickSpacing;
+        const tickCount = Math.ceil(niceMaxVal / tickSpacing) + 1;
+        const tickValues = Array.from(
+            { length: Math.min(tickCount, 6) },
+            (_, i) => i * tickSpacing,
+        ).filter((value) => value <= niceMaxVal);
+        return { niceMaxVal, tickValues };
+    }, [maxDataValue]);
+
+    const formatVal = (v: number) => {
+        if (metric === "pollen") return formatActivityPollen(v);
+        if (Math.abs(v) >= 1e3) return formatCount(v);
+        return Math.round(v).toString();
+    };
+    const axisChars = Math.max(
+        MIN_AXIS_CHARS,
+        ...scale.tickValues.map((value) => formatVal(value).length),
+    );
     const pad = {
         top: 24,
-        right: isCompact ? 10 : 20,
+        right: AXIS_GAP + axisChars * AXIS_CHAR_WIDTH,
         bottom: 32,
-        left: getYAxisPadding({ isCompact, needsPrecisePollenScale }),
+        left: PLOT_INSET,
     };
     const cw = width - pad.left - pad.right;
     const ch = height - pad.top - pad.bottom;
@@ -120,38 +145,17 @@ export const Chart: FC<ChartProps> = ({
     const { bars, yTicks } = useMemo(() => {
         if (data.length === 0) return { bars: [], yTicks: [] };
 
-        const max = maxDataValue;
-
-        // Calculate nice tick spacing based on data max
-        const getNiceStep = (maxVal: number): number => {
-            if (maxVal <= 0) return 1;
-            const magnitude = 10 ** Math.floor(Math.log10(maxVal));
-            const normalized = maxVal / magnitude;
-            // Pick step that gives 4-6 ticks and uses range well
-            // For normalized values (1-10), pick step that results in max being 60-100% of scale
-            if (normalized <= 1.2) return magnitude * 0.2;
-            if (normalized <= 1.5) return magnitude * 0.5;
-            if (normalized <= 2.5) return magnitude * 0.5;
-            if (normalized <= 3.5) return magnitude;
-            if (normalized <= 6) return magnitude;
-            if (normalized <= 8) return magnitude * 2;
-            return magnitude * 2;
-        };
-
-        // Calculate nice scale with tight fit
-        const tickSpacing = getNiceStep(max || 1);
-        // Round up to next tick, then add just one more tick for headroom
-        const niceMaxVal =
-            Math.ceil(max / tickSpacing) * tickSpacing || tickSpacing;
-
-        const barWidth = Math.max(4, (cw / data.length) * 0.7);
-        const gap = (cw / data.length) * 0.3;
+        const { niceMaxVal, tickValues } = scale;
+        // Each bar is centred in its share of the plot, so a 4px minimum
+        // width can never push later bars past the axis.
+        const slot = cw / data.length;
+        const barWidth = Math.max(4, slot * 0.7);
 
         const barData = data.map((d, i) => {
             const tierHeight = (d.tierValue / niceMaxVal) * ch;
             const paidHeight = (d.paidValue / niceMaxVal) * ch;
             return {
-                x: pad.left + i * (barWidth + gap) + gap / 2,
+                x: pad.left + i * slot + (slot - barWidth) / 2,
                 y: pad.top + ch - (d.value / niceMaxVal) * ch,
                 width: barWidth,
                 height: (d.value / niceMaxVal) * ch,
@@ -163,24 +167,13 @@ export const Chart: FC<ChartProps> = ({
             };
         });
 
-        // Generate nice Y ticks
-        const tickCount = Math.ceil(niceMaxVal / tickSpacing) + 1;
-        const ticks = Array.from({ length: Math.min(tickCount, 6) }, (_, i) => {
-            const value = i * tickSpacing;
-            return {
-                value,
-                y: pad.top + ch - (value / niceMaxVal) * ch,
-            };
-        }).filter((t) => t.value <= niceMaxVal);
+        const ticks = tickValues.map((value) => ({
+            value,
+            y: pad.top + ch - (value / niceMaxVal) * ch,
+        }));
 
         return { bars: barData, yTicks: ticks };
-    }, [data, cw, ch, pad.left, pad.top, maxDataValue]);
-
-    const formatVal = (v: number) => {
-        if (metric === "pollen") return formatActivityPollen(v);
-        if (Math.abs(v) >= 1e3) return formatCount(v);
-        return Math.round(v).toString();
-    };
+    }, [data, cw, ch, pad.left, pad.top, scale]);
 
     const formatAccessibleValue = (v: number) => {
         if (metric === "pollen") return formatActivityPollen(v);
@@ -228,9 +221,9 @@ export const Chart: FC<ChartProps> = ({
                             strokeDasharray="4 4"
                         />
                         <text
-                            x={pad.left - 8}
+                            x={width - pad.right + AXIS_GAP}
                             y={t.y}
-                            textAnchor="end"
+                            textAnchor="start"
                             alignmentBaseline="middle"
                             className="text-micro fill-theme-text-muted font-medium"
                         >

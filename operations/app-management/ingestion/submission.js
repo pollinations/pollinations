@@ -60,6 +60,11 @@ function section(body, label) {
     return match ? match[1].trim() : "";
 }
 
+// Single-line fields: ignore notes or footers added below the value.
+function line(body, label) {
+    return section(body, label).split(/\r?\n/, 1)[0];
+}
+
 function normalizeUrl(value) {
     const input = clean(value, 500);
     if (!input) return "";
@@ -101,18 +106,15 @@ function parseScreenshotUrl(value) {
 }
 
 function parseSubmission(body) {
-    const name = clean(section(body, "App Name"), 80);
+    const name = clean(line(body, "App Name"), 80);
     const description = clean(section(body, "App Description"), 200);
-    const appUrl = normalizeUrl(section(body, "App URL"));
-    const repoUrl = normalizeUrl(section(body, "GitHub Repository URL"));
-    const category = clean(section(body, "App Category"), 30).toLowerCase();
-    const platform = clean(section(body, "Platform"), 30).toLowerCase();
-    const language = normalizeLanguage(section(body, "App Language"));
-    const discord = clean(section(body, "Discord Username"), 80);
-    const quest = clean(
-        section(body, "Quest").split(/\r?\n/, 1)[0],
-        20,
-    ).replace(/^#/, "");
+    const appUrl = normalizeUrl(line(body, "App URL"));
+    const repoUrl = normalizeUrl(line(body, "GitHub Repository URL"));
+    const category = clean(line(body, "App Category"), 30).toLowerCase();
+    const platform = clean(line(body, "Platform"), 30).toLowerCase();
+    const language = normalizeLanguage(line(body, "App Language"));
+    const discord = clean(line(body, "Discord Username"), 80);
+    const quest = clean(line(body, "Quest"), 20).replace(/^#/, "");
     const screenshotUrl = parseScreenshotUrl(section(body, "Screenshot"));
 
     return {

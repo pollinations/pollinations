@@ -185,6 +185,28 @@ test("parses quest before the trailing credit footer", () => {
     assert.deepEqual(validateSubmission(submission), []);
 });
 
+test("reads single-line fields before a trailing note", () => {
+    const expected = parseSubmission(BODY);
+    for (const [label, key] of [
+        ["App Name", "name"],
+        ["App URL", "appUrl"],
+        ["GitHub Repository URL", "repoUrl"],
+        ["App Category", "category"],
+        ["Platform", "platform"],
+        ["App Language", "language"],
+        ["Discord Username", "discord"],
+    ]) {
+        const submission = parseSubmission(
+            BODY.replace(
+                new RegExp(`(### ${label}\\n.*)`),
+                "$1\n\n---\nHosted on Pollinations Sites.",
+            ),
+        );
+        assert.equal(submission[key], expected[key], label);
+        assert.deepEqual(validateSubmission(submission), [], label);
+    }
+});
+
 test("builds the canonical catalog app", () => {
     const app = buildApp(parseSubmission(BODY), {
         githubUsername: "example",

@@ -38,6 +38,46 @@ async function getBalance(headers: Record<string, string>) {
 }
 
 describe("GET /api/account/balance", () => {
+    test("an existing key immediately sees frozen Quest Pollen separately from spendable funds", async ({
+        sessionToken,
+        accountToken,
+    }) => {
+        const userId = await sessionUserId(sessionToken);
+        const created = await createApiKeyViaApi(accountToken, {
+            name: "existing",
+            accountPermissions: ["usage"],
+        });
+        await setAccountBalances(userId);
+        await drizzle(env.DB)
+            .update(userTable)
+            .set({ questPollenRestricted: true })
+            .where(eq(userTable.id, userId));
+        const response = await getBalance({
+            Authorization: `Bearer ${created.key}`,
+        });
+        expect(await response.json()).toEqual({
+            balance: PAID,
+            accountBalance: {
+                total: PAID,
+                tier: 0,
+                paid: PAID,
+                heldTier: TIER,
+                questPollenRestricted: true,
+            },
+        });
+        await drizzle(env.DB)
+            .update(userTable)
+            .set({ questPollenRestricted: false })
+            .where(eq(userTable.id, userId));
+        const cleared = await getBalance({
+            Authorization: `Bearer ${created.key}`,
+        });
+        expect(await cleared.json()).toEqual({
+            balance: TOTAL,
+            accountBalance: { total: TOTAL, tier: TIER, paid: PAID },
+        });
+    });
+
     test("session sees account total in balance plus accountBalance breakdown", async ({
         sessionToken,
         mocks,

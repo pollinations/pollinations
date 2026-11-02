@@ -25,12 +25,12 @@ jobs:
           check-latest: true
 
       - name: Test registry generation
-        run: node --test operations/mcp-registry/generate-server-json.test.ts
+        run: node --test operations/infrastructure/mcp-registry/generate-server-json.test.ts
 
       - name: Generate server.json entries from shared/registry/mcp.ts
         env:
           REGISTRY_VERSION: ${{ inputs.version }}
-        run: node operations/mcp-registry/generate-server-json.ts "$RUNNER_TEMP/mcp-registry" "$REGISTRY_VERSION"
+        run: node operations/infrastructure/mcp-registry/generate-server-json.ts "$RUNNER_TEMP/mcp-registry" "$REGISTRY_VERSION"
 
       - name: Install mcp-publisher
         working-directory: ${{ runner.temp }}

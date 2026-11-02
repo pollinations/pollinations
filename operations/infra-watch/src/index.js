@@ -90,6 +90,19 @@ const statusRows = async (gen, minutes, traffic) =>
         )
     ).data;
 
+// The weekly eval's runs, newest first (operations/model-evals), published
+// on the repository's `evals` branch; none when they can't be read, which
+// tells nothing.
+const EVALS_INDEX =
+    "https://raw.githubusercontent.com/pollinations/pollinations/evals/data/index.json";
+const evalRuns = () =>
+    getJson(EVALS_INDEX)
+        .then((index) => index.runs ?? [])
+        .catch((error) => {
+            console.error(`evals: ${error.message}`);
+            return [];
+        });
+
 // Only the status matters; cancel the unread body to free it.
 const isUp = (gen) =>
     withTimeout(20_000, async (signal) => {
@@ -627,6 +640,7 @@ export class Watch extends DurableObject {
             pending: state.pending,
             served: state.served,
             listings: listings?.changes ?? null,
+            evals: await evalRuns(),
             now,
         });
         state.pending = pending;

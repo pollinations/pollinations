@@ -301,6 +301,88 @@ test("listing changes are an incident only when something changed", () => {
     );
 });
 
+test("the weekly eval's score gaps go to the maintainers once per run, in its first week", () => {
+    const gap = (n) => ({
+        model: `community/m/model-${n}`,
+        rate: 0.13,
+        twin: `model-${n}`,
+        twinRate: 0.57,
+    });
+    const run = {
+        id: "2026-10-26",
+        date: "2026-10-26T03:00:00Z",
+        gaps: [gap(1)],
+    };
+    const [gaps] = find({ evals: [run] });
+    assert.equal(gaps.kind, "gaps");
+    assert.equal(gaps.to, "maintainers");
+    assert.deepEqual(gaps.owners, []);
+    assert.deepEqual(gaps.quiet, ["gaps 2026-10-26"]);
+    // Told: quiet for the rest of the run's week.
+    assert.deepEqual(
+        find({ evals: [run], quiet: { "gaps 2026-10-26": NOW - DAY } }),
+        [],
+    );
+    // A run older than a week, or one without gaps, tells nothing.
+    assert.deepEqual(
+        find({ evals: [{ ...run, date: "2026-10-24T00:00:00Z" }] }),
+        [],
+    );
+    assert.deepEqual(find({ evals: [{ ...run, gaps: [] }] }), []);
+    assert.deepEqual(find({ evals: [] }), []);
+    // A newer run doesn't hide an older one not delivered yet.
+    const newer = { id: "2026-10-31", date: "2026-10-31T03:00:00Z", gaps: [] };
+    assert.deepEqual(
+        find({ evals: [newer, run] }).map((i) => i.run),
+        ["2026-10-26"],
+    );
+    // Its card names up to 5 models like every card, links the run's
+    // results for the rest, and says how to confirm.
+    const many = {
+        ...run,
+        gaps: Array.from({ length: 25 }, (_, n) => gap(n + 1)),
+    };
+    const plan = decision(
+        JSON.stringify({
+            maintainers: [{ incidents: ["1"], text: "Check it." }],
+        }),
+        find({ evals: [many] }),
+    );
+    assert.match(plan.maintainers.text, /COMMUNITY MODELS: SCORE GAP/);
+    assert.match(plan.maintainers.text, /m\/model-1 13% vs model-1 57%/);
+    assert.match(plan.maintainers.text, /m\/model-5 13%/);
+    assert.doesNotMatch(plan.maintainers.text, /m\/model-6 /);
+    assert.match(plan.maintainers.text, /…and 20 more/);
+    assert.match(
+        plan.maintainers.text,
+        /github\.com\/pollinations\/pollinations\/blob\/evals\/data\/runs\/2026-10-26\.json/,
+    );
+    assert.match(plan.maintainers.text, /fingerprint\.js compare/);
+    assert.deepEqual(plan.maintainers.owners, []);
+    // The longest ids still fit one post, results link included.
+    const longest = (n) => ({
+        model: `community/${"o".repeat(39)}/${"m".repeat(117)}-${String(n).padStart(2, "0")}`,
+        rate: 0.13,
+        twin: `${"t".repeat(40)}/${"m".repeat(80)}`,
+        twinRate: 0.57,
+    });
+    const big = decision(
+        JSON.stringify({
+            maintainers: [{ incidents: ["1"], text: "Check it." }],
+        }),
+        find({
+            evals: [
+                {
+                    ...run,
+                    gaps: Array.from({ length: 25 }, (_, n) => longest(n)),
+                },
+            ],
+        }),
+    );
+    assert.ok(big.maintainers.text.length <= 4096);
+    assert.match(big.maintainers.text, /evals\/data\/runs\/2026-10-26\.json/);
+});
+
 test("a shared failure keeps its models while they break the same way, even past 4 hours", () => {
     const shared = ["community/a/x", "community/b/y", "community/c/z"];
     const catalog = shared.map((n) => model(n));

@@ -13,8 +13,14 @@ import {
     WarningIcon,
 } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
-import { buildLeaderboard, EVALS_DATA_URL } from "./eval-data.js";
+import { buildLeaderboard } from "../../model-evals/lib/pairs.js";
 import SortableTh from "./SortableTh.jsx";
+
+// Results are published by .github/workflows/evals-run-weekly.yml to the
+// `evals` data branch of the repository; no service sits in between.
+const EVALS_DATA_URL =
+    import.meta.env.VITE_EVALS_DATA_URL ??
+    "https://raw.githubusercontent.com/pollinations/pollinations/evals/data";
 
 const PAIR_SORTS = {
     community: (a, b) => a.community.name.localeCompare(b.community.name),
@@ -30,12 +36,13 @@ const percent = (value) => `${Math.round(value * 100)}%`;
 // The difference of the two scores as shown, so it always adds up on screen.
 const shownGap = ({ community, official }) =>
     Math.round(community.rate * 100) - Math.round(official.rate * 100);
-// Only gaps beyond both 95% ranges are flagged. Clearly below its namesake is
-// red (broken, or not that model); clearly above is amber (a different model,
-// not a harmful one).
-const highlight = ({ community, official, significant }) => {
+// Only gaps beyond both 95% ranges, as published and on the questions each
+// model answered, are flagged (pairs.js). Clearly below its namesake is red
+// (not that model); clearly above is amber (a different model, not a
+// harmful one).
+const highlight = ({ gap, significant }) => {
     if (!significant) return "default";
-    return community.rate < official.rate ? "danger" : "warning";
+    return gap < 0 ? "danger" : "warning";
 };
 const signed = (value) =>
     `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value)}%`;
@@ -146,7 +153,7 @@ function TwinPairs({ pairs, titles }) {
                         />
                         <SortableTh
                             label={
-                                <span title="Community minus official. Red when clearly lower, amber when clearly higher: the two 95% confidence ranges do not overlap">
+                                <span title="Community minus official. Red when clearly lower, amber when clearly higher: the two 95% confidence ranges do not overlap. Endpoint errors when the community model errored on most questions">
                                     Difference
                                 </span>
                             }
@@ -186,7 +193,9 @@ function TwinPairs({ pairs, titles }) {
                         sorted.map((pair) => {
                             const { community, official } = pair;
                             const intent = highlight(pair);
-                            const difference = signed(shownGap(pair));
+                            const difference = pair.errored
+                                ? "endpoint errors"
+                                : signed(shownGap(pair));
                             return (
                                 <TableRow key={community.name} intent={intent}>
                                     <ModelCell

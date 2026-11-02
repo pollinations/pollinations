@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { signGrantAgent } from "@shared/auth/agent-run-token.ts";
 import { communityModelId } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import {
@@ -413,6 +414,51 @@ describe("Account Key Management API", () => {
                 expiresAt: concurrentKey.expiresAt,
                 permissions: { account: ["usage"] },
                 questPollenOnly: true,
+            });
+        });
+
+        test("an overspent key can still be edited", async ({
+            accountToken,
+        }) => {
+            const key = await createApiKeyViaApi(accountToken, {
+                name: "overspent",
+                pollenBudget: 1,
+            });
+            // Settling can bill past a reservation and leave a budget below 0.
+            await drizzle(env.DB)
+                .update(schema.apikey)
+                .set({ pollenBalance: -0.3 })
+                .where(eq(schema.apikey.id, key.id));
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            };
+            const keys = await (
+                await SELF.fetch("http://localhost:3000/api/account/keys", {
+                    headers,
+                })
+            ).json<{ data: ApiKey[] }>();
+            const initial = initialKeyEditValues(
+                keys.data.find(({ id }) => id === key.id) as ApiKey,
+            );
+
+            const saved = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${key.id}`,
+                {
+                    method: "PATCH",
+                    headers,
+                    body: JSON.stringify(
+                        keyEditUpdates(initial, {
+                            ...initial,
+                            name: "renamed",
+                        }),
+                    ),
+                },
+            );
+            expect(saved.status).toBe(200);
+            expect(await saved.json()).toMatchObject({
+                name: "renamed",
+                pollenBalance: -0.3,
             });
         });
 
@@ -937,6 +983,61 @@ describe("Account Key Management API", () => {
                 allowedModels: [communityModelId("model-owner", "image-model")],
             });
             expect(image.status).toBe(403);
+        });
+        test("a negative budget is refused however a key gets one", async ({
+            accountToken,
+        }) => {
+            const caller = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "five-for-an-hour",
+                    accountPermissions: ["keys"],
+                    pollenBudget: 5,
+                    expiresIn: 3600,
+                })
+            ).json();
+            const child = await (
+                await call(caller.key, "/keys", "POST", {
+                    name: "two-for-a-minute",
+                    pollenBudget: 2,
+                    expiresIn: 60,
+                })
+            ).json();
+            expect(await budgetOf(caller.key)).toBe(3);
+
+            const later = new Date(Date.now() + 1800_000).toISOString();
+            for (const [path, method, body] of [
+                ["/keys", "POST", { name: "negative", pollenBudget: -5 }],
+                [`/keys/${child.id}`, "PATCH", { pollenBudget: -1 }],
+                // A negative budget reserves nothing, so this would renew the
+                // key for free.
+                [
+                    `/keys/${child.id}`,
+                    "PATCH",
+                    { expiresAt: later, pollenBudget: -1 },
+                ],
+            ] as const) {
+                expect(
+                    (await call(caller.key, path, method, body)).status,
+                ).toBe(400);
+            }
+            const consent = await call(accountToken, "/keys", "POST", {
+                name: "consented",
+                pollenBudget: -0.01,
+                consent: {
+                    redirectOrigin: "https://app.example",
+                    redirectUri: "https://app.example/callback",
+                },
+            });
+            expect(consent.status).toBe(400);
+            expect(await budgetOf(caller.key)).toBe(3);
+            expect(await budgetOf(child.key)).toBe(2);
+
+            const zero = await call(caller.key, "/keys", "POST", {
+                name: "zero",
+                pollenBudget: 0,
+            });
+            expect(zero.status).toBe(200);
+            expect(await budgetOf(caller.key)).toBe(3);
         });
     });
 

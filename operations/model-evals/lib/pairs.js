@@ -28,26 +28,33 @@ export function officialTwin(model, officialModels) {
     );
 }
 
-// A model's score on the questions it answered. An error says its endpoint
-// failed, not how well it answers, so errors never count towards a gap.
+// A model's score on the questions it answered: an error says its endpoint
+// failed, not how well it answers.
 const answered = (model) =>
     model.failed > 0
         ? scoreOf(model.correct, model.questions - model.failed)
         : model;
+// 1 when `a` is clearly above `b`, -1 when clearly below, beyond both 95%
+// Wilson intervals; 0 when they overlap.
+const side = (a, b) => (a.lower > b.upper ? 1 : b.lower > a.upper ? -1 : 0);
 
 /**
- * Community score against its official twin, both on the questions they
- * answered: `gap` is the community model's score minus its twin's, and it
- * is significant only beyond both 95% Wilson intervals, so neither noise
- * nor errors are flagged, and errors never turn a better model into a
- * worse one. A community model that errored on more than half its
+ * Community score against its official twin. `gap` is the difference of the
+ * scores as published. It is significant only when the published scores and
+ * the scores on the questions each answered agree that one is clearly
+ * higher: errors are not random (a model can fail a whole hard family), so
+ * neither measure alone decides, and errors can neither make a gap nor turn
+ * one around. A community model that errored on more than half its
  * questions is a broken endpoint, not a different model.
  */
 export function compareToTwin(community, official) {
+    const gap = community.rate - official.rate;
     const errored = community.failed * 2 > community.questions;
-    const [a, b] = [answered(community), answered(official)];
-    const gap = a.rate - b.rate;
-    const significant = !errored && (a.lower > b.upper || b.lower > a.upper);
+    const published = side(community, official);
+    const significant =
+        !errored &&
+        published !== 0 &&
+        published === side(answered(community), answered(official));
     return { gap, significant, errored };
 }
 

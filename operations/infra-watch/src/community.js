@@ -412,8 +412,7 @@ const health = (m) =>
         : `${short(m.model)} (${Math.round(m.health)}%)`;
 // An eval score, 0 to 1, as a whole percent.
 const percent = (rate) => `${Math.round(rate * 100)}%`;
-// A score gap card names this many models; each run's results hold them all.
-const GAPS_SHOWN = 20;
+// Each run's results, linked from its card, hold all its gaps.
 const EVALS_RUNS =
     "https://github.com/pollinations/pollinations/blob/evals/data/runs";
 // The error without "stream returned ", so the box stays narrow enough for
@@ -453,17 +452,16 @@ const ROWS = {
         ...named("BACK", i.back.map(health), i.backMore),
         ["TOTAL", `${i.filtered} hidden now`],
     ],
-    // Up to GAPS_SHOWN models; the run's results, linked, have them all.
+    // Up to SHOWN models, like every card, so it always fits; the run's
+    // results, linked, have them all.
     gaps: (i) => [
-        ...i.gaps
-            .slice(0, GAPS_SHOWN)
-            .map((g, n) => [
-                n ? "" : "MODEL",
-                `${short(g.model)} ${percent(g.rate)} vs ${g.twin} ${percent(g.twinRate)}`,
-            ]),
-        ...(i.gaps.length > GAPS_SHOWN
-            ? [["", `…and ${i.gaps.length - GAPS_SHOWN} more`]]
-            : []),
+        ...named(
+            "MODEL",
+            i.gaps.map(
+                (g) =>
+                    `${short(g.model)} ${percent(g.rate)} vs ${g.twin} ${percent(g.twinRate)}`,
+            ),
+        ),
         ["RESULTS", `${EVALS_RUNS}/${i.run}.json`],
         ["CHECK", "model-evals/fingerprint.js compare"],
     ],

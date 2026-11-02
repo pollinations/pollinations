@@ -36,9 +36,10 @@ const percent = (value) => `${Math.round(value * 100)}%`;
 // The difference of the two scores as shown, so it always adds up on screen.
 const shownGap = ({ community, official }) =>
     Math.round(community.rate * 100) - Math.round(official.rate * 100);
-// Only gaps beyond both 95% ranges are flagged, on the questions each model
-// answered (pairs.js). Clearly below its namesake is red (not that model);
-// clearly above is amber (a different model, not a harmful one).
+// Only gaps beyond both 95% ranges, as published and on the questions each
+// model answered, are flagged (pairs.js). Clearly below its namesake is red
+// (not that model); clearly above is amber (a different model, not a
+// harmful one).
 const highlight = ({ gap, significant }) => {
     if (!significant) return "default";
     return gap < 0 ? "danger" : "warning";

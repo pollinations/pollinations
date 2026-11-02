@@ -336,8 +336,8 @@ test("the weekly eval's score gaps go to the maintainers once per run, in its fi
         find({ evals: [newer, run] }).map((i) => i.run),
         ["2026-10-26"],
     );
-    // Its card names up to 20 models, links the run's results for the rest,
-    // and says how to confirm.
+    // Its card names up to 5 models like every card, links the run's
+    // results for the rest, and says how to confirm.
     const many = {
         ...run,
         gaps: Array.from({ length: 25 }, (_, n) => gap(n + 1)),
@@ -350,15 +350,37 @@ test("the weekly eval's score gaps go to the maintainers once per run, in its fi
     );
     assert.match(plan.maintainers.text, /COMMUNITY MODELS: SCORE GAP/);
     assert.match(plan.maintainers.text, /m\/model-1 13% vs model-1 57%/);
-    assert.match(plan.maintainers.text, /m\/model-20 13%/);
-    assert.doesNotMatch(plan.maintainers.text, /m\/model-21 /);
-    assert.match(plan.maintainers.text, /…and 5 more/);
+    assert.match(plan.maintainers.text, /m\/model-5 13%/);
+    assert.doesNotMatch(plan.maintainers.text, /m\/model-6 /);
+    assert.match(plan.maintainers.text, /…and 20 more/);
     assert.match(
         plan.maintainers.text,
         /github\.com\/pollinations\/pollinations\/blob\/evals\/data\/runs\/2026-10-26\.json/,
     );
     assert.match(plan.maintainers.text, /fingerprint\.js compare/);
     assert.deepEqual(plan.maintainers.owners, []);
+    // The longest ids still fit one post, results link included.
+    const longest = (n) => ({
+        model: `community/${"o".repeat(39)}/${"m".repeat(117)}-${String(n).padStart(2, "0")}`,
+        rate: 0.13,
+        twin: `${"t".repeat(40)}/${"m".repeat(80)}`,
+        twinRate: 0.57,
+    });
+    const big = decision(
+        JSON.stringify({
+            maintainers: [{ incidents: ["1"], text: "Check it." }],
+        }),
+        find({
+            evals: [
+                {
+                    ...run,
+                    gaps: Array.from({ length: 25 }, (_, n) => longest(n)),
+                },
+            ],
+        }),
+    );
+    assert.ok(big.maintainers.text.length <= 4096);
+    assert.match(big.maintainers.text, /evals\/data\/runs\/2026-10-26\.json/);
 });
 
 test("a shared failure keeps its models while they break the same way, even past 4 hours", () => {

@@ -135,11 +135,10 @@ describe("errors", () => {
             }),
         );
         assert.ok(weak.significant);
-        // Errors never turn a better model into a worse one: 18 of 18
-        // answered right with 12 errors publishes 60%, below 20 of 30 (67%),
-        // yet on what each answered it is clearly higher (Wilson 82–100%
-        // against 49–81%).
-        const better = compareToTwin(
+        // Errors never decide a gap: 18 of 18 answered right with 12 errors
+        // (60% published) against 20 of 30 (67%) is below as published but
+        // clearly higher on what each answered, so it isn't flagged.
+        const mixed = compareToTwin(
             model("community/a/x", 0.6, 0.17, {
                 questions: 30,
                 correct: 18,
@@ -151,19 +150,34 @@ describe("errors", () => {
                 failed: 0,
             }),
         );
-        assert.ok(better.significant);
-        assert.ok(better.gap > 0);
+        assert.ok(!mixed.significant);
+        // Nor the other way round: an official model that errored on a whole
+        // hard family looks better on what it answered (18 of 18) than a
+        // community model with 20 of 30, which is above it as published.
+        const hardFamily = compareToTwin(
+            model("community/a/x", 0.67, 0.14, {
+                questions: 30,
+                correct: 20,
+                failed: 0,
+            }),
+            model("z-ai/x", 0.6, 0.17, {
+                questions: 30,
+                correct: 18,
+                failed: 12,
+            }),
+        );
+        assert.ok(!hardFamily.significant);
         assert.deepEqual(
             scoreGaps([
-                model("openai/x", 0.67, 0.14, {
-                    questions: 30,
-                    correct: 20,
-                    failed: 0,
-                }),
-                model("community/a/x", 0.6, 0.17, {
+                model("z-ai/x", 0.6, 0.17, {
                     questions: 30,
                     correct: 18,
                     failed: 12,
+                }),
+                model("community/a/x", 0.67, 0.14, {
+                    questions: 30,
+                    correct: 20,
+                    failed: 0,
                 }),
             ]),
             [],

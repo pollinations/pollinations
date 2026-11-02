@@ -122,7 +122,11 @@ async function main() {
                     githubUserId: candidate.author?.id || "",
                 },
             ],
-            githubUser.node_id || "",
+            // Must match the numeric id used for the candidate above.
+            // githubUser.node_id is the base64 GraphQL id ("MDQ6VXNlcjEyMzQ1"),
+            // so comparing it against a numeric id never matched and same-name
+            // duplicates from the same author slipped through.
+            githubUser.id,
         );
     });
     if (pendingDuplicate) {

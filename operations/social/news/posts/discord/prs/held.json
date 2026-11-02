@@ -18,10 +18,6 @@
       "merge_sha": "0f373ffc6003df59743ac843c5418c1256b34f4e",
       "merged_at": "2026-11-02T14:22:13Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/economics",
-        "deploy-applications.yml:Deploy operations/dashboards/kpi",
-        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"

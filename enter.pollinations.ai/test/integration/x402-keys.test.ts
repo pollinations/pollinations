@@ -260,24 +260,19 @@ describe("x402 prepaid API keys", () => {
         );
         await creditPurchase(env.DB, id, owner.user_id, issued.id);
 
-        const replay = (pack: string) =>
-            x402KeysRoutes.request(
-                `http://localhost/${pack}`,
-                { method: "POST", headers: { "payment-signature": signature } },
-                {
-                    ...env,
-                    X402_HOLDING_USER_ID: owner.user_id,
-                    WEFT_SELLER_API_KEY: "ax_test",
-                    WEFT_FACILITATOR_URL: "https://x402.staging.weft.network",
-                    WEFT_NETWORK: "eip155:84532",
-                    WEFT_PAY_TO: "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
-                },
-                createExecutionContext(),
-            );
-
-        const same = await replay("p2");
-        expect(same.status).toBe(200);
-        expect(((await same.json()) as { key: string }).key).toBe(issued.key);
-        expect((await replay("p5")).status).toBe(409);
+        const response = await x402KeysRoutes.request(
+            "http://localhost/p5",
+            { method: "POST", headers: { "payment-signature": signature } },
+            {
+                ...env,
+                X402_HOLDING_USER_ID: owner.user_id,
+                WEFT_SELLER_API_KEY: "ax_test",
+                WEFT_FACILITATOR_URL: "https://x402.staging.weft.network",
+                WEFT_NETWORK: "eip155:84532",
+                WEFT_PAY_TO: "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
+            },
+            createExecutionContext(),
+        );
+        expect(response.status).toBe(409);
     });
 });

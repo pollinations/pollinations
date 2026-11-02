@@ -135,6 +135,39 @@ describe("errors", () => {
             }),
         );
         assert.ok(weak.significant);
+        // Errors never turn a better model into a worse one: 18 of 18
+        // answered right with 12 errors publishes 60%, below 20 of 30 (67%),
+        // yet on what each answered it is clearly higher (Wilson 82–100%
+        // against 49–81%).
+        const better = compareToTwin(
+            model("community/a/x", 0.6, 0.17, {
+                questions: 30,
+                correct: 18,
+                failed: 12,
+            }),
+            model("openai/x", 0.67, 0.14, {
+                questions: 30,
+                correct: 20,
+                failed: 0,
+            }),
+        );
+        assert.ok(better.significant);
+        assert.ok(better.gap > 0);
+        assert.deepEqual(
+            scoreGaps([
+                model("openai/x", 0.67, 0.14, {
+                    questions: 30,
+                    correct: 20,
+                    failed: 0,
+                }),
+                model("community/a/x", 0.6, 0.17, {
+                    questions: 30,
+                    correct: 18,
+                    failed: 12,
+                }),
+            ]),
+            [],
+        );
     });
 });
 

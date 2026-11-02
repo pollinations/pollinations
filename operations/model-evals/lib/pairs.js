@@ -36,16 +36,17 @@ const answered = (model) =>
         : model;
 
 /**
- * Community score against its official twin. `gap` is the difference of the
- * scores as published; it is significant only when the two models' scores on
- * the questions they answered differ beyond their 95% Wilson intervals, so
- * neither noise nor errors are flagged. A community model that errored on
- * more than half its questions is a broken endpoint, not a different model.
+ * Community score against its official twin, both on the questions they
+ * answered: `gap` is the community model's score minus its twin's, and it
+ * is significant only beyond both 95% Wilson intervals, so neither noise
+ * nor errors are flagged, and errors never turn a better model into a
+ * worse one. A community model that errored on more than half its
+ * questions is a broken endpoint, not a different model.
  */
 export function compareToTwin(community, official) {
-    const gap = community.rate - official.rate;
     const errored = community.failed * 2 > community.questions;
     const [a, b] = [answered(community), answered(official)];
+    const gap = a.rate - b.rate;
     const significant = !errored && (a.lower > b.upper || b.lower > a.upper);
     return { gap, significant, errored };
 }

@@ -11,7 +11,8 @@ import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
 } from "@shared/community-endpoints.ts";
-import type { ReactElement, ReactNode } from "react";
+import { type ReactElement, type ReactNode, useEffect, useState } from "react";
+import { authClient } from "../../auth.ts";
 import { ModelFormRow } from "./model-form-row.tsx";
 import type { ModelListingFormState } from "./types.ts";
 
@@ -65,14 +66,26 @@ export function ModelListingFields({
         value: string,
     ) => void;
 }) {
+    // Publishing needs a connected Discord (the API refuses it without one):
+    // Community Watch reaches publishers there about their models.
+    const [discord, setDiscord] = useState<boolean>();
+    useEffect(() => {
+        if (!canPublish) return;
+        void authClient.listAccounts().then(({ data }) => {
+            if (data) setDiscord(data.some((a) => a.providerId === "discord"));
+        });
+    }, [canPublish]);
+    const needsDiscord = canPublish && discord === false;
     const isPublic = form.visibility === "public";
-    const visibilityHelp = isPublic
-        ? isAgent
-            ? "Listed in /models and callable by anyone. Calls use the caller’s Pollen and key permissions."
-            : "Callable by anyone. Listed in /models while recent request success stays above 80% (or before any requests). Set prices below, or leave them at 0 for free."
-        : canPublish
-          ? "Only you can use it, for free. Your public prices and fallbacks are saved. It appears in /models only with your key."
-          : "Only you can use it, for free. It appears in /models only with your key. Public publishing requires approval.";
+    const visibilityHelp = needsDiscord
+        ? "Connect Discord to publish, so we can reach you about your models."
+        : isPublic
+          ? isAgent
+              ? "Listed in /models and callable by anyone. Calls use the caller’s Pollen and key permissions."
+              : "Callable by anyone. Listed in /models while recent request success stays above 80% (or before any requests). Set prices below, or leave them at 0 for free."
+          : canPublish
+            ? "Only you can use it, for free. Your public prices and fallbacks are saved. It appears in /models only with your key."
+            : "Only you can use it, for free. It appears in /models only with your key. Public publishing requires approval.";
     const visibilityOptions = (
         <ButtonGroup aria-label="Model visibility">
             <TabButton
@@ -86,7 +99,7 @@ export function ModelListingFields({
             </TabButton>
             <TabButton
                 active={isPublic}
-                disabled={!canPublish}
+                disabled={!canPublish || needsDiscord}
                 onClick={() => onChange("visibility", "public")}
                 size="sm"
                 className="min-w-24 gap-1.5"
@@ -183,7 +196,15 @@ export function ModelListingFields({
                 </>
             )}
 
-            <ModelFormRow label="Visibility" help={visibilityHelp}>
+            <ModelFormRow
+                label="Visibility"
+                help={visibilityHelp}
+                action={
+                    needsDiscord && (
+                        <InlineLink href="/account">Connect Discord</InlineLink>
+                    )
+                }
+            >
                 {visibilityOptions}
             </ModelFormRow>
         </div>

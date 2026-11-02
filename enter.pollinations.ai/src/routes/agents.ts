@@ -29,6 +29,7 @@ import {
     loadCodeAgentSource,
     resolveCodeAgentRepository,
 } from "../services/code-agent.ts";
+import { requireDiscordToPublish } from "../services/discord.ts";
 import {
     BuiltinMcpServerIdSchema,
     PromptAgentInputSchema,
@@ -341,6 +342,7 @@ async function requireAgentWriteAccess(
                 "Community model publishing requires approval. Agents can stay private for your own use.",
         });
     }
+    if (visibility === "public") await requireDiscordToPublish(db, ownerUserId);
     const existing = await db.query.communityEndpoint.findFirst({
         columns: { id: true },
         where: and(

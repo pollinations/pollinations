@@ -3,13 +3,13 @@ import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { decodePaymentSignatureHeader } from "@x402/core/http";
 import type { PaymentPayload } from "@x402/core/types";
-import stableStringify from "fast-json-stable-stringify";
 import { HTTPException } from "hono/http-exception";
 import { CompactEncrypt, compactDecrypt } from "jose";
+import { getAddress, verifyMessage } from "viem";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 
-type Purchase = {
+export type Purchase = {
     payment_id: string;
     user_id: string;
     key_id: string;
@@ -55,12 +55,31 @@ export async function paymentId(signature: string): Promise<string> {
     return paymentIdForPayload(decodePaymentSignatureHeader(signature));
 }
 
+// One purchase per signed transfer. The EIP-3009 nonce is unique per token
+// and payer; unsigned envelope fields (resource, extensions) are left out so
+// they cannot mint a second purchase for the same transfer.
+export function transferOf(payment: PaymentPayload) {
+    const { authorization } = payment.payload as {
+        authorization?: { from?: string; nonce?: string };
+    };
+    const nonce = authorization?.nonce ?? "";
+    if (!/^0x[0-9a-fA-F]{64}$/.test(nonce))
+        throw new Error("x402 payment has no EIP-3009 nonce");
+    return {
+        network: payment.accepted.network,
+        asset: getAddress(payment.accepted.asset),
+        payer: getAddress(authorization?.from ?? ""),
+        nonce: nonce.toLowerCase(),
+    };
+}
+
 export async function paymentIdForPayload(
     payment: PaymentPayload,
 ): Promise<string> {
+    const { network, asset, payer, nonce } = transferOf(payment);
     const digest = await crypto.subtle.digest(
         "SHA-256",
-        encoder.encode(stableStringify(payment)),
+        encoder.encode(`${network}:${asset}:${payer}:${nonce}`.toLowerCase()),
     );
     return Array.from(new Uint8Array(digest), (byte) =>
         byte.toString(16).padStart(2, "0"),
@@ -79,6 +98,9 @@ export async function getPurchase(
     );
 }
 
+// Settlement publishes the signed payment on-chain, so anyone can rebuild a
+// PAYMENT-SIGNATURE header. Only the request that records the payment gets
+// the new key; later requests must prove they hold the paying wallet.
 export async function preparePurchase(
     env: Env["Bindings"],
     ctx: ExecutionContext | undefined,
@@ -86,22 +108,6 @@ export async function preparePurchase(
     userId: string,
     packKey: string,
 ): Promise<{ id: string; key: string }> {
-    const existing = await getPurchase(env.DB, id);
-    if (existing) {
-        if (existing.user_id !== userId || existing.pack_key !== packKey) {
-            throw new HTTPException(409, {
-                message: "Payment already belongs to another purchase",
-            });
-        }
-        return {
-            id: existing.key_id,
-            key: await decryptKey(
-                existing.encrypted_key,
-                env.BETTER_AUTH_SECRET,
-            ),
-        };
-    }
-
     // A pending key cannot spend Pollen. It becomes usable only after Weft
     // settles and creditPurchase atomically funds the wallet and key budget.
     const created = await createApiKeyForUser({
@@ -124,21 +130,63 @@ export async function preparePurchase(
             .bind(id, userId, created.id, packKey, encrypted, Date.now())
             .run();
     } catch (error) {
-        // A concurrent retry may have won the unique payment-id insert.
         await env.DB.prepare(
             "DELETE FROM apikey WHERE id = ? AND pollen_balance = 0",
         )
             .bind(created.id)
             .run();
-        const winner = await getPurchase(env.DB, id);
-        if (!winner || winner.user_id !== userId || winner.pack_key !== packKey)
-            throw error;
-        return {
-            id: winner.key_id,
-            key: await decryptKey(winner.encrypted_key, env.BETTER_AUTH_SECRET),
-        };
+        if (!(await getPurchase(env.DB, id))) throw error;
+        throw new HTTPException(409, {
+            message: "x402 payment already used",
+        });
     }
     return { id: created.id, key: created.key };
+}
+
+export async function storedKey(
+    env: Env["Bindings"],
+    purchase: Purchase,
+): Promise<{ id: string; key: string }> {
+    return {
+        id: purchase.key_id,
+        key: await decryptKey(purchase.encrypted_key, env.BETTER_AUTH_SECRET),
+    };
+}
+
+export const recoveryMessage = (
+    origin: string,
+    transfer: ReturnType<typeof transferOf>,
+    issuedAt: string,
+) =>
+    [
+        "Recover Pollinations x402 key",
+        `Origin: ${origin}`,
+        `Network: ${transfer.network}`,
+        `Asset: ${transfer.asset}`,
+        `Payer: ${transfer.payer}`,
+        `Nonce: ${transfer.nonce}`,
+        `Issued at: ${issuedAt}`,
+    ].join("\n");
+
+// The paying wallet personal_signs recoveryMessage. issuedAt must be a whole
+// unix second from 120 s before to 30 s after the server clock; the proof is
+// reusable inside that window. EOA wallets only: smart-wallet buyers recover
+// through support.
+export async function isBuyer(
+    origin: string,
+    paymentHeader: string,
+    signature: string | undefined,
+    issuedAt: string | undefined,
+): Promise<boolean> {
+    if (!signature || !issuedAt || !/^\d{1,12}$/.test(issuedAt)) return false;
+    const age = Math.floor(Date.now() / 1000) - Number(issuedAt);
+    if (age < -30 || age > 120) return false;
+    const transfer = transferOf(decodePaymentSignatureHeader(paymentHeader));
+    return verifyMessage({
+        address: transfer.payer,
+        message: recoveryMessage(origin, transfer, issuedAt),
+        signature: signature as `0x${string}`,
+    }).catch(() => false);
 }
 
 export async function creditPurchase(

@@ -12,10 +12,13 @@ import type { Env } from "../env.ts";
 import {
     creditPurchase,
     getPurchase,
+    isBuyer,
+    type Purchase,
     paymentId,
     paymentIdForPayload,
     preparePurchase,
     purchaseAmountUsd,
+    storedKey,
 } from "../services/x402-key-purchases.ts";
 
 function paymentSignature(c: {
@@ -56,7 +59,7 @@ export const x402KeysRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Buy a prepaid API key with x402",
             description:
-                "GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Replaying a settled payment returns the same key, not more credits.",
+                'GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Each payment (one signed EIP-3009 transfer) returns its key once; other requests with it get 409. To get the key again, repeat the request with X402-BUYER-ISSUED-AT (unix seconds, from 120 s old to 30 s ahead) and X402-BUYER-SIGNATURE, the paying wallet\'s personal_sign of these lines joined by newlines: "Recover Pollinations x402 key", "Origin: {origin}", "Network: {network}", "Asset: {checksummed asset}", "Payer: {checksummed payer}", "Nonce: {lowercase authorization nonce}", "Issued at: {X402-BUYER-ISSUED-AT}".',
             responses: {
                 200: { description: "Prepaid API key" },
                 402: { description: "x402 payment required" },
@@ -98,6 +101,7 @@ export const x402KeysRoutes = new Hono<Env>()
 
             const signature = paymentSignature(c);
             let id: string | undefined;
+            let recovering: Purchase | undefined;
             if (signature) {
                 try {
                     id = await paymentId(signature);
@@ -107,19 +111,34 @@ export const x402KeysRoutes = new Hono<Env>()
                     });
                 }
                 const previous = await getPurchase(c.env.DB, id);
-                if (previous && previous.credited_at !== null) {
-                    const issued = await preparePurchase(
-                        c.env,
-                        c.executionCtx,
-                        id,
-                        holdingUserId,
-                        purchaseKey,
-                    );
-                    return c.json({
-                        id: issued.id,
-                        key: issued.key,
-                        pollen: amountUsd,
-                    });
+                if (previous) {
+                    if (
+                        previous.user_id !== holdingUserId ||
+                        previous.pack_key !== purchaseKey
+                    )
+                        throw new HTTPException(409, {
+                            message:
+                                "Payment already belongs to another purchase",
+                        });
+                    if (
+                        !(await isBuyer(
+                            new URL(c.req.url).origin,
+                            signature,
+                            c.req.header("x402-buyer-signature"),
+                            c.req.header("x402-buyer-issued-at"),
+                        ))
+                    )
+                        throw new HTTPException(409, {
+                            message:
+                                "x402 payment already used. Sign the recovery message with the paying wallet to get its key again.",
+                        });
+                    if (previous.credited_at !== null) {
+                        const issued = await storedKey(c.env, previous);
+                        return c.json({ ...issued, pollen: amountUsd });
+                    }
+                    // Recorded but not yet credited: settle again, which
+                    // assumes Weft answers a repeat with the original receipt.
+                    recovering = previous;
                 }
             }
 
@@ -157,35 +176,27 @@ export const x402KeysRoutes = new Hono<Env>()
                             server: new ExactEvmScheme(),
                         },
                     ],
-                    resumeVerifiedPayment: async (_context, candidate) => {
-                        const candidateId = await paymentIdForPayload(
+                    resumeVerifiedPayment: async (_context, candidate) =>
+                        recovering &&
+                        (await paymentIdForPayload(
                             candidate.paymentPayload,
-                        );
-                        const pending = await getPurchase(
-                            c.env.DB,
-                            candidateId,
-                        );
-                        if (
-                            !pending ||
-                            pending.credited_at !== null ||
-                            pending.user_id !== holdingUserId ||
-                            pending.pack_key !== purchaseKey
-                        )
-                            return undefined;
-                        return candidate;
-                    },
+                        )) === id
+                            ? candidate
+                            : undefined,
                 },
             );
             const response = await payment(c, async () => {
                 if (!id)
                     throw new Error("Verified x402 payment has no signature");
-                issued = await preparePurchase(
-                    c.env,
-                    c.executionCtx,
-                    id,
-                    holdingUserId,
-                    purchaseKey,
-                );
+                issued = recovering
+                    ? await storedKey(c.env, recovering)
+                    : await preparePurchase(
+                          c.env,
+                          c.executionCtx,
+                          id,
+                          holdingUserId,
+                          purchaseKey,
+                      );
                 c.res = c.json({
                     id: issued.id,
                     key: issued.key,
@@ -208,12 +219,15 @@ export const x402KeysRoutes = new Hono<Env>()
                 c.get("log").error("x402 key credit failed: {error}", {
                     error,
                 });
-                return c.json(
+                // The paid handler already set c.res, so a returned response
+                // would be ignored and the unfunded key sent with a 200.
+                c.res = c.json(
                     {
-                        error: "Payment settled but key activation is pending. Retry with the same payment signature.",
+                        error: "Payment settled but key activation is pending. Retry with the same payment signature and a buyer signature.",
                     },
                     503,
                 );
+                return c.res;
             }
             return c.res;
         },

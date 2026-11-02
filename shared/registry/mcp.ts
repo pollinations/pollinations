@@ -263,4 +263,4 @@ export function getMcpPricingInfo(server: McpServerDefinition): McpPricingInfo {
         description: server.pricing.description,
         rates: server.pricing.rates.map((rate) => publicPriceInfo(rate)),
     };
-            }
+}

@@ -671,6 +671,48 @@ test("a new fallback joins an untold one instead of replacing it", () => {
     assert.equal(notice.rescued, undefined);
 });
 
+test("a notice holds three fallbacks, the oldest; the rest wait for the next notice", () => {
+    // Full-length ids with hyphens that end every other row early.
+    const long = (tag) =>
+        `community/o-${"o".repeat(35)}${tag}/${"-".padEnd(39, "m").repeat(4).slice(0, 120)}`;
+    const m = long("mm");
+    const vias = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((n) => long(`v${n}`));
+    const catalog = [m, ...vias].map((name) => model(name));
+    // Three windows while delivery failed, three other fallbacks in each:
+    // all nine in one card made it too long to post.
+    const pending = Object.fromEntries(
+        vias.map((via, n) => [
+            fallbackKey(m, via),
+            {
+                kind: "fallback",
+                model: m,
+                via,
+                rescued: 20 - n,
+                total: 40,
+                successes: 100,
+                at: NOW - (3 - Math.floor(n / 3)) * 5 * HOUR,
+            },
+        ]),
+    );
+    const keys = (from, to) =>
+        vias.slice(from, to).map((v) => fallbackKey(m, v));
+    const first = cycle({ catalog, pending });
+    const [notice] = first.found;
+    assert.deepEqual(notice.quiet, keys(0, 3));
+    assert.ok(
+        decision(
+            JSON.stringify({
+                community: [{ incidents: [notice.id], text: "s".repeat(250) }],
+            }),
+            first.found,
+        ).community,
+    );
+    // Told, the next oldest follow.
+    const quiet = Object.fromEntries(notice.quiet.map((key) => [key, NOW]));
+    const [next] = cycle({ catalog, quiet, pending: first.pending }).found;
+    assert.deepEqual(next.quiet, keys(3, 6));
+});
+
 // --- served-model mismatches (the old monitor's duty 2d) ---
 
 const FLASH = "community/o/flash";

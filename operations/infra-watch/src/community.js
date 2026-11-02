@@ -314,8 +314,14 @@ export function incidents({
         if (p.kind === "fallback" && told(key, "fallback")) delete kept[key];
     // One notice per model, with a snapshot per window its untold pairs come
     // from: each window's counts stay together, never summed with another's.
+    // It holds the VIA_SHOWN oldest pairs, as many as one configuration has,
+    // so its card fits a post; pairs piled up while delivery failed and the
+    // configuration changed stay pending for the next notice.
     const pairs = Object.entries(kept).filter(([, p]) => p.kind === "fallback");
-    for (const [model, own] of Map.groupBy(pairs, ([, p]) => p.model)) {
+    for (const [model, all] of Map.groupBy(pairs, ([, p]) => p.model)) {
+        const own = all
+            .sort(([, a], [, b]) => a.at - b.at || b.rescued - a.rescued)
+            .slice(0, VIA_SHOWN);
         const snapshots = [...Map.groupBy(own, ([, p]) => p.at)]
             .sort(([a], [b]) => a - b)
             .map(([at, entries]) => ({

@@ -377,7 +377,7 @@ export function incidents({
             quiet: [],
         });
 
-    // The weekly eval's runs (operations/model-evals): community models
+    // The weekly eval's runs (operations/monitoring/model-evals): community models
     // scored clearly below their namesake, by the Trust tab's rule. Each run
     // is told to the maintainers until delivered, in its first week, never
     // to a publisher: a score is statistical, so a person confirms first.

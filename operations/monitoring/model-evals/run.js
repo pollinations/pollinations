@@ -18,7 +18,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 const USAGE = `Score every text model on gen.pollinations.ai with the same eval questions.
 
-  POLLINATIONS_API_KEY=sk_... node operations/model-evals/run.js [options]
+  POLLINATIONS_API_KEY=sk_... node operations/monitoring/model-evals/run.js [options]
 
   --scope all|official|community   which models to score (default all)
   --models a,b,c                   only these names or aliases (overrides --scope)
@@ -28,7 +28,7 @@ const USAGE = `Score every text model on gen.pollinations.ai with the same eval 
   --concurrency N                  models scored at once (default 8)
   --timeout SECONDS                per-question time limit, a timeout counts as a failed answer (default 180)
   --seed N                         question seed (default: random; printed and saved)
-  --out DIR                        results directory (default: operations/model-evals/data)
+  --out DIR                        results directory (default: operations/monitoring/model-evals/data)
   --dry-run                        print the questions and models, call nothing
 `;
 

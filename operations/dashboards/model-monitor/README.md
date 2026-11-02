@@ -16,7 +16,7 @@ Community → Trust (`#trust`) shows the latest weekly model eval: each communit
 model next to the official model it is named after (a gap is highlighted when
 their 95% Wilson intervals do not overlap). Results come from the `evals`
 data branch, written by `.github/workflows/evals-run-weekly.yml`, which runs
-`operations/model-evals` (see `node operations/model-evals/run.js --help`).
+`operations/monitoring/model-evals` (see `node operations/monitoring/model-evals/run.js --help`).
 Locally, set `VITE_EVALS_DATA_URL` to serve results from another location.
 
 ## Endpoints Monitored

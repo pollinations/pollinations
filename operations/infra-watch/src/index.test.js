@@ -1410,10 +1410,10 @@ it("checks a newly published proxy once gen lists it, and tells nothing before",
         "/v1/chat/completions community/o/new",
         "/v1/chat/completions community/o/new",
     ]);
-    expect(posts(COMMUNITY).map((p) => p.content)).toEqual([OWNER_O]);
+    expect(posts(INFRA).map((p) => p.content)).toEqual([MAINTAINERS]);
 });
 
-it("tells a served-model mismatch to its owner once due, however long delivery fails, and again only on a new probe", async () => {
+it("tells a served-model mismatch to the maintainers once due, however long delivery fails, and again only on a new probe", async () => {
     const stub = watch();
     let clock = Date.UTC(2026, 10, 1, 10, 5);
     vi.spyOn(Date, "now").mockImplementation(() => clock);
@@ -1426,7 +1426,7 @@ it("tells a served-model mismatch to its owner once due, however long delivery f
     await cycled(stub);
     clock += HOURS(4);
     await cycled(stub);
-    expect(posts(COMMUNITY)).toHaveLength(0);
+    expect(posts(INFRA)).toHaveLength(0);
     // Eight days on, busy and healthy so never probed since, it is still
     // due.
     world.fails = () => false;
@@ -1437,19 +1437,19 @@ it("tells a served-model mismatch to its owner once due, however long delivery f
         {
             id: "1",
             kind: "mismatch",
-            to: "community",
+            to: "maintainers",
             model: "community/o/m",
             declared: "gemini-3-flash",
             served: "llama-3.1-8b",
         },
     ]);
-    expect(posts(COMMUNITY).map((p) => p.content)).toEqual([OWNER_O]);
+    expect(posts(INFRA).map((p) => p.content)).toEqual([MAINTAINERS]);
     // After its quiet week it is told again only once a new probe reports it.
     clock += HOURS(8 * 24);
     await cycled(stub);
-    expect(posts(COMMUNITY)).toHaveLength(1);
+    expect(posts(INFRA)).toHaveLength(1);
     world.regular = [];
     clock += HOURS(1);
     await cycled(stub);
-    expect(posts(COMMUNITY)).toHaveLength(2);
+    expect(posts(INFRA)).toHaveLength(2);
 });

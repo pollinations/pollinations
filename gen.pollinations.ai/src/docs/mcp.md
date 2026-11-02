@@ -13,6 +13,7 @@ then choose a server:
 | --- | --- | --- | --- |
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
+| DNS | `https://gen.pollinations.ai/mcp/dns` | Look up live DNS records and reverse-resolve IP addresses | [Source](https://github.com/pollinations/pollinations/tree/main/apps/dns-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
@@ -142,6 +143,16 @@ with the link can access it, and it expires after 30 days.
 probabilities. Include relevant facts in `state`; confidence can remain high
 when facts are missing. Calls use Jev's listed model rate with no additional
 MCP fee.
+
+### DNS MCP
+
+- `dns_lookup` resolves a hostname and returns its records with TTLs and the
+  resolver status (`NOERROR`, `NXDOMAIN`, `SERVFAIL`) for any common record
+  type: A, AAAA, CNAME, MX, NS, TXT, SOA, SRV, CAA, DS, DNSKEY, or PTR.
+- `dns_reverse` returns the PTR records for an IPv4 or IPv6 address, building
+  the `in-addr.arpa` or `ip6.arpa` name for you.
+
+Answers come from Cloudflare's public resolver and add no MCP fee.
 
 ### FFmpeg MCP
 

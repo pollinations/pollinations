@@ -29,13 +29,13 @@ domains and verifies both session endpoints.
 
 The canonical Economics Tinybird datasource and pipe definitions
 (`economics_*`) live in
-[`enter.pollinations.ai/observability/`](../../enter.pollinations.ai/observability/).
+[`enter.pollinations.ai/observability/`](../../../enter.pollinations.ai/observability/).
 
 The private [Vendor journals folder](https://drive.google.com/drive/folders/1GnyBRJEGtuZjdJl9qrBapH6jfUpmG9ei)
 owns vendor definitions, accounts, access and collection details, and business
 categories (`category`, `cashRules` and `runwayLine`). The dashboard reads and
 validates its files after sign-in, once per page load, before running calculations.
-There is no repository fallback. `operations/economics/provider-registry.json`
+There is no repository fallback. `operations/dashboards/economics/provider-registry.json`
 keeps canonical vendor IDs/aliases and exact historical model mappings only.
 The two sources join on vendor ID; their vendor sets must match.
 `web/src/lib/categories.ts` only defines the category
@@ -113,7 +113,7 @@ when queried. Payouts and currency conversions are not sales; their fees count
 once. Refunds, disputes and reversals stay in their recorded month.
 
 Refresh a complete UTC month, or the current month through now, with
-`node operations/economics/ingest/stripe-sync.mjs pollen 2026-10-01 now --write`.
+`node operations/dashboards/economics/ingest/stripe-sync.mjs pollen 2026-10-01 now --write`.
 The command uses existing `STRIPE_API_KEY`, `TINYBIRD_PROD_READ_TOKEN` (Enter
 read only) and `TINYBIRD_STRIPE_SYNC_TOKEN` (staging write) from the process
 environment. It verifies both account and workspace before writing. Run one

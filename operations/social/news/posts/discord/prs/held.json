@@ -13,8 +13,24 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18997": {
+      "merge_sha": "90cdecc6b08f730715086ba271f31b9e75419a21",
+      "merged_at": "2026-11-02T12:48:05Z",
+      "required": []
+    },
+    "19002": {
+      "merge_sha": "62b313fa79b48acc8fa72224802aeef92f28b6c5",
+      "merged_at": "2026-11-02T12:49:33Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/dashboards/kpi",
+        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
+        "deploy-applications.yml:Deploy operations/dashboards/observability",
+        "deploy-applications.yml:Deploy operations/dashboards/quest-dashboard",
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
     }
   },
-  "production": "ecc4f732415aef65cfb84f44ef29a62565f66a0e",
+  "production": "dd586c56ce26d36b778935630cbbfe4483300591",
   "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

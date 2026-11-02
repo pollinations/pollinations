@@ -9,6 +9,19 @@ const {
     validateSubmission,
 } = require("./submission.js");
 
+/**
+ * Turn a download failure into the message the submitter sees. A rejection that
+ * already names the rule (size or format) is passed through, because "upload it
+ * again" hides what is actually wrong with a 6 MB or non-PNG screenshot.
+ */
+function screenshotFailureMessage(error) {
+    const reason = String(error?.message || "");
+    if (/must be (PNG|larger than)|refusing to buffer/i.test(reason)) {
+        return `Screenshot ${reason.replace(/^Screenshot\s+/i, "")}.`;
+    }
+    return "Screenshot could not be downloaded; upload it again in the Screenshot field.";
+}
+
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;
 
@@ -77,10 +90,8 @@ async function main() {
                     await downloadScreenshot(submission.screenshotUrl),
                 )),
             );
-        } catch {
-            errors.push(
-                "Screenshot could not be downloaded; upload it again in the Screenshot field.",
-            );
+        } catch (error) {
+            errors.push(screenshotFailureMessage(error));
         }
     }
     const duplicate = findCatalogDuplicate(
@@ -158,9 +169,13 @@ async function main() {
     if (!result.valid) process.exitCode = 2;
 }
 
-main().catch((error) => {
-    process.stdout.write(
-        `${JSON.stringify({ valid: false, system_error: error.message })}\n`,
-    );
-    process.exitCode = 1;
-});
+if (require.main === module) {
+    main().catch((error) => {
+        process.stdout.write(
+            `${JSON.stringify({ valid: false, system_error: error.message })}\n`,
+        );
+        process.exitCode = 1;
+    });
+}
+
+module.exports = { screenshotFailureMessage };

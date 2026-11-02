@@ -91,7 +91,7 @@ React's guidance on loading React 19 without UMD builds:
 https://react.dev/blog/2024/04/25/react-19-upgrade-guide#umd-builds-removed
 
 `dist/connect.js` is a separate, self-contained bundle (React included) that
-defines the `<polli-connect>` sign-in button. Usage:
+defines the `<polli-connect>` Connect button. Usage:
 [Drop-in Button](../../BRING_YOUR_OWN_POLLEN.md#-drop-in-button-no-build-step).
 
 For Pollinations apps that use unprefixed Tailwind utilities, import the
@@ -198,10 +198,12 @@ Cancel and the alternative payment-method link on the line below.
   `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
   `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
 - **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
-  `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
+  `CopyButton`, `CopyStateIcon`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
   `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
   `StatCard`.
+  `CopyButton` shows the one copy feedback (a check and "Copied"); a spot that
+  draws its own icon uses `CopyStateIcon`, a clipboard that turns into a check.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label
   rows for compact forms.
   `EditableCombobox.startContent` renders content inside a wrapping input shell

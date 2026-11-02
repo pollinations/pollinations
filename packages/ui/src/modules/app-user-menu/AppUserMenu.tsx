@@ -1,4 +1,5 @@
 import {
+    isOutageError,
     useAccountBalance,
     useAccountKey,
     useAccountProfile,
@@ -119,7 +120,9 @@ export function AppUserMenu({
         if (returnUrl) editKeyUrl.searchParams.set("redirect", returnUrl);
     }
     let pollenSource: AccountPollenSource | undefined;
-    if (key.data && key.data.pollenBudget !== null) {
+    if (isOutageError(key.error) || isOutageError(balance.error)) {
+        pollenSource = { type: "unavailable" };
+    } else if (key.data && key.data.pollenBudget !== null) {
         pollenSource = {
             type: "budget",
             remaining: key.data.pollenBudget,

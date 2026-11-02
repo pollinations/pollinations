@@ -1117,7 +1117,8 @@ class DeliverTest(unittest.TestCase):
         def pr(number, merged_at="2026-10-21T10:00:00Z", base="main"):
             return {"number": number, "title": f"PR {number}", "body": "", "merged_at": merged_at,
                     "merge_commit_sha": f"pr{number}", "base": {"ref": base},
-                    "head": {"ref": "feature"}, "user": {"login": "bee"}, "labels": [],
+                    "head": {"ref": "feature"}, "user": {"login": "bee", "avatar_url": "https://avatars.test/bee"},
+                    "labels": [],
                     "html_url": f"https://github.com/pollinations/pollinations/pull/{number}"}
         workflow = "deploy-cloudflare-production.yml"
         api = {
@@ -1170,6 +1171,7 @@ class DeliverTest(unittest.TestCase):
              patch("prs.call_pollinations_api", return_value=note), \
              patch("deploy_posts.call_pollinations_api", side_effect=output), \
              patch("deploy_posts.generate_image", return_value=(b"jpeg", "https://media.pollinations.ai/abc")) as picture, \
+             patch("deploy_posts.dev_project", return_value={"area": "Models", "type": "Feature", "source": "Team"}), \
              patch("deploy_posts.subprocess.check_output", return_value="production"), \
              patch("sys.argv", ["deploy_posts.py", "--production", deploy_posts.get_repo_root()]):
             deploy_posts.includes.cache_clear()
@@ -1187,7 +1189,7 @@ class DeliverTest(unittest.TestCase):
             state = json.loads(self.store[deploy_posts.HELD_PATH])
             self.assertEqual(list(state["held"]), ["2"])
             self.assertEqual((state["production"], state["master"]), ("production", "master"))
-            self.assertEqual(picture.call_args_list, [call("a bee racing a snail", "test")] * 2)
+            self.assertEqual(picture.call_args_list, [call("a bee racing a snail", "test", 1344, 768)] * 2)
             record = json.loads(self.store[f"{NEWS_REL_DIR}/posts/discord/prs/2026-10/delivery.json"])
             self.assertEqual((record["pr-1"]["state"], record["pr-3"]["state"]), ("done", "done"))
             deploy_posts.main()  # no new deploy: Gen stays held, docs are not sent twice
@@ -1210,7 +1212,9 @@ class DeliverTest(unittest.TestCase):
         sent = self.sent("https://discord.test/realtime?wait=true")
         self.assertEqual(len(sent), 3)
         payload = json.loads(sent[0][2]["payload_json"][1])
-        self.assertIn("[PR #1]", payload["content"])
+        (embed,) = payload["embeds"]
+        self.assertEqual((embed["description"], embed["footer"]["text"], embed["image"]["url"]),
+                         ("`Models` `Feature` `PR #1`", "bee · Team", "attachment://image.jpg"))
         self.assertEqual((payload["allowed_mentions"], sent[0][2]["files[0]"][1]), ({"parse": []}, b"jpeg"))
         deploy_posts.includes.cache_clear()
 
@@ -1218,6 +1222,29 @@ class DeliverTest(unittest.TestCase):
 class DeploymentReadinessTest(unittest.TestCase):
     def tearDown(self):
         deploy_posts.includes.cache_clear()
+
+    def test_post_is_a_card_with_project_fields_and_only_known_links(self):
+        pr = {"number": 7, "html_url": "https://github.com/p/7", "merged_at": "2026-11-01T10:00:00Z",
+              "user": {"login": "bee", "avatar_url": "https://avatars.test/bee"}}
+        app = {"app_name": "Snap", "app_url": "https://snap.test"}
+        text = ("## Keys moved\n- 🔑 Make one on [your keys page](https://enter.pollinations.ai/keys)\n"
+                "- 🧩 See [the guide](https://made.up/guide) or [Snap](https://snap.test)")
+        embed = deploy_posts.message(pr, text, app, {"area": "Accounts & keys", "type": "Bug", "source": "Team"})["embeds"][0]
+        self.assertEqual((embed["title"], embed["url"], embed["footer"]["text"]),
+                         ("Keys moved", "https://github.com/p/7", "bee · Team"))
+        self.assertEqual(embed["description"],
+                         "- 🔑 Make one on [your keys page](https://enter.pollinations.ai/keys)\n"
+                         "- 🧩 See the guide or [Snap](https://snap.test)\n\n`Accounts & keys` `Bug` `PR #7`")
+        # The app is always linked, once, and a trailing slash on either side still matches.
+        linked = deploy_posts.message(pr, "Snap added\n- 🐝 A meme maker", app, {})["embeds"][0]
+        self.assertEqual(linked["description"], "- 🐝 A meme maker\n\n🔗 [Snap](https://snap.test)\n\n`PR #7`")
+        slashed = deploy_posts.message(pr, "Snap added\n- 🐝 Try [Snap](https://snap.test) or [keys](https://enter.pollinations.ai/keys/)",
+                                       {**app, "app_url": "https://snap.test/"}, {})["embeds"][0]
+        self.assertEqual(slashed["description"],
+                         "- 🐝 Try [Snap](https://snap.test) or [keys](https://enter.pollinations.ai/keys/)\n\n`PR #7`")
+        # Off the Dev project, the card has no labels rather than guessed ones.
+        bare = deploy_posts.message(pr, "Keys moved", {}, {"area": None, "type": None, "source": None})["embeds"][0]
+        self.assertEqual((bare["description"], bare["footer"]["text"]), ("`PR #7`", "bee"))
 
     def test_requirements_come_from_the_scanned_production_checkout(self):
         source = Path(deploy_posts.get_repo_root())
@@ -1266,7 +1293,7 @@ class DeploymentReadinessTest(unittest.TestCase):
                     {"name": "Deploy apps/other", "conclusion": "success"}]}]}
         def api(path, **params):
             if path.startswith("actions/workflows/"):
-                self.assertEqual(params["status"], "completed")  # failed runs too: jobs are judged one by one
+                self.assertNotIn("status", params)  # failed and unfinished runs too: jobs are judged one by one
                 return {"workflow_runs": runs[path.split("/")[2]]}
             if path.startswith("actions/runs/"):
                 return {"jobs": jobs[int(path.split("/")[2])]}

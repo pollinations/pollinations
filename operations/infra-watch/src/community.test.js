@@ -503,16 +503,24 @@ const read = (rows, seen) => servedStreaks(rows, seen, new Set([FLASH]));
 test("names compare as the old monitor compared them", () => {
     assert.equal(
         servedName("Google/Gemini-3-Flash-Preview:free"),
-        "gemini-3-flash",
+        "gemini3flash",
     );
-    assert.equal(servedName("claude-3-5-sonnet-20241022"), "claude-3-5-sonnet");
-    assert.equal(servedName("gpt-4o-2024-08-06-latest"), "gpt-4o");
+    assert.equal(servedName("claude-3-5-sonnet-20241022"), "claude35sonnet");
+    assert.equal(servedName("gpt-4o-2024-08-06-latest"), "gpt4o");
     const agree = (declared, served) =>
         !read([{ model: FLASH, declared, served }])[FLASH];
     assert.ok(agree("gemini-3-flash-preview", "models/gemini-3-flash"));
     // One contains the other: a thinking variant of the same model agrees.
     assert.ok(agree("poe/DeepSeek-V4.1-Flash-T", "deepseek-v4.1-flash"));
     assert.ok(!agree("gemini-3-flash-preview", "llama-3.1-8b"));
+    // Naming styles seen live on 2026-11-02: Fireworks' "5p3", a gateway's
+    // trailing counter, separators. A router asked for "auto" reports the
+    // model it picked.
+    assert.ok(agree("glm-5.3", "accounts/fireworks/models/glm-5p3 - 12"));
+    assert.ok(agree("qwen3.8-27b", "qwen-3.8-27b - 3"));
+    assert.ok(agree("blazergateway/auto", "qwen/qwen3.8-27b"));
+    // A missing version still differs, for a person to judge.
+    assert.ok(!agree("deepseek-v4.1-flash-1017", "deepseek-flash-1017 - 4"));
 });
 
 test("a model's run keeps through cycles without a probe, and a fresh probe that disagrees ends it", () => {
@@ -547,7 +555,7 @@ test("a model's run keeps through cycles without a probe, and a fresh probe that
         assert.equal(shown(name), name);
 });
 
-test("a mismatch at the second probe in a row is its publisher's until a fresh probe disproves it, then quiet for a week", () => {
+test("a mismatch at the second probe in a row goes to the maintainers until a fresh probe disproves it, then quiet for a week", () => {
     const catalog = [model(FLASH), model("community/o/agent", { agent: true })];
     const { id } = read(asked("llama-3.1-8b"))[FLASH];
     const seen = (streak, m = FLASH) => ({
@@ -568,8 +576,8 @@ test("a mismatch at the second probe in a row is its publisher's until a fresh p
             model: FLASH,
             declared: "gemini-3-flash-preview",
             served: "llama-3.1-8b",
-            to: "community",
-            owners: ["o"],
+            to: "maintainers",
+            owners: [],
             quiet: [key],
         },
     ]);

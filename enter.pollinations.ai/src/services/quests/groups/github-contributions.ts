@@ -158,7 +158,8 @@ type DerivedQuestIssue = {
     description: string;
     url: string;
     rewardAmount: number | null;
-    // "completed" issues stay off the open board once assigned or merged.
+    // "completed" issues stay off the open board once assigned or closed.
+    // Multi-winner quests are reopened after each merge and stay available.
     state: "available" | "completed";
     completedByGithubIds: number[];
 };
@@ -397,10 +398,6 @@ function toDerivedQuestIssue(
 ): DerivedQuestIssue {
     const body = issue.body ?? "";
     const closers = mergedClosers(issue);
-    // An open quest stays available even after a merged PR: multi-winner quests
-    // are reopened after each winner, and GitHub keeps the merged closers
-    // attached to the open issue. Only a closed issue, or one claimed by an
-    // assignee, leaves the open board.
     const state: DerivedQuestIssue["state"] =
         issue.state === "CLOSED" || issue.assignees.nodes.length > 0
             ? "completed"

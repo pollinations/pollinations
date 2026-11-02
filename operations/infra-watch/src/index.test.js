@@ -1050,7 +1050,7 @@ it("counts a cycle whose post Discord rejects as failed, and says so", async () 
     await cycled(stub);
     const [card] = posts(INFRA);
     expect(card.content).toBe(MAINTAINERS);
-    expect(card.text).toContain("Discord rejected the community post");
+    expect(card.text).toContain("Discord rejected a community message");
 });
 
 it("tells nothing for a slow, healthy cycle right after a pause", async () => {
@@ -1228,6 +1228,31 @@ it("starts quiet periods only for incidents in a delivered post; the rest stay p
     await later(stub, 0);
     await cycled(stub);
     expect(world.agentFacts).toHaveLength(3);
+}, 15_000);
+
+it("posts each community incident as its own message, pinging only its owner", async () => {
+    const stub = watch();
+    world.catalog = [community("community/o/a"), community("community/p/b")];
+    world.probe = answers(() => true);
+    world.agent = tells();
+    await cycled(stub);
+    await later(stub, HOURS(8));
+    const told = () =>
+        posts(COMMUNITY).map((p) => [
+            p.content,
+            p.text.match(/MODEL {3}(\S+)/)[1],
+        ]);
+    // Discord refuses p's message only: o's is told, p's stays pending.
+    world.fails = (w) => w.path === COMMUNITY && w.text.includes("p/b");
+    await cycled(stub);
+    expect(told()).toEqual([[OWNER_O, "o/a"]]);
+    world.fails = () => false;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(told()).toEqual([
+        [OWNER_O, "o/a"],
+        ["p", "p/b"],
+    ]);
 }, 15_000);
 
 it("sends a stream broken for three owners' working models at once to the maintainers, pinging no owner", async () => {
@@ -1489,4 +1514,4 @@ it("tells a served-model mismatch to the maintainers once due, however long deli
     clock += HOURS(1);
     await cycled(stub);
     expect(posts(INFRA)).toHaveLength(2);
-});
+}, 15_000);

@@ -39,7 +39,7 @@ Each line tells the one incident in its "incidents" and goes to the channel its 
 - mismatch: a model's answers reported a different model name than its listing requests, in two of its probes in a row. The name is what the publisher's upstream reported, so word it as evidence, like "the publisher reported this name for requests configured as the requested model", and never say which model actually ran. It goes to the maintainers: say whether it looks like naming or a different model, for them to check before telling the publisher.
 - listings: models newly filtered out of /models for low health, or back; filtered models stay callable by their exact ID.
 - gaps: in this week's eval, community models scored clearly below the official model they are named after. It is statistical evidence, not proof: say a maintainer should confirm each with the fingerprint tool before anyone else is told.
-Code puts lines into each post until it is full; incidents that don't fit come next time. Code pings publishers and points them to their dashboard.`;
+Code posts each incident as its own message, its card above your line, pings its publisher and points them to their dashboard.`;
 
 // The public community models gen's reliability filter leaves out of the
 // default listing: in the full list but not the default one, with a
@@ -502,14 +502,7 @@ const card = (i) => {
     }
 };
 
-// Discord cuts an embed at 4,096 characters.
-const LIMIT = 4096;
-// Discord takes at most this much message text, where the mentions go. An
-// owner takes their GitHub name or a mention, `<@` and up to 20 digits.
-const CONTENT_LIMIT = 2000;
-const mentionSize = (owners) =>
-    owners.reduce((size, o) => size + Math.max(o.length, 23) + 1, 0);
-// Every community post ends here, the one link it carries.
+// Every community message ends here, the one link it carries.
 const MY_MODELS =
     "\n\nPublishers see their models' errors on [My Models](https://enter.pollinations.ai/my-models).";
 
@@ -529,12 +522,12 @@ const clip = (text) =>
         ? `${text.slice(0, SENTENCE_MAX - 1).trimEnd()}…`
         : text;
 
-// The agent's posts within the rails, or null if its answer isn't one.
-// Each line tells only incidents code found for its channel, goes under
-// their cards, and carries no link of its own. Lines go into the post while
-// it and its mentions fit, each with as many of its incidents as fit: those
-// left out stay pending, so a post never shows less than it pings and
-// acknowledges.
+// The agent's messages within the rails, or null if its answer isn't one:
+// one per incident, its card, then the agent's line for it and the footer.
+// A line tells only incidents code found for its channel, and carries no
+// link of its own; one telling several gives each its own message. A card
+// stays under CARD_MAX and a line under SENTENCE_MAX, and an incident has
+// one owner at most, so every message fits Discord.
 export function decision(text, found) {
     let answer;
     try {
@@ -545,14 +538,13 @@ export function decision(text, found) {
         return null;
     }
     const byId = new Map(found.map((i) => [i.id, i]));
-    const post = (lines, to, footer = "") => {
-        let body = "";
-        const told = [];
-        for (const line of Array.isArray(lines) ? lines : []) {
+    const messages = (lines, to, footer = "") => {
+        const told = new Set();
+        return (Array.isArray(lines) ? lines : []).flatMap((line) => {
             const ids = Array.isArray(line?.incidents)
                 ? [...new Set(line.incidents.map(String))]
                 : [];
-            let items = ids.map((id) => byId.get(id));
+            const items = ids.map((id) => byId.get(id));
             const words =
                 typeof line?.text === "string"
                     ? clip(noLinks(line.text).trim())
@@ -560,38 +552,20 @@ export function decision(text, found) {
             if (
                 !words ||
                 !items.length ||
-                items.some((i) => i?.to !== to || told.includes(i))
+                items.some((i) => i?.to !== to || told.has(i))
             )
-                continue;
-            // A line too big goes in with its first incidents that fit.
-            while (items.length) {
-                const block = [...items.map(card), words].join("\n");
-                const next = body ? `${body}\n${block}` : block;
-                const owners = new Set(
-                    [...told, ...items].flatMap((i) => i.owners),
-                );
-                if (
-                    next.length + footer.length <= LIMIT &&
-                    mentionSize([...owners]) <= CONTENT_LIMIT
-                ) {
-                    body = next;
-                    told.push(...items);
-                    break;
-                }
-                items = items.slice(0, -1);
-            }
-        }
-        return told.length
-            ? {
-                  text: `${body}${footer}`,
-                  owners: [...new Set(told.flatMap((i) => i.owners))],
-                  incidents: told,
-                  color: COLOR.PRIMARY_WEAK,
-              }
-            : null;
+                return [];
+            for (const i of items) told.add(i);
+            return items.map((i) => ({
+                text: `${card(i)}\n${words}${footer}`,
+                owners: i.owners,
+                incidents: [i],
+                color: COLOR.PRIMARY_WEAK,
+            }));
+        });
     };
     return {
-        community: post(answer?.community, "community", MY_MODELS),
-        maintainers: post(answer?.maintainers, "maintainers"),
+        community: messages(answer?.community, "community", MY_MODELS),
+        maintainers: messages(answer?.maintainers, "maintainers"),
     };
 }

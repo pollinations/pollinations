@@ -213,7 +213,8 @@ export default defineConfig(async ({ mode }) => {
                         DOG_MCP: async (request: Request) =>
                             Response.json({
                                 pathname: new URL(request.url).pathname,
-                                authorization: \`Bearer \${request.headers.get("authorization")}\`,
+                                authorization:
+                                    request.headers.get("authorization"),
                                 cookie: request.headers.get("cookie"),
                                 payload: await request.json(),
                             }),

@@ -30,7 +30,7 @@ cd operations/observability
 
 # 1. Install and build the shared UI
 npm install
-npm run build --prefix ../../packages/ui
+npm run build --prefix ../../../packages/ui
 
 # 2. Configure private Grafana and the approved app session secret
 #    as described in the local-preview instructions below.

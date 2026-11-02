@@ -4,17 +4,17 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "predev": "npm run build --prefix ../../packages/ui",
+        "predev": "npm run build --prefix ../../../packages/ui",
         "dev": "vite",
         "test": "vitest run",
-        "prebuild": "npm run build --prefix ../../packages/ui",
+        "prebuild": "npm run build --prefix ../../../packages/ui",
         "build": "vite build",
         "deploy": "npm run build && npx wrangler deploy",
         "preview": "vite preview"
     },
     "dependencies": {
-        "@pollinations/auth": "file:../../packages/auth",
-        "@pollinations/ui": "file:../../packages/ui",
+        "@pollinations/auth": "file:../../../packages/auth",
+        "@pollinations/ui": "file:../../../packages/ui",
         "hono": "^4.10.6",
         "react": "^19.2.0",
         "react-dom": "^19.2.0"

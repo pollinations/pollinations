@@ -13,7 +13,7 @@ import {
     WarningIcon,
 } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
-import { buildLeaderboard } from "../../model-evals/lib/pairs.js";
+import { buildLeaderboard } from "../../../model-evals/lib/pairs.js";
 import SortableTh from "./SortableTh.jsx";
 
 // Results are published by .github/workflows/evals-run-weekly.yml to the

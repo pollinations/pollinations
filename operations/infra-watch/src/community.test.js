@@ -792,19 +792,29 @@ test("a line tells only incidents code found for its channel, and pings only the
 });
 
 test("a line that doesn't fit is left out with its incident, which isn't pinged", () => {
-    const plan = answer({
-        community: [
-            line(["1"], "x".repeat(3600)),
-            line(["2"], "y".repeat(300)),
-        ],
-    });
-    assert.ok(plan.community.text.length <= 4096);
-    assert.doesNotMatch(plan.community.text, /yyy/);
-    assert.deepEqual(
-        plan.community.incidents.map((i) => i.id),
-        ["1"],
+    // Each line is a card with the longest id and a full sentence: the post
+    // fills up, and the lines after it wait for the next one.
+    const streams = Array.from({ length: 12 }, (_, n) => ({
+        ...stream(String(n + 1), `owner${n}`),
+        model: `community/owner${n}/${"m".repeat(150)}`,
+    }));
+    const plan = decision(
+        JSON.stringify({
+            community: streams.map((i) => line([i.id], "z".repeat(240))),
+        }),
+        streams,
     );
-    assert.deepEqual(plan.community.owners, ["o"]);
+    assert.ok(plan.community.text.length <= 4096);
+    const told = plan.community.incidents.map((i) => i.id);
+    assert.ok(told.length > 0 && told.length < streams.length);
+    assert.deepEqual(
+        told,
+        streams.slice(0, told.length).map((i) => i.id),
+    );
+    assert.deepEqual(
+        plan.community.owners,
+        streams.slice(0, told.length).map((i) => i.owners[0]),
+    );
 });
 
 test("a line grouping more incidents than fit goes in with those that fit; the rest stay pending", () => {
@@ -897,6 +907,17 @@ test("a card's title says it is community models and whose fault, and its facts 
     ])
         assert.ok(mismatch.includes(`│ ${row}`), row);
     assert.match(text, /\n```\nCheck gen\.$/);
+});
+
+test("the agent's sentence stays under the old monitor's 250 characters", () => {
+    const long = `${"word ".repeat(100)}end.`;
+    const plan = decision(
+        JSON.stringify({ maintainers: [line(["1"], long)] }),
+        [{ ...FOUND[3], id: "1" }],
+    );
+    const sentence = plan.maintainers.text.split("```").at(-1).trim();
+    assert.equal(sentence.length, 250);
+    assert.ok(sentence.endsWith("…"));
 });
 
 test("a post carries no link of the agent's own", () => {

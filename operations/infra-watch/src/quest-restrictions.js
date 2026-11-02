@@ -2,7 +2,7 @@
 // 1 = restricted, 0 = explicitly cleared by a purchase or maintainer.
 const literal = (value) => `'${value.replaceAll("'", "''")}'`;
 
-export function domainCondition(domain) {
+function domainCondition(domain) {
     if (!/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/.test(domain))
         throw new Error("Invalid signup domain");
     return `(lower(email) LIKE '%@${domain}' OR lower(email) LIKE '%.${domain}')`;

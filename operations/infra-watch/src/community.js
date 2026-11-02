@@ -498,6 +498,13 @@ const noLinks = (text) =>
         .replace(/\[([^\]]*)\]\([^)]*\)?/g, "$1")
         .replace(/\S*(?::(?:[\\/]|%2f)|www\.)\S*/gi, "");
 
+// The agent's sentence stays under the old monitor's 250 characters.
+const SENTENCE_MAX = 250;
+const clip = (text) =>
+    text.length > SENTENCE_MAX
+        ? `${text.slice(0, SENTENCE_MAX - 1).trimEnd()}…`
+        : text;
+
 // The agent's posts within the rails, or null if its answer isn't one.
 // Each line tells only incidents code found for its channel, goes under
 // their cards, and carries no link of its own. Lines go into the post while
@@ -523,7 +530,9 @@ export function decision(text, found) {
                 : [];
             let items = ids.map((id) => byId.get(id));
             const words =
-                typeof line?.text === "string" ? noLinks(line.text).trim() : "";
+                typeof line?.text === "string"
+                    ? clip(noLinks(line.text).trim())
+                    : "";
             if (
                 !words ||
                 !items.length ||

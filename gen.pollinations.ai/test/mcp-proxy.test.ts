@@ -47,6 +47,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "emoji",
+                name: "Emoji",
+                description:
+                    "Find emoji by word, name or feeling, with keywords for each character.",
+                url: "https://gen.pollinations.ai/mcp/emoji",
+                pricing: {
+                    description:
+                        "Lookups run in the worker against a bundled set, so no model usage is billed.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:

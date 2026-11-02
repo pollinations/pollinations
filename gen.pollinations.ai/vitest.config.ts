@@ -215,6 +215,13 @@ export default defineConfig(async ({ mode }) => {
                                 cookie: request.headers.get("cookie"),
                                 payload: await request.json(),
                             }),
+                        EMOJI_MCP: async (request: Request) =>
+                            Response.json({
+                                pathname: new URL(request.url).pathname,
+                                authorization:
+                                    request.headers.get("authorization"),
+                                payload: await request.json(),
+                            }),
                         FFMPEG_MCP: async (request: Request) => {
                             if (
                                 request.headers.has("authorization") ||

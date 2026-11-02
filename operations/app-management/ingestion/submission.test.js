@@ -176,7 +176,7 @@ test("rejects a description longer than the catalog shows", () => {
     );
     assert.equal(submission.description.length, 253);
     assert.deepEqual(validateSubmission(submission), [
-        "App Description is 253 characters; the catalog shows 200. Shorten it and submit again.",
+        "App Description is 253 characters; the catalog shows 200. Shorten it.",
     ]);
 });
 

@@ -13,7 +13,7 @@ export default defineConfig(async () => ({
                     TEST_MIGRATIONS: await readD1Migrations(
                         fileURLToPath(
                             new URL(
-                                "../../enter.pollinations.ai/drizzle",
+                                "../../../enter.pollinations.ai/drizzle",
                                 import.meta.url,
                             ),
                         ),

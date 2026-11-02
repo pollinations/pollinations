@@ -91,7 +91,7 @@ const statusRows = async (gen, minutes, traffic) =>
         )
     ).data;
 
-// The weekly eval's runs, newest first (operations/model-evals), published
+// The weekly eval's runs, newest first (operations/monitoring/model-evals), published
 // on the repository's `evals` branch; none when they can't be read, which
 // tells nothing.
 const EVALS_INDEX =

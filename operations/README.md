@@ -16,8 +16,9 @@ Internal tools that run Pollinations, grouped by what they are for. Apps with a 
 
 | Folder | What it is |
 | --- | --- |
-| [`infra-watch`](infra-watch/) | Checks every minute and posts Discord alerts; also the daily community leaderboards and the outside heartbeat |
-| [`model-evals`](model-evals/) | Weekly model quality tests whose scores feed the Trust tab |
+| [`monitoring/infra-watch`](monitoring/infra-watch/) | Checks every minute and posts Discord alerts, plus the outside heartbeat |
+| [`monitoring/community-leaderboards`](monitoring/community-leaderboards/) | Daily community model leaderboards posted to Discord |
+| [`monitoring/model-evals`](monitoring/model-evals/) | Weekly model quality tests whose scores feed the Trust tab |
 | [`community-monitor`](community-monitor/README.md) | Retired EC2 community monitor, awaiting removal |
 
 ## Data sync

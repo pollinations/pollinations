@@ -15,7 +15,7 @@ const MAX_TOKENS = 1024;
 const USAGE = `Check whether a model answers like the model it claims to be. Review only:
 nothing here hides or changes a model, it only prints findings for a person.
 
-  POLLINATIONS_API_KEY=sk_... node operations/model-evals/fingerprint.js <command> [options]
+  POLLINATIONS_API_KEY=sk_... node operations/monitoring/model-evals/fingerprint.js <command> [options]
 
   reference --models a,b           probe official models and save versioned references
   compare --pairs cand=ref,...     probe each candidate and compare it with the saved
@@ -25,7 +25,7 @@ nothing here hides or changes a model, it only prints findings for a person.
   --repetitions N                  answers per probe and model, at least ${MIN_REPETITIONS} (default ${MIN_REPETITIONS})
   --seed N                         first request seed (default: random; saved)
   --timeout SECONDS                per-request time limit (default 120)
-  --out DIR                        references and reports (default: operations/model-evals/data/fingerprints)
+  --out DIR                        references and reports (default: operations/monitoring/model-evals/data/fingerprints)
 `;
 
 const ONE_WORD = /^[a-z]+$/;

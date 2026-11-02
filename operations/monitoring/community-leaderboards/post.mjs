@@ -5,10 +5,10 @@
 // each board goes out as its own webhook message, its image right below its
 // post.
 //
-// Run from operations/community-leaderboards, with infra-watch's secrets
+// Run from operations/monitoring/community-leaderboards, with infra-watch's secrets
 // (its Tinybird read token and the Community Watch webhook):
 //
-//   sops exec-env ../infra-watch/secrets.vars.json 'node post.mjs [text] [image]'
+//   sops exec-env ../infra-watch/secrets/secrets.vars.json 'node post.mjs [text] [image]'
 //
 // `--dry-run <dir>` writes the boards and the post there instead. CHROME_PATH
 // points at Chrome when it isn't where GitHub's Ubuntu runners have it.

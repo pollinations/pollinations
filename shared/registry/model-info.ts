@@ -288,25 +288,17 @@ export function modelInfoFromDefinition(
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata
-                ? Object.entries(service.costVariants).map(
-                      ([name, variantCost]) => {
-                          const metadata = service.costVariantMetadata?.[name];
-                          return {
-                              name,
-                              label: metadata?.label ?? name,
-                              description: metadata?.description ?? name,
-                              pricing: pricingInfoFromDefinition(
-                                  getPriceDefinitionForModel({
-                                      ...service,
-                                      cost: {
-                                          ...service.cost,
-                                          ...variantCost,
-                                      },
-                                  }),
-                              ),
-                          };
-                      },
-                  )
+                ? Object.keys(service.costVariants).map((name) => {
+                      const metadata = service.costVariantMetadata?.[name];
+                      return {
+                          name,
+                          label: metadata?.label ?? name,
+                          description: metadata?.description ?? name,
+                          pricing: pricingInfoFromDefinition(
+                              getPriceDefinitionForModel(service, name),
+                          ),
+                      };
+                  })
                 : undefined,
         pricing_default_label: service.defaultCostVariantLabel,
         pricing_dimensions: service.pricingDimensions,

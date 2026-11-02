@@ -37,6 +37,13 @@ function balanceNoticeMessage(
     c: Context<Env>,
     error: PaymentRequiredError,
 ): string {
+    if (error.errorCode === "QUEST_POLLEN_RESTRICTED") {
+        return (
+            "We couldn’t verify the account behind this API key. Its Quest pollen is locked. " +
+            `Please ${mdLink("make your first purchase", error.fixUrl)} to unlock it, or ${mdLink("contact us", "mailto:hello@pollinations.ai")} if you think this is a mistake.\n\n` +
+            NOT_YOUR_ACCOUNT
+        );
+    }
     if (error.errorCode === "KEY_BUDGET_EXHAUSTED") {
         return (
             "The API key used for this request has reached its budget. " +

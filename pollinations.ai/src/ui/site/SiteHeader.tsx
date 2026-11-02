@@ -8,6 +8,7 @@ import {
     Drawer,
     DropdownItem,
     ExternalLinkButton,
+    formatCount,
     GitHubIcon,
     IconButton,
     LiveDot,
@@ -21,7 +22,6 @@ import {
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
-import { compact } from "../../data/publicStats";
 import { DOCS_URL, SOCIAL } from "./links";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
@@ -101,7 +101,7 @@ function MenuUtilities({
                 </span>
                 {discordOnline !== null && (
                     <SocialCount as="span" network="discord" showIcon={false}>
-                        {compact(discordOnline)} online
+                        {formatCount(discordOnline)} online
                         <LiveDot />
                     </SocialCount>
                 )}
@@ -129,7 +129,7 @@ function MenuUtilities({
 function GitHubStarsButton({ stars }: { stars: number | null }) {
     if (stars === null) return null;
 
-    const displayedStars = compact(stars);
+    const displayedStars = formatCount(stars);
     const label = `Star us on GitHub (${stars.toLocaleString()} stars)`;
 
     return (
@@ -161,7 +161,7 @@ function DiscordLiveButton({ online }: { online: number | null }) {
             aria-label={label}
             title={label}
         >
-            {compact(online)} online
+            {formatCount(online)} online
             <LiveDot />
         </SocialCount>
     );
@@ -170,7 +170,8 @@ function DiscordLiveButton({ online }: { online: number | null }) {
 export function SiteHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { data: repoStars } = useRepoStars();
-    const displayedRepoStars = repoStars === null ? null : compact(repoStars);
+    const displayedRepoStars =
+        repoStars === null ? null : formatCount(repoStars);
     const { data: discordOnline } = useDiscordPresence({
         refreshMs: 300_000,
     });

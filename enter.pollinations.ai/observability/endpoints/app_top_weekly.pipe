@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Listed apps ranked by successful, billable Pollen Pay (BYOP) requests in
+    Listed apps ranked by successful, billable Pollinations Pay (BYOP) requests in
     the rolling last 7 days. A registered App Key is credited to the one
     catalog listing of the same owner whose URL covers the key's redirect URI.
     Without a URL match, it is credited to the owner's listing only when the

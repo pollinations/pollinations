@@ -11,6 +11,7 @@ import {
     Dropdown,
     DropdownItem,
     ExpandIcon,
+    formatCount,
     ImageIcon,
     McpIcon,
     MicIcon,
@@ -85,16 +86,12 @@ export const formatPriceLine = ({
     };
 };
 
-const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
-
 const formatAdjustmentUnit = ({
     kind,
     quantity,
     unit,
 }: Pick<ModelPriceAdjustment, "kind" | "quantity" | "unit">): string => {
-    const quantityLabel = compactNumber
-        .format(quantity)
-        .replace(/^1(?=[A-Z])/, "");
+    const quantityLabel = formatCount(quantity).replace(/^1(?=[A-Z])/, "");
     if (kind === "search_request") {
         return quantity === 1 ? "req" : `${quantityLabel} req`;
     }

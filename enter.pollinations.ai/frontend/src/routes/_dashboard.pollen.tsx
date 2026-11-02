@@ -10,8 +10,8 @@ import {
 import { Suspense, useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
 import {
+    CardLoading,
     LoadError,
-    PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import {
     BillingPanel,
@@ -20,6 +20,7 @@ import {
     PollenBalance,
 } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import { BALANCE_PATH } from "../hooks/use-account-balance.ts";
 import { checkoutNotice, checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/_dashboard/pollen")({
         ...checkoutReturnSearch(search),
     }),
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -70,17 +71,15 @@ function PollenPage() {
     return (
         <>
             <Section title="Pollen">
-                <Await promise={balance} fallback={<PageStatus />}>
+                <Await
+                    promise={balance}
+                    fallback={<CardLoading className="h-52 sm:h-56" />}
+                >
                     {(balances) =>
                         balances ? (
                             <Await
                                 promise={earnings}
-                                fallback={
-                                    <>
-                                        <PollenBalance {...balances} />
-                                        <PageStatus />
-                                    </>
-                                }
+                                fallback={<PollenBalance {...balances} />}
                             >
                                 {(earnings) => (
                                     <PollenBalance
@@ -90,7 +89,7 @@ function PollenPage() {
                                 )}
                             </Await>
                         ) : (
-                            <LoadError onRetry={retry}>
+                            <LoadError onRetry={retry} paths={[BALANCE_PATH]}>
                                 Couldn’t load your balance.
                             </LoadError>
                         )
@@ -112,7 +111,7 @@ function PollenPage() {
                         />
                     </Surface>
                 )}
-                <Suspense fallback={<PageStatus />}>
+                <Suspense fallback={<CardLoading className="h-110 sm:h-62" />}>
                     <Await promise={billing}>
                         {(billingState) => (
                             <BuyPollenPanel
@@ -124,16 +123,18 @@ function PollenPage() {
                     </Await>
                 </Suspense>
             </Section>
-            {/* The Top-up section above shows the page's one loading status. */}
             <Section title="Billing" id="billing" action={<EditOnStripeLink />}>
-                <Suspense fallback={null}>
+                <Suspense fallback={<CardLoading className="h-71 sm:h-41" />}>
                     <Await promise={billing}>
                         {(billingState) =>
                             billingState ? (
                                 <BillingPanel billing={billingState} />
                             ) : (
                                 // Not "none saved": it may well be there.
-                                <LoadError onRetry={reloadWallet}>
+                                <LoadError
+                                    onRetry={reloadWallet}
+                                    paths={["/api/stripe/billing"]}
+                                >
                                     Couldn’t load your billing details.
                                 </LoadError>
                             )

@@ -51,22 +51,26 @@ test("429 errors preserve the gateway cooldown retry duration", () => {
     );
 });
 
-test("parseApiError surfaces insufficient-pollen 402 with actionable guidance", () => {
+test("parseApiError displays gateway 402 error message unchanged", () => {
     const errorJson = JSON.stringify({
-        error: { message: "Insufficient pollen balance" },
+        error: {
+            message:
+                "API key budget too low. This request costs ~0.0100 pollen, but this key has 0.0000. Increase the key budget at https://enter.pollinations.ai/edit-key?id=test-key-123; topping up the wallet does not increase this limit.",
+            code: "KEY_BUDGET_EXHAUSTED",
+        },
     });
     const message = parseApiError(402, errorJson);
     assert.equal(
         message,
-        "Insufficient pollen balance Your account balance is too low to pay for this request. Add funds or use a key with a positive balance at https://enter.pollinations.ai/keys",
+        "API key budget too low. This request costs ~0.0100 pollen, but this key has 0.0000. Increase the key budget at https://enter.pollinations.ai/edit-key?id=test-key-123; topping up the wallet does not increase this limit.",
     );
 });
 
-test("parseApiError surfaces insufficient-pollen 402 guidance even with empty body", () => {
+test("parseApiError provides generic fallback when 402 body has no details", () => {
     const message = parseApiError(402, "");
     assert.equal(
         message,
-        "Insufficient pollen balance. Your account balance is too low to pay for this request. Add funds or use a key with a positive balance at https://enter.pollinations.ai/keys",
+        "Insufficient pollen balance or API key budget exhausted.",
     );
 });
 

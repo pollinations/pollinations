@@ -1,6 +1,6 @@
 # Operations
 
-Internal tools that run Pollinations: dashboards, monitoring, data jobs, repository bots and infrastructure. Apps with a `deploy.json` deploy from `production` through [`deployment/`](deployment/README.md).
+Internal tools that run Pollinations, grouped by what they are for. Apps with a `deploy.json` deploy from `production` through [`deployment/`](deployment/README.md).
 
 ## Dashboards
 
@@ -20,20 +20,23 @@ Internal tools that run Pollinations: dashboards, monitoring, data jobs, reposit
 | [`model-evals`](model-evals/) | Weekly model quality tests whose scores feed the Trust tab |
 | [`community-monitor`](community-monitor/README.md) | Retired EC2 community monitor, awaiting removal |
 
-## Data jobs
+## Data sync
 
 | Folder | What it is |
 | --- | --- |
 | [`data-sync`](data-sync/) | Scheduled jobs that copy D1, app list, Cloudflare, GitHub and Search Console data into Tinybird |
 
-## Automation
+## News
+
+| Folder | What it is |
+| --- | --- |
+| [`social`](social/PIPELINE.md) | News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data |
+
+## App management
 
 | Folder | What it is |
 | --- | --- |
 | [`app-management`](app-management/) | Community app list (`app.json`), submission reviews, screenshots, metrics and the README app table |
-| [`social`](social/PIPELINE.md) | News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data |
-| [`github`](github/project-manager.md) | Project manager bot that sets Area and Priority on issues and PRs |
-| [`mcp-registry`](mcp-registry/DIRECTORY_LISTINGS.md) | Publishes the hosted MCP servers to the official MCP registry |
 
 ## Infrastructure
 
@@ -44,8 +47,10 @@ Internal tools that run Pollinations: dashboards, monitoring, data jobs, reposit
 | [`infrastructure/e2b`](infrastructure/e2b/) | E2B sandbox template |
 | [`infrastructure/azure-sandboxes`](infrastructure/azure-sandboxes/) | Azure sandbox image |
 | [`deployment`](deployment/README.md) | Deploy scripts for every app with a `deploy.json` |
+| [`github`](github/project-manager.md) | Project manager bot that sets Area and Priority on issues and PRs |
+| [`mcp-registry`](mcp-registry/DIRECTORY_LISTINGS.md) | Publishes the hosted MCP servers to the official MCP registry |
 
-## Documents
+## Legal
 
 | Folder | What it is |
 | --- | --- |

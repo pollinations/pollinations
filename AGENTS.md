@@ -29,7 +29,7 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Applications maintained in this repository
 - `operations/app-management/` — Community app catalog and automation
-- `operations/` — Internal dashboards, monitoring, data jobs, bots and infrastructure; folder map in `operations/README.md`
+- `operations/` — Internal dashboards, monitoring, data sync, news, app management and infrastructure; folder map in `operations/README.md`
 - `operations/social/` — Discord/Reddit/GitHub automation
 - `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 

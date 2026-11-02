@@ -102,7 +102,7 @@ export const ImageParamsSchema = z
                 // Keep commas inside URLs, matching the public query schema.
                 const urls = value.includes("|")
                     ? value.split("|")
-                    : value.split(/,(?=\s*https?:\/\/)/i);
+                    : value.split(/,(?=\s*https?:\/\/)/);
                 return urls.map((url) => url.trim()).filter(Boolean);
             })
             .catch([]),

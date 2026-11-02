@@ -57,10 +57,11 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             // present; otherwise split only on commas that start a new URL, so
             // commas inside a URL (e.g. Cloudinary transforms) are kept. Trim
             // each entry: a space after the separator is the natural way to
-            // write a list.
+            // write a list. Lowercase only, as before: `,HTTPS://` inside a
+            // URL's query must not split it.
             const urls = value.includes("|")
                 ? value.split("|")
-                : value.split(/,(?=\s*https?:\/\/)/i);
+                : value.split(/,(?=\s*https?:\/\/)/);
             return urls.map((url) => url.trim()).filter(Boolean);
         })
         .optional()

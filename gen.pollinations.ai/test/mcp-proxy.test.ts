@@ -150,6 +150,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "fx",
+                name: "Exchange Rates",
+                description:
+                    "Look up ECB reference exchange rates, list currencies, and convert amounts.",
+                url: "https://gen.pollinations.ai/mcp/fx",
+                pricing: {
+                    description:
+                        "Exchange rate lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

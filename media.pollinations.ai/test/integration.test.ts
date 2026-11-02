@@ -1945,13 +1945,13 @@ describe("media.pollinations.ai", () => {
         expect(publicGallery.status).toBe(200);
     });
 
-    // #18082: an unbounded filename overflowed R2's ~2 KB customMetadata and the
-    // upload 500'd. The service-binding path already sliced; the HTTP paths did not.
+    // R2 rejects more than 8,192 bytes of object metadata, so an uncapped
+    // filename past that made the upload 500.
     describe("upload filename cap", () => {
-        const longName = `${"n".repeat(3000)}.png`;
+        const longName = `${"n".repeat(9000)}.png`;
 
-        it("multipart upload with a 3 KB filename succeeds with a truncated name", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
+        it("multipart upload with a 9 KB filename succeeds with a truncated name", async () => {
+            const { status, body } = await uploadViaForm("sk_app_alice", {
                 fileName: longName,
                 bytes: variant(60),
             });
@@ -1968,7 +1968,7 @@ describe("media.pollinations.ai", () => {
             expect(disposition).toContain("n".repeat(200));
         });
 
-        it("JSON upload with a 3 KB name succeeds with a truncated name", async () => {
+        it("JSON upload with a 9 KB name succeeds with a truncated name", async () => {
             const res = await SELF.fetch(
                 "https://media.pollinations.ai/upload",
                 {

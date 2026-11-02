@@ -15,7 +15,7 @@ A prompt agent for chapter one of the [Sirius Cybernetics Elevator Challenge](ht
 npx @pollinations/cli agents create --config agent.json
 ```
 
-Or **My Models → Add Agent** at https://enter.pollinations.ai/my-models and paste `agent.json`.
+Or **My Listings → Create** at https://enter.pollinations.ai/my-models and paste `agent.json`.
 
 ## Call it
 

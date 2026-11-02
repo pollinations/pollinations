@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
@@ -11,7 +11,13 @@ import {
     publicCommunityFallbackOptions,
 } from "./types.ts";
 
-export function Deployments({ canPublish }: { canPublish: boolean }) {
+export function Deployments({
+    canPublish,
+    appsTab,
+}: {
+    canPublish: boolean;
+    appsTab: { action: ReactNode; content: ReactNode };
+}) {
     const [fallbackOptions, setFallbackOptions] = useState<
         FallbackModelOption[]
     >([]);
@@ -49,6 +55,7 @@ export function Deployments({ canPublish }: { canPublish: boolean }) {
     return (
         <CommunityEndpoints
             canPublish={canPublish}
+            appsTab={appsTab}
             fallbackOptions={fallbackOptions}
             healthByModelId={healthByModelId}
             onChange={loadFallbackOptions}

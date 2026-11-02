@@ -6,10 +6,10 @@ import { DashboardShell } from "./dashboard-shell.tsx";
 const pageTitles: Record<string, readonly string[]> = {
     "/news": ["News", "FAQ"],
     "/models": ["Models"],
-    "/my-models": ["Agents", "Models"],
-    "/my-apps": ["My Apps"],
+    "/agents": ["Agents"],
+    "/my-models": ["My Listings"],
     "/sandboxes": ["Sandboxes"],
-    "/keys": ["Secrets", "Apps"],
+    "/keys": ["Keys"],
     "/pollen": ["Pollen", "Top-up", "Billing"],
     "/activity": ["Overview", "Last events"],
     "/quests": ["Claimed"],

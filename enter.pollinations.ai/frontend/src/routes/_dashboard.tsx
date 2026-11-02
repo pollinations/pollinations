@@ -13,24 +13,26 @@ import {
     useRouter,
     useRouterState,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue, useState } from "react";
+import { Suspense, useDeferredValue } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/types.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
-import type { ApiKey } from "../components/keys";
-import {
-    CardLoading,
-    LoadError,
-} from "../components/layout/dashboard-loading.tsx";
+import { type ApiKey, SidebarKeys } from "../components/keys";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { SidebarOutage, SidebarWallet } from "../components/pollen";
+import {
+    SidebarBalance,
+    SidebarEarnings,
+    SidebarOutage,
+} from "../components/pollen";
+import { SidebarSandboxes } from "../components/sandboxes.tsx";
 import {
     BALANCE_PATH,
     fetchAccountBalance,
@@ -164,7 +166,7 @@ function DashboardLayout() {
     const router = useRouter();
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
-    const [isSigningOut, setIsSigningOut] = useState(false);
+    const user = data.user;
     const pathname = useRouterState({ select: (s) => s.location.pathname });
     // Pages that need the account wait out the outage; public pages still load.
     const outagePageTitle =
@@ -176,18 +178,6 @@ function DashboardLayout() {
         router.invalidate(),
     );
 
-    async function handleSignOut(): Promise<void> {
-        if (isSigningOut) return;
-        setIsSigningOut(true);
-        try {
-            await authClient.signOut();
-            window.location.href = "/news";
-        } catch (error) {
-            console.error("Sign out failed:", error);
-            setIsSigningOut(false);
-        }
-    }
-
     return (
         <DashboardShell
             navItems={
@@ -195,9 +185,8 @@ function DashboardLayout() {
                     ? DASHBOARD_NAV_ITEMS
                     : SIGNED_OUT_NAV_ITEMS
             }
-            accountName={data.user?.name || data.githubUsername}
+            accountName={user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
-            onSignOut={data.user ? handleSignOut : undefined}
             accountArea={
                 data.user ? undefined : data.sessionUnavailable ? (
                     // Who is signed in is unknown: the outage takes the
@@ -216,33 +205,81 @@ function DashboardLayout() {
                     <DashboardSignInBanner />
                 )
             }
-            walletArea={
-                data.user ? (
-                    // Await adds no boundary for a null fallback; without this
-                    // the whole dashboard would wait for the balance.
-                    <Suspense fallback={<CardLoading className="h-11" />}>
-                        <Await promise={data.balance}>
-                            {(balance) =>
-                                balance ? (
-                                    <Await
-                                        promise={data.earnings}
-                                        fallback={
-                                            <SidebarWallet {...balance} />
-                                        }
-                                    >
-                                        {(earnings) => (
-                                            <SidebarWallet
-                                                {...balance}
-                                                {...earnings}
-                                            />
-                                        )}
-                                    </Await>
-                                ) : (
-                                    <WalletLoadError onRetry={retry} />
-                                )
-                            }
-                        </Await>
-                    </Suspense>
+            rowStatus={
+                user
+                    ? {
+                          pollen: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.balance}>
+                                      {(balance) =>
+                                          balance && (
+                                              <SidebarBalance
+                                                  kind="paid"
+                                                  balance={balance.packBalance}
+                                              />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          quests: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.balance}>
+                                      {(balance) =>
+                                          balance && (
+                                              <SidebarBalance
+                                                  kind="tier"
+                                                  balance={balance.tierBalance}
+                                                  restricted={
+                                                      balance.questPollenRestricted
+                                                  }
+                                              />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          "my-models": (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.earnings}>
+                                      {(earnings) =>
+                                          earnings && (
+                                              <SidebarEarnings {...earnings} />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          sandboxes: <SidebarSandboxes />,
+                          keys: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.apiKeys}>
+                                      {(apiKeys) =>
+                                          apiKeys && (
+                                              <SidebarKeys apiKeys={apiKeys} />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                      }
+                    : undefined
+            }
+            accountCard={
+                user ? (
+                    <>
+                        {/* Await adds no boundary for a null fallback;
+                            without this the whole dashboard would wait. */}
+                        <Suspense fallback={null}>
+                            <Await promise={data.balance}>
+                                {(balance) =>
+                                    !balance && (
+                                        <WalletLoadError onRetry={retry} />
+                                    )
+                                }
+                            </Await>
+                        </Suspense>
+                    </>
                 ) : undefined
             }
         >

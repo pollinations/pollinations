@@ -92,7 +92,7 @@ export function KeyDialogContent({
     const description =
         createdKey !== undefined
             ? app
-                ? "Add this app key to your app. You can copy it again from the Apps section at any time."
+                ? "Add this app key to your app. You can copy it again from the App tab at any time."
                 : "Copy your secret key now. You won’t be able to see it again."
             : app
               ? "Set the name, earnings and redirect URLs."

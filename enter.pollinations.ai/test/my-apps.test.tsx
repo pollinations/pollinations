@@ -16,13 +16,14 @@ afterAll(() => {
 });
 
 describe("My Apps", () => {
-    it("shows navigation to every signed-in account", () => {
-        expect(DASHBOARD_NAV_ITEMS.some((item) => item.id === "my-apps")).toBe(
-            true,
-        );
-        expect(SIGNED_OUT_NAV_ITEMS.some((item) => item.id === "my-apps")).toBe(
-            false,
-        );
+    it("is reached through My Listings by every signed-in account", () => {
+        // My Apps is the Apps tab of My Listings (/my-models?tab=apps).
+        expect(
+            DASHBOARD_NAV_ITEMS.some((item) => item.to === "/my-models"),
+        ).toBe(true);
+        expect(
+            SIGNED_OUT_NAV_ITEMS.some((item) => item.to === "/my-models"),
+        ).toBe(false);
     });
 
     it("offers submission when no app is listed", () => {

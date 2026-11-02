@@ -6,7 +6,6 @@ import {
     ImageIcon,
     InlineLink,
     PulseIcon,
-    Section,
     Surface,
     Text,
 } from "@pollinations/ui";
@@ -19,10 +18,10 @@ import {
 import type { ListedApp } from "../backend-types.ts";
 import { CardLoading, LoadError } from "./layout/dashboard-loading.tsx";
 
-/** The submission form every listed app started as (issue template). */
 /** The public catalog every listing here appears in. */
 const APP_CATALOG_URL = "https://pollinations.ai/apps";
 
+/** The submission form every listed app started as (issue template). */
 const SUBMIT_APP_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml";
 
@@ -199,16 +198,9 @@ function AppCard({ app }: { app: ListedApp }) {
     );
 }
 
-export function MyApps({
-    apps,
-    githubConnected,
-    onRetry,
-}: {
-    apps: ListedApp[] | null | undefined;
-    githubConnected: boolean;
-    onRetry: () => Promise<void>;
-}) {
-    const submitAction = (
+/** Opens the app submission form; the Apps tab shows it once you have apps. */
+export function SubmitAppButton() {
+    return (
         <Button
             intent="commit"
             as="a"
@@ -220,68 +212,71 @@ export function MyApps({
             Submit
         </Button>
     );
+}
 
-    return (
-        <Section
-            title="My Apps"
-            action={apps && apps.length > 0 ? submitAction : undefined}
-        >
-            {apps === undefined ? (
-                <CardLoading />
-            ) : apps === null ? (
-                <LoadError onRetry={onRetry} paths={["/account/apps"]}>
-                    Couldn’t load your apps. Please try again.
-                </LoadError>
-            ) : (
-                <>
-                    {apps.length === 0 ? (
-                        <Surface className="p-6 text-center">
-                            <div className="mb-2">{submitAction}</div>
-                            <p className="text-sm text-theme-text-muted">
-                                Apps you submit to the community catalog show up
-                                here once a maintainer approves them.
-                            </p>
-                        </Surface>
-                    ) : (
-                        <div className="@container">
-                            <div className="grid auto-rows-fr grid-cols-1 gap-3 @min-[40rem]:grid-cols-2">
-                                {apps.map((app) => (
-                                    <AppCard
-                                        key={`${app.name}|${app.webUrl}`}
-                                        app={app}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        {githubConnected ? (
-                            <span>
-                                Each app here is listed in the Pollinations{" "}
-                                <InlineLink href={APP_CATALOG_URL}>
-                                    app catalog
-                                </InlineLink>
-                                : submitted from your connected GitHub account
-                                and approved by a maintainer.
-                            </span>
-                        ) : (
-                            <span>
-                                Apps here are listed in the Pollinations{" "}
-                                <InlineLink href={APP_CATALOG_URL}>
-                                    app catalog
-                                </InlineLink>{" "}
-                                and matched to the GitHub account that submitted
-                                them.{" "}
-                                <InlineLink href="/account">
-                                    Connect GitHub
-                                </InlineLink>{" "}
-                                on your account page to see yours.
-                            </span>
-                        )}
+/** Your apps in the community catalog: the My Listings card's Apps tab. */
+export function MyApps({
+    apps,
+    githubConnected,
+    onRetry,
+}: {
+    apps: ListedApp[] | null | undefined;
+    githubConnected: boolean;
+    onRetry: () => Promise<void>;
+}) {
+    return apps === undefined ? (
+        <CardLoading />
+    ) : apps === null ? (
+        <LoadError onRetry={onRetry} paths={["/account/apps"]}>
+            Couldn’t load your apps. Please try again.
+        </LoadError>
+    ) : (
+        <>
+            {apps.length === 0 ? (
+                <Surface className="p-6 text-center">
+                    <div className="mb-2">
+                        <SubmitAppButton />
+                    </div>
+                    <p className="text-sm text-theme-text-muted">
+                        Apps you submit to the community catalog show up here
+                        once a maintainer approves them.
                     </p>
-                </>
+                </Surface>
+            ) : (
+                <div className="@container">
+                    <div className="grid auto-rows-fr grid-cols-1 gap-3 @min-[40rem]:grid-cols-2">
+                        {apps.map((app) => (
+                            <AppCard
+                                key={`${app.name}|${app.webUrl}`}
+                                app={app}
+                            />
+                        ))}
+                    </div>
+                </div>
             )}
-        </Section>
+            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {githubConnected ? (
+                    <span>
+                        Each app here is listed in the Pollinations{" "}
+                        <InlineLink href={APP_CATALOG_URL}>
+                            app catalog
+                        </InlineLink>
+                        : submitted from your connected GitHub account and
+                        approved by a maintainer.
+                    </span>
+                ) : (
+                    <span>
+                        Apps here are listed in the Pollinations{" "}
+                        <InlineLink href={APP_CATALOG_URL}>
+                            app catalog
+                        </InlineLink>{" "}
+                        and matched to the GitHub account that submitted them.{" "}
+                        <InlineLink href="/account">Connect GitHub</InlineLink>{" "}
+                        on your account page to see yours.
+                    </span>
+                )}
+            </p>
+        </>
     );
 }

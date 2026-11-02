@@ -26,12 +26,19 @@ export const MODEL_SORTS = [
 ] as const;
 export type ModelSort = (typeof MODEL_SORTS)[number];
 
-export type ModelSearch = {
-    category?: ModelCategory;
+/** Search params shared by the /models and /agents pages. */
+export type CatalogSearch = {
     q?: string;
-    agentQ?: string;
-    mcpQ?: string;
     sort?: ModelSort;
+};
+
+export type ModelSearch = CatalogSearch & {
+    category?: ModelCategory;
+};
+
+/** The /agents page shows agents, or MCP servers with ?view=mcp. */
+export type AgentsSearch = CatalogSearch & {
+    view?: "mcp";
 };
 
 function includes<T extends string>(
@@ -41,23 +48,36 @@ function includes<T extends string>(
     return typeof value === "string" && values.includes(value as T);
 }
 
+export function validateCatalogSearch(
+    search: Record<string, unknown>,
+): CatalogSearch {
+    const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "popular";
+    const query = typeof search.q === "string" ? search.q.trim() : "";
+
+    return {
+        q: query || undefined,
+        sort: sort === "popular" ? undefined : sort,
+    };
+}
+
+export function validateAgentsSearch(
+    search: Record<string, unknown>,
+): AgentsSearch {
+    return {
+        ...validateCatalogSearch(search),
+        view: search.view === "mcp" ? "mcp" : undefined,
+    };
+}
+
 export function validateModelSearch(
     search: Record<string, unknown>,
 ): ModelSearch {
     const category = includes(MODEL_CATEGORIES, search.category)
         ? search.category
         : "all";
-    const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "popular";
-    const query = typeof search.q === "string" ? search.q.trim() : "";
-    const agentQuery =
-        typeof search.agentQ === "string" ? search.agentQ.trim() : "";
-    const mcpQuery = typeof search.mcpQ === "string" ? search.mcpQ.trim() : "";
 
     return {
         category: category === "all" ? undefined : category,
-        q: query || undefined,
-        agentQ: agentQuery || undefined,
-        mcpQ: mcpQuery || undefined,
-        sort: sort === "popular" ? undefined : sort,
+        ...validateCatalogSearch(search),
     };
 }

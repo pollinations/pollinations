@@ -393,6 +393,35 @@ function SandboxCard({
     );
 }
 
+// The page tells the drawer after every load, so its count follows starts,
+// pauses and kills.
+const SANDBOXES_LOADED_EVENT = "pollinations:sandboxes-loaded";
+
+/** How many sandboxes run, on the drawer's Sandboxes row; nothing at zero. */
+export function SidebarSandboxes() {
+    const [running, setRunning] = useState(0);
+    useEffect(() => {
+        const count = (list: Sandbox[]) =>
+            setRunning(list.filter((s) => s.state === "running").length);
+        const onLoaded = (event: Event) =>
+            count((event as CustomEvent<Sandbox[]>).detail);
+        e2b<Sandbox[]>("/v2/sandboxes").then(count, () => {});
+        window.addEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
+        return () =>
+            window.removeEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
+    }, []);
+    if (running === 0) return null;
+    return (
+        <Chip
+            intent="neutral"
+            size="sm"
+            className="ml-auto bg-transparent text-theme-text-soft"
+        >
+            {running} running
+        </Chip>
+    );
+}
+
 export function Sandboxes() {
     const [pricing, setPricing] = useState<Pricing>();
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
@@ -413,6 +442,9 @@ export function Sandboxes() {
             ]);
             setPricing(prices);
             setSandboxes(list);
+            window.dispatchEvent(
+                new CustomEvent(SANDBOXES_LOADED_EVENT, { detail: list }),
+            );
         } catch (error) {
             setLoadError(
                 error instanceof Error

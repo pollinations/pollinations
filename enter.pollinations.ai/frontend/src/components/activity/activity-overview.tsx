@@ -80,7 +80,7 @@ const EMPTY_STATES: Record<ActivityTab, ReactNode> = {
         <>
             No earnings in this period. Once users spend Pollen through your
             apps or community models, earnings will appear here.{" "}
-            <InlineLink href="/keys">Create an App key</InlineLink>.
+            <InlineLink href="/keys?tab=app">Create an App key</InlineLink>.
         </>
     ),
 };

@@ -17,11 +17,7 @@
     "19009": {
       "merge_sha": "0f373ffc6003df59743ac843c5418c1256b34f4e",
       "merged_at": "2026-11-02T14:22:13Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     }
   },
   "production": "df33bec36e8d0ea9cdd86372571529fdd91a2d15",

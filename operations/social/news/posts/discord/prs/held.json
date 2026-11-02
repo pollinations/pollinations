@@ -36,11 +36,6 @@
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
-    "18642": {
-      "merge_sha": "2a37cc0040a0252e5e7cb719a53daffcf42e11b6",
-      "merged_at": "2026-11-02T16:48:30Z",
-      "required": []
-    },
     "18643": {
       "merge_sha": "cad4c6f915b2d5f8eb786f9e9b6171a2dabfc82e",
       "merged_at": "2026-11-02T16:48:30Z",

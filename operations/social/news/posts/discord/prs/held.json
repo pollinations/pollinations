@@ -17,10 +17,7 @@
     "19016": {
       "merge_sha": "836a78f3971370c4350ad38267d0f7ac4023bd05",
       "merged_at": "2026-11-02T16:35:14Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
-        "deploy-applications.yml:Deploy operations/monitoring/infra-watch"
-      ]
+      "required": []
     }
   },
   "production": "2f57f4f5feb0a00c9ff83259b057f607b176e45a",

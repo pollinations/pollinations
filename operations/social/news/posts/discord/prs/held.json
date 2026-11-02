@@ -13,8 +13,29 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "19000": {
+      "merge_sha": "b6c5eebf6c2425702e84fd8bcb30e6aed9ce90cb",
+      "merged_at": "2026-11-02T13:31:25Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
+    },
+    "19003": {
+      "merge_sha": "ab8787230feee800bc90b70bf756f3055f607745",
+      "merged_at": "2026-11-02T13:31:25Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
+    },
+    "19004": {
+      "merge_sha": "67705df17b5f820752350bc8b0030ac1d3469e10",
+      "merged_at": "2026-11-02T13:31:25Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
     }
   },
-  "production": "dd586c56ce26d36b778935630cbbfe4483300591",
+  "production": "47f57eb3a7d8fc37258c111ba8647c2f5c68eb4d",
   "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

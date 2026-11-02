@@ -2,7 +2,7 @@
   "target": "script",
   "credentials": "myceli",
   "sops": "economics",
-  "install": "npm ci --prefix ../..",
+  "install": "npm ci --prefix ../../..",
   "build": "npm run build --prefix web",
   "deploy": "sops exec-file --no-fifo secrets/web.json 'node --import tsx web/scripts/check-tinybird-contract.mjs --require-drive-binding --secrets-file {} && npm exec --prefix web -- wrangler deploy --config web/dist/myceli_economics/wrangler.json --secrets-file {}'",
   "verify": [

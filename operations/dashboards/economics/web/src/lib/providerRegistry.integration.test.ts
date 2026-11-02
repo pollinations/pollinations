@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     getModels,
     getRegistryModelDefinition,
-} from "../../../../../shared/registry/registry";
+} from "../../../../../../shared/registry/registry";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type {
     Data,

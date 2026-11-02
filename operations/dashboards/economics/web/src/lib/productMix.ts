@@ -1,4 +1,4 @@
-import { MCP_SERVERS } from "../../../../../shared/registry/mcp";
+import { MCP_SERVERS } from "../../../../../../shared/registry/mcp";
 import type { Data } from "../types";
 import { parseRevenueShareSources } from "./pipeContracts";
 

@@ -57,8 +57,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             // present; otherwise split only on commas that start a new URL, so
             // commas inside a URL (e.g. Cloudinary transforms) are kept. Trim
             // each entry: a space after the separator is the natural way to
-            // write a list. Lowercase only, as before: `,HTTPS://` inside a
-            // URL's query must not split it.
+            // write a list.
             const urls = value.includes("|")
                 ? value.split("|")
                 : value.split(/,(?=\s*https?:\/\/)/);
@@ -67,7 +66,13 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .optional()
         .refine(
             (urls) =>
-                !urls || urls.every((url) => !url || /^https?:\/\//i.test(url)),
+                !urls ||
+                urls.every(
+                    (url) =>
+                        !url ||
+                        url.startsWith("http://") ||
+                        url.startsWith("https://"),
+                ),
             {
                 message:
                     "Invalid image URL. Put image= param last in your URL, or URL-encode it.",

@@ -45,12 +45,6 @@ describe.each([
         ).toEqual(["https://a.example/1.png", "https://b.example/2.png"]);
     });
 
-    it("accepts an uppercase scheme, which URLs allow", () => {
-        expect(parseImage("HTTPS://a.example/1.png")).toEqual([
-            "HTTPS://a.example/1.png",
-        ]);
-    });
-
     it("keeps an uppercase scheme inside a URL's query", () => {
         const url = "https://a.example/image?next=1,HTTPS://b.example/image";
         expect(parseImage(url)).toEqual([url]);

@@ -58,7 +58,10 @@ async function discord(url, init) {
     await sleep(world.delay(write));
     write.ok = !world.fails(write);
     world.writes.push(write);
-    if (!write.ok) return new Response("unavailable", { status: 503 });
+    if (!write.ok)
+        return new Response("unavailable", {
+            status: world.failStatus ?? 503,
+        });
     world.seen(write);
     if (init.method === "PATCH") return Response.json({});
     world.posts++;
@@ -984,6 +987,127 @@ const tells =
         };
     };
 const HOURS = (n) => n * 60 * 60_000;
+
+it("opens a community monitor card when no cycle gets done for 90 minutes, says why, and closes it once one does", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/a"), community("community/p/b")];
+    // Gen refuses our probe key: every cycle fails and the models stay due.
+    world.probe = () =>
+        Response.json(
+            { error: { message: "Insufficient balance" } },
+            { status: 402 },
+        );
+    const open = async () =>
+        (await stored(stub, "state")).open.community ?? null;
+    for (let minutes = 0; minutes < 90; minutes += 30) {
+        await cycled(stub);
+        expect(await open()).toBeNull();
+        clock += 30 * 60_000;
+    }
+    await cycled(stub);
+    const card = await open();
+    expect(card).not.toBeNull();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("DOWN: community monitor");
+    expect(post.text).toContain("probe key refused (402)");
+    expect(world.probes).toHaveLength(8);
+    // The key works again: the next cycle gets done and the card closes.
+    world.probe = answers(() => false, "gemini-3-flash");
+    clock += 30 * 60_000;
+    await cycled(stub);
+    clock += 60_000;
+    await stub.check();
+    await settle(stub);
+    expect(await open()).toBeNull();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("counts a cycle whose post Discord rejects as failed, and says so", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/m")];
+    // Its stream breaks every time; the community webhook is gone (404).
+    world.probe = answers(() => true, "x");
+    world.agent = tells();
+    world.fails = (w) => w.path === COMMUNITY;
+    world.failStatus = 404;
+    await cycled(stub);
+    // Its second broken probe, after the doubled backoff, makes it due.
+    clock += HOURS(8);
+    // Each cycle tries it, and Discord rejects it three times.
+    for (let i = 0; i < 3; i++) {
+        await cycled(stub);
+        clock += 30 * 60_000;
+    }
+    expect(posts(INFRA)).toHaveLength(0);
+    await cycled(stub);
+    const [card] = posts(INFRA);
+    expect(card.content).toBe(MAINTAINERS);
+    expect(card.text).toContain("Discord rejected the community post");
+});
+
+it("tells nothing for a slow, healthy cycle right after a pause", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/m")];
+    world.probe = answers(() => false, "x");
+    await cycled(stub);
+    // Five hours of pause, then a probe still answering a minute on.
+    clock += HOURS(5);
+    let answer;
+    world.probe = (path, body) =>
+        new Promise((resolve) => {
+            answer = () => resolve(answers(() => false, "x")(path, body));
+        });
+    await stub.check();
+    await vi.waitFor(() => expect(answer).toBeDefined());
+    clock += 60_000;
+    await stub.check();
+    expect((await stored(stub, "state")).open.community).toBeUndefined();
+    // The answer resolves inside the object, which owns its I/O.
+    await runInDurableObject(stub, async (instance) => {
+        answer();
+        await instance.cycle;
+    });
+});
+
+it("keeps a stuck cycle's card open until a cycle works, even when the stuck one then fails", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 2, 10, 5);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    world.catalog = [community("community/o/a"), community("community/p/b")];
+    const waiting = [];
+    world.probe = () => new Promise((resolve) => waiting.push(resolve));
+    await stub.check();
+    await vi.waitFor(() => expect(waiting).toHaveLength(2));
+    clock += HOURS(3);
+    await stub.check();
+    const open = async () =>
+        (await stored(stub, "state")).open.community ?? null;
+    expect(await open()).not.toBeNull();
+    // The stuck cycle then fails, and so do the next: gen refuses the key.
+    world.probe = () => Response.json({}, { status: 402 });
+    await runInDurableObject(stub, async (instance) => {
+        for (const resolve of waiting)
+            resolve(Response.json({}, { status: 402 }));
+        await instance.cycle;
+    });
+    clock += 60_000;
+    await stub.check();
+    expect(await open()).not.toBeNull();
+    // A working cycle closes it.
+    world.probe = answers(() => false, "x");
+    clock += 30 * 60_000;
+    await cycled(stub);
+    clock += 60_000;
+    await stub.check();
+    expect(await open()).toBeNull();
+});
 
 it("probes due models by Thomas's rule, and calls the agent only with incidents, through its own key", async () => {
     const stub = watch();

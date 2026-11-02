@@ -39,7 +39,7 @@
  * Reruns append the same day and host again: consumers must select the latest
  * fetched_at per (dataset, date, host) before aggregating.
  *
- * Usage: node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dataset all] [--dry-run]
+ * Usage: node operations/data-sync/cloudflare-traffic-to-tinybird.mjs [--days 1] [--dataset all] [--dry-run]
  *
  * --days fetches the last N complete UTC days, for a missed run or a backfill:
  * up to 7 for all datasets or host_views (a day of everything takes ~2 min),

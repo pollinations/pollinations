@@ -119,6 +119,27 @@ export function conditions({
     return found;
 }
 
+// The community cycle (community.js) runs every half hour. It is down after
+// COMMUNITY_FAILURES failed cycles in a row, about 90 minutes, with the last
+// error (a refused probe key, a rejected Discord post) saying why; or while
+// one is still `running` after COMMUNITY_STUCK_MS, far past any cycle's
+// probes and their timeouts. A pause in infra-watch fails nothing: the
+// heartbeat tells that.
+export const COMMUNITY_FAILURES = 3;
+export const COMMUNITY_STUCK_MS = 3 * 60 * 60 * 1000;
+export function communityDown(community, now, running) {
+    const stuck = running && now - (community?.at ?? now) >= COMMUNITY_STUCK_MS;
+    if (!stuck && (community?.failures ?? 0) < COMMUNITY_FAILURES) return {};
+    return {
+        community: {
+            kind: "COMMUNITY_DOWN",
+            error: stuck
+                ? "a cycle has run for 3+ hours"
+                : (community.error ?? null),
+        },
+    };
+}
+
 // A legacy bridge is down when its last full UTC hour fell below half the
 // median of the same hour on the previous 7 days, in requests or success,
 // with a median of at least 10 requests (the pipe's `degraded`). Once down,
@@ -380,6 +401,7 @@ const LABEL = {
     WATCH_DOWN: "DOWN",
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
+    COMMUNITY_DOWN: "DOWN",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -388,6 +410,7 @@ const SUBJECT = {
     analytics: "model status data",
     platform: "platform-wide",
     watch: "infra-watch",
+    community: "community monitor",
 };
 // Sign-up cards are about an email domain.
 const DOMAIN_KEY = /^signup:/;
@@ -415,6 +438,7 @@ export const COLOR = {
     // A farm signing up stands out like an outage, without the ping.
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
+    COMMUNITY_DOWN: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -532,6 +556,12 @@ function openRows(incident, now) {
                     : "/health unreachable",
             ],
             ["", "model and outage alerts paused"],
+        ];
+    if (kind === "COMMUNITY_DOWN")
+        return [
+            ["WHY", "community cycles failing or stuck"],
+            ...(info.error ? [["ERROR", info.error]] : []),
+            ["", "probes and community posts paused"],
         ];
     if (kind === "LEGACY_DOWN") {
         const rows = [

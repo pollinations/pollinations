@@ -1,15 +1,16 @@
-import { Section } from "@pollinations/ui";
+import { ClockIcon, InlineLink, Section, TerminalIcon } from "@pollinations/ui";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
-    type ActivityPeriod,
+    ActivityOverview,
+    type ActivitySearch,
+} from "../components/activity/activity-overview.tsx";
+import {
     activityTimezone,
     parseActivityPeriod,
 } from "../components/activity/activity-period";
-import { EarningsGraph } from "../components/activity/earnings-graph.tsx";
-import type { Metric } from "../components/activity/types.ts";
-import { UsageSection } from "../components/activity/usage-section.tsx";
-import { CliHint } from "../components/cli-hint.tsx";
+import { CopyValue } from "../components/models/copy-value.tsx";
 import { LastEventsPanel } from "../components/pollen/last-events-panel.tsx";
+import { Footnotes } from "../components/pollen/pollen-balance.tsx";
 
 function stringArray(value: unknown): string[] | undefined {
     return Array.isArray(value) &&
@@ -18,43 +19,20 @@ function stringArray(value: unknown): string[] | undefined {
         : undefined;
 }
 
-function metric(value: unknown): Metric | undefined {
-    return value === "requests" ? value : undefined;
-}
-
 export const Route = createFileRoute("/_dashboard/activity")({
-    validateSearch: (search: Record<string, unknown>) => {
-        const usage = parseActivityPeriod(
-            search.usageGranularity,
-            search.usagePeriod,
-            search.usageBucket,
-            search.usageAnchor,
-        );
-        const earnings = parseActivityPeriod(
-            search.earningsGranularity,
-            search.earningsPeriod,
-            search.earningsBucket,
-            search.earningsAnchor,
-        );
-        return {
-            usageGranularity: usage.granularity,
-            usagePeriod: usage.period,
-            usageBucket: usage.bucket,
-            usageAnchor: usage.anchor,
-            earningsGranularity: earnings.granularity,
-            earningsPeriod: earnings.period,
-            earningsBucket: earnings.bucket,
-            earningsAnchor: earnings.anchor,
-            usageMetric: metric(search.usageMetric),
-            usageGroup:
-                search.usageGroup === "key" ? ("key" as const) : undefined,
-            usageKeys: stringArray(search.usageKeys),
-            usageModels: stringArray(search.usageModels),
-            earningsMetric: metric(search.earningsMetric),
-            earningsApps: stringArray(search.earningsApps),
-            earningsModels: stringArray(search.earningsModels),
-        };
-    },
+    validateSearch: (search: Record<string, unknown>): ActivitySearch => ({
+        ...parseActivityPeriod(
+            search.granularity,
+            search.period,
+            search.bucket,
+            search.anchor,
+        ),
+        tab: search.tab === "earnings" ? search.tab : undefined,
+        metric: search.metric === "requests" ? search.metric : undefined,
+        group: search.group === "key" ? search.group : undefined,
+        keys: stringArray(search.keys),
+        models: stringArray(search.models),
+    }),
     beforeLoad: ({ context, location }) => {
         if (!context.user && !context.sessionUnavailable) {
             throw redirect({
@@ -69,111 +47,44 @@ export const Route = createFileRoute("/_dashboard/activity")({
 function ActivityPage() {
     const search = Route.useSearch();
     const navigate = useNavigate({ from: "/activity" });
-    const usagePeriod: ActivityPeriod = {
-        granularity: search.usageGranularity,
-        period: search.usagePeriod,
-        bucket: search.usageBucket,
-        anchor: search.usageAnchor,
-    };
-    const earningsPeriod: ActivityPeriod = {
-        granularity: search.earningsGranularity,
-        period: search.earningsPeriod,
-        bucket: search.earningsBucket,
-        anchor: search.earningsAnchor,
-    };
-
-    function updateSearch(changes: Partial<typeof search>): void {
-        void navigate({
-            resetScroll: false,
-            search: (current) => ({ ...current, ...changes }),
-        });
-    }
 
     return (
         <>
-            <Section title="Usage" framed>
-                <UsageSection
-                    period={usagePeriod}
-                    onPeriodChange={(value) =>
-                        updateSearch({
-                            usageGranularity: value.granularity,
-                            usagePeriod: value.period,
-                            usageBucket: value.bucket,
-                            usageAnchor: value.anchor,
-                        })
-                    }
-                    metric={search.usageMetric ?? "pollen"}
-                    groupBy={search.usageGroup ?? "model"}
-                    onGroupByChange={(group) =>
-                        updateSearch({
-                            usageGroup: group === "key" ? group : undefined,
-                        })
-                    }
-                    selectedKeyIds={search.usageKeys ?? []}
-                    selectedModels={search.usageModels ?? []}
-                    onMetricChange={(metric) =>
-                        updateSearch({
-                            usageMetric:
-                                metric === "pollen" ? undefined : metric,
-                        })
-                    }
-                    onSelectedKeyIdsChange={(usageKeys) =>
-                        updateSearch({
-                            usageKeys: usageKeys.length ? usageKeys : undefined,
-                        })
-                    }
-                    onSelectedModelsChange={(usageModels) =>
-                        updateSearch({
-                            usageModels: usageModels.length
-                                ? usageModels
-                                : undefined,
-                        })
-                    }
-                />
-            </Section>
-            <Section title="Earnings" framed>
-                <EarningsGraph
-                    period={earningsPeriod}
-                    onPeriodChange={(value) =>
-                        updateSearch({
-                            earningsGranularity: value.granularity,
-                            earningsPeriod: value.period,
-                            earningsBucket: value.bucket,
-                            earningsAnchor: value.anchor,
-                        })
-                    }
-                    metric={search.earningsMetric ?? "pollen"}
-                    selectedAppKeyIds={search.earningsApps ?? []}
-                    selectedModelIds={search.earningsModels ?? []}
-                    onMetricChange={(metric) =>
-                        updateSearch({
-                            earningsMetric:
-                                metric === "pollen" ? undefined : metric,
-                        })
-                    }
-                    onSelectedAppKeyIdsChange={(earningsApps) =>
-                        updateSearch({
-                            earningsApps: earningsApps.length
-                                ? earningsApps
-                                : undefined,
-                        })
-                    }
-                    onSelectedModelIdsChange={(earningsModels) =>
-                        updateSearch({
-                            earningsModels: earningsModels.length
-                                ? earningsModels
-                                : undefined,
+            <Section title="Overview" framed>
+                <ActivityOverview
+                    search={search}
+                    onChange={(changes) =>
+                        void navigate({
+                            resetScroll: false,
+                            search: (current) => ({ ...current, ...changes }),
                         })
                     }
                 />
             </Section>
             <Section title="Last events" framed>
                 <LastEventsPanel />
+                <Footnotes>
+                    <p className="flex items-start gap-1.5">
+                        <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Times shown in your timezone ({activityTimezone()})
+                        </span>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                        <TerminalIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span>Get this history in your terminal:</span>
+                        <CopyValue
+                            value="polli usage --history"
+                            label="Copy CLI command"
+                            showCopyIcon
+                        />
+                        <span aria-hidden="true">·</span>
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/cli">
+                            CLI docs
+                        </InlineLink>
+                    </div>
+                </Footnotes>
             </Section>
-            <p className="px-4 text-micro text-theme-text-muted sm:px-0">
-                Times shown in your timezone ({activityTimezone()}).
-            </p>
-            <CliHint command="usage --history" />
         </>
     );
 }

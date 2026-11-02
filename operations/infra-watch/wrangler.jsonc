@@ -7,10 +7,17 @@
     "compatibility_date": "2026-08-26",
     "observability": { "enabled": true },
     "triggers": { "crons": ["* * * * *"] },
-    // production-pollinations-setup-holds, shared with Enter: sign-up bursts
-    // write domain holds here, and held accounts' review requests are read.
+    // Domain detection inputs, shared with Enter. D1 owns each account's
+    // Quest Pollen spending restriction.
     "kv_namespaces": [
         { "binding": "SETUP_HOLDS", "id": "957b3d13dc2c4142ab22fdf889f27bec" }
+    ],
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "production-pollinations-enter-db",
+            "database_id": "fc771b05-4e24-48bf-980c-d09f21279bd1"
+        }
     ],
     "durable_objects": {
         "bindings": [{ "name": "WATCH", "class_name": "Watch" }]

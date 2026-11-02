@@ -13,8 +13,30 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18985": {
+      "merge_sha": "541069d36999fcde61596254d471288fa0ebbb52",
+      "merged_at": "2026-11-02T11:57:02Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch",
+        "deploy-applications.yml:Deploy operations/model-monitor"
+      ]
+    },
+    "18998": {
+      "merge_sha": "44c993d6cdaba17803afe691cd2218c906a7fcc5",
+      "merged_at": "2026-11-02T12:01:56Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/economics",
+        "deploy-applications.yml:Deploy operations/kpi",
+        "deploy-applications.yml:Deploy operations/model-monitor",
+        "deploy-applications.yml:Deploy operations/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
     }
   },
-  "production": "d5449a8c950d4770bcc9c537222e8265a79305c0",
+  "production": "ecc4f732415aef65cfb84f44ef29a62565f66a0e",
   "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

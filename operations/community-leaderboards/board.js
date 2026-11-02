@@ -1,15 +1,47 @@
-// The daily community image leaderboard: the pixel-art board and its post,
-// copied from the EC2 community monitor's build-image-leaderboard.mjs, the
-// text board's image counterpart.
+// The daily community leaderboards, text and image: the pixel-art board and
+// its post, copied from the EC2 community monitor's build-leaderboard.mjs
+// and build-image-leaderboard.mjs. The design is explained in
+// .claude/skills/community-leaderboard/SKILL.md.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const MIN_REQUESTS = 10; // image traffic is much lower than text traffic
 const TOP_N = 10;
 const SPEED_TOP_N = 3;
+
+// What sets the two boards apart: the count they rank by, the speed they
+// race on, their words, and the traffic a model needs to be ranked (image
+// traffic is much lower than text traffic, so ignore only the quietest).
+const TEXT = {
+    name: "Text",
+    emoji: "💬",
+    minRequests: 50,
+    count: "total_tokens",
+    noun: "tokens",
+    verb: "served",
+    speed: "median_tps",
+    speedUnit: "T/S",
+    speedHead: "SPEED T/S",
+    speedNote: "MEDIAN TOKENS PER SECOND",
+    speedPost: "tokens/sec",
+    lowerIsFaster: false,
+};
+const IMAGE = {
+    name: "Image",
+    emoji: "🖼️",
+    minRequests: 10,
+    count: "images",
+    noun: "images",
+    verb: "generated",
+    speed: "median_seconds",
+    speedUnit: "SEC",
+    speedHead: "MEDIAN SEC",
+    speedNote: "MEDIAN SECONDS PER IMAGE",
+    speedPost: "sec/image",
+    lowerIsFaster: true,
+};
 
 function hpBadge(success) {
     if (success >= 100) return '<span class="perfect">PERFECT</span>';
@@ -22,60 +54,66 @@ function hpBadge(success) {
                 ? [1, "warn"]
                 : [0, "bad"];
     if (n === 0) return '<i class="skull"></i>';
-    return Array.from({ length: n }, () => `<i class="ph ${cls}"></i>`).join(
-        "",
-    );
+    return Array.from(
+        { length: n },
+        () => '<i class="ph ' + cls + '"></i>',
+    ).join("");
 }
 
 function formatCount(n) {
     return n.toLocaleString("en-US").replace(/,/g, "<i>,</i>");
 }
 
-function buildHtml({ rows, speedChampions, totals, date }) {
+function buildHtml(kind, { rows, speedChampions, totals, date }) {
     const fontsCss = readFileSync(
         join(__dirname, "fonts-embedded.css"),
         "utf8",
     );
-    const maxImages = rows[0].images;
+    const top = rows[0][kind.count];
+    const NAME = kind.name.toUpperCase();
+    const NOUN = kind.noun.toUpperCase();
 
     const bodyRows = rows
         .map((r, i) => {
             const isFirst = i === 0;
             const [owner, ...rest] = r.model.split("/");
             const model = rest.join("/");
-            const pct = (r.images / maxImages) * 100;
+            const pct = (r[kind.count] / top) * 100;
             const crown = isFirst ? '<span class="crown"></span>' : "";
             return `  <div class="row${isFirst ? " first" : ""}">
     <div class="bar" style="width:${pct}%"></div>
-    <span class="score">${formatCount(r.images)}</span>
+    <span class="score">${formatCount(r[kind.count])}</span>
     <span class="name">${crown}<b>${owner}</b>/${model}</span>
-    <span class="speed">${r.median_seconds}</span>
+    <span class="speed">${r[kind.speed]}</span>
     <span class="hp">${hpBadge(r.success)}</span>
   </div>`;
         })
         .join("\n");
 
-    const fastestSeconds = speedChampions[0].median_seconds;
+    const best = speedChampions[0][kind.speed];
     const cards = speedChampions
         .map((c, i) => {
             const [owner, ...rest] = c.model.split("/");
             const model = rest.join("/");
-            const pct = (fastestSeconds / c.median_seconds) * 100;
+            const pct =
+                (kind.lowerIsFaster
+                    ? best / c[kind.speed]
+                    : c[kind.speed] / best) * 100;
             const gold = i === 0 ? " gold" : "";
             const medal = i === 0 ? '<span class="medal">FASTEST</span>' : "";
             return `    <div class="card${gold}">
       ${medal}
-      <div class="big">${c.median_seconds} <span class="unit">SEC</span></div>
+      <div class="big">${c[kind.speed]} <span class="unit">${kind.speedUnit}</span></div>
       <div class="sbar"><div class="fill" style="width:${pct}%"></div></div>
       <div class="who"><b>${owner}</b>/${model}</div>
     </div>`;
         })
         .join("\n");
 
-    const imagesDisplay = totals.images.toLocaleString("en-US");
+    const countDisplay = totals[kind.count].toLocaleString("en-US");
 
     return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Community Image Model Leaderboard</title>
+<html><head><meta charset="utf-8"><title>Community ${kind.name} Model Leaderboard</title>
 <style id="fonts">${fontsCss}</style>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; border-radius:0 !important; }
@@ -164,26 +202,26 @@ function buildHtml({ rows, speedChampions, totals, date }) {
 </div>
 <div class="titlebar">
   <div class="star"></div>
-  <h1>IMAGE LEADERBOARD</h1>
+  <h1>${NAME} LEADERBOARD</h1>
   <div class="star flip"></div>
 </div>
-<div class="subtitle">RANKED BY IMAGES GENERATED &middot; LAST 24 HOURS</div>
+<div class="subtitle">RANKED BY ${NOUN} ${kind.verb.toUpperCase()} &middot; LAST 24 HOURS</div>
 <div class="counterwrap">
   <div class="counter">
-    <span class="cdig">${imagesDisplay}</span>
-    <span class="cunit">IMAGES<br>&middot; 24H &middot;</span>
+    <span class="cdig">${countDisplay}</span>
+    <span class="cunit">${NOUN}<br>&middot; 24H &middot;</span>
   </div>
   <div class="csub">${totals.requests.toLocaleString("en-US")} REQUESTS &middot; ${totals.models} MODELS</div>
 </div>
 <div class="cab">
-  <div class="thead"><span>IMAGES &middot; 24H</span><span>MODEL</span><span class="r">MEDIAN SEC</span><span class="c">SUCCESS</span></div>
+  <div class="thead"><span>${NOUN} &middot; 24H</span><span>MODEL</span><span class="r">${kind.speedHead}</span><span class="c">SUCCESS</span></div>
 ${bodyRows}
 </div>
 <div class="bonus">
   <div class="bonus-title">
     <span class="px">FASTEST</span>
     <div class="dash"></div>
-    <span class="px" style="font-size:8px;color:#6b5f80">MEDIAN SECONDS PER IMAGE &middot; 24H</span>
+    <span class="px" style="font-size:8px;color:#6b5f80">${kind.speedNote} &middot; 24H</span>
   </div>
   <div class="cards">
 ${cards}
@@ -203,7 +241,7 @@ ${cards}
 </body></html>`;
 }
 
-function buildDiscordMarkdown({ date, totals, rows, speedChampions }) {
+function buildDiscordMarkdown(kind, { date, totals, rows, speedChampions }) {
     const top = rows[0];
     const [topOwner, ...topRest] = top.model.split("/");
     const topModel = topRest.join("/");
@@ -217,12 +255,12 @@ function buildDiscordMarkdown({ date, totals, rows, speedChampions }) {
     const mrModel = mrRest.join("/");
 
     const lines = [
-        `# 🖼️ COMMUNITY IMAGE MODEL LEADERBOARD — ${date}`,
+        `# ${kind.emoji} COMMUNITY ${kind.name.toUpperCase()} MODEL LEADERBOARD — ${date}`,
         "",
-        `**${totals.images.toLocaleString("en-US")} images** generated in 24 hours across ${totals.models} models (${totals.requests.toLocaleString("en-US")} requests).`,
+        `**${totals[kind.count].toLocaleString("en-US")} ${kind.noun}** ${kind.verb} in 24 hours across ${totals.models} models (${totals.requests.toLocaleString("en-US")} requests).`,
         "",
-        `👑 \`${topOwner}/${topModel}\` — ${top.images.toLocaleString("en-US")} images · ${top.success}% success`,
-        `⚡ fastest: \`${fastOwner}/${fastModel}\` — **${fastest.median_seconds} sec/image** median`,
+        `👑 \`${topOwner}/${topModel}\` — ${top[kind.count].toLocaleString("en-US")} ${kind.noun} · ${top.success}% success`,
+        `⚡ fastest: \`${fastOwner}/${fastModel}\` — **${fastest[kind.speed]} ${kind.speedPost}** median`,
     ];
     if (mostRequests.model !== top.model) {
         lines.push(
@@ -237,28 +275,45 @@ function buildDiscordMarkdown({ date, totals, rows, speedChampions }) {
     return lines.join("\n");
 }
 
-// The day's board and post from every community image model's 24-hour row,
-// or null when none was busy enough to rank. Only `listed` models, the
-// public ones, count: a private model is never ranked or totalled.
-export function imageBoard(rows, date, listed) {
+// The day's board and post from every community model's 24-hour row, or
+// null when none was busy enough to rank. Only `listed` models, the public
+// ones, count: a private model is never ranked or totalled. An image model
+// needs images to be ranked, and a speed to race.
+function board(kind, rows, date, listed) {
     const all = rows.filter((r) => listed.has(r.model));
     const ranked = all
-        .filter((r) => r.requests >= MIN_REQUESTS && r.images > 0)
-        .sort((a, b) => b.images - a.images);
+        .filter(
+            (r) =>
+                r.requests >= kind.minRequests &&
+                (!kind.lowerIsFaster || r[kind.count] > 0),
+        )
+        .sort((a, b) => b[kind.count] - a[kind.count]);
     if (ranked.length === 0) return null;
     const sum = (field) => all.reduce((total, r) => total + r[field], 0);
     const data = {
         rows: ranked.slice(0, TOP_N),
         speedChampions: ranked
-            .filter((row) => row.median_seconds > 0)
-            .sort((a, b) => a.median_seconds - b.median_seconds)
+            .filter((r) => !kind.lowerIsFaster || r[kind.speed] > 0)
+            .sort((a, b) =>
+                kind.lowerIsFaster
+                    ? a[kind.speed] - b[kind.speed]
+                    : b[kind.speed] - a[kind.speed],
+            )
             .slice(0, SPEED_TOP_N),
         totals: {
             requests: sum("requests"),
-            images: sum("images"),
+            [kind.count]: sum(kind.count),
             models: all.length,
         },
         date,
     };
-    return { html: buildHtml(data), markdown: buildDiscordMarkdown(data) };
+    return {
+        html: buildHtml(kind, data),
+        markdown: buildDiscordMarkdown(kind, data),
+    };
 }
+
+export const textBoard = (rows, date, listed) =>
+    board(TEXT, rows, date, listed);
+export const imageBoard = (rows, date, listed) =>
+    board(IMAGE, rows, date, listed);

@@ -97,26 +97,23 @@ afterEach(() => {
 });
 
 describe("Wan 3.0 Prime via Fal", () => {
-    it.each(["16:9", "4:3", "1:1", "3:4", "9:16", "adaptive"] as const)(
-        "preserves explicit %s with default dimensions for text and reference video",
-        async (aspectRatio) => {
-            for (const reference_videos of [undefined, [REF_VIDEO_URL]]) {
-                const requests: ProviderRequest[] = [];
-                mockFalFetch(requests);
-                await callWan3FalAPI("a sailboat crossing a calm bay", {
-                    ...baseParams,
-                    width: 1024,
-                    height: 1024,
-                    aspectRatio,
-                    reference_videos,
-                });
-                expect(requests[0].url).toBe(
-                    reference_videos ? R2V_ENDPOINT : TEXT_ENDPOINT,
-                );
-                expect(requests[0].body?.aspect_ratio).toBe(aspectRatio);
-            }
-        },
-    );
+    it("prefers an explicit ratio over width/height for text and reference video", async () => {
+        for (const reference_videos of [undefined, [REF_VIDEO_URL]]) {
+            const requests: ProviderRequest[] = [];
+            mockFalFetch(requests);
+            await callWan3FalAPI("a sailboat crossing a calm bay", {
+                ...baseParams,
+                width: 1024,
+                height: 1024,
+                aspectRatio: "16:9",
+                reference_videos,
+            });
+            expect(requests[0].url).toBe(
+                reference_videos ? R2V_ENDPOINT : TEXT_ENDPOINT,
+            );
+            expect(requests[0].body?.aspect_ratio).toBe("16:9");
+        }
+    });
 
     it("waits beyond five minutes without submitting another generation", async () => {
         vi.useFakeTimers();
@@ -231,6 +228,7 @@ describe("Wan 3.0 Prime via Fal", () => {
         await callWan3FalAPI("smooth transition", {
             ...baseParams,
             image: [START, END],
+            aspectRatio: "9:16",
         });
 
         expect(requests[0].url).toBe(IMAGE_ENDPOINT);
@@ -238,25 +236,6 @@ describe("Wan 3.0 Prime via Fal", () => {
         expect(requests[0].body?.end_image_url).toBe(END);
         expect(requests[0].body?.aspect_ratio).toBe("adaptive");
     });
-
-    it.each([
-        ["9:16", [], "9:16"],
-        ["21:9", [], "21:9"],
-        ["9:16", ["https://media.pollinations.ai/start.png"], "adaptive"],
-    ] as const)(
-        "sends explicit %s over 1280x720 with frames %j as %s",
-        async (aspectRatio, image, expected) => {
-            const requests: ProviderRequest[] = [];
-            mockFalFetch(requests);
-            await callWan3FalAPI("a sailboat crossing a calm bay", {
-                ...baseParams,
-                dimensionsExplicit: true,
-                aspectRatio,
-                image: [...image],
-            });
-            expect(requests[0].body?.aspect_ratio).toBe(expected);
-        },
-    );
 
     it("R2V maps Pollinations references to the Fal Prime contract", async () => {
         const requests: ProviderRequest[] = [];

@@ -11,13 +11,13 @@
     "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {}'",
     "containers:list": "wrangler containers list",
     "containers:images": "wrangler containers images list",
-    "build": "npm run build --prefix ../../packages/ui && vite build",
+    "build": "npm run build --prefix ../../../packages/ui && vite build",
     "test": "node --experimental-strip-types --test test/*.test.ts"
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.7",
-    "@pollinations/auth": "file:../../packages/auth",
-    "@pollinations/ui": "file:../../packages/ui",
+    "@pollinations/auth": "file:../../../packages/auth",
+    "@pollinations/ui": "file:../../../packages/ui",
     "hono": "^4.10.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

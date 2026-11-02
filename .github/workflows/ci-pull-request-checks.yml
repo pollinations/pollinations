@@ -161,7 +161,7 @@ jobs:
           operations/deployment/*.test.cjs
           operations/community-monitor/*.test.mjs
           operations/model-evals/*.test.js
-          operations/model-monitor/src/*.test.js
+          operations/dashboards/model-monitor/src/*.test.js
 
       - name: Test shared providers and agent configurations
         run: npx vitest run --config shared/vitest.config.ts

@@ -396,14 +396,14 @@ describe("service availability row", () => {
     it("keeps community traffic out of the service-health population", () => {
         const regularPipe = readFileSync(
             new URL(
-                "../../../enter.pollinations.ai/observability/endpoints/weekly_health_stats.pipe",
+                "../../../../enter.pollinations.ai/observability/endpoints/weekly_health_stats.pipe",
                 import.meta.url,
             ),
             "utf8",
         );
         const communityPipe = readFileSync(
             new URL(
-                "../../../enter.pollinations.ai/observability/endpoints/weekly_usage_stats.pipe",
+                "../../../../enter.pollinations.ai/observability/endpoints/weekly_usage_stats.pipe",
                 import.meta.url,
             ),
             "utf8",

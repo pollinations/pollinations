@@ -2,7 +2,7 @@
   "target": "script",
   "credentials": "myceli",
   "sops": "none",
-  "install": "npm ci --prefix ../.. && npm ci",
+  "install": "npm ci --prefix ../../.. && npm ci",
   "deploy": "npm run deploy",
   "verify": [
     "https://kpi.pollinations.ai/"

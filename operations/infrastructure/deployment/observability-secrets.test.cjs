@@ -11,7 +11,7 @@ test("Observability provisions its session secret and rejects missing configurat
     );
     const script = resolve(
         __dirname,
-        "../dashboards/observability/scripts/push-secrets.mjs",
+        "../../dashboards/observability/scripts/push-secrets.mjs",
     );
     const input = join(directory, "input.json");
     const secrets = {

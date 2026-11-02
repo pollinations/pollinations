@@ -1,3 +1,4 @@
+import importlib.util
 import unittest
 import json
 import os
@@ -5,8 +6,10 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from operations.github import project_manager as manager
-from operations.github.project_manager import classification_answer
+spec = importlib.util.spec_from_file_location("project_manager", Path(__file__).with_name("project_manager.py"))
+manager = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(manager)
+classification_answer = manager.classification_answer
 
 
 class ClassificationTest(unittest.TestCase):

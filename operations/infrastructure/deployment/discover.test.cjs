@@ -63,7 +63,8 @@ test("selects direct and shared dependency changes", () => {
     assert.equal(selectChanged(apps, ["packages/ui/src/index.ts"]).length, 1);
     assert.equal(selectChanged(apps, ["README.md"]).length, 0);
     assert.equal(
-        selectChanged(apps, ["operations/deployment/deploy.sh"]).length,
+        selectChanged(apps, ["operations/infrastructure/deployment/deploy.sh"])
+            .length,
         0,
     );
     fs.rmSync(root, { recursive: true, force: true });

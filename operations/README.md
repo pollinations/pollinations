@@ -1,6 +1,6 @@
 # Operations
 
-Internal tools that run Pollinations, grouped by what they are for. Apps with a `deploy.json` deploy from `production` through [`deployment/`](deployment/README.md).
+Internal tools that run Pollinations, grouped by what they are for. Apps with a `deploy.json` deploy from `production` through [`infrastructure/deployment/`](infrastructure/deployment/README.md).
 
 ## Dashboards
 
@@ -47,9 +47,9 @@ Internal tools that run Pollinations, grouped by what they are for. Apps with a 
 | [`infrastructure/cpu`](infrastructure/cpu/) | CPU host list and its encrypted secrets |
 | [`infrastructure/e2b`](infrastructure/e2b/) | E2B sandbox template |
 | [`infrastructure/azure-sandboxes`](infrastructure/azure-sandboxes/) | Azure sandbox image |
-| [`deployment`](deployment/README.md) | Deploy scripts for every app with a `deploy.json` |
-| [`github`](github/project-manager.md) | Project manager bot that sets Area and Priority on issues and PRs |
-| [`mcp-registry`](mcp-registry/DIRECTORY_LISTINGS.md) | Publishes the hosted MCP servers to the official MCP registry |
+| [`infrastructure/deployment`](infrastructure/deployment/README.md) | Deploy scripts for every app with a `deploy.json` |
+| [`infrastructure/project-manager`](infrastructure/project-manager/project-manager.md) | Project manager bot that sets Area and Priority on issues and PRs |
+| [`infrastructure/mcp-registry`](infrastructure/mcp-registry/DIRECTORY_LISTINGS.md) | Publishes the hosted MCP servers to the official MCP registry |
 
 ## Legal
 

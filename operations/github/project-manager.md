@@ -77,7 +77,7 @@ Apps built on Pollinations: submissions and review (`operations/app-management/`
 Not here: plugins → Developer tools; hosted agents and MCP servers → Agents & agent tools; community agents → Community models; Polli → Internal automation.
 
 ### Data & insights
-Getting data into Tinybird (`enter.pollinations.ai/observability/`) and what we learn from it (`operations/dashboards/kpi/`, `operations/economics/`): datasources, pipes, event schemas, traffic syncs, product event recording, KPIs, funnels, revenue, provider costs, the economics ledger, analysis of census answers.
+Getting data into Tinybird (`enter.pollinations.ai/observability/`) and what we learn from it (`operations/dashboards/kpi/`, `operations/dashboards/economics/`): datasources, pipes, event schemas, traffic syncs, product event recording, KPIs, funnels, revenue, provider costs, the economics ledger, analysis of census answers.
 Not here: service health → API & reliability.
 
 ## Type

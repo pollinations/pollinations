@@ -1732,9 +1732,9 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         isSpecialized: true,
     },
-    "typesafe/jev-1.13": {
+    "typesafe/jev-latest": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev", "typesafe/jev"],
+        aliases: ["jev", "typesafe/jev", "typesafe/jev-1.13", "jev-latest"],
         provider: "vercel",
         publisher: "TypeSafe",
         category: "decision",
@@ -1755,7 +1755,7 @@ const TEXT_BASE_SERVICES = {
         // the chat adapter only — /text returns plain content and has nothing
         // to return here.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,
         reasoning: false,

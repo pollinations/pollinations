@@ -817,7 +817,7 @@ export interface DecisionUsage {
 
 /** Options for requesting a decision (POST /alpha/decisions) */
 export interface DecisionOptions extends RequestOptions {
-    /** Decision model to use (default: 'typesafe/jev-1.13') */
+    /** Decision model to use (default: 'typesafe/jev-latest') */
     model?: string;
     /** The facts/context to decide on */
     state: DecisionContent;

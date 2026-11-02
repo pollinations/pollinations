@@ -30,7 +30,7 @@ function buildServer() {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        model: "typesafe/jev-1.13",
+                        model: "typesafe/jev-latest",
                         state,
                         questions,
                     }),

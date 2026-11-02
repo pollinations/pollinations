@@ -957,13 +957,23 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "typesafe/jev-latest",
+        config: portkeyConfig["jev-latest"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "typesafe/jev-latest:openrouter:typesafe",
+        config: portkeyConfig["typesafe/jev-latest:openrouter:typesafe"],
+        useSystemOneApi: true,
+    },
+    {
         name: "typesafe/jev-1.13",
-        config: portkeyConfig["jev-1.13"],
+        config: portkeyConfig["jev-latest"],
         useSystemOneApi: true,
     },
     {
         name: "typesafe/jev-1.13:openrouter:typesafe",
-        config: portkeyConfig["typesafe/jev-1.13:openrouter:typesafe"],
+        config: portkeyConfig["typesafe/jev-latest:openrouter:typesafe"],
         useSystemOneApi: true,
     },
     {

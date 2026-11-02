@@ -4,7 +4,7 @@ import { configure, decision, resetClient } from "./helpers.js";
 
 const response = {
     id: "dec-1",
-    model: "typesafe/jev-1.13",
+    model: "typesafe/jev-latest",
     provider: "TypeSafe",
     answers: { urgent: { type: "noul", noul: 0.9 } },
     usage: { input_tokens: 10, output_tokens: 1 },

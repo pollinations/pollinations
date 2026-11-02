@@ -1158,7 +1158,7 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps Jev's lower Vercel quote when OpenRouter serves it", () => {
-        const model = "typesafe/jev-1.13";
+        const model = "typesafe/jev-latest";
         expect(TEXT_SERVICES[model].fallbacks).toEqual([
             `${model}:openrouter:typesafe`,
         ]);

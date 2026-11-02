@@ -10,7 +10,7 @@ import { z } from "zod";
  */
 
 /** The only decision model today; callers may omit `model` entirely. */
-export const DEFAULT_DECISION_MODEL = "typesafe/jev-1.13";
+export const DEFAULT_DECISION_MODEL = "typesafe/jev-latest";
 
 /**
  * State, instructions, and criteria all accept any JSON the caller wants to

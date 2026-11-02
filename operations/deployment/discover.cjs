@@ -52,15 +52,23 @@ function discover(scope, repoRoot = REPO_ROOT) {
     if (scope !== "apps" && scope !== "operations") {
         throw new Error("scope must be apps, operations, or all");
     }
-    return fs
-        .readdirSync(path.join(repoRoot, scope), { withFileTypes: true })
-        .filter((entry) => entry.isDirectory())
-        .map((entry) => `${scope}/${entry.name}`)
-        .filter((appPath) =>
-            fs.existsSync(path.join(repoRoot, appPath, "deploy.json")),
-        )
+    // Operations groups its apps in folders such as operations/dashboards/kpi.
+    return appPaths(scope, scope === "operations" ? 2 : 1, repoRoot)
         .map((appPath) => readManifest(appPath, repoRoot))
         .sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function appPaths(dir, depth, repoRoot) {
+    return fs
+        .readdirSync(path.join(repoRoot, dir), { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .flatMap((entry) => {
+            const appPath = `${dir}/${entry.name}`;
+            if (fs.existsSync(path.join(repoRoot, appPath, "deploy.json"))) {
+                return [appPath];
+            }
+            return depth > 1 ? appPaths(appPath, depth - 1, repoRoot) : [];
+        });
 }
 
 function selectChanged(apps, changedFiles) {

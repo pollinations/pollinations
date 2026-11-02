@@ -359,14 +359,16 @@ describe("direct Responses transport", () => {
 
     it("keeps gpt-5.4 recovery on Standard in native Responses", () => {
         const input = request({
-            model: "openai/gpt-5.4:openai",
+            model: "openai/gpt-5.4:aws",
             service_tier: "priority",
         });
         const target = resolveDirectResponsesTarget(input.model, input);
-        if (!target) throw new Error("expected direct OpenAI target");
-        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        if (!target) throw new Error("expected global AWS target");
+        expect(target.endpoint).toBe(
+            "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
+        );
         expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
-            model: "gpt-5.4-2026-03-05",
+            model: "global.openai.gpt-5.4",
             service_tier: "default",
             store: false,
         });

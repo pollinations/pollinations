@@ -462,15 +462,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins gpt-5.4 recovery to exact OpenAI Standard", () => {
+    it("pins gpt-5.4 recovery to global AWS Standard on native Chat", () => {
         const resolved = resolveModelConfig(messages, {
-            model: "openai/gpt-5.4:openai",
+            model: "openai/gpt-5.4:aws",
             service_tier: "priority",
         });
-        expect(resolved.options.model).toBe("gpt-5.4-2026-03-05");
+        expect(resolved.options.model).toBe("global.openai.gpt-5.4");
         expect(resolved.options.service_tier).toBe("default");
         expect(resolved.options.modelConfig).toMatchObject({
-            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            responsesEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             supportsMaxCompletionTokens: true,
             supportsStreamOptions: true,
         });
@@ -603,23 +606,31 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Grok 4.7 to xAI with a base-xAI OpenRouter fallback", () => {
-        const primary = resolveModelConfig(messages, {
-            model: "x-ai/grok-4.7",
-        });
-        const fallback = resolveModelConfig(messages, {
-            model: "x-ai/grok-4.7:openrouter",
-        });
+    it.each([undefined, "auto", "priority"])(
+        "routes Grok 4.7 to global AWS with Standard xAI recovery (%s)",
+        (service_tier) => {
+            const primary = resolveModelConfig(messages, {
+                model: "x-ai/grok-4.7",
+                service_tier,
+            });
+            const fallback = resolveModelConfig(messages, {
+                model: "x-ai/grok-4.7:xai",
+                service_tier,
+            });
 
-        expect(primary.options.model).toBe("grok-4.7");
-        expect(primary.options.provider).toBeUndefined();
-        expect(fallback.options.model).toBe("x-ai/grok-4.7");
-        expect(fallback.options.provider).toEqual({
-            only: ["xai"],
-            ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
-            allow_fallbacks: false,
-        });
-    });
+            expect(primary.options.model).toBe("global.xai.grok-4.7");
+            expect(primary.options.provider).toBeUndefined();
+            expect(primary.options.modelConfig).toMatchObject({
+                provider: "bedrock",
+                directEndpoint:
+                    "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            });
+            expect(primary.options.service_tier).toBe("default");
+            expect(fallback.options.model).toBe("grok-4.7");
+            expect(fallback.options.provider).toBeUndefined();
+            expect(fallback.options.service_tier).toBe("default");
+        },
+    );
 
     it.each([
         ["xiaomi/mimo-v2.6-flash", "xiaomimimo/mimo-v2.6-flash"],
@@ -688,14 +699,15 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("keeps Grok 4.6 recovery on direct xAI", () => {
+    it("routes Grok 4.6 recovery through global AWS", () => {
         const resolved = resolveModelConfig(messages, {
-            model: "x-ai/grok-4.6:xai",
+            model: "x-ai/grok-4.6:aws",
         });
         expect(resolved.options.modelConfig).toMatchObject({
-            provider: "openai",
-            model: "grok-4.6",
-            directEndpoint: "https://api.x.ai/v1/chat/completions",
+            provider: "bedrock",
+            model: "global.xai.grok-4.6",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
         });
         expect(findModelByName("x-ai/grok-4.6:azure:sweden")).toBeNull();
     });
@@ -1084,17 +1096,36 @@ describe("resolveModelConfig", () => {
         expect(transformed?.options.reasoning_effort).toBe("high");
     });
 
-    it("routes Kimi K3 directly to Fireworks without fallback", () => {
+    it("routes Kimi K3 to global Bedrock Standard without filtering optional controls", () => {
         const result = resolveModelConfig(messages, {
             model: "moonshotai/kimi-k3",
+            service_tier: "priority",
+            presence_penalty: 0.1,
+            logprobs: true,
         });
 
-        expect(result.options.model).toBe("accounts/fireworks/models/kimi-k3");
+        expect(result.options).toMatchObject({
+            model: "global.moonshotai.kimi-k3",
+            service_tier: "default",
+            presence_penalty: 0.1,
+            logprobs: true,
+        });
         expect(result.options.modelConfig).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+        });
+        expect(result.options.provider).toBeUndefined();
+        const fallback = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k3:fireworks",
+        });
+        expect(fallback.options.model).toBe(
+            "accounts/fireworks/models/kimi-k3",
+        );
+        expect(fallback.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Nemotron 3.5 Super VL directly to DeepInfra with a Together fallback", () => {

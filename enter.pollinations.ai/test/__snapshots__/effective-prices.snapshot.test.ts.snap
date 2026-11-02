@@ -850,14 +850,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000009,
     },
   },
-  "cohere/embed-v4.0:azure:sweden": {
+  "cohere/embed-v4.0:aws": {
     "cost": {
-      "promptImageTokens": 0.00000047,
+      "promptImageTokens": 0.00000012,
       "promptTextTokens": 0.00000012,
     },
     "price": {
-      "promptImageTokens": 0.0000003525,
-      "promptTextTokens": 0.00000009,
+      "promptImageTokens": 0.00000012,
+      "promptTextTokens": 0.00000012,
     },
   },
   "deepseek/deepseek-v4-flash": {
@@ -2579,11 +2579,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "moonshotai/kimi-k3": {
     "cost": {
       "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.00000375,
       "promptCachedTokens": 0.0000003,
       "promptTextTokens": 0.000003,
     },
     "price": {
       "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.00000375,
       "promptCachedTokens": 0.0000003,
       "promptTextTokens": 0.000003,
     },
@@ -2598,6 +2600,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00001425,
       "promptCachedTokens": 0.000000285,
       "promptTextTokens": 0.00000285,
+    },
+  },
+  "moonshotai/kimi-k3:fireworks": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptCachedTokens": 0.0000003,
+      "promptTextTokens": 0.000003,
+    },
+    "price": {
+      "completionTextTokens": 0.000015,
+      "promptCachedTokens": 0.0000003,
+      "promptTextTokens": 0.000003,
     },
   },
   "nex-agi/nex-n2.5-mini": {
@@ -2845,7 +2859,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000002,
     },
   },
-  "openai/gpt-5.4:openai": {
+  "openai/gpt-5.4:aws": {
     "cost": {
       "completionTextTokens": 0.000015,
       "promptCachedTokens": 0.00000025,
@@ -4609,20 +4623,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
-  "x-ai/grok-4.6:xai": {
+  "x-ai/grok-4.6:aws": {
     "cost": {
       "completionTextTokens": 0.000006,
       "promptCachedTokens": 0.0000005,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
-    },
-    "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.000012,
-        "promptCachedTokens": 0.000001,
-        "promptImageTokens": 0.000004,
-        "promptTextTokens": 0.000004,
-      },
     },
     "price": {
       "completionTextTokens": 0.000006,
@@ -4639,6 +4645,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
     "costVariants": {
+      "long_context": {},
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.0000005,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+    "priceMultiplierVariants": {
+      "long_context": 2,
+    },
+  },
+  "x-ai/grok-4.7:xai": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.0000005,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+    "costVariants": {
       "long_context": {
         "completionTextTokens": 0.000012,
         "promptCachedTokens": 0.000001,
@@ -4651,25 +4677,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000005,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
-    },
-  },
-  "x-ai/grok-4.7:openrouter": {
-    "cost": {
-      "completionTextTokens": 0.00000633,
-      "promptCachedTokens": 0.0000005275,
-      "promptTextTokens": 0.00000211,
-    },
-    "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.00001266,
-        "promptCachedTokens": 0.000001055,
-        "promptTextTokens": 0.00000422,
-      },
-    },
-    "price": {
-      "completionTextTokens": 0.00000633,
-      "promptCachedTokens": 0.0000005275,
-      "promptTextTokens": 0.00000211,
     },
   },
   "x-ai/grok-imagine-image": {

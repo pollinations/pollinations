@@ -587,8 +587,7 @@ def build_rows_for_file(repo_root: Path, rel_path: str, git_sha: str) -> list[di
 # both take real network round-trips per call, so a sequential loop over ~1800 files
 # spends almost all its time waiting on I/O rather than doing local work.
 #
-# POLLI_VECTOR_DB is an sk_ (secret) key: gen.pollinations.ai's rate-limit middleware
-# (rate-limit-durable.ts) explicitly skips non-publishable keys, so there's no
+# POLLI_VECTOR_DB is an sk_ (secret) key, so there's no
 # platform-side concurrency wall here — the only real ceiling is pollen balance (402 on
 # empty). Still bounded rather than unbounded to stay a reasonable client of Vectorize's
 # own API and the GitHub Actions runner's resources, not because of a Pollinations limit.

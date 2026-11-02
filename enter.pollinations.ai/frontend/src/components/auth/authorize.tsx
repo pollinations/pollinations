@@ -522,6 +522,14 @@ export function Authorize() {
                 subject={subject}
                 description={access}
                 error={`Couldn’t connect: ${error}`}
+                errorPaths={[
+                    "/api/app-lookup",
+                    "/api/device/info",
+                    // Allow access: create the key, then hand it over.
+                    "/account/keys",
+                    "/api/oauth/code",
+                    "/api/device/approve",
+                ]}
                 actions={
                     <Button
                         intent="neutral"
@@ -581,7 +589,7 @@ export function Authorize() {
                     <Alert intent="warning" className="mb-4">
                         Access goes to a program on this computer, and any
                         program can use this app's name. Only allow it if you
-                        just started this sign-in yourself.
+                        just started this request yourself.
                     </Alert>
                 )}
             <form

@@ -215,6 +215,7 @@ function GrantPage() {
                 footnote="help"
                 title={title}
                 error="Couldn’t load this request. Check that you’re signed in as the key owner."
+                errorPaths={["/account/keys"]}
             />
         );
     }

@@ -55,7 +55,7 @@ def resolve_api_key() -> str:
     """The credential this request may spend.
 
     Normally the per-request bearer the caller or gateway passed in (`ag_` run
-    tokens, or direct `sk_`/`pk_` keys). Falls back to the operator's own key
+    tokens, or direct `sk_` keys). Falls back to the operator's own key
     only when `POLLI_ALLOW_OPERATOR_KEY` is set.
     """
     key = _current_api_key()

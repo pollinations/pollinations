@@ -1,4 +1,4 @@
-import { createProviderResolver } from "../../../../../shared/providers";
+import { createProviderResolver } from "../../../../../../shared/providers";
 import registryJson from "../../../provider-registry.json";
 import type {
     Data,

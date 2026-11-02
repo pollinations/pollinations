@@ -6,7 +6,7 @@ Internal tools that run Pollinations, grouped by what they are for. Apps with a 
 
 | Folder | What it is |
 | --- | --- |
-| [`economics`](economics/) | economics.pollinations.ai: income, provider costs and balances, plus the provider list the shared tests read |
+| [`dashboards/economics`](dashboards/economics/) | economics.pollinations.ai: income, provider costs and balances, plus the provider list the shared tests read |
 | [`dashboards/kpi`](dashboards/kpi/) | kpi.pollinations.ai: growth numbers, plus the daily GitHub stars snapshot |
 | [`dashboards/model-monitor`](dashboards/model-monitor/) | model-monitor.pollinations.ai: public model health and the Trust tab |
 | [`dashboards/observability`](dashboards/observability/) | observability.pollinations.ai: Grafana dashboards |

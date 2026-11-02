@@ -121,7 +121,10 @@ type PeriodQuery = {
     timezone: string;
 };
 
-type Loaded = { rows: ActivityRow[]; download?: () => Promise<void> };
+type Loaded = {
+    rows: ActivityRow[];
+    download?: (picks: Picks) => Promise<void>;
+};
 
 export const ACTIVITY_SOURCES: Record<
     ActivityTab,
@@ -144,14 +147,17 @@ export const ACTIVITY_SOURCES: Record<
             };
             return {
                 rows: usage.map(usageRow),
-                // Lists every request, so the server builds it.
-                download: () =>
+                // Lists every request, so the server builds it, narrowed by
+                // the same picks as the chart and table.
+                download: ({ keys, models }) =>
                     accountClient.usage
                         .$get({
                             query: {
                                 ...query,
                                 format: "csv",
                                 limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
+                                api_key_ids: keys.join(",") || undefined,
+                                models: models.join(",") || undefined,
                             },
                         })
                         .then(downloadFile),
@@ -296,6 +302,7 @@ export function useActivityData({
     }, [retry]);
 
     const rows = loaded?.rows;
+    const download = loaded?.download;
     const { chartData, totals, entries, selecting } = useMemo(() => {
         const allRows = rows ?? [];
         const labels = keyLabels(allRows);
@@ -379,7 +386,7 @@ export function useActivityData({
         refreshing: pending && Boolean(loaded),
         error: status.key === requestKey ? status.error : null,
         retry,
-        download: loaded?.download,
+        download: download && (() => download(picks)),
         hasData: Boolean(rows?.length),
         chartData,
         totals,

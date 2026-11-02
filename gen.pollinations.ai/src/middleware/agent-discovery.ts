@@ -17,14 +17,58 @@ export const AGENT_DISCOVERY_LINKS = [
     '</.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");
 
-export function acceptsMarkdown(accept: string): boolean {
-    return accept.split(",").some((range) => {
-        const [type, ...params] = range.trim().toLowerCase().split(";");
-        if (type.trim() !== "text/markdown") return false;
-        const q = params.find((param) => param.trim().startsWith("q="));
-        const quality = q === undefined ? 1 : Number(q.split("=")[1]);
-        return quality > 0 && quality <= 1;
+type AcceptedRange = { type: string; subtype: string; quality: number };
+
+function parseAccept(accept: string): AcceptedRange[] {
+    return accept.split(",").flatMap((range) => {
+        const [mediaType, ...params] = range.trim().toLowerCase().split(";");
+        const [type, subtype] = mediaType.split("/").map((part) => part.trim());
+        if (!type || !subtype) return [];
+
+        const q = params
+            .map((param) => param.trim())
+            .find((param) => param.startsWith("q="));
+        const quality = q === undefined ? 1 : Number(q.slice(2));
+        // RFC 9110 §12.5.1: q is a 0..1 weight; a malformed q drops the range.
+        return Number.isFinite(quality) && quality >= 0 && quality <= 1
+            ? [{ type, subtype, quality }]
+            : [];
     });
+}
+
+// The most specific matching range sets a media type's weight, so an explicit
+// `text/markdown;q=0` overrides a permissive `*/*`.
+function qualityFor(
+    ranges: AcceptedRange[],
+    type: string,
+    subtype: string,
+): number {
+    const exact = ranges.filter(
+        (range) => range.type === type && range.subtype === subtype,
+    );
+    const typeWildcard = ranges.filter(
+        (range) => range.type === type && range.subtype === "*",
+    );
+    const wildcard = ranges.filter(
+        (range) => range.type === "*" && range.subtype === "*",
+    );
+    const matches = exact.length
+        ? exact
+        : typeWildcard.length
+          ? typeWildcard
+          : wildcard;
+    return matches.reduce((max, range) => Math.max(max, range.quality), 0);
+}
+
+export function acceptsMarkdown(accept: string): boolean {
+    const ranges = parseAccept(accept);
+    const requested = ranges.some(
+        (range) => range.type === "text" && range.subtype === "markdown",
+    );
+    if (!requested) return false;
+
+    const markdown = qualityFor(ranges, "text", "markdown");
+    return markdown > 0 && markdown >= qualityFor(ranges, "text", "html");
 }
 
 /**

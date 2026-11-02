@@ -1,4 +1,4 @@
-import { openaiUsageToUsage } from "../../../shared/registry/usage-headers.ts";
+import { openaiUsageToUsage } from "../../../../shared/registry/usage-headers.ts";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

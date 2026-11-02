@@ -948,8 +948,22 @@ const accountBalanceSchema = z.object({
         .describe(
             "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
         ),
-    tier: z.number().describe("Quest Pollen remaining, never below 0"),
+    tier: z
+        .number()
+        .describe(
+            "Spendable Quest pollen, never below 0; zero while restricted",
+        ),
     paid: z.number().describe("Paid Pollen remaining, never below 0"),
+    heldTier: z
+        .number()
+        .optional()
+        .describe("Locked Quest pollen, excluded from total and tier"),
+    questPollenRestricted: z
+        .boolean()
+        .optional()
+        .describe(
+            "Whether Quest pollen spending is locked until a purchase or account review",
+        ),
 });
 
 const balanceResponseSchema = z.object({
@@ -1333,7 +1347,8 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             requireAccountPermission(c, "usage");
 
-            const rows = await drizzle(c.env.DB)
+            const db = drizzle(c.env.DB, { schema });
+            const rows = await db
                 .select()
                 .from(rewardsTable)
                 .where(eq(rewardsTable.userId, user.id))
@@ -1386,7 +1401,8 @@ export const accountRoutes = new Hono<Env>()
         }
 
         const user = c.var.auth.requireUser();
-        const result = await claimReward(drizzle(c.env.DB, { schema }), {
+        const db = drizzle(c.env.DB, { schema });
+        const result = await claimReward(db, {
             rewardId: c.req.param("rewardId"),
             userId: user.id,
         });
@@ -1439,7 +1455,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             let accountBalance:
-                | { total: number; tier: number; paid: number }
+                | z.infer<typeof accountBalanceSchema>
                 | undefined;
             if (canViewAccount) {
                 // Same helper the billing path uses, so a bucket that has gone
@@ -1453,8 +1469,16 @@ export const accountRoutes = new Hono<Env>()
                 );
                 accountBalance = {
                     total: getAvailableBalance(balances),
-                    tier: Math.max(0, balances.tierBalance),
+                    tier: balances.questPollenRestricted
+                        ? 0
+                        : Math.max(0, balances.tierBalance),
                     paid: Math.max(0, balances.packBalance),
+                    ...(balances.questPollenRestricted
+                        ? {
+                              heldTier: Math.max(0, balances.tierBalance),
+                              questPollenRestricted: true,
+                          }
+                        : {}),
                 };
             }
 
@@ -1968,11 +1992,9 @@ export const accountRoutes = new Hono<Env>()
                 createdByApiKeyId: c.var.auth.apiKey?.id,
                 originAppKeyId:
                     c.var.auth.apiKey?.byopClientKeyId ??
-                    (c.var.auth.apiKey?.metadata?.keyType === "publishable"
-                        ? c.var.auth.apiKey.id
-                        : (c.var.auth.apiKey?.metadata?.originAppKeyId as
-                              | string
-                              | undefined)),
+                    (c.var.auth.apiKey?.metadata?.originAppKeyId as
+                        | string
+                        | undefined),
             }).catch(async (error) => {
                 // Give back the budget taken for a key that wasn't created.
                 if (callerKey && budgetTaken) {
@@ -2371,11 +2393,6 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Whether this key spends only Quest Pollen, never paid Pollen",
                                         ),
-                                    rateLimitEnabled: z
-                                        .boolean()
-                                        .describe(
-                                            "Whether rate limiting is enabled for this key",
-                                        ),
                                     userId: z
                                         .string()
                                         .nullable()
@@ -2490,8 +2507,6 @@ export const accountRoutes = new Hono<Env>()
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
                 questPollenOnly: apiKey.questPollenOnly ?? false,
-                // Generation rate limiting applies to publishable keys only.
-                rateLimitEnabled: keyType === "publishable",
                 // Server-attested identity. Downstream services (media catalog)
                 // stamp ownership from these values — never from request
                 // params — so user and BYOP app ids cannot be spoofed.

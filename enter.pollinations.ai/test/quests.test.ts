@@ -1,11 +1,12 @@
 import { env, SELF } from "cloudflare:test";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import {
     claimReward,
     recordRewards,
     rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
@@ -67,6 +68,9 @@ type SeedQuestIssue = {
     completedByPrNumber?: number | null;
     completedByGithubId?: number | null;
     completedByLogin?: string | null;
+    // A reopened multi-winner quest: still open, but GitHub keeps the merged
+    // PRs that closed it before it was reopened.
+    reopened?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 };
@@ -81,17 +85,18 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
     const completedByLogin = issue.completedByLogin ?? null;
     const created = issue.createdAt ?? new Date("2026-06-01T00:00:00Z");
     const updated = issue.updatedAt ?? new Date("2026-06-02T00:00:00Z");
+    const isClosed =
+        !issue.reopened && (completedBy !== null || issue.closed === true);
 
     github.questIssues.push({
         number: issue.issueNumber,
-        state: completedBy !== null || issue.closed ? "closed" : "open",
+        state: isClosed ? "closed" : "open",
         title: issue.title,
         html_url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
         body: questIssueBody(issue.reward, issue.goal),
         created_at: created.toISOString(),
         updated_at: updated.toISOString(),
-        closed_at:
-            completedBy !== null || issue.closed ? updated.toISOString() : null,
+        closed_at: isClosed ? updated.toISOString() : null,
         user: { login: "maintainer" },
         assignees: assigneeLogin
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
@@ -616,6 +621,7 @@ test("quest checks reuse the GitHub quest issues the catalog just fetched", asyn
         completedByLogin: user.githubUsername,
     });
     await env.KV.delete("quests:catalog:v30");
+
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
     );
@@ -632,6 +638,37 @@ test("quest checks reuse the GitHub quest issues the catalog just fetched", asyn
     expect(rewards).toEqual([
         { idempotencyKey: `quest:github:issue:806:github:${user.githubId}` },
     ]);
+});
+
+test("catalog keeps a reopened multi-winner quest available", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v30");
+
+    // Multi-winner quests are reopened after each winner, but GitHub keeps the
+    // merged PRs that closed them before the reopen.
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 807,
+        title: "Reopened multi-winner bounty",
+        goal: "Still open for more entries after an earlier winner.",
+        reward: 5,
+        completedByPrNumber: 1807,
+        reopened: true,
+    });
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: { id: string; state: string }[];
+    };
+    const quest = payload.quests.find(
+        (candidate) => candidate.id === "github:issue:807",
+    );
+
+    expect(quest?.state).toBe("available");
 });
 
 test("account quests merge earned rewards into completed status", async ({
@@ -2726,5 +2763,123 @@ test("account quest history accepts account usage permission", async ({
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
         rewards: [{ questId: "first_api_key" }],
+    });
+});
+
+/** Google-only accounts with an API key: their next check earns first_api_key. */
+async function seedSetupAccounts(
+    prefix: string,
+    count: number,
+    domain: string,
+): Promise<string[]> {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+    const ids = Array.from(
+        { length: count },
+        (_, index) => `${prefix}-${index}`,
+    );
+    for (const id of ids) {
+        await db.insert(schema.user).values({
+            id,
+            name: id,
+            email: `${id}@${domain}`,
+            emailVerified: true,
+            createdAt: now,
+            updatedAt: now,
+            tierBalance: 0,
+            packBalance: 0,
+        });
+        await db.insert(schema.account).values({
+            id: `${id}-google`,
+            accountId: `google-${id}`,
+            providerId: "google",
+            userId: id,
+        });
+        await db.insert(schema.apikey).values({
+            id: `${id}-key`,
+            name: "Key",
+            key: `sk_${id}`,
+            prefix: "sk",
+            referenceId: id,
+            createdAt: now,
+            updatedAt: now,
+        });
+    }
+    return ids;
+}
+
+function earnFirstKey(bindings: typeof env, userId: string) {
+    return checkQuestsForUser(bindings, userId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+}
+
+async function tierBalanceOf(userId: string) {
+    const [row] = await drizzle(env.DB, { schema })
+        .select({ value: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, userId));
+    return row?.value ?? 0;
+}
+
+test("restricted accounts can earn and claim Setup rewards into their frozen Quest balance", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const db = drizzle(env.DB, { schema });
+    const [userId] = await seedSetupAccounts("restricted", 1, "farm.test");
+    await db
+        .update(schema.user)
+        .set({ questPollenRestricted: true })
+        .where(eq(schema.user.id, userId));
+    await earnFirstKey(env, userId);
+    const token = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId,
+    });
+    const headers = { Authorization: `Bearer ${token}` };
+    const history = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/rewards",
+        { headers },
+    );
+    const body = (await history.json()) as {
+        rewards: Array<{ id: string; claimedAt: string | null }>;
+    };
+    expect(body.rewards[0].claimedAt).not.toBeNull();
+    expect(body).not.toHaveProperty("setupHold");
+    await recordRewards(db, [
+        {
+            idempotencyKey: "restricted-model-quest",
+            userId,
+            questId: "use_text_model",
+            title: "Use a text model",
+            amount: 0.25,
+            bucket: "tier",
+        },
+    ]);
+    const reward = await db
+        .select()
+        .from(schema.rewards)
+        .where(
+            and(
+                eq(schema.rewards.userId, userId),
+                eq(schema.rewards.questId, "use_text_model"),
+            ),
+        )
+        .get();
+    if (!reward) throw new Error("Expected the earned model reward");
+    const claimed = await SELF.fetch(
+        `http://localhost:3000/api/account/quests/rewards/${reward.id}/claim`,
+        { method: "POST", headers },
+    );
+    expect(await claimed.json()).toMatchObject({ claimed: true });
+    expect(await tierBalanceOf(userId)).toBe(0.5);
+    const balance = await SELF.fetch(
+        "http://localhost:3000/api/account/balance",
+        { headers },
+    );
+    expect(await balance.json()).toMatchObject({
+        balance: 0,
+        accountBalance: { tier: 0, heldTier: 0.5, questPollenRestricted: true },
     });
 });

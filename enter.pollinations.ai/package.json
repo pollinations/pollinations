@@ -75,6 +75,7 @@
         "sucrase": "^3.35.1",
         "tailwind-merge": "^3.4.0",
         "tailwindcss": "^4.1.12",
+        "tldts": "^7.4.19",
         "unique-names-generator": "^4.7.1",
         "zod": "4.5.4"
     },

@@ -95,7 +95,6 @@ import {
 } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { apiErrorStatus } from "@/text/errors.ts";
 import {
     getResponsesEventUsage,
@@ -182,7 +181,6 @@ export type TrackEnv = {
         LoggerVariables &
         AuthVariables &
         BalanceVariables &
-        FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables &
         GenerationCacheVariables;
@@ -267,6 +265,15 @@ export const track = (eventType: EventType) =>
             communityModelReward?: CommunityModelRewardResolution | null;
             billedPrice?: number;
         }): Promise<InsertGenerationEvent> => {
+            // Owner-only models stay out of public stats. A private model asked
+            // for drops the row; a private fallback that served a public model
+            // keeps the row in that model's totals, with its route unnamed.
+            const isPrivate = (id: string | undefined) =>
+                fallbackCandidates(modelInfo).some(
+                    (candidate) =>
+                        candidate.communityEndpoint?.visibility === "private" &&
+                        candidate.id === id,
+                );
             const event = createTrackingEvent({
                 id: generateRandomId(),
                 requestId: c.get("requestId"),
@@ -288,6 +295,8 @@ export const track = (eventType: EventType) =>
                 markup: row.markup ?? null,
                 communityModelReward: row.communityModelReward ?? null,
                 billedPrice: row.billedPrice ?? 0,
+                privateModel: isPrivate(requestTracking.resolvedModelRequested),
+                privateRoute: isPrivate(row.responseTracking.modelUsed),
             });
             await sendToTinybird(
                 event,
@@ -394,7 +403,6 @@ export const track = (eventType: EventType) =>
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
-                    await c.var.frontendKeyRateLimit?.consumePollen(0);
                     return;
                 }
                 // trackResponse consumes SSE text and JSON bodies, so for
@@ -486,12 +494,6 @@ export const track = (eventType: EventType) =>
                           ...payerBucketToMeter(payerBucket),
                       }
                     : balanceTracking();
-
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.isBilledUsage
-                        ? responseTracking.price?.totalPrice || 0
-                        : 0,
-                );
 
                 const finalEvent = await emitRow({
                     startTime,
@@ -1293,6 +1295,8 @@ type TrackingEventInput = {
     communityModelReward: CommunityModelRewardResolution | null;
     billedPrice: number;
     errorTracking?: ErrorData;
+    privateModel: boolean;
+    privateRoute: boolean;
 };
 
 // Reduce the per-rule adjustment breakdown into the two Map columns the event
@@ -1336,6 +1340,8 @@ function createTrackingEvent({
     communityModelReward,
     billedPrice,
     errorTracking,
+    privateModel,
+    privateRoute,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id,
@@ -1366,6 +1372,8 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         communityEndpointType: requestTracking.communityEndpointType,
+        privateModel,
+        privateRoute,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

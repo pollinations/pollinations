@@ -115,3 +115,81 @@ test("refuses when content-length already exceeds the cap", async () => {
         globalThis.fetch = realFetch;
     }
 });
+
+// Content-Length cannot be trusted on its own: it may be missing entirely, or
+// understate the real body. The streaming check has to catch both cases.
+test("stops an oversized body when Content-Length is missing", async () => {
+    const { downloadScreenshot } = require("./screenshot.js");
+    const realFetch = globalThis.fetch;
+    let pulled = 0;
+    try {
+        globalThis.fetch = async () =>
+            new Response(
+                new ReadableStream({
+                    pull(controller) {
+                        pulled += 1;
+                        controller.enqueue(new Uint8Array(1024 * 1024));
+                    },
+                }),
+                { status: 200 }, // no content-length at all
+            );
+        await assert.rejects(
+            () => downloadScreenshot("https://example.com/nolen.png"),
+            /larger than .*at most 5 MB|must be PNG/,
+        );
+        assert.ok(
+            pulled <= 7,
+            `should stop shortly after 5 MB, pulled ${pulled}`,
+        );
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+});
+
+test("stops an oversized body when Content-Length understates it", async () => {
+    const { downloadScreenshot } = require("./screenshot.js");
+    const realFetch = globalThis.fetch;
+    let pulled = 0;
+    try {
+        globalThis.fetch = async () =>
+            new Response(
+                new ReadableStream({
+                    pull(controller) {
+                        pulled += 1;
+                        controller.enqueue(new Uint8Array(1024 * 1024));
+                    },
+                }),
+                {
+                    status: 200,
+                    headers: { "content-length": "1024" }, // lies: real body is unbounded
+                },
+            );
+        await assert.rejects(
+            () => downloadScreenshot("https://example.com/liar.png"),
+            /larger than .*at most 5 MB|must be PNG/,
+        );
+        assert.ok(
+            pulled <= 7,
+            `must not trust a small content-length, pulled ${pulled}`,
+        );
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+});
+
+test("still returns a small body that declares its true length", async () => {
+    const { downloadScreenshot } = require("./screenshot.js");
+    const realFetch = globalThis.fetch;
+    const body = new Uint8Array(1024);
+    try {
+        globalThis.fetch = async () =>
+            new Response(body, {
+                status: 200,
+                headers: { "content-length": "1024" },
+            });
+        const out = await downloadScreenshot("https://example.com/ok.png");
+        assert.equal(out.length, 1024);
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+});

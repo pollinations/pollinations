@@ -4,9 +4,8 @@ import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 
-// R2 caps customMetadata at ~2 KB per object, so an unbounded upload filename
-// makes the put throw and the client sees an opaque 500. The service-binding
-// path always sliced to 253; the HTTP paths now share the same cap.
+// R2 rejects a put with more than 8,192 bytes of object metadata, so every
+// upload path stores at most this much of the filename.
 export const MAX_ORIGINAL_NAME_LENGTH = 253;
 
 type MediaStorageEnv = {

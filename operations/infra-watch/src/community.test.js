@@ -302,46 +302,60 @@ test("listing changes are an incident only when something changed", () => {
 });
 
 test("the weekly eval's score gaps go to the maintainers once per run, in its first week", () => {
-    const evals = {
+    const gap = (n) => ({
+        model: `community/m/model-${n}`,
+        rate: 0.13,
+        twin: `model-${n}`,
+        twinRate: 0.57,
+    });
+    const run = {
         id: "2026-10-26",
         date: "2026-10-26T03:00:00Z",
-        gaps: [
-            {
-                model: "community/m/minimax-m3:paid",
-                rate: 0.13,
-                twin: "minimax-m3",
-                twinRate: 0.57,
-            },
-        ],
+        gaps: [gap(1)],
     };
-    const [gaps] = find({ evals });
+    const [gaps] = find({ evals: [run] });
     assert.equal(gaps.kind, "gaps");
     assert.equal(gaps.to, "maintainers");
     assert.deepEqual(gaps.owners, []);
     assert.deepEqual(gaps.quiet, ["gaps 2026-10-26"]);
     // Told: quiet for the rest of the run's week.
     assert.deepEqual(
-        find({ evals, quiet: { "gaps 2026-10-26": NOW - DAY } }),
+        find({ evals: [run], quiet: { "gaps 2026-10-26": NOW - DAY } }),
         [],
     );
     // A run older than a week, or one without gaps, tells nothing.
     assert.deepEqual(
-        find({ evals: { ...evals, date: "2026-10-24T00:00:00Z" } }),
+        find({ evals: [{ ...run, date: "2026-10-24T00:00:00Z" }] }),
         [],
     );
-    assert.deepEqual(find({ evals: { ...evals, gaps: [] } }), []);
-    assert.deepEqual(find({ evals: null }), []);
-    // Its card names each model, both scores and how to confirm.
+    assert.deepEqual(find({ evals: [{ ...run, gaps: [] }] }), []);
+    assert.deepEqual(find({ evals: [] }), []);
+    // A newer run doesn't hide an older one not delivered yet.
+    const newer = { id: "2026-10-31", date: "2026-10-31T03:00:00Z", gaps: [] };
+    assert.deepEqual(
+        find({ evals: [newer, run] }).map((i) => i.run),
+        ["2026-10-26"],
+    );
+    // Its card names up to 20 models, links the run's results for the rest,
+    // and says how to confirm.
+    const many = {
+        ...run,
+        gaps: Array.from({ length: 25 }, (_, n) => gap(n + 1)),
+    };
     const plan = decision(
         JSON.stringify({
             maintainers: [{ incidents: ["1"], text: "Check it." }],
         }),
-        [gaps],
+        find({ evals: [many] }),
     );
     assert.match(plan.maintainers.text, /COMMUNITY MODELS: SCORE GAP/);
+    assert.match(plan.maintainers.text, /m\/model-1 13% vs model-1 57%/);
+    assert.match(plan.maintainers.text, /m\/model-20 13%/);
+    assert.doesNotMatch(plan.maintainers.text, /m\/model-21 /);
+    assert.match(plan.maintainers.text, /…and 5 more/);
     assert.match(
         plan.maintainers.text,
-        /m\/minimax-m3:paid 13% vs minimax-m3 57%/,
+        /github\.com\/pollinations\/pollinations\/blob\/evals\/data\/runs\/2026-10-26\.json/,
     );
     assert.match(plan.maintainers.text, /fingerprint\.js compare/);
     assert.deepEqual(plan.maintainers.owners, []);

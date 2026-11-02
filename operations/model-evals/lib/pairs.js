@@ -1,8 +1,8 @@
-// Results are published by .github/workflows/evals-run-weekly.yml to the
-// `evals` data branch of the repository; no service sits in between.
-export const EVALS_DATA_URL =
-    import.meta.env?.VITE_EVALS_DATA_URL ??
-    "https://raw.githubusercontent.com/pollinations/pollinations/evals/data";
+// How a community model compares with the official model it is named
+// after: one rule for the weekly run's score gaps (run.js, read by
+// infra-watch) and the Trust tab on model-monitor, which imports this file.
+
+import { scoreOf } from "./stats.js";
 
 /**
  * The name a model is known by, without publisher, tag, or release suffix, so
@@ -28,18 +28,25 @@ export function officialTwin(model, officialModels) {
     );
 }
 
+// A model's score on the questions it answered. An error says its endpoint
+// failed, not how well it answers, so errors never count towards a gap.
+const answered = (model) =>
+    model.failed > 0
+        ? scoreOf(model.correct, model.questions - model.failed)
+        : model;
+
 /**
- * Community score against its official twin. The gap is significant when it
- * exceeds the 95% Wilson intervals, so noise is not flagged. A community
- * model that errored on more than half its questions is a broken endpoint,
- * not a different model: its gap is never flagged.
+ * Community score against its official twin. `gap` is the difference of the
+ * scores as published; it is significant only when the two models' scores on
+ * the questions they answered differ beyond their 95% Wilson intervals, so
+ * neither noise nor errors are flagged. A community model that errored on
+ * more than half its questions is a broken endpoint, not a different model.
  */
 export function compareToTwin(community, official) {
     const gap = community.rate - official.rate;
     const errored = community.failed * 2 > community.questions;
-    const significant =
-        !errored &&
-        (community.lower > official.upper || official.lower > community.upper);
+    const [a, b] = [answered(community), answered(official)];
+    const significant = !errored && (a.lower > b.upper || b.lower > a.upper);
     return { gap, significant, errored };
 }
 

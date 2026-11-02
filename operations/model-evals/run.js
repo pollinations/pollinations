@@ -3,8 +3,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-// The Trust tab's rule for a gap, so the page and infra-watch's card agree.
-import { scoreGaps } from "../model-monitor/src/eval-data.js";
 import { EVALS } from "./evals/index.js";
 import {
     ask,
@@ -12,6 +10,7 @@ import {
     estimateCost,
     fetchTextModels,
 } from "./lib/gen.js";
+import { scoreGaps } from "./lib/pairs.js";
 import { createRng } from "./lib/rng.js";
 import { scoreOf } from "./lib/stats.js";
 

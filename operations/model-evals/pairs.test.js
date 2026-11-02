@@ -6,7 +6,7 @@ import {
     compareToTwin,
     officialTwin,
     scoreGaps,
-} from "./eval-data.js";
+} from "./lib/pairs.js";
 
 const model = (name, rate, margin, extra = {}) => ({
     name,
@@ -80,17 +80,61 @@ describe("compareToTwin", () => {
     test("never flags a model that errored on most questions: its endpoint is broken", () => {
         const official = model("openai/x", 0.9, 0.1);
         const broken = compareToTwin(
-            model("community/a/x", 0.1, 0.1, { questions: 30, failed: 16 }),
+            model("community/a/x", 0.1, 0.1, {
+                questions: 30,
+                correct: 3,
+                failed: 16,
+            }),
             official,
         );
         assert.ok(broken.errored);
         assert.ok(!broken.significant);
         const answering = compareToTwin(
-            model("community/a/x", 0.1, 0.1, { questions: 30, failed: 15 }),
+            model("community/a/x", 0.1, 0.1, {
+                questions: 30,
+                correct: 3,
+                failed: 15,
+            }),
             official,
         );
         assert.ok(!answering.errored);
         assert.ok(answering.significant);
+    });
+});
+
+describe("errors", () => {
+    test("never count towards a gap: only the questions answered compare", () => {
+        // 30 asked, 12 errors, all 18 answered right: a flaky endpoint, not
+        // a weaker model, though its published score is 60%.
+        const official = model("google/x", 1, 0.06, {
+            questions: 30,
+            correct: 30,
+            failed: 0,
+        });
+        const flaky = compareToTwin(
+            model("community/a/x", 0.6, 0.17, {
+                questions: 30,
+                correct: 18,
+                failed: 12,
+            }),
+            official,
+        );
+        assert.ok(!flaky.errored);
+        assert.ok(!flaky.significant);
+        // 4 right out of 28 answered stays a gap.
+        const weak = compareToTwin(
+            model("community/a/x", 0.13, 0.1, {
+                questions: 30,
+                correct: 4,
+                failed: 2,
+            }),
+            model("minimax/x", 0.57, 0.17, {
+                questions: 30,
+                correct: 17,
+                failed: 0,
+            }),
+        );
+        assert.ok(weak.significant);
     });
 });
 

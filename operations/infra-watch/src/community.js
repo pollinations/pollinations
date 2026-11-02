@@ -179,7 +179,7 @@ export function incidents({
     pending = {},
     served = {},
     listings,
-    evals = null,
+    evals = [],
     now,
 }) {
     const named = new Set(catalog.map((m) => m.name));
@@ -363,24 +363,26 @@ export function incidents({
             quiet: [],
         });
 
-    // The weekly eval's latest run (operations/model-evals): community
-    // models scored clearly below their namesake, by the Trust tab's rule.
-    // Told to the maintainers once per run, in its first week, never to a
-    // publisher: a score is statistical, so a person confirms first.
-    const gapsKey = `gaps ${evals?.id}`;
-    if (
-        evals?.gaps?.length &&
-        now - Date.parse(evals.date) < QUIET_MS.gaps &&
-        !told(gapsKey, "gaps")
-    )
-        add({
-            kind: "gaps",
-            to: "maintainers",
-            run: evals.id,
-            gaps: evals.gaps,
-            owners: [],
-            quiet: [gapsKey],
-        });
+    // The weekly eval's runs (operations/model-evals): community models
+    // scored clearly below their namesake, by the Trust tab's rule. Each run
+    // is told to the maintainers until delivered, in its first week, never
+    // to a publisher: a score is statistical, so a person confirms first.
+    for (const run of evals) {
+        const key = `gaps ${run.id}`;
+        if (
+            run.gaps?.length &&
+            now - Date.parse(run.date) < QUIET_MS.gaps &&
+            !told(key, "gaps")
+        )
+            add({
+                kind: "gaps",
+                to: "maintainers",
+                run: run.id,
+                gaps: run.gaps,
+                owners: [],
+                quiet: [key],
+            });
+    }
     return { found, pending: kept };
 }
 
@@ -410,6 +412,10 @@ const health = (m) =>
         : `${short(m.model)} (${Math.round(m.health)}%)`;
 // An eval score, 0 to 1, as a whole percent.
 const percent = (rate) => `${Math.round(rate * 100)}%`;
+// A score gap card names this many models; each run's results hold them all.
+const GAPS_SHOWN = 20;
+const EVALS_RUNS =
+    "https://github.com/pollinations/pollinations/blob/evals/data/runs";
 // The error without "stream returned ", so the box stays narrow enough for
 // Discord not to wrap it.
 const error = (i) => i.error.replace(/^stream returned /, "");
@@ -447,14 +453,18 @@ const ROWS = {
         ...named("BACK", i.back.map(health), i.backMore),
         ["TOTAL", `${i.filtered} hidden now`],
     ],
+    // Up to GAPS_SHOWN models; the run's results, linked, have them all.
     gaps: (i) => [
-        ...named(
-            "MODEL",
-            i.gaps.map(
-                (g) =>
-                    `${short(g.model)} ${percent(g.rate)} vs ${g.twin} ${percent(g.twinRate)}`,
-            ),
-        ),
+        ...i.gaps
+            .slice(0, GAPS_SHOWN)
+            .map((g, n) => [
+                n ? "" : "MODEL",
+                `${short(g.model)} ${percent(g.rate)} vs ${g.twin} ${percent(g.twinRate)}`,
+            ]),
+        ...(i.gaps.length > GAPS_SHOWN
+            ? [["", `…and ${i.gaps.length - GAPS_SHOWN} more`]]
+            : []),
+        ["RESULTS", `${EVALS_RUNS}/${i.run}.json`],
         ["CHECK", "model-evals/fingerprint.js compare"],
     ],
 };

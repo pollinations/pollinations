@@ -13,8 +13,14 @@ import {
     WarningIcon,
 } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
-import { buildLeaderboard, EVALS_DATA_URL } from "./eval-data.js";
+import { buildLeaderboard } from "../../model-evals/lib/pairs.js";
 import SortableTh from "./SortableTh.jsx";
+
+// Results are published by .github/workflows/evals-run-weekly.yml to the
+// `evals` data branch of the repository; no service sits in between.
+const EVALS_DATA_URL =
+    import.meta.env.VITE_EVALS_DATA_URL ??
+    "https://raw.githubusercontent.com/pollinations/pollinations/evals/data";
 
 const PAIR_SORTS = {
     community: (a, b) => a.community.name.localeCompare(b.community.name),

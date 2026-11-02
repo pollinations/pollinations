@@ -9,6 +9,7 @@
     "https://model-monitor.pollinations.ai"
   ],
   "watch": [
+    "operations/model-evals/lib/pairs.js",
     "packages/ui/",
     "packages/sdk/",
     "package.json",

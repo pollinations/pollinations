@@ -2,7 +2,7 @@
 
 Publishing an agent creates a reusable text model that Pollinations runs for you. A prompt agent combines instructions, a base model, and optional MCP tools. A code agent deploys one self-contained `agent.ts` file from a public GitHub repository.
 
-This is different from hosting your own OpenAI-compatible model endpoint. It is also different from [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md), which lets an app ask its users to pay for their own generations.
+This is different from hosting your own OpenAI-compatible model endpoint. It is also different from [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md), which lets an app ask its users to pay for their own generations.
 
 ## Create an agent in the dashboard
 

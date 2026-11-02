@@ -27,7 +27,7 @@ import { SESSION_TOKEN_PREFIX, verifySessionToken } from "./session-token.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
 const PUBLISHABLE_KEY_REFUSAL =
-    "Publishable keys (pk_) only identify your app and can't authenticate requests. Let users pay through Connect User Wallets: https://gen.pollinations.ai/docs#tag/connect-user-wallets. On a server, use a secret key (sk_) from https://enter.pollinations.ai/keys.";
+    "Publishable keys (pk_) only identify your app and can't authenticate requests. Let users pay through Pollinations Pay: https://gen.pollinations.ai/docs#tag/pollinations-pay. On a server, use a secret key (sk_) from https://enter.pollinations.ai/keys.";
 
 export type AuthUser = typeof schema.user.$inferSelect;
 

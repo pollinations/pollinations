@@ -53,7 +53,7 @@ Shared UI in the Enter dashboard (`enter.pollinations.ai/frontend/`) and `packag
 Not here: a screen owned by one area (key editor → Accounts & keys, top-up page → Billing & payments); what a banner says → Brand & news.
 
 ### API & reliability
-How requests flow through gen and enter, and keeping that path up: endpoints (OpenAI- and Anthropic-compatible), request handling, streaming, errors, timeouts, the generation coordinator, caching, R2, D1, KV, service health and monitoring (`operations/model-monitor/`, `operations/observability/`).
+How requests flow through gen and enter, and keeping that path up: endpoints (OpenAI- and Anthropic-compatible), request handling, streaming, errors, timeouts, the generation coordinator, caching, R2, D1, KV, service health and monitoring (`operations/dashboards/model-monitor/`, `operations/dashboards/observability/`).
 Not here: one model misbehaving → Models.
 
 ### CI & releases
@@ -65,7 +65,7 @@ Bots and agents that run our own work: this project manager and other repo autom
 Not here: agents users run → Agents & agent tools.
 
 ### Brand & news
-How we present Pollinations and what we tell people: the site (`pollinations.ai/`) and its upgrades, logo and brand kit, news and social posts (`operations/social/`), the newsletter, and any banner or notice: adding, rewording or removing it, even when it is about keys, models or an incident.
+How we present Pollinations and what we tell people: the site (`pollinations.ai/`) and its upgrades, logo and brand kit, news and social posts (`operations/news/`), the newsletter, and any banner or notice: adding, rewording or removing it, even when it is about keys, models or an incident.
 Not here: the banner component → Dashboard.
 
 ### Docs & support
@@ -77,7 +77,7 @@ Apps built on Pollinations: submissions and review (`operations/app-management/`
 Not here: plugins → Developer tools; hosted agents and MCP servers → Agents & agent tools; community agents → Community models; Polli → Internal automation.
 
 ### Data & insights
-Getting data into Tinybird (`enter.pollinations.ai/observability/`) and what we learn from it (`operations/kpi/`, `operations/economics/`): datasources, pipes, event schemas, traffic syncs, product event recording, KPIs, funnels, revenue, provider costs, the economics ledger, analysis of census answers.
+Getting data into Tinybird (`enter.pollinations.ai/observability/`) and what we learn from it (`operations/dashboards/kpi/`, `operations/dashboards/economics/`): datasources, pipes, event schemas, traffic syncs, product event recording, KPIs, funnels, revenue, provider costs, the economics ledger, analysis of census answers.
 Not here: service health → API & reliability.
 
 ## Type

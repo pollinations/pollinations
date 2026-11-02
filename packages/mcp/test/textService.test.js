@@ -86,3 +86,32 @@ test("generateText labels MP3 audio with the audio/mpeg media type", async (t) =
         },
     );
 });
+
+test("generateText forwards legacy function-call history after schema parsing", async (t) => {
+    const original = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = original;
+    });
+    let sent;
+    globalThis.fetch = async (input, init) => {
+        if (String(input).endsWith("/text/models"))
+            return Response.json([{ name: "test-model" }]);
+        sent = JSON.parse(init.body);
+        return Response.json({ choices: [{ message: { content: "Sunny" } }] });
+    };
+    const [, , shape, generateText] = textTools.find(
+        ([name]) => name === "generateText",
+    );
+    const messages = [
+        { role: "user", content: "Weather?" },
+        {
+            role: "assistant",
+            content: null,
+            function_call: { name: "weather", arguments: "{}" },
+        },
+        { role: "function", name: "weather", content: "Sunny" },
+    ];
+    const params = z.object(shape).parse({ model: "test-model", messages });
+    await generateText(params, { http: { authInfo: { token: "sk_test" } } });
+    assert.deepEqual(sent.messages, messages);
+});

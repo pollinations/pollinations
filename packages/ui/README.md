@@ -91,7 +91,7 @@ React's guidance on loading React 19 without UMD builds:
 https://react.dev/blog/2024/04/25/react-19-upgrade-guide#umd-builds-removed
 
 `dist/connect.js` is a separate, self-contained bundle (React included) that
-defines the `<polli-connect>` sign-in button. Usage:
+defines the `<polli-connect>` Connect button. Usage:
 [Drop-in Button](../../BRING_YOUR_OWN_POLLEN.md#-drop-in-button-no-build-step).
 
 For Pollinations apps that use unprefixed Tailwind utilities, import the

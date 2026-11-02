@@ -225,8 +225,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "Connect User Wallets",
-            href: `${genDocsUrl()}#tag/connect-user-wallets`,
+            label: "Pollinations Pay",
+            href: `${genDocsUrl()}#tag/pollinations-pay`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -382,13 +382,7 @@ function useQuestNavStatus(enabled: boolean): string | null {
                     rewardsResponse.json(),
                 ]);
                 if (!cancelled && currentRequest === requestId) {
-                    setLabel(
-                        questNavLabel(
-                            catalog.quests,
-                            rewards.rewards,
-                            rewards.setupHold !== null,
-                        ),
-                    );
+                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
                 }
             } catch {
                 if (!cancelled && currentRequest === requestId) setLabel(null);

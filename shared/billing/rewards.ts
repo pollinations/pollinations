@@ -129,30 +129,21 @@ export async function recordRewards(
 /**
  * Claims one pending reward and credits the chosen balance bucket. The balance
  * update is gated on the preceding `claimed_at IS NULL` update, so retries and
- * double-clicks cannot double-pay. Rewards for `lockedQuestIds` stay unclaimed.
+ * double-clicks cannot double-pay. Account restrictions freeze spending, not claims.
  */
 export async function claimReward(
     db: AuthDb,
     {
         rewardId,
         userId,
-        lockedQuestIds,
     }: {
         rewardId: string;
         userId: string;
-        /**
-         * Quest ids this account can't claim now (a Setup hold). Required, so
-         * every claim path decides: undefined when no hold applies.
-         */
-        lockedQuestIds: ReadonlySet<string> | undefined;
     },
 ): Promise<ClaimRewardResult> {
     const row = await loadRewardForUser(db, rewardId, userId);
     if (!row) return { claimed: false, reward: null, newBalance: null };
-    if (
-        row.claimedAt !== null ||
-        (row.questId !== null && lockedQuestIds?.has(row.questId))
-    ) {
+    if (row.claimedAt !== null) {
         return { claimed: false, reward: row, newBalance: null };
     }
 

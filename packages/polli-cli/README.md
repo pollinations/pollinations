@@ -12,7 +12,7 @@ polli auth login
 polli gen text "Say hello in one sentence" --model openai/gpt-5.4-nano
 ```
 
-Device login opens a browser for approval. The last command prints a short, low-cost result in your terminal. To try an image next, run `polli gen image "a cat in space" --output cat.png` and check that `cat.png` was saved.
+Device authorization opens a browser for approval. The last command prints a short, low-cost result in your terminal. To try an image next, run `polli gen image "a cat in space" --output cat.png` and check that `cat.png` was saved.
 
 <video src="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785" controls muted loop playsinline width="720">
   <a href="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785">▶️ Watch the demo</a>
@@ -98,7 +98,7 @@ polli quests --claimed       # already-completed and earned quest status
 Two kinds of keys:
 
 - **Secret (`sk_`)** — backend use, full access. Default.
-- **App Key (`pk_`)** — identifies your app in Connect User Wallets sign-in; never authenticates requests.
+- **App Key (`pk_`)** — identifies your app in Pollinations Connect; never authenticates requests.
 
 ```bash
 polli keys list

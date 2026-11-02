@@ -65,7 +65,7 @@ const CALLER_FIELDS = [
     "failures_dev",
 ];
 
-export const SYSTEM_PROMPT = `You investigate one infra-watch alert for the Pollinations maintainers in a private Discord channel.
+const SYSTEM_PROMPT = `You investigate one infra-watch alert for the Pollinations maintainers in a private Discord channel.
 The user message is JSON: the moment, your previous lines on this incident, the alert, and public request statistics for the last 15 and 60 minutes.
 The moment is one of:
 - open: the incident just opened.

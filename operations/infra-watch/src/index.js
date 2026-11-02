@@ -41,6 +41,7 @@ import {
     escalates,
     legacyDown,
     lineColor,
+    modelOf,
     noteworthy,
     pings,
     renderCard,
@@ -127,7 +128,7 @@ async function post(env, message, webhook = "DISCORD_WEBHOOK_URL") {
     );
     if (env.DRY_RUN === "1") {
         show(`dry-run ${webhook}`, body);
-        return { id: "dry-run", channel_id: "dry-run" };
+        return { id: "dry-run" };
     }
     if (!env[webhook]) throw new Error(`${webhook} missing`);
     return send(env[webhook], body);
@@ -146,8 +147,6 @@ async function remove(env, id) {
     if (env.DRY_RUN === "1") return true;
     return edit(env.DISCORD_WEBHOOK_URL, id, null);
 }
-
-const modelOf = (key) => (key.startsWith("model:") ? key.slice(6) : null);
 
 // One instance holds all incidents. A check awaits network calls, so the
 // next cron could interleave with it: `once` skips a check while one runs.
@@ -413,7 +412,6 @@ export class Watch extends DurableObject {
                 delete unposted[key];
                 Object.assign(incident, {
                     messageId: saved.id,
-                    channelId: saved.channel_id,
                     text: card.text,
                     noted: snapshot(incident),
                     notedAt: now,
@@ -457,7 +455,6 @@ export class Watch extends DurableObject {
                     Object.assign(incident, {
                         pinged: true,
                         messageId: saved.id,
-                        channelId: saved.channel_id,
                         text: card.text,
                     });
                 } else if (!saved) failed++;

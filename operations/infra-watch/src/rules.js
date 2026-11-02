@@ -181,6 +181,9 @@ const CONFIRMED = new Set([
     "platform",
 ]);
 const HOSTS = { gen: true, public: true, upstream: true };
+// A model incident's model, from its key; null for any other incident.
+export const modelOf = (key) =>
+    key.startsWith("model:") ? key.slice(6) : null;
 
 // One incident per key: a model (`model:<id>`), or gen, a hostname, the
 // status data or the platform. It opens once confirmed, updates on every
@@ -251,7 +254,7 @@ export function step(state, found, now, recent = []) {
         if (found.analytics && !HOSTS[key]) continue;
         // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
         // sample neither counts nor resets the run.
-        const model = key.startsWith("model:") ? key.slice(6) : null;
+        const model = modelOf(key);
         if (model) {
             const fresh = (health[model]?.nonClient ?? 0) >= MIN_REQUESTS;
             clears[key] = (state.clears?.[key] ?? 0) + (fresh ? 1 : 0);

@@ -30,6 +30,9 @@ SQL >
     WHERE calls.start_time >= now() - INTERVAL 7 DAY
     AND calls.is_final  -- one row per request; attempts counted separately
     AND calls.resolved_model_requested != 'undefined'
+    -- Calls made while a model is private never count, so private use can't
+    -- keep a formerly public model listed or change its public numbers.
+    AND NOT calls.private_model
 
 NODE public_model_stats_node
 SQL >

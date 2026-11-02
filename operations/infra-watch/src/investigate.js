@@ -7,14 +7,12 @@ import { withTimeout } from "./delivery.js";
 
 const GEN = "https://gen.pollinations.ai/v1/chat/completions";
 export const MODEL = "openai/gpt-6.1-sol";
-export const DAILY_LIMIT = 10;
+// AI lines per UTC day, across all incident and review cards.
+export const DAILY_LIMIT = 60;
 export const MAX_TOOL_CALLS = 8;
-// One Discord message holds 2,000 characters; leave room for the frame.
-export const MAX_REPORT = 1800;
 const TIMEOUT_MS = 90_000;
-const MAX_LINE = 300;
-// WHY, one sentence, then up to 12 evidence lines.
-const MAX_LINES = 14;
+// The answer is one line under the alert panel.
+export const MAX_LINE = 300;
 
 // Status fields the model may read; everything else is dropped.
 const FIELDS = [
@@ -67,8 +65,12 @@ const CALLER_FIELDS = [
     "failures_dev",
 ];
 
-export const SYSTEM_PROMPT = `You investigate one infra-watch alert for the Pollinations maintainers in a private Discord channel.
-The user message is JSON: the alert, and public request statistics for the last 15 and 60 minutes.
+const SYSTEM_PROMPT = `You investigate one infra-watch alert for the Pollinations maintainers in a private Discord channel.
+The user message is JSON: the moment, your previous lines on this incident, the alert, and public request statistics for the last 15 and 60 minutes.
+The moment is one of:
+- open: the incident just opened.
+- change: it changed in a way that matters; the reason says how.
+- closed: it is over; footprint says how long it lasted and how many requests and callers it cost.
 
 You may call read-only tools when they help explain the alert, at most ${MAX_TOOL_CALLS} calls in all:
 - model_status(model, minutes): public status rows of any official model for the last 15 or 60 minutes, for example a fallback target or a related model.
@@ -83,14 +85,16 @@ How to read a status row:
 - retried_503s: attempts that got a 503 and were retried on another backend. The retry may still have failed, so this is not a count of saved requests.
 - fallback_rescues: requests that finally succeeded through a fallback.
 - Latencies are in milliseconds; times are UTC.
+- A PRIMARY_WEAK alert means callers are fine thanks to a fallback, but the model's primary route fails often: explain why the primary fails and whether the fallback keeps up.
 - A platform-drop alert lists the models whose traffic fell the most: now10 is the last 10 minutes, baseline10 the average 10 minutes before.
 
-Reply in plain text, without headings or code blocks:
-WHY <the most likely cause, at most 80 characters, naming providers and counts>
-<one plain sentence: what callers experience, and whether it looks like a provider fault, our fault, or a single caller>
-Then up to 12 short lines starting with "- ": the evidence (numbers and times), which component is involved, and what a maintainer should check next.
+Your answer is added as one line to the incident's card, under a panel that already gives the success rate, the callers and each route, and under your previous lines. Reply with one line of plain text, at most two short sentences and under 250 characters:
+- open: the verdict (an outage, a provider fault, our fault, a single caller, or unclear), then the cause, naming the provider and the kind of error.
+- change: what changed and what it means now, without repeating your previous lines.
+- closed: what caused it and what ended it. The card's summary already says how long it lasted and how many users and requests it cost: do not repeat those numbers.
+Do not repeat the panel's numbers, request ids or caveats, and no markdown.
 
-Use only facts from the data and tool results, and quote example request ids so a maintainer can look them up. If the facts cannot explain the alert, say so on the WHY line.`;
+Use only facts from the data and tool results. If they cannot explain the alert, say it is unclear.`;
 
 const TOOL_SPECS = [
     {
@@ -149,9 +153,8 @@ const TOOL_SPECS = [
     },
 ];
 
-export const investigates = (post) =>
-    post.type === "alert" &&
-    ["DEGRADED", "PLATFORM_DROP"].includes(post.info.kind);
+export const investigates = (kind) =>
+    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP"].includes(kind);
 
 const only = (fields, row) =>
     Object.fromEntries(fields.map((f) => [f, row[f]]));
@@ -160,7 +163,7 @@ const pick = (row) => only(FIELDS, row);
 // Minutes the Tinybird tools may look back: 1 to 60, 15 by default.
 const lookback = (minutes) => Math.min(Math.max(Number(minutes) || 15, 1), 60);
 
-async function pipe(name, params, { tinybirdToken, fetchImpl }) {
+export async function pipe(name, params, { tinybirdToken, fetchImpl }) {
     if (!tinybirdToken) throw new Error("Tinybird is not configured");
     const url = new URL(`${TINYBIRD}/${name}.json`);
     for (const [key, value] of Object.entries(params))
@@ -283,20 +286,24 @@ export const toolsFor = (data, tinybird = {}) => {
     };
 };
 
-// The model's report as lines (WHY, a sentence, evidence), cut to fit one
-// Discord message, or null if it is off-format.
+// The model's answer as one line, or null if it gave none.
 export function reply(text) {
-    const lines = (text ?? "")
+    const line = (text ?? "")
         .split("\n")
-        .map((l) => l.trim().slice(0, MAX_LINE))
-        .filter(Boolean)
-        .slice(0, MAX_LINES);
-    if (lines.length < 2 || !lines[0].startsWith("WHY")) return null;
-    while (lines.join("\n").length > MAX_REPORT) lines.pop();
-    return lines;
+        .map((l) => l.trim())
+        .find(Boolean);
+    return line ? line.slice(0, MAX_LINE) : null;
 }
 
-async function chat(key, messages, offerTools, signal, fetchImpl) {
+async function chat(
+    key,
+    messages,
+    specs,
+    offerTools,
+    signal,
+    fetchImpl,
+    maxTokens,
+) {
     const res = await fetchImpl(GEN, {
         method: "POST",
         headers: {
@@ -306,10 +313,12 @@ async function chat(key, messages, offerTools, signal, fetchImpl) {
         body: JSON.stringify({
             model: MODEL,
             reasoning_effort: "low",
-            max_completion_tokens: 1500,
+            max_completion_tokens: maxTokens,
             messages,
-            tools: TOOL_SPECS,
-            tool_choice: offerTools ? "auto" : "none",
+            ...(specs.length && {
+                tools: specs,
+                tool_choice: offerTools ? "auto" : "none",
+            }),
         }),
         signal,
     });
@@ -331,19 +340,40 @@ async function runTool(tools, call) {
 }
 
 // Runs the model until it answers. It may call tools for at most
-// MAX_TOOL_CALLS calls; the whole investigation shares one timeout.
-export async function ask(key, payload, tools, { fetchImpl = fetch } = {}) {
+// MAX_TOOL_CALLS calls; the whole investigation shares one timeout. Without
+// specs the model just answers. `answer` shapes the answer: one line by
+// default.
+export async function ask(
+    key,
+    payload,
+    tools,
+    {
+        fetchImpl = fetch,
+        system = SYSTEM_PROMPT,
+        specs = TOOL_SPECS,
+        answer = reply,
+        maxTokens = 1500,
+    } = {},
+) {
     return withTimeout(TIMEOUT_MS, async (signal) => {
         const messages = [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: system },
             { role: "user", content: JSON.stringify(payload) },
         ];
         let calls = 0;
         for (;;) {
             const offer = calls < MAX_TOOL_CALLS;
-            const message = await chat(key, messages, offer, signal, fetchImpl);
+            const message = await chat(
+                key,
+                messages,
+                specs,
+                offer,
+                signal,
+                fetchImpl,
+                maxTokens,
+            );
             if (!offer || !message.tool_calls?.length)
-                return reply(message.content);
+                return answer(message.content);
             messages.push(message);
             // The budget is checked per call: one reply can hold many calls.
             for (const call of message.tool_calls) {
@@ -362,16 +392,28 @@ export async function ask(key, payload, tools, { fetchImpl = fetch } = {}) {
     });
 }
 
-// Counts investigations per UTC day; null once the day's limit is used.
-export function allow(budget, now) {
-    const day = new Date(now).toISOString().slice(0, 10);
-    const count = budget?.day === day ? budget.count : 0;
-    return count < DAILY_LIMIT ? { day, count: count + 1 } : null;
+// A closed incident's footprint over up to 24 hours: its requests and those
+// that ended in a server error, its callers (accounts) and those that got
+// one. Null if Tinybird can't say.
+export async function lost(model, minutes, tinybird) {
+    try {
+        const [row] = await pipe(
+            "infra_watch_callers",
+            { model, minutes: Math.min(Math.max(Math.ceil(minutes), 1), 1440) },
+            { fetchImpl: fetch, ...tinybird },
+        );
+        if (!row) return null;
+        const { requests, failures, callers, failing_callers } = row;
+        return { requests, failures, callers, failing_callers };
+    } catch (error) {
+        console.error(`lost: ${error.message}`);
+        return null;
+    }
 }
 
-export const followUp = (post, [why, ...rest]) =>
-    [
-        `↳ \`${post.info.model ?? "platform"}\` ${why}`,
-        ...rest,
-        `-# AI follow-up (${MODEL}) from status and error data`,
-    ].join("\n");
+// Counts AI calls per UTC day; null once the day's limit is used.
+export function allow(budget, now, limit = DAILY_LIMIT) {
+    const day = new Date(now).toISOString().slice(0, 10);
+    const count = budget?.day === day ? budget.count : 0;
+    return count < limit ? { day, count: count + 1 } : null;
+}

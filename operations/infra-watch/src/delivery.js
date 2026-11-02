@@ -1,5 +1,5 @@
-// Webhook delivery and state commits. No Cloudflare imports, so it is
-// testable with plain Node.
+// Discord webhook delivery, and the timeout, write queue and run lease the
+// Worker runs on. No Cloudflare imports, so it is testable with plain Node.
 
 const TIMEOUT_MS = 10_000;
 
@@ -23,8 +23,9 @@ const withWait = (url) => {
 };
 const MAX_TRIES = 3;
 
-// True only once Discord accepted the message. Retries 429 (honouring
-// retry_after, capped) and 5xx/network errors.
+// Truthy only once Discord accepted the message: the saved message (wait=true
+// returns it, with its id and channel), so the card can be edited and linked
+// later. Retries 429 (honouring retry_after, capped) and 5xx/network errors.
 export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     const wait = sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
@@ -42,7 +43,10 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
         } catch {
             res = null;
         }
-        if (res?.ok) return true;
+        if (res?.ok) {
+            const saved = await res.json?.().catch(() => null);
+            return saved ?? true;
+        }
         if (res && res.status < 500 && res.status !== 429) return false;
         if (attempt === MAX_TRIES) break;
         const header = res?.headers?.get?.("retry-after");
@@ -59,17 +63,89 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     return false;
 }
 
-// Keep a post's state change only if it was delivered: an undelivered alert
-// stays eligible next check, an undelivered recovery stays active.
-export function settle(prev, next, posts, delivered) {
-    const active = { ...next.active };
-    posts.forEach((post, i) => {
-        if (delivered[i]) return;
-        const before = prev.active?.[post.key];
-        if (before) active[post.key] = before;
-        else delete active[post.key];
-    });
-    return { ...next, active };
+// Pinged on alerts that need a person: thomash, elliot.
+export const MAINTAINERS = ["304378879705874432", "884468469452656732"];
+
+// OWNER_DISCORD_IDS: community model owners' GitHub usernames to Discord
+// ids, as JSON. Usernames are matched without case, and only a string of
+// digits is an id: nothing else is ever turned into a mention. Missing or
+// unreadable, it is empty, and every owner is named instead.
+export function discordIds(json) {
+    try {
+        return Object.fromEntries(
+            Object.entries(JSON.parse(json ?? "{}"))
+                .filter(
+                    ([, id]) =>
+                        typeof id === "string" && /^\d{17,20}$/.test(id),
+                )
+                .map(([name, id]) => [name.toLowerCase(), id]),
+        );
+    } catch {
+        console.error("OWNER_DISCORD_IDS is not a JSON object");
+        return {};
+    }
+}
+
+// Owners above a community post: one with a known Discord id is pinged,
+// anyone else is named by GitHub username.
+function mention(owners, ids) {
+    // Own keys only: a name like "constructor" is no id.
+    const id = (name) =>
+        Object.hasOwn(ids, name.toLowerCase()) ? ids[name.toLowerCase()] : null;
+    return {
+        content: owners.map((o) => (id(o) ? `<@${id(o)}>` : o)).join(" "),
+        users: [...new Set(owners.map(id).filter(Boolean))],
+    };
+}
+
+// A webhook body: the alert as a coloured embed, mentions outside it, since
+// Discord never pings from inside an embed. An alert that pings pings the
+// maintainers; a community card its `owners`. parse: [] blocks @everyone,
+// roles and any user not listed.
+export function payload(
+    { text, ping, color, owners = [] },
+    maintainers,
+    ids = {},
+) {
+    const { content, users } = ping
+        ? {
+              content: maintainers.map((id) => `<@${id}>`).join(" "),
+              users: maintainers,
+          }
+        : mention(owners, ids);
+    return {
+        content,
+        embeds: [{ description: text, color }],
+        allowed_mentions: { parse: [], users },
+    };
+}
+
+// Replaces the content of a message this webhook posted, or deletes it when
+// there is no body; a message already gone counts as deleted. One try: a
+// failed edit is written again on a later check.
+export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
+    const u = new URL(url);
+    u.search = "";
+    u.pathname += `/messages/${id}`;
+    try {
+        const res = await withTimeout(TIMEOUT_MS, (signal) =>
+            fetchImpl(
+                u,
+                body
+                    ? {
+                          method: "PATCH",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify(body),
+                          signal,
+                      }
+                    : { method: "DELETE", signal },
+            ),
+        );
+        res.body?.cancel();
+        return res.ok || (!body && res.status === 404);
+    } catch {
+        return false;
+    }
 }
 
 // Runs tasks one after another in the background: the caller never waits,

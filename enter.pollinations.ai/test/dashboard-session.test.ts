@@ -3,9 +3,9 @@ import * as schema from "@shared/db/better-auth.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
+import kpiApp from "../../operations/dashboards/kpi/worker/index";
+import { createObservabilityApp } from "../../operations/dashboards/observability/src/app";
 import economicsApp from "../../operations/economics/web/worker/index";
-import kpiApp from "../../operations/kpi/worker/index";
-import { createObservabilityApp } from "../../operations/observability/src/app";
 import { createPollinationsAuth } from "../../packages/auth/src/server";
 import { test } from "./fixtures.ts";
 

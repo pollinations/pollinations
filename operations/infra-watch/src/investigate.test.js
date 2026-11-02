@@ -6,7 +6,8 @@ import {
     DAILY_LIMIT,
     evidence,
     investigates,
-    MAX_REPORT,
+    lost,
+    MAX_LINE,
     MAX_TOOL_CALLS,
     MODEL,
     reply,
@@ -36,13 +37,11 @@ const degraded = {
     info: { kind: "DEGRADED", model: "a/model", success: 0.8, nonClient: 100 },
 };
 
-test("only degraded and platform-drop alerts are investigated", () => {
-    assert.equal(investigates(degraded), true);
-    const drop = { type: "alert", info: { kind: "PLATFORM_DROP" } };
-    assert.equal(investigates(drop), true);
-    for (const kind of ["SPILLOVER", "GEN_DOWN", "ANALYTICS_DOWN"])
-        assert.equal(investigates({ type: "alert", info: { kind } }), false);
-    assert.equal(investigates({ ...degraded, type: "recovered" }), false);
+test("degraded, weak-primary and platform-drop incidents are investigated", () => {
+    for (const kind of ["DEGRADED", "PLATFORM_DROP", "PRIMARY_WEAK"])
+        assert.equal(investigates(kind), true);
+    for (const kind of ["GEN_DOWN", "ANALYTICS_DOWN"])
+        assert.equal(investigates(kind), false);
 });
 
 test("evidence holds only the alerted model's rows and allowlisted fields", () => {
@@ -74,21 +73,14 @@ test("platform-drop evidence lists official models that lost the most traffic", 
     assert.ok(!JSON.stringify(e).includes(owned));
 });
 
-test("reply keeps WHY, a sentence and up to 12 evidence lines, within Discord's limit", () => {
-    const evidenceLines = Array.from({ length: 20 }, (_, i) => `- line ${i}`);
-    const lines = reply(
-        ["WHY vercel 5xx (20)", "Provider issue.", ...evidenceLines].join("\n"),
+test("reply keeps one short line: the verdict and the cause", () => {
+    assert.equal(
+        reply("One caller, not an outage. Fireworks 502s.\n- extra detail"),
+        "One caller, not an outage. Fireworks 502s.",
     );
-    assert.equal(lines[0], "WHY vercel 5xx (20)");
-    assert.equal(lines.length, 14);
-    assert.equal(reply("The model is fine."), null);
+    assert.equal(reply("\n  \n"), null);
     assert.equal(reply(""), null);
-    const long = reply(
-        [`WHY ${"x".repeat(500)}`, ...Array(14).fill("y".repeat(300))].join(
-            "\n",
-        ),
-    );
-    assert.ok(long.join("\n").length <= MAX_REPORT);
+    assert.ok(reply("x".repeat(900)).length <= MAX_LINE);
 });
 
 const answer = (message) => ({
@@ -105,13 +97,35 @@ test("ask sends the key only as a header and parses the answer", async () => {
     let sent;
     const fetchImpl = async (url, init) => {
         sent = { url, init, body: JSON.parse(init.body) };
-        return answer({ content: "WHY x\nSentence." });
+        return answer({ content: "Verdict." });
     };
     const lines = await ask("sk_test", { alert: {} }, {}, { fetchImpl });
-    assert.deepEqual(lines, ["WHY x", "Sentence."]);
+    assert.equal(lines, "Verdict.");
     assert.equal(sent.init.headers.authorization, "Bearer sk_test");
     assert.equal(sent.body.model, MODEL);
     assert.ok(!sent.init.body.includes("sk_test"));
+});
+
+test("ask with its own prompt and no specs offers no tools", async () => {
+    let body;
+    const fetchImpl = async (_url, init) => {
+        body = JSON.parse(init.body);
+        return answer({ content: "APPROVE: steady use." });
+    };
+    const line = await ask(
+        "sk_test",
+        {},
+        {},
+        {
+            fetchImpl,
+            system: "Review.",
+            specs: [],
+        },
+    );
+    assert.equal(line, "APPROVE: steady use.");
+    assert.equal(body.messages[0].content, "Review.");
+    assert.equal(body.tools, undefined);
+    assert.equal(body.tool_choice, undefined);
 });
 
 test("ask fails loudly on an error response", async () => {
@@ -126,7 +140,7 @@ test("ask runs the tools the model calls and returns its final answer", async ()
             content: null,
             tool_calls: [toolCall("model_status", { model: "a/model" })],
         }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const fetchImpl = async (_url, init) => {
         bodies.push(JSON.parse(init.body));
@@ -134,7 +148,7 @@ test("ask runs the tools the model calls and returns its final answer", async ()
     };
     const tools = { model_status: ({ model }) => ({ model, rows: [] }) };
     const lines = await ask("sk_test", {}, tools, { fetchImpl });
-    assert.deepEqual(lines, ["WHY x", "Sentence."]);
+    assert.equal(lines, "Verdict.");
     const result = bodies[1].messages.at(-1);
     assert.equal(result.role, "tool");
     assert.equal(result.tool_call_id, "call_1");
@@ -150,7 +164,7 @@ test("ask stops offering tools after MAX_TOOL_CALLS", async () => {
         const body = JSON.parse(init.body);
         bodies.push(body);
         return body.tool_choice === "none"
-            ? answer({ content: "WHY x\nSentence." })
+            ? answer({ content: "Verdict." })
             : answer({
                   content: null,
                   tool_calls: [toolCall("model_status", { model: "a/model" })],
@@ -169,7 +183,7 @@ test("a batch of tool calls cannot run past MAX_TOOL_CALLS", async () => {
     );
     const replies = [
         answer({ content: null, tool_calls: batch }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const bodies = [];
     const fetchImpl = async (_url, init) => {
@@ -204,7 +218,7 @@ test("unknown tools and bad arguments come back as errors, not crashes", async (
                 },
             ],
         }),
-        answer({ content: "WHY x\nSentence." }),
+        answer({ content: "Verdict." }),
     ];
     const fetchImpl = async (_url, init) => {
         bodies.push(JSON.parse(init.body));
@@ -370,8 +384,36 @@ test("at most DAILY_LIMIT investigations per UTC day", () => {
         assert.ok(budget);
     }
     assert.equal(allow(budget, day1), null);
+    // A caller may set its own limit.
+    assert.equal(
+        allow({ day: "2026-01-01", count: 47 }, Date.parse("2026-01-01"), 48)
+            .count,
+        48,
+    );
+    assert.equal(
+        allow({ day: "2026-01-01", count: 48 }, Date.parse("2026-01-01"), 48),
+        null,
+    );
     assert.deepEqual(allow(budget, day1 + 24 * 3600 * 1000), {
         day: "2026-10-31",
         count: 1,
     });
+});
+
+test("lost counts an incident's failed requests over up to 24 hours", async () => {
+    const { seen, fetchImpl } = tinybird([
+        { requests: 900, failures: 37, failing_callers: 5, callers: 40 },
+    ]);
+    const tb = { tinybirdToken: "tb_test", fetchImpl };
+    assert.deepEqual(await lost("a/model", 135, tb), {
+        requests: 900,
+        failures: 37,
+        callers: 40,
+        failing_callers: 5,
+    });
+    assert.equal(seen[0].url.pathname, "/v0/pipes/infra_watch_callers.json");
+    assert.equal(seen[0].url.searchParams.get("minutes"), "135");
+    await lost("a/model", 5000, tb);
+    assert.equal(seen[1].url.searchParams.get("minutes"), "1440");
+    assert.equal(await lost("a/model", 60, {}), null);
 });

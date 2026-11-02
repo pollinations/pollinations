@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { exclusive, send, serial, settle, withTimeout } from "./delivery.js";
+import {
+    discordIds,
+    edit,
+    exclusive,
+    payload,
+    send,
+    serial,
+    withTimeout,
+} from "./delivery.js";
 
 const reply = (status, retryAfter) => ({
     ok: status >= 200 && status < 300,
@@ -45,19 +53,6 @@ test("send gives up after 3 failures and on 4xx", async () => {
         ),
         false,
     );
-});
-
-test("undelivered alert stays eligible, undelivered recovery stays active", () => {
-    const prev = { active: { "degraded:b": { postedAt: 1 } } };
-    const next = { active: { "degraded:a": { postedAt: 9 } } };
-    const posts = [
-        { type: "alert", key: "degraded:a" },
-        { type: "recovered", key: "degraded:b" },
-    ];
-    const kept = settle(prev, next, posts, [false, false]);
-    assert.deepEqual(kept.active, { "degraded:b": { postedAt: 1 } });
-    const sent = settle(prev, next, posts, [true, true]);
-    assert.deepEqual(sent.active, next.active);
 });
 
 test("overlapping checks: second is skipped until the first finishes", async () => {
@@ -120,4 +115,101 @@ test("send asks Discord to confirm the saved message (wait=true)", async () => {
         { fetchImpl, sleep: noSleep },
     );
     assert.equal(new URL(seen).searchParams.get("wait"), "true");
+});
+
+test("send returns the message Discord saved, so it can be edited and linked", async () => {
+    const fetchImpl = async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: "123", channel_id: "9" }),
+    });
+    assert.deepEqual(
+        await send("https://x.test/h", {}, { fetchImpl, sleep: noSleep }),
+        { id: "123", channel_id: "9" },
+    );
+});
+
+test("edit patches the webhook's own message", async () => {
+    let seen;
+    const fetchImpl = async (url, init) => {
+        seen = {
+            url: String(url),
+            method: init.method,
+            body: JSON.parse(init.body),
+        };
+        return reply(200);
+    };
+    const ok = await edit(
+        "https://discord.com/api/webhooks/1/abc",
+        "123",
+        { content: "done" },
+        { fetchImpl },
+    );
+    assert.equal(ok, true);
+    assert.equal(
+        seen.url,
+        "https://discord.com/api/webhooks/1/abc/messages/123",
+    );
+    assert.equal(seen.method, "PATCH");
+    assert.equal(seen.body.content, "done");
+});
+
+test("alerts go out as a coloured embed; mentions stay outside it", () => {
+    const message = { text: "box", color: 0xd85a30 };
+    const pinged = payload({ ...message, ping: true }, ["1", "2"]);
+    assert.equal(pinged.content, "<@1> <@2>");
+    assert.deepEqual(pinged.embeds, [{ description: "box", color: 0xd85a30 }]);
+    assert.deepEqual(pinged.allowed_mentions, { parse: [], users: ["1", "2"] });
+    const quiet = payload({ ...message, ping: false }, ["1", "2"]);
+    assert.equal(quiet.content, "");
+    assert.deepEqual(quiet.allowed_mentions, { parse: [], users: [] });
+});
+
+test("a community card pings each owner with a known Discord id and names the rest", () => {
+    const ids = discordIds(
+        JSON.stringify({
+            Known: "123456789012345678",
+            "no-discord": null,
+            // A number may have lost digits; never a guessed id.
+            rounded: 123456789012345680,
+            fake: "<@1>",
+        }),
+    );
+    const card = { text: "box", color: 1 };
+    const body = payload(
+        {
+            ...card,
+            owners: ["known", "unknown", "no-discord", "rounded", "fake"],
+        },
+        ["1", "2"],
+        ids,
+    );
+    assert.equal(
+        body.content,
+        "<@123456789012345678> unknown no-discord rounded fake",
+    );
+    assert.deepEqual(body.allowed_mentions, {
+        parse: [],
+        users: ["123456789012345678"],
+    });
+    // No maintainer is pinged by a community card.
+    assert.doesNotMatch(body.content, /<@[12]>/);
+    // Without the map, every owner is named.
+    assert.equal(payload({ ...card, owners: ["known"] }, []).content, "known");
+});
+
+test("an owner named like an object property is named, never mentioned", () => {
+    const ids = discordIds(JSON.stringify({ known: "123456789012345678" }));
+    const body = payload(
+        { text: "box", owners: ["constructor", "__proto__", "toString"] },
+        [],
+        ids,
+    );
+    assert.equal(body.content, "constructor __proto__ toString");
+    assert.deepEqual(body.allowed_mentions.users, []);
+});
+
+test("an unreadable owner map names every owner", () => {
+    for (const json of [undefined, "not json", "null"])
+        assert.deepEqual(discordIds(json), {});
 });

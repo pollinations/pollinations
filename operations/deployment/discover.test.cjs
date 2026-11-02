@@ -10,6 +10,12 @@ function fixture() {
     fs.mkdirSync(path.join(root, "apps", "chat"), { recursive: true });
     fs.mkdirSync(path.join(root, "apps", "plain"), { recursive: true });
     fs.mkdirSync(path.join(root, "operations", "kpi"), { recursive: true });
+    fs.mkdirSync(path.join(root, "operations", "dashboards", "economics"), {
+        recursive: true,
+    });
+    fs.mkdirSync(path.join(root, "operations", "infrastructure", "gpu"), {
+        recursive: true,
+    });
     fs.writeFileSync(
         path.join(root, "apps", "chat", "deploy.json"),
         JSON.stringify({
@@ -22,6 +28,10 @@ function fixture() {
         path.join(root, "operations", "kpi", "deploy.json"),
         JSON.stringify({ target: "worker", credentials: "myceli" }),
     );
+    fs.writeFileSync(
+        path.join(root, "operations", "dashboards", "economics", "deploy.json"),
+        JSON.stringify({ target: "script", credentials: "myceli" }),
+    );
     return root;
 }
 
@@ -33,11 +43,15 @@ test("discovers only directories with valid manifests", () => {
     );
     assert.deepEqual(
         discover("operations", root).map((app) => app.path),
-        ["operations/kpi"],
+        ["operations/dashboards/economics", "operations/kpi"],
     );
     assert.deepEqual(
-        discover("all", root).map((app) => app.path),
-        ["apps/chat", "operations/kpi"],
+        discover("all", root).map((app) => [app.path, app.name]),
+        [
+            ["apps/chat", "chat"],
+            ["operations/dashboards/economics", "economics"],
+            ["operations/kpi", "kpi"],
+        ],
     );
     fs.rmSync(root, { recursive: true, force: true });
 });

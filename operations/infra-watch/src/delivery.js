@@ -25,7 +25,8 @@ const MAX_TRIES = 3;
 
 // Truthy only once Discord accepted the message: the saved message (wait=true
 // returns it, with its id and channel), so the card can be edited and linked
-// later. Retries 429 (honouring retry_after, capped) and 5xx/network errors.
+// later. Retries a 429 once Discord's whole cooldown has passed, as its
+// rate limits require, and 5xx/network errors after at most 5 seconds.
 export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     const wait = sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
@@ -51,14 +52,10 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
         if (attempt === MAX_TRIES) break;
         const header = res?.headers?.get?.("retry-after");
         const retryAfter = header == null ? Number.NaN : Number(header);
-        await wait(
-            Math.min(
-                Number.isFinite(retryAfter)
-                    ? retryAfter * 1000
-                    : 1000 * attempt,
-                5000,
-            ),
-        );
+        const ms = Number.isFinite(retryAfter)
+            ? retryAfter * 1000
+            : 1000 * attempt;
+        await wait(res?.status === 429 ? ms : Math.min(ms, 5000));
     }
     return false;
 }

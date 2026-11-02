@@ -26,6 +26,20 @@ test("send retries 429 and 5xx, then succeeds", async () => {
     );
 });
 
+test("send waits out Discord's whole 429 cooldown; other retries wait at most 5 seconds", async () => {
+    const waits = [];
+    const sleep = async (ms) => waits.push(ms);
+    const statuses = [429, 204];
+    const limited = async () => reply(statuses.shift(), "65");
+    assert.equal(
+        await send("https://x.test/h", {}, { fetchImpl: limited, sleep }),
+        true,
+    );
+    const down = async () => reply(503, "65");
+    await send("https://x.test/h", {}, { fetchImpl: down, sleep });
+    assert.deepEqual(waits, [65_000, 5000, 5000]);
+});
+
 test("send gives up after 3 failures and on 4xx", async () => {
     let calls = 0;
     const down = async () => {

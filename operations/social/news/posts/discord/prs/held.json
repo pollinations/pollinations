@@ -13,8 +13,27 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18979": {
+      "merge_sha": "8ff51e8a50b9e97524c235d4a980323eb6b4a144",
+      "merged_at": "2026-11-01T22:50:58Z",
+      "required": []
+    },
+    "18980": {
+      "merge_sha": "31353b41286c9599a12e87a528b778763bc0d736",
+      "merged_at": "2026-11-01T23:27:49Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "18983": {
+      "merge_sha": "6a093cf96d434483566dd361e07c29696558bdf3",
+      "merged_at": "2026-11-02T00:04:12Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/infra-watch"
+      ]
     }
   },
-  "production": "c1d76143de7793d2c22c45d93914c5d39ee5f52a",
+  "production": "0697716922ae387d50e51af5a8895c7e75956ebc",
   "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

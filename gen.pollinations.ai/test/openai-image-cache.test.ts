@@ -119,7 +119,16 @@ describe("OpenAI image cache", () => {
                 }).success,
             ).toBe(true);
         }
-        for (const size of ["abc", "1024 by 1024", "1024", "x", ""]) {
+        const overflow = "9".repeat(309);
+        for (const size of [
+            "abc",
+            "1024 by 1024",
+            "1024",
+            "x",
+            "",
+            `${overflow}x768`,
+            `${overflow}x${overflow}`,
+        ]) {
             expect(
                 CreateImageRequestSchema.safeParse({ prompt: "x", size })
                     .success,

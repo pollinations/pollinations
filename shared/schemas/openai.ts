@@ -881,7 +881,8 @@ const imageSizeMeta = {
     description:
         "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default",
 };
-export const IMAGE_SIZE_PATTERN = /^\s*(?:auto|\d+\s*[xX]\s*\d+)\s*$/;
+// At most 15 digits per side, so each side parses to an exact integer.
+export const IMAGE_SIZE_PATTERN = /^\s*(?:auto|\d{1,15}\s*[xX]\s*\d{1,15})\s*$/;
 export const isValidImageSize = (size: string) => IMAGE_SIZE_PATTERN.test(size);
 // Reject an unparseable size instead of letting `resolveParams()` drop it and
 // generate (and bill) a 1024x1024 default the caller never asked for.

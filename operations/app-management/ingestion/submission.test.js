@@ -177,6 +177,14 @@ test("parses the optional quest reference", () => {
     ]);
 });
 
+test("parses quest before the trailing credit footer", () => {
+    const submission = parseSubmission(
+        `${BODY}\n\n### Quest\n\n#17246\n\n---\n\n**Made with pollinations.ai**`,
+    );
+    assert.equal(submission.quest, "17246");
+    assert.deepEqual(validateSubmission(submission), []);
+});
+
 test("builds the canonical catalog app", () => {
     const app = buildApp(parseSubmission(BODY), {
         githubUsername: "example",

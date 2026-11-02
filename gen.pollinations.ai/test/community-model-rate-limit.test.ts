@@ -18,6 +18,7 @@ const QUOTA_BOUND_MODELS = new Set([
     "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
     "microsoft/mai-image-2.6",
+    "vllm-sr/d3",
 ]);
 
 describe("model rate limiting", () => {

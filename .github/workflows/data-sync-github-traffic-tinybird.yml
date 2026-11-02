@@ -34,9 +34,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
+          check-latest: true
 
       - name: Sync traffic
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
-        run: node operations/github/sync-traffic-to-tinybird.mjs
+        run: node operations/data-sync/github-traffic-to-tinybird.mjs

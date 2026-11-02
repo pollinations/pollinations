@@ -77,7 +77,7 @@ interface SeedanceModelConfig {
 
 const SEEDANCE_PRO_FAST_CONFIG: SeedanceModelConfig = {
     model: "bytedance/seedance-1-pro-fast",
-    trackingLabel: "bytedance/seedance-1-pro-fast",
+    trackingLabel: "bytedance/seedance-1-pro-fast:replicate",
     displayName: "Seedance 1.0 Pro Fast",
     defaultDuration: 5,
     maxDuration: 10,

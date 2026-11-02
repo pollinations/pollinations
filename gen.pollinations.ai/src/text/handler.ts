@@ -25,6 +25,7 @@ import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
 import {
     publicChatChoices,
     publicChatStream,
+    publicUsage,
     withoutPayg,
 } from "./chat/public.ts";
 import { completionToChatStream } from "./chat/stream.ts";
@@ -137,7 +138,58 @@ export async function generateChatAttempt(
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
     );
-    if (!attemptData.stream) requireChatCompletionUsage(result);
+    if (!attemptData.stream) {
+        requireChatCompletionUsage(result);
+        // Reasoning is not an answer. Tool calls, refusals and media can be
+        // valid without text, but a blank completion must never become a cache hit.
+        const emptyChoices = (result.choices ?? []).filter(
+            ({ message, finish_reason }) =>
+                finish_reason !== "content_filter" &&
+                (!message ||
+                    !(
+                        (typeof message.content === "string"
+                            ? message.content.trim()
+                            : message.content?.length) ||
+                        message.tool_calls?.length ||
+                        message.function_call ||
+                        message.audio ||
+                        (typeof message.refusal === "string" &&
+                            message.refusal.trim())
+                    )),
+        );
+        if (
+            !result.choices?.length ||
+            emptyChoices.length === result.choices.length
+        ) {
+            const tokenLimitReached =
+                (requestData.max_tokens != null ||
+                    requestData.max_completion_tokens != null) &&
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ finish_reason }) => finish_reason === "length",
+                );
+            const { status, ...details } = tokenLimitReached
+                ? {
+                      status: 400 as const,
+                      message:
+                          "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
+                      errorCode: "output_token_limit_exceeded" as const,
+                  }
+                : {
+                      status: 502 as const,
+                      message:
+                          "Chat Completions provider returned an empty response",
+                      errorCode: "empty_response" as const,
+                  };
+            throw new UpstreamError(status, {
+                ...details,
+                requestUrl: result.upstreamRequestUrl,
+                billedUsage: openaiUsageToUsage(
+                    result.usage as Parameters<typeof openaiUsageToUsage>[0],
+                ),
+            });
+        }
+    }
     return buffered ? completionToChatStream(result) : result;
 }
 
@@ -186,43 +238,13 @@ function usageHeaders(
     return headers;
 }
 
-// Provider billing fields stay internal. InferencePort's `payg_*` fields hold
-// its ledger entry, including our account balance.
-function isPrivateUsageKey(key: string): boolean {
-    return (
-        key === "cost" ||
-        key === "search_context_size" ||
-        key.startsWith("payg_")
-    );
-}
-
-function publicCompletionUsage(
-    usage: ChatCompletion["usage"],
-): ChatCompletion["usage"] {
-    if (!usage || !Object.keys(usage).some(isPrivateUsageKey)) return usage;
-    return Object.fromEntries(
-        Object.entries(usage).filter(([key]) => !isPrivateUsageKey(key)),
-    ) as ChatCompletion["usage"];
-}
-
-function publicChatCompletion(
-    completion: ChatCompletion,
-    isVercel: boolean,
-): ChatCompletion {
-    const usage = publicCompletionUsage(completion.usage);
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
     // InferencePort also attaches its `payg_*` ledger to the top level of
     // non-streaming responses; the stream path strips it in public.ts.
-    const hasPaygTopLevel = Object.keys(completion).some((key) =>
-        key.startsWith("payg_"),
-    );
-    if (!isVercel && !hasPaygTopLevel && usage === completion.usage)
-        return completion;
     const publicCompletion = withoutPayg({
         ...completion,
-        usage,
-        choices: isVercel
-            ? publicChatChoices(completion.choices)
-            : completion.choices,
+        usage: publicUsage(completion.usage),
+        choices: publicChatChoices(completion.choices),
     });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
@@ -398,10 +420,6 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        const isVercel = candidate.definition?.provider === "vercel";
-        // InferencePort ends its streams with a PAYG ledger chunk.
-        const filtersStream =
-            isVercel || candidate.definition?.provider === "inferenceport";
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -410,9 +428,7 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = filtersStream
-                ? publicChatStream(clientBody)
-                : clientBody;
+            completion.responseStream = publicChatStream(clientBody);
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),
@@ -422,7 +438,7 @@ async function generateTextResponse(
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);
-        const publicCompletion = publicChatCompletion(completion, isVercel);
+        const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(

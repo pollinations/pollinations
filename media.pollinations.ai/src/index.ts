@@ -1,5 +1,8 @@
+import { AGENT_RUN_TOKEN_PREFIX } from "@shared/auth/agent-run-token.ts";
+import { extractApiKey } from "@shared/auth/api-key.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { rateLimit } from "@shared/rate-limit.ts";
 import {
     invalidSafeTokens,
     parseSafeFeatures,
@@ -8,6 +11,7 @@ import {
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 import {
     describeRoute,
     openAPIRouteHandler,
@@ -44,9 +48,11 @@ import {
 export { MediaUpload } from "./media-upload.ts";
 
 const DOMAIN = "media.pollinations.ai";
-// gen.pollinations.ai proxies /account/* to enter — using the public path
-// keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+// Enter's key check, reached over the ENTER service binding (the host is not
+// used for routing). A public fetch through Gen would leave from the Workers
+// egress IP that every Worker shares, so it would count against Gen's per-IP
+// limit and a bad-key flood could turn valid uploads into 503s.
+const KEY_VERIFY_URL = "https://enter.pollinations.ai/api/account/key";
 // Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
 // IDs can be reused after expiry; neither should remain in downstream caches.
 const UNCACHED_CACHE_CONTROL = "no-store";
@@ -72,13 +78,15 @@ interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
+    ENTER: Fetcher;
 }
 
 /**
- * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
+ * Wire shape of `GET /api/account/key`. BYOP attribution arrives nested under
  * `byopApp`, which is null for keys not minted through the BYOP flow.
  */
 interface KeyVerifyResponse {
+    id: string;
     valid: boolean;
     type: string;
     name: string | null;
@@ -87,42 +95,46 @@ interface KeyVerifyResponse {
 }
 
 interface AuthResult {
-    valid: boolean;
     type: string;
     name: string | null;
+    keyId: string | null;
     userId: string | null;
     byopClientKeyId: string | null;
 }
 
-async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    try {
-        const res = await fetch(KEY_VERIFY_URL, {
+async function verifyApiKey(
+    enter: Fetcher,
+    apiKey: string,
+): Promise<AuthResult | null> {
+    const res = await enter
+        .fetch(KEY_VERIFY_URL, {
             headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        if (!res.ok) return null;
-        const data = await res.json<KeyVerifyResponse>();
-        if (!data.valid) return null;
-        // Normalize: an enter deployment that predates the identity fields
-        // omits them, and `undefined` would slip past the `=== null` guards
-        // downstream — never treat an unattested key as user-attached.
-        return {
-            valid: true,
-            type: data.type,
-            name: data.name ?? null,
-            userId: data.userId ?? null,
-            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
-        };
-    } catch {
+        })
+        .catch(() => undefined);
+    // Only a 4xx means a bad key. A throttled, failing or malformed check must
+    // not tell the owner of a valid key that it is invalid.
+    if (res && res.status >= 400 && res.status < 500 && res.status !== 429) {
         return null;
     }
-}
-
-function extractApiKey(req: Request): string | null {
-    const bearer = req.headers
-        .get("authorization")
-        ?.match(/^Bearer (.+)$/)?.[1];
-    if (bearer) return bearer;
-    return new URL(req.url).searchParams.get("key");
+    const data = res?.ok
+        ? await res.json<KeyVerifyResponse>().catch(() => null)
+        : null;
+    if (typeof data?.valid !== "boolean") {
+        throw new HTTPException(503, {
+            message: "API key check unavailable. Please retry.",
+        });
+    }
+    if (!data.valid) return null;
+    // Normalize: an enter deployment that predates the identity fields
+    // omits them, and `undefined` would slip past the `=== null` guards
+    // downstream — never treat an unattested key as user-attached.
+    return {
+        type: data.type,
+        name: data.name ?? null,
+        keyId: data.id ?? null,
+        userId: data.userId ?? null,
+        byopClientKeyId: data.byopApp?.clientKeyId ?? null,
+    };
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -305,6 +317,17 @@ const MediaListQuerySchema = z.object({
 
 const api = new Hono<{ Bindings: Env }>();
 
+// Every key check and gallery read is a D1 lookup in Enter, so cap each key
+// and client IP before it; wrangler.toml sets the limits.
+const keyCheckRateLimit = rateLimit({ byIp: true });
+const RateLimitedResponse = {
+    description:
+        "Too many requests from this API key or IP address; retry after `Retry-After` seconds",
+};
+const KeyCheckUnavailableResponse = {
+    description: "The API key check is temporarily unavailable; retry",
+};
+
 api.post(
     "/upload",
     describeRoute({
@@ -395,6 +418,12 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            403: {
+                description: "Publishable (pk_) keys can't upload",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             409: {
                 description:
                     "The custom ID already has a file or gallery entry; nothing was replaced",
@@ -409,6 +438,7 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
             500: {
                 description:
                     "Upload failed. The file may already have been stored, so retrying a custom ID can return 409.",
@@ -416,8 +446,10 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            503: KeyCheckUnavailableResponse,
         },
     }),
+    keyCheckRateLimit,
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {
@@ -428,10 +460,36 @@ api.post(
                 401,
             );
         }
-        const authResult = await verifyApiKey(apiKey);
+        const authResult = await verifyApiKey(c.env.ENTER, apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
+        // Publishable keys ship inside public clients, so anyone holding one
+        // could host files on the owner's account; uploads are secret-key only.
+        if (authResult.type !== "secret") {
+            return c.json(
+                { error: "Uploading media requires a secret (sk_) API key" },
+                403,
+            );
+        }
+        // Stored on the file and logged, so finding who uploaded it needs
+        // neither the key name nor Enter's D1.
+        const uploader = {
+            uploadedBy: authResult.name || "unknown",
+            keyType: authResult.type,
+            keyId: authResult.keyId ?? "",
+            userId: authResult.userId ?? "",
+        };
+        const logUpload = (id: string, size: number, contentType: string) =>
+            console.log(
+                JSON.stringify({
+                    event: "upload",
+                    id,
+                    size,
+                    contentType,
+                    ...uploader,
+                }),
+            );
 
         const uploadMaxSize =
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -533,9 +591,9 @@ api.post(
                     contentType: requestContentType,
                     fileName: rawUploadFileName(c.req.raw.headers),
                     size: bodySize,
-                    uploadedBy: authResult.name || "unknown",
-                    keyType: authResult.type,
+                    ...uploader,
                 });
+                logUpload(upload.id, upload.size, upload.contentType);
                 if (privacyApplied) c.header("X-Safety-Applied", "privacy");
                 return c.json(upload);
             } catch (error) {
@@ -739,8 +797,7 @@ api.post(
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
                     originalName: fileName || "",
-                    uploadedBy: authResult.name || "",
-                    keyType: authResult.type,
+                    ...uploader,
                 },
             };
             let stored: R2Object | null;
@@ -782,16 +839,7 @@ api.post(
                 });
             }
 
-            console.log(
-                JSON.stringify({
-                    event: "upload",
-                    id,
-                    size: fileSize,
-                    contentType,
-                    keyType: authResult.type,
-                    uploadedBy: authResult.name || "unknown",
-                }),
-            );
+            logUpload(id, fileSize, contentType);
 
             if (privacyApplied) c.header("X-Safety-Applied", "privacy");
             return c.json({
@@ -846,8 +894,10 @@ api.get(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
         },
     }),
+    keyCheckRateLimit,
     validator("query", MediaListQuerySchema, (result, c) => {
         // Emit validation failures in the same {error} shape as every other
         // error response instead of the validator's default body.
@@ -928,7 +978,7 @@ api.delete(
             },
             403: {
                 description:
-                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
+                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else. Agent run tokens (`ag_`) can't delete media",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -939,8 +989,11 @@ api.delete(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: RateLimitedResponse,
+            503: KeyCheckUnavailableResponse,
         },
     }),
+    keyCheckRateLimit,
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {
@@ -951,7 +1004,7 @@ api.delete(
                 401,
             );
         }
-        const auth = await verifyApiKey(apiKey);
+        const auth = await verifyApiKey(c.env.ENTER, apiKey);
         if (!auth) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
@@ -963,8 +1016,12 @@ api.delete(
         }
         // Publishable keys ship inside public clients — anyone holding one
         // could delete the owner's published media, so deletion is
-        // secret-key only.
-        if (auth.type !== "secret") {
+        // secret-key only. Agent run tokens report their parent key's type,
+        // but they're handed to generated code, so they can't delete either.
+        if (
+            auth.type !== "secret" ||
+            apiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)
+        ) {
             return c.json(
                 { error: "Deleting media requires a secret (sk_) API key" },
                 403,
@@ -1153,7 +1210,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
+                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a secret pollinations.ai API key (`sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {
@@ -1162,7 +1219,7 @@ app.get("/openapi.json", async (c, next) => {
                         type: "http",
                         scheme: "bearer",
                         bearerFormat: "API Key",
-                        description: "pollinations.ai API key (pk_ or sk_)",
+                        description: "Secret pollinations.ai API key (sk_)",
                     },
                 },
             },

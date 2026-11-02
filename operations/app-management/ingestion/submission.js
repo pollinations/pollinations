@@ -109,7 +109,10 @@ function parseSubmission(body) {
     const platform = clean(section(body, "Platform"), 30).toLowerCase();
     const language = normalizeLanguage(section(body, "App Language"));
     const discord = clean(section(body, "Discord Username"), 80);
-    const quest = clean(section(body, "Quest"), 20).replace(/^#/, "");
+    const quest = clean(
+        section(body, "Quest").split(/\r?\n/, 1)[0],
+        20,
+    ).replace(/^#/, "");
     const screenshotUrl = parseScreenshotUrl(section(body, "Screenshot"));
 
     return {

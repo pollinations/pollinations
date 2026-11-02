@@ -38,7 +38,6 @@ import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -1861,8 +1860,8 @@ export async function generateMusic(
 
 /**
  * Calls ElevenLabs Sound Effects (text -> sound effect) via /v1/sound-generation.
- * Billed per second of output audio (see registry
- * `elevenlabs/eleven-text-to-sound-v2` cost block).
+ * Billed per metered second (see registry `elevenlabs/eleven-text-to-sound-v2`
+ * cost block).
  */
 export async function generateSoundEffect(opts: {
     prompt: string;
@@ -1889,9 +1888,8 @@ export async function generateSoundEffect(opts: {
                 "Sound effects service is not configured (missing API key)",
         });
     }
-    // SFX always returns 128 kbps MP3. The per-second price is derived from the
-    // MP3 byte rate, so honoring other formats would need per-format billing
-    // math — reject instead of silently downgrading (default "mp3" passes).
+    // SFX always returns 128 kbps MP3; reject other formats instead of silently
+    // downgrading (default "mp3" passes).
     if (responseFormat && responseFormat !== "mp3") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: `elevenlabs/eleven-text-to-sound-v2 only supports mp3 output; response_format=${responseFormat} is not available.`,
@@ -1922,19 +1920,19 @@ export async function generateSoundEffect(opts: {
     const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
+    // Bill ElevenLabs' character-cost meter: 12 credits per second, and a flat
+    // 60 credits when the caller sets no duration, whatever length it returns.
+    const meteredSeconds = getElevenLabsMeteredInputSeconds(response, log);
     const audioBuffer = await response.arrayBuffer();
-    // ElevenLabs Sound Effects returns 128 kbps CBR MP3 (= 16 kB/s, ffprobe-verified).
-    const SFX_MP3_BYTES_PER_SECOND = 16000;
-    const estimatedDuration = audioBuffer.byteLength / SFX_MP3_BYTES_PER_SECOND;
 
     const usageHeaders = buildUsageHeaders(
         "elevenlabs/eleven-text-to-sound-v2",
-        createCompletionAudioSecondsUsage(estimatedDuration),
+        createCompletionAudioSecondsUsage(meteredSeconds),
     );
 
-    log.info("Sound effect success: {bytes} bytes, ~{duration}s", {
+    log.info("Sound effect success: {bytes} bytes, {duration}s metered", {
         bytes: audioBuffer.byteLength,
-        duration: Math.round(estimatedDuration),
+        duration: meteredSeconds,
     });
 
     return new Response(audioBuffer, {
@@ -4080,6 +4078,40 @@ export async function handleSpeechWithTimestamps(
     );
 }
 
+/** Multipart body for the OVH and DeepInfra whisper-large-v3 endpoints. */
+export function buildWhisperForm(opts: {
+    file: File;
+    language?: string | null;
+    prompt?: string | null;
+    temperature?: number;
+    isDeepInfra: boolean;
+}): FormData {
+    const { file, language, prompt, temperature, isDeepInfra } = opts;
+    const form = new FormData();
+    const filename =
+        file.name && file.name !== "blob" ? file.name : "audio.mp3";
+    form.append("file", file, filename);
+    if (language) form.append("language", language);
+    if (prompt) form.append("prompt", prompt);
+    if (temperature !== undefined)
+        form.append("temperature", String(temperature));
+    form.append("response_format", "verbose_json");
+    form.append(
+        "model",
+        isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+    );
+    if (isDeepInfra) {
+        // DeepInfra returns segments either way, and drops words when
+        // both granularities are requested.
+        form.append("timestamp_granularities", "word");
+    } else {
+        // OVH leaves segments empty unless asked; srt/vtt cues are those.
+        form.append("timestamp_granularities[]", "word");
+        form.append("timestamp_granularities[]", "segment");
+    }
+    return form;
+}
+
 export async function handleTranscription(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("transcription");
     const formData = c.get("formData");
@@ -4245,25 +4277,13 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "vtt",
         ]);
 
-        const whisperFormData = new FormData();
-        const filename =
-            file.name && file.name !== "blob" ? file.name : "audio.mp3";
-        whisperFormData.append("file", file, filename);
-        if (language) whisperFormData.append("language", language);
-        whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append(
-            "model",
-            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
-        );
-        if (isDeepInfra) {
-            // DeepInfra returns segments either way, and drops words when
-            // both granularities are requested.
-            whisperFormData.append("timestamp_granularities", "word");
-        } else {
-            // OVH leaves segments empty unless asked; srt/vtt cues are those.
-            whisperFormData.append("timestamp_granularities[]", "word");
-            whisperFormData.append("timestamp_granularities[]", "segment");
-        }
+        const whisperFormData = buildWhisperForm({
+            file,
+            language,
+            prompt,
+            temperature,
+            isDeepInfra,
+        });
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"
@@ -4323,7 +4343,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
-    .use("*", auth(), frontendKeyRateLimit, balance)
+    .use("*", auth(), balance)
     .post(
         "/voice-changer",
         describeRoute({

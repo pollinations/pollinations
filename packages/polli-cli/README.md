@@ -12,7 +12,7 @@ polli auth login
 polli gen text "Say hello in one sentence" --model openai/gpt-5.4-nano
 ```
 
-Device login opens a browser for approval. The last command prints a short, low-cost result in your terminal. To try an image next, run `polli gen image "a cat in space" --output cat.png` and check that `cat.png` was saved.
+Device authorization opens a browser for approval. The last command prints a short, low-cost result in your terminal. To try an image next, run `polli gen image "a cat in space" --output cat.png` and check that `cat.png` was saved.
 
 <video src="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785" controls muted loop playsinline width="720">
   <a href="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785">▶️ Watch the demo</a>
@@ -39,7 +39,7 @@ Every command is agent-friendly:
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
-Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 Set `POLLINATIONS_ENV=staging` to use the staging API, with a separate login stored in `~/.pollinations/credentials.staging.json`. `polli upload` has no staging.
 
@@ -82,12 +82,14 @@ polli gen chat --model openai/gpt-5.4-nano            # interactive multi-turn
 
 ```bash
 polli models                 # all models
-polli models --type image    # filter (text, decision, image, audio, video, 3d, embedding)
+polli models --type image    # filter (text, decision, image, audio, video, 3d, embedding, realtime)
+polli models flux --source community   # search; --reliability all adds unhealthy community models
+polli models --type audio --voices     # voices per model
 polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint
 polli docs --open            # open in browser
-polli quests                 # public quest catalog
+polli quests                 # your quests with claim state (requires login)
 polli quests --claimed       # already-completed and earned quest status
 ```
 
@@ -96,12 +98,11 @@ polli quests --claimed       # already-completed and earned quest status
 Two kinds of keys:
 
 - **Secret (`sk_`)** — backend use, full access. Default.
-- **Publishable (`pk_`)** — safe to ship in frontend code.
+- **App Key (`pk_`)** — identifies your app in Pollinations Connect; never authenticates requests.
 
 ```bash
 polli keys list
 polli keys create --name mybot --budget 100                    # secret (default)
-polli keys create --name myapp --type publishable              # API publishable
 polli keys create --name myapp --type publishable \
   --redirect-uri https://myapp.com/callback --earnings          # 3rd-party app key
 polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models

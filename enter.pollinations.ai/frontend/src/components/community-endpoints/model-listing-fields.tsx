@@ -1,9 +1,11 @@
 import {
     ButtonGroup,
     CheckIcon,
+    DiscordIcon,
     Field,
     InlineLink,
     Input,
+    LockIcon,
     TabButton,
     Textarea,
 } from "@pollinations/ui";
@@ -77,15 +79,13 @@ export function ModelListingFields({
     }, [canPublish]);
     const needsDiscord = canPublish && discord === false;
     const isPublic = form.visibility === "public";
-    const visibilityHelp = needsDiscord
-        ? "Connect Discord to publish, so we can reach you about your models."
-        : isPublic
-          ? isAgent
-              ? "Listed in /models and callable by anyone. Calls use the caller’s Pollen and key permissions."
-              : "Callable by anyone. Listed in /models while recent request success stays above 80% (or before any requests). Set prices below, or leave them at 0 for free."
-          : canPublish
-            ? "Only you can use it, for free. Your public prices and fallbacks are saved. It appears in /models only with your key."
-            : "Only you can use it, for free. It appears in /models only with your key. Public publishing requires approval.";
+    const visibilityHelp = isPublic
+        ? isAgent
+            ? "Listed in /models and callable by anyone. Calls use the caller’s Pollen and key permissions."
+            : "Callable by anyone. Listed in /models while recent request success stays above 80% (or before any requests). Set prices below, or leave them at 0 for free."
+        : canPublish
+          ? "Only you can use it, for free. Your public prices and fallbacks are saved. It appears in /models only with your key."
+          : "Only you can use it, for free. It appears in /models only with your key. Public publishing requires approval.";
     const visibilityOptions = (
         <ButtonGroup aria-label="Model visibility">
             <TabButton
@@ -105,6 +105,7 @@ export function ModelListingFields({
                 className="min-w-24 gap-1.5"
             >
                 {isPublic && <CheckIcon className="h-3.5 w-3.5" />}
+                {needsDiscord && <LockIcon className="h-3.5 w-3.5" />}
                 Public
             </TabButton>
         </ButtonGroup>
@@ -199,9 +200,19 @@ export function ModelListingFields({
             <ModelFormRow
                 label="Visibility"
                 help={visibilityHelp}
-                action={
+                note={
                     needsDiscord && (
-                        <InlineLink href="/account">Connect Discord</InlineLink>
+                        <p className="flex items-start gap-1.5 font-body text-xs text-theme-text-muted">
+                            <DiscordIcon className="mt-px h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                Public needs a connected Discord, so we can
+                                reach you if your {isAgent ? "agent" : "model"}{" "}
+                                stops working.{" "}
+                                <InlineLink href="/account">
+                                    Connect Discord
+                                </InlineLink>
+                            </span>
+                        </p>
                     )
                 }
             >

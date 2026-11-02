@@ -119,12 +119,13 @@ const show = (label, body) =>
 
 // Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an
 // error, never a silent dry run. Posts to the infra-watch channel, or the
-// community channel with COMMUNITY_WEBHOOK_URL. Returns the saved message.
-async function post(env, message, webhook = "DISCORD_WEBHOOK_URL") {
+// community channel with COMMUNITY_WEBHOOK_URL, pinging owners by the
+// Discord accounts they `linked` on Enter first. Returns the saved message.
+async function post(env, message, webhook = "DISCORD_WEBHOOK_URL", linked) {
     const body = payload(
         message,
         MAINTAINERS,
-        discordIds(env.OWNER_DISCORD_IDS),
+        discordIds(env.OWNER_DISCORD_IDS, linked),
     );
     if (env.DRY_RUN === "1") {
         show(`dry-run ${webhook}`, body);
@@ -564,10 +565,10 @@ export class Watch extends DurableObject {
 
     // Every half hour, the community monitor (community.js): code probes the
     // due models and finds the incidents worth telling, by Thomas's rules;
-    // one AI call with COMMUNITY_AGENT_KEY groups them into posts and words
-    // them. Each post is sent on its own, and only a delivered one starts
-    // its incidents' quiet periods: anything else stays pending. A failure
-    // ends the cycle, logged where it starts.
+    // one AI call with COMMUNITY_AGENT_KEY words them. Each incident is its
+    // own message, and only a delivered one starts its quiet periods:
+    // anything else stays pending. A failure ends the cycle, logged where it
+    // starts.
     async community(gen, catalog, now) {
         const state = (await this.ctx.storage.get("community")) ?? {};
         if (now - (state.at ?? 0) < CYCLE_MS) return;
@@ -668,22 +669,23 @@ export class Watch extends DurableObject {
             found,
         );
         if (!plan) throw new Error("the agent gave no decision");
-        // A post Discord rejects stays pending and fails the cycle.
-        const rejected = [];
-        for (const [message, webhook, channel] of [
+        // A message Discord rejects stays pending and fails the cycle.
+        const rejected = new Set();
+        const linked = plan.community.length ? await this.linkedDiscord() : [];
+        for (const [messages, webhook, channel] of [
             [plan.community, "COMMUNITY_WEBHOOK_URL", "community"],
             [
-                plan.maintainers && { ...plan.maintainers, ping: true },
+                plan.maintainers.map((m) => ({ ...m, ping: true })),
                 undefined,
                 "maintainers",
             ],
-        ]) {
-            if (!message) continue;
-            if (!(await post(this.env, message, webhook))) {
-                rejected.push(channel);
-                continue;
-            }
-            for (const incident of message.incidents) {
+        ])
+            for (const message of messages) {
+                if (!(await post(this.env, message, webhook, linked))) {
+                    rejected.add(channel);
+                    continue;
+                }
+                const [incident] = message.incidents;
                 for (const k of incident.quiet) state.quiet[k] = now;
                 if (incident.kind === "listings")
                     await this.ctx.storage.put("listings", listings.saved);
@@ -691,11 +693,10 @@ export class Watch extends DurableObject {
                 if (incident.kind === "mismatch")
                     state.served[incident.model].streak = 1;
             }
-        }
-        if (rejected.length) {
+        if (rejected.size) {
             await save();
             throw new Error(
-                `Discord rejected the ${rejected.join(" and ")} post`,
+                `Discord rejected a ${[...rejected].join(" and a ")} message`,
             );
         }
         await done();
@@ -728,6 +729,26 @@ export class Watch extends DurableObject {
                 }));
         } catch (error) {
             console.error(`served models: ${error.message}`);
+            return [];
+        }
+    }
+
+    // The Discord accounts publishers linked on Enter, as [GitHub username,
+    // Discord id] pairs: from each endpoint to its owner by primary key, and
+    // to the account through its user_id index. CROSS JOIN keeps that order;
+    // with a plain JOIN, SQLite reads every account to find Discord's. A
+    // failed read leaves OWNER_DISCORD_IDS alone.
+    async linkedDiscord() {
+        try {
+            const { results } = await this.env.DB.prepare(
+                `SELECT DISTINCT u.github_username AS owner, a.account_id AS id
+                FROM community_endpoint ce CROSS JOIN user u ON u.id = ce.owner_user_id
+                CROSS JOIN account a ON a.user_id = u.id AND a.provider_id = 'discord'
+                WHERE u.github_username IS NOT NULL`,
+            ).all();
+            return results.map((r) => [r.owner, r.id]);
+        } catch (error) {
+            console.error(`linked discord: ${error.message}`);
             return [];
         }
     }

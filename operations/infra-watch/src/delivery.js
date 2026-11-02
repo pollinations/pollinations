@@ -25,7 +25,8 @@ const MAX_TRIES = 3;
 
 // Truthy only once Discord accepted the message: the saved message (wait=true
 // returns it, with its id and channel), so the card can be edited and linked
-// later. Retries 429 (honouring retry_after, capped) and 5xx/network errors.
+// later. Retries a 429 once Discord's whole cooldown has passed, as its
+// rate limits require, and 5xx/network errors after at most 5 seconds.
 export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
     const wait = sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
@@ -51,14 +52,10 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
         if (attempt === MAX_TRIES) break;
         const header = res?.headers?.get?.("retry-after");
         const retryAfter = header == null ? Number.NaN : Number(header);
-        await wait(
-            Math.min(
-                Number.isFinite(retryAfter)
-                    ? retryAfter * 1000
-                    : 1000 * attempt,
-                5000,
-            ),
-        );
+        const ms = Number.isFinite(retryAfter)
+            ? retryAfter * 1000
+            : 1000 * attempt;
+        await wait(res?.status === 429 ? ms : Math.min(ms, 5000));
     }
     return false;
 }
@@ -66,24 +63,26 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
 // Pinged on alerts that need a person: thomash, elliot.
 export const MAINTAINERS = ["304378879705874432", "884468469452656732"];
 
-// OWNER_DISCORD_IDS: community model owners' GitHub usernames to Discord
-// ids, as JSON. Usernames are matched without case, and only a string of
-// digits is an id: nothing else is ever turned into a mention. Missing or
-// unreadable, it is empty, and every owner is named instead.
-export function discordIds(json) {
+// Community model owners' GitHub usernames to Discord ids: `linked`, the
+// [username, id] pairs of the Discord accounts publishers linked on Enter,
+// over OWNER_DISCORD_IDS, a JSON map, for those who linked none. Usernames
+// are matched without case, and only a string of digits is an id: nothing
+// else is ever turned into a mention. An unreadable map is empty, and an
+// owner with no id is named instead.
+export function discordIds(json, linked = []) {
+    let listed = [];
     try {
-        return Object.fromEntries(
-            Object.entries(JSON.parse(json ?? "{}"))
-                .filter(
-                    ([, id]) =>
-                        typeof id === "string" && /^\d{17,20}$/.test(id),
-                )
-                .map(([name, id]) => [name.toLowerCase(), id]),
-        );
+        listed = Object.entries(JSON.parse(json ?? "{}"));
     } catch {
         console.error("OWNER_DISCORD_IDS is not a JSON object");
-        return {};
     }
+    return Object.fromEntries(
+        [...listed, ...linked]
+            .filter(
+                ([, id]) => typeof id === "string" && /^\d{17,20}$/.test(id),
+            )
+            .map(([name, id]) => [name.toLowerCase(), id]),
+    );
 }
 
 // Owners above a community post: one with a known Discord id is pinged,

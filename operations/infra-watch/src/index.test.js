@@ -1050,7 +1050,7 @@ it("counts a cycle whose post Discord rejects as failed, and says so", async () 
     await cycled(stub);
     const [card] = posts(INFRA);
     expect(card.content).toBe(MAINTAINERS);
-    expect(card.text).toContain("Discord rejected the community post");
+    expect(card.text).toContain("Discord rejected a community message");
 });
 
 it("tells nothing for a slow, healthy cycle right after a pause", async () => {
@@ -1230,6 +1230,31 @@ it("starts quiet periods only for incidents in a delivered post; the rest stay p
     expect(world.agentFacts).toHaveLength(3);
 }, 15_000);
 
+it("posts each community incident as its own message, pinging only its owner", async () => {
+    const stub = watch();
+    world.catalog = [community("community/o/a"), community("community/p/b")];
+    world.probe = answers(() => true);
+    world.agent = tells();
+    await cycled(stub);
+    await later(stub, HOURS(8));
+    const told = () =>
+        posts(COMMUNITY).map((p) => [
+            p.content,
+            p.text.match(/MODEL {3}(\S+)/)[1],
+        ]);
+    // Discord refuses p's message only: o's is told, p's stays pending.
+    world.fails = (w) => w.path === COMMUNITY && w.text.includes("p/b");
+    await cycled(stub);
+    expect(told()).toEqual([[OWNER_O, "o/a"]]);
+    world.fails = () => false;
+    await later(stub, 0);
+    await cycled(stub);
+    expect(told()).toEqual([
+        [OWNER_O, "o/a"],
+        ["p", "p/b"],
+    ]);
+}, 15_000);
+
 it("sends a stream broken for three owners' working models at once to the maintainers, pinging no owner", async () => {
     const stub = watch();
     world.catalog = ["community/a/x", "community/b/y", "community/c/z"].map(
@@ -1384,6 +1409,42 @@ const proxies = (names, visibility = "public") =>
     ]);
 const runs = async (stub) => (await stored(stub, "community")).served;
 
+it("pings an owner by the Discord account linked on Enter ahead of the list, and by the list when D1 can't be read", async () => {
+    await proxies(["broken"]);
+    await env.DB.prepare(
+        "INSERT INTO account (id, account_id, provider_id, user_id, created_at, updated_at) VALUES ('discord-o', '987654321098765432', 'discord', 'owner-o', 1, 1)",
+    ).run();
+    world.catalog = [community("community/o/broken")];
+    world.probe = answers(() => true);
+    world.agent = tells();
+    // The second broken stream in a row is told.
+    const told = async (stub) => {
+        await cycled(stub);
+        await later(stub, HOURS(8));
+        await cycled(stub);
+        return posts(COMMUNITY).at(-1);
+    };
+    // The list has o as 123456789012345678; the account o linked wins.
+    const linked = await told(watch());
+    expect([linked.content, linked.users]).toEqual([
+        "<@987654321098765432>",
+        ["987654321098765432"],
+    ]);
+    const stub = watch();
+    await runInDurableObject(stub, (instance) => {
+        const prepare = instance.env.DB.prepare.bind(instance.env.DB);
+        vi.spyOn(instance.env.DB, "prepare").mockImplementation((sql) => {
+            if (sql.includes("'discord'")) throw new Error("D1 unavailable");
+            return prepare(sql);
+        });
+    });
+    const listed = await told(stub);
+    expect([listed.content, listed.users]).toEqual([
+        OWNER_O,
+        ["123456789012345678"],
+    ]);
+});
+
 it("compares only fresh probes of listed proxies that answered themselves with a model name", async () => {
     const stub = watch();
     let clock = Date.UTC(2026, 10, 1, 10, 5);
@@ -1489,4 +1550,4 @@ it("tells a served-model mismatch to the maintainers once due, however long deli
     clock += HOURS(1);
     await cycled(stub);
     expect(posts(INFRA)).toHaveLength(2);
-});
+}, 15_000);

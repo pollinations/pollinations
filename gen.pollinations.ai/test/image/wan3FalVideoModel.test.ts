@@ -239,6 +239,25 @@ describe("Wan 3.0 Prime via Fal", () => {
         expect(requests[0].body?.aspect_ratio).toBe("adaptive");
     });
 
+    it.each([
+        ["9:16", [], "9:16"],
+        ["21:9", [], "21:9"],
+        ["9:16", ["https://media.pollinations.ai/start.png"], "adaptive"],
+    ] as const)(
+        "sends explicit %s over 1280x720 with frames %j as %s",
+        async (aspectRatio, image, expected) => {
+            const requests: ProviderRequest[] = [];
+            mockFalFetch(requests);
+            await callWan3FalAPI("a sailboat crossing a calm bay", {
+                ...baseParams,
+                dimensionsExplicit: true,
+                aspectRatio,
+                image: [...image],
+            });
+            expect(requests[0].body?.aspect_ratio).toBe(expected);
+        },
+    );
+
     it("R2V maps Pollinations references to the Fal Prime contract", async () => {
         const requests: ProviderRequest[] = [];
         mockFalFetch(requests);

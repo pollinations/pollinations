@@ -85,16 +85,12 @@ export async function callWan3FalAPI(
         resolution,
         aspect_ratio: hasFrames
             ? "adaptive"
-            : safeParams.aspectRatio === "adaptive" ||
-                WAN_3_ASPECT_RATIOS.some(
-                    (ratio) => ratio === safeParams.aspectRatio,
-                )
-              ? safeParams.aspectRatio
-              : closestRatioLogSpace(
-                    safeParams.width,
-                    safeParams.height,
-                    WAN_3_ASPECT_RATIOS,
-                ),
+            : (safeParams.aspectRatio ??
+              closestRatioLogSpace(
+                  safeParams.width,
+                  safeParams.height,
+                  WAN_3_ASPECT_RATIOS,
+              )),
         duration,
         audio: safeParams.audio ?? true,
         enable_prompt_expansion: true,

@@ -127,6 +127,39 @@ describe("OpenAI image cache", () => {
         }
     });
 
+    it("generates an uppercase X size at both requested dimensions", async () => {
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("model", {
+                    requested: "flux",
+                    resolved: "flux",
+                    definition: {} as Env["Variables"]["model"]["definition"],
+                });
+                await next();
+            })
+            .post(
+                "/v1/images/generations",
+                validator("json", CreateImageRequestSchema),
+                prepareOpenAIImageGeneration,
+                (c) => c.json(c.req.valid("json" as never)),
+            );
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "a paper boat",
+                    size: "1024X768",
+                }),
+            }),
+            {} as CloudflareBindings,
+        );
+        expect(await response.json()).toMatchObject({
+            width: 1024,
+            height: 768,
+        });
+    });
+
     it.each(["json", "multipart"])(
         "passes an explicit seed through %s edits",
         async (encoding) => {

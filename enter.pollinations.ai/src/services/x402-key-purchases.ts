@@ -9,7 +9,7 @@ import { getAddress, verifyMessage } from "viem";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 
-export type Purchase = {
+type Purchase = {
     payment_id: string;
     user_id: string;
     key_id: string;

@@ -13,9 +13,7 @@ import {
     creditPurchase,
     getPurchase,
     isBuyer,
-    type Purchase,
     paymentId,
-    paymentIdForPayload,
     preparePurchase,
     purchaseAmountUsd,
     storedKey,
@@ -101,7 +99,6 @@ export const x402KeysRoutes = new Hono<Env>()
 
             const signature = paymentSignature(c);
             let id: string | undefined;
-            let recovering: Purchase | undefined;
             if (signature) {
                 try {
                     id = await paymentId(signature);
@@ -132,13 +129,15 @@ export const x402KeysRoutes = new Hono<Env>()
                             message:
                                 "x402 payment already used. Sign the recovery message with the paying wallet to get its key again.",
                         });
-                    if (previous.credited_at !== null) {
-                        const issued = await storedKey(c.env, previous);
-                        return c.json({ ...issued, pollen: amountUsd });
-                    }
-                    // Recorded but not yet credited: settle again, which
-                    // assumes Weft answers a repeat with the original receipt.
-                    recovering = previous;
+                    // Never resume a recorded payment: the same nonce can carry
+                    // other terms, and resuming skips verification.
+                    if (previous.credited_at === null)
+                        throw new HTTPException(409, {
+                            message:
+                                "x402 payment is not activated. If it was charged, contact hello@pollinations.ai with the transaction.",
+                        });
+                    const issued = await storedKey(c.env, previous);
+                    return c.json({ ...issued, pollen: amountUsd });
                 }
             }
 
@@ -176,27 +175,18 @@ export const x402KeysRoutes = new Hono<Env>()
                             server: new ExactEvmScheme(),
                         },
                     ],
-                    resumeVerifiedPayment: async (_context, candidate) =>
-                        recovering &&
-                        (await paymentIdForPayload(
-                            candidate.paymentPayload,
-                        )) === id
-                            ? candidate
-                            : undefined,
                 },
             );
             const response = await payment(c, async () => {
                 if (!id)
                     throw new Error("Verified x402 payment has no signature");
-                issued = recovering
-                    ? await storedKey(c.env, recovering)
-                    : await preparePurchase(
-                          c.env,
-                          c.executionCtx,
-                          id,
-                          holdingUserId,
-                          purchaseKey,
-                      );
+                issued = await preparePurchase(
+                    c.env,
+                    c.executionCtx,
+                    id,
+                    holdingUserId,
+                    purchaseKey,
+                );
                 c.res = c.json({
                     id: issued.id,
                     key: issued.key,
@@ -223,7 +213,7 @@ export const x402KeysRoutes = new Hono<Env>()
                 // would be ignored and the unfunded key sent with a 200.
                 c.res = c.json(
                     {
-                        error: "Payment settled but key activation is pending. Retry with the same payment signature and a buyer signature.",
+                        error: "Payment settled but key activation failed. Contact hello@pollinations.ai with the transaction.",
                     },
                     503,
                 );

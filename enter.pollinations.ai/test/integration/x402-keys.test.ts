@@ -513,7 +513,7 @@ describe("x402 prepaid API keys", () => {
             }
         });
 
-        test("second review: a failed credit returns no key and the buyer can recover once", async ({
+        test("second review: a failed credit returns no key; once support activates it the buyer recovers it", async ({
             accountToken,
         }) => {
             const owner = await holdingOwner(accountToken, "credit-failure");
@@ -568,16 +568,25 @@ describe("x402 prepaid API keys", () => {
                     ...headers,
                     ...(await proof(buyer.account, buyer.payment)),
                 };
+                // A pending purchase is never resumed, even for the buyer.
+                expect((await send(owner, "p2", signedHeaders)).status).toBe(
+                    409,
+                );
+                expect((await ledger(owner)).paid).toBe(before.paid);
+                // Support checks the transaction on-chain, then credits it.
+                await creditPurchase(
+                    env.DB,
+                    buyer.id,
+                    owner,
+                    pending?.key_id as string,
+                );
                 const recovered = await send(owner, "p2", signedHeaders);
                 expect(recovered.status).toBe(200);
                 expect(((await recovered.json()) as { id: string }).id).toBe(
                     pending?.key_id,
                 );
-                expect((await send(owner, "p2", signedHeaders)).status).toBe(
-                    200,
-                );
                 expect(calls.filter((path) => path === "/settle")).toHaveLength(
-                    2,
+                    1,
                 );
                 const after = await ledger(owner);
                 expect(after.paid - before.paid).toBe(2);
@@ -776,7 +785,7 @@ describe("x402 prepaid API keys", () => {
             ).toBeNull();
         });
 
-        test("the paying wallet recovers its key; a pending one settles and credits once", async ({
+        test("the paying wallet recovers an activated key; a pending one is never resumed", async ({
             accountToken,
         }) => {
             const owner = await holdingOwner(accountToken, "race-recover");
@@ -795,30 +804,66 @@ describe("x402 prepaid API keys", () => {
                 ...(await proof(buyer.account, buyer.payment)),
             };
 
+            const pending = await Promise.all([
+                send(owner, "p2", headers),
+                send(owner, "p2", headers),
+            ]);
+            expect(pending.map((response) => response.status)).toEqual([
+                409, 409,
+            ]);
+            expect(await ledger(owner)).toEqual(before);
+
+            // Activated: the proof returns the key without any settlement.
+            await creditPurchase(env.DB, buyer.id, owner, issued.id);
             const recovered = await Promise.all([
                 send(owner, "p2", headers),
                 send(owner, "p2", headers),
             ]);
-            expect(recovered.map((response) => response.status)).toEqual([
-                200, 200,
-            ]);
-            for (const response of recovered)
+            vi.unstubAllGlobals();
+            for (const response of recovered) {
+                expect(response.status).toBe(200);
                 expect(((await response.json()) as { key: string }).key).toBe(
                     issued.key,
                 );
+            }
             expect(calls).not.toContain("/verify");
-            expect(calls.filter((path) => path === "/settle")).toHaveLength(2);
-
-            // Credited now: the proof returns the key without settling again.
-            const again = await send(owner, "p2", headers);
-            vi.unstubAllGlobals();
-            expect(again.status).toBe(200);
-            expect(calls.filter((path) => path === "/settle")).toHaveLength(2);
+            expect(calls).not.toContain("/settle");
             expect(await ledger(owner)).toEqual({
                 ...before,
                 paid: before.paid + 2,
                 key_pollen: before.key_pollen + 2,
             });
+        });
+
+        test("a proven buyer cannot resume a pending purchase with a cheaper transfer", async ({
+            accountToken,
+        }) => {
+            const owner = await holdingOwner(accountToken, "resume-swap");
+            const buyer = await buyerPayment(owner, "p2");
+            await preparePurchase(env, undefined, buyer.id, owner, "p2");
+            // Same payer and nonce, so the same purchase, cut to $0.01.
+            const cheap = structuredClone(buyer.payment) as PaymentPayload;
+            cheap.accepted.amount = "10000";
+            (
+                cheap.payload as { authorization: { value: string } }
+            ).authorization.value = "10000";
+            const cheapHeader = encodePaymentSignatureHeader(cheap);
+            expect(await paymentId(cheapHeader)).toBe(buyer.id);
+            const before = await ledger(owner);
+            const calls = stubFacilitator(buyer.account.address);
+
+            const response = await send(owner, "p2", {
+                "payment-signature": cheapHeader,
+                ...(await proof(buyer.account, cheap)),
+            });
+            vi.unstubAllGlobals();
+
+            expect(response.status).toBe(409);
+            expect(calls).not.toContain("/settle");
+            expect(await ledger(owner)).toEqual(before);
+            expect(
+                (await getPurchase(env.DB, buyer.id))?.credited_at,
+            ).toBeNull();
         });
     });
 });

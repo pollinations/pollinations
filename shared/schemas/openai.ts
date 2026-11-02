@@ -871,7 +871,10 @@ const imageSizeField = z
             (/^\d+x\d+$/.test(v) &&
                 Number(v.split("x")[0]) >= 1 &&
                 Number(v.split("x")[1]) >= 1),
-        { message: "size must be 'auto' or WIDTHxHEIGHT with both dimensions >= 1" },
+        {
+            message:
+                "size must be 'auto' or WIDTHxHEIGHT with both dimensions >= 1",
+        },
     )
     .meta(imageSizeMeta);
 const imageEditSizeField = z
@@ -884,7 +887,10 @@ const imageEditSizeField = z
             (/^\d+x\d+$/.test(v) &&
                 Number(v.split("x")[0]) >= 1 &&
                 Number(v.split("x")[1]) >= 1),
-        { message: "size must be 'auto' or WIDTHxHEIGHT with both dimensions >= 1" },
+        {
+            message:
+                "size must be 'auto' or WIDTHxHEIGHT with both dimensions >= 1",
+        },
     )
     .meta(imageSizeMeta);
 // Same bounds as the GET image route and the chat route: out-of-range seeds

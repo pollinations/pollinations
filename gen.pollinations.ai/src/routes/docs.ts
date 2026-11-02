@@ -75,7 +75,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     x402PrepaidKeys: "x402 Prepaid Keys",
-    userWallets: "Connect User Wallets",
+    userWallets: "Pollinations Pay",
     publishModel: "Publish a Model",
     communityModels: "Community Models",
     publishAgent: "Publish an Agent",
@@ -390,7 +390,7 @@ const GEN_API_DOCS = [
     PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
-const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
+const USER_WALLETS_SECTION = `## Pollinations Pay\n\n${USER_WALLETS_DOCS}`;
 const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
 const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
@@ -437,7 +437,7 @@ export const LLMS_FULL_TEXT = [
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
-    byop: "connect-user-wallets",
+    byop: "pollinations-pay",
     models: "publish-a-model",
     "community-models": "publish-a-model",
     agents: "publish-an-agent",
@@ -474,8 +474,8 @@ ${connectScript}
 <script>
 (function () {
   function normalizeLegacyHash() {
-    if (window.location.hash === '#tag/byop') {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/connect-user-wallets');
+    if (window.location.hash === '#tag/byop' || window.location.hash === '#tag/connect-user-wallets') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/pollinations-pay');
     }
   }
   normalizeLegacyHash();

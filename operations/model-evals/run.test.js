@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
 import aiw from "./evals/aiw.js";
 import { estimateCost } from "./lib/gen.js";
 import { createRng } from "./lib/rng.js";
 import { scoreOf } from "./lib/stats.js";
-import { formatTable, runEvals, selectModels } from "./run.js";
+import { formatTable, runEvals, saveRun, selectModels } from "./run.js";
 
 // Re-derives each answer from the prompt text alone, so a template edit that
 // breaks its own ground truth fails here instead of grading models wrongly.
@@ -451,5 +454,46 @@ describe("runEvals against a real HTTP server", () => {
         assert.equal(byName["vendor/refused"].failed, 12);
         assert.deepEqual(byName["vendor/refused"].errors, { refused: 12 });
         assert.equal(byName["vendor/right"].correct, 12);
+    });
+});
+
+describe("saveRun", () => {
+    test("lists the run's score gaps in the index for infra-watch", () => {
+        const out = mkdtempSync(join(tmpdir(), "evals-"));
+        const scored = (name, rate) => ({
+            name,
+            community: name.startsWith("community/"),
+            aliases: [],
+            status: "scored",
+            rate,
+            lower: rate - 0.1,
+            upper: rate + 0.1,
+            cost: 0.01,
+        });
+        saveRun(out, {
+            id: "2026-11-02",
+            date: "2026-11-02T03:00:00Z",
+            cost: 1,
+            evals: [
+                {
+                    id: "aiw",
+                    models: [
+                        scored("openai/x", 0.9),
+                        scored("community/a/x", 0.2),
+                    ],
+                },
+            ],
+        });
+        const index = JSON.parse(
+            readFileSync(join(out, "index.json"), "utf-8"),
+        );
+        assert.deepEqual(index.runs[0].gaps, [
+            {
+                model: "community/a/x",
+                rate: 0.2,
+                twin: "openai/x",
+                twinRate: 0.9,
+            },
+        ]);
     });
 });

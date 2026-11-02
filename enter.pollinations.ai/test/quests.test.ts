@@ -1,11 +1,12 @@
 import { env, SELF } from "cloudflare:test";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import {
     claimReward,
     recordRewards,
     rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect, vi } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
@@ -1372,6 +1373,69 @@ test("Polli CLI quest rewards device-login keys on accounts 3+ days old", async 
     expect(rewards).toEqual([{ userId: polliUserId, amount: 1 }]);
 });
 
+test("use_app counts only logins into another account's GitHub-linked app", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const githubOwner = await getOnlyUser();
+    // All four start logged in to the GitHub-linked fixture user's app.
+    const [ownAppUserId, googleAppUserId, githubAppUserId, polliUserId] =
+        await seedByopConnections(githubOwner.id, 4, "use-app");
+    if (!ownAppUserId || !googleAppUserId || !githubAppUserId || !polliUserId) {
+        throw new Error("Expected BYOP users");
+    }
+
+    const now = new Date();
+    const googleOwnerId = "use-app-google-owner";
+    await db.insert(schema.user).values({
+        id: googleOwnerId,
+        name: googleOwnerId,
+        email: `${googleOwnerId}@example.com`,
+        createdAt: now,
+        updatedAt: now,
+    });
+    // Polli CLI's app key; in production its owner is GitHub-linked.
+    const polliClientKeyId = "jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0";
+    // [logged-in user, app key, app owner]
+    const appOwners: [string, string, string][] = [
+        [ownAppUserId, "use-app-own-app-key", ownAppUserId],
+        [googleAppUserId, "use-app-google-app-key", googleOwnerId],
+        [polliUserId, polliClientKeyId, githubOwner.id],
+    ];
+    for (const [userId, appKeyId, ownerId] of appOwners) {
+        await db
+            .update(schema.apikey)
+            .set({ byopClientKeyId: appKeyId })
+            .where(eq(schema.apikey.referenceId, userId));
+        await db.insert(schema.apikey).values({
+            id: appKeyId,
+            key: `pk_${appKeyId}`,
+            referenceId: ownerId,
+            createdAt: now,
+            updatedAt: now,
+        });
+    }
+
+    for (const userId of [
+        ownAppUserId,
+        googleAppUserId,
+        githubAppUserId,
+        polliUserId,
+    ]) {
+        await checkQuestsForUser(env, userId, [
+            questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+        ]);
+    }
+
+    const rewards = await db
+        .select({ userId: schema.rewards.userId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "use_app"));
+    expect(new Set(rewards.map((reward) => reward.userId))).toEqual(
+        new Set([githubAppUserId, polliUserId]),
+    );
+});
+
 test("app milestones award their rewards at inclusive thresholds", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -2663,5 +2727,123 @@ test("account quest history accepts account usage permission", async ({
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
         rewards: [{ questId: "first_api_key" }],
+    });
+});
+
+/** Google-only accounts with an API key: their next check earns first_api_key. */
+async function seedSetupAccounts(
+    prefix: string,
+    count: number,
+    domain: string,
+): Promise<string[]> {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+    const ids = Array.from(
+        { length: count },
+        (_, index) => `${prefix}-${index}`,
+    );
+    for (const id of ids) {
+        await db.insert(schema.user).values({
+            id,
+            name: id,
+            email: `${id}@${domain}`,
+            emailVerified: true,
+            createdAt: now,
+            updatedAt: now,
+            tierBalance: 0,
+            packBalance: 0,
+        });
+        await db.insert(schema.account).values({
+            id: `${id}-google`,
+            accountId: `google-${id}`,
+            providerId: "google",
+            userId: id,
+        });
+        await db.insert(schema.apikey).values({
+            id: `${id}-key`,
+            name: "Key",
+            key: `sk_${id}`,
+            prefix: "sk",
+            referenceId: id,
+            createdAt: now,
+            updatedAt: now,
+        });
+    }
+    return ids;
+}
+
+function earnFirstKey(bindings: typeof env, userId: string) {
+    return checkQuestsForUser(bindings, userId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+}
+
+async function tierBalanceOf(userId: string) {
+    const [row] = await drizzle(env.DB, { schema })
+        .select({ value: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, userId));
+    return row?.value ?? 0;
+}
+
+test("restricted accounts can earn and claim Setup rewards into their frozen Quest balance", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const db = drizzle(env.DB, { schema });
+    const [userId] = await seedSetupAccounts("restricted", 1, "farm.test");
+    await db
+        .update(schema.user)
+        .set({ questPollenRestricted: true })
+        .where(eq(schema.user.id, userId));
+    await earnFirstKey(env, userId);
+    const token = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId,
+    });
+    const headers = { Authorization: `Bearer ${token}` };
+    const history = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/rewards",
+        { headers },
+    );
+    const body = (await history.json()) as {
+        rewards: Array<{ id: string; claimedAt: string | null }>;
+    };
+    expect(body.rewards[0].claimedAt).not.toBeNull();
+    expect(body).not.toHaveProperty("setupHold");
+    await recordRewards(db, [
+        {
+            idempotencyKey: "restricted-model-quest",
+            userId,
+            questId: "use_text_model",
+            title: "Use a text model",
+            amount: 0.25,
+            bucket: "tier",
+        },
+    ]);
+    const reward = await db
+        .select()
+        .from(schema.rewards)
+        .where(
+            and(
+                eq(schema.rewards.userId, userId),
+                eq(schema.rewards.questId, "use_text_model"),
+            ),
+        )
+        .get();
+    if (!reward) throw new Error("Expected the earned model reward");
+    const claimed = await SELF.fetch(
+        `http://localhost:3000/api/account/quests/rewards/${reward.id}/claim`,
+        { method: "POST", headers },
+    );
+    expect(await claimed.json()).toMatchObject({ claimed: true });
+    expect(await tierBalanceOf(userId)).toBe(0.5);
+    const balance = await SELF.fetch(
+        "http://localhost:3000/api/account/balance",
+        { headers },
+    );
+    expect(await balance.json()).toMatchObject({
+        balance: 0,
+        accountBalance: { tier: 0, heldTier: 0.5, questPollenRestricted: true },
     });
 });

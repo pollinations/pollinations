@@ -66,24 +66,26 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
 // Pinged on alerts that need a person: thomash, elliot.
 export const MAINTAINERS = ["304378879705874432", "884468469452656732"];
 
-// OWNER_DISCORD_IDS: community model owners' GitHub usernames to Discord
-// ids, as JSON. Usernames are matched without case, and only a string of
-// digits is an id: nothing else is ever turned into a mention. Missing or
-// unreadable, it is empty, and every owner is named instead.
-export function discordIds(json) {
+// Community model owners' GitHub usernames to Discord ids: `linked`, the
+// [username, id] pairs of the Discord accounts publishers linked on Enter,
+// over OWNER_DISCORD_IDS, a JSON map, for those who linked none. Usernames
+// are matched without case, and only a string of digits is an id: nothing
+// else is ever turned into a mention. An unreadable map is empty, and an
+// owner with no id is named instead.
+export function discordIds(json, linked = []) {
+    let listed = [];
     try {
-        return Object.fromEntries(
-            Object.entries(JSON.parse(json ?? "{}"))
-                .filter(
-                    ([, id]) =>
-                        typeof id === "string" && /^\d{17,20}$/.test(id),
-                )
-                .map(([name, id]) => [name.toLowerCase(), id]),
-        );
+        listed = Object.entries(JSON.parse(json ?? "{}"));
     } catch {
         console.error("OWNER_DISCORD_IDS is not a JSON object");
-        return {};
     }
+    return Object.fromEntries(
+        [...listed, ...linked]
+            .filter(
+                ([, id]) => typeof id === "string" && /^\d{17,20}$/.test(id),
+            )
+            .map(([name, id]) => [name.toLowerCase(), id]),
+    );
 }
 
 // Owners above a community post: one with a known Discord id is pinged,

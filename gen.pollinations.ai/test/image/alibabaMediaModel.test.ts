@@ -129,6 +129,41 @@ describe("Alibaba media adapters", () => {
             parameters: { size: "720*1280", duration: 10 },
         });
     });
+    it.each([
+        ["16:9", [], "16:9"],
+        ["21:9", [], "21:9"],
+        ["adaptive", [], "adaptive"],
+        ["9:16", ["https://example.com/start.png"], "adaptive"],
+    ] as const)(
+        "sends Wan 3.0 explicit %s with frames %j as %s",
+        async (aspectRatio, image, expected) => {
+            const fetch = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(
+                    Response.json({
+                        output: {
+                            task_id: "job",
+                            task_status: "SUCCEEDED",
+                            video_url: outputUrl,
+                        },
+                        usage: {
+                            input_video_duration: 0,
+                            output_video_duration: 5,
+                        },
+                    }),
+                )
+                .mockResolvedValueOnce(new Response("video"));
+            await callAlibabaVideo(
+                "Animate",
+                { ...params, aspectRatio, image: [...image] },
+                "3.0",
+            );
+            expect(
+                JSON.parse(fetch.mock.calls[0][1]?.body as string).parameters
+                    .ratio,
+            ).toBe(expected);
+        },
+    );
     it("keeps polling one accepted job beyond five minutes", async () => {
         vi.useFakeTimers();
         let polls = 0;

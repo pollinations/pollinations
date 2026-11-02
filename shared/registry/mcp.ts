@@ -238,7 +238,8 @@ export const MCP_SERVERS = [
         binding: "FX_MCP",
         billing: "downstream",
         pricing: {
-            description: "Exchange rate lookups are free. No additional MCP fee.",
+            description:
+                "Exchange rate lookups are free. No additional MCP fee.",
             rates: [],
         },
     },
@@ -262,4 +263,4 @@ export function getMcpPricingInfo(server: McpServerDefinition): McpPricingInfo {
         description: server.pricing.description,
         rates: server.pricing.rates.map((rate) => publicPriceInfo(rate)),
     };
-}
+            }

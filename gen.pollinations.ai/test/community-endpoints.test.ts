@@ -7,7 +7,10 @@ import {
 import { Buffer } from "node:buffer";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
-import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import {
+    MAX_AGENT_RUN_DEPTH,
+    verifyAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
@@ -4864,6 +4867,81 @@ fixtureTest.each(
         expect(runToken?.parentRequestId).toBe(outerEvents[0].requestId);
     },
 );
+
+fixtureTest("stops an agent that calls itself at the depth limit", async () => {
+    const ownerGithubUsername = `depth-owner-${crypto.randomUUID().slice(0, 8)}`;
+    const name = `depth-${crypto.randomUUID().slice(0, 8)}`;
+    const id = crypto.randomUUID();
+    const modelId = communityModelId(ownerGithubUsername, name);
+    await insertCommunityEndpoints({
+        id,
+        ownerUserId: await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        }),
+        type: "prompt_agent",
+        visibility: "public",
+        name,
+        baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+        upstreamModel: id,
+        agentConfig: {
+            systemPrompt: "Reply.",
+            baseModel: modelId,
+            mcpServers: [],
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    await resetGenerationModelRegistryCache(env);
+    const caller = await createTestApiKey({
+        name: "depth-caller",
+        user: { tierBalance: 0, packBalance: 1 },
+    });
+    const dispatch = async (request: Request): Promise<Response> => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            request,
+            withInlineGenerationCoordinator(env),
+            ctx,
+        );
+        const body = response.body ? await response.arrayBuffer() : null;
+        await waitOnExecutionContext(ctx);
+        return new Response(body, response);
+    };
+    let nestedCalls = 0;
+    vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            if (new URL(request.url).origin !== "https://gen.pollinations.ai")
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            // Without the limit only Cloudflare's 16-invocation cap stops it.
+            if (++nestedCalls > 20) return new Response(null, { status: 508 });
+            return dispatch(request);
+        }),
+    );
+
+    const response = await dispatch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${caller.key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: modelId,
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        }),
+    );
+
+    expect(nestedCalls).toBe(MAX_AGENT_RUN_DEPTH);
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain(
+        `at most ${MAX_AGENT_RUN_DEPTH} levels deep`,
+    );
+});
 
 fixtureTest(
     "falls back between community Responses endpoints with per-attempt credentials",

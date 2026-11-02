@@ -120,6 +120,7 @@ async function responsesClientForAttempt(
         secret: c.env.BETTER_AUTH_SECRET,
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        parentAgentDepth: c.var.auth?.agentRun?.depth,
     });
     if (endpoint.type === "prompt_agent" || endpoint.type === "code_agent") {
         const apiKey = config.authKey;

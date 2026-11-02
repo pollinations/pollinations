@@ -1,4 +1,7 @@
-import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import {
+    MAX_AGENT_RUN_DEPTH,
+    signAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
     isFreeCommunityEndpoint,
@@ -7,6 +10,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
+import { HTTPException } from "hono/http-exception";
 import type { RequestData, TransformOptions } from "./types.js";
 
 /**
@@ -35,14 +39,22 @@ async function mintDelegatedToken({
     endpoint,
     parentApiKeyId,
     parentRequestId,
+    parentAgentDepth = 0,
     secret,
 }: {
     endpoint: CommunityEndpointRuntime;
     parentApiKeyId: string | undefined;
     parentRequestId: string;
+    parentAgentDepth?: number;
     secret: string;
 }): Promise<string | undefined> {
     if (!usesAgentRunToken(endpoint)) return undefined;
+    const depth = parentAgentDepth + 1;
+    if (depth > MAX_AGENT_RUN_DEPTH) {
+        throw new HTTPException(400, {
+            message: `Agents can call other agents at most ${MAX_AGENT_RUN_DEPTH} levels deep`,
+        });
+    }
     if (!isFreeCommunityEndpoint(endpoint)) {
         throw new Error(
             `Community endpoint '${endpoint.modelId}' delegates generation but is not free`,
@@ -64,6 +76,7 @@ async function mintDelegatedToken({
                 ? endpoint.id
                 : undefined,
         agentModelId: endpoint.modelId,
+        depth,
     });
 }
 
@@ -76,6 +89,7 @@ export async function communityEndpointGatewayContext({
     userApiKey,
     parentRequestId,
     parentApiKeyId,
+    parentAgentDepth,
 }: {
     endpoint: CommunityEndpointRuntime;
     modelDefinition: ModelDefinition;
@@ -85,6 +99,7 @@ export async function communityEndpointGatewayContext({
     userApiKey: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    parentAgentDepth?: number;
 }): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const modelConfig = await communityEndpointModelConfig({
@@ -92,6 +107,7 @@ export async function communityEndpointGatewayContext({
         secret,
         parentRequestId,
         parentApiKeyId,
+        parentAgentDepth,
     });
     return {
         ...requestDataWithoutMessages,
@@ -108,16 +124,19 @@ export async function communityEndpointModelConfig({
     secret,
     parentRequestId,
     parentApiKeyId,
+    parentAgentDepth,
 }: {
     endpoint: CommunityEndpointRuntime;
     secret: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    parentAgentDepth?: number;
 }): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
         parentRequestId,
+        parentAgentDepth,
         secret,
     });
     // Only a proxy stores and receives its registered upstream bearer secret.

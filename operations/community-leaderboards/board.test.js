@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { imageBoard } from "./image-board.js";
-import { textBoard } from "./text-board.js";
+import { imageBoard, textBoard } from "./board.js";
 
 const DATE = "2026-10-31";
 // The public models; p/secret, the busiest, is private.

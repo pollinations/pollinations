@@ -5,9 +5,10 @@
 // each board goes out as its own webhook message, its image right below its
 // post.
 //
-// Run from operations/infra-watch, with the secrets from its SOPS file:
+// Run from operations/community-leaderboards, with infra-watch's secrets
+// (its Tinybird read token and the Community Watch webhook):
 //
-//   sops exec-env secrets.vars.json 'node leaderboard/post.mjs [text] [image]'
+//   sops exec-env ../infra-watch/secrets.vars.json 'node post.mjs [text] [image]'
 //
 // `--dry-run <dir>` writes the boards and the post there instead. CHROME_PATH
 // points at Chrome when it isn't where GitHub's Ubuntu runners have it.
@@ -18,10 +19,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import puppeteer from "puppeteer-core";
-import { imageBoard } from "./image-board.js";
-import { textBoard } from "./text-board.js";
+import { imageBoard, textBoard } from "./board.js";
 
 const TINYBIRD = "https://api.europe-west2.gcp.tinybird.co/v0/pipes";
+// No request may hang the run.
+const TIMEOUT_MS = 30_000;
 const BOARDS = {
     text: { pipe: "infra_watch_text_leaderboard", build: textBoard },
     image: { pipe: "infra_watch_image_leaderboard", build: imageBoard },
@@ -43,6 +45,7 @@ if (process.env.GITHUB_ACTIONS)
 async function rows(pipe) {
     const res = await fetch(`${TINYBIRD}/${pipe}.json`, {
         headers: { authorization: `Bearer ${process.env.TINYBIRD_TOKEN}` },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`tinybird ${pipe} -> ${res.status}`);
     return (await res.json()).data;
@@ -53,6 +56,7 @@ async function rows(pipe) {
 async function listed() {
     const res = await fetch(
         "https://gen.pollinations.ai/models?community=true&reliability=all",
+        { signal: AbortSignal.timeout(TIMEOUT_MS) },
     );
     if (!res.ok) throw new Error(`models -> ${res.status}`);
     const body = await res.json();
@@ -91,7 +95,11 @@ async function post(board) {
     );
     const url = new URL(process.env.COMMUNITY_WEBHOOK_URL);
     url.searchParams.set("wait", "true");
-    const res = await fetch(url, { method: "POST", body: form });
+    const res = await fetch(url, {
+        method: "POST",
+        body: form,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
     if (!res.ok)
         throw new Error(`discord -> ${res.status} ${await res.text()}`);
 }

@@ -1,4 +1,4 @@
-import { CheckIcon, ClipboardIcon, CopyButton, cn } from "@pollinations/ui";
+import { CopyButton, CopyStateIcon, cn } from "@pollinations/ui";
 import type { FC } from "react";
 
 type CopyValueProps = {
@@ -14,18 +14,7 @@ export const CopyValue: FC<CopyValueProps> = ({
 }) => (
     <CopyButton
         value={value}
-        tooltip={
-            showCopyIcon ? null : (
-                <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                    Click to copy
-                </span>
-            )
-        }
-        copiedTooltip={
-            <span className="font-sans text-xs font-semibold text-intent-success-text">
-                Copied
-            </span>
-        }
+        tooltip={showCopyIcon ? null : undefined}
         aria-label={label}
         tooltipAlign="start"
         tooltipMaxWidth={520}
@@ -42,12 +31,12 @@ export const CopyValue: FC<CopyValueProps> = ({
         {(copied) => (
             <span className="inline-flex min-w-0 items-center gap-1.5">
                 <span className="min-w-0 truncate">{value}</span>
-                {showCopyIcon &&
-                    (copied ? (
-                        <CheckIcon className="h-3.5 w-3.5 shrink-0" />
-                    ) : (
-                        <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />
-                    ))}
+                {showCopyIcon && (
+                    <CopyStateIcon
+                        copied={copied}
+                        className="h-3.5 w-3.5 shrink-0"
+                    />
+                )}
                 {showCopyIcon && copied && (
                     <span className="sr-only">Copied</span>
                 )}

@@ -192,8 +192,11 @@ Use the single [ledger consolidation migration](../migrations/2026-10-ledger-con
 It includes historical comparisons, rollout ordering, cleanup and recovery; no
 production migration runs automatically from this PR.
 
-Public CI tests repository model mappings with artificial vendor definitions via
-`apps/model-compatibility.vitest.config.ts`; it needs no Drive credential.
+Public CI runs `npm run test:public --workspace economics-web`. This builds the
+shared UI and runs the selected calculation and presentation tests with artificial
+vendor definitions; it needs no Drive credential. The public selection lives in
+this app's existing `vite.config.ts`. Shared provider and agent-config checks run
+separately through `shared/vitest.config.ts`.
 The full `npm test` run remains an authenticated integration check against Drive
 (or an explicitly supplied private snapshot), including the real-account and
 forecast contracts in `*.integration.test.ts`. Run it before deployment; a green

@@ -327,7 +327,12 @@ jobs:
 
   deploy-media:
     needs: [changes, migrate]
-    if: needs.changes.outputs.media == 'true'
+    # always() as in deploy-enter: a skipped test-gen (no gen changes) would
+    # otherwise skip this job through migrate, even when media changed.
+    if: >-
+      always() &&
+      needs.changes.outputs.media == 'true' &&
+      needs.migrate.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

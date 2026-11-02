@@ -35,7 +35,7 @@ Each line tells the one incident in its "incidents" and goes to the channel its 
 - stream: a model's own answers broke the same way twice in a row; its publisher should fix their endpoint.
 - shared: models that worked broke the same way at once across many publishers, likely gen's own fault.
 - fallback: a model leans on its fallbacks; "private" fallbacks are never named.
-- mismatch: a model's answers reported a different model name than its listing requests, in two of its probes in a row. The name is what the publisher's upstream reported, so word it as evidence, like "the publisher reported this name for requests configured as the requested model", and never say which model actually ran.
+- mismatch: a model's answers reported a different model name than its listing requests, in two of its probes in a row. The name is what the publisher's upstream reported, so word it as evidence, like "the publisher reported this name for requests configured as the requested model", and never say which model actually ran. It goes to the maintainers: say whether it looks like naming or a different model, for them to check before telling the publisher.
 - listings: models newly filtered out of /models for low health, or back; filtered models stay callable by their exact ID.
 Code puts lines into each post until it is full; incidents that don't fit come next time. Code pings publishers and points them to their dashboard.`;
 
@@ -95,16 +95,23 @@ export const mismatchKey = (model, id) => `mismatch ${model} ${id}`;
 
 // Names compare as the old monitor compared them: lowercase, without a
 // provider prefix or a trailing :free, :paid, -latest, -preview or date;
-// they agree when one contains the other.
+// they agree when one contains the other. Naming styles don't count either:
+// a gateway's trailing " - 4", "5p3" for 5.3, and separators.
 const NAME_SUFFIX = /(:free|:paid|-latest|-preview|-\d{8}|-\d{4}-\d{2}-\d{2})$/;
 export function servedName(name) {
-    let base = String(name).toLowerCase().split("/").pop();
+    let base = String(name)
+        .toLowerCase()
+        .replace(/\s+-\s+\d+$/, "")
+        .split("/")
+        .pop();
     while (NAME_SUFFIX.test(base)) base = base.replace(NAME_SUFFIX, "");
-    return base;
+    return base.replace(/(\d)p(\d)/g, "$1.$2").replace(/[^a-z0-9]/g, "");
 }
+// A listing that asks for "auto" is a router: it reports the model it
+// picked, by design.
 const agree = (a, b) => {
     const [x, y] = [servedName(a), servedName(b)];
-    return x.includes(y) || y.includes(x);
+    return x === "auto" || x.includes(y) || y.includes(x);
 };
 // Both names come from owners' servers: backticks and control characters
 // are dropped, so a name can't break a post, and a URL, an IP address or
@@ -336,17 +343,19 @@ export function incidents({
     // later probe that reports the asked-for model, or another name, or the
     // model leaving the list withdraws it. Telling it starts its run over
     // (index.js), so after its quiet week it is told again only on a new
-    // probe, never on old evidence.
+    // probe, never on old evidence. Told to the maintainers, never its
+    // publisher: most mismatches are naming, and a person tells them apart
+    // from a swapped model first.
     for (const [model, m] of Object.entries(served)) {
         const key = mismatchKey(model, m.id);
         if (listed.has(model) && m.streak >= 2 && !told(key, "mismatch"))
             add({
                 kind: "mismatch",
-                to: "community",
+                to: "maintainers",
                 model,
                 declared: m.declared,
                 served: m.served,
-                owners: [ownerOf(model)],
+                owners: [],
                 quiet: [key],
             });
     }

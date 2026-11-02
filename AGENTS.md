@@ -134,11 +134,11 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Economics Environment Safety
 
-- `operations/economics/web` local development must read Tinybird staging
+- `operations/dashboards/economics/web` local development must read Tinybird staging
   (`pollinations_enter_staging`) through
-  `operations/economics/secrets/web.dev.json`.
+  `operations/dashboards/economics/secrets/web.dev.json`.
 - Production Economics deployments read
-  `operations/economics/secrets/web.json`. Never decrypt that production file
+  `operations/dashboards/economics/secrets/web.json`. Never decrypt that production file
   directly into the local `.dev.vars` file.
 - After switching, merging, or rebasing an Economics branch, rerun
   `npm run decrypt-vars` before trusting the local dashboard. The generated

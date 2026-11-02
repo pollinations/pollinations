@@ -150,6 +150,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "hn",
+                name: "Hacker News",
+                description:
+                    "Search Hacker News, read the front page, and open stories with their comments.",
+                url: "https://gen.pollinations.ai/mcp/hn",
+                pricing: {
+                    description:
+                        "Hacker News lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

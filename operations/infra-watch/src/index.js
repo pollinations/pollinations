@@ -119,12 +119,13 @@ const show = (label, body) =>
 
 // Local `npm run dev` sets DRY_RUN=1; anywhere else a missing webhook is an
 // error, never a silent dry run. Posts to the infra-watch channel, or the
-// community channel with COMMUNITY_WEBHOOK_URL. Returns the saved message.
-async function post(env, message, webhook = "DISCORD_WEBHOOK_URL") {
+// community channel with COMMUNITY_WEBHOOK_URL, pinging owners by the
+// Discord accounts they `linked` on Enter first. Returns the saved message.
+async function post(env, message, webhook = "DISCORD_WEBHOOK_URL", linked) {
     const body = payload(
         message,
         MAINTAINERS,
-        discordIds(env.OWNER_DISCORD_IDS),
+        discordIds(env.OWNER_DISCORD_IDS, linked),
     );
     if (env.DRY_RUN === "1") {
         show(`dry-run ${webhook}`, body);
@@ -670,6 +671,7 @@ export class Watch extends DurableObject {
         if (!plan) throw new Error("the agent gave no decision");
         // A message Discord rejects stays pending and fails the cycle.
         const rejected = new Set();
+        const linked = plan.community.length ? await this.linkedDiscord() : [];
         for (const [messages, webhook, channel] of [
             [plan.community, "COMMUNITY_WEBHOOK_URL", "community"],
             [
@@ -679,7 +681,7 @@ export class Watch extends DurableObject {
             ],
         ])
             for (const message of messages) {
-                if (!(await post(this.env, message, webhook))) {
+                if (!(await post(this.env, message, webhook, linked))) {
                     rejected.add(channel);
                     continue;
                 }
@@ -727,6 +729,26 @@ export class Watch extends DurableObject {
                 }));
         } catch (error) {
             console.error(`served models: ${error.message}`);
+            return [];
+        }
+    }
+
+    // The Discord accounts publishers linked on Enter, as [GitHub username,
+    // Discord id] pairs: from each endpoint to its owner by primary key, and
+    // to the account through its user_id index. CROSS JOIN keeps that order;
+    // with a plain JOIN, SQLite reads every account to find Discord's. A
+    // failed read leaves OWNER_DISCORD_IDS alone.
+    async linkedDiscord() {
+        try {
+            const { results } = await this.env.DB.prepare(
+                `SELECT DISTINCT u.github_username AS owner, a.account_id AS id
+                FROM community_endpoint ce CROSS JOIN user u ON u.id = ce.owner_user_id
+                CROSS JOIN account a ON a.user_id = u.id AND a.provider_id = 'discord'
+                WHERE u.github_username IS NOT NULL`,
+            ).all();
+            return results.map((r) => [r.owner, r.id]);
+        } catch (error) {
+            console.error(`linked discord: ${error.message}`);
             return [];
         }
     }

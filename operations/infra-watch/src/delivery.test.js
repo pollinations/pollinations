@@ -227,3 +227,28 @@ test("an unreadable owner map names every owner", () => {
     for (const json of [undefined, "not json", "null"])
         assert.deepEqual(discordIds(json), {});
 });
+
+test("a Discord account linked on Enter wins over the map, which covers owners who linked none", () => {
+    const map = JSON.stringify({
+        Moved: "111111111111111111",
+        listed: "222222222222222222",
+        kept: "333333333333333333",
+    });
+    const linked = [
+        ["moved", "444444444444444444"],
+        ["New", "555555555555555555"],
+        // Not an id: the map's stays.
+        ["kept", "<@1>"],
+    ];
+    assert.deepEqual(discordIds(map, linked), {
+        moved: "444444444444444444",
+        listed: "222222222222222222",
+        kept: "333333333333333333",
+        new: "555555555555555555",
+    });
+    // An unreadable map leaves the linked accounts.
+    assert.deepEqual(discordIds("not json", linked), {
+        moved: "444444444444444444",
+        new: "555555555555555555",
+    });
+});

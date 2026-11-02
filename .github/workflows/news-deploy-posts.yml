@@ -91,7 +91,7 @@ jobs:
         run: |
           flags=()
           [ "$PREVIEW" = true ] && flags+=(--preview)
-          python operations/social/scripts/deploy_posts.py --production production-rules "${flags[@]}"
+          python operations/news/scripts/deploy_posts.py --production production-rules "${flags[@]}"
 
       - name: Report failure as an issue
         if: failure()

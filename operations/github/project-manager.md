@@ -65,7 +65,7 @@ Bots and agents that run our own work: this project manager and other repo autom
 Not here: agents users run → Agents & agent tools.
 
 ### Brand & news
-How we present Pollinations and what we tell people: the site (`pollinations.ai/`) and its upgrades, logo and brand kit, news and social posts (`operations/social/`), the newsletter, and any banner or notice: adding, rewording or removing it, even when it is about keys, models or an incident.
+How we present Pollinations and what we tell people: the site (`pollinations.ai/`) and its upgrades, logo and brand kit, news and social posts (`operations/news/`), the newsletter, and any banner or notice: adding, rewording or removing it, even when it is about keys, models or an incident.
 Not here: the banner component → Dashboard.
 
 ### Docs & support

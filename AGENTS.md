@@ -30,7 +30,7 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 - `apps/` — Applications maintained in this repository
 - `operations/app-management/` — Community app catalog and automation
 - `operations/` — Internal dashboards, monitoring, data sync, news, app management and infrastructure; folder map in `operations/README.md`
-- `operations/social/` — Discord/Reddit/GitHub automation
+- `operations/news/` — News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data
 - `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 
 ## API Gateway

@@ -31,7 +31,7 @@ Internal tools that run Pollinations, grouped by what they are for. Apps with a 
 
 | Folder | What it is |
 | --- | --- |
-| [`social`](social/PIPELINE.md) | News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data |
+| [`news`](news/PIPELINE.md) | News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data |
 
 ## App management
 

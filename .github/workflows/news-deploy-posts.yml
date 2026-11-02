@@ -71,10 +71,20 @@ jobs:
       - name: Install dependencies
         run: pip install requests pyyaml
 
+      - name: Pollinations bot token
+        # Reads each PR's Area, Work type and Source from the Dev project.
+        id: bot
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
       - name: Post the shipped PRs
         env:
           PREVIEW: ${{ inputs.preview || false }}
           GITHUB_TOKEN: ${{ github.token }}
+          DEV_PROJECT_TOKEN: ${{ steps.bot.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           DISCORD_REALTIME_WEBHOOK_URL: ${{ secrets.DISCORD_REALTIME_WEBHOOK_URL }}
         run: |

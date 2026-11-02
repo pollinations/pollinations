@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 2048 AI Edition](https://boofan126.github.io/mini2048-ai) | 2048 AI Edition is a single-file browser game that integrates Pollinations AI. The "AI Skin" button calls the flux-2-dev-free image model to generate custom game themes on demand; the "AI Hint" button | [@boofan126](https://github.com/boofan126) |
 | [🖼️ Chatbot v2](https://pollinations-chatbot-2.vercel.app) | This app only ai assistant | [@amancrypto12-pixel](https://github.com/amancrypto12-pixel) |
 | [🖼️ Polli Snap - Text to Image Meme Maker](https://mhmdrizzzki.github.io/polli-snap) | A fast text-to-image meme generator. Type a prompt and instantly get a generated image with quick meme presets. Built directly on the Pollinations image API (flux). Live public app, no login required. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
 | [🛠️ Websim](https://websim.pollinations.app) | Generate, preview, and download single-file HTML pages using Pollinations models and your own Pollen. | [@pollinations-ai](https://github.com/pollinations-ai) |
@@ -30,7 +31,6 @@
 | [🎬 Reel Hook Generator](https://anojan-va.github.io/reel-hook-generator) | Type a reel topic and get five scroll-stopping hooks in different styles (curiosity gap, shock fact, direct question, bold claim, mini story), each read aloud with Pollinations text-to-speech so you c | [@anojan-va](https://github.com/anojan-va) |
 | [🎮 Tiny Fighter Arena](https://kreggscode.github.io/tiny-fighter-arena) | Describe a fighter in one line, the AI designs the whole thing from it, then sends it into a short commentated battle up a five-rung ladder. One line in ( a shy storm cloud that apologises before it s | [@kreggscode](https://github.com/kreggscode) |
 | [💬 Radio Bloom](https://mrunknowne09-radio-bloom.static.hf.space) | Radio Bloom is a duplicate-ready voice character playground. Visitors sign in with their own Pollen, then speak or type to three AI characters powered by Pollinations chat, transcription, and voice mo | [@ismailbanouigu](https://github.com/ismailbanouigu) |
-| [🎮 One Line Arena](https://drjacky.github.io/one-line-arena) | Describe a fighter in one line. Pollinations designs the whole fighter from it: name, title, portrait, stats, three moves, a quirk, a weakness and a catchphrase. Then it sends the fighter into a short | [@Drjacky](https://github.com/Drjacky) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -105,7 +105,7 @@
 
 | Guide | Purpose |
 | --- | --- |
-| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay with their own Pollen |
 | [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
 | [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
 | [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
@@ -142,7 +142,7 @@ Community members connect their own OpenAI-compatible text, image, image-editing
 - **Automatic fallback routing**: nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
 - **Discover and monitor**: browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
-For billing details when building apps on top, see [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md).
+For billing details when building apps on top, see [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md).
 
 ## 🚀 Getting Started
 
@@ -257,7 +257,7 @@ Stream AI responses over an OpenAI-compatible WebSocket:
 wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=sk_YOUR_API_KEY
 ```
 
-Browser clients pass a user-authorized key from [Connect User Wallets](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
+Browser clients pass a user-authorized key from [Pollinations Pay](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
 
 ### MCP Servers
 
@@ -279,12 +279,12 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Identifies your app in Connect User Wallets sign-in | Can't authenticate requests | Stable |
+| **App Key** | `pk_`  | Identifies your app in Pollinations Connect | Can't authenticate requests | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
-> 💡 **Building an app?** Use [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
+> 💡 **Building an app?** Use [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
 
 ### Model Restrictions
 

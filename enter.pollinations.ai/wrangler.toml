@@ -153,8 +153,7 @@ binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
 [[env.production.kv_namespaces]]
-# production-pollinations-setup-holds: Setup reward holds, shared with
-# infra-watch, which writes domain holds and reads review requests
+# Domain detection input shared with infra-watch; D1 owns account restrictions.
 binding = "SETUP_HOLDS"
 id = "957b3d13dc2c4142ab22fdf889f27bec"
 

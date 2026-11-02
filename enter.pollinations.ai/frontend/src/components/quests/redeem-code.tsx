@@ -5,14 +5,17 @@ import {
     FieldStack,
     Input,
     Section,
+    SparkleIcon,
+    Surface,
 } from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
+import { Footnotes } from "../pollen/pollen-balance.tsx";
 
 const REDEEM_FAILED = "Couldn’t redeem the code. Please try again.";
 
-/** Event codes arrive as a `?code=` link or are typed in from a talk. */
+/** Promo and event codes arrive as a `?code=` link or are typed in. */
 export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
     const [code, setCode] = useState(
         () => new URLSearchParams(window.location.search).get("code") ?? "",
@@ -59,42 +62,56 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
     }
 
     return (
-        <Section title="Event code">
+        <Section title="Promo or event code">
             {credited !== null && (
                 <Alert intent="info">
-                    {formatPollen(credited)} Quest Pollen added to your wallet.
+                    {formatPollen(credited)} Quest pollen added to your wallet.
                 </Alert>
             )}
-            <form onSubmit={handleSubmit} className="flex items-start gap-2">
-                <FieldStack error={error} className="flex-1">
-                    <Field.Input asChild>
-                        <Input
-                            ref={inputRef}
-                            type="text"
-                            aria-label="Event code"
-                            value={code}
-                            onChange={(e) => {
-                                setCode(e.target.value.toUpperCase());
-                                setError(null);
-                            }}
-                            placeholder="XXXX-XXXX"
-                            className="w-full font-mono tracking-widest"
-                            maxLength={20}
-                            disabled={redeeming}
-                            autoCapitalize="characters"
-                            spellCheck={false}
-                            required
-                        />
-                    </Field.Input>
-                </FieldStack>
-                <Button
-                    type="submit"
-                    intent="commit"
-                    disabled={redeeming || !code.trim()}
+            <Surface variant="card">
+                <form
+                    onSubmit={handleSubmit}
+                    className="flex items-start gap-2"
                 >
-                    {redeeming ? "Redeeming…" : "Redeem"}
-                </Button>
-            </form>
+                    <FieldStack error={error} className="flex-1">
+                        <Field.Input asChild>
+                            <Input
+                                ref={inputRef}
+                                type="text"
+                                aria-label="Promo or event code"
+                                value={code}
+                                onChange={(e) => {
+                                    setCode(e.target.value.toUpperCase());
+                                    setError(null);
+                                }}
+                                placeholder="XXXX-XXXX"
+                                className="w-full font-mono tracking-widest"
+                                maxLength={20}
+                                disabled={redeeming}
+                                autoCapitalize="characters"
+                                spellCheck={false}
+                                required
+                            />
+                        </Field.Input>
+                    </FieldStack>
+                    <Button
+                        type="submit"
+                        intent="commit"
+                        disabled={redeeming || !code.trim()}
+                    >
+                        {redeeming ? "Redeeming…" : "Redeem"}
+                    </Button>
+                </form>
+            </Surface>
+            <Footnotes>
+                <p className="flex items-start gap-1.5">
+                    <SparkleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Have a code from a Pollinations event or promotion?
+                        Redeem it for free API credits.
+                    </span>
+                </p>
+            </Footnotes>
         </Section>
     );
 }

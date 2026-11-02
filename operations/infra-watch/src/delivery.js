@@ -66,32 +66,83 @@ export async function send(url, body, { fetchImpl = fetch, sleep } = {}) {
 // Pinged on alerts that need a person: thomash, elliot.
 export const MAINTAINERS = ["304378879705874432", "884468469452656732"];
 
-// A webhook body: the alert as a coloured embed, mentions outside it, since
-// Discord never pings from inside an embed. parse: [] blocks @everyone,
-// roles and any user not listed.
-export const payload = ({ text, ping, color }, maintainers) => ({
-    content: ping ? maintainers.map((id) => `<@${id}>`).join(" ") : "",
-    embeds: [{ description: text, color }],
-    allowed_mentions: { parse: [], users: ping ? maintainers : [] },
-});
+// OWNER_DISCORD_IDS: community model owners' GitHub usernames to Discord
+// ids, as JSON. Usernames are matched without case, and only a string of
+// digits is an id: nothing else is ever turned into a mention. Missing or
+// unreadable, it is empty, and every owner is named instead.
+export function discordIds(json) {
+    try {
+        return Object.fromEntries(
+            Object.entries(JSON.parse(json ?? "{}"))
+                .filter(
+                    ([, id]) =>
+                        typeof id === "string" && /^\d{17,20}$/.test(id),
+                )
+                .map(([name, id]) => [name.toLowerCase(), id]),
+        );
+    } catch {
+        console.error("OWNER_DISCORD_IDS is not a JSON object");
+        return {};
+    }
+}
 
-// Replaces the content of a message this webhook posted. One try: a failed
-// edit is written again on a later check.
+// Owners above a community post: one with a known Discord id is pinged,
+// anyone else is named by GitHub username.
+export function mention(owners, ids) {
+    // Own keys only: a name like "constructor" is no id.
+    const id = (name) =>
+        Object.hasOwn(ids, name.toLowerCase()) ? ids[name.toLowerCase()] : null;
+    return {
+        content: owners.map((o) => (id(o) ? `<@${id(o)}>` : o)).join(" "),
+        users: [...new Set(owners.map(id).filter(Boolean))],
+    };
+}
+
+// A webhook body: the alert as a coloured embed, mentions outside it, since
+// Discord never pings from inside an embed. An alert that pings pings the
+// maintainers; a community card its `owners`. parse: [] blocks @everyone,
+// roles and any user not listed.
+export function payload(
+    { text, ping, color, owners = [] },
+    maintainers,
+    ids = {},
+) {
+    const { content, users } = ping
+        ? {
+              content: maintainers.map((id) => `<@${id}>`).join(" "),
+              users: maintainers,
+          }
+        : mention(owners, ids);
+    return {
+        content,
+        embeds: [{ description: text, color }],
+        allowed_mentions: { parse: [], users },
+    };
+}
+
+// Replaces the content of a message this webhook posted, or deletes it when
+// there is no body; a message already gone counts as deleted. One try: a
+// failed edit is written again on a later check.
 export async function edit(url, id, body, { fetchImpl = fetch } = {}) {
     const u = new URL(url);
     u.search = "";
     u.pathname += `/messages/${id}`;
     try {
         const res = await withTimeout(TIMEOUT_MS, (signal) =>
-            fetchImpl(u, {
-                method: "PATCH",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify(body),
-                signal,
-            }),
+            fetchImpl(
+                u,
+                body
+                    ? {
+                          method: "PATCH",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify(body),
+                          signal,
+                      }
+                    : { method: "DELETE", signal },
+            ),
         );
         res.body?.cancel();
-        return res.ok;
+        return res.ok || (!body && res.status === 404);
     } catch {
         return false;
     }

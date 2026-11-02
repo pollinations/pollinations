@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 // `polli agents create --config <file>` sends these files to the agents API,
 // which rejects unknown keys. The listing fields each agent type accepts may
 // come from flags instead, so only their presence is allowed here.
-const apps = new URL("./", import.meta.url);
+const apps = new URL("../apps/", import.meta.url);
 const files = readdirSync(apps)
     .filter((app) => app.startsWith("agent-"))
     .flatMap((app) => [`${app}/agent.json`, `${app}/code-agent.json`])

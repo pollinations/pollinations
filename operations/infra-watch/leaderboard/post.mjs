@@ -2,7 +2,8 @@
 // EC2 community monitor did: GitHub Actions runs this once a day
 // (.github/workflows/monitor-community-leaderboards.yml). Each board's rows
 // come from its Tinybird pipe, the board is screenshotted in Chrome, and
-// both go out in one webhook message with the images attached.
+// each board goes out as its own webhook message, its image right below its
+// post.
 //
 // Run from operations/infra-watch, with the secrets from its SOPS file:
 //
@@ -73,22 +74,21 @@ async function screenshot(browser, html) {
     return page.screenshot({ fullPage: true, type: "png" });
 }
 
-// One message: the posts in order, each board's image attached below them.
-async function post(boards) {
+// One board's message: its post, with its image attached below it.
+async function post(board) {
     const form = new FormData();
     form.append(
         "payload_json",
         JSON.stringify({
-            content: boards.map((b) => b.markdown).join("\n\n"),
+            content: board.markdown,
             allowed_mentions: { parse: [] },
         }),
     );
-    for (const [i, b] of boards.entries())
-        form.append(
-            `files[${i}]`,
-            new Blob([b.png], { type: "image/png" }),
-            b.file,
-        );
+    form.append(
+        "files[0]",
+        new Blob([board.png], { type: "image/png" }),
+        board.file,
+    );
     const url = new URL(process.env.COMMUNITY_WEBHOOK_URL);
     url.searchParams.set("wait", "true");
     const res = await fetch(url, { method: "POST", body: form });
@@ -134,14 +134,25 @@ try {
 
 if (dryRun) {
     await mkdir(dryRun, { recursive: true });
-    for (const b of built) await writeFile(join(dryRun, b.file), b.png);
-    await writeFile(
-        join(dryRun, "message.md"),
-        built.map((b) => b.markdown).join("\n\n"),
-    );
+    for (const b of built) {
+        await writeFile(join(dryRun, b.file), b.png);
+        await writeFile(
+            join(dryRun, b.file.replace(/\.png$/, ".md")),
+            b.markdown,
+        );
+    }
     console.log(`dry run: wrote ${built.length} board(s) to ${dryRun}`);
-} else if (built.length) {
-    await post(built);
-    console.log(`posted: ${built.map((b) => b.file).join(", ")}`);
+} else {
+    // In order, text then image; a board whose post fails is left out and
+    // fails the run, like one that could not be built.
+    for (const b of built) {
+        try {
+            await post(b);
+            console.log(`posted: ${b.file}`);
+        } catch (error) {
+            failed++;
+            console.error(`${b.file}: ${error.message}`);
+        }
+    }
 }
 if (failed) process.exit(1);

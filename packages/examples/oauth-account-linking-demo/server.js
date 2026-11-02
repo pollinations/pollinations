@@ -113,7 +113,7 @@ function home(response) {
         `<!doctype html><meta charset="utf-8"><title>OAuth account linking</title>
         <h1>OAuth account linking</h1>
         <p>${connected ? "Pollinations connected." : "Pollinations not connected."}</p>
-        <p><a href="/connect">Connect Pollinations</a></p>
+        <p><a href="/connect">Pollinations Connect</a></p>
         <form method="post" action="/generate"><button ${connected ? "" : "disabled"}>Generate a greeting</button></form>`,
     );
 }

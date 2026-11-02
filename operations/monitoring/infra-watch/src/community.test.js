@@ -314,7 +314,7 @@ test("community cards fit a phone: long names continue on rows of their own, nev
         JSON.stringify({ community: [{ incidents: ["1"], text: "Changed." }] }),
         find({ listings: changes }),
     );
-    const box = plan.community.text.split("```")[1].split("\n").slice(1, -1);
+    const box = plan.community[0].text.split("```")[1].split("\n").slice(1, -1);
     for (const line of box) assert.ok([...plain(line)].length <= 49, line);
     // The longest title fits too.
     const broken = decision(
@@ -330,7 +330,7 @@ test("community cards fit a phone: long names continue on rows of their own, nev
                 quiet: [],
             },
         ],
-    ).community.text;
+    ).community[0].text;
     for (const line of broken.split("```")[1].split("\n").slice(1, -1))
         assert.ok([...plain(line)].length <= 49, line);
     // Joined back, every name is whole.
@@ -366,7 +366,7 @@ test("a card too long for a post names fewer models and counts the rest", () => 
             community: [{ incidents: ["1"], text: "s".repeat(250) }],
         }),
         find({ listings }),
-    ).community;
+    ).community[0];
     const more = [...text.matchAll(/…and (\d+) more/g)].map(([, n]) => +n);
     assert.ok(more[0] > 50 && more[1] > 50, more);
     // Each list's 55 models are named or counted.
@@ -441,17 +441,17 @@ test("the weekly eval's score gaps go to the maintainers once per run, in its fi
         }),
         find({ evals: [many] }),
     );
-    assert.match(plan.maintainers.text, /COMMUNITY MODELS: SCORE GAP/);
-    assert.match(plan.maintainers.text, /m\/model-1 13% vs model-1 57%/);
-    assert.match(plan.maintainers.text, /m\/model-5 13%/);
-    assert.doesNotMatch(plan.maintainers.text, /m\/model-6 /);
-    assert.match(plan.maintainers.text, /…and 20 more/);
+    assert.match(plan.maintainers[0].text, /COMMUNITY MODELS: SCORE GAP/);
+    assert.match(plan.maintainers[0].text, /m\/model-1 13% vs model-1 57%/);
+    assert.match(plan.maintainers[0].text, /m\/model-5 13%/);
+    assert.doesNotMatch(plan.maintainers[0].text, /m\/model-6 /);
+    assert.match(plan.maintainers[0].text, /…and 20 more/);
     assert.match(
-        plan.maintainers.text,
+        plan.maintainers[0].text,
         /github\.com\/pollinations\/pollinations\/blob\/evals\/data\/runs\/2026-10-26\.json/,
     );
-    assert.match(plan.maintainers.text, /fingerprint\.js compare/);
-    assert.deepEqual(plan.maintainers.owners, []);
+    assert.match(plan.maintainers[0].text, /fingerprint\.js compare/);
+    assert.deepEqual(plan.maintainers[0].owners, []);
     // The longest ids still fit one post, results link included.
     const longest = (n) => ({
         model: `community/${"o".repeat(39)}/${"m".repeat(117)}-${String(n).padStart(2, "0")}`,
@@ -472,11 +472,14 @@ test("the weekly eval's score gaps go to the maintainers once per run, in its fi
             ],
         }),
     );
-    assert.ok(big.maintainers.text.length <= 4096);
-    assert.match(big.maintainers.text, /evals\/data\/runs\/2026-10-26\.json/);
+    assert.ok(big.maintainers[0].text.length <= 4096);
+    assert.match(
+        big.maintainers[0].text,
+        /evals\/data\/runs\/2026-10-26\.json/,
+    );
     // The link sits under the box, where Discord makes it clickable.
     assert.match(
-        big.maintainers.text,
+        big.maintainers[0].text,
         /```\n\[Full results\]\(https:\/\/github\.com\/pollinations\/pollinations\/blob\/evals\/data\/runs\/2026-10-26\.json\)\n/,
     );
 });
@@ -705,7 +708,7 @@ test("a notice holds three fallbacks, the oldest; the rest wait for the next not
                 community: [{ incidents: [notice.id], text: "s".repeat(250) }],
             }),
             first.found,
-        ).community,
+        ).community[0],
     );
     // Told, the next oldest follow.
     const quiet = Object.fromEntries(notice.quiet.map((key) => [key, NOW]));
@@ -894,7 +897,7 @@ const line = (ids, text) => ({ incidents: ids, text });
 // A post's text without its cards: the agent's lines and the footer.
 const words = (text) => text.replace(/```ansi\n[\s\S]*?\n```\n/g, "");
 
-test("a line tells only incidents code found for its channel, and pings only their owners", () => {
+test("each incident code found for a channel is its own message, under its line, pinging only its owner", () => {
     const plan = answer({
         community: [
             line(["1"], "Stream"),
@@ -907,84 +910,55 @@ test("a line tells only incidents code found for its channel, and pings only the
         maintainers: [line(["4"], "Gen")],
     });
     assert.deepEqual(
-        plan.community.incidents.map((i) => i.id),
-        ["1", "2", "3"],
+        plan.community.map((m) => [m.incidents[0].id, m.owners]),
+        [
+            ["1", ["o"]],
+            ["2", ["p"]],
+            ["3", []],
+        ],
     );
-    assert.match(
-        words(plan.community.text),
-        /^Stream\nFallback and listings\n\nPublishers see/,
-    );
-    // Each line goes under its incidents' cards.
-    assert.match(
-        plan.community.text,
-        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT[\s\S]*\nStream\n```ansi\n┌─ .*COMMUNITY MODEL RUNNING ON BACKUP[\s\S]*COMMUNITY MODELS HIDDEN OR BACK IN LIST[\s\S]*\nFallback and listings\n/,
-    );
-    assert.deepEqual(plan.community.owners, ["o", "p"]);
+    // A line telling two incidents goes under each one's card.
     assert.deepEqual(
-        plan.maintainers.incidents.map((i) => i.id),
+        plan.community.map((m) => words(m.text).split("\n")[0]),
+        ["Stream", "Fallback and listings", "Fallback and listings"],
+    );
+    assert.match(
+        plan.community[0].text,
+        /^```ansi\n┌─ .*COMMUNITY MODEL BROKEN: PUBLISHER'S ENDPOINT[\s\S]*\n```\nStream\n\nPublishers see .*My Models/,
+    );
+    assert.match(plan.community[1].text, /COMMUNITY MODEL RUNNING ON BACKUP/);
+    assert.match(plan.community[2].text, /COMMUNITY MODELS HIDDEN OR BACK/);
+    assert.deepEqual(
+        plan.maintainers.map((m) => m.incidents[0].id),
         ["4"],
     );
     assert.deepEqual(answer({ community: [line(["9"], "Made up")] }), {
-        community: null,
-        maintainers: null,
+        community: [],
+        maintainers: [],
     });
     assert.equal(decision("not json", FOUND), null);
 });
 
-test("a line that doesn't fit is left out with its incident, which isn't pinged", () => {
-    // Each line is a card with the longest id and a full sentence: the post
-    // fills up, and the lines after it wait for the next one.
+test("every message fits Discord, at the longest ids and sentences", () => {
+    const owner = (n) => `${"o".repeat(37)}${String(n).padStart(2, "0")}`;
     const streams = Array.from({ length: 12 }, (_, n) => ({
-        ...stream(String(n + 1), `owner${n}`),
-        model: `community/owner${n}/${"m".repeat(150)}`,
-    }));
-    const plan = decision(
-        JSON.stringify({
-            community: streams.map((i) => line([i.id], "z".repeat(240))),
-        }),
-        streams,
-    );
-    assert.ok(plan.community.text.length <= 4096);
-    const told = plan.community.incidents.map((i) => i.id);
-    assert.ok(told.length > 0 && told.length < streams.length);
-    assert.deepEqual(
-        told,
-        streams.slice(0, told.length).map((i) => i.id),
-    );
-    assert.deepEqual(
-        plan.community.owners,
-        streams.slice(0, told.length).map((i) => i.owners[0]),
-    );
-});
-
-test("a line grouping more incidents than fit goes in with those that fit; the rest stay pending", () => {
-    const streams = Array.from({ length: 20 }, (_, n) => ({
-        ...stream(String(n + 1), `CloudCompile${n}`),
-        model: `community/CloudCompile${n}/nvidia-nemotron-3-ultra-550b-a55b:free`,
-        error: "stream returned usage_missing: missing or invalid token usage",
+        ...stream(String(n + 1), owner(n)),
+        model: `community/${owner(n)}/${"m".repeat(120)}`,
     }));
     const plan = decision(
         JSON.stringify({
             community: [
                 line(
                     streams.map((i) => i.id),
-                    "Their publishers should fix their endpoints.",
+                    "z".repeat(400),
                 ),
             ],
         }),
         streams,
     );
-    const told = plan.community.incidents.length;
-    assert.ok(told > 0 && told < 20, `${told} told`);
-    assert.ok(plan.community.text.length <= 4096);
-    assert.match(
-        words(plan.community.text),
-        /^Their publishers should fix their endpoints\.\n\nPublishers see/,
-    );
-    assert.deepEqual(
-        plan.community.owners,
-        streams.slice(0, told).map((i) => i.owners[0]),
-    );
+    assert.equal(plan.community.length, 12);
+    for (const message of plan.community)
+        assert.ok(message.text.length <= 4096, message.text.length);
 });
 
 test("a card's title says it is community models and whose fault, and its facts are never cut", () => {
@@ -1000,7 +974,7 @@ test("a card's title says it is community models and whose fault, and its facts 
         JSON.stringify({ maintainers: [line(["1"], "Check gen.")] }),
         [{ ...FOUND[3], id: "1", error, models }],
     );
-    const text = plan.maintainers.text;
+    const text = plan.maintainers[0].text;
     assert.match(text, /COMMUNITY MODELS: LIKELY A GEN PROBLEM/);
     // Too long for a phone, the error and the id continue on rows of their
     // own, never cut.
@@ -1026,7 +1000,7 @@ test("a card's title says it is community models and whose fault, and its facts 
             },
         ],
     );
-    assert.ok(listing.community.text.includes("│ HIDDEN  q/m (67%)"));
+    assert.ok(listing.community[0].text.includes("│ HIDDEN  q/m (67%)"));
     // A mismatch's rows line up under its longest label.
     const mismatch = decision(
         JSON.stringify({ community: [line(["1"], "Reported.")] }),
@@ -1042,7 +1016,7 @@ test("a card's title says it is community models and whose fault, and its facts 
                 quiet: [],
             },
         ],
-    ).community.text;
+    ).community[0].text;
     assert.match(mismatch, /COMMUNITY MODEL NAME MISMATCH/);
     for (const row of [
         "MODEL     o/flash",
@@ -1059,7 +1033,7 @@ test("the agent's sentence stays under the old monitor's 250 characters", () => 
         JSON.stringify({ maintainers: [line(["1"], long)] }),
         [{ ...FOUND[3], id: "1" }],
     );
-    const sentence = plan.maintainers.text.split("```").at(-1).trim();
+    const sentence = plan.maintainers[0].text.split("```").at(-1).trim();
     assert.equal(sentence.length, 250);
     assert.ok(sentence.endsWith("…"));
 });
@@ -1075,41 +1049,16 @@ test("a post carries no link of the agent's own", () => {
         community: [line(["1"], text)],
         maintainers: [line(["4"], text)],
     });
-    for (const post of [plan.community.text, plan.maintainers.text]) {
+    for (const post of [plan.community[0].text, plan.maintainers[0].text]) {
         const own = words(post).replace(/\n\nPublishers see .*$/s, "");
         assert.doesNotMatch(own, /https?:|www\.|\]\(/i);
         assert.match(own, /^Owner dashboard .*done$/);
     }
     assert.match(
-        plan.community.text,
+        plan.community[0].text,
         /\[My Models\]\(https:\/\/enter\.pollinations\.ai\/my-models\)\.$/,
     );
-    assert.doesNotMatch(plan.maintainers.text, /My Models/);
-});
-
-test("a post's mentions fit Discord's 2,000 characters; owners that don't stay pending", () => {
-    const owners = Array.from(
-        { length: 100 },
-        (_, i) => `owner-${String(i).padStart(24, "0")}`,
-    );
-    const found = owners.map((o, i) => stream(String(i + 1), o));
-    const plan = decision(
-        JSON.stringify({
-            community: found.map((i) => ({
-                incidents: [i.id],
-                text: `x ${i.id}`,
-            })),
-        }),
-        found,
-    );
-    const told = plan.community.incidents;
-    assert.ok(told.length > 0 && told.length < 100);
-    // Every owner it pings has an incident in it, and their names fit.
-    assert.deepEqual(
-        plan.community.owners,
-        told.map((i) => i.owners[0]),
-    );
-    assert.ok(plan.community.owners.join(" ").length <= 2000);
+    assert.doesNotMatch(plan.maintainers[0].text, /My Models/);
 });
 
 const listed = (name, success_rate) =>
@@ -1165,8 +1114,7 @@ test("a big listing change names 5 models a list and still fits a post at the lo
         JSON.stringify({ community: [line(["1"], "x".repeat(400))] }),
         [incident],
     );
-    assert.ok(plan.community, "the card is delivered");
-    assert.ok(plan.community.text.length <= 4096);
+    assert.ok(plan.community[0].text.length <= 4096, "the card is delivered");
 });
 
 test("listing changes: newly filtered, and back in the default list", () => {

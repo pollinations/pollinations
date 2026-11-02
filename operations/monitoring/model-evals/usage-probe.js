@@ -33,12 +33,12 @@ export const CORPUS = [
 
 const USAGE = `Compare the input usage that gen reports for a candidate and a reference model.
 
-  POLLINATIONS_API_KEY=sk_... node operations/model-evals/usage-probe.js --pairs candidate=reference[,...] [options]
+  POLLINATIONS_API_KEY=sk_... node operations/monitoring/model-evals/usage-probe.js --pairs candidate=reference[,...] [options]
 
   --pairs a=b,c=d     candidate=reference model pairs, e.g. community/x/gpt-6.1-sol=openai
   --seed N            request seed (default: random; printed and saved)
   --timeout SECONDS   per-request time limit (default 120)
-  --out DIR           results directory (default: operations/model-evals/data)
+  --out DIR           results directory (default: operations/monitoring/model-evals/data)
   --dry-run           print the corpus and pairs, call nothing
 
 Sends the ${CORPUS.length}-item corpus once to each model (max_tokens 16) and reports,

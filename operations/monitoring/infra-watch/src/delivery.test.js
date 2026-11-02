@@ -26,6 +26,20 @@ test("send retries 429 and 5xx, then succeeds", async () => {
     );
 });
 
+test("send waits out Discord's whole 429 cooldown; other retries wait at most 5 seconds", async () => {
+    const waits = [];
+    const sleep = async (ms) => waits.push(ms);
+    const statuses = [429, 204];
+    const limited = async () => reply(statuses.shift(), "65");
+    assert.equal(
+        await send("https://x.test/h", {}, { fetchImpl: limited, sleep }),
+        true,
+    );
+    const down = async () => reply(503, "65");
+    await send("https://x.test/h", {}, { fetchImpl: down, sleep });
+    assert.deepEqual(waits, [65_000, 5000, 5000]);
+});
+
 test("send gives up after 3 failures and on 4xx", async () => {
     let calls = 0;
     const down = async () => {
@@ -212,4 +226,29 @@ test("an owner named like an object property is named, never mentioned", () => {
 test("an unreadable owner map names every owner", () => {
     for (const json of [undefined, "not json", "null"])
         assert.deepEqual(discordIds(json), {});
+});
+
+test("a Discord account linked on Enter wins over the map, which covers owners who linked none", () => {
+    const map = JSON.stringify({
+        Moved: "111111111111111111",
+        listed: "222222222222222222",
+        kept: "333333333333333333",
+    });
+    const linked = [
+        ["moved", "444444444444444444"],
+        ["New", "555555555555555555"],
+        // Not an id: the map's stays.
+        ["kept", "<@1>"],
+    ];
+    assert.deepEqual(discordIds(map, linked), {
+        moved: "444444444444444444",
+        listed: "222222222222222222",
+        kept: "333333333333333333",
+        new: "555555555555555555",
+    });
+    // An unreadable map leaves the linked accounts.
+    assert.deepEqual(discordIds("not json", linked), {
+        moved: "444444444444444444",
+        new: "555555555555555555",
+    });
 });

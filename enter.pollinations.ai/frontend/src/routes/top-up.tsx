@@ -11,6 +11,7 @@ import { BuyPollenPanel } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
 import {
     type AccountBalance,
+    BALANCE_PATH,
     fetchAccountBalance,
 } from "../hooks/use-account-balance.ts";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
@@ -158,6 +159,7 @@ function TopUpPage() {
                 footnote="help"
                 title="Top-up"
                 error="Couldn’t load your wallet."
+                errorPaths={[BALANCE_PATH]}
                 balance={wallet}
                 topUpHref={null}
                 actions={

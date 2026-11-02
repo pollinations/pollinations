@@ -243,6 +243,7 @@ async function creditCheckoutSessionOnce({
                     ${POLLEN_BILLING_PRECISION}
                 ),
                 last_pack_pollen = ?,
+                quest_pollen_restricted = 0,
                 low_balance_notified_at = NULL
                 WHERE id = ?`,
             ).bind(creditsToAdd, creditsToAdd, userId),

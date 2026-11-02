@@ -138,7 +138,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             <KeyDialogContent
                 mode="create"
                 app={simplified}
-                publishable={simplified}
                 name={name}
                 onNameChange={setName}
                 permissions={keyPermissions}

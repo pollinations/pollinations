@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "DNS_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -124,6 +125,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "dns",
+        name: "DNS",
+        description:
+            "Look up live DNS records and reverse-resolve IP addresses.",
+        binding: "DNS_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Lookups run on Cloudflare's public resolver and add no MCP fee.",
             rates: [],
         },
     },

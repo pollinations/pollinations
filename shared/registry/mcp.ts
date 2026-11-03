@@ -45,6 +45,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "VOICE_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -126,6 +127,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "voice",
+        name: "Voice",
+        description:
+            "Isolate vocals from recordings and change the voice of spoken audio.",
+        binding: "VOICE_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Tools use the selected audio model's listed rate. No additional MCP fee.",
             rates: [],
         },
     },

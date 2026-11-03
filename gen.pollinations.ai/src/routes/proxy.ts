@@ -387,7 +387,9 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         paid_only: entry.info.paid_only,
         pricing: entry.info.pricing,
         pricing_units: entry.info.pricing_units,
-        max_completion_tokens: entry.info.max_completion_tokens,
+        top_provider: {
+            max_completion_tokens: entry.info.max_completion_tokens ?? null,
+        },
         capabilities: entry.info.capabilities,
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),

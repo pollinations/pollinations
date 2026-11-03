@@ -1732,9 +1732,9 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         isSpecialized: true,
     },
-    "typesafe/jev-1.13": {
+    "typesafe/jev-1.14": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev", "typesafe/jev"],
+        aliases: ["jev", "typesafe/jev", "typesafe/jev-1.13"],
         provider: "vercel",
         publisher: "TypeSafe",
         category: "decision",
@@ -1742,7 +1742,7 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // Vercel TypeSafe route (2026-10-24), with no gateway surcharge.
+            // Vercel TypeSafe route (2026-11-03), with no gateway surcharge.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
@@ -1760,7 +1760,7 @@ const TEXT_BASE_SERVICES = {
         tools: false,
         reasoning: false,
         // 64k for state + questions together; 32k for state + the longest
-        // question. https://docs.typesafe.ai/model-jaggedness/jev-1.13
+        // question. https://docs.typesafe.ai/models#context-length
         contextLength: 64000,
         isSpecialized: true,
     },

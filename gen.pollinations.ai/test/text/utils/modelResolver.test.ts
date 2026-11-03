@@ -1150,9 +1150,10 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes MiniMax M3.1 Flash directly to Fireworks", () => {
+    it("routes MiniMax M3.1 Flash directly to Fireworks Standard", () => {
         const result = resolveModelConfig(messages, {
             model: "minimax/minimax-m3.1-flash",
+            service_tier: "priority",
         });
 
         expect(result.options.model).toBe(
@@ -1162,6 +1163,7 @@ describe("resolveModelConfig", () => {
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
+        expect(result.options.service_tier).toBe("default");
         expect(result.options.provider).toBeUndefined();
     });
 

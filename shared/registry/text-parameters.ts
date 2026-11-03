@@ -79,13 +79,10 @@ export const CHAT_PARAMETERS = {
         "parallel_tool_calls",
         "reasoning_effort",
     ],
-    // OpenRouter xAI tag for Grok 4.7 (2026-09-21). web_search_options is
-    // withheld: OpenRouter bills web search per call ($0.005), a non-token
-    // charge our cost model can't meter yet.
-    openRouterGrok47: [
+    // AWS and direct xAI accept logprobs requests but return no probabilities.
+    grok47: [
         ...TOOL_CHAT,
         ...SAMPLING,
-        ...LOGPROBS,
         ...OPENROUTER_REASONING,
         "seed",
         "structured_outputs",
@@ -173,6 +170,14 @@ export const CHAT_PARAMETERS = {
     azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
     // Bedrock Qwen3 Coder rejects stop and has no seed/logprobs controls.
     bedrockQwenCoder: [...TOOL_CHAT, ...SAMPLING],
+    // Bedrock Kimi fixes top_p at 0.95, rejects penalties and omits logprobs.
+    bedrockKimi: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "reasoning_effort",
+        "parallel_tool_calls",
+    ],
     openRouterMistralSmall32: [
         ...SAMPLED_CHAT,
         ...PENALTIES,
@@ -254,6 +259,19 @@ export const CHAT_PARAMETERS = {
         "response_format",
         "stop",
     ],
+    // Shared by the Together and DeepInfra FP4 endpoints: neither accepts seed,
+    // and only Together lists logprobs.
+    openRouterNemotronSuperVl: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...PENALTIES,
+        "stop",
+        "top_k",
+        "min_p",
+        "repetition_penalty",
+        "logit_bias",
+        ...OPENROUTER_REASONING,
+    ],
     mimo: [...SAMPLED_CHAT, ...PENALTIES, ...OPENROUTER_REASONING],
     openRouterGlm53: [
         ...SAMPLED_CHAT,
@@ -281,11 +299,6 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "repetition_penalty",
         "seed",
-    ],
-    openRouterMinimax27FirstParty: [
-        ...TOOL_CHAT,
-        ...SAMPLING,
-        ...OPENROUTER_REASONING,
     ],
     openRouterMuseGlimmer: [
         ...SAMPLED_CHAT,
@@ -401,24 +414,6 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
-    // Phala fallback route for Hy3 (2026-09-18): distinct provider from
-    // Novita primary, adds min_p over Novita's parameter surface.
-    openRouterHy3Phala: [
-        "max_tokens",
-        "stream",
-        ...TOOLS,
-        "structured_outputs",
-        "temperature",
-        "top_p",
-        "top_k",
-        "min_p",
-        ...PENALTIES,
-        "repetition_penalty",
-        "stop",
-        "seed",
-        ...OPENROUTER_REASONING,
-        "reasoning_effort",
-    ],
     // OpenRouter Novita tag for Ling 3.1 Flash (verified 2026-10-05): no
     // response_format, structured outputs or logprobs; reasoning_effort
     // "none" turns thinking off.
@@ -519,12 +514,6 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "repetition_penalty",
         "seed",
-        "reasoning_effort",
-    ],
-    qwen38Reka: [
-        ...EXTENDED_CHAT,
-        ...OPENROUTER_REASONING,
-        "structured_outputs",
         "reasoning_effort",
     ],
     qwen38Max: [...EXTENDED_CHAT, ...OPENROUTER_REASONING, "reasoning_effort"],

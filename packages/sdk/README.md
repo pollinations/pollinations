@@ -426,7 +426,7 @@ await image.saveToFile('robot.png');
 const base64 = image.toBase64();
 const dataUrl = image.toDataURL();
 
-// Just get the URL (no download)
+// Stored media URL to share, e.g. in <img src>
 const url = await imageUrl('a sunset');
 ```
 
@@ -889,10 +889,6 @@ const client = new Pollinations({
   videoTimeout: 1200000, // 20 minutes for videos
 });
 ```
-
-### Rate Limiting
-
-Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimited requests.
 
 ### Network Errors
 

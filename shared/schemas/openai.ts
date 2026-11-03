@@ -150,9 +150,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -568,9 +566,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -783,6 +779,7 @@ export const GetModelsResponseSchema = z
 // Shared fields between image generation and editing requests
 const imageModelField = z
     .string()
+    .min(1)
     .optional()
     .default("black-forest-labs/flux.1-schnell")
     .meta({

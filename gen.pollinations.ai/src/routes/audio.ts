@@ -69,7 +69,7 @@ import {
 
 const CreateSpeechRequestSchema = z
     .object({
-        model: z.string().optional(),
+        model: z.string().min(1).optional(),
         input: z.string().min(1).max(10000).meta({
             description:
                 "The text to generate audio for. Maximum 10000 characters.",

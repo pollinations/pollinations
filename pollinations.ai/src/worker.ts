@@ -3,7 +3,7 @@
  * Serves static assets and rewrites meta tags per route for SEO.
  *
  * The site talks to the public APIs (gen/enter) directly from the browser using
- * the publishable BYOP app key (see src/config.ts).
+ * the key a user approves through BYOP sign-in with the app key in src/config.ts.
  */
 
 import { getJsonLd, knownPage, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
@@ -114,7 +114,21 @@ export default {
         }
 
         // Serve static assets with per-route meta tag rewriting for SEO
-        const response = await env.ASSETS.fetch(request);
+        let response = await env.ASSETS.fetch(request);
+        if (
+            response.status === 404 &&
+            (request.method === "GET" || request.method === "HEAD")
+        ) {
+            // Keep the branded page shell without turning unknown URLs into
+            // successful responses. Only unknown pages drop conditional headers:
+            // a cached homepage must not make a missing page return 304.
+            response = await env.ASSETS.fetch(
+                new Request(
+                    new URL("/", url),
+                    page ? request : { method: request.method },
+                ),
+            );
+        }
 
         // Only rewrite HTML responses (SPA pages, not JS/CSS/images)
         const contentType = response.headers.get("content-type") || "";

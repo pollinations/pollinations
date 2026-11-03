@@ -144,6 +144,27 @@ describe("auth status", () => {
             key_budget: 4.4691,
         });
     });
+
+    it("shows the profile name when no GitHub account is linked", async () => {
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        const stdout = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation(() => true);
+        vi.stubGlobal("fetch", async (url: string) =>
+            Response.json(
+                url.includes("/account/balance")
+                    ? { balance: 1, accountBalance: { total: 1 } }
+                    : { githubUsername: null, name: "Ada Lovelace" },
+            ),
+        );
+
+        await authCommand.parseAsync(["status"], { from: "user" });
+
+        expect(JSON.parse(String(stdout.mock.calls[0][0]))).toMatchObject({
+            name: "Ada Lovelace",
+        });
+    });
 });
 
 describe("auth login with a key", () => {

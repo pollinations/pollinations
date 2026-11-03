@@ -1238,6 +1238,26 @@ describe("POST /v1/messages", () => {
         },
     );
 
+    it("rejects more than four stop sequences with the field path", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100 },
+        });
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 256,
+                stop_sequences: ["a", "b", "c", "d", "e"],
+                messages: [{ role: "user", content: "hi" }],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(400);
+        const { error } = JSON.parse(text);
+        expect(error.type).toBe("invalid_request_error");
+        expect(error.message).toContain("stop_sequences");
+    });
+
     it.each([
         { name: "malformed JSON", body: "{", status: 400 },
         {

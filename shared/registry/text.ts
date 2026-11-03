@@ -2549,11 +2549,13 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-10-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vercel AI Gateway list rates (2026-10-23), no gateway fee. Twice the
-        // Kimi K3.1 Pro rate. Moonshot AI is the only endpoint.
+        // Vercel AI Gateway list rates (2026-11-03), no gateway fee. Twice the
+        // Kimi K3.1 Pro rate. Moonshot AI is the only endpoint. Vercel reports
+        // 5-minute cache writes in cache_creation_input_tokens at the input rate.
         cost: {
             promptTextTokens: perMillion(4),
             promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(4),
             completionTextTokens: perMillion(20),
         },
         title: "Kimi K3.1 Pro Highspeed",

@@ -207,9 +207,8 @@ async function requireValidBaseModel(
         ? await findReferenceableCommunityModel(db, ownerUserId, parsed)
         : undefined;
     if (
-        !target ||
-        (target.type === "proxy" &&
-            parseListingPayload("proxy", target.payload)?.modality !== "text")
+        target?.type !== "proxy" ||
+        parseListingPayload("proxy", target.payload)?.modality !== "text"
     ) {
         throw invalid();
     }

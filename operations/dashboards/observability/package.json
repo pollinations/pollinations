@@ -6,7 +6,7 @@
   "scripts": {
     "check": "npm test && npm run build && wrangler deploy --dry-run",
     "decrypt-vars": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} local'",
-    "dev": "OBSERVABILITY_LOCAL=true vite dev",
+    "dev": "vite dev",
     "deploy": "wrangler deploy",
     "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {}'",
     "containers:list": "wrangler containers list",

@@ -403,6 +403,24 @@ describe("error observability", () => {
         },
     );
 
+    it.each([
+        [400, "content_policy_violation"],
+        [400, "output_token_limit_exceeded"],
+        [400, "unsupported_parameter"],
+        [402, "QUEST_POLLEN_RESTRICTED"],
+        [429, "community_model_rate_limit"],
+        [502, "empty_response"],
+    ] as const)("publishes the %s %s error code", (status, code) => {
+        const body = {
+            status,
+            success: false,
+            error: { code, message: "documented", timestamp: "2026-11-02" },
+        };
+        expect(createErrorResponseSchema(status).safeParse(body).success).toBe(
+            true,
+        );
+    });
+
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

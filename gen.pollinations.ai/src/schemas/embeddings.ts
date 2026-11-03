@@ -12,7 +12,7 @@ const TextContentPartSchema = z.object({
 const ImageUrlContentPartSchema = z.object({
     type: z.literal("image_url"),
     image_url: z.object({
-        url: z.string().meta({
+        url: z.string().url().meta({
             description: "Image URL or base64 data URI",
             example: "https://example.com/image.jpg",
         }),
@@ -35,7 +35,7 @@ const AudioContentPartSchema = z.object({
 const VideoUrlContentPartSchema = z.object({
     type: z.literal("video_url"),
     video_url: z.object({
-        url: z.string().meta({
+        url: z.string().url().meta({
             description:
                 "Video URL or base64 data URI. Supports mp4 and mpeg. Max 120s.",
             example: "https://example.com/video.mp4",

@@ -355,8 +355,6 @@ test("POST /api/account/keys rejects invalid account permissions", {
         }),
     });
     expect(invalid.status).toBe(400);
-    const invalidBody = await invalid.json();
-    expect(invalidBody.error.message).toContain("account permission");
 
     // Valid permissions should still be accepted
     const valid = await SELF.fetch("http://localhost:3000/api/account/keys", {

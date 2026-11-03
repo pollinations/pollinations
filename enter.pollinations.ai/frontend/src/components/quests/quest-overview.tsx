@@ -541,7 +541,7 @@ export function QuestRow({
             className={claimed ? "polli:bg-transparent" : undefined}
         >
             {/* Mobile: the title full width, then the description above the
-                reward (right) or Claim button (left). */}
+                reward or Claim button. */}
             <div className="flex flex-col gap-2 sm:hidden">
                 <div className="flex items-center gap-4">
                     {marker}
@@ -550,9 +550,7 @@ export function QuestRow({
                 {/* Indented past the icon, under the title. */}
                 <div className="flex flex-col gap-2 pl-9">
                     {details}
-                    <div className={claimButton ? undefined : "ml-auto"}>
-                        {reward}
-                    </div>
+                    <div>{reward}</div>
                 </div>
             </div>
 

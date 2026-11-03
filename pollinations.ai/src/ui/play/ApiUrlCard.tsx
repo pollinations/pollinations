@@ -1,4 +1,4 @@
-import { CheckIcon, ClipboardIcon, CopyButton, Text } from "@pollinations/ui";
+import { CopyButton, CopyStateIcon, Text } from "@pollinations/ui";
 import { Fragment } from "react";
 
 function shellQuote(value: string): string {
@@ -78,11 +78,14 @@ export function ApiUrlCard({
                             aria-hidden="true"
                             className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg-active text-theme-text-strong"
                         >
-                            {copied ? (
-                                <CheckIcon className="h-4 w-4 text-intent-success-text" />
-                            ) : (
-                                <ClipboardIcon className="h-4 w-4" />
-                            )}
+                            <CopyStateIcon
+                                copied={copied}
+                                className={
+                                    copied
+                                        ? "h-4 w-4 text-intent-success-text"
+                                        : "h-4 w-4"
+                                }
+                            />
                         </span>
                         <output className="sr-only">
                             {copied ? "Copied" : ""}

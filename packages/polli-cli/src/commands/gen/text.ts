@@ -20,7 +20,7 @@ import { streamSSE } from "../../lib/stream.js";
 
 interface ChatResponse {
     choices: Array<{
-        message: { content: string };
+        message: { content: string | null; refusal?: string | null };
         finish_reason?: string | null;
     }>;
     model: string;
@@ -217,7 +217,8 @@ export function createTextCommand() {
                 }
 
                 const data = (await res.json()) as ChatResponse;
-                const content = data.choices[0]?.message?.content ?? "";
+                const message = data.choices[0]?.message;
+                const content = message?.content || message?.refusal || "";
                 warnIfTruncated(data.choices[0]?.finish_reason);
 
                 if (opts.output) {

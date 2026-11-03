@@ -57,6 +57,7 @@ describe("getGenerationModelRegistry", () => {
             "openai/gpt-oss-20b",
             "respan/span-01-lite",
             "vllm-sr/d3",
+            "moonshotai/kimi-k3", // Retains Quest access after the AWS move.
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
             // Costs $0 while Vercel offers it as a stealth model.
@@ -108,6 +109,8 @@ describe("getGenerationModelRegistry", () => {
             ["openai/gpt-audio-mini", "stream", true],
             ["openai/gpt-audio-1.5", "max_completion_tokens", true],
             ["x-ai/grok-4.3", "max_tokens", true],
+            ["x-ai/grok-4.7", "logprobs", false],
+            ["x-ai/grok-4.7", "top_logprobs", false],
             ["anthropic/claude-sonnet-4.6", "response_format", true],
             ["anthropic/claude-sonnet-5", "temperature", false],
             ["anthropic/claude-sonnet-5", "response_format", false],
@@ -133,14 +136,16 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
-    it("keeps the Bedrock coder's catalog aligned with its serving route", async () => {
+    it("keeps the coder's catalog aligned with its serving route", async () => {
         const registry = await getGenerationModelRegistry(env);
         const model = registry.resolve("qwen-coder");
 
         expect(model?.id).toBe("qwen/qwen3-coder-30b-a3b-instruct");
-        expect(model?.definition.provider).toBe("aws");
+        expect(model?.definition.provider).toBe("openrouter");
         expect(model?.definition.paidOnly).toBe(true);
-        expect(model?.definition.fallbacks ?? []).toEqual([]);
+        expect(model?.definition.fallbacks).toEqual([
+            "qwen/qwen3-coder-30b-a3b-instruct:aws",
+        ]);
         // Responses runs through its Chat route; there is no native target.
         expect(model?.supportedEndpoints).toContain("/v1/responses");
         expect(supportsDirectResponses(model?.id ?? "")).toBe(false);
@@ -203,6 +208,44 @@ describe("getGenerationModelRegistry", () => {
 
         for (const entry of registry.visibleEntries()) {
             if (entry.definition.inputModalities?.includes("image")) continue;
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+    });
+
+    it("advertises the native video and 3D routes on their categories", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const visible = registry.visibleEntries();
+
+        const video = visible.filter(
+            (entry) => entry.definition.category === "video",
+        );
+        expect(video.length).toBeGreaterThan(0);
+        for (const entry of video) {
+            expect(entry.supportedEndpoints, entry.id).toContain(
+                "/video/{prompt}",
+            );
+            expect(entry.info.supported_endpoints, entry.id).toContain(
+                "/video/{prompt}",
+            );
+            // Video generation is not an image edit.
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+
+        const model3d = visible.filter(
+            (entry) => entry.definition.category === "3d",
+        );
+        expect(model3d.length).toBeGreaterThan(0);
+        for (const entry of model3d) {
+            expect(entry.supportedEndpoints, entry.id).toContain(
+                "/3d/{prompt}",
+            );
+            expect(entry.info.supported_endpoints, entry.id).toContain(
+                "/3d/{prompt}",
+            );
             expect(entry.supportedEndpoints, entry.id).not.toContain(
                 "/v1/images/edits",
             );

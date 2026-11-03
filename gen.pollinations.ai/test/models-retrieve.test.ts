@@ -382,6 +382,31 @@ test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async 
     }
 });
 
+test("model listings carry billing units so agents can price a call", async () => {
+    type ListedModel = { id: string; pricing_units?: unknown };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.pricing_units, model.id).toEqual(
+            registry.resolve(model.id)?.info.pricing_units,
+        );
+    }
+
+    const withUnits = list.data.filter((model) => model.pricing_units);
+    expect(withUnits.length).toBeGreaterThan(0);
+    for (const model of withUnits) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.pricing_units, model.id).toEqual(model.pricing_units);
+    }
+});
+
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker(
         `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,

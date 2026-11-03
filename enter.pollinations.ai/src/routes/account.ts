@@ -151,6 +151,17 @@ const CreateKeySchema = z.object({
         .array(z.string())
         .nullable()
         .optional()
+        .refine(
+            (perms) =>
+                !perms ||
+                perms.every((p) =>
+                    ["profile", "usage", "keys", "machines"].includes(p),
+                ),
+            {
+                message:
+                    'Invalid account permission. Allowed values: profile, usage, keys, machines',
+            },
+        )
         .describe(
             'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes.',
         ),

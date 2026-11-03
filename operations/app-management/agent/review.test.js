@@ -181,3 +181,104 @@ test("snippets keeps code around each Pollinations mention", () => {
     assert.ok(snippet.length < 200);
     assert.equal(snippets("nothing here").length, 0);
 });
+
+const { changedDuring, renderComment } = require("./review.js");
+
+const report = (label, findings, extra = {}) => ({
+    label,
+    findings,
+    questions: [],
+    couldNotCheck: [],
+    ...extra,
+});
+
+test("renderComment ready keeps the marker, heading and approval sentence", () => {
+    const body = renderComment({
+        kind: "report",
+        author: "alice",
+        result: report("APP-REVIEW", [
+            {
+                requirement: "works",
+                status: "supported",
+                note: "Loads | works.",
+            },
+        ]),
+    });
+    assert.match(
+        body,
+        /^<!-- APP_PRE_REVIEW -->\n## App pre-review: ready for human review/,
+    );
+    assert.match(body, /@alice/);
+    assert.match(body, /\| Works \| ✅ supported \| Loads \\\| works\. \|/);
+    assert.match(body, /add `APP-APPROVED` to publish it\.$/);
+});
+
+test("renderComment needs-info lists questions and adds the badge snippet only for missing credit", () => {
+    const missingCredit = renderComment({
+        kind: "report",
+        author: "bob",
+        result: report(
+            "APP-NEEDS-INFO",
+            [
+                {
+                    requirement: "credits_pollinations",
+                    status: "contradicted",
+                    note: "No badge.",
+                },
+            ],
+            {
+                questions: ["Add the badge."],
+                couldNotCheck: ["The page timed out."],
+            },
+        ),
+    });
+    assert.match(missingCredit, /## App pre-review: more information needed/);
+    assert.match(missingCredit, /- Add the badge\./);
+    assert.match(missingCredit, /badge-made-with\.svg/);
+    assert.match(missingCredit, /Could not check:\n\n- The page timed out\./);
+    const signIn = renderComment({
+        kind: "report",
+        result: report("APP-NEEDS-INFO", [
+            {
+                requirement: "sign_in",
+                status: "contradicted",
+                note: "Device flow.",
+            },
+        ]),
+    });
+    assert.doesNotMatch(signIn, /badge-made-with\.svg/);
+});
+
+test("renderComment invalid and unavailable match today's texts", () => {
+    assert.match(
+        renderComment({
+            kind: "invalid",
+            author: "carol",
+            errors: ["App Name is required."],
+        }),
+        /more information needed\n\n@carol \n\n- App Name is required\.\n\nEdit the issue with the missing information/,
+    );
+    assert.match(
+        renderComment({ kind: "unavailable", author: "bad name!" }),
+        /## App pre-review unavailable\n\nThe automated check could not finish/,
+    );
+});
+
+test("changedDuring stops writes after an edit or an approval", () => {
+    const before = { body: "a", labels: ["APP-SUBMISSION"] };
+    assert.equal(
+        changedDuring(before, {
+            body: "a",
+            labels: ["APP-SUBMISSION", "APP-REVIEW"],
+        }),
+        false,
+    );
+    assert.equal(
+        changedDuring(before, { body: "b", labels: ["APP-SUBMISSION"] }),
+        true,
+    );
+    assert.equal(
+        changedDuring(before, { body: "a", labels: ["APP-APPROVED"] }),
+        true,
+    );
+});

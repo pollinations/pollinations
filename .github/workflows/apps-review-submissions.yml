@@ -23,6 +23,7 @@ jobs:
         startsWith(github.event.issue.title, '[App Submission]')) &&
        !contains(github.event.issue.labels.*.name, 'APP-APPROVED'))
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       issues: write
@@ -69,13 +70,6 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/sharp" --no-audit --no-fund sharp@0.34.5
           echo "NODE_PATH=$RUNNER_TEMP/sharp/node_modules" >> "$GITHUB_ENV"
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - name: Install reviewer dependency
-        run: pip install requests
-
       - name: Validate submission
         id: validate
         env:
@@ -97,11 +91,11 @@ jobs:
             exit 1
           fi
 
-      - name: Run AI pre-review
+      - name: Run community app manager
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           GH_BOT_ID: ${{ steps.issue.outputs.bot-id }}
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
-        run: python operations/app-management/ingestion/review-agent.py
+        run: node operations/app-management/agent/review.js

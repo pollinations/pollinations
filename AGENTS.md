@@ -4,7 +4,7 @@
 
 Two-phase review: AI evidence + human decision via `apps-review-submissions.yml`. Source of truth: `operations/app-management/app.json`.
 
-Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `operations/app-management/app.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → the community app manager (a hosted agent; rulebook `operations/app-management/agent/REVIEW.md`) checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `operations/app-management/app.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 

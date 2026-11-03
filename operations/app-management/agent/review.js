@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// Community app manager, read-only: builds the context for one submission, asks
-// the hosted agent, checks its report against the evidence it actually had,
-// and prints the result. Nothing is written to GitHub yet.
+// Community app manager: builds the context for one submission, asks the hosted
+// agent, checks its report against the evidence it actually had, then writes
+// the pre-review comment and status label. DRY_RUN=1 prints instead of writing.
 const { execFileSync } = require("node:child_process");
 const dns = require("node:dns/promises");
 const fs = require("node:fs");
@@ -449,77 +449,191 @@ function checkReport(report, { ids, fetched }) {
     };
 }
 
-function validationFor(issue) {
-    if (process.env.VALIDATION_RESULT)
-        return JSON.parse(process.env.VALIDATION_RESULT);
-    const author = gh([
-        "api",
-        `repos/pollinations/pollinations/issues/${issue}`,
-        "--jq",
-        ".user.login",
-    ]);
-    try {
-        return JSON.parse(
-            execFileSync(
-                "node",
-                [path.join(__dirname, "../ingestion/validate-submission.js")],
-                {
-                    encoding: "utf8",
-                    env: {
-                        ...process.env,
-                        ISSUE_NUMBER: issue,
-                        ISSUE_AUTHOR: author,
-                    },
-                },
-            ),
-        );
-    } catch (error) {
-        // validate-submission.js exits 2 for an invalid form; its output still holds the result.
-        return JSON.parse(error.stdout);
+const REPO = "repos/pollinations/pollinations";
+const MARKER = "<!-- APP_PRE_REVIEW -->";
+const STATUS_LABELS = ["APP-NEEDS-INFO", "APP-REVIEW"];
+const CHECK_NAMES = {
+    works: "Works",
+    uses_pollinations: "Uses Pollinations",
+    credits_pollinations: "Credits Pollinations",
+    screenshot_shows_app: "Screenshot shows the app",
+    not_already_listed: "Not already listed",
+    sign_in: "Sign-in returns to the app",
+    quest_fits: "Quest fits",
+};
+const STATUS_TEXT = {
+    supported: "✅ supported",
+    contradicted: "❌ contradicted",
+    unverified: "❔ unverified",
+    not_applicable: "➖ not applicable",
+};
+const BADGE_SNIPPET =
+    "```markdown\n[![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)\n```";
+
+const bullets = (items) => items.map((item) => `- ${item}`).join("\n");
+
+function renderComment({ kind, author, errors = [], result }) {
+    const mention = /^[A-Za-z0-9-]+$/.test(author ?? "") ? `@${author} ` : "";
+    if (kind === "invalid")
+        return `${MARKER}\n## App pre-review: more information needed\n\n${mention}\n\n${bullets(errors)}\n\nEdit the issue with the missing information; the pre-review will run again.`;
+    if (kind === "unavailable")
+        return `${MARKER}\n## App pre-review unavailable\n\n${mention}The automated check could not finish. A maintainer can rerun the workflow; no submitter action is required yet.`;
+    const table = [
+        "| Check | Result | Note |",
+        "|---|---|---|",
+        ...result.findings.map(
+            (f) =>
+                `| ${CHECK_NAMES[f.requirement]} | ${STATUS_TEXT[f.status]} | ${f.note.replace(/\|/g, "\\|")} |`,
+        ),
+    ].join("\n");
+    const notChecked = result.couldNotCheck.length
+        ? `\n\nCould not check:\n\n${bullets(result.couldNotCheck)}`
+        : "";
+    if (result.label === "APP-REVIEW")
+        return `${MARKER}\n## App pre-review: ready for human review\n\n${mention}\n\n${table}${notChecked}\n\nA maintainer can verify the app, confirm the badge or pollinations.ai link is visible, and add \`APP-APPROVED\` to publish it.`;
+    const badge = result.findings.some(
+        (f) =>
+            f.requirement === "credits_pollinations" &&
+            f.status === "contradicted",
+    )
+        ? `\n\nBadge snippet:\n\n${BADGE_SNIPPET}`
+        : "";
+    return `${MARKER}\n## App pre-review: more information needed\n\n${mention}\n\n${bullets(result.questions)}${badge}\n\n${table}${notChecked}\n\nEdit the issue with the requested information; the pre-review will run again.`;
+}
+
+const issueState = (issue) =>
+    JSON.parse(
+        gh([
+            "api",
+            `${REPO}/issues/${issue}`,
+            "--jq",
+            "{body, labels: [.labels[].name]}",
+        ]),
+    );
+
+// A review that took a while must not overwrite a newer submission or a
+// maintainer's approval: the newer run, or the approval, wins.
+const changedDuring = (before, after) =>
+    before.body !== after.body || after.labels.includes("APP-APPROVED");
+
+function ghWrite(method, endpoint, payload) {
+    execFileSync("gh", ["api", "-X", method, endpoint, "--input", "-"], {
+        input: JSON.stringify(payload ?? {}),
+        encoding: "utf8",
+    });
+}
+
+function setStatusLabel(issue, label) {
+    for (const old of STATUS_LABELS) {
+        try {
+            ghWrite("DELETE", `${REPO}/issues/${issue}/labels/${old}`);
+        } catch {
+            // Not on the issue: nothing to remove.
+        }
     }
+    if (label)
+        ghWrite("POST", `${REPO}/issues/${issue}/labels`, { labels: [label] });
+}
+
+function upsertComment(issue, botId, body) {
+    const ids = gh([
+        "api",
+        "--paginate",
+        `${REPO}/issues/${issue}/comments`,
+        "--jq",
+        `.[] | select(.user.id == ${Number(botId)} and (.body | contains("${MARKER}"))) | .id`,
+    ])
+        .split("\n")
+        .filter(Boolean);
+    if (ids.length)
+        ghWrite("PATCH", `${REPO}/issues/comments/${ids.at(-1)}`, { body });
+    else ghWrite("POST", `${REPO}/issues/${issue}/comments`, { body });
 }
 
 async function main() {
     const issue = process.env.ISSUE_NUMBER;
     const key = process.env.POLLINATIONS_API_KEY;
-    if (!/^\d+$/.test(issue || "") || !key)
-        throw new Error("ISSUE_NUMBER and POLLINATIONS_API_KEY are required");
-    const started = Date.now();
-    const validation = validationFor(issue);
-    if (validation.system_error) throw new Error(validation.system_error);
-    if (!validation.valid) {
-        console.log(
-            JSON.stringify({
-                issue,
-                label: "APP-NEEDS-INFO",
-                formErrors: validation.errors,
-            }),
+    const botId = process.env.GH_BOT_ID;
+    const dryRun = process.env.DRY_RUN === "1";
+    if (!/^\d+$/.test(issue || "") || !key || !process.env.VALIDATION_RESULT)
+        throw new Error(
+            "ISSUE_NUMBER, POLLINATIONS_API_KEY and VALIDATION_RESULT are required",
         );
-        return;
+    if (!dryRun && !/^\d+$/.test(botId || ""))
+        throw new Error("GH_BOT_ID is required unless DRY_RUN=1");
+    const started = Date.now();
+    const before = issueState(issue);
+    // The workflow's validate step passes its result in; locally, run
+    // ingestion/validate-submission.js first and pass its output the same way.
+    const validation = JSON.parse(process.env.VALIDATION_RESULT || "{}");
+    const author = validation.metadata?.githubUsername;
+    try {
+        if (validation.system_error) throw new Error(validation.system_error);
+        let comment;
+        let label;
+        let report = {};
+        if (!validation.valid) {
+            label = "APP-NEEDS-INFO";
+            report = { formErrors: validation.errors };
+            comment = renderComment({
+                kind: "invalid",
+                author,
+                errors: validation.errors,
+            });
+        } else {
+            const { submission, metadata } = validation;
+            const context = await buildContext(
+                submission,
+                readApps(),
+                metadata.submittedDate,
+            );
+            const ids = new Set(
+                [...context.facts, ...context.related].map((f) => f.id),
+            );
+            const answer = await askAgent(context, context.screenshot, key);
+            const result = checkReport(parseReport(answer.text), {
+                ids,
+                fetched: answer.fetched,
+            });
+            label = result.label;
+            report = {
+                ...result,
+                fetched: answer.fetched,
+                usage: answer.usage,
+            };
+            comment = renderComment({ kind: "report", author, result });
+        }
+        const seconds = Math.round((Date.now() - started) / 1000);
+        console.log(JSON.stringify({ issue, label, ...report, seconds }));
+        if (dryRun) {
+            console.log(comment);
+            return;
+        }
+        if (changedDuring(before, issueState(issue))) {
+            console.log(
+                "The issue changed during the review; nothing written.",
+            );
+            return;
+        }
+        upsertComment(issue, botId, comment);
+        setStatusLabel(issue, label);
+    } catch (error) {
+        if (!dryRun) {
+            try {
+                setStatusLabel(issue);
+                upsertComment(
+                    issue,
+                    botId,
+                    renderComment({ kind: "unavailable", author }),
+                );
+            } catch (commentError) {
+                console.error(
+                    `could not post the failure status: ${commentError.message}`,
+                );
+            }
+        }
+        throw error;
     }
-    const { submission, metadata } = validation;
-    const context = await buildContext(
-        submission,
-        readApps(),
-        metadata.submittedDate,
-    );
-    const ids = new Set(
-        [...context.facts, ...context.related].map((f) => f.id),
-    );
-    const answer = await askAgent(context, context.screenshot, key);
-    const result = checkReport(parseReport(answer.text), {
-        ids,
-        fetched: answer.fetched,
-    });
-    console.log(
-        JSON.stringify({
-            issue,
-            ...result,
-            fetched: answer.fetched,
-            usage: answer.usage,
-            seconds: Math.round((Date.now() - started) / 1000),
-        }),
-    );
 }
 
 if (require.main === module) {
@@ -532,10 +646,12 @@ if (require.main === module) {
 module.exports = {
     askAgent,
     buildContext,
+    changedDuring,
     checkReport,
     isPublicIp,
     parseReport,
     redact,
     relatedApps,
+    renderComment,
     snippets,
 };

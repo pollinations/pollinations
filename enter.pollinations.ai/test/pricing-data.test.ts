@@ -217,6 +217,7 @@ test("audio hour rates agree across price lines, badges and the ledger", () => {
     });
     const badge = renderToStaticMarkup(
         createElement(PriceBadge, {
+            kind: audio.kind,
             price: audio.price,
             unit: audio.unit,
             subKinds: ["audioIn"],

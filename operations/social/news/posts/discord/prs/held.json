@@ -39,7 +39,6 @@
       "merge_sha": "c3721d925cced0359fa7f579ac8bb6bba70ca435",
       "merged_at": "2026-11-02T21:18:24Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/mcp",
         "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
@@ -50,8 +49,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18656": {
@@ -60,8 +58,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18657": {
@@ -81,9 +78,7 @@
     "18691": {
       "merge_sha": "485413a860ab2c95a7f9f3fcbfe0fdb6e0afb44e",
       "merged_at": "2026-11-02T17:43:21Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/observability"
-      ]
+      "required": []
     },
     "18726": {
       "merge_sha": "3939673cf3adb6cebfe2ff99b80fcc89567f21e4",
@@ -98,8 +93,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18770": {
@@ -134,12 +128,7 @@
       "merge_sha": "592d702bb82c86398ee644f1830e72ce4e78dc8a",
       "merged_at": "2026-11-02T17:55:57Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/economics",
-        "deploy-applications.yml:Deploy operations/dashboards/kpi",
-        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
     "18871": {
@@ -162,8 +151,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19048": {

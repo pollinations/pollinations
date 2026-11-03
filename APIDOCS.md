@@ -570,7 +570,7 @@ Errors use Anthropic's error shape. `count_tokens`, batches, files, server tools
 | `messages[].content` * | `string` \| `object`[] | — |
 | `system` | `string` \| `object`[] | — |
 | `stream` | `boolean` | — |
-| `stop_sequences` | `string`[] | — |
+| `stop_sequences` | `string`[] | Custom text sequences that stop generation (up to 4). |
 | `temperature` | `number` | — |
 | `top_p` | `number` | — |
 | `tools` | `object`[] | — |
@@ -1037,6 +1037,8 @@ Community image models use a `community/owner/model` id and support generation t
 
 Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
+Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.
+
 **Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.1.1-pro:replicate`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux-3-image-klein`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-nano-banana-2.1`, `google/gemini-nano-banana-2.1:vercel`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-5.0-pro:replicate`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-2.1-turbo`, `qwen/qwen-image-2.1-pro`, `qwen/qwen-image-2.1-pro:openrouter`, `qwen/qwen-image-3`, `qwen/qwen-image-3:openrouter`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `x-ai/grok-imagine-image-2.0:openrouter`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `recraft/recraft-v4.1-flash:openrouter`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image:replicate`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
@@ -1087,7 +1089,7 @@ Generate images from text prompts. Supports `response_format: "url"` (returns th
 | `prompt` * | `string` | A text description of the desired image(s) · length: `1…32000` |
 | `model` | `string` | The model to use for image generation · default: `"black-forest-labs/flux.1-schnell"` |
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
-| `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
+| `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
 | `seed` | `integer` \| `null` | Seed for reproducible results. -1 maps to the stable compatibility seed. |
 | `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
@@ -1136,7 +1138,7 @@ Community image models forward edits to the registrant's OpenAI-compatible endpo
 | `image` * | `string` \| `object`[] | Source image(s). A URL string, or an array of {image_url} objects (OpenAI format) |
 | `model` | `string` | The model to use for image editing. It must list image in input_modalities. · default: `"openai/gpt-image-1-mini"` |
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
-| `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) |
+| `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
 | `seed` | `integer` \| `null` | Seed for reproducible results. -1 maps to the stable compatibility seed. |
 | `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
@@ -1515,7 +1517,7 @@ Use a secret key with positive balance. Server clients can use `Authorization: B
 
 The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.
 
-Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).
+Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime conversations guide](https://developers.openai.com/api/docs/guides/realtime-conversations).
 
 ```js
 import WebSocket from "ws";
@@ -4684,9 +4686,9 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `type` | `"secret"` \| `"publishable"` | Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key. · default: `"secret"` |
 | `expiresIn` | `integer` | Expiry in seconds from now |
 | `allowedModels` | `string`[] \| `null` | Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime, decision) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models |
-| `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
+| `pollenBudget` | `number` \| `null` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
 | `questPollenOnly` | `boolean` | Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only |
-| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
+| `accountPermissions` | `"profile"` \| `"usage"` \| `"keys"` \| `"machines"`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
 | `description` | `string` | Note shown with the key |
@@ -4728,9 +4730,9 @@ Update an API key's name, model access, budget, account permissions, expiry, des
 | Field | Type | Description |
 |---|---|---|
 | `allowedModels` | `string`[] \| `null` | Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime, decision) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models |
-| `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
+| `pollenBudget` | `number` \| `null` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
 | `questPollenOnly` | `boolean` | Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only |
-| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
+| `accountPermissions` | `"profile"` \| `"usage"` \| `"keys"` \| `"machines"`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
 | `description` | `string` | Note shown with the key |
@@ -5294,7 +5296,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `prompt` * | `string` | A text description of the desired image(s) · length: `1…32000` |
 | `model` | `string` | The model to use for image generation · default: `"black-forest-labs/flux.1-schnell"` |
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
-| `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
+| `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
 | `seed` | `integer` \| `null` | Seed for reproducible results. -1 maps to the stable compatibility seed. |
 | `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
@@ -5337,7 +5339,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `messages[].content` * | `string` \| `object`[] | — |
 | `system` | `string` \| `object`[] | — |
 | `stream` | `boolean` | — |
-| `stop_sequences` | `string`[] | — |
+| `stop_sequences` | `string`[] | Custom text sequences that stop generation (up to 4). |
 | `temperature` | `number` | — |
 | `top_p` | `number` | — |
 | `tools` | `object`[] | — |

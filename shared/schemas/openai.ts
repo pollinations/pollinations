@@ -342,7 +342,7 @@ const ChatOutputTokenLimitSchema = z
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
-        model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
@@ -462,7 +462,7 @@ const ResponseFunctionToolSchema = z
  */
 export const CreateResponseRequestSchema = z
     .object({
-        model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+        model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL),
         input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
@@ -878,14 +878,24 @@ const imageNField = z
     .default(1)
     .meta({ description: "Number of images to generate (currently max 1)" });
 const imageSizeMeta = {
-    description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+    description:
+        "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default",
 };
-const imageSizeField = z
+// At most 15 digits per side, so each side parses to an exact integer.
+const IMAGE_SIZE_PATTERN = /^\s*(?:auto|\d{1,15}\s*[xX]\s*\d{1,15})\s*$/;
+// Reject an unparseable size instead of letting `resolveParams()` drop it and
+// generate (and bill) a 1024x1024 default the caller never asked for.
+const imageSizeValues = z
     .string()
+    .regex(
+        IMAGE_SIZE_PATTERN,
+        "size must be `auto` or WIDTHxHEIGHT, e.g. 1024x1024",
+    );
+const imageSizeField = imageSizeValues
     .optional()
     .default("1024x1024")
     .meta(imageSizeMeta);
-const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+const imageEditSizeField = imageSizeValues.optional().meta(imageSizeMeta);
 // Same bounds as the GET image route and the chat route: out-of-range seeds
 // are rejected here instead of being silently replaced with seed 42 by the
 // generation pipeline.

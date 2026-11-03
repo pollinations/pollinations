@@ -3,7 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const REPO_ROOT = path.resolve(__dirname, "../..");
+const REPO_ROOT = path.resolve(__dirname, "../../..");
 const TARGETS = new Set(["pages", "worker", "script", "vps"]);
 const CREDENTIALS = new Set([
     "apps",

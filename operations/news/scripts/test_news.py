@@ -1254,7 +1254,7 @@ class DeploymentReadinessTest(unittest.TestCase):
                 path = Path(".github/workflows") / name
                 (production / path).parent.mkdir(parents=True, exist_ok=True)
                 (production / path).write_bytes((source / path).read_bytes())
-            discovery = Path("operations/deployment/discover.cjs")
+            discovery = Path("operations/infrastructure/deployment/discover.cjs")
             (production / discovery).parent.mkdir(parents=True)
             (production / discovery).write_bytes((source / discovery).read_bytes())
             app = production / "apps/still-live"

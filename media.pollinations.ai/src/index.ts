@@ -37,6 +37,7 @@ import {
 import {
     rawUploadFileName,
     readMedia,
+    storedFileName,
     uploadUnlistedMedia,
 } from "./media-upload.ts";
 import {
@@ -796,7 +797,7 @@ api.post(
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
-                    originalName: fileName || "",
+                    originalName: storedFileName(fileName),
                     ...uploader,
                 },
             };

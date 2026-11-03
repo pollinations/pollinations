@@ -559,6 +559,20 @@ describe("gen worker routing", () => {
             "text/html",
         );
 
+        const htmlPreferred = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.1, text/html;q=0.9" },
+        });
+        expect(htmlPreferred.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const markdownPreferred = await fetchWorker("/docs", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.9, text/html;q=0.1" },
+        });
+        expect(markdownPreferred.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+
         const browserHome = await fetchWorker("/", envWithEnter(), {
             headers: { Accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
         });

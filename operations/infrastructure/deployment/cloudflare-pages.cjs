@@ -267,7 +267,7 @@ async function upsertCname(zoneId, headers, name, target) {
 function appContext(appPath) {
     const manifestPath = path.resolve(
         __dirname,
-        "../..",
+        "../../..",
         appPath,
         "deploy.json",
     );

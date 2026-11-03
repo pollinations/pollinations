@@ -61,7 +61,7 @@ Getting code tested and shipped: GitHub Actions, pull request checks, test infra
 Not here: an upgrade for one app → that app's area; a key for a payment feature → Billing & payments.
 
 ### Internal automation
-Bots and agents that run our own work: this project manager and other repo automation (`operations/github/`), internal agents (Polli in `apps/polli/`, Flow, the Polli auto-fix agent), scheduled operations jobs, agent guidance (`AGENTS.md`, `CLAUDE.md`, `.claude/skills/`).
+Bots and agents that run our own work: this project manager and other repo automation (`operations/infrastructure/project-manager/`), internal agents (Polli in `apps/polli/`, Flow, the Polli auto-fix agent), scheduled operations jobs, agent guidance (`AGENTS.md`, `CLAUDE.md`, `.claude/skills/`).
 Not here: agents users run → Agents & agent tools.
 
 ### Brand & news

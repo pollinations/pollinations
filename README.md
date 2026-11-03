@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Meme Forge](https://meme-forge.pollinations.app) | Type an idea, get a classic Impact-style meme: a Pollinations text model writes the captions and Flux Schnell / Z-Image Turbo paints the image. Sign in and pay with your own Pollen (BYOP). | [@opengenifzr-sudo](https://github.com/opengenifzr-sudo) |
 | [🎬 Roast My Pic](https://roast-my-pic.pollinations.app) | Upload a pic and an AI roaster (Comedian, Grandma, Chef, Shakespeare, Sports Commentator) roasts it out loud. Get a 9:16 card + video. Pollinations vision + TTS, pay with your own Pollen. | [@opengenifzr-sudo](https://github.com/opengenifzr-sudo) |
 | [🎮 2048 AI Edition](https://boofan126.github.io/mini2048-ai) | 2048 AI Edition is a single-file browser game that integrates Pollinations AI. The "AI Skin" button calls the flux-2-dev-free image model to generate custom game themes on demand; the "AI Hint" button | [@boofan126](https://github.com/boofan126) |
 | [🖼️ Chatbot v2](https://pollinations-chatbot-2.vercel.app) | This app only ai assistant | [@amancrypto12-pixel](https://github.com/amancrypto12-pixel) |
@@ -30,7 +31,6 @@
 | [🛠️ Screenshot to Bug Report](https://screenshot-to-bug-report.pollinations.app) | Paste, drop or upload a screenshot and add rough notes. The community prompt agent community/danhquach/bug-report-writer reads the screenshot and writes a clean Markdown bug report: title, what happen | [@danhquach](https://github.com/danhquach) |
 | [🖼️ Prompt to Image](https://prompt-to-image.pollinations.app) | Type a rough image idea and pick a style. The community prompt agent community/danhquach/prompt-enhancer expands it into a detailed prompt, which you can edit, and a Pollinations image model renders i | [@danhquach](https://github.com/danhquach) |
 | [🎬 Reel Hook Generator](https://anojan-va.github.io/reel-hook-generator) | Type a reel topic and get five scroll-stopping hooks in different styles (curiosity gap, shock fact, direct question, bold claim, mini story), each read aloud with Pollinations text-to-speech so you c | [@anojan-va](https://github.com/anojan-va) |
-| [🛠️ Delivery proof checklist](https://agentes-que-entregam.pollinations.app/app) | Paste what your code agent claims it finished and get a six-item checklist of the evidence that would prove it (command output, HTTP status, database row, file hash, log line). Text generation runs th | [@Samuelfmedeiros](https://github.com/Samuelfmedeiros) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

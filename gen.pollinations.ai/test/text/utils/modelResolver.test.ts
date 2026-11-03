@@ -774,6 +774,7 @@ describe("resolveModelConfig", () => {
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://ai-gateway.vercel.sh/v1",
+            requiresBase64ImageUrls: true,
         });
         expect(result.options.provider).toBeUndefined();
     });

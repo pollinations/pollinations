@@ -3,7 +3,7 @@
  * Serves static assets and rewrites meta tags per route for SEO.
  *
  * The site talks to the public APIs (gen/enter) directly from the browser using
- * the publishable BYOP app key (see src/config.ts).
+ * the key a user approves through BYOP sign-in with the app key in src/config.ts.
  */
 
 import { getJsonLd, knownPage, NOT_FOUND_META, ROUTE_META } from "./routeMeta";

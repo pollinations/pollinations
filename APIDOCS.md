@@ -16,7 +16,7 @@ Also available at [https://gen.pollinations.ai/docs](https://gen.pollinations.ai
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
 
 - `sk_*` — secret key for backend use. Never ship it in a browser, mobile app, or repository.
-- `pk_*` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user `sk_*`; do not use raw publishable keys for new browser generation integrations.
+- `pk_*` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user `sk_*`; a `pk_*` sent as a key gets `401`.
 
 **2. Send the key** in the `Authorization` header (or as `?key=` query param for GET endpoints):
 
@@ -31,7 +31,7 @@ curl https://gen.pollinations.ai/v1/models \
 
 | Guide | Purpose |
 | --- | --- |
-| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay with their own Pollen |
 | [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
 | [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
 | [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
@@ -45,7 +45,7 @@ curl https://gen.pollinations.ai/v1/models \
 - [🚀 Getting Started](#-getting-started)
 - [Guides](#guides)
 - [🔐 Authentication](#-authentication)
-- [🔓 Sign in with Pollinations (OAuth 2.1)](#-sign-in-with-pollinations-oauth-21)
+- [🔓 Pollinations Connect (OAuth 2.1)](#-pollinations-connect-oauth-21)
 - [🧪 Use any OpenAI SDK](#-use-any-openai-sdk)
 - [▲ Vercel AI SDK](#-vercel-ai-sdk)
 - [🌊 Streaming chat completions](#-streaming-chat-completions)
@@ -75,13 +75,12 @@ curl https://gen.pollinations.ai/v1/models \
 
 ## 🔐 Authentication
 
-Pollinations recognises two prefixes. Use the right *kind* of `pk_` for the surface you're building.
+Pollinations recognises two prefixes. Only `sk_` keys authenticate requests; a `pk_` key only identifies your app.
 
 | Key type | Prefix | Where it goes | What it can do |
 |---|---|---|---|
-| Secret key | `sk_` | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). | Secret keys have configurable model permissions, account permissions, and budgets. |
-| App key (BYOP) | `pk_` with redirect URIs | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user secret key (`sk_`). Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). This is the supported client path. |
-| Raw publishable key | `pk_` with no app / OAuth binding | Legacy only | Existing integrations only. Rate-limited to 1 pollen per IP per hour. **Do not mint new raw `pk_` keys, and do not embed them in new browser code.** |
+| Secret key | `sk_` | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from [Pollinations Pay](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). | Secret keys have configurable model permissions, account permissions, and budgets. |
+| App key (BYOP) | `pk_` | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user secret key (`sk_`). Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). A `pk_` sent as a key gets `401`. |
 
 Authenticate generation requests with a secret key:
 
@@ -105,7 +104,7 @@ The header is preferred for everything except browser flows that can't set custo
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted. See [Error Responses](#-error-responses).
 
-## 🔓 Sign in with Pollinations (OAuth 2.1)
+## 🔓 Pollinations Connect (OAuth 2.1)
 
 Third-party apps can obtain a secret key on behalf of a Pollinations user. Use the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
 
@@ -115,7 +114,7 @@ Endpoints are discoverable via RFC 8414 metadata. Resolve them from there:
 GET https://enter.pollinations.ai/.well-known/oauth-authorization-server
 ```
 
-[Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) covers authorization requests, token exchange, device flow, userinfo, scopes, and revocation.
+[Pollinations Pay](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) covers authorization requests, token exchange, device flow, userinfo, scopes, and revocation.
 
 ## 🧪 Use any OpenAI SDK
 
@@ -322,7 +321,7 @@ Each upload gets its own unique id. Re-uploading the same bytes yields a new URL
 
 ## 💡 Tips
 
-- **Do not put raw `pk_` keys in browsers.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`. Raw `pk_` keys are legacy and rate-limited (1 pollen/IP/hour).
+- **`pk_` keys don't authenticate requests.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`.
 - **One key per app.** Child keys have independent budgets and permissions. You can audit and revoke them without touching production.
 - **Retry the same request after a timeout.** Keep the endpoint, body, query parameters, and seed unchanged. Your retry waits for the generation already in progress or receives the completed cached result instead of starting another generation.
 - **Watch `429` and `503`.** A `Retry-After` header tells you how long to back off. `502` indicates an upstream provider error, which is usually transient.
@@ -1876,7 +1875,7 @@ For current per-model values, read the live [`GET /models`](https://gen.pollinat
 
 #### `GET` `/models/status` — Model Health Status
 
-Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.
+Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the response of the public Tinybird `model_route_health` pipe without private community models: a `data` array of rows plus a `meta` array typing each column.
 
 Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.
 
@@ -1906,7 +1905,7 @@ curl "https://gen.pollinations.ai/models/status?traffic=all&minutes=60" \
 
 Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.
 
-`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers.
+`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers. Private community models are never listed.
 
 Refreshed hourly.
 
@@ -3061,7 +3060,7 @@ Create a prompt agent or deploy `agent.ts` from a public GitHub repository. Code
 |---|---|---|
 | `systemPrompt` * | `string` | length: `1…8000` |
 | `baseModel` * | `string` | length: `1…253` |
-| `mcpServers` | enum (7) — `"pollinations"`, `"ask-jev"`, `"ffmpeg"`, …[] | default: `[]` |
+| `mcpServers` | enum (6) — `"pollinations"`, `"ask-jev"`, `"ffmpeg"`, …[] | default: `[]` |
 | `name` * | `string` | length: `1…120` |
 | `title` * | `string` | length: `1…42` |
 | `description` | `string` | default: `""` · max length: `1000` |
@@ -3932,7 +3931,7 @@ Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed`
 
 ### GET /account/apps
 
-App directory listings whose `github_user_id` matches the account's linked GitHub user, newest approval first: name, description, links, screenshot, category, platforms, approval date, and whether it supports Pollen Pay. `requests24h` is reported only for Pollen Pay apps, where traffic belongs to that listing.
+App directory listings whose `github_user_id` matches the account's linked GitHub user, newest approval first: name, description, links, screenshot, category, platforms, approval date, and whether it supports Pollinations Pay. `requests24h` is reported only for Pollinations Pay apps, where traffic belongs to that listing.
 
 The directory is public, so no extra permission is required (the same as `/account/profile`). An account without a linked GitHub user, or one that has not listed an app, gets an empty `apps` array. A temporarily unavailable directory answers `503` with a `Retry-After` header rather than an empty list, so a caller can tell "no listings" from "could not read".
 
@@ -4412,8 +4411,10 @@ Returns the pollen balance visible to the caller. API keys with a budget always 
 | `balance` * | `number` | Pollen remaining for this caller. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest Pollen + paid). |
 | `accountBalance` | `object` | Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account wallet is not leaked. |
 | `accountBalance.total` * | `number` | Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total. |
-| `accountBalance.tier` * | `number` | Quest Pollen remaining, never below 0 |
+| `accountBalance.tier` * | `number` | Spendable Quest pollen, never below 0; zero while restricted |
 | `accountBalance.paid` * | `number` | Paid Pollen remaining, never below 0 |
+| `accountBalance.heldTier` | `number` | Locked Quest pollen, excluded from total and tier |
+| `accountBalance.questPollenRestricted` | `boolean` | Whether Quest pollen spending is locked until a purchase or account review |
 
 <sub>`*` = required field</sub>
 
@@ -4816,7 +4817,6 @@ Returns information about the API key used in the request: validity, type (secre
 | `permissions.account` * | `string`[] \| `null` | List of account permissions, null = no account access |
 | `pollenBudget` * | `any` | Remaining pollen budget for this key, null = unlimited (uses user balance) |
 | `questPollenOnly` * | `boolean` | Whether this key spends only Quest Pollen, never paid Pollen |
-| `rateLimitEnabled` * | `boolean` | Whether rate limiting is enabled for this key |
 | `userId` * | `any` | Stable id of the user that owns this key — server-attested. |
 | `byopApp` * | `object` \| `null` | BYOP app attribution for keys minted through the BYOP authorize flow. Server-attested; null for non-BYOP keys. |
 
@@ -4842,8 +4842,7 @@ curl "https://gen.pollinations.ai/account/key" \
       "usage"
     ]
   },
-  "pollenBudget": null,
-  "rateLimitEnabled": false
+  "pollenBudget": null
 }
 ```
 

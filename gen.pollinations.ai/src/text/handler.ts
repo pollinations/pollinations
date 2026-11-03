@@ -173,13 +173,13 @@ export async function generateChatAttempt(
                       status: 400 as const,
                       message:
                           "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
-                      errorCode: "output_token_limit_exceeded",
+                      errorCode: "output_token_limit_exceeded" as const,
                   }
                 : {
                       status: 502 as const,
                       message:
                           "Chat Completions provider returned an empty response",
-                      errorCode: "empty_response",
+                      errorCode: "empty_response" as const,
                   };
             throw new UpstreamError(status, {
                 ...details,

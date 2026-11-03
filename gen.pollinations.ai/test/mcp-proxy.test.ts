@@ -47,6 +47,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "csv",
+                name: "CSV",
+                description:
+                    "Describe a CSV and query its rows without writing code.",
+                url: "https://gen.pollinations.ai/mcp/csv",
+                pricing: {
+                    description:
+                        "Parsing and querying run inside the worker. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:

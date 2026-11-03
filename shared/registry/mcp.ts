@@ -45,6 +45,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "CSV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -126,6 +127,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "csv",
+        name: "CSV",
+        description: "Describe a CSV and query its rows without writing code.",
+        binding: "CSV_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Parsing and querying run inside the worker. No additional MCP fee.",
             rates: [],
         },
     },

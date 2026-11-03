@@ -21,11 +21,6 @@
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
-    "17241": {
-      "merge_sha": "7def6cbbc54620cc10fced77ea2aedf7e514e424",
-      "merged_at": "2026-11-03T05:29:53Z",
-      "required": []
-    },
     "17840": {
       "merge_sha": "22f01d43fdb1b9d7e039b32e9673e1a4835db4b6",
       "merged_at": "2026-11-03T05:37:37Z",
@@ -48,16 +43,6 @@
         "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
-    },
-    "18483": {
-      "merge_sha": "4d5399f732a6754cb66c1fac8d74112ff3936215",
-      "merged_at": "2026-11-03T00:25:12Z",
-      "required": []
-    },
-    "18608": {
-      "merge_sha": "5ae10a5b0eca1c693a060b3afaf4b2fdf67d06d5",
-      "merged_at": "2026-11-03T05:12:37Z",
-      "required": []
     },
     "18622": {
       "merge_sha": "fbea49a9cff169d45ef80a62fffe369e9b0fb3dd",
@@ -92,16 +77,6 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
-    },
-    "18667": {
-      "merge_sha": "7a8d8f9e59bf9d7405ae33460d0754e1ee57f02b",
-      "merged_at": "2026-11-02T21:20:36Z",
-      "required": []
-    },
-    "18677": {
-      "merge_sha": "a5cb002cdd3df59b43cec932bd3f7ff8f505a094",
-      "merged_at": "2026-11-02T17:57:15Z",
-      "required": []
     },
     "18691": {
       "merge_sha": "485413a860ab2c95a7f9f3fcbfe0fdb6e0afb44e",
@@ -174,11 +149,6 @@
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
-    "18894": {
-      "merge_sha": "88cb9c9ec46352040901f9f63f2832b21c62f669",
-      "merged_at": "2026-11-02T17:53:43Z",
-      "required": []
-    },
     "18920": {
       "merge_sha": "568aba73536d585358c4768ae8c3a5a7d4bb4262",
       "merged_at": "2026-11-02T17:43:21Z",
@@ -223,11 +193,6 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
-    },
-    "19075": {
-      "merge_sha": "e58d9ba4a89e06f2b60fda0377da2d9642d960c8",
-      "merged_at": "2026-11-03T04:13:15Z",
-      "required": []
     }
   },
   "production": "cc1e17a0cf9bbf5eade222c268446a3e953839a5",

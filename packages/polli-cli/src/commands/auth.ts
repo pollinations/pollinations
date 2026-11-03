@@ -26,7 +26,14 @@ type LoginOptions = {
 
 interface ProfileResponse {
     githubUsername?: string | null;
+    // Returned only for keys with account:profile, which device login grants.
+    name?: string | null;
     image?: string | null;
+}
+
+// Accounts without a linked GitHub (e.g. Google sign-in) still have a name.
+function profileName(profile: ProfileResponse): string {
+    return profile.githubUsername ?? profile.name ?? "unknown";
 }
 
 interface BalanceResponse {
@@ -147,7 +154,7 @@ async function fetchProfileLabel(key: string): Promise<string | null> {
         apiKey: key,
     }).catch(() => null);
     if (!profile) return null;
-    return `Logged in as ${profile.githubUsername ?? "unknown"}`;
+    return `Logged in as ${profileName(profile)}`;
 }
 
 /** Run the browser device flow, store the resulting key, and return it. */
@@ -301,7 +308,7 @@ export async function showAuthStatus(): Promise<void> {
     printResult({
         authenticated: true,
         key: masked,
-        name: profile.githubUsername ?? "unknown",
+        name: profileName(profile),
         pollen: wallet ?? "unknown",
         key_budget: balance?.balance !== wallet ? balance?.balance : undefined,
     });

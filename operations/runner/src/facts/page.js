@@ -34,7 +34,7 @@ async function fetchText(url) {
 
 // Each Pollinations mention with the code around it, so the agent sees what
 // the app does with it.
-export function snippets(text, max = 12) {
+function snippets(text, max = 12) {
     const found = new Set();
     for (const match of text.matchAll(MENTION)) {
         const start = Math.max(0, match.index - 80);

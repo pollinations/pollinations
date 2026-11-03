@@ -3,7 +3,7 @@
 // burst of edits costs one agent call; a redelivered event or an unchanged body
 // costs none. A failed agent call is retried, spaced out, before anything is
 // posted; any other throw falls to Cloudflare's own alarm retries.
-export const QUIET_MS = 30_000;
+const QUIET_MS = 30_000;
 export const RETRY_MS = [60_000, 300_000];
 
 async function digest(text) {

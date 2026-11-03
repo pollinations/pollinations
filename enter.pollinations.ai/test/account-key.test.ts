@@ -343,39 +343,33 @@ test("POST /api/account/keys rejects invalid account permissions", {
     await mocks.enable("tinybird");
 
     // Invalid permission should be rejected with 400
-    const invalid = await SELF.fetch(
-        "http://localhost:3000/api/account/keys",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accountToken}`,
-            },
-            body: JSON.stringify({
-                name: "invalid-perm-key",
-                accountPermissions: ["not_a_real_permission"],
-            }),
+    const invalid = await SELF.fetch("http://localhost:3000/api/account/keys", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accountToken}`,
         },
-    );
+        body: JSON.stringify({
+            name: "invalid-perm-key",
+            accountPermissions: ["not_a_real_permission"],
+        }),
+    });
     expect(invalid.status).toBe(400);
     const invalidBody = await invalid.json();
     expect(invalidBody.error.message).toContain("account permission");
 
     // Valid permissions should still be accepted
-    const valid = await SELF.fetch(
-        "http://localhost:3000/api/account/keys",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accountToken}`,
-            },
-            body: JSON.stringify({
-                name: "valid-perm-key",
-                accountPermissions: ["usage", "keys"],
-            }),
+    const valid = await SELF.fetch("http://localhost:3000/api/account/keys", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accountToken}`,
         },
-    );
+        body: JSON.stringify({
+            name: "valid-perm-key",
+            accountPermissions: ["usage", "keys"],
+        }),
+    });
     expect(valid.status).toBe(200);
     const validBody = await valid.json();
     expect(validBody.permissions.account).toEqual(["usage", "keys"]);

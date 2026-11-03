@@ -159,7 +159,7 @@ const CreateKeySchema = z.object({
                 ),
             {
                 message:
-                    'Invalid account permission. Allowed values: profile, usage, keys, machines',
+                    "Invalid account permission. Allowed values: profile, usage, keys, machines",
             },
         )
         .describe(

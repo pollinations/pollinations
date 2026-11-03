@@ -3496,8 +3496,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Fireworks serverless rates (2026-10-17). Limited preview through
-            // 2026-10-29 on US-only capacity; the price after it is unconfirmed.
+            // Fireworks serverless standard rates, verified 2026-11-03 after the
+            // preview ended. US-only capacity; Fireworks waives its premium.
             promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.15),
             completionTextTokens: perMillion(4.25),

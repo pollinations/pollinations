@@ -1,4 +1,4 @@
-import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 import { parseBooleanLike } from "@/util.ts";
@@ -49,8 +49,10 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     repetition_penalty: FloatQueryParamSchema,
     max_tokens: IntQueryParamSchema,
     max_completion_tokens: IntQueryParamSchema,
-    reasoning_effort: z.string().optional(),
-    voice: z.string().optional(),
+    reasoning_effort: z
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
+        .optional(),
+    voice: z.enum(AUDIO_VOICES).optional(),
     stream: BooleanQueryParamSchema.optional().default(false).meta({
         description:
             "Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text.",

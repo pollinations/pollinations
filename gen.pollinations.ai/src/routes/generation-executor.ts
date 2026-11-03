@@ -170,7 +170,9 @@ generationExecutorRoutes.post(
     validator("param", z.object({ prompt: z.string().min(1) })),
     validator(
         "query",
-        z.object({ key: z.string().optional(), safe: SafeSchema }).strict(),
+        z
+            .object({ key: z.string().min(1).optional(), safe: SafeSchema })
+            .strict(),
     ),
     validator("json", Generate3dRequestBodySchema),
     resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),

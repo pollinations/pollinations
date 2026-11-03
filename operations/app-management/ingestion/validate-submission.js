@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 const { execFileSync } = require("node:child_process");
-const { downloadScreenshot, screenshotErrors } = require("./screenshot.js");
+const { readApps } = require("../app.js");
 const {
     buildApp,
-    findCatalogDuplicate,
+    checkScreenshot,
     parseSubmission,
-    validateSubmission,
+    submissionErrors,
 } = require("./submission.js");
 
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
@@ -69,31 +69,7 @@ async function main() {
     if (!issue.createdAt || !issue.url)
         throw new Error("Issue snapshot metadata is incomplete");
     const submission = parseSubmission(issue.body);
-    const errors = validateSubmission(submission);
-    if (submission.screenshotUrl) {
-        try {
-            errors.push(
-                ...(await screenshotErrors(
-                    await downloadScreenshot(submission.screenshotUrl),
-                )),
-            );
-        } catch {
-            errors.push(
-                "Screenshot could not be downloaded; upload it again in the Screenshot field.",
-            );
-        }
-    }
-    const duplicate = findCatalogDuplicate(
-        submission,
-        undefined,
-        githubUser.id,
-    );
-    if (duplicate) {
-        errors.push(
-            `This app appears to already be listed as ${duplicate.name} in operations/app-management/app.json.`,
-        );
-    }
-    const pendingIssues = JSON.parse(
+    const openSubmissions = JSON.parse(
         gh([
             "issue",
             "list",
@@ -108,34 +84,25 @@ async function main() {
             "--json",
             "number,body,url,author",
         ]),
-    );
-    const pendingDuplicate = pendingIssues.find((candidate) => {
-        if (String(candidate.number) === ISSUE_NUMBER) return false;
-        const parsed = parseSubmission(candidate.body);
-        return findCatalogDuplicate(
-            submission,
-            [
-                {
-                    name: parsed.name,
-                    url: parsed.appUrl,
-                    repositoryUrl: parsed.repoUrl,
-                    githubUserId: candidate.author?.id || "",
-                },
-            ],
-            githubUser.node_id || "",
-        );
+    ).map((candidate) => ({
+        number: candidate.number,
+        body: candidate.body,
+        url: candidate.url,
+        authorNodeId: candidate.author?.id,
+    }));
+    const errors = submissionErrors({
+        submission,
+        issueNumber: ISSUE_NUMBER,
+        author: { id: githubUser.id, nodeId: githubUser.node_id },
+        apps: readApps(),
+        openSubmissions,
+        questOpen: /^\d+$/.test(submission.quest)
+            ? isOpenQuest(submission.quest)
+            : false,
+        screenshot: submission.screenshotUrl
+            ? await checkScreenshot(submission.screenshotUrl)
+            : [],
     });
-    if (pendingDuplicate) {
-        errors.push(
-            `This app appears to duplicate open submission #${pendingDuplicate.number}: ${pendingDuplicate.url}`,
-        );
-    }
-
-    if (/^\d+$/.test(submission.quest) && !isOpenQuest(submission.quest)) {
-        errors.push(
-            `Quest #${submission.quest} is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.`,
-        );
-    }
 
     const approvedDate =
         process.env.APPROVED_DATE || new Date().toISOString().slice(0, 10);

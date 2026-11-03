@@ -1,5 +1,3 @@
-const { readApps } = require("../app.js");
-
 const CATEGORIES = new Set([
     "image",
     "video_audio",
@@ -177,11 +175,7 @@ function normalizeComparable(value) {
         .replace(/\/$/, "");
 }
 
-function findCatalogDuplicate(
-    submission,
-    apps = readApps(),
-    githubUserId = "",
-) {
+function findCatalogDuplicate(submission, apps, githubUserId = "") {
     const appUrl = normalizeComparable(submission.appUrl);
     const repoUrl = normalizeComparable(submission.repoUrl);
     const name = normalizeComparable(submission.name);
@@ -220,9 +214,108 @@ function buildApp(submission, metadata) {
     };
 }
 
+const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
+const SCREENSHOT_RULES = "PNG, JPEG, or WebP, at most 5 MB";
+
+async function downloadScreenshot(url) {
+    const response = await fetch(url, {
+        redirect: "follow",
+        signal: AbortSignal.timeout(20_000),
+    });
+    if (!response.ok)
+        throw new Error(`Screenshot download returned HTTP ${response.status}`);
+    return Buffer.from(await response.arrayBuffer());
+}
+
+// The image format from its first bytes, so the check needs no image library
+// and runs in a Worker as well as in Node.
+function imageFormat(buffer) {
+    const head = buffer.subarray(0, 12).toString("latin1");
+    if (head.startsWith("\x89PNG\r\n\x1a\n")) return "png";
+    if (head.startsWith("\xff\xd8\xff")) return "jpeg";
+    if (head.startsWith("RIFF") && head.slice(8, 12) === "WEBP") return "webp";
+    if (head.startsWith("GIF8")) return "gif";
+    return null;
+}
+
+async function screenshotErrors(buffer) {
+    if (buffer.length > MAX_SCREENSHOT_BYTES)
+        return [
+            `Screenshot is ${(buffer.length / 1024 / 1024).toFixed(1)} MB; it must be ${SCREENSHOT_RULES}.`,
+        ];
+    const format = imageFormat(buffer);
+    if (!format)
+        return [
+            `Screenshot is not a readable image; it must be ${SCREENSHOT_RULES}.`,
+        ];
+    if (format === "gif")
+        return [`Screenshot is gif; it must be ${SCREENSHOT_RULES}.`];
+    return [];
+}
+
+async function checkScreenshot(url) {
+    try {
+        return await screenshotErrors(await downloadScreenshot(url));
+    } catch {
+        return [
+            "Screenshot could not be downloaded; upload it again in the Screenshot field.",
+        ];
+    }
+}
+
+// Every reason a submission cannot go on, from facts its caller gathered: the
+// catalog, the other open submissions, whether its quest is open and its
+// screenshot's errors. No reads here, so the publish script and the agent
+// runner share one set of rules.
+function submissionErrors({
+    submission,
+    issueNumber,
+    author,
+    apps,
+    openSubmissions,
+    questOpen,
+    screenshot,
+}) {
+    const errors = [...validateSubmission(submission), ...screenshot];
+    const duplicate = findCatalogDuplicate(submission, apps, author.id);
+    if (duplicate)
+        errors.push(
+            `This app appears to already be listed as ${duplicate.name} in operations/app-management/app.json.`,
+        );
+    const pending = openSubmissions.find((candidate) => {
+        if (String(candidate.number) === String(issueNumber)) return false;
+        const parsed = parseSubmission(candidate.body);
+        return findCatalogDuplicate(
+            submission,
+            [
+                {
+                    name: parsed.name,
+                    url: parsed.appUrl,
+                    repositoryUrl: parsed.repoUrl,
+                    githubUserId: candidate.authorNodeId || "",
+                },
+            ],
+            author.nodeId || "",
+        );
+    });
+    if (pending)
+        errors.push(
+            `This app appears to duplicate open submission #${pending.number}: ${pending.url}`,
+        );
+    if (/^\d+$/.test(submission.quest) && !questOpen)
+        errors.push(
+            `Quest #${submission.quest} is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.`,
+        );
+    return errors;
+}
+
 module.exports = {
     buildApp,
+    checkScreenshot,
+    downloadScreenshot,
     findCatalogDuplicate,
     parseSubmission,
+    screenshotErrors,
+    submissionErrors,
     validateSubmission,
 };

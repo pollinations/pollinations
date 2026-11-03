@@ -29,15 +29,15 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Applications maintained in this repository
 - `operations/app-management/` — Community app catalog and automation
-- `operations/` — Internal dashboards, monitoring, economics, and infrastructure
-- `operations/social/` — Discord/Reddit/GitHub automation
+- `operations/` — Internal dashboards, monitoring, data sync, news, app management and infrastructure; folder map in `operations/README.md`
+- `operations/news/` — News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data
 - `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 
 ## API Gateway
 
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
-- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai/keys
+- Auth: `sk_` keys authenticate requests; `pk_` App Keys only identify an app (OAuth `client_id`) and get `401` as a key. Keys: https://enter.pollinations.ai/keys
 - Billing: Pollen credits ($1 ≈ 1 Pollen). API reference: `APIDOCS.md`; service operations: `.claude/skills/enter-services/SKILL.md`.
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
@@ -134,11 +134,11 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Economics Environment Safety
 
-- `operations/economics/web` local development must read Tinybird staging
+- `operations/dashboards/economics/web` local development must read Tinybird staging
   (`pollinations_enter_staging`) through
-  `operations/economics/secrets/web.dev.json`.
+  `operations/dashboards/economics/secrets/web.dev.json`.
 - Production Economics deployments read
-  `operations/economics/secrets/web.json`. Never decrypt that production file
+  `operations/dashboards/economics/secrets/web.json`. Never decrypt that production file
   directly into the local `.dev.vars` file.
 - After switching, merging, or rebasing an Economics branch, rerun
   `npm run decrypt-vars` before trusting the local dashboard. The generated
@@ -165,6 +165,9 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Maintain project skills in `.claude/skills/`. Expose them to Codex through
   relative directory links in `.agents/skills/`; keep command adapters as
   pointers to their maintained instructions, never copied workflows.
+- Skills from other repos (`grill-me`, `grilling`) stay unedited and pinned in
+  `skills-lock.json`; refresh them with `npx -y skills@1.7.2 add
+  mattpocock/skills --skill grill-me --skill grilling --agent claude-code --copy -y`.
 
 - Don't use `cd` in bash; use `cwd` parameter.
 - Don't create `.md` docs unless asked.
@@ -221,12 +224,12 @@ npx vitest run test/file.test.ts
 - After a correction, check whether existing guidance already covers it. Propose a narrow update for a repeated pattern or material safety failure; keep one-off product decisions in the relevant issue/PR. Replace superseded guidance instead of adding another rule.
 - Fix reported bugs and failing CI; use logs, errors, or failing tests as evidence.
 
-### Design Questions
+### Grill Plans Before Building
 
-- Before committing to a design, surface unresolved choices that could materially change the user outcome, scope, UX, constraints, or architecture. Ask even when the request is executable if the answer could improve it.
-- Investigate facts available in the codebase or documentation yourself. Ask the user about intent and tradeoffs. Prefer one consequential question at a time; group up to three only when their answers are independent. Give a recommendation and its tradeoff, while allowing another answer.
-- Use each answer to revise the design and subsequent questions. Stop when consequential choices are settled; handle routine, reversible details autonomously. Briefly reflect the resulting design before building.
-- Avoid repeating answered questions or asking for permission already given. Existing safety approval requirements still apply.
+- Use the `grilling` skill often (`.claude/skills/grilling/`; users start it with `/grill-me`). Grill every non-trivial feature, design, API or pricing change, quest, and any plan with open choices, even when the request already looks executable.
+- Look facts up yourself in the code, docs, issues and PRs; ask the user only about intent and tradeoffs. Ask every question that is unblocked now in one numbered round, each with your recommended answer, then let the answers shape the next round.
+- Keep working on parts that don't depend on the answers. Decide routine, reversible details yourself, and briefly restate the settled design before building.
+- Don't repeat answered questions or ask for permission already given. Existing approval and safety rules still apply.
 
 ## Compact Instructions
 
@@ -263,7 +266,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Project Manager
 
-A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/infrastructure/project-manager/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

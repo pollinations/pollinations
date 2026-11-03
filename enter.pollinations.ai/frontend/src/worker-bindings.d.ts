@@ -21,6 +21,8 @@ interface __BaseEnv_CloudflareBindings {
 	BETTER_AUTH_SECRET: string;
 	GITHUB_CLIENT_ID: string;
 	GITHUB_CLIENT_SECRET: string;
+	GOOGLE_CLIENT_ID: string;
+	GOOGLE_CLIENT_SECRET: string;
 	PLN_ENTER_TOKEN: string;
 	TINYBIRD_READ_TOKEN: string;
 	STRIPE_SECRET_KEY: string;
@@ -37,7 +39,7 @@ interface __BaseEnv_CloudflareBindings {
 	GITHUB_APP_PRIVATE_KEY: string;
 	GEN_BASE_URL: "http://localhost:8788" | "https://gen.pollinations.ai" | "https://staging.gen.pollinations.ai" | "https://dev.gen.pollinations.ai";
 	STAGING_ALLOWED_GITHUB_IDS?: "36901823,5099901,235942848,248917639,241978997,118118458,189873015";
-	STAGING_ALLOWED_EMAILS?: "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
+	STAGING_ALLOWED_EMAILS?: "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
 	USAGE_DEBUG_USER_ID?: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
 }
 declare namespace Cloudflare {
@@ -60,6 +62,8 @@ declare namespace Cloudflare {
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
+		GOOGLE_CLIENT_ID: string;
+		GOOGLE_CLIENT_SECRET: string;
 		PLN_ENTER_TOKEN: string;
 		TINYBIRD_READ_TOKEN: string;
 		STRIPE_SECRET_KEY: string;
@@ -94,6 +98,8 @@ declare namespace Cloudflare {
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
+		GOOGLE_CLIENT_ID: string;
+		GOOGLE_CLIENT_SECRET: string;
 		PLN_ENTER_TOKEN: string;
 		TINYBIRD_READ_TOKEN: string;
 		STRIPE_SECRET_KEY: string;
@@ -126,10 +132,12 @@ declare namespace Cloudflare {
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
 		STAGING_ALLOWED_GITHUB_IDS: "36901823,5099901,235942848,248917639,241978997,118118458,189873015";
-		STAGING_ALLOWED_EMAILS: "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
+		STAGING_ALLOWED_EMAILS: "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
+		GOOGLE_CLIENT_ID: string;
+		GOOGLE_CLIENT_SECRET: string;
 		PLN_ENTER_TOKEN: string;
 		TINYBIRD_READ_TOKEN: string;
 		STRIPE_SECRET_KEY: string;
@@ -165,6 +173,8 @@ declare namespace Cloudflare {
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
+		GOOGLE_CLIENT_ID: string;
+		GOOGLE_CLIENT_SECRET: string;
 		PLN_ENTER_TOKEN: string;
 		TINYBIRD_READ_TOKEN: string;
 		STRIPE_SECRET_KEY: string;
@@ -199,6 +209,8 @@ declare namespace Cloudflare {
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
+		GOOGLE_CLIENT_ID: string;
+		GOOGLE_CLIENT_SECRET: string;
 		PLN_ENTER_TOKEN: string;
 		TINYBIRD_READ_TOKEN: string;
 		STRIPE_SECRET_KEY: string;
@@ -221,5 +233,5 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "D1_EXPORT_TOKEN_SHA256" | "TINYBIRD_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "DASHSCOPE_API_KEY" | "GITHUB_APP_ID" | "GITHUB_APP_PRIVATE_KEY" | "GEN_BASE_URL" | "STAGING_ALLOWED_GITHUB_IDS" | "STAGING_ALLOWED_EMAILS" | "USAGE_DEBUG_USER_ID">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "D1_EXPORT_TOKEN_SHA256" | "TINYBIRD_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "DASHSCOPE_API_KEY" | "GITHUB_APP_ID" | "GITHUB_APP_PRIVATE_KEY" | "GEN_BASE_URL" | "STAGING_ALLOWED_GITHUB_IDS" | "STAGING_ALLOWED_EMAILS" | "USAGE_DEBUG_USER_ID">> {}
 }

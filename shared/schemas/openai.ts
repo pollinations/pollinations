@@ -1,7 +1,11 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { ModelHealthSchema } from "../registry/model-info.ts";
+import {
+    AGENT_FIELD_DESCRIPTIONS,
+    ModelHealthSchema,
+    ModelInfoSchema,
+} from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -206,15 +210,35 @@ const ChatCompletionRequestUserMessageSchema = z
     })
     .passthrough();
 
-const ChatCompletionMessageToolCallSchema = z.object({
-    id: z.string(),
-    type: z.literal("function"),
-    function: z.object({
-        name: z.string(),
-        arguments: z.string(),
-        thought_signature: z.string().optional(),
-    }),
-});
+const ChatCompletionMessageToolCallSchema = z
+    .object({
+        id: z.string(),
+        type: z.literal("function"),
+        function: z.object({
+            name: z.string(),
+            arguments: z.string(),
+            thought_signature: z.string().optional(),
+        }),
+        // Google's OpenAI-compatible field for the same Gemini signature.
+        // Malformed values are dropped so they never fail a request or a
+        // provider response parsed with this schema.
+        extra_content: z
+            .object({
+                google: z
+                    .object({ thought_signature: z.string().optional() })
+                    .optional(),
+            })
+            .nullish()
+            .catch(undefined),
+    })
+    .transform(({ extra_content, ...call }) => {
+        const thought_signature =
+            call.function.thought_signature ??
+            extra_content?.google?.thought_signature;
+        return thought_signature
+            ? { ...call, function: { ...call.function, thought_signature } }
+            : call;
+    });
 
 const ChatCompletionMessageToolCallsSchema = z.array(
     ChatCompletionMessageToolCallSchema,
@@ -306,6 +330,15 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
+const ChatOutputTokenLimitSchema = z
+    .number()
+    .int()
+    .min(0)
+    .nullish()
+    .describe(
+        "Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort.",
+    );
+
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -341,7 +374,8 @@ export const CreateChatCompletionRequestSchema = z
             .default(null),
         logprobs: z.boolean().nullable().optional(),
         top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
-        max_tokens: z.number().int().min(0).nullable().optional(),
+        max_tokens: ChatOutputTokenLimitSchema,
+        max_completion_tokens: ChatOutputTokenLimitSchema,
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
         seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
@@ -432,7 +466,14 @@ export const CreateResponseRequestSchema = z
         input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
-        max_output_tokens: z.number().int().positive().nullish(),
+        max_output_tokens: z
+            .number()
+            .int()
+            .positive()
+            .nullish()
+            .describe(
+                "Maximum generated tokens, including reasoning. For models served through Chat Completions, non-streaming requests that exhaust an explicit limit without an answer return 400 output_token_limit_exceeded; reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. Native Responses models can instead return status incomplete with reason max_output_tokens.",
+            ),
         max_tool_calls: z.number().int().positive().nullish(),
         stream: z.boolean().optional().default(false),
         stream_options: z
@@ -582,6 +623,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
 
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullish(),
+    refusal: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z
@@ -759,14 +801,21 @@ export const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
-        agent: z.boolean().optional(),
-        base_model: z.string().optional(),
+        agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+        base_model: z
+            .string()
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
         paid_only: z
             .boolean()
             .describe(
                 "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
             ),
-        pricing: z.record(z.string(), z.string()).optional(),
+        pricing: z
+            .record(z.string(), z.string())
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
+        pricing_units: ModelInfoSchema.shape.pricing_units,
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())
@@ -810,6 +859,15 @@ const imageModelField = z
     .default("black-forest-labs/flux.1-schnell")
     .meta({
         description: "The model to use for image generation",
+    });
+// Edits need a model that reads the source image; schnell is text-only.
+const imageEditModelField = z
+    .string()
+    .optional()
+    .default("openai/gpt-image-1-mini")
+    .meta({
+        description:
+            "The model to use for image editing. It must list image in input_modalities.",
     });
 const imageNField = z
     .number()
@@ -952,7 +1010,7 @@ export const CreateImageEditRequestSchema = z
                 description:
                     "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
             }),
-        model: imageModelField,
+        model: imageEditModelField,
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,

@@ -2,12 +2,21 @@ import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    communityEndpointPriceFieldsForModality,
+    communityEndpointPrices,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     parseListingPayload,
+    staticFallbackRejection,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    type ModelName,
+} from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 import { deriveCreateProxyPolicy } from "../../src/routes/community-endpoints/proxy-policy.ts";
 import { test } from "../fixtures.ts";
 
@@ -57,6 +66,20 @@ async function publishPendingModel(
 }
 
 describe("community endpoint configuration policy", () => {
+    test("lists no models for an account without GitHub", async ({
+        accountToken,
+    }) => {
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubId: null, githubUsername: null });
+
+        const response = await SELF.fetch(endpointUrl, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({ data: [] });
+    });
+
     test("creates, reads and edits endpoint-agent modalities without losing unrelated settings", async ({
         accountToken,
     }) => {
@@ -281,6 +304,81 @@ describe("community endpoint configuration policy", () => {
         expect(publicAgent.status).toBe(403);
     });
 
+    test("identifies invalid agent creation fields", async ({
+        accountToken,
+    }) => {
+        const prompt = {
+            name: "validation-agent",
+            title: "Validation agent",
+            systemPrompt: "Answer briefly.",
+            baseModel: "openai",
+        };
+        for (const [body, field] of [
+            [{ ...prompt, mcpServers: ["not-a-server"] }, "mcpServers"],
+            [
+                {
+                    ...prompt,
+                    type: "prompt_agent",
+                    mcpServers: ["not-a-server"],
+                },
+                "mcpServers",
+            ],
+            [{ ...prompt, name: "invalid name" }, "name"],
+            [{ ...prompt, title: "" }, "title"],
+            [{ ...prompt, baseModel: 42 }, "baseModel"],
+            [{ type: "code_agent" }, "repository"],
+            [{ ...prompt, type: "unknown" }, "type"],
+            [{ ...prompt, type: null }, "type"],
+        ] as const) {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/agents",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accountToken}`,
+                    },
+                    body: JSON.stringify(body),
+                },
+            );
+            expect(response.status).toBe(400);
+            const result = await response.json<{
+                error: {
+                    details: {
+                        formErrors: string[];
+                        fieldErrors: Record<string, string[]>;
+                    };
+                };
+            }>();
+            expect(result.error.details.formErrors).toEqual([]);
+            expect(
+                result.error.details.fieldErrors[field]?.length,
+            ).toBeGreaterThan(0);
+        }
+    });
+
+    test("accepts an explicit prompt agent type", async ({ accountToken }) => {
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/agents",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify({
+                    type: "prompt_agent",
+                    name: "explicit-prompt-agent",
+                    title: "Explicit prompt agent",
+                    systemPrompt: "Answer briefly.",
+                    baseModel: "openai",
+                }),
+            },
+        );
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(await response.json()).toMatchObject({ type: "prompt_agent" });
+    });
+
     test("accepts descriptions up to the limit and names it when rejecting", async ({
         accountToken,
     }) => {
@@ -314,6 +412,138 @@ describe("community endpoint configuration policy", () => {
         expect(await rejected.text()).toContain(
             `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
         );
+    });
+
+    test("bounds each account's share of the community catalog", async ({
+        accountToken,
+    }) => {
+        const create = (url: string, body: Record<string, unknown>) =>
+            SELF.fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify(body),
+            });
+        const model = {
+            name: "token-limit",
+            title: "Token limit",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+        };
+        const oversized = await create(endpointUrl, {
+            ...model,
+            bearerToken: "t".repeat(4097),
+        });
+        expect(oversized.status).toBe(400);
+
+        await env.DB.prepare(
+            `INSERT INTO community_endpoint (id, owner_user_id, name, title, base_url, upstream_model)
+             WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 99)
+             SELECT 'filler-' || i, (SELECT id FROM user WHERE github_username = 'testuser'),
+                    'filler-' || i, 'Filler', 'https://text.example.com/v1', 'filler'
+             FROM n`,
+        ).run();
+        const hundredth = await create(endpointUrl, {
+            ...model,
+            bearerToken: "t".repeat(4096),
+        });
+        expect(hundredth.status, await hundredth.clone().text()).toBe(200);
+
+        const overLimit = [
+            await create(`${endpointUrl}/endpoint-agents`, {
+                name: "one-too-many",
+                title: "One too many",
+                api: "responses",
+                url: "https://agent.example.com/v1/responses",
+            }),
+            await create("http://localhost:3000/api/account/agents", {
+                name: "one-too-many",
+                title: "One too many",
+                systemPrompt: "Answer briefly.",
+                baseModel: "openai",
+            }),
+        ];
+        for (const response of overLimit) {
+            expect(response.status).toBe(400);
+            expect(await response.text()).toContain(
+                "at most 100 community models and agents",
+            );
+        }
+    });
+
+    test("rejects an agent baseModel Gen cannot call", async ({
+        accountToken,
+    }) => {
+        const request = (method: string, path: string, body: object) =>
+            SELF.fetch(`http://localhost:3000/api/account/agents${path}`, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify(body),
+            });
+        const agent = {
+            name: "base-model-agent",
+            title: "Base model",
+            systemPrompt: "Answer briefly.",
+        };
+
+        for (const baseModel of ["no-such/model-xyz", "flux"]) {
+            const rejected = await request("POST", "", {
+                ...agent,
+                baseModel,
+            });
+            expect(rejected.status).toBe(400);
+            expect(await rejected.text()).toContain(
+                `baseModel \\"${baseModel}\\" is not a callable text model`,
+            );
+        }
+
+        const created = await request("POST", "", {
+            ...agent,
+            baseModel: "openai",
+        });
+        expect(created.status, await created.clone().text()).toBe(200);
+        const { id } = await created.json<{ id: string }>();
+
+        const renamed = await request("PATCH", `/${id}`, { title: "Renamed" });
+        expect(renamed.status, await renamed.clone().text()).toBe(200);
+        const retargeted = await request("PATCH", `/${id}`, {
+            baseModel: "no-such/model-xyz",
+        });
+        expect(retargeted.status).toBe(400);
+    });
+
+    test("names the field when an agent update is invalid", async ({
+        accountToken,
+    }) => {
+        const request = (method: string, path: string, body: object) =>
+            SELF.fetch(`http://localhost:3000/api/account/agents${path}`, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify(body),
+            });
+        const created = await request("POST", "", {
+            name: "field-error-agent",
+            title: "Field error",
+            systemPrompt: "Answer briefly.",
+            baseModel: "openai",
+        });
+        expect(created.status, await created.clone().text()).toBe(200);
+        const { id } = await created.json<{ id: string }>();
+
+        const rejected = await request("PATCH", `/${id}`, {
+            mcpServers: ["pollinations", "not-a-server"],
+        });
+        expect(rejected.status).toBe(400);
+        const body = await rejected.json<{ error: { message: string } }>();
+        expect(body.error.message).toMatch(/^mcpServers(\.\d+)?: /);
     });
 
     test("preserves validation error precedence", () => {
@@ -476,6 +706,80 @@ describe("community endpoint configuration policy", () => {
         expect(candidates.data).not.toContain(primary.modelId as string);
     });
 
+    test("accepts a Pollinations model as a fallback only when it costs no more", async ({
+        accountToken,
+    }) => {
+        await approveCommunityModels();
+        const textPrices = Object.fromEntries(
+            communityEndpointPriceFieldsForModality("text").map((field) => [
+                field.key,
+                MAX_COMMUNITY_PRICE_PER_TOKEN,
+            ]),
+        );
+        const cheaperPrices = { promptTextPrice: 0.000001 };
+        const rejectionAt = (
+            prices: Record<string, number>,
+            modelId: ModelName,
+        ) =>
+            staticFallbackRejection(
+                {
+                    modality: "text",
+                    imagePricing: "request",
+                    paidOnly: false,
+                    prices: communityEndpointPrices(prices),
+                },
+                getRegistryModelDefinition(modelId),
+            );
+        // Picked with the shared rule, so no catalog id is hardcoded.
+        const target = getModels().find(
+            (modelId) =>
+                !rejectionAt(textPrices, modelId) &&
+                rejectionAt(cheaperPrices, modelId),
+        );
+        expect(target).toBeDefined();
+        const primary = await postModel(accountToken, "", {
+            name: "primary-with-static-fallback",
+            title: "Primary with a Pollinations fallback",
+            visibility: "public",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "test-provider-token",
+            ...textPrices,
+            fallbacks: [target],
+        });
+        const published = await publishPendingModel(
+            accountToken,
+            primary.id as string,
+        );
+        expect(published.fallbacks).toEqual([target]);
+        const response = await SELF.fetch(
+            `${endpointUrl}/${primary.id as string}/fallback-candidates`,
+            { headers: { Authorization: `Bearer ${accountToken}` } },
+        );
+        const candidates = await response.json<{ data: string[] }>();
+        expect(candidates.data).toContain(target);
+
+        const cheaper = await SELF.fetch(endpointUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            },
+            body: JSON.stringify({
+                name: "cheaper-than-static",
+                title: "Cheaper than its fallback",
+                visibility: "public",
+                api: "chat_completions",
+                url: "https://text.example.com/v1/chat/completions",
+                bearerToken: "test-provider-token",
+                ...cheaperPrices,
+                fallbacks: [target],
+            }),
+        });
+        expect(cheaper.status).toBe(400);
+        expect(await cheaper.text()).toContain("costs more than this model");
+    });
+
     test("clears advertised metadata without rewriting payload for listing-only changes", async ({
         accountToken,
     }) => {
@@ -515,5 +819,180 @@ describe("community endpoint configuration policy", () => {
             where: eq(schema.communityEndpoint.id, created.id as string),
         });
         expect(after?.payload).toBe(before?.payload);
+    });
+
+    test("tests a saved model with its stored token and reports its health", async ({
+        accountToken,
+        mocks,
+    }) => {
+        const created = await postModel(accountToken, "", {
+            name: "health-check",
+            title: "Health check",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "saved-provider-token",
+            upstreamModel: "upstream-model",
+            modality: "text",
+        });
+        const id = created.id as string;
+
+        const upstreamCalls: RequestInit[] = [];
+        const mockedFetch = globalThis.fetch;
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = input instanceof Request ? input.url : input;
+                if (new URL(url).host !== "text.example.com") {
+                    return mockedFetch(input, init);
+                }
+                upstreamCalls.push(init ?? {});
+                return Promise.resolve(
+                    Response.json({
+                        choices: [{ message: { content: "OK" } }],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    }),
+                );
+            },
+        );
+        const tested = await postModel(accountToken, `/${id}/test`, {});
+        vi.unstubAllGlobals();
+        expect(tested).toMatchObject({ ok: true, streaming: false });
+        expect(
+            new Headers(upstreamCalls[0]?.headers).get("Authorization"),
+        ).toBe("Bearer saved-provider-token");
+        expect(JSON.parse(String(upstreamCalls[0]?.body))).toMatchObject({
+            model: "upstream-model",
+        });
+
+        await mocks.enable("tinybird");
+        const daysAgo = (days: number) =>
+            new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+        const row = {
+            status: 0,
+            code: "",
+            host: "",
+            counted: 0,
+            from_pollinations: 0,
+            from_owner: 0,
+            message: "",
+        };
+        mocks.tinybird.state.modelHealthResponse = [
+            {
+                ...row,
+                day: daysAgo(0),
+                failure_group: 0,
+                succeeded: 15,
+                failed: 4,
+                last_at: "2026-10-15 17:06:15",
+            },
+            {
+                ...row,
+                day: "1970-01-01",
+                failure_group: 1,
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                succeeded: 0,
+                failed: 4,
+                counted: 1,
+                from_pollinations: 2,
+                last_at: "2026-10-15 17:06:15",
+                message: "402 Payment Required",
+            },
+        ];
+        const health = await SELF.fetch(`${endpointUrl}/${id}/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(health.status).toBe(200);
+        const body = (await health.json()) as {
+            days: { day: string; succeeded: number; failed: number }[];
+            failures: unknown[];
+            runs: unknown[];
+        };
+        expect(body.runs).toEqual([]);
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            model: created.modelId,
+        });
+        expect(body.days.map((day) => day.day)).toEqual(
+            [6, 5, 4, 3, 2, 1, 0].map(daysAgo),
+        );
+        expect(body.days.at(-1)).toEqual({
+            day: daysAgo(0),
+            succeeded: 15,
+            failed: 4,
+        });
+        expect(body.days[0]).toMatchObject({ succeeded: 0, failed: 0 });
+        expect(body.failures).toEqual([
+            {
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                failures: 4,
+                counted: 1,
+                fromPollinations: 2,
+                fromOwner: 0,
+                lastAt: "2026-10-15T17:06:15.000Z",
+                message: "402 Payment Required",
+            },
+        ]);
+
+        const missing = await SELF.fetch(`${endpointUrl}/missing/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(missing.status).toBe(404);
+    });
+
+    test("adds the owner's own runs to an agent's health", async ({
+        accountToken,
+        mocks,
+    }) => {
+        const created = await postModel(accountToken, "/endpoint-agents", {
+            name: "runs-agent",
+            title: "Runs agent",
+            api: "responses",
+            url: "https://agent.example.com/v1/responses",
+        });
+        await mocks.enable("tinybird");
+        mocks.tinybird.state.modelRunsResponse = [
+            {
+                run_id: "run-1",
+                started_at: "2026-10-16 08:45:15",
+                status: 502,
+                duration_ms: 4000,
+                key_name: "undefined",
+                cost: 0.0021,
+                model_calls: 2,
+                tool_calls: 1,
+                failed_calls: 1,
+                error: "MCP server computer failed",
+            },
+        ];
+        const health = await SELF.fetch(`${endpointUrl}/${created.id}/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(health.status).toBe(200);
+        expect(((await health.json()) as { runs: unknown[] }).runs).toEqual([
+            {
+                id: "run-1",
+                startedAt: "2026-10-16T08:45:15.000Z",
+                status: 502,
+                durationMs: 4000,
+                keyName: "",
+                cost: 0.0021,
+                modelCalls: 2,
+                toolCalls: 1,
+                failedCalls: 1,
+                error: "MCP server computer failed",
+            },
+        ]);
+        const runsCall = mocks.tinybird.state.pipeCalls.find((call) =>
+            call.url.includes("my_model_runs"),
+        );
+        expect(runsCall?.query).toMatchObject({ model: created.modelId });
+        expect(runsCall?.query.owner_user_id).toBeTruthy();
     });
 });

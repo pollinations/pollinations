@@ -37,6 +37,9 @@ function successResponse(): Response {
 }
 
 beforeEach(() => {
+    // The Workers env fills process.env as in production. These tests cover
+    // the provider call alone, so Content Safety stays unconfigured.
+    vi.stubEnv("AZURE_CONTENT_SAFETY_ENDPOINT", "");
     syncImageEnv(
         { INFERENCEPORT_API_KEY: "test-ip-key" } as CloudflareBindings,
         ["INFERENCEPORT_API_KEY"],
@@ -45,6 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
 });
 
 describe("callInferencePortImage", () => {

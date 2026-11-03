@@ -227,6 +227,75 @@ describe("Device Authorization Flow", () => {
         expect(body.error).toBe("authorization_pending");
     });
 
+    test("malformed token bodies return 400 invalid_request, never 500 or SQL", async () => {
+        const bodies = [
+            "not json",
+            JSON.stringify({ device_code: { a: 1 } }),
+            JSON.stringify({ device_code: 123 }),
+            "null",
+            "[]",
+            "false",
+        ];
+        for (const body of bodies) {
+            const res = await SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body,
+            });
+            const text = await res.text();
+            expect(res.status).toBe(400);
+            expect(text).not.toContain("Failed query");
+            const parsed = JSON.parse(text) as { error: string };
+            expect(parsed.error).toBe("invalid_request");
+        }
+    });
+
+    test("POST /api/device/token accepts form-encoded device codes", async () => {
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ device_code: device.deviceCode }),
+        });
+        const body = (await res.json()) as { error: string };
+        expect(res.status).toBe(400);
+        expect(body.error).toBe("authorization_pending");
+    });
+
+    test("POST /api/device/code with a JSON null body still issues a code", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { device_code: string };
+        expect(body.device_code).toBeTruthy();
+    });
+
+    test("malformed deny bodies return 400, never 500", async ({
+        sessionToken,
+    }) => {
+        const bodies = [
+            "not json",
+            JSON.stringify({ userCode: { a: 1 } }),
+            "null",
+        ];
+        for (const body of bodies) {
+            const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body,
+            });
+            const text = await res.text();
+            expect(res.status).toBe(400);
+            expect(text).not.toContain("Failed query");
+        }
+    });
+
     test("POST /api/device/approve without auth returns 401", async () => {
         const res = await SELF.fetch(`${BASE}/api/device/approve`, {
             method: "POST",

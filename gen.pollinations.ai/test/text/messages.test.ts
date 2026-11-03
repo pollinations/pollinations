@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -15,6 +16,7 @@ import {
     messagesToChatRequest,
     toolUseInput,
 } from "@/text/messages/translate.ts";
+import { responsesToChatCompletion } from "@/text/responses/chatResponse.ts";
 import worker from "../../src/index.ts";
 import { createMessagesRoutes } from "../../src/routes/messages.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
@@ -242,6 +244,96 @@ describe("Messages request translation", () => {
         });
     });
 
+    it("accepts tool search results and mid-conversation tool changes", () => {
+        const tool = (name: string, extra = {}) => ({
+            name,
+            input_schema: { type: "object" },
+            ...extra,
+        });
+        const chat = messagesToChatRequest(
+            request({
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "tool_result",
+                                tool_use_id: "toolu_1",
+                                content: [
+                                    {
+                                        type: "tool_reference",
+                                        tool_name: "TaskStop",
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        // Claude Code 2.1.306 after /compact
+                        role: "system",
+                        content: [
+                            { type: "text", text: "Tools changed." },
+                            {
+                                type: "tool_addition",
+                                tool: {
+                                    type: "tool_definition",
+                                    definition: tool("Artifact"),
+                                },
+                            },
+                            {
+                                type: "tool_addition",
+                                tool: {
+                                    type: "tool_definition",
+                                    definition: tool("Read", {
+                                        description: "Read v2",
+                                    }),
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        role: "system",
+                        content: [
+                            {
+                                type: "tool_removal",
+                                tool: { type: "tool_reference", name: "Read" },
+                            },
+                        ],
+                    },
+                ],
+                tools: [
+                    tool("Read", { description: "Read v1" }),
+                    tool("TaskStop", { defer_loading: true }),
+                ],
+            }),
+        );
+        expect(chat.messages).toEqual([
+            {
+                role: "tool",
+                tool_call_id: "toolu_1",
+                content: [{ type: "text", text: "Tool loaded: TaskStop" }],
+            },
+            {
+                role: "system",
+                content: [{ type: "text", text: "Tools changed." }],
+            },
+        ]);
+        expect(chat.tools).toEqual(
+            [
+                ["Read", "Read v2"],
+                ["TaskStop", undefined],
+                ["Artifact", undefined],
+            ].map(([name, description]) => ({
+                type: "function",
+                function: {
+                    name,
+                    ...(description && { description }),
+                    parameters: { type: "object" },
+                },
+            })),
+        );
+    });
+
     it("sends documents as Chat file and text parts, also from tool results", () => {
         const pdf = {
             type: "document",
@@ -352,6 +444,17 @@ describe("Messages request translation", () => {
         },
     );
 
+    it("raises Claude Code's 1-token model check to the 16 every provider accepts", () => {
+        expect(
+            messagesToChatRequest(
+                request({
+                    max_tokens: 1,
+                    messages: [{ role: "user", content: "Hi" }],
+                }),
+            ).max_tokens,
+        ).toBe(16);
+    });
+
     it("rejects server tools with the tag Claude Code recognizes", () => {
         expect(() =>
             messagesToChatRequest(
@@ -456,6 +559,56 @@ describe("Messages response translation", () => {
             { type: "text", text: "Partial" },
         ]);
         expect(message.stop_reason).toBe("max_tokens");
+    });
+
+    it("round-trips a Gemini tool-call signature in an empty thinking block", () => {
+        const call = (id: string, thought_signature?: string) => ({
+            id,
+            type: "function" as const,
+            function: { name: "Read", arguments: "{}", thought_signature },
+        });
+        const message = chatToMessagesResponse(
+            {
+                id: "chatcmpl_3",
+                object: "chat.completion",
+                created: 1,
+                choices: [
+                    {
+                        finish_reason: "tool_calls",
+                        message: {
+                            role: "assistant",
+                            content: null,
+                            tool_calls: [
+                                call("call_a", "AY8/+="),
+                                call("call_b"),
+                            ],
+                        },
+                    },
+                ],
+                usage,
+            },
+            model,
+        );
+        expect(message.content).toEqual([
+            { type: "thinking", thinking: "", signature: "gemini:AY8/+=" },
+            { type: "tool_use", id: "call_a", name: "Read", input: {} },
+            { type: "tool_use", id: "call_b", name: "Read", input: {} },
+        ]);
+        // Clients replay the thinking block; Gemini wants the signature back
+        // on the first call and rejects the call without it.
+        const chat = messagesToChatRequest(
+            request({
+                messages: [
+                    { role: "user", content: "Read both." },
+                    { role: "assistant", content: message.content },
+                ],
+            }),
+        );
+        expect(chat.messages[1]).toEqual({
+            role: "assistant",
+            content: null,
+            tool_calls: [call("call_a", "AY8/+="), call("call_b")],
+        });
     });
 });
 
@@ -624,6 +777,76 @@ describe("Messages stream translation", () => {
         expect(events.at(-2)).toMatchObject({
             delta: { stop_reason: "tool_use" },
         });
+    });
+
+    it("streams a Gemini tool-call signature in a thinking block", async () => {
+        const events = await translateStream([
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "call_a",
+                                    function: { name: "Read", arguments: "{}" },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            // The signature may arrive in a later chunk than the call.
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    function: { thought_signature: "AY8/+=" },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            { choices: [{ delta: {}, finish_reason: "stop" }], usage },
+            "[DONE]",
+        ]);
+        expect(events.slice(1, -2)).toEqual([
+            {
+                type: "content_block_start",
+                index: 0,
+                content_block: {
+                    type: "thinking",
+                    thinking: "",
+                    signature: "",
+                },
+            },
+            {
+                type: "content_block_delta",
+                index: 0,
+                delta: { type: "signature_delta", signature: "gemini:AY8/+=" },
+            },
+            { type: "content_block_stop", index: 0 },
+            {
+                type: "content_block_start",
+                index: 1,
+                content_block: {
+                    type: "tool_use",
+                    id: "call_a",
+                    name: "Read",
+                    input: {},
+                },
+            },
+            {
+                type: "content_block_delta",
+                index: 1,
+                delta: { type: "input_json_delta", partial_json: "{}" },
+            },
+            { type: "content_block_stop", index: 1 },
+        ]);
     });
 
     it.each([
@@ -975,6 +1198,46 @@ describe("POST /v1/messages", () => {
         },
     );
 
+    // Claude Code switches off the feature that sent a block when the
+    // rejection names the block's tag the way Anthropic does.
+    it.each([
+        {
+            name: "a message",
+            content: [{ type: "tool_future", tool: {} }],
+            prefix: "messages.0.content.0: Input tag 'tool_future' found using 'type' does not match any of the expected tags: 'text', ",
+        },
+        {
+            name: "a tool result",
+            content: [
+                {
+                    type: "tool_result",
+                    tool_use_id: "toolu_1",
+                    content: [{ type: "search_result" }],
+                },
+            ],
+            prefix: "messages.0.content.0.content.0: Input tag 'search_result' found using 'type' does not match any of the expected tags: 'text', ",
+        },
+    ])(
+        "names an unknown block type in $name the way Anthropic does",
+        async ({ content, prefix }) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const { response, text } = await call(
+                "/v1/messages",
+                {
+                    model,
+                    max_tokens: 256,
+                    messages: [{ role: "user", content }],
+                },
+                caller.key,
+            );
+            expect(response.status, text).toBe(400);
+            const { message } = JSON.parse(text).error;
+            expect(message.startsWith(prefix), message).toBe(true);
+        },
+    );
+
     it.each([
         { name: "malformed JSON", body: "{", status: 400 },
         {
@@ -1042,6 +1305,69 @@ describe("POST /v1/messages", () => {
         ]);
     });
 
+    it("replaces the oldest images over the model's limit, tool results included", async () => {
+        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        const { providerBodies } = mockUpstream();
+        const limit = TEXT_SERVICES[model].maxReferenceImages as number;
+        const image = (n: number) => ({
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data: `${n}` },
+        });
+        // Claude Code opens screenshots with its Read tool, then one is pasted.
+        const reads = Array.from({ length: limit + 1 }, (_, n) => [
+            {
+                role: "assistant",
+                content: [
+                    {
+                        type: "tool_use",
+                        id: `toolu_${n}`,
+                        name: "Read",
+                        input: { file_path: `shot${n}.png` },
+                    },
+                ],
+            },
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "tool_result",
+                        tool_use_id: `toolu_${n}`,
+                        content: [image(n)],
+                    },
+                ],
+            },
+        ]).flat();
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 32,
+                messages: [
+                    ...reads,
+                    {
+                        role: "user",
+                        content: [
+                            image(limit + 1),
+                            { type: "text", text: "Compare them." },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        // The two oldest become notes; the newest `limit` stay, in order.
+        const sent = JSON.stringify(providerBodies[0].messages);
+        const note = `[image omitted: over the ${limit}-image limit]`;
+        expect(sent.split(note)).toHaveLength(3);
+        expect(sent.match(/data:image\/png;base64,\d+/g)).toEqual(
+            Array.from(
+                { length: limit },
+                (_, n) => `data:image/png;base64,${n + 2}`,
+            ),
+        );
+    });
+
     it("preserves thinking signatures through response validation", async () => {
         const caller = await createTestApiKey({ user: { tierBalance: 100 } });
         mockUpstream({ withThinking: true });
@@ -1082,6 +1408,58 @@ describe("POST /v1/messages", () => {
         expect(text).toContain("top up");
         expect(providerBodies).toEqual([]);
         expect(events.filter((event) => event.isBilledUsage)).toEqual([]);
+    });
+
+    it("preserves provider refusal text in the Messages response", async () => {
+        // Refusal-only Responses output is valid; Messages clients display it
+        // as assistant text rather than a separate refusal field.
+        const completion = responsesToChatCompletion(
+            {
+                id: "resp_refusal",
+                status: "completed",
+                output: [
+                    {
+                        type: "message",
+                        role: "assistant",
+                        content: [
+                            {
+                                type: "refusal",
+                                refusal: "I cannot fulfill this request.",
+                            },
+                        ],
+                    },
+                ],
+                usage: { input_tokens: 10, output_tokens: 7, total_tokens: 17 },
+            },
+            model,
+            new URL("https://api.openai.com/v1/responses"),
+        );
+        const routes = createMessagesRoutes(() => Response.json(completion));
+        const response = await routes.request(
+            "https://gen.pollinations.ai/v1/messages",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model,
+                    max_tokens: 32,
+                    messages: [
+                        {
+                            role: "user",
+                            content: "A request the provider declines",
+                        },
+                    ],
+                }),
+            },
+            env,
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            role: "assistant",
+            content: [{ type: "text", text: "I cannot fulfill this request." }],
+            stop_reason: "end_turn",
+            usage: { input_tokens: 10, output_tokens: 7 },
+        });
     });
 
     it("preserves rate-limit status and Retry-After", async () => {

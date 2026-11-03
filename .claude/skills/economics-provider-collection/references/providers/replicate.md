@@ -84,6 +84,11 @@ Seedance 2.0 pricing witness:
 
 Known traps:
 
+- `modelLabels` can map one Replicate slug to several Pollen IDs, but the
+  vendor ledger's `model` column accepts one string. For a SKU-specific line,
+  use its exact reviewed canonical model ID when the billed tier identifies
+  one; never serialize the registry's array into a ledger row. Preserve the
+  original provider slug and SKU in `resource_name` and `resource_sku`.
 - Replicate has no public invoice export API and no per-model spend API. Monthly cash evidence must come from invoices, receipts, Wise/card records, or the billing UI.
 - The predictions API is operational evidence, not a billing ledger. It is useful for finding models, statuses, sources, and recent runs, but it may not be enough to reconstruct a closed month.
 - The predictions API returns 100 records per page. Do not rely on older `prediction_count` examples to limit page size.
@@ -98,3 +103,9 @@ Known traps:
   balance. Keep that usage in `paid`; it is not a promotional provider credit.
 - The billing overview can lag the open invoice; use the downloaded JSON total
   and retain its draft/final status and observation time.
+- At the start of the next month, the completed calendar month's invoice may
+  still say `In progress` and its JSON may say `DRAFT`. Download that original
+  JSON during the first visit and record its status; revisit when finalized.
+  Download every separate credit-purchase invoice PDF and receipt from the
+  billing page or Myceli mailbox. Those purchases are funding evidence, not
+  the month's model usage.

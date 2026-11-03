@@ -37,6 +37,43 @@ test("parseApiError displays staging access restriction 403 message unchanged", 
     );
 });
 
+test("429 errors preserve the gateway cooldown retry duration", () => {
+    const errorJson = JSON.stringify({
+        error: "Rate limit exceeded",
+        message:
+            "Rate limit exceeded. Retry after 37.5s. Use secret keys (sk_*) for unlimited requests.",
+        retryAfterSeconds: 37.5,
+    });
+    const message = parseApiError(429, errorJson);
+    assert.equal(
+        message,
+        "Rate limit exceeded. Retry after 37.5s. Use secret keys (sk_*) for unlimited requests.",
+    );
+});
+
+test("parseApiError displays gateway 402 error message unchanged", () => {
+    const errorJson = JSON.stringify({
+        error: {
+            message:
+                "API key budget too low. This request costs ~0.0100 pollen, but this key has 0.0000. Increase the key budget at https://enter.pollinations.ai/edit-key?id=test-key-123; topping up the wallet does not increase this limit.",
+            code: "KEY_BUDGET_EXHAUSTED",
+        },
+    });
+    const message = parseApiError(402, errorJson);
+    assert.equal(
+        message,
+        "API key budget too low. This request costs ~0.0100 pollen, but this key has 0.0000. Increase the key budget at https://enter.pollinations.ai/edit-key?id=test-key-123; topping up the wallet does not increase this limit.",
+    );
+});
+
+test("parseApiError provides generic fallback when 402 body has no details", () => {
+    const message = parseApiError(402, "");
+    assert.equal(
+        message,
+        "Insufficient pollen balance or API key budget exhausted.",
+    );
+});
+
 test("parseApiError provides generic fallback when 403 body has no details", () => {
     const message = parseApiError(403, "");
     assert.equal(

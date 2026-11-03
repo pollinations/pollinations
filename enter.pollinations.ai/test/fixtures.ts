@@ -15,6 +15,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
 import { createMockDiscord } from "./mocks/discord.ts";
 import { createMockGithub } from "./mocks/github.ts";
+import { createMockGoogle } from "./mocks/google.ts";
 import { createMockStripe } from "./mocks/stripe.ts";
 
 const createAuthClientInstance = () =>
@@ -31,6 +32,7 @@ const createMocks = () => ({
     tinybird: createMockTinybird(),
     discord: createMockDiscord(),
     github: createMockGithub(),
+    google: createMockGoogle(),
     stripe: createMockStripe(),
 });
 

@@ -11,6 +11,7 @@ import {
     Dropdown,
     DropdownItem,
     ExpandIcon,
+    formatCount,
     ImageIcon,
     McpIcon,
     MicIcon,
@@ -85,16 +86,12 @@ export const formatPriceLine = ({
     };
 };
 
-const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
-
 const formatAdjustmentUnit = ({
     kind,
     quantity,
     unit,
 }: Pick<ModelPriceAdjustment, "kind" | "quantity" | "unit">): string => {
-    const quantityLabel = compactNumber
-        .format(quantity)
-        .replace(/^1(?=[A-Z])/, "");
+    const quantityLabel = formatCount(quantity).replace(/^1(?=[A-Z])/, "");
     if (kind === "search_request") {
         return quantity === 1 ? "req" : `${quantityLabel} req`;
     }
@@ -349,7 +346,7 @@ const ModelPricingControls: FC<{
                                         type="button"
                                         size="xs"
                                         intent="neutral"
-                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` — ${modelName}` : ""}`}
+                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` (${modelName})` : ""}`}
                                         className="polli:w-full polli:min-w-0 polli:justify-between polli:gap-1 polli:px-1 polli:py-0 polli:text-xs polli:tabular-nums"
                                     >
                                         <span className="truncate">

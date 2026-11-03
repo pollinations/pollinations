@@ -3,6 +3,7 @@ import {
     isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
+    staticFallbackRejection,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -286,12 +287,7 @@ function isUsableCommunityFallback(
 ): target is GenerationModelEntry {
     if (target.eventType !== from.eventType) return false;
     const primary = from.communityEndpoint;
-    const candidate = target.communityEndpoint;
-    if (!primary || !candidate) return false;
-    if (primary.modality !== candidate.modality) return false;
-    if (usesAgentRunToken(candidate)) return false;
-    if (primary.imagePricing !== candidate.imagePricing) return false;
-    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
+    if (!primary) return false;
     if (
         !from.supportedEndpoints.every((endpoint) =>
             target.supportedEndpoints.includes(endpoint),
@@ -299,6 +295,19 @@ function isUsableCommunityFallback(
     ) {
         return false;
     }
+    const candidate = target.communityEndpoint;
+    if (!candidate) {
+        return (
+            staticFallbackRejection(
+                { ...primary, prices: primary },
+                target.definition,
+            ) === null
+        );
+    }
+    if (primary.modality !== candidate.modality) return false;
+    if (usesAgentRunToken(candidate)) return false;
+    if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 

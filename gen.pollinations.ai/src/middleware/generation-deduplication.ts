@@ -57,6 +57,7 @@ export type GenerationJobHead = Omit<GenerationJob, "request"> & {
 
 export type GenerationOutcome =
     | { status: "cached" }
+    | { status: "generated" }
     | { status: "failed"; error: GenerationErrorSnapshot };
 
 export type AsyncJobRecord = {
@@ -254,6 +255,12 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             if (c.var.track) c.var.track.detachedExecutionTracked = true;
             return replayFailedResponse(outcome.error);
         }
+        // A fresh generation was already tracked and billed inside the
+        // detached executor; the outer caller must not emit a second usage
+        // row for it (it used to be suppressed by the unconditional HIT).
+        if (outcome?.status === "generated" && c.var.track) {
+            c.var.track.detachedExecutionTracked = true;
+        }
 
         // An RPC failure may happen after the result was saved. Read once;
         // never restart the coordinator or execute another generation here.
@@ -285,8 +292,11 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 })
             );
         }
-        c.header("X-Cache", "HIT");
-        response.headers.set("X-Cache", "HIT");
+        // A job that ran a provider and wrote a fresh cache entry was a MISS
+        // for this requester; only pre-existing entries are HITs.
+        const cacheStatus = outcome?.status === "generated" ? "MISS" : "HIT";
+        c.header("X-Cache", cacheStatus);
+        response.headers.set("X-Cache", cacheStatus);
         return response;
     },
 );

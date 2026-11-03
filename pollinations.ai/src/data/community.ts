@@ -59,8 +59,8 @@ export function useDiscordPresence(options?: UseAsyncOptions) {
 /* ── Contributors ───────────────────────────────────────────────────────── */
 
 /** Merged PRs per account, one file per finished month (news branch). */
-const NEWS_MONTHLY =
-    "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/monthly";
+const NEWS_CONTRIBUTORS =
+    "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/data/contributors";
 const CONTRIBUTOR_MONTHS = 6;
 
 type Contributor = {
@@ -73,7 +73,7 @@ type Contributor = {
 
 /** A finished month's counts, or null until the monthly job writes it. */
 const loadMonth = cachePublic(async (month: string) => {
-    const response = await fetch(`${NEWS_MONTHLY}/${month}/contributors.json`);
+    const response = await fetch(`${NEWS_CONTRIBUTORS}/${month}.json`);
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`news ${month}: ${response.status}`);
     return (await response.json()) as { contributors: Contributor[] };
@@ -176,7 +176,7 @@ export function useVotingIssues() {
 
 /* ── Quests ─────────────────────────────────────────────────────────────── */
 
-/** Completed GitHub Quest rewards: global totals plus the top contributors. */
+/** Completed Quests: global totals plus the top contributors. */
 export type QuestLeaderboardData = {
     leaderboard: {
         githubLogin: string;
@@ -186,7 +186,6 @@ export type QuestLeaderboardData = {
     totals: {
         contributors: number;
         completedQuests: number;
-        totalPollen: number;
     };
 };
 

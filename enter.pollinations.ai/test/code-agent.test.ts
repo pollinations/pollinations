@@ -585,6 +585,57 @@ export default async ({ request }: AgentContext) => new Response(request.url);`;
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it("tells the owner why Cloudflare rejected the upload", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json(
+                    {
+                        success: false,
+                        errors: [
+                            {
+                                code: 10021,
+                                message:
+                                    "Uncaught ReferenceError: x is not defined\n  at agent.mjs:1:1",
+                            },
+                        ],
+                    },
+                    { status: 400 },
+                ),
+            ),
+        );
+
+        await expect(
+            deployCodeAgent(
+                deploymentEnv,
+                "agent-id",
+                "export default () => x;",
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message:
+                "Code agent deployment failed: Uncaught ReferenceError: x is not defined\n  at agent.mjs:1:1",
+        });
+    });
+
+    it("keeps the status when Cloudflare gives no reason", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response("bad gateway", { status: 500 })),
+        );
+
+        await expect(
+            deployCodeAgent(
+                deploymentEnv,
+                "agent-id",
+                "export default () => new Response();",
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "Code agent deployment failed (500)",
+        });
+    });
+
     it("treats an already absent Worker as deleted", async () => {
         vi.stubGlobal(
             "fetch",

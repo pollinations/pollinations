@@ -1,4 +1,4 @@
-import { BeakerIcon, Tooltip } from "@pollinations/ui";
+import { BeakerIcon, Tooltip, WarningIcon } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 
 export const accountPermissions = [
@@ -23,6 +23,22 @@ export const accountPermissions = [
         label: "Run hosted sandboxes",
     },
 ] as const;
+
+/**
+ * Shown wherever a key can get `keys`: keys it creates don't inherit its
+ * budget, so it can spend the whole balance.
+ */
+export function KeysPermissionWarning() {
+    return (
+        <span className="inline-flex items-center gap-1">
+            <WarningIcon
+                className="h-3.5 w-3.5 shrink-0 text-intent-warning-text"
+                aria-hidden="true"
+            />
+            Be careful: only allow this for apps you trust.
+        </span>
+    );
+}
 
 /** The same optional grants in dashboard keys and connection consent. */
 export function AccountPermissionsInput({
@@ -49,10 +65,11 @@ export function AccountPermissionsInput({
                 key={id}
                 checked={value?.includes(id) ?? false}
                 disabled={disabled}
+                details={id === "keys" ? <KeysPermissionWarning /> : undefined}
                 info={
                     id === "machines" ? (
                         <Tooltip
-                            content="Alpha — experimental, may be unstable."
+                            content="Alpha. Experimental and may be unstable."
                             ariaLabel="Sandboxes are in alpha"
                             tapEnabled
                             className="ml-1.5 inline-flex items-center text-intent-info-text"

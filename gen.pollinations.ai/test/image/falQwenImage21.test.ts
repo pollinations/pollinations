@@ -207,3 +207,50 @@ describe("qwenImage21Model", () => {
         });
     });
 });
+
+describe("FLUX.3 Image Klein on fal", () => {
+    it("sends explicit sizes as given, edits to edit-image, and bills fal's units", async () => {
+        const requests: FalRequest[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url = input.toString();
+                if (url === OUTPUT_URL)
+                    return new Response(new Uint8Array([1]));
+                requests.push({
+                    url,
+                    headers: new Headers(init?.headers),
+                    body: JSON.parse(init?.body as string),
+                });
+                return Response.json(
+                    { images: [{ url: OUTPUT_URL }] },
+                    { headers: { "x-fal-billable-units": "4.0" } },
+                );
+            },
+        );
+
+        const result = await callFalQwenImageAPI(
+            "edit the reference",
+            {
+                ...baseParams,
+                model: "black-forest-labs/flux-3-image-klein",
+                width: 4096,
+                height: 2304,
+                dimensionsExplicit: true,
+                image: [INPUT_IMAGE],
+            },
+            "black-forest-labs/flux-3-image-klein",
+        );
+
+        expect(requests[0]).toMatchObject({
+            url: "https://fal.run/blackforestlabs/flux-3/klein/edit-image",
+            body: {
+                image_urls: [INPUT_IMAGE],
+                image_size: { width: 4096, height: 2304 },
+                enable_prompt_expansion: false,
+            },
+        });
+        expect(result.trackingData?.usage).toEqual({
+            completionImageTokens: 4_000_000,
+        });
+    });
+});

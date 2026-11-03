@@ -1,9 +1,17 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import { MCP_SERVER_IDS } from "./registry/mcp.ts";
+import {
+    AGENT_MCP_SERVER_IDS,
+    getMcpServerDefinition,
+} from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
 import {
     type Category,
+    derivePrice,
+    getCostSheetsForModel,
+    isFallbackPricingAllowed,
+    isFlatRateModel,
+    isVisibleModelDefinition,
     MODEL_INPUT_MODALITIES,
     MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
@@ -111,6 +119,7 @@ export const CommunityEndpointAdvertisedSchema = z
     .object({
         capabilities: z
             .array(z.enum(COMMUNITY_ENDPOINT_CAPABILITIES))
+            .max(COMMUNITY_ENDPOINT_CAPABILITIES.length)
             .optional(),
         contextLength: z
             .number()
@@ -498,9 +507,83 @@ export function isCommunityFallbackPricingAllowed(
  */
 export function isCommunityFallbackBalanceAllowed(
     primary: { paidOnly: boolean },
-    target: { paidOnly: boolean },
+    target: { paidOnly?: boolean },
 ): boolean {
     return !target.paidOnly || primary.paidOnly;
+}
+
+export type CommunityFallbackPrimary = {
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    paidOnly: boolean;
+    inputModalities?: readonly ModelInputModality[] | null;
+    prices: CommunityEndpointPrices;
+};
+
+/**
+ * Why a Pollinations model cannot serve a community model's failed requests,
+ * or null when it can. The caller still pays the community model's price for
+ * the served model's usage, so both must count usage in the same units, and
+ * no rate sheet of the served model may cost more. A provider-reported charge
+ * (`providerBilling`) can still exceed the sheet.
+ */
+export function staticFallbackRejection(
+    primary: CommunityFallbackPrimary,
+    target: ModelDefinition,
+): string | null {
+    const spec: CommunityModalitySpec =
+        COMMUNITY_MODALITY_SPEC[primary.modality];
+    const inputs = normalizeCommunityEndpointInputModalities(
+        primary.inputModalities,
+        primary.modality,
+    );
+    if (!isVisibleModelDefinition(target)) return "is not a public model";
+    // Gen links a target only if it serves every endpoint of the primary.
+    // Static video models default to image routes without /video/{prompt}.
+    if (
+        primary.modality === "video" ||
+        target.category !== spec.category ||
+        (target.supportedEndpoints &&
+            !communityEndpointSupportedEndpoints(
+                primary.modality,
+                inputs,
+            ).every((endpoint) =>
+                target.supportedEndpoints?.includes(endpoint),
+            )) ||
+        !spec.outputModalities.every((modality) =>
+            target.outputModalities?.includes(modality),
+        ) ||
+        !inputs.every((modality) => target.inputModalities?.includes(modality))
+    ) {
+        return `cannot serve this model's ${primary.modality} requests`;
+    }
+    if (
+        target.billing ||
+        target.priceUnits ||
+        isFlatRateModel(target) !==
+            (primary.modality === "image" && primary.imagePricing === "request")
+    ) {
+        return "counts usage in units this model's prices do not cover";
+    }
+    if (!isCommunityFallbackBalanceAllowed(primary, target)) {
+        return "accepts only Paid Pollen, which this model does not require";
+    }
+    const quoted = communityPriceDefinition(
+        primary.prices,
+        primary.modality,
+        primary.imagePricing,
+    );
+    // Neither below what Pollinations pays nor below the model's own price.
+    const multiplier = Math.max(
+        target.priceMultiplier,
+        ...Object.values(target.priceMultiplierVariants ?? {}),
+        1,
+    );
+    return getCostSheetsForModel(target).every((cost) =>
+        isFallbackPricingAllowed(quoted, derivePrice(cost, multiplier)),
+    )
+        ? null
+        : "costs more than this model";
 }
 
 export function normalizeCommunityEndpointModality(
@@ -635,20 +718,33 @@ export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
  * A managed prompt agent Gen runs locally. Its row id is also the model used
  * to load this configuration from the same row.
  */
-export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
+export const BuiltinMcpServerIdSchema = z.enum(AGENT_MCP_SERVER_IDS);
+const AgentMcpServersSchema = z
+    .array(BuiltinMcpServerIdSchema)
+    .max(AGENT_MCP_SERVER_IDS.length)
+    .refine((servers) => new Set(servers).size === servers.length, {
+        message: "Duplicate MCP servers are not allowed",
+    });
 export const PromptAgentConfigSchema = z.object({
     systemPrompt: z.string().trim().min(1).max(8000),
     baseModel: z.string().trim().min(1).max(253),
+    // A saved agent can list a server agents have since lost (Connectors, or
+    // a save the previous Enter version accepted mid-deploy). It runs
+    // without that server instead of dropping out of the catalog.
     mcpServers: z
-        .array(BuiltinMcpServerIdSchema)
-        .max(MCP_SERVER_IDS.length)
-        .refine((servers) => new Set(servers).size === servers.length, {
-            message: "Duplicate MCP servers are not allowed",
-        })
+        .array(z.string())
+        .transform((servers) =>
+            servers.filter(
+                (id) => getMcpServerDefinition(id)?.agents !== false,
+            ),
+        )
+        .pipe(AgentMcpServersSchema)
         .optional()
         .default([]),
 });
-export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
+export const PromptAgentInputSchema = PromptAgentConfigSchema.extend({
+    mcpServers: AgentMcpServersSchema.optional().default([]),
+}).strict();
 
 export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 
@@ -708,15 +804,18 @@ export const EndpointAgentListingPayloadSchema = z
         inputModalities: z
             .array(z.enum(MODEL_INPUT_MODALITIES))
             .min(1)
+            .max(MODEL_INPUT_MODALITIES.length)
             .optional()
             .describe("Input types accepted by the agent. Defaults to text."),
         outputModalities: z
             .array(z.enum(MODEL_OUTPUT_MODALITIES))
             .min(1)
+            .max(MODEL_OUTPUT_MODALITIES.length)
             .optional()
             .describe("Output types produced by the agent. Defaults to text."),
         capabilities: z
             .array(z.enum(ENDPOINT_AGENT_CAPABILITIES))
+            .max(ENDPOINT_AGENT_CAPABILITIES.length)
             .optional()
             .describe(
                 "Traits the agent supports through its public endpoint, such as tools it runs itself. Defaults to none.",
@@ -864,7 +963,7 @@ type CommunityEndpointRuntimeBase = {
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
     perUserRpm: number | null;
-    // Community model ids tried in order when this endpoint's upstream fails.
+    // Model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbacks: string[];
 } & CommunityEndpointPrices;

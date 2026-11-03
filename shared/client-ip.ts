@@ -1,27 +1,7 @@
 import type { Context } from "hono";
-import { hasTrustedProxyHeaders } from "./public-origin.ts";
 
-/**
- * Resolve the real visitor IP. When the worker is reached through a trusted
- * edge hop, CF-Connecting-IP can be the edge's egress IP — useless for rate
- * limiting or abuse detection — so we prefer X-Original-Client-IP instead.
- * A trusted edge sets that header only with a known X-Forwarded-Host:
- *   - AWS CloudFront in front of gen.pollinations.ai injects it via the
- *     `pln-gen-viewer-ip` viewer-request function (event.viewer.ip). Without
- *     this, Origin Shield collapses every client to a handful of 64.252.x
- *     egress IPs. The function overwrites any client-supplied value, so a
- *     spoofed X-Original-Client-IP cannot survive the CloudFront hop.
- *     See infra/cloudfront/README.md for the full stack.
- *
- * For direct hits (e.g. *.myceli.ai), only CF-Connecting-IP is present and
- * already correct.
- */
+/** The visitor IP that Cloudflare saw. Clients cannot set CF-Connecting-IP. */
 export function getRealClientIp(c: Context): string {
-    if (hasTrustedProxyHeaders(c)) {
-        const originalIp = c.req.header("x-original-client-ip");
-        if (originalIp) return originalIp;
-    }
-
     return c.req.header("cf-connecting-ip") || "unknown";
 }
 

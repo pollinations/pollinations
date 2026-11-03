@@ -62,11 +62,27 @@ export const docsCommand = new Command("docs")
                     }
                     const needle = endpoint.replace(/^\//, "").toLowerCase();
                     // The preamble before the first heading is not a section title.
-                    const headingMatches = sections.filter(
-                        (s) =>
-                            /^#{1,6} /.test(s) &&
-                            s.split("\n")[0].toLowerCase().includes(needle),
-                    );
+                    const headingMatches: string[] = [];
+                    let selectedLevel = 0;
+                    for (const section of sections) {
+                        const level = section.match(/^(#{1,6}) /)?.[1].length;
+                        if (!level) continue;
+                        // Keep a matching heading's children in the same block.
+                        if (selectedLevel && level > selectedLevel) {
+                            headingMatches[headingMatches.length - 1] +=
+                                section;
+                        } else if (
+                            section
+                                .split("\n")[0]
+                                .toLowerCase()
+                                .includes(needle)
+                        ) {
+                            selectedLevel = level;
+                            headingMatches.push(section);
+                        } else {
+                            selectedLevel = 0;
+                        }
+                    }
                     const matches = headingMatches.length
                         ? headingMatches
                         : sections.filter((s) =>

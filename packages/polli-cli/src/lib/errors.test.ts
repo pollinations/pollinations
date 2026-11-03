@@ -20,7 +20,10 @@ describe("budgetHint", () => {
     it("directs insufficient balances to wallet top-up", async () => {
         setKeyOverride("test-only");
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            Response.json({ balance: 0 }),
+            Response.json({
+                balance: 4.4691,
+                accountBalance: { total: 0, tier: 0, paid: 0 },
+            }),
         );
         const hint = await budgetHint(
             402,
@@ -33,6 +36,31 @@ describe("budgetHint", () => {
         );
         expect(hint).toContain("Account balance: 0 pollen");
         expect(hint).not.toContain("Manage key budget:");
+    });
+
+    it("does not label a hidden wallet's key budget as the account balance", async () => {
+        setKeyOverride("test-only");
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ balance: 4.4691 }),
+        );
+        const hint = await budgetHint(
+            402,
+            JSON.stringify({ error: { code: "INSUFFICIENT_BALANCE" } }),
+        );
+        expect(hint).not.toContain("Account balance:");
+        expect(hint).toContain("Insufficient pollen balance");
+    });
+
+    it("keeps reporting the visible wallet for an unbudgeted key", async () => {
+        setKeyOverride("test-only");
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                balance: 2.5,
+                accountBalance: { total: 2.5, tier: 2.5, paid: 0 },
+            }),
+        );
+        const hint = await budgetHint(402, "Payment required");
+        expect(hint).toContain("Account balance: 2.5 pollen");
     });
 
     it("does not assume an unknown 402 is a wallet failure", async () => {

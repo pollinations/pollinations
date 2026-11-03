@@ -110,6 +110,32 @@ describe("prompt-agent runtime", () => {
         });
     });
 
+    it("names the MCP server that failed to load", async () => {
+        const fetchMock = vi.fn(async (input: RequestInfo | URL) =>
+            String(input) === EXA_MCP_PROXY_URL
+                ? new Response("unavailable", { status: 503 })
+                : Response.json({ error: "unexpected model call" }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "hello" }] },
+            {
+                ...BASE_RUNTIME,
+                config: { ...BASE_RUNTIME.config, mcpServers: ["exa"] },
+            },
+        );
+
+        expect(response.status).toBe(502);
+        const body = (await response.json()) as { error: { message: string } };
+        expect(body.error.message).toMatch(/^MCP server exa failed: /);
+        expect(
+            fetchMock.mock.calls.every(
+                ([input]) => String(input) === EXA_MCP_PROXY_URL,
+            ),
+        ).toBe(true);
+    });
+
     it("runs the MCP tool loop and reuses the negotiated session", async () => {
         const mcpRequests: Request[] = [];
         let modelCalls = 0;

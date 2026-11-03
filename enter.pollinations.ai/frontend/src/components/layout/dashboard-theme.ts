@@ -2,6 +2,7 @@
 // `danger`; Chip supports generic label intents (news/alpha/neutral).
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 import {
+    AppIcon,
     BeakerIcon,
     CloudUploadIcon,
     LockIcon,
@@ -26,6 +27,12 @@ export const DASHBOARD_NAV_ITEMS = [
         to: "/my-models",
         label: "My Models",
         icon: CloudUploadIcon,
+    },
+    {
+        id: "my-apps",
+        to: "/my-apps",
+        label: "My Apps",
+        icon: AppIcon,
     },
     {
         id: "sandboxes",

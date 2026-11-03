@@ -136,6 +136,48 @@ for (const variation of ["two_stems_v1", "six_stems_v1", undefined]) {
     });
 }
 
+test("never bills less than the stems ElevenLabs returns", async () => {
+    // 10 s of two 128 kbps stems plus headers, whatever the upload claims.
+    const mocks = createFetchMock({
+        tinybird: createMockTinybird(),
+        elevenlabs: {
+            state: {},
+            reset() {},
+            handlerMap: {
+                "api.elevenlabs.io": async () =>
+                    new Response(zip, {
+                        headers: {
+                            "content-type": "application/zip",
+                            "content-length": String(2 * 1000 + 10 * 32_000),
+                        },
+                    }),
+            },
+        },
+    });
+    await mocks.enable("elevenlabs", "tinybird");
+    const { key } = await createTestApiKey({
+        user: { packBalance: 1 },
+        allowedModels: ["elevenlabs/stem-separation"],
+    });
+    const form = new FormData();
+    form.set("file", input());
+    form.set("stem_variation_id", "two_stems_v1");
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/alpha/audio/stem-separation", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${key}` },
+            body: form,
+        }),
+        withInlineGenerationCoordinator({ ...env, ELEVENLABS_API_KEY: "test" }),
+        ctx,
+    );
+    await response.arrayBuffer();
+    await waitOnExecutionContext(ctx);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("10");
+});
+
 test("requires purchased balance", async ({ apiKey }) => {
     const form = new FormData();
     form.set("file", input());

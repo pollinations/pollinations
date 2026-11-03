@@ -255,12 +255,133 @@ test("GET /api/account/usage/daily maps selected periods to exact windows", asyn
     expect(dailyCalls[0].query.since).toBe("2026-04-24 00:00:00");
     expect(dailyCalls[0].query.until).toBe("2026-04-25 00:00:00");
     expect(dailyCalls[0].query.grain).toBe("hour");
+    expect(dailyCalls[0].query.timezone).toBe("UTC");
     expect(dailyCalls[1].query.since).toBe("2026-04-20 00:00:00");
     expect(dailyCalls[1].query.until).toBe("2026-04-27 00:00:00");
     expect(dailyCalls[1].query.grain).toBe("day");
     expect(dailyCalls[2].query.since).toBe("2026-04-01 00:00:00");
     expect(dailyCalls[2].query.until).toBe("2026-05-01 00:00:00");
     expect(dailyCalls[2].query.grain).toBe("day");
+});
+
+for (const [timezone, period] of [
+    ["Europe/Berlin", "2026-03-29"],
+    ["Asia/Kolkata", "2026-04-24"],
+    ["Australia/Lord_Howe", "2026-10-04"],
+]) {
+    test(`usage periods retain wall-calendar bounds for ${timezone}`, async ({
+        accountToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird");
+        const next = new Date(`${period}T00:00:00Z`);
+        next.setUTCDate(next.getUTCDate() + 1);
+        const query = new URLSearchParams({
+            granularity: "day",
+            period,
+            timezone,
+        });
+        for (const path of ["usage/daily", "usage"]) {
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/account/${path}?${query}`,
+                { headers: authHeaders(accountToken) },
+            );
+            expect(response.status).toBe(200);
+            expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+                timezone: new Intl.DateTimeFormat("en-US", {
+                    timeZone: timezone,
+                }).resolvedOptions().timeZone,
+                since: `${period} 00:00:00`,
+                until: `${next.toISOString().slice(0, 10)} 00:00:00`,
+            });
+        }
+    });
+}
+
+test("usage rejects invalid timezones before calling Tinybird", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    for (const timezone of ["Invalid/Zone", "+02:00", ""]) {
+        const query = new URLSearchParams({ timezone });
+        for (const path of ["usage", "usage/daily"]) {
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/account/${path}?${query}`,
+                { headers: authHeaders(accountToken) },
+            );
+            expect(response.status).toBe(400);
+        }
+    }
+    expect(mocks.tinybird.state.pipeCalls).toHaveLength(0);
+});
+
+test("usage canonicalizes timezone names before forwarding them", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?timezone=europe/berlin",
+        { headers: authHeaders(accountToken) },
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.tinybird.state.pipeCalls.at(-1)?.query.timezone).toBe(
+        "Europe/Berlin",
+    );
+});
+
+test("usage rolling windows and future-period validation use local today", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    for (const timezone of ["Pacific/Kiritimati", "Pacific/Pago_Pago"]) {
+        const parts = Object.fromEntries(
+            new Intl.DateTimeFormat("en-US", {
+                timeZone: timezone,
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+            })
+                .formatToParts(new Date())
+                .map(({ type, value }) => [type, value]),
+        );
+        const today = `${parts.year}-${parts.month}-${parts.day}`;
+        const next = new Date(`${today}T00:00:00Z`);
+        next.setUTCDate(next.getUTCDate() + 1);
+        const tomorrow = next.toISOString().slice(0, 10);
+        const query = new URLSearchParams({ timezone, days: "1" });
+        const rolling = await SELF.fetch(
+            `http://localhost:3000/api/account/usage/daily?${query}`,
+            { headers: authHeaders(accountToken) },
+        );
+        expect(rolling.status).toBe(200);
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            since: `${today} 00:00:00`,
+            until: `${tomorrow} 00:00:00`,
+            timezone,
+        });
+        query.set("granularity", "day");
+        query.set("period", today);
+        expect(
+            (
+                await SELF.fetch(
+                    `http://localhost:3000/api/account/usage/daily?${query}`,
+                    { headers: authHeaders(accountToken) },
+                )
+            ).status,
+        ).toBe(200);
+        query.set("period", tomorrow);
+        expect(
+            (
+                await SELF.fetch(
+                    `http://localhost:3000/api/account/usage/daily?${query}`,
+                    { headers: authHeaders(accountToken) },
+                )
+            ).status,
+        ).toBe(400);
+    }
 });
 
 test("GET /api/account/usage/daily derives pipe grain from selected period", async ({
@@ -591,4 +712,40 @@ test("GET /api/account/usage?format=csv neutralizes spreadsheet formulas", async
     const lines = csv.trim().split("\n");
     expect(lines[1]).toContain(",'=1+1,");
     expect(lines[1]).toContain(`"'+SUM(1,1)"`);
+});
+
+test("analytics timeouts stay 504 across activity routes instead of becoming generic 500s", async ({
+    accountToken,
+    mocks,
+}) => {
+    for (const [host, handler] of Object.entries(mocks.tinybird.handlerMap)) {
+        mocks.tinybird.handlerMap[host] = async (request) =>
+            new URL(request.url).pathname.startsWith("/v0/pipes/")
+                ? Response.json(
+                      { error: "Timeout exceeded: maximum 20000 ms" },
+                      { status: 408 },
+                  )
+                : handler(request);
+    }
+    await mocks.enable("tinybird");
+    for (const path of [
+        "usage/daily",
+        "usage",
+        "earnings",
+        "earnings/transactions",
+    ]) {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/${path}`,
+            {
+                headers: authHeaders(accountToken),
+            },
+        );
+        expect(response.status).toBe(504);
+        expect(await response.json()).toMatchObject({
+            error: {
+                code: "GATEWAY_TIMEOUT",
+                message: "Analytics query timed out. Please try again.",
+            },
+        });
+    }
 });

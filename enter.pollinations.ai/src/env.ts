@@ -11,6 +11,8 @@ export type Env = {
         X402_HOLDING_USER_ID?: string;
         CODE_AGENT_DEPLOY_API_TOKEN?: string;
         CODE_AGENT_DISPATCH_NAMESPACE?: string;
+        SITES_DISPATCH_NAMESPACE?: string;
+        SITES_HOST_SUFFIX?: string;
         CODE_AGENT_CONTEXT?: {
             authorization: string;
             origin: string;

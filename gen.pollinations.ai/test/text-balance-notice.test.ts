@@ -34,6 +34,50 @@ beforeEach(async () => {
 describe("text balance notice", () => {
     const enabled = TEXT_BALANCE_NOTICE_ENABLED;
 
+    it.each([false, true])(
+        "refuses locked Quest spending through the authenticated text route, quest-only=%s",
+        async (questPollenOnly) => {
+            const caller = await createTestApiKey();
+            await drizzle(env.DB)
+                .update(apikey)
+                .set({ questPollenOnly })
+                .where(eq(apikey.id, caller.id));
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json({ data: [] }),
+            );
+            await drizzle(env.DB)
+                .update(user)
+                .set({
+                    tierBalance: 5,
+                    packBalance: questPollenOnly ? 3 : 0,
+                    questPollenRestricted: true,
+                })
+                .where(eq(user.id, caller.userId));
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    `https://gen.pollinations.ai/text/hello?model=${model}`,
+                    {
+                        headers: { Authorization: `Bearer ${caller.key}` },
+                    },
+                ),
+                env,
+                ctx,
+            );
+            const text = await response.text();
+            expect(response.status).toBe(enabled ? 200 : 402);
+            expect(text).toContain(
+                enabled ? "Quest pollen is locked" : "QUEST_POLLEN_RESTRICTED",
+            );
+            expect(text).toContain("hello@pollinations.ai");
+            expect(
+                (await getUserBalance(drizzle(env.DB), caller.userId))
+                    .tierBalance,
+            ).toBe(5);
+            await waitOnExecutionContext(ctx);
+        },
+    );
+
     it.each([false, true])("handles HEAD with json=%s", async (json) => {
         const caller = await createTestApiKey();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -382,7 +426,7 @@ it.each([
                 `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
             );
             if (redirect) link.searchParams.set("redirect", redirect);
-            expect(text).toContain(`[raise the key budget](${link})`);
+            expect(text).toContain(`[raise the key budget](<${link}>)`);
             expect(text).toContain("Topping up the wallet does not raise");
             expect(text).not.toContain("complete a quest");
         }
@@ -474,7 +518,7 @@ it.each([
         }).toString();
         if (TEXT_PERMISSION_NOTICE_ENABLED && !responseFormat) {
             expect(response.status, text).toBe(200);
-            expect(text).toContain(`[allow it for this key](${link})`);
+            expect(text).toContain(`[allow it for this key](<${link}>)`);
         } else {
             // JSON callers parse the body, so they keep the plain 403.
             expect(response.status, text).toBe(403);

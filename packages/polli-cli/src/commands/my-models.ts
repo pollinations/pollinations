@@ -393,6 +393,7 @@ const create = addPriceOptions(
         else {
             printSuccess(`Model registered: ${created.modelId}`);
             printModels([created]);
+            printInfo("It can take a minute or two before this is callable.");
         }
     } catch (err) {
         fail("Failed to create model", err);
@@ -462,6 +463,7 @@ const update = addPriceOptions(
         else {
             printSuccess(`Model updated: ${updated.modelId}`);
             printModels([updated]);
+            printInfo("It can take a minute or two before this is callable.");
         }
     } catch (err) {
         fail("Failed to update model", err);

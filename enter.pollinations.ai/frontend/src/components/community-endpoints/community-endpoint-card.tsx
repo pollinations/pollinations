@@ -3,10 +3,9 @@ import {
     BeakerIcon,
     BotIcon,
     CardIcon,
-    CheckIcon,
     Chip,
-    ClipboardIcon,
     CopyButton,
+    CopyStateIcon,
     currentPeriod,
     ExternalLinkIcon,
     GitHubIcon,
@@ -28,6 +27,7 @@ import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
+import { EndpointHealth } from "./endpoint-health.tsx";
 import {
     type CommunityEndpoint,
     type ManagedAgent,
@@ -107,21 +107,10 @@ export function CommunityEndpointCard({
                             data-tone="quiet"
                             to="/activity"
                             search={{
-                                usageGranularity: "day",
-                                usagePeriod: currentPeriod().period,
-                                usageBucket: undefined,
-                                usageAnchor: undefined,
-                                earningsGranularity: "day",
-                                earningsPeriod: currentPeriod().period,
-                                earningsBucket: undefined,
-                                earningsAnchor: undefined,
-                                earningsModels: [endpoint.modelId],
-                                usageMetric: undefined,
-                                usageGroup: undefined,
-                                usageKeys: undefined,
-                                usageModels: undefined,
-                                earningsMetric: undefined,
-                                earningsApps: undefined,
+                                granularity: "day",
+                                period: currentPeriod().period,
+                                tab: "earnings",
+                                models: [endpoint.modelId],
                             }}
                             className="polli-link"
                         >
@@ -247,6 +236,14 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
+
+            <EndpointHealth
+                id={endpoint.id}
+                proxy={endpoint.type === "proxy"}
+                listing={
+                    isPublic && endpoint.type === "proxy" ? health : undefined
+                }
+            />
         </Surface>
     );
 }
@@ -335,16 +332,14 @@ function CommunityDetailRow({
                     <CopyButton
                         value={copyValue}
                         tooltip={copyLabel}
-                        copiedTooltip="Copied"
                         className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
                     >
-                        {(copied: boolean) =>
-                            copied ? (
-                                <CheckIcon className="h-3.5 w-3.5" />
-                            ) : (
-                                <ClipboardIcon className="h-3.5 w-3.5" />
-                            )
-                        }
+                        {(copied: boolean) => (
+                            <CopyStateIcon
+                                copied={copied}
+                                className="h-3.5 w-3.5"
+                            />
+                        )}
                     </CopyButton>
                 )}
             </span>

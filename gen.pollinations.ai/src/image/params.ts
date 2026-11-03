@@ -25,10 +25,15 @@ const sanitizedSeed = z.preprocess((v) => {
     return normalizeSeed(parsed);
 }, z.int().min(0).max(MAX_SEED).catch(SENTINEL_SEED));
 
+// Images need at least 16 px per side (gpt-image clamps up from 16); smaller
+// values used to reach providers and leak their validation errors. Video
+// models read width and height only as an aspect ratio, so 16x9 stays valid.
+const MIN_IMAGE_SIDE = 16;
+
 const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);
     return Number.isInteger(parsed) ? parsed : undefined;
-}, z.int().optional());
+}, z.int().positive().optional());
 
 const parseReferenceUrls = (value: unknown): string[] => {
     const values = Array.isArray(value)
@@ -94,10 +99,11 @@ export const ImageParamsSchema = z
                 if (!value) return [];
                 // Already an array (from POST JSON body)
                 if (Array.isArray(value)) return value;
-                // String: support both pipe (|) and comma (,) separators
-                return value.includes("|")
+                // Keep commas inside URLs, matching the public query schema.
+                const urls = value.includes("|")
                     ? value.split("|")
-                    : value.split(",");
+                    : value.split(/,(?=\s*https?:\/\/)/);
+                return urls.map((url) => url.trim()).filter(Boolean);
             })
             .catch([]),
         reference_images: referenceUrls.optional(),
@@ -163,6 +169,18 @@ export const ImageParamsSchema = z
             }
         }
         const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
+        if (definition.category !== "video") {
+            for (const side of ["width", "height"] as const) {
+                const value = data[side];
+                if (value !== undefined && value < MIN_IMAGE_SIDE) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        path: [side],
+                        message: `Images need at least ${MIN_IMAGE_SIDE} px per side.`,
+                    });
+                }
+            }
+        }
         if (
             definition.maxReferenceImages !== undefined &&
             data.image &&

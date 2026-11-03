@@ -241,9 +241,12 @@ async function creditCheckoutSessionOnce({
                 SET pack_balance = ROUND(
                     COALESCE(pack_balance, 0) + ?,
                     ${POLLEN_BILLING_PRECISION}
-                )
+                ),
+                last_pack_pollen = ?,
+                quest_pollen_restricted = 0,
+                low_balance_notified_at = NULL
                 WHERE id = ?`,
-            ).bind(creditsToAdd, userId),
+            ).bind(creditsToAdd, creditsToAdd, userId),
         ]);
 
         if ((updateResult.meta.changes ?? 0) !== 1) {

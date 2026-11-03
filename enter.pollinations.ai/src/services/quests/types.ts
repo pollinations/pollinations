@@ -19,6 +19,8 @@ export type QuestUser = {
     id: string;
     githubId: number | null;
     githubUsername: string | null;
+    /** Google account id (`sub`) for users who signed in with Google. */
+    googleId?: string | null;
 };
 
 export type QuestGroup = {
@@ -56,7 +58,7 @@ export function toQuestProgress(
 
 export function toReward(
     proposal: RewardProposal,
-    githubId: number | null,
+    user: QuestUser,
 ): RecordRewardInput {
     const { quest, userId } = proposal;
     return {
@@ -64,7 +66,7 @@ export function toReward(
             proposal.idempotencyKey ??
             (quest.scope === "once"
                 ? `quest:${quest.id}`
-                : rewardKey(quest.id, githubId)),
+                : rewardKey(quest.id, user)),
         userId,
         questId: quest.id,
         title: quest.title,

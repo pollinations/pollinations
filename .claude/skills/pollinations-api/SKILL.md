@@ -1,13 +1,14 @@
 ---
 name: pollinations-api
-description: Call the Pollinations API directly via REST without installing anything. Use when the polli CLI cannot be installed, when browser login steps are blocked, or when only curl or fetch is available. Without an API key, the user can approve a device sign-in in their own browser.
+description: Call the Pollinations API directly via REST without installing anything. Use when the polli CLI cannot be installed, when browser login steps are blocked, or when only curl or fetch is available. Without an API key, the user can approve a device authorization in their own browser, or an agent with a USDC wallet can buy a prepaid key over x402.
 ---
 
 # pollinations-api — Pollinations REST API
 
 Direct REST access to `https://gen.pollinations.ai` without installing the CLI.
 The image URL works keyless; authenticated calls use `POLLINATIONS_API_KEY`.
-If no key is available, the user can approve a device sign-in in their own browser.
+If no key is available, the user can approve a device authorization in their own browser.
+With no user to approve, an agent can buy a prepaid key over x402 (below).
 
 Use the `polli` CLI skill when the CLI is already installed. Use this skill
 when it is not (sandboxes, Codex cloud, Cursor chat, fresh containers)
@@ -17,13 +18,13 @@ or when you only need one quick call.
 
 - Keyless (no header): `GET /image/{prompt}`.
 - Authenticated: header `Authorization: Bearer $POLLINATIONS_API_KEY`
-  (an existing key, or a user-approved device sign-in below).
+  (an existing key, or a user-approved device authorization below).
 - Same key permissions, billing and caching as the CLI path.
 
 ## Get a key without copying one into the agent
 
 If `POLLINATIONS_API_KEY` is already set, skip this. Otherwise **ask the user to
-approve sign-in**, then use the [OAuth 2.0 Device Authorization Grant (RFC 8628)](https://www.rfc-editor.org/rfc/rfc8628).
+approve device authorization**, then use the [OAuth 2.0 Device Authorization Grant (RFC 8628)](https://www.rfc-editor.org/rfc/rfc8628).
 The user opens the printed URL on their own device; the agent polls at the
 server-provided interval. No credential goes into a chat, command argument,
 URL, public repository, or log. This uses Python's standard library only:
@@ -83,6 +84,19 @@ its permissions are `0600`. The user can revoke the issued key on the
 [Pollinations keys page](https://enter.pollinations.ai/keys). For all grant
 options and the browser consent details, see
 [Bring Your Own Pollen](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#️-clis--headless-apps-device-flow).
+
+## No one to approve: buy a prepaid key with x402
+
+An agent with USDC on Base can buy a key without a Pollinations account. Spend
+only with the user's permission.
+
+1. `GET https://enter.pollinations.ai/api/x402/keys/0.50` asks for a $0.50 key
+   (any amount from $0.01 to $10,000). It returns `402` with payment terms in
+   the `PAYMENT-REQUIRED` header.
+2. An x402 client signs those terms and retries with `PAYMENT-SIGNATURE`. The
+   response holds the new secret `key` and its `pollen` budget.
+
+Each payment creates a new key; store it like the device authorization key above.
 
 ## First call (keyless image, no code)
 

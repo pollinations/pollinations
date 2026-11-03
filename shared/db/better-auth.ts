@@ -42,15 +42,23 @@ export const user = sqliteTable("user", {
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
+  // NULL: not reviewed; true: Quest spending frozen; false: explicitly cleared.
+  // Automatic detection only changes NULL, so it cannot undo a purchase/review.
+  questPollenRestricted: integer("quest_pollen_restricted", { mode: "boolean" }),
   lastTierGrant: integer("last_tier_grant"),
   stripeCustomerId: text("stripe_customer_id").unique(),
   autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })
     .default(sql`0`)
     .notNull(),
   autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
+  lowBalanceNotifiedAt: integer("low_balance_notified_at"),
+  emailUnsubscribedAt: integer("email_unsubscribed_at"),
+  lastPackPollen: real("last_pack_pollen"),
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
+  // Quest pollen restriction sweeps: accounts made since a sign-up burst.
+  index("idx_user_created_at").on(table.createdAt),
   // GitHub profile lookup for quest checks and account display.
   uniqueIndex("user_github_id_unique").on(table.githubId),
 ]);

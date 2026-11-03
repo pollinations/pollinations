@@ -3,6 +3,7 @@ import {
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
+    type CommunityModelParts,
     communityModelId,
     effectiveCommunityEndpointVisibility,
     isCommunityFallbackBalanceAllowed,
@@ -11,9 +12,15 @@ import {
     parseCommunityModelId,
     parseListingPayload,
     resolveEffectiveProxyListing,
+    staticFallbackRejection,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import type { ModelInputModality } from "@shared/registry/registry.ts";
+import {
+    getRegistryModelDefinition,
+    type ModelInputModality,
+    type ModelName,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { and, eq } from "drizzle-orm";
 import type { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
@@ -40,11 +47,11 @@ function missingTargetMessage(modelId: string): string {
 // Private rows owned by someone else must look identical to a
 // missing row. Distinct validation errors would expose whether a model exists.
 function shouldConcealTarget(
-    primary: FallbackPrimary,
+    ownerUserId: string,
     target: CommunityEndpointRow,
 ): boolean {
     return (
-        target.ownerUserId !== primary.ownerUserId &&
+        target.ownerUserId !== ownerUserId &&
         effectiveCommunityEndpointVisibility(
             target.visibility,
             target.pendingVisibility,
@@ -60,7 +67,7 @@ export function fallbackTargetRejection(
     target: CommunityEndpointRow,
 ): string | null {
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
-    if (shouldConcealTarget(primary, target))
+    if (shouldConcealTarget(primary.ownerUserId, target))
         return missingTargetMessage(modelId);
     if (target.type !== "proxy") {
         return `Fallback target ${modelId} cannot delegate generation`;
@@ -115,25 +122,21 @@ export function fallbackTargetRejection(
     return null;
 }
 
-async function resolveFallback(
-    db: Db,
-    requested: string,
-    primary: FallbackPrimary,
-): Promise<string> {
-    const parsed = parseCommunityModelId(requested);
-    if (!parsed) {
-        throw new HTTPException(400, {
-            message: `Fallback target ${requested} must be a community model id in the form community/<owner>/<name>`,
-        });
+/** The canonical id of a bundled Pollinations model or alias, if it is one. */
+export function registryModelId(requested: string): ModelName | null {
+    try {
+        return resolveModelName(requested);
+    } catch {
+        return null;
     }
-    const modelId = communityModelId(
-        parsed.ownerGithubUsername,
-        parsed.modelName,
-    );
-    if (modelId === primary.modelId) {
-        throw new HTTPException(400, { message: SELF_FALLBACK_MESSAGE });
-    }
+}
 
+/** The community model ownerUserId may reference; hidden ones look missing. */
+export async function findReferenceableCommunityModel(
+    db: Db,
+    ownerUserId: string,
+    parsed: CommunityModelParts,
+): Promise<CommunityEndpointRow | undefined> {
     const owner = await db.query.user.findFirst({
         columns: { id: true },
         where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
@@ -146,7 +149,50 @@ async function resolveFallback(
               ),
           })
         : undefined;
-    if (!target || shouldConcealTarget(primary, target)) {
+    return target && !shouldConcealTarget(ownerUserId, target)
+        ? target
+        : undefined;
+}
+
+async function resolveFallback(
+    db: Db,
+    requested: string,
+    primary: FallbackPrimary,
+): Promise<string> {
+    // Bundled ids win, as in gen; community names cannot collide with them.
+    const registryId = registryModelId(requested);
+    if (registryId) {
+        const rejection = staticFallbackRejection(
+            primary,
+            getRegistryModelDefinition(registryId),
+        );
+        if (rejection) {
+            throw new HTTPException(400, {
+                message: `Fallback target ${registryId} ${rejection}`,
+            });
+        }
+        return registryId;
+    }
+    const parsed = parseCommunityModelId(requested);
+    if (!parsed) {
+        throw new HTTPException(400, {
+            message: `Fallback target ${requested} must be a Pollinations model id or a community model id in the form community/<owner>/<name>`,
+        });
+    }
+    const modelId = communityModelId(
+        parsed.ownerGithubUsername,
+        parsed.modelName,
+    );
+    if (modelId === primary.modelId) {
+        throw new HTTPException(400, { message: SELF_FALLBACK_MESSAGE });
+    }
+
+    const target = await findReferenceableCommunityModel(
+        db,
+        primary.ownerUserId,
+        parsed,
+    );
+    if (!target) {
         throw new HTTPException(400, {
             message: missingTargetMessage(modelId),
         });

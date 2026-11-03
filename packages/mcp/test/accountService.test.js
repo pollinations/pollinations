@@ -58,6 +58,18 @@ const REQUESTS = [
     ],
     ["createKey", { name: "bot" }, "POST", "/account/keys", { name: "bot" }],
     ["revokeKey", { id: "abc123" }, "DELETE", "/account/keys/abc123"],
+    ["listSites", {}, "GET", "/account/sites"],
+    [
+        "deploySite",
+        {
+            name: "my-app",
+            files: [{ file: "index.html", data: "<h1>Hi</h1>" }],
+        },
+        "PUT",
+        "/account/sites/my-app",
+        { files: [{ file: "index.html", data: "<h1>Hi</h1>" }] },
+    ],
+    ["deleteSite", { name: "my-app" }, "DELETE", "/account/sites/my-app"],
 ];
 
 function mockFetch(t, respond) {

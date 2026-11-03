@@ -24,25 +24,22 @@ import {
     apiDocsAnchor,
     type CardDetail,
     cardDetails,
+    type DailyItem,
     formatNewsDate,
-    type Highlight,
-    highlightLink,
+    itemLink,
     type ModelNews,
     type NewsIndex,
     visibleModelNews,
 } from "./news-index.ts";
 
-export const NEWS_MORE_URL =
-    "https://github.com/pollinations/pollinations#-latest-news";
-
 /** Rows shown at first and added per "Show older". */
 const PAGE_SIZE = 10;
 
-/** A launch or change pinned by hand; it shows until `until` (UTC day). */
+/** A launch or change pinned by hand, optionally until a UTC day. */
 type Announcement = {
     /** The day it shipped or takes effect. */
     date: string;
-    until: string;
+    until?: string;
     label: "New" | "Updated" | "Changing";
     title: string;
     text: string;
@@ -51,30 +48,51 @@ type Announcement = {
 };
 
 /**
- * Newest first. Cards share a row, so keep them even: a title of a few
- * words, one sentence of about 80 characters and a two- or three-word button.
+ * Newest first; only the first four current ones show. Cards share a row, so
+ * keep them even: a title of a few words, one sentence of about 80 characters
+ * and a two- or three-word button.
  */
 const ANNOUNCEMENTS: Announcement[] = [
     {
         date: "2026-11-01",
         until: "2026-11-15",
-        label: "Changing",
-        title: "Publishable keys",
-        text: "From Nov 1, pk_ keys only identify your app; users pay through Connect User Wallets.",
+        label: "Updated",
+        title: "App Keys",
+        text: "pk_ keys now identify apps only. API calls require sk_; connect users through Pollinations Pay.",
         icon: KeyIcon,
         cta: {
             label: "Migrate your app",
-            href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+            href: "https://gen.pollinations.ai/docs#tag/pollinations-pay",
         },
     },
     {
-        date: "2026-10-13",
-        until: "2026-10-27",
+        date: "2026-11-01",
+        until: "2026-11-15",
         label: "Updated",
-        title: "Sandboxes",
-        text: "Now in your dashboard: create, resume and kill sandboxes, then connect over SSH.",
+        title: "Sandbox launch pricing",
+        text: "Run a 2 vCPU, 2 GB sandbox from 0.0333 pollen/hour.",
         icon: TerminalIcon,
         cta: { label: "Open Sandboxes", href: "/sandboxes" },
+    },
+    {
+        date: "2026-10-22",
+        until: "2026-11-05",
+        label: "New",
+        title: "Free site hosting",
+        text: "Publish a static site at your-name.pollinations.app from the CLI, SDK or an agent.",
+        icon: GlobeIcon,
+        cta: {
+            label: "Visit pollinations.app",
+            href: "https://pollinations.app",
+        },
+    },
+    {
+        date: "2026-10-17",
+        label: "Updated",
+        title: "25% off selected Claude models",
+        text: "Sonnet 5.5 and Haiku 5.5: 25% off standard API prices.",
+        icon: WalletIcon,
+        cta: { label: "View models", href: "/models?q=anthropic" },
     },
     {
         date: "2026-10-10",
@@ -88,19 +106,10 @@ const ANNOUNCEMENTS: Announcement[] = [
             href: "https://pollinations.ai",
         },
     },
-    {
-        date: "2026-10-06",
-        until: "2026-10-20",
-        label: "New",
-        title: "Pay with crypto",
-        text: "Buy Pollen packs with USDC: pick a pack, then choose Pay with Crypto.",
-        icon: WalletIcon,
-        cta: { label: "Buy Pollen", href: "/pollen" },
-    },
 ];
 
 export const currentAnnouncements = (today: string) =>
-    ANNOUNCEMENTS.filter(({ until }) => until >= today);
+    ANNOUNCEMENTS.filter(({ until }) => !until || until >= today).slice(0, 4);
 
 function changeChip(
     { action, date, changes, status }: ModelNews,
@@ -329,7 +338,6 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
             <Surface
                 as="li"
                 key={item.title}
-                variant="card-themed"
                 className="flex grow basis-72 flex-col gap-3 p-5 sm:p-6"
             >
                 <div className="flex items-center gap-3">
@@ -343,7 +351,7 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
                 </Heading>
                 <Text size="sm">{item.text}</Text>
                 <div className="mt-auto pt-1">
-                    <ExternalLinkButton href={item.cta.href}>
+                    <ExternalLinkButton href={item.cta.href} size="sm">
                         {item.cta.label}
                     </ExternalLinkButton>
                 </div>
@@ -352,8 +360,8 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
     </ul>
 );
 
-/** The daily highlights as a grid of cards, newest first. */
-export const Updates: FC<{ items: Highlight[] }> = ({ items }) => {
+/** The daily items as a grid of cards, newest first. */
+export const Updates: FC<{ items: DailyItem[] }> = ({ items }) => {
     const [visible, setVisible] = useState(PAGE_SIZE);
     const updates = items.slice(0, visible);
     if (updates.length === 0) return null;
@@ -362,7 +370,7 @@ export const Updates: FC<{ items: Highlight[] }> = ({ items }) => {
         <>
             <ul className="grid gap-3 sm:grid-cols-2">
                 {updates.map((item) => {
-                    const { text, link } = highlightLink(item.text);
+                    const { text, link } = itemLink(item.text);
                     return (
                         <Surface
                             as="li"

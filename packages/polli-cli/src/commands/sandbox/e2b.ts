@@ -51,11 +51,22 @@ export const killSandbox = (id: string) =>
     genText(`${E2B_PATH}/sandboxes/${id}`, { method: "DELETE" });
 
 // Resumes a paused sandbox and keeps it running for at least `timeout`
-// seconds, paying in advance for time not yet paid.
+// seconds, paying in advance for time not yet paid. A refusal reads as Gen's
+// sentence, not its JSON, since ssh shows it on one line.
 export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
     gen<Connection>(`${E2B_PATH}/sandboxes/${id}/connect`, {
         method: "POST",
         body: { timeout },
+    }).catch((err) => {
+        let refusal: string | undefined;
+        try {
+            // Gen refuses with E2B's {code, message}.
+            refusal = JSON.parse(err.body).message;
+        } catch {
+            // Not a refusal, such as a network error: keep it as it is.
+        }
+        if (!refusal) throw err;
+        throw new Error(`${refusal}\nSee your sandboxes: polli sandbox list`);
     });
 
 // Paused sandboxes keep their files and memory and cost nothing. A pause ends

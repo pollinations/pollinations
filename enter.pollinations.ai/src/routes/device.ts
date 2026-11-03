@@ -337,9 +337,10 @@ export async function exchangeDeviceCode(
                 scope?: string | null;
             } | null;
 
-            // Approved but the key is gone: it can never be delivered.
+            // KV may not show a fresh write from another location yet, so
+            // keep polling; the key now lives until the code expires.
             if (!stored) {
-                return c.json({ error: "expired_token" }, 400);
+                return c.json({ error: "authorization_pending" }, 400);
             }
 
             // Delete device code row and KV entry concurrently

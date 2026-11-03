@@ -118,7 +118,7 @@ export const simpleAudioQuerySchema = z.object({
             "Seed passed to the model. Same seed + parameters return the same cached result while available.",
         example: "42",
     }),
-    key: z.string().optional().meta({
+    key: z.string().min(1).optional().meta({
         description: "API key (alternative to Authorization header)",
     }),
     safe: SafeSchema,

@@ -32,10 +32,9 @@ const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
 const CONTRIBUTION_GROUPS = questIndex.QUEST_GROUPS.filter(
     (group) => group.id === "github-contributions",
 );
-// Contribution defaults start on 2026-11-04 and pay 3 days after the merge.
+// Contribution defaults start on 2026-11-04.
 const OPENED_AFTER_REWARDS_START = "2026-11-05T00:00:00Z";
 const MERGED = "2026-11-06T00:00:00Z";
-const MERGED_TWO_DAYS_AGO = "2026-11-18T00:00:00Z";
 const ELLIOT = 36901823;
 const THOMAS = 5099901;
 
@@ -51,16 +50,6 @@ function humanComment(
         author: { __typename: "User", login: `user${databaseId}`, databaseId },
         editor: null,
     };
-}
-
-async function checkContributions(userId: string) {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-11-20T00:00:00Z"));
-    try {
-        await checkQuestsForUser(env, userId, CONTRIBUTION_GROUPS);
-    } finally {
-        vi.useRealTimers();
-    }
 }
 
 async function rewardsById(userId: string) {
@@ -2547,7 +2536,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
 });
 
-test("merged PRs opened after the rollout pay 3 three days after merge, unless Elliot or Thomas changes it", async ({
+test("merged PRs opened after the rollout pay 3 unless Elliot or Thomas changes it", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2560,13 +2549,11 @@ test("merged PRs opened after the rollout pay 3 three days after merge, unless E
         number: number;
         comments?: MockRewardComment[];
         expected?: [number, string];
-        mergedAt?: string;
         authorId?: number;
         repository?: string;
         closingIssueLabels?: string[][];
     }[] = [
         { number: 20001, expected: [3, "tier"] },
-        { number: 20002, mergedAt: MERGED_TWO_DAYS_AGO },
         { number: 20003, comments: [humanComment("Reward: 0", ELLIOT)] },
         {
             number: 20004,
@@ -2629,7 +2616,6 @@ test("merged PRs opened after the rollout pay 3 three days after merge, unless E
     for (const {
         number,
         comments,
-        mergedAt,
         authorId,
         repository,
         closingIssueLabels,
@@ -2639,15 +2625,15 @@ test("merged PRs opened after the rollout pay 3 three days after merge, unless E
             authorLogin: user.githubUsername ?? "",
             authorId: authorId ?? user.githubId ?? 0,
             createdAt: OPENED_AFTER_REWARDS_START,
-            mergedAt: mergedAt ?? MERGED,
+            mergedAt: MERGED,
             repository,
             comments,
             closingIssueLabels,
         });
     }
 
-    await checkContributions(user.id);
-    await checkContributions(user.id);
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
     expect(await rewardsById(user.id)).toEqual(
         Object.fromEntries(
             cases.flatMap(({ number, expected }) =>
@@ -2736,12 +2722,13 @@ test("an issue earns its author 1 once someone else's merged PR fixes it; older 
     issue(21007, OPENED_AFTER_REWARDS_START, {
         author: { __typename: "Bot", login: "pollinations-ai", databaseId: 0 },
     });
+    // A PR merged before the report was opened cannot have fixed it.
     issue(21008, OPENED_AFTER_REWARDS_START, {
         author: someoneElse,
-        mergedAt: MERGED_TWO_DAYS_AGO,
+        mergedAt: "2026-11-04T12:00:00Z",
     });
 
-    await checkContributions(user.id);
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
     expect(await rewardsById(user.id)).toEqual({
         merged_pr: [5, "tier"],
         "github:reported_issue:21001": [3, "tier"],
@@ -2776,7 +2763,7 @@ test("a quest PR earns the bounty plus an override, and the override's Paid rewa
         comments: [humanComment("Reward: 20 paid", THOMAS)],
     });
 
-    await checkContributions(user.id);
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
     expect(await rewardsById(user.id)).toEqual({
         "github:issue:22000": [20, "tier"],
         "github:merged_pr:22001": [20, "pack"],

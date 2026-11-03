@@ -22,8 +22,8 @@ import {
  * GitHub mirror and no materialized quest table.
  *
  * Other merged PRs earn 3, and an issue someone else's merged PR fixes earns
- * its author 1, three days after the merge. Elliot or Thomas can change either
- * with a `Reward: N` comment; the project manager only announces the default.
+ * its author 1. Elliot or Thomas can change either with a `Reward: N`
+ * comment; the project manager only announces the default.
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
@@ -31,8 +31,6 @@ const REWARD_MAINTAINERS = new Set([5099901, 36901823]); // Thomas, Elliot
 const CONTRIBUTION_REWARD_LIMIT = 100;
 const PR_REWARD = 3;
 const ISSUE_REWARD = 1;
-// Time for Elliot or Thomas to change a reward before it is recorded.
-const PAYOUT_DELAY_MS = 3 * 24 * 60 * 60 * 1000;
 // Issues and PRs opened before this keep the old fixed rewards: 3 for each
 // reported issue a merged PR fixes, 5 for a first merged PR. Same date as
 // REWARDS_START in operations/infrastructure/project-manager/project_manager.py.
@@ -108,7 +106,7 @@ const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
     description:
-        "Earn 3 Quest Pollen for each pull request merged into the Pollinations [repository](https://github.com/pollinations/pollinations), claimable 3 days after merge.",
+        "Earn 3 Quest Pollen for each pull request merged into the Pollinations [repository](https://github.com/pollinations/pollinations), claimable after merge.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: PR_REWARD,
@@ -118,7 +116,7 @@ const mergedPrQuest: QuestDefinition = {
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose). Earn 1 Quest Pollen when someone else's merged PR fixes it, claimable 3 days after merge.`,
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose). Earn 1 Quest Pollen when someone else's merged PR fixes it.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: ISSUE_REWARD,
@@ -514,10 +512,6 @@ async function contributionReward(
     );
 }
 
-function pastPayoutDelay(mergedAt: string): boolean {
-    return Date.parse(mergedAt) <= Date.now() - PAYOUT_DELAY_MS;
-}
-
 // The user's issues or PRs from REWARDS_START on, in this repository. Older
 // items keep the old rules, so a check never walks a contributor's history.
 async function recentContributions<TNode extends Contribution>(
@@ -769,11 +763,14 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
         CLOSED_ISSUES_QUERY,
         user,
     )) {
+        // Only a merge after the report was opened can have fixed it.
         const merges = issue.closedByPullRequestsReferences.nodes.filter(
-            (pr) => pr.mergedAt && pr.repository.nameWithOwner === REPO,
+            (pr) =>
+                pr.mergedAt &&
+                pr.mergedAt >= issue.createdAt &&
+                pr.repository.nameWithOwner === REPO,
         );
-        const firstMerge = merges.map((pr) => pr.mergedAt ?? "").sort()[0];
-        if (!firstMerge || !pastPayoutDelay(firstMerge)) continue;
+        if (merges.length === 0) continue;
         // A report its own author fixed earns nothing by default.
         const fixedBySomeoneElse = merges.some(
             (pr) =>
@@ -800,7 +797,6 @@ async function mergedPrProposals(token: string, user: QuestUser) {
         MERGED_PRS_QUERY,
         user,
     )) {
-        if (!pastPayoutDelay(pr.mergedAt)) continue;
         // A closed quest pays its bounty through the issue instead of the
         // default. Beyond the first page, assume one does rather than pay twice.
         const closesQuest =

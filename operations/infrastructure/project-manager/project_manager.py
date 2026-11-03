@@ -369,9 +369,9 @@ def write_reward_comment():
             or ITEM_DATA.get("created_at", "") < REWARDS_START):
         return
     if IS_PULL_REQUEST:
-        reward, rule = 3, "The PR author can claim this 3 days after merge. If the PR closes a POLLEN-QUEST issue, that quest's bounty is paid instead."
+        reward, rule = 3, "The PR author can claim this after merge. If the PR closes a POLLEN-QUEST issue, that quest's bounty is paid instead."
     else:
-        reward, rule = 1, "The issue author can claim this 3 days after a merged PR from someone else closes this issue."
+        reward, rule = 1, "The issue author can claim this once a merged PR from someone else closes this issue."
     body = (f"Reward: {reward} pollen\n\n{rule} Claim at https://enter.pollinations.ai/quests.\n\n"
             "Elliot or Thomas can change it with a comment containing only `Reward: 2` or `Reward: 2 paid`.")
     try:

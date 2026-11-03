@@ -172,7 +172,13 @@ export const CreateMessageRequestSchema = z
         messages: z.array(MessageSchema).min(1),
         system: z.union([z.string(), z.array(TextBlockSchema)]).optional(),
         stream: z.boolean().optional(),
-        stop_sequences: z.array(z.string()).optional(),
+        stop: z
+            .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
+            .optional()
+            .describe(
+                "Up to 4 sequences where the API will stop generating further tokens. Passed through to the provider as OpenAI's `stop`.",
+            ),
+        stop_sequences: z.array(z.string()).min(1).max(4).optional(),
         temperature: z.number().optional(),
         top_p: z.number().optional(),
         tools: z.array(ToolSchema).optional(),

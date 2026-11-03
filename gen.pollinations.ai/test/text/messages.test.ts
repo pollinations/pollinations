@@ -1509,4 +1509,52 @@ describe("POST /v1/messages", () => {
             "/v1/messages",
         );
     });
+
+    it("rejects more than 4 stop sequences", () => {
+        const result = CreateMessageRequestSchema.safeParse({
+            model,
+            max_tokens: 5,
+            messages: [{ role: "user", content: "hi" }],
+            stop: ["a", "b", "c", "d", "e"],
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]?.path).toContain("stop");
+        }
+    });
+
+    it("rejects an empty stop string", () => {
+        // Empty string stop is allowed (matches /v1/chat/completions behavior);
+        // it simply means no stop sequence.
+        const result = CreateMessageRequestSchema.safeParse({
+            model,
+            max_tokens: 5,
+            messages: [{ role: "user", content: "hi" }],
+            stop: "",
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it("rejects more than 4 stop_sequences", () => {
+        const result = CreateMessageRequestSchema.safeParse({
+            model,
+            max_tokens: 5,
+            messages: [{ role: "user", content: "hi" }],
+            stop_sequences: ["a", "b", "c", "d", "e"],
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]?.path).toContain("stop_sequences");
+        }
+    });
+
+    it("accepts a valid stop array", () => {
+        const result = CreateMessageRequestSchema.safeParse({
+            model,
+            max_tokens: 5,
+            messages: [{ role: "user", content: "hi" }],
+            stop: ["a", "b", "c"],
+        });
+        expect(result.success).toBe(true);
+    });
 });

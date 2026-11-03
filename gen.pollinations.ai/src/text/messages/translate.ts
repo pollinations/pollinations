@@ -351,9 +351,11 @@ export function messagesToChatRequest(
         // and quota checks), but OpenAI Responses models reject fewer than 16.
         max_tokens: Math.max(request.max_tokens, 16),
         stream: request.stream ?? false,
-        ...(request.stop_sequences?.length && {
-            stop: request.stop_sequences,
-        }),
+        ...(request.stop !== undefined
+            ? { stop: request.stop }
+            : request.stop_sequences?.length && {
+                  stop: request.stop_sequences,
+              }),
         ...(request.temperature !== undefined && {
             temperature: request.temperature,
         }),

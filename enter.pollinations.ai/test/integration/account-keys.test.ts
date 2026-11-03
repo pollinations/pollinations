@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { signGrantAgent } from "@shared/auth/agent-run-token.ts";
 import { communityModelId } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import {
@@ -301,7 +302,7 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(403);
         });
 
-        test("should create key via publishable API key with account:keys permission", async ({
+        test("refuses a publishable key even with account:keys permission", async ({
             accountToken,
         }) => {
             const createPub = await SELF.fetch(
@@ -349,20 +350,13 @@ describe("Account Key Management API", () => {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${createdPub.key}`,
                     },
-                    // A publishable key's budget is 0, so its keys' are too.
                     body: JSON.stringify({
                         name: "child-from-publishable",
-                        pollenBudget: 0,
                     }),
                 },
             );
 
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.key.startsWith("sk_")).toBe(true);
-            expect(data.name).toBe("child-from-publishable");
-            expect(data.pollenBudget).toBe(0);
-            expect(data.permissions?.account ?? []).not.toContain("keys");
+            expect(response.status).toBe(401);
         });
     });
 
@@ -423,6 +417,51 @@ describe("Account Key Management API", () => {
             });
         });
 
+        test("an overspent key can still be edited", async ({
+            accountToken,
+        }) => {
+            const key = await createApiKeyViaApi(accountToken, {
+                name: "overspent",
+                pollenBudget: 1,
+            });
+            // Settling can bill past a reservation and leave a budget below 0.
+            await drizzle(env.DB)
+                .update(schema.apikey)
+                .set({ pollenBalance: -0.3 })
+                .where(eq(schema.apikey.id, key.id));
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            };
+            const keys = await (
+                await SELF.fetch("http://localhost:3000/api/account/keys", {
+                    headers,
+                })
+            ).json<{ data: ApiKey[] }>();
+            const initial = initialKeyEditValues(
+                keys.data.find(({ id }) => id === key.id) as ApiKey,
+            );
+
+            const saved = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${key.id}`,
+                {
+                    method: "PATCH",
+                    headers,
+                    body: JSON.stringify(
+                        keyEditUpdates(initial, {
+                            ...initial,
+                            name: "renamed",
+                        }),
+                    ),
+                },
+            );
+            expect(saved.status).toBe(200);
+            expect(await saved.json()).toMatchObject({
+                name: "renamed",
+                pollenBalance: -0.3,
+            });
+        });
+
         test("accepts an ISO 8601 expiry with a UTC offset", async ({
             accountToken,
         }) => {
@@ -449,6 +488,38 @@ describe("Account Key Management API", () => {
                 "2030-01-01T00:00:00.000Z",
             );
         });
+    });
+
+    test("rejects negative budgets on create and update", async ({
+        accountToken,
+    }) => {
+        const headers = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accountToken}`,
+        };
+        const created = await SELF.fetch(
+            "http://localhost:3000/api/account/keys",
+            {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ name: "negative", pollenBudget: -5 }),
+            },
+        );
+        expect(created.status).toBe(400);
+
+        const key = await createApiKeyViaApi(accountToken, {
+            name: "positive",
+            pollenBudget: 5,
+        });
+        const updated = await SELF.fetch(
+            `http://localhost:3000/api/account/keys/${key.id}`,
+            {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({ pollenBudget: -3 }),
+            },
+        );
+        expect(updated.status).toBe(400);
     });
 
     describe("keys managed with an API key stay within it", () => {

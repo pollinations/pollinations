@@ -12,7 +12,10 @@ import {
 } from "@shared/auth/api-key-creation.ts";
 import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import {
+    CONSENT_PERMISSIONS,
+    sanitizeAuthorizeAccountPermissions,
+} from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
 import {
     atomicAdjustApiKeyBalance,
@@ -136,6 +139,7 @@ const CreateKeySchema = z.object({
         ),
     pollenBudget: z
         .number()
+        .min(0)
         .nullable()
         .optional()
         .describe(
@@ -148,7 +152,7 @@ const CreateKeySchema = z.object({
             "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only",
         ),
     accountPermissions: z
-        .array(z.string())
+        .array(z.enum(CONSENT_PERMISSIONS))
         .nullable()
         .optional()
         .describe(
@@ -610,11 +614,15 @@ const earningsQuerySchema = usageDailyQuerySchema
 const earningsTransactionsQuerySchema = usageQuerySchema
     .pick({
         limit: true,
+        before: true,
+        before_event_id: true,
         granularity: true,
         period: true,
         timezone: true,
     })
     .extend({
+        before_source: z.string().optional(),
+        before_entity_id: z.string().optional(),
         days: z.coerce
             .number()
             .int()
@@ -622,7 +630,25 @@ const earningsTransactionsQuerySchema = usageQuerySchema
             .max(MAX_EARNINGS_DAYS)
             .optional()
             .default(DEFAULT_USAGE_DAYS),
-    });
+    })
+    .refine(
+        ({ before, before_event_id, before_source, before_entity_id }) => {
+            const cursor = [
+                before,
+                before_event_id,
+                before_source,
+                before_entity_id,
+            ];
+            return (
+                cursor.every((value) => value === undefined) ||
+                cursor.every((value) => value !== undefined)
+            );
+        },
+        {
+            message:
+                "Earnings pagination requires before, before_event_id, before_source, and before_entity_id together",
+        },
+    );
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
@@ -759,6 +785,10 @@ const developerEarningsTransactionSchema = z.object({
         .string()
         .describe("Request timestamp in UTC (YYYY-MM-DD HH:mm:ss format)"),
     cursor_event_id: z.string().describe("Stable event id"),
+    cursor_source: z.string().describe("Earning source used for pagination"),
+    cursor_entity_id: z
+        .string()
+        .describe("Earning entity id used for pagination"),
     entity_name: z.string().describe("Earning entity display name"),
     model: z.string().nullable().describe("Model used for generation"),
     meter_source: z
@@ -879,6 +909,7 @@ async function respondDetailedUsage(
 
         return c.json({ usage, count: usage.length });
     } catch (error) {
+        if (error instanceof HTTPException) throw error;
         log.error("Error fetching usage: {error}", { error });
         return c.json({ error: "Failed to fetch usage data" }, 500);
     }
@@ -921,8 +952,22 @@ const accountBalanceSchema = z.object({
         .describe(
             "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
         ),
-    tier: z.number().describe("Quest Pollen remaining, never below 0"),
+    tier: z
+        .number()
+        .describe(
+            "Spendable Quest pollen, never below 0; zero while restricted",
+        ),
     paid: z.number().describe("Paid Pollen remaining, never below 0"),
+    heldTier: z
+        .number()
+        .optional()
+        .describe("Locked Quest pollen, excluded from total and tier"),
+    questPollenRestricted: z
+        .boolean()
+        .optional()
+        .describe(
+            "Whether Quest pollen spending is locked until a purchase or account review",
+        ),
 });
 
 const balanceResponseSchema = z.object({
@@ -1306,7 +1351,8 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             requireAccountPermission(c, "usage");
 
-            const rows = await drizzle(c.env.DB)
+            const db = drizzle(c.env.DB, { schema });
+            const rows = await db
                 .select()
                 .from(rewardsTable)
                 .where(eq(rewardsTable.userId, user.id))
@@ -1359,7 +1405,8 @@ export const accountRoutes = new Hono<Env>()
         }
 
         const user = c.var.auth.requireUser();
-        const result = await claimReward(drizzle(c.env.DB, { schema }), {
+        const db = drizzle(c.env.DB, { schema });
+        const result = await claimReward(db, {
             rewardId: c.req.param("rewardId"),
             userId: user.id,
         });
@@ -1412,7 +1459,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             let accountBalance:
-                | { total: number; tier: number; paid: number }
+                | z.infer<typeof accountBalanceSchema>
                 | undefined;
             if (canViewAccount) {
                 // Same helper the billing path uses, so a bucket that has gone
@@ -1426,8 +1473,16 @@ export const accountRoutes = new Hono<Env>()
                 );
                 accountBalance = {
                     total: getAvailableBalance(balances),
-                    tier: Math.max(0, balances.tierBalance),
+                    tier: balances.questPollenRestricted
+                        ? 0
+                        : Math.max(0, balances.tierBalance),
                     paid: Math.max(0, balances.packBalance),
+                    ...(balances.questPollenRestricted
+                        ? {
+                              heldTier: Math.max(0, balances.tierBalance),
+                              questPollenRestricted: true,
+                          }
+                        : {}),
                 };
             }
 
@@ -1628,6 +1683,7 @@ export const accountRoutes = new Hono<Env>()
                     count: usage.length,
                 });
             } catch (error) {
+                if (error instanceof HTTPException) throw error;
                 log.error("Error fetching daily usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
             }
@@ -1639,7 +1695,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Earnings Transactions",
             description:
-                "Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.",
+                "Returns recent per-request earnings transactions, newest first. Pass the last row's timestamp and cursor fields as `before`, `before_event_id`, `before_source`, and `before_entity_id` together to fetch the next page. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Earnings transaction records",
@@ -1671,8 +1727,17 @@ export const accountRoutes = new Hono<Env>()
 
             requireAccountPermission(c, "usage");
 
-            const { limit, days, granularity, period, timezone } =
-                c.req.valid("query");
+            const {
+                limit,
+                days,
+                granularity,
+                period,
+                timezone,
+                before,
+                before_event_id,
+                before_source,
+                before_entity_id,
+            } = c.req.valid("query");
             const { userId: devUserId } = resolveUsageTargetUserId(
                 c.env,
                 user.id,
@@ -1695,6 +1760,10 @@ export const accountRoutes = new Hono<Env>()
                         {
                             dev_user_id: devUserId,
                             limit: limit.toString(),
+                            before,
+                            before_event_id,
+                            before_source,
+                            before_entity_id,
                             since: window.since,
                             until: window.until,
                             timezone,
@@ -1703,6 +1772,7 @@ export const accountRoutes = new Hono<Env>()
 
                 return c.json({ transactions, count: transactions.length });
             } catch (error) {
+                if (error instanceof HTTPException) throw error;
                 log.error("Error fetching earnings transactions: {error}", {
                     error,
                 });
@@ -1802,6 +1872,7 @@ export const accountRoutes = new Hono<Env>()
 
                 return c.json({ daily, perEntity });
             } catch (error) {
+                if (error instanceof HTTPException) throw error;
                 log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
@@ -1925,11 +1996,9 @@ export const accountRoutes = new Hono<Env>()
                 createdByApiKeyId: c.var.auth.apiKey?.id,
                 originAppKeyId:
                     c.var.auth.apiKey?.byopClientKeyId ??
-                    (c.var.auth.apiKey?.metadata?.keyType === "publishable"
-                        ? c.var.auth.apiKey.id
-                        : (c.var.auth.apiKey?.metadata?.originAppKeyId as
-                              | string
-                              | undefined)),
+                    (c.var.auth.apiKey?.metadata?.originAppKeyId as
+                        | string
+                        | undefined),
             }).catch(async (error) => {
                 // Give back the budget taken for a key that wasn't created.
                 if (callerKey && budgetTaken) {
@@ -2328,11 +2397,6 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Whether this key spends only Quest Pollen, never paid Pollen",
                                         ),
-                                    rateLimitEnabled: z
-                                        .boolean()
-                                        .describe(
-                                            "Whether rate limiting is enabled for this key",
-                                        ),
                                     userId: z
                                         .string()
                                         .nullable()
@@ -2447,8 +2511,6 @@ export const accountRoutes = new Hono<Env>()
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
                 questPollenOnly: apiKey.questPollenOnly ?? false,
-                // Generation rate limiting applies to publishable keys only.
-                rateLimitEnabled: keyType === "publishable",
                 // Server-attested identity. Downstream services (media catalog)
                 // stamp ownership from these values — never from request
                 // params — so user and BYOP app ids cannot be spoofed.

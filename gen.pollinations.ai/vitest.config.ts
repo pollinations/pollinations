@@ -12,7 +12,6 @@ const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const genAliases = [
     "content-filter.ts",
     "cache",
-    "durable-objects/PollenRateLimiter.ts",
     "durable-objects/GenerationCoordinator.ts",
     "env.ts",
     "error.ts",
@@ -27,7 +26,6 @@ const genAliases = [
     "middleware/logger.ts",
     "middleware/media-cache.ts",
     "middleware/model.ts",
-    "middleware/rate-limit-durable.ts",
     "middleware/rate-limit-edge.ts",
     "middleware/safety.ts",
     "middleware/text-cache.ts",

@@ -1,7 +1,7 @@
 name: Evals / Run weekly model evals
 
 # Scores every text model in /text/models (community models included) with
-# operations/model-evals and publishes the results to the `evals` data branch,
+# operations/monitoring/model-evals and publishes the results to the `evals` data branch,
 # which Community → Trust on model-monitor.pollinations.ai reads. Needs
 # PLN_GITHUB_EVALS_KEY in the encrypted evals secrets file: a pollinationsagent
 # key with no model limit, on an account with ~20 Pollen, some of it paid
@@ -74,8 +74,8 @@ jobs:
           SAMPLES: ${{ inputs.samples || '10' }}
           BUDGET: ${{ inputs.budget || '12' }}
         run: |
-          sops exec-env operations/model-evals/secrets/prod.vars.json \
-            'POLLINATIONS_API_KEY="$PLN_GITHUB_EVALS_KEY" node operations/model-evals/run.js \
+          sops exec-env operations/monitoring/model-evals/secrets/prod.vars.json \
+            'POLLINATIONS_API_KEY="$PLN_GITHUB_EVALS_KEY" node operations/monitoring/model-evals/run.js \
               --out "$RUNNER_TEMP/evals/data" \
               --scope "$SCOPE" \
               --samples "$SAMPLES" \

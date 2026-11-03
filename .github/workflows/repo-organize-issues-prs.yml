@@ -35,11 +35,6 @@ jobs:
       repository-projects: write
     steps:
       - uses: actions/checkout@v5
-        with:
-          # This privileged workflow reads PR patches through the API; it must
-          # never execute files from a contributor's branch.
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
 
       - name: Generate Pollinations AI Token
         id: pollinations-ai
@@ -63,8 +58,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          CONTRIBUTION_REWARD_KEY: ${{ secrets.CONTRIBUTION_REWARD_KEY }}
-        run: python operations/github/project_manager.py
+        run: python operations/infrastructure/project-manager/project_manager.py
 
       - name: Organize existing issues and PRs
         if: github.event_name == 'workflow_dispatch'
@@ -72,7 +66,6 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          CONTRIBUTION_REWARD_KEY: ${{ secrets.CONTRIBUTION_REWARD_KEY }}
           PR_NUMBERS: ${{ inputs.pr_numbers }}
           ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
@@ -88,7 +81,7 @@ jobs:
               event=$(gh api "repos/$GITHUB_REPOSITORY/issues/$2" \
                 --jq 'if .pull_request then error("#\(.number) is a pull request") else {issue: .} end') || return 1
             fi
-            GITHUB_EVENT="$event" python operations/github/project_manager.py
+            GITHUB_EVENT="$event" python operations/infrastructure/project-manager/project_manager.py
           }
           prs="$PR_NUMBERS"
           if [ -z "$PR_NUMBERS$ISSUE_NUMBERS" ]; then

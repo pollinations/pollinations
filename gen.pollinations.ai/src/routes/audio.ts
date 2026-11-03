@@ -38,7 +38,6 @@ import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -441,7 +440,7 @@ export async function generateElevenLabsSpeech(opts: {
     // credits, not exact billable characters; verified against usage analytics.
     const characters = isV4 ? [...text].length : text.length;
 
-    if (isV4 && responseFormat === "flac") {
+    if (responseFormat === "flac") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
                 "This speech model supports mp3, opus, aac, wav, and pcm output; flac is not supported.",
@@ -4126,11 +4125,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     const language = formData.get("language") as string | null;
     const prompt = formData.get("prompt") as string | null;
     const responseFormat = formData.get("response_format") as string | null;
-    const temperatureRaw = formData.get("temperature") as string | null;
-    const temperature =
-        temperatureRaw !== null && temperatureRaw !== ""
-            ? Number(temperatureRaw)
-            : undefined;
+    const temperature = parseOptionalNumber(
+        formData.get("temperature"),
+        "temperature",
+    );
+    if (temperature !== undefined && (temperature < 0 || temperature > 1)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "temperature must be between 0 and 1",
+        });
+    }
     const speakersExpected = parsePositiveInt(
         formData.get("speakers_expected"),
         "speakers_expected",
@@ -4344,7 +4347,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
-    .use("*", auth(), frontendKeyRateLimit, balance)
+    .use("*", auth(), balance)
     .post(
         "/voice-changer",
         describeRoute({

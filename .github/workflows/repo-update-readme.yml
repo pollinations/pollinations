@@ -44,7 +44,7 @@ jobs:
         run: |
           git fetch --depth=1 origin news
           git show FETCH_HEAD:operations/social/news/data/index.json > "$RUNNER_TEMP/index.json"
-          python3 operations/social/scripts/readme.py "$RUNNER_TEMP/index.json" README.md
+          python3 operations/news/scripts/readme.py "$RUNNER_TEMP/index.json" README.md
 
       - name: Check for changes
         id: changes

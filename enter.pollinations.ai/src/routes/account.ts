@@ -12,7 +12,10 @@ import {
 } from "@shared/auth/api-key-creation.ts";
 import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import {
+    CONSENT_PERMISSIONS,
+    sanitizeAuthorizeAccountPermissions,
+} from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
 import {
     atomicAdjustApiKeyBalance,
@@ -149,7 +152,7 @@ const CreateKeySchema = z.object({
             "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only",
         ),
     accountPermissions: z
-        .array(z.string())
+        .array(z.enum(CONSENT_PERMISSIONS))
         .nullable()
         .optional()
         .describe(

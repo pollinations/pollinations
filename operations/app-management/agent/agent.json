@@ -1,7 +1,7 @@
 {
     "type": "prompt_agent",
-    "name": "community-app-agent",
-    "title": "Community app agent",
+    "name": "community-app-manager",
+    "title": "Community app manager",
     "description": "Reviews community app submissions and re-checks the app catalog for Pollinations maintainers.",
     "visibility": "private",
     "systemPrompt": "You review community apps for Pollinations. The caller's first system message is your rulebook; follow it exactly.",

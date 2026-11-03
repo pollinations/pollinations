@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Community app agent, read-only: builds the context for one submission, asks
+// Community app manager, read-only: builds the context for one submission, asks
 // the hosted agent, checks its report against the evidence it actually had,
 // and prints the result. Nothing is written to GitHub yet.
 const { execFileSync } = require("node:child_process");
@@ -11,7 +11,8 @@ const path = require("node:path");
 const { readApps } = require("../app.js");
 
 const AGENT =
-    process.env.AGENT_MODEL || "community/pollinations-ai/community-app-agent";
+    process.env.AGENT_MODEL ||
+    "community/pollinations-ai/community-app-manager";
 const RULEBOOK = fs.readFileSync(path.join(__dirname, "REVIEW.md"), "utf8");
 const REQUIREMENTS = [
     "works",
@@ -88,7 +89,7 @@ async function fetchText(url, maxBytes = 600_000) {
         const res = await fetch(current, {
             redirect: "manual",
             signal: AbortSignal.timeout(15_000),
-            headers: { "user-agent": "pollinations-community-app-agent" },
+            headers: { "user-agent": "pollinations-community-app-manager" },
         });
         const location = res.headers.get("location");
         if (res.status >= 300 && res.status < 400 && location) {
@@ -490,7 +491,7 @@ async function main() {
 
 if (require.main === module) {
     main().catch((error) => {
-        console.error(`community app agent: ${error.message}`);
+        console.error(`community app manager: ${error.message}`);
         process.exitCode = 1;
     });
 }

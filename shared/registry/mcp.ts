@@ -27,6 +27,8 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
     pricing: McpPricingDefinition;
     userScoped?: boolean;
+    /** Agents run code their author wrote, so their run tokens are refused. */
+    agents?: false;
     accountPath?: string;
 };
 
@@ -199,6 +201,7 @@ export const MCP_SERVERS = [
         billing: "usage_receipt",
         provider: "composio",
         userScoped: true,
+        agents: false,
         accountPath: "/account#connectors",
         pricing: COMPOSIO_MCP_PRICING,
     },
@@ -229,10 +232,11 @@ export const MCP_SERVERS = [
 ] as const satisfies readonly McpServerDefinition[];
 
 export type McpServerId = (typeof MCP_SERVERS)[number]["id"];
-export const MCP_SERVER_IDS = MCP_SERVERS.map(({ id }) => id) as [
-    McpServerId,
-    ...McpServerId[],
-];
+
+/** The servers a hosted agent can be given. */
+export const AGENT_MCP_SERVER_IDS = MCP_SERVERS.filter(
+    (server: McpServerDefinition) => server.agents !== false,
+).map(({ id }) => id) as [McpServerId, ...McpServerId[]];
 
 export function getMcpServerDefinition(
     id: string,

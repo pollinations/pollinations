@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.26] - 2026-10-31
+
+### Removed
+- `KeyInfo.rateLimitEnabled`. `GET /account/key` no longer returns it: from
+  2026-11-01 publishable (`pk_`) App Keys only identify an app and can't
+  authenticate requests, so no key is rate limited per IP.
+
 ## [5.1.0-alpha.25] - 2026-10-29
 
 ### Added

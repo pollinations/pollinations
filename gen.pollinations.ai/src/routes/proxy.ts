@@ -13,7 +13,6 @@ import {
     model3dCache,
 } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
@@ -684,7 +683,6 @@ export const proxyRoutes = new Hono<Env>()
     .get("/register", handleRegisterServer)
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth())
-    .use(frontendKeyRateLimit)
     .use(balance)
     .get(
         "/realtime",
@@ -973,6 +971,8 @@ export const proxyRoutes = new Hono<Env>()
             summary: "Generate Image",
             description: [
                 "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
+                "",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.",
                 "",
                 `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",

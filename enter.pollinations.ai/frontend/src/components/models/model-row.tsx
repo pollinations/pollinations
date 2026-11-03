@@ -1,4 +1,4 @@
-import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
+import { formatCount, InlineLink, Surface, Tooltip } from "@pollinations/ui";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
@@ -144,7 +144,7 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
                     <strong className="font-semibold text-theme-text-base">
                         Context window:
                     </strong>{" "}
-                    {model.contextLength.toLocaleString()} tokens
+                    {formatCount(model.contextLength)} tokens
                 </span>
             )}
             {videoDuration && (

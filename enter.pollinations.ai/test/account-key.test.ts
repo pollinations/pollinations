@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { defaultKeyHasher } from "@better-auth/api-key";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -127,7 +128,6 @@ test("GET /api/account/key - returns key status for secret key", {
     expect(data).toHaveProperty("expiresIn");
     expect(data).toHaveProperty("permissions");
     expect(data).toHaveProperty("pollenBudget");
-    expect(data).toHaveProperty("rateLimitEnabled");
 });
 
 test("GET /api/account/key - agent run token has no account permissions", {
@@ -185,7 +185,7 @@ test("GET /api/account/key - agent run token has no account permissions", {
     expect(refusal.error).not.toHaveProperty("fixUrl");
 });
 
-test("GET /api/account/key - returns key status for publishable key", {
+test("GET /api/account/key - refuses a publishable key", {
     timeout: 30000,
 }, async ({ pubApiKey, mocks }) => {
     await mocks.enable("tinybird");
@@ -195,12 +195,34 @@ test("GET /api/account/key - returns key status for publishable key", {
             Authorization: `Bearer ${pubApiKey}`,
         },
     });
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(401);
+    const body = (await response.json()) as { error: { message: string } };
+    expect(body.error.message).toContain("only identify your app");
+});
 
-    const data = await response.json();
-    expect(data.valid).toBe(true);
-    expect(data.type).toBe("publishable");
-    expect(data.rateLimitEnabled).toBe(true);
+test("GET /api/account/key - refuses an App Key in the old plln_pk_ format", {
+    timeout: 30000,
+}, async ({ pubApiKey, mocks }) => {
+    await mocks.enable("tinybird");
+    const legacyKey = `plln_${pubApiKey}`;
+    const row = await drizzle(env.DB)
+        .select({ id: schema.apikey.id })
+        .from(schema.apikey)
+        .where(eq(schema.apikey.key, await defaultKeyHasher(pubApiKey)))
+        .get();
+    await updateKey(row?.id ?? "", {
+        key: await defaultKeyHasher(legacyKey),
+        prefix: "plln_pk",
+    });
+
+    const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+        headers: {
+            Authorization: `Bearer ${legacyKey}`,
+        },
+    });
+    expect(response.status).toBe(401);
+    const body = (await response.json()) as { error: { message: string } };
+    expect(body.error.message).toContain("only identify your app");
 });
 
 test("GET /api/account/key - shows permissions for restricted key", {
@@ -313,4 +335,40 @@ test("GET /api/account/key - returns null for keys without expiry", {
         expect(data.expiresAt).toBeNull();
         expect(data.expiresIn).toBeNull();
     }
+});
+
+test("POST /api/account/keys rejects invalid account permissions", {
+    timeout: 30000,
+}, async ({ accountToken, mocks }) => {
+    await mocks.enable("tinybird");
+
+    // Invalid permission should be rejected with 400
+    const invalid = await SELF.fetch("http://localhost:3000/api/account/keys", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accountToken}`,
+        },
+        body: JSON.stringify({
+            name: "invalid-perm-key",
+            accountPermissions: ["not_a_real_permission"],
+        }),
+    });
+    expect(invalid.status).toBe(400);
+
+    // Valid permissions should still be accepted
+    const valid = await SELF.fetch("http://localhost:3000/api/account/keys", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accountToken}`,
+        },
+        body: JSON.stringify({
+            name: "valid-perm-key",
+            accountPermissions: ["usage", "keys"],
+        }),
+    });
+    expect(valid.status).toBe(200);
+    const validBody = await valid.json();
+    expect(validBody.permissions.account).toEqual(["usage", "keys"]);
 });

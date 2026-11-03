@@ -55,10 +55,13 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             if (!value) return undefined;
             // Support both pipe (|) and comma (,) separators. Prefer pipe if
             // present; otherwise split only on commas that start a new URL, so
-            // commas inside a URL (e.g. Cloudinary transforms) are kept.
-            return value.includes("|")
+            // commas inside a URL (e.g. Cloudinary transforms) are kept. Trim
+            // each entry: a space after the separator is the natural way to
+            // write a list.
+            const urls = value.includes("|")
                 ? value.split("|")
-                : value.split(/,(?=https?:\/\/)/);
+                : value.split(/,(?=\s*https?:\/\/)/);
+            return urls.map((url) => url.trim()).filter(Boolean);
         })
         .optional()
         .refine(

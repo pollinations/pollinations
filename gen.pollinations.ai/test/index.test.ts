@@ -545,6 +545,34 @@ describe("gen worker routing", () => {
         expect(agentHome.headers.get("Vary")).toBe("Accept");
         expect(await agentHome.text()).toMatch(/^# Pollinations\n/);
 
+        const caseInsensitive = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "Text/Markdown" },
+        });
+        expect(caseInsensitive.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+
+        const rejectedMarkdown = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/html, text/markdown;q=0" },
+        });
+        expect(rejectedMarkdown.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const htmlPreferred = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.1, text/html;q=0.9" },
+        });
+        expect(htmlPreferred.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const markdownPreferred = await fetchWorker("/docs", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.9, text/html;q=0.1" },
+        });
+        expect(markdownPreferred.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+
         const browserHome = await fetchWorker("/", envWithEnter(), {
             headers: { Accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
         });

@@ -17,58 +17,26 @@ export const AGENT_DISCOVERY_LINKS = [
     '</.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");
 
-type AcceptedRange = { type: string; subtype: string; quality: number };
-
-function parseAccept(accept: string): AcceptedRange[] {
-    return accept.split(",").flatMap((range) => {
-        const [mediaType, ...params] = range.trim().toLowerCase().split(";");
-        const [type, subtype] = mediaType.split("/").map((part) => part.trim());
-        if (!type || !subtype) return [];
-
-        const q = params
-            .map((param) => param.trim())
-            .find((param) => param.startsWith("q="));
-        const quality = q === undefined ? 1 : Number(q.slice(2));
-        // RFC 9110 §12.5.1: q is a 0..1 weight; a malformed q drops the range.
-        return Number.isFinite(quality) && quality >= 0 && quality <= 1
-            ? [{ type, subtype, quality }]
-            : [];
-    });
-}
-
-// The most specific matching range sets a media type's weight, so an explicit
-// `text/markdown;q=0` overrides a permissive `*/*`.
-function qualityFor(
-    ranges: AcceptedRange[],
-    type: string,
-    subtype: string,
-): number {
-    const exact = ranges.filter(
-        (range) => range.type === type && range.subtype === subtype,
-    );
-    const typeWildcard = ranges.filter(
-        (range) => range.type === type && range.subtype === "*",
-    );
-    const wildcard = ranges.filter(
-        (range) => range.type === "*" && range.subtype === "*",
-    );
-    const matches = exact.length
-        ? exact
-        : typeWildcard.length
-          ? typeWildcard
-          : wildcard;
-    return matches.reduce((max, range) => Math.max(max, range.quality), 0);
-}
-
 export function acceptsMarkdown(accept: string): boolean {
-    const ranges = parseAccept(accept);
-    const requested = ranges.some(
-        (range) => range.type === "text" && range.subtype === "markdown",
-    );
-    if (!requested) return false;
-
-    const markdown = qualityFor(ranges, "text", "markdown");
-    return markdown > 0 && markdown >= qualityFor(ranges, "text", "html");
+    // RFC 9110 §12.5.1: q is a 0..1 weight; a malformed q drops the range.
+    const weights = new Map<string, number>();
+    for (const range of accept.toLowerCase().split(",")) {
+        const [type, ...params] = range.split(";").map((part) => part.trim());
+        const q = params.find((param) => param.startsWith("q="));
+        const quality = q === undefined ? 1 : Number(q.slice(2));
+        if (quality >= 0 && quality <= 1) {
+            weights.set(type, Math.max(weights.get(type) ?? 0, quality));
+        }
+    }
+    // Markdown must be listed explicitly. The most specific range sets HTML's
+    // weight, so a bare `*/*` or a heavier HTML range keeps the HTML page.
+    const markdown = weights.get("text/markdown") ?? 0;
+    const html =
+        weights.get("text/html") ??
+        weights.get("text/*") ??
+        weights.get("*/*") ??
+        0;
+    return markdown > 0 && markdown >= html;
 }
 
 /**

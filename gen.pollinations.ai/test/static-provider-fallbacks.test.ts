@@ -1722,21 +1722,6 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps exact provider route costs", () => {
-        expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
-            promptTextTokens: 0.15 / 1_000_000,
-            promptCachedTokens: 0.075 / 1_000_000,
-            completionTextTokens: 0.6 / 1_000_000,
-        });
-        expect(TEXT_SERVICES["openai/gpt-4o-mini"].fallbacks).toEqual([
-            "openai/gpt-4o-mini:openrouter:openai",
-        ]);
-        expect(
-            TEXT_SERVICES["openai/gpt-4o-mini:openrouter:openai"].cost,
-        ).toMatchObject({
-            promptTextTokens: (0.15 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
-            completionTextTokens: (0.6 / 1_000_000) * 1.055,
-        });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
             "x-ai/grok-4.6:aws",
         ]);

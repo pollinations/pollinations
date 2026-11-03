@@ -154,32 +154,6 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "openai/gpt-4o-mini": {
-        supportedParameters: CHAT_PARAMETERS.openRouterGpt4oMini,
-        aliases: [],
-        provider: "openai",
-        publisher: "OpenAI",
-        category: "text",
-        addedDate: new Date("2026-09-12").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        cost: {
-            // OpenAI Standard rates (2026-10-24). Image inputs are included
-            // in promptTextTokens by the provider.
-            promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.075),
-            completionTextTokens: perMillion(0.6),
-        },
-        title: "GPT-4o Mini",
-        description:
-            "Affordable multimodal chat with vision input for everyday tasks",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenAI vision limit: 10 images/chat request (provider cap).
-        tools: true,
-        contextLength: 128000,
-        isSpecialized: false,
-    },
     "openai/gpt-5.3-codex": {
         supportedParameters: CHAT_PARAMETERS.azureResponses,
         aliases: [],

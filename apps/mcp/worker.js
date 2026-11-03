@@ -35,7 +35,7 @@ function unauthorizedResponse() {
 }
 
 export default {
-    async fetch(request) {
+    async fetch(request, env) {
         const url = new URL(request.url);
 
         if (url.pathname === "/health" && request.method === "GET") {
@@ -49,6 +49,19 @@ export default {
 
         if (url.pathname !== "/") {
             return new Response("Not found", { status: 404 });
+        }
+
+        // Tool calls carry the caller's key to Gen, and so to Enter's D1, from
+        // Cloudflare's shared Workers IP, so cap each client IP here.
+        const ip = request.headers.get("cf-connecting-ip");
+        if (ip && !(await env.IP_RATE_LIMITER.limit({ key: ip })).success) {
+            return Response.json(
+                {
+                    error: "rate_limited",
+                    message: "Too many requests. Please slow down.",
+                },
+                { status: 429, headers: { "Retry-After": "10" } },
+            );
         }
 
         const token = readBearerToken(request);

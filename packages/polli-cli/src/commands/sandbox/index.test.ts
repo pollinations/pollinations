@@ -178,6 +178,29 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
             "Host existing.example\n",
         );
     });
+
+    it("says which consent box to tick when the login lacks account:machines", async () => {
+        const grant =
+            "https://enter.pollinations.ai/grant?id=key1&permission=machines";
+        const command = await prepare(
+            Response.json(
+                {
+                    code: 403,
+                    message: `API key does not have 'account:machines' permission. Allow it at ${grant}`,
+                },
+                { status: 403 },
+            ),
+        );
+
+        await expect(command.run()).rejects.toMatchObject({ code: 1 });
+
+        const { stderr } = command.output();
+        expect(stderr).toContain(
+            'Run `polli auth login` again and tick "Run hosted sandboxes".',
+        );
+        expect(stderr).toContain(`Or allow it for this login: ${grant}`);
+        expect(stderr).not.toContain("403");
+    });
 });
 
 describe("sandbox timeout and pause", () => {

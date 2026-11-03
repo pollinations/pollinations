@@ -31,6 +31,13 @@ describe("questNavLabel", () => {
         ).toBe("2 new!");
     });
 
+    it("counts Setup rewards as claimable", () => {
+        const setup = { ...available("done"), category: "setup" };
+        expect(questNavLabel([setup], [reward("done", null)])).toBe(
+            "1 claimable!",
+        );
+    });
+
     it("hides the badge when nothing needs attention", () => {
         expect(
             questNavLabel(

@@ -3487,7 +3487,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/muse-spark-open": {
-        supportedParameters: CHAT_PARAMETERS.openRouterMuseSparkOpen,
+        supportedParameters: CHAT_PARAMETERS.fireworksMuseSparkOpen,
         aliases: [],
         provider: "fireworks",
         publisher: "Meta",

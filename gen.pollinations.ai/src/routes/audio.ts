@@ -440,7 +440,7 @@ export async function generateElevenLabsSpeech(opts: {
     // credits, not exact billable characters; verified against usage analytics.
     const characters = isV4 ? [...text].length : text.length;
 
-    if (isV4 && responseFormat === "flac") {
+    if (responseFormat === "flac") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
                 "This speech model supports mp3, opus, aac, wav, and pcm output; flac is not supported.",

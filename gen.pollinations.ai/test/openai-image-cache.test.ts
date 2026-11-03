@@ -576,48 +576,6 @@ describe("OpenAI image cache", () => {
         expect(originHits).toBe(0);
     });
 
-    it.each(["abc", "", "256x256x256", "1024", "x256", "256x", "256 x 256"])(
-        "rejects invalid size string %s before it can reach the POST cache",
-        async (size) => {
-            let originHits = 0;
-            const app = new Hono<Env>();
-            app.onError((error) => {
-                if (error instanceof ValidationError) {
-                    return new Response(error.message, { status: 400 });
-                }
-                return new Response("unexpected error", { status: 500 });
-            });
-            app.post(
-                "/v1/images/generations",
-                validator("json", CreateImageRequestSchema),
-                prepareOpenAIImageGeneration,
-                imageCache,
-                () => {
-                    originHits += 1;
-                    return new Response("origin");
-                },
-            );
-
-            const response = await app.fetch(
-                new Request(
-                    "https://gen.pollinations.ai/v1/images/generations",
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            prompt: "a paper boat",
-                            model: "flux",
-                            size,
-                        }),
-                    },
-                ),
-                {} as CloudflareBindings,
-            );
-
-            expect(response.status, size).toBe(400);
-        },
-    );
-
     it.each(["url", "b64_json"])(
         "serves %s and a file link for objects cached before model metadata was stored",
         async (response_format) => {

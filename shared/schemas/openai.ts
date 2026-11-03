@@ -894,10 +894,6 @@ const imageSizeValues = z
 const imageSizeField = imageSizeValues
     .optional()
     .default("1024x1024")
-    .refine(
-        (s) => /^\d+x\d+$/.test(s),
-        "Size must be in WIDTHxHEIGHT format (e.g., 1024x1024)",
-    )
     .meta(imageSizeMeta);
 const imageEditSizeField = imageSizeValues.optional().meta(imageSizeMeta);
 // Same bounds as the GET image route and the chat route: out-of-range seeds

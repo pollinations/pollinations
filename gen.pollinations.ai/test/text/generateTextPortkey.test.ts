@@ -542,6 +542,65 @@ describe("generateTextPortkey", () => {
         ]);
     });
 
+    it.each([
+        {
+            model: "z-ai/glm-5.3-flash",
+            caller: { service_tier: "priority" },
+            sent: { service_tier: undefined },
+        },
+        {
+            model: "google/gemini-2.5-flash-lite",
+            caller: {
+                providerOptions: { gateway: { serviceTier: "priority" } },
+            },
+            sent: {
+                providerOptions: { gateway: { only: ["vertex", "google"] } },
+            },
+        },
+        {
+            // A tier the route sets on purpose is still sent.
+            model: "meta/llama-4-scout:deepinfra:priority",
+            caller: { service_tier: "flex" },
+            sent: { service_tier: "priority" },
+        },
+    ])(
+        "sends $model only the route's processing tier",
+        async ({ model, caller, sent }) => {
+            syncTextEnvironment({
+                ...env,
+                AI_GATEWAY_API_KEY: "test-vercel-key",
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+                FIREWORKS_NEO_API_KEY: "test-fireworks-key",
+            });
+            let body: Record<string, unknown> = {};
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_input, init) => {
+                    body = JSON.parse(String(init?.body));
+                    return Response.json({
+                        choices: [
+                            {
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 5,
+                            completion_tokens: 1,
+                            total_tokens: 6,
+                        },
+                    });
+                },
+            );
+            await generateTextPortkey([{ role: "user", content: "Hi" }], {
+                model,
+                ...caller,
+            });
+            for (const [key, value] of Object.entries(sent)) {
+                expect(body[key]).toEqual(value);
+            }
+        },
+    );
+
     it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {
         vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
             "test-google-token",

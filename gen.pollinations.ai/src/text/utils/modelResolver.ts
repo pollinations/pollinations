@@ -56,8 +56,15 @@ export function resolveModelConfig(
         config.provider,
     );
 
-    // Filter out undefined values so they don't overwrite config defaults
-    const definedOptions = Object.fromEntries(
+    // Filter out undefined values so they don't overwrite config defaults.
+    // A processing tier changes what the provider charges us, so only route
+    // config may set one: drop the caller's `service_tier` and
+    // `providerOptions`, where Vercel reads tiers under several keys.
+    const {
+        service_tier: _serviceTier,
+        providerOptions: _providerOptions,
+        ...definedOptions
+    } = Object.fromEntries(
         Object.entries(options).filter(([_, v]) => v !== undefined),
     );
     const defaults = {

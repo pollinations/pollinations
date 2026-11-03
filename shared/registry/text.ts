@@ -3412,7 +3412,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-10-23").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         // Fireworks standard serverless rates (2026-10-23).
         cost: {
             promptTextTokens: perMillion(0.15),

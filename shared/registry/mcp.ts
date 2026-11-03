@@ -24,6 +24,8 @@ type McpServerDefinitionBase = {
     id: string;
     name: string;
     description: string;
+    /** Experimental server; uses the same maturity flag as model catalogs. */
+    alpha?: boolean;
     binding: McpBindingName;
     pricing: McpPricingDefinition;
     userScoped?: boolean;
@@ -105,6 +107,7 @@ const COMPOSIO_MCP_PRICING = {
 export const MCP_SERVERS = [
     {
         id: "pollinations",
+        alpha: true,
         name: "Pollinations",
         description:
             "Access Pollinations models and API capabilities through agent tools.",
@@ -118,6 +121,7 @@ export const MCP_SERVERS = [
     },
     {
         id: "ask-jev",
+        alpha: true,
         name: "Ask Jev",
         description:
             "Evaluate state with typed choice, score, and probability questions.",
@@ -131,6 +135,7 @@ export const MCP_SERVERS = [
     },
     {
         id: "ffmpeg",
+        alpha: true,
         name: "FFmpeg",
         description:
             "Trim, convert, resize, compress, and remix audio and video.",
@@ -156,6 +161,7 @@ export const MCP_SERVERS = [
     },
     {
         id: "exa",
+        alpha: true,
         name: "Exa Search",
         description:
             "Search the live web and fetch clean content from source pages.",
@@ -194,6 +200,7 @@ export const MCP_SERVERS = [
     },
     {
         id: "composio",
+        alpha: true,
         name: "Connectors",
         description:
             "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
@@ -207,6 +214,7 @@ export const MCP_SERVERS = [
     },
     {
         id: "computer",
+        alpha: true,
         name: "Computer",
         description:
             "A private persistent computer: files that survive between runs, a bash shell and JavaScript.",
@@ -218,6 +226,7 @@ export const MCP_SERVERS = [
     },
     {
         id: "machines",
+        alpha: true,
         name: "Machines",
         description:
             "Start, pause, resume, and run commands and file operations in Linux sandboxes.",

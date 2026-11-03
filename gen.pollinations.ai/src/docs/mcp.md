@@ -4,6 +4,9 @@ Use Pollinations-hosted MCP servers from any
 [Model Context Protocol](https://modelcontextprotocol.io) client that supports
 Streamable HTTP.
 
+Hosted MCP servers are **alpha**: experimental and may be unstable.
+The `/mcp` catalog marks experimental servers with `alpha: true`.
+
 ### Quick start
 
 Get an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys),

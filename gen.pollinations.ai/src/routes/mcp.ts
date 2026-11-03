@@ -167,6 +167,7 @@ export const mcpRoutes = new Hono<Env>()
                 id: server.id,
                 name: server.name,
                 description: server.description,
+                alpha: server.alpha,
                 url: `${getPublicOrigin(c)}/mcp/${server.id}`,
                 pricing: getMcpPricingInfo(server),
             })),

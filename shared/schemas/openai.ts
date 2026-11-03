@@ -897,10 +897,10 @@ export const CreateImageEditRequestSchema = z
         }),
         image: z
             .union([
-                z.string().meta({ description: "Image URL" }),
+                z.string().min(1).meta({ description: "Image URL" }),
                 z.array(
                     z.object({
-                        image_url: z.string().meta({
+                        image_url: z.string().min(1).meta({
                             description:
                                 "URL or base64 data URI of the source image",
                         }),

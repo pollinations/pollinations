@@ -96,7 +96,7 @@ export function resolveUsageTargetUserId(
 
 // Schema for creating an API key via the API
 const CreateKeySchema = z.object({
-    name: z.string().min(1).max(253).describe("Name for the API key"),
+    name: z.string().trim().min(1).max(253).describe("Name for the API key"),
     type: z
         .enum(["secret", "publishable"])
         .optional()

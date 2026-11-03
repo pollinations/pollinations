@@ -67,7 +67,7 @@ const connectPolliCliQuest: QuestDefinition = {
     id: "connect_polli_cli",
     title: "Connect Polli CLI",
     description:
-        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) and connect your account with `polli auth login`. Your account must be at least 3 days old.",
+        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli), run `polli auth login` and approve it in your browser. Logging in with an existing key (`--with-token`) doesn't count. Your account must be at least 3 days old.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,

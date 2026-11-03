@@ -6,7 +6,7 @@ import { MAX_EMBEDDING_BATCH_SIZE } from "@/embeddings/limits.ts";
 
 const TextContentPartSchema = z.object({
     type: z.literal("text"),
-    text: z.string(),
+    text: z.string().min(1),
 });
 
 const ImageUrlContentPartSchema = z.object({

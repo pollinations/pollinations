@@ -132,6 +132,26 @@ describe("registry fallback linking", () => {
         }
     });
 
+    it("isolates the wan-2.2-fast Replicate route as fallback-only behind Fal", () => {
+        // Replicate 일반 400/422는 terminal (~48% errors_4xx, 2026-10-21
+        // /models/status)이므로 failing route를 첫 시도에서 내리고 Fal이 base를 수행.
+        expect(IMAGE_SERVICES["alibaba/wan-2.2-fast"]).toMatchObject({
+            provider: "fal",
+            fallbacks: ["alibaba/wan-2.2-fast:replicate"],
+        });
+        expect(IMAGE_SERVICES["alibaba/wan-2.2-fast:replicate"]).toMatchObject({
+            aliases: [],
+            hidden: true,
+            fallbackOnly: true,
+            provider: "replicate",
+        });
+        // No same-endpoint auto-retry: primary is already Fal.
+        expect("alibaba/wan-2.2-fast:fal" in IMAGE_SERVICES).toBe(false);
+        expect(getVisibleImageModels()).not.toContain(
+            "alibaba/wan-2.2-fast:replicate",
+        );
+    });
+
     it("uses registry declarations without applying community price rules", () => {
         const primary = registryEntry("primary", ["target-alias", "target"]);
         const target = registryEntry("target", ["primary"], 10);

@@ -1,0 +1,12 @@
+{
+  "type": "prompt_agent",
+  "name": "community-app",
+  "title": "Community app",
+  "description": "Reviews community app submissions and re-checks the app catalog for Pollinations maintainers.",
+  "visibility": "private",
+  "systemPrompt": "You review community apps for Pollinations. The caller's first system message is your rulebook; follow it exactly.",
+  "baseModel": "openai/gpt-6.1-sol",
+  "mcpServers": [
+    "exa"
+  ]
+}

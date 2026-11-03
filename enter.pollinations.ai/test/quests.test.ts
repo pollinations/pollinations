@@ -2737,6 +2737,54 @@ test("an issue earns its author 1 once someone else's merged PR fixes it; older 
     });
 });
 
+test("Elliot and Thomas earn no contribution rewards", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await drizzle(env.DB, { schema })
+        .update(schema.user)
+        .set({ githubId: ELLIOT })
+        .where(eq(schema.user.id, user.id));
+    await mocks.enable("github");
+    mocks.github.state.mergedPullRequests.push(
+        {
+            number: 23001,
+            authorLogin: user.githubUsername ?? "",
+            authorId: ELLIOT,
+            createdAt: OPENED_AFTER_REWARDS_START,
+            mergedAt: MERGED,
+        },
+        {
+            number: 23002,
+            authorLogin: user.githubUsername ?? "",
+            authorId: ELLIOT,
+            mergedAt: "2026-10-02T00:00:00Z",
+        },
+    );
+    mocks.github.state.questIssues.push({
+        number: 23003,
+        state: "closed",
+        title: "Issue 23003",
+        html_url: "https://github.com/pollinations/pollinations/issues/23003",
+        body: "A useful issue report",
+        created_at: OPENED_AFTER_REWARDS_START,
+        updated_at: MERGED,
+        closed_at: MERGED,
+        user: { login: user.githubUsername ?? "", databaseId: ELLIOT },
+        closedByPullRequestsReferences: [
+            {
+                number: 24003,
+                mergedAt: MERGED,
+                author: { __typename: "User", login: "fixer", databaseId: 999 },
+            },
+        ],
+    });
+
+    await checkQuestsForUser(env, user.id, CONTRIBUTION_GROUPS);
+    expect(await rewardsById(user.id)).toEqual({});
+});
+
 test("a quest PR earns the bounty plus an override, and the override's Paid reward claims once", async ({
     mocks,
     accountToken,

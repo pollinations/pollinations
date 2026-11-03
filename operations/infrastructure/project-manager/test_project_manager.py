@@ -90,8 +90,10 @@ class RewardCommentTest(unittest.TestCase):
         opened, item = {"action": "opened"}, {"created_at": "2026-11-04T00:00:00Z", "user": {"type": "User"}}
         self.assertTrue(self.post(opened, item).startswith("Reward: 3 pollen\n"))
         self.assertTrue(self.post(opened, item, is_pr=False).startswith("Reward: 1 pollen\n"))
-        # Bots, re-runs (the manual dispatch has no action) and items from before the rollout get none.
+        # Bots, Elliot and Thomas, re-runs (the manual dispatch has no action) and items from before the rollout get none.
         self.assertIsNone(self.post(opened, {**item, "user": {"type": "Bot"}}))
+        with patch.object(manager, "ISSUE_AUTHOR_ID", 36901823):
+            self.assertIsNone(self.post(opened, item))
         self.assertIsNone(self.post({}, item))
         self.assertIsNone(self.post(opened, {**item, "created_at": "2026-11-03T23:59:59Z"}))
 

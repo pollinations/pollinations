@@ -946,6 +946,8 @@ export async function evaluateUser(
     if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
+    // Elliot and Thomas set contribution rewards, so they earn none themselves.
+    const contributor = !REWARD_MAINTAINERS.has(githubId);
     const [
         issues,
         mergedPrs,
@@ -956,10 +958,10 @@ export async function evaluateUser(
         honeyCensus,
     ] = await Promise.all([
         cachedQuestIssues(ctx.env),
-        mergedPrProposals(token, user),
-        reportedIssueProposals(token, user),
-        hasLegacyMergedPr(token, user),
-        legacyReportedIssueProposals(token, user),
+        contributor ? mergedPrProposals(token, user) : [],
+        contributor ? reportedIssueProposals(token, user) : [],
+        contributor && hasLegacyMergedPr(token, user),
+        contributor ? legacyReportedIssueProposals(token, user) : [],
         answeredSurvey(token, user, BEE_CENSUS),
         pollenBought(ctx.db, user.id).then(
             (bought) =>

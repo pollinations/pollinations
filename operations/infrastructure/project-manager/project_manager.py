@@ -63,6 +63,8 @@ NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
 # Same date as REWARDS_START in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
 REWARDS_START = "2026-11-04T00:00:00Z"
+# Thomas and Elliot set contribution rewards and earn none.
+REWARD_MAINTAINERS = {5099901, 36901823}
 
 
 def log_debug(msg: str):
@@ -366,7 +368,7 @@ def write_reward_comment():
     """Announce the default reward. Enter pays it without reading this comment."""
     # Only when opened, so a re-run never repeats it; older items keep the old rewards.
     if (GITHUB_EVENT.get("action") != "opened" or ITEM_DATA.get("user", {}).get("type") == "Bot"
-            or ITEM_DATA.get("created_at", "") < REWARDS_START):
+            or ISSUE_AUTHOR_ID in REWARD_MAINTAINERS or ITEM_DATA.get("created_at", "") < REWARDS_START):
         return
     if IS_PULL_REQUEST:
         reward, rule = 3, "The PR author can claim this after merge. If the PR closes a POLLEN-QUEST issue, that quest's bounty is paid instead."

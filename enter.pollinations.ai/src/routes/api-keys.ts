@@ -119,7 +119,7 @@ async function updateKeyMetadata(
  * - account: ["profile", "usage", "keys", "machines"] = allow access to account endpoints and hosted sandboxes
  */
 const UpdateApiKeySchema = z.object({
-    name: z.string().optional().describe("Name for the API key"),
+    name: z.string().trim().min(1).max(253).describe("Name for the API key"),
     allowedModels: z
         .array(z.string())
         .nullable()

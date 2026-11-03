@@ -426,7 +426,8 @@ function parseReport(text) {
 }
 
 // Agent text goes into a public comment: no links of any kind, no mentions, no
-// HTML, and Markdown punctuation escaped so it shows as plain text.
+// HTML, and Markdown punctuation (table pipes included) escaped so it shows as
+// plain text. renderComment relies on this: it gets only cleaned text.
 const cleanLine = (value, max = 200) =>
     redact(value)
         .replace(
@@ -436,7 +437,7 @@ const cleanLine = (value, max = 200) =>
         .replace(/@/g, "@​")
         .replace(/[<>]/g, "")
         .replace(/\p{Cc}/gu, " ")
-        .replace(/[\\`*_[\]()#!~]/g, "\\$&")
+        .replace(/[\\`*_[\]()#!~|]/g, "\\$&")
         .trim()
         .slice(0, max);
 
@@ -527,7 +528,7 @@ function renderComment({ kind, author, errors = [], result }) {
         "|---|---|---|",
         ...result.findings.map(
             (f) =>
-                `| ${CHECK_NAMES[f.requirement]} | ${STATUS_TEXT[f.status]} | ${f.note.replace(/\|/g, "\\|")} |`,
+                `| ${CHECK_NAMES[f.requirement]} | ${STATUS_TEXT[f.status]} | ${f.note} |`,
         ),
     ].join("\n");
     const notChecked = result.couldNotCheck.length

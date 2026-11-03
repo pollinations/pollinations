@@ -200,7 +200,7 @@ test("renderComment ready keeps the marker, heading and approval sentence", () =
             {
                 requirement: "works",
                 status: "supported",
-                note: "Loads | works.",
+                note: require("./review.js").cleanLine("Loads | works."),
             },
         ]),
     });

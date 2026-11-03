@@ -1,0 +1,18 @@
+{
+    // The agent runner: GitHub webhooks in, one Durable Object per issue does
+    // the run. Writes stay off (WRITE "0") until the switch-over.
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "runner",
+    "account_id": "b6ec751c0862027ba269faf7029b2501",
+    "main": "src/index.js",
+    "workers_dev": true,
+    "compatibility_date": "2026-10-01",
+    "compatibility_flags": ["nodejs_compat"],
+    "observability": { "enabled": true },
+    "rules": [{ "type": "Text", "globs": ["**/*.md"], "fallthrough": true }],
+    "vars": { "WRITE": "0", "REPO": "pollinations/pollinations" },
+    "durable_objects": {
+        "bindings": [{ "name": "JOBS", "class_name": "Job" }]
+    },
+    "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Job"] }]
+}

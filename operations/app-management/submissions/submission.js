@@ -1,5 +1,3 @@
-const { readApps } = require("../app.js");
-
 const CATEGORIES = new Set([
     "image",
     "video_audio",
@@ -177,11 +175,7 @@ function normalizeComparable(value) {
         .replace(/\/$/, "");
 }
 
-function findCatalogDuplicate(
-    submission,
-    apps = readApps(),
-    githubUserId = "",
-) {
+function findCatalogDuplicate(submission, apps, githubUserId = "") {
     const appUrl = normalizeComparable(submission.appUrl);
     const repoUrl = normalizeComparable(submission.repoUrl);
     const name = normalizeComparable(submission.name);
@@ -220,9 +214,56 @@ function buildApp(submission, metadata) {
     };
 }
 
+// Every reason a submission cannot go on, from facts its caller gathered: the
+// catalog, the other open submissions, whether its quest is open and its
+// screenshot's errors. No reads here, so the publish script and the agent
+// runner share one set of rules.
+function submissionErrors({
+    submission,
+    issueNumber,
+    author,
+    apps,
+    openSubmissions,
+    questOpen,
+    screenshot,
+}) {
+    const errors = [...validateSubmission(submission), ...screenshot];
+    const duplicate = findCatalogDuplicate(submission, apps, author.id);
+    if (duplicate)
+        errors.push(
+            `This app appears to already be listed as ${duplicate.name} in operations/app-management/app.json.`,
+        );
+    const pending = openSubmissions.find((candidate) => {
+        if (String(candidate.number) === String(issueNumber)) return false;
+        const parsed = parseSubmission(candidate.body);
+        return findCatalogDuplicate(
+            submission,
+            [
+                {
+                    name: parsed.name,
+                    url: parsed.appUrl,
+                    repositoryUrl: parsed.repoUrl,
+                    githubUserId: candidate.authorNodeId || "",
+                },
+            ],
+            author.nodeId || "",
+        );
+    });
+    if (pending)
+        errors.push(
+            `This app appears to duplicate open submission #${pending.number}: ${pending.url}`,
+        );
+    if (/^\d+$/.test(submission.quest) && !questOpen)
+        errors.push(
+            `Quest #${submission.quest} is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.`,
+        );
+    return errors;
+}
+
 module.exports = {
     buildApp,
     findCatalogDuplicate,
     parseSubmission,
+    submissionErrors,
     validateSubmission,
 };

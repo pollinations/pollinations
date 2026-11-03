@@ -21,6 +21,13 @@ Internal tools that run Pollinations, grouped by what they are for. Apps with a 
 | [`monitoring/model-evals`](monitoring/model-evals/) | Weekly model quality tests whose scores feed the Trust tab |
 | [`community-monitor`](community-monitor/README.md) | Retired EC2 community monitor, awaiting removal |
 
+## Agents
+
+| Folder | What it is |
+| --- | --- |
+| [`runner`](runner/) | The agent runner: one Worker that wakes agents, gathers their facts, checks their answers and makes their allowed writes |
+| [`agents`](agents/) | One folder per agent: its hosted-agent config and rulebooks |
+
 ## Data sync
 
 | Folder | What it is |

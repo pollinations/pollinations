@@ -5,8 +5,13 @@ import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 
 // R2 rejects a put with more than 8,192 bytes of object metadata, so every
-// upload path stores at most this much of the filename.
-export const MAX_ORIGINAL_NAME_LENGTH = 253;
+// upload path stores at most 253 characters of the filename. Counting code
+// points keeps an emoji at the cut whole.
+export function storedFileName(fileName: string | undefined): string {
+    return Array.from(fileName ?? "")
+        .slice(0, 253)
+        .join("");
+}
 
 type MediaStorageEnv = {
     MEDIA_BUCKET: R2Bucket;
@@ -89,9 +94,7 @@ export async function uploadUnlistedMedia(
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
-                    originalName:
-                        input.fileName?.slice(0, MAX_ORIGINAL_NAME_LENGTH) ||
-                        "",
+                    originalName: storedFileName(input.fileName),
                     uploadedBy: input.uploadedBy || "pollinations-service",
                     keyType: input.keyType || "service",
                     keyId: input.keyId ?? "",

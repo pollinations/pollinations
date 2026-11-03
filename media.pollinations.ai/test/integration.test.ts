@@ -1995,6 +1995,36 @@ describe("media.pollinations.ai", () => {
             expect(disposition.length).toBeLessThan(600);
             expect(disposition).toContain("n".repeat(200));
         });
+
+        it("cuts the name between characters, not inside an emoji", async () => {
+            const kept = `${"a".repeat(252)}😀`;
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        data: Buffer.from(variant(63)).toString("base64"),
+                        contentType: "image/png",
+                        name: `${kept}.png`,
+                    }),
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
+            expect(res.status).toBe(200);
+            const { id } = (await res.json()) as UploadResponse;
+
+            const stored = await env.MEDIA_BUCKET.head(id);
+            expect(stored?.customMetadata?.originalName).toBe(kept);
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${id}`,
+            );
+            expect(getRes.headers.get("content-disposition")).toContain(
+                encodeURIComponent(kept),
+            );
+        });
     });
 
     describe("DELETE /media/:id", () => {

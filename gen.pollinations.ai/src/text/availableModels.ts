@@ -1307,6 +1307,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
+        name: "minimax/minimax-m3.1-flash",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m3p1-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
         name: "meta/muse-glimmer-30b",
         config: portkeyConfig["meta-models/Muse-Glimmer-30B"],
         transform: fireworksThinking,

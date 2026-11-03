@@ -2540,6 +2540,35 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "moonshotai/kimi-k3.1-pro": {
+        supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vercel AI Gateway list rates (2026-11-03), no gateway fee; cache writes
+        // bill at the input rate (Moonshot 5-minute TTL). Moonshot AI is the
+        // only endpoint.
+        // https://ai-gateway.vercel.sh/v1/models/moonshotai/kimi-k3.1-pro/endpoints
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2),
+            completionTextTokens: perMillion(10),
+        },
+        title: "Kimi K3.1 Pro",
+        description:
+            "Reasoning and agentic coding model with 1M context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "moonshotai/kimi-k3": {
         supportedParameters: CHAT_PARAMETERS.bedrockKimi,
         aliases: ["kimi-k3"],

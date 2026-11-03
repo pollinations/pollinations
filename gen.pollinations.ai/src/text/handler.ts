@@ -158,7 +158,7 @@ export async function generateChatAttempt(
         const emptyChoices = (result.choices ?? []).filter(
             ({ message, finish_reason }) =>
                 finish_reason !== "content_filter" &&
-                !(stopsOnRequest && finish_reason === "stop") &&
+                !(stopsOnRequest && message && finish_reason === "stop") &&
                 (!message ||
                     !(
                         (typeof message.content === "string"

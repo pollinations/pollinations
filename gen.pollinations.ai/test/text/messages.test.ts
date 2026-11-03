@@ -945,8 +945,26 @@ describe("POST /v1/messages", () => {
                 }
                 const body = (await upstream.json().catch(() => null)) as {
                     messages?: unknown;
+                    input?: unknown;
                     stream?: boolean;
                 } | null;
+                if (body?.input) {
+                    providerBodies.push(body);
+                    return Response.json({
+                        id: "resp_test",
+                        object: "response",
+                        model,
+                        status: "completed",
+                        output: [],
+                        ...(options.withUsage !== false && {
+                            usage: {
+                                input_tokens: 120,
+                                output_tokens: 30,
+                                total_tokens: 150,
+                            },
+                        }),
+                    });
+                }
                 if (!body?.messages) return Response.json({ data: [] });
                 providerBodies.push(body);
                 if (body.stream) {

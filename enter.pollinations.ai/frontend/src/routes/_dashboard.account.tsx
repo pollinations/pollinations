@@ -1,10 +1,9 @@
 import {
     Alert,
     Button,
-    CheckIcon,
-    ClipboardIcon,
     ConfirmationDialog,
     CopyButton,
+    CopyStateIcon,
     DiscordIcon,
     Field,
     FieldStack,
@@ -15,6 +14,7 @@ import {
     MailIcon,
     Section,
     SignOutIcon,
+    Surface,
     Text,
     TrashIcon,
 } from "@pollinations/ui";
@@ -23,8 +23,8 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
 import {
+    CardLoading,
     LoadError,
-    PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -39,7 +39,7 @@ type DiscordConnection = {
 
 export const Route = createFileRoute("/_dashboard/account")({
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -81,7 +81,7 @@ function AccountPage() {
     return (
         <>
             <Section title="Profile">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <Surface className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
                         {user.image ? (
                             <img
@@ -119,7 +119,7 @@ function AccountPage() {
                     >
                         {isSigningOut ? "Signing out…" : "Sign out"}
                     </Button>
-                </div>
+                </Surface>
             </Section>
 
             {signOutError && <Alert intent="danger">{signOutError}</Alert>}
@@ -128,7 +128,7 @@ function AccountPage() {
                 promise={profile}
                 fallback={
                     <Section title="Community">
-                        <PageStatus />
+                        <CardLoading className="h-80 sm:h-46" />
                     </Section>
                 }
             >
@@ -142,7 +142,10 @@ function AccountPage() {
                         />
                     ) : (
                         <Section title="Community">
-                            <LoadError onRetry={retry}>
+                            <LoadError
+                                onRetry={retry}
+                                paths={["/account/profile"]}
+                            >
                                 Couldn’t load connection settings.
                             </LoadError>
                         </Section>
@@ -155,8 +158,8 @@ function AccountPage() {
             </div>
 
             <Section title="Need help?">
-                <ul className="grid gap-5 text-sm sm:grid-cols-2">
-                    <li className="flex min-w-0 items-start gap-2">
+                <ul className="grid gap-3 text-sm sm:grid-cols-2">
+                    <Surface as="li" className="flex min-w-0 items-start gap-2">
                         <DiscordIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
@@ -167,8 +170,8 @@ function AccountPage() {
                                 Discord
                             </InlineLink>
                         </Text>
-                    </li>
-                    <li className="flex min-w-0 items-start gap-2">
+                    </Surface>
+                    <Surface as="li" className="flex min-w-0 items-start gap-2">
                         <GitHubIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
@@ -179,8 +182,8 @@ function AccountPage() {
                                 GitHub
                             </InlineLink>
                         </Text>
-                    </li>
-                    <li className="flex min-w-0 items-start gap-2">
+                    </Surface>
+                    <Surface as="li" className="flex min-w-0 items-start gap-2">
                         <MailIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
@@ -189,8 +192,8 @@ function AccountPage() {
                             General questions:{" "}
                             <ContactEmail email="hello@pollinations.ai" />
                         </Text>
-                    </li>
-                    <li className="flex min-w-0 items-start gap-2">
+                    </Surface>
+                    <Surface as="li" className="flex min-w-0 items-start gap-2">
                         <MailIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
@@ -199,12 +202,12 @@ function AccountPage() {
                             Billing support:{" "}
                             <ContactEmail email="billing@pollinations.ai" />
                         </Text>
-                    </li>
+                    </Surface>
                 </ul>
             </Section>
 
             <Section title="Delete account">
-                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                <Surface className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                     <Text size="sm" tone="muted">
                         Permanently delete your account, profile, keys, agents
                         and models. All remaining Pollen will be lost. This
@@ -219,7 +222,7 @@ function AccountPage() {
                     >
                         Delete account
                     </Button>
-                </div>
+                </Surface>
             </Section>
 
             <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 text-[13px] text-theme-text-muted sm:px-1">
@@ -261,19 +264,18 @@ function ContactEmail({ email }: { email: string }) {
             value={email}
             aria-label={`Copy ${email}`}
             tooltip="Copy email address"
-            copiedTooltip="Email address copied"
             className="polli-link inline-flex max-w-full items-center gap-1.5 text-left align-baseline"
         >
             {(copied) => (
                 <>
                     <span className="min-w-0 break-all" aria-live="polite">
-                        {copied ? "Copied!" : email}
+                        {copied ? "Copied" : email}
                     </span>
                     <span
                         className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"
                         aria-hidden="true"
                     >
-                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                        <CopyStateIcon copied={copied} />
                     </span>
                 </>
             )}
@@ -485,7 +487,7 @@ function CommunityConnections({
 
     return (
         <Section title="Community">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Surface className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                     <GitHubIcon className="h-6 w-6 shrink-0" />
                     <div>
@@ -513,8 +515,8 @@ function CommunityConnections({
                         {connectionPending ? "Working..." : "Connect GitHub"}
                     </Button>
                 )}
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            </Surface>
+            <Surface className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                     {discordConnection?.avatarUrl ? (
                         <img
@@ -571,7 +573,7 @@ function CommunityConnections({
                             ? "Checking..."
                             : "Connect Discord"}
                 </Button>
-            </div>
+            </Surface>
             {connectionError && (
                 <Text size="sm" tone="muted">
                     {connectionError}

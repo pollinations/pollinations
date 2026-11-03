@@ -104,7 +104,7 @@ export function listedAppsFor(
 
         const byop = asBoolean(row.byop);
         // Non-BYOP counts belong to the developer's whole account, not to the
-        // listing, so only a Pollen Pay app reports traffic.
+        // listing, so only a Pollinations Pay app reports traffic.
         const requests24h = byop ? asCount(row.requests_24h) : null;
 
         apps.push({

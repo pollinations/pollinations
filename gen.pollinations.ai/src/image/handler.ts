@@ -493,7 +493,7 @@ function extractRegisterToken(
     return null;
 }
 
-async function isAuthorizedRegisterWrite(
+async function isAuthorizedRegisterRequest(
     c: ImageContext,
     body: Record<string, unknown>,
 ): Promise<boolean> {
@@ -507,6 +507,10 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
     syncImageEnvironment(c.env);
 
     if (c.req.method === "GET") {
+        // The list exposes worker hostnames, so reads need the token too.
+        if (!(await isAuthorizedRegisterRequest(c, {}))) {
+            return c.json({ success: false, message: "Unauthorized" }, 401);
+        }
         const params = new URL(c.req.url).searchParams;
         const directUrl = params.get("url");
         const ip = params.get("ip");
@@ -519,9 +523,6 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        if (!(await isAuthorizedRegisterWrite(c, {}))) {
-            return c.json({ success: false, message: "Unauthorized" }, 401);
-        }
         if (!isValidType(typeParam)) {
             return c.json(
                 { success: false, message: `Invalid type "${typeParam}"` },
@@ -543,7 +544,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
 
-    if (!(await isAuthorizedRegisterWrite(c, body))) {
+    if (!(await isAuthorizedRegisterRequest(c, body))) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
     }
 

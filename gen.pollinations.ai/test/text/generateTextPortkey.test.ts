@@ -7,6 +7,7 @@ import { withModelFallback } from "../../src/fallback.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
+import type { ChatMessage } from "../../src/text/types.js";
 
 const azureModelConfig = {
     provider: "azure-openai",
@@ -25,6 +26,96 @@ afterEach(() => {
 });
 
 describe("generateTextPortkey", () => {
+    it.each([
+        { status: 429, failures: 1 },
+        { status: 503, failures: 2 },
+        { status: 503, failures: 3 },
+        { status: 400, failures: 1 },
+    ])(
+        "uses ordinary Kimi failover for $status after $failures failures",
+        async ({ status, failures }) => {
+            syncTextEnvironment({
+                ...env,
+                AWS_ACCESS_KEY_ID: "test-access-key",
+                AWS_SECRET_ACCESS_KEY: "test-secret-key",
+                AWS_REGION: "us-east-1",
+            });
+            const primary = "moonshotai/kimi-k3" as const;
+            const ids = [primary, ...TEXT_SERVICES[primary].fallbacks];
+            const upstreams = [
+                "global.moonshotai.kimi-k3",
+                "accounts/fireworks/models/kimi-k3",
+                "moonshotai/Kimi-K3",
+            ];
+            const attempts: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const body = JSON.parse(String(init?.body));
+                    attempts.push(body.model);
+                    // Optional controls are forwarded, never used to choose a provider.
+                    expect(body.presence_penalty).toBe(0.1);
+                    expect(body.logprobs).toBe(true);
+                    expect(body.service_tier).toBe("default");
+                    if (attempts.length === 1) {
+                        expect(String(input)).toBe(
+                            "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+                        );
+                        expect(
+                            new Headers(init?.headers).get("authorization"),
+                        ).toMatch(/^AWS4-HMAC-SHA256 /);
+                    }
+                    if (attempts.length <= failures) {
+                        return Response.json(
+                            { error: { message: "Provider rejected request" } },
+                            { status },
+                        );
+                    }
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "Hello",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 10,
+                            completion_tokens: 1,
+                            total_tokens: 11,
+                        },
+                    });
+                },
+            );
+            const run = withModelFallback(
+                ids.map((id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                })),
+                ({ id }) =>
+                    generateTextPortkey([{ role: "user", content: "Hello" }], {
+                        model: id,
+                        max_tokens: 128,
+                        presence_penalty: 0.1,
+                        logprobs: true,
+                        service_tier: "priority",
+                    }),
+            );
+            if (status === 400 || failures === ids.length) {
+                await expect(run).rejects.toThrow();
+            } else {
+                expect((await run).candidate.id).toBe(ids[failures]);
+            }
+            expect(attempts).toEqual(
+                upstreams.slice(
+                    0,
+                    status === 400 ? 1 : Math.min(failures + 1, ids.length),
+                ),
+            );
+        },
+    );
+
     it.each([0, 1, 2, 3])(
         "uses the GLM 5.3 chain with %i failed providers",
         async (failures) => {
@@ -242,14 +333,22 @@ describe("generateTextPortkey", () => {
         expect(billing.price.totalPrice).toBe(0.0013155);
     });
 
-    it("falls back from Azure Grok to xAI direct at the primary price", async () => {
+    it("falls back from Azure Grok to signed global AWS Chat at the primary price", async () => {
+        syncTextEnvironment({
+            ...env,
+            AWS_ACCESS_KEY_ID: "test-access-key",
+            AWS_SECRET_ACCESS_KEY: "test-secret-key",
+        });
         const hosts: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const url = new URL(String(input));
                 hosts.push(url.hostname);
-                expect(JSON.parse(String(init?.body)).model).toBe("grok-4.6");
-                if (url.hostname !== "api.x.ai") {
+                const body = JSON.parse(String(init?.body));
+                if (
+                    url.hostname !== "bedrock-runtime.us-east-1.amazonaws.com"
+                ) {
+                    expect(body.model).toBe("grok-4.6");
                     return Response.json(
                         { error: { message: "Capacity exhausted" } },
                         { status: 429 },
@@ -257,9 +356,13 @@ describe("generateTextPortkey", () => {
                 }
                 const headers = new Headers(init?.headers);
                 expect(headers.has("api-key")).toBe(false);
-                expect(headers.get("authorization")).toBe(
-                    `Bearer ${env.XAI_API_KEY}`,
+                expect(headers.has("x-portkey-provider")).toBe(false);
+                expect(headers.get("authorization")).toMatch(
+                    /^AWS4-HMAC-SHA256 Credential=test-access-key\//,
                 );
+                expect(body.model).toBe("global.xai.grok-4.6");
+                expect(body.service_tier).toBe("default");
+                expect(url.pathname).toBe("/openai/v1/chat/completions");
                 return Response.json({
                     model: "grok-4.6",
                     choices: [
@@ -269,11 +372,10 @@ describe("generateTextPortkey", () => {
                             finish_reason: "stop",
                         },
                     ],
-                    // Observed xAI usage (2026-09-24): reasoning is additive
-                    // and cost_in_usd_ticks reported $0.001296.
+                    // AWS includes reasoning in completion_tokens.
                     usage: {
                         prompt_tokens: 648,
-                        completion_tokens: 1,
+                        completion_tokens: 128,
                         total_tokens: 776,
                         prompt_tokens_details: {
                             text_tokens: 648,
@@ -300,14 +402,14 @@ describe("generateTextPortkey", () => {
         expect(index).toBe(1);
         expect(hosts).toEqual([
             "myceli-prod-eastus.cognitiveservices.azure.com",
-            "api.x.ai",
+            "bedrock-runtime.us-east-1.amazonaws.com",
         ]);
         const billing = calculateUsageBilling({
             model: "x-ai/grok-4.6",
             usage: openaiUsageToUsage(
                 result.usage as Parameters<typeof openaiUsageToUsage>[0],
             ),
-            servedBy: TEXT_SERVICES["x-ai/grok-4.6:xai"],
+            servedBy: TEXT_SERVICES["x-ai/grok-4.6:aws"],
             quotedBy: TEXT_SERVICES["x-ai/grok-4.6"],
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.001296, 12);
@@ -375,6 +477,69 @@ describe("generateTextPortkey", () => {
                 total_tokens: 6,
             },
         });
+    });
+
+    it("sends Gemini tool-call signatures only to Vertex", async () => {
+        vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+            "test-google-token",
+        );
+        const bodies: Record<string, unknown>[] = [];
+        const portkeyFetcher = vi.fn(
+            async (_input: RequestInfo | URL, init?: RequestInit) => {
+                bodies.push(JSON.parse(String(init?.body)));
+                return Response.json({
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 5,
+                        completion_tokens: 1,
+                        total_tokens: 6,
+                    },
+                });
+            },
+        );
+        const signedCall = {
+            id: "call_1",
+            type: "function",
+            function: {
+                name: "read_file",
+                arguments: "{}",
+                thought_signature: "sig",
+            },
+        };
+        const messages = [
+            { role: "user", content: "hello" },
+            { role: "assistant", content: null, tool_calls: [signedCall] },
+            { role: "tool", tool_call_id: "call_1", content: "ok" },
+        ];
+
+        for (const model of [
+            "google/gemini-3.5-flash-lite",
+            "minimax/minimax-m3",
+        ]) {
+            await generateTextPortkey(
+                messages,
+                { model, portkeyGatewayUrl: "https://portkey.test" },
+                portkeyFetcher,
+            );
+        }
+
+        const [vertex, fireworks] = bodies.map(
+            (body) => (body.messages as ChatMessage[])[1].tool_calls,
+        );
+        expect(vertex).toEqual([signedCall]);
+        expect(fireworks).toEqual([
+            {
+                id: "call_1",
+                type: "function",
+                function: { name: "read_file", arguments: "{}" },
+            },
+        ]);
     });
 
     it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {

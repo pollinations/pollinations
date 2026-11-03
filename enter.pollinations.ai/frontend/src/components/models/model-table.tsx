@@ -226,7 +226,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         capabilityLabel={capabilityLabel}
                         perUserRpm={model.perUserRpm}
                     />
-                    {(model.health || showNew || showAlpha) && (
+                    {(model.health ||
+                        showNew ||
+                        showAlpha ||
+                        (model.agent && model.verified)) && (
                         <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                             <ModelStatusChips
                                 health={model.health}
@@ -235,6 +238,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 )}
                                 showNew={showNew}
                                 showAlpha={showAlpha}
+                                verified={Boolean(
+                                    model.agent && model.verified,
+                                )}
                             />
                         </div>
                     )}

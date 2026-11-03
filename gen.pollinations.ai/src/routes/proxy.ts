@@ -972,7 +972,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
                 "",
-                "Completed generations are cached publicly: once a request has been generated, the same request is served from cache even without an API key.",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.",
                 "",
                 `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",

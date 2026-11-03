@@ -994,7 +994,7 @@ describe("POST /v1/messages", () => {
     }
 
     async function call(
-        path: "/v1/messages" | "/v1/chat/completions",
+        path: "/v1/messages" | "/v1/chat/completions" | "/v1/responses",
         body: Record<string, unknown> | string,
         key?: string,
     ) {
@@ -1530,15 +1530,36 @@ describe("POST /v1/messages", () => {
         );
     });
 
-    it("rejects an empty model string", () => {
-        const result = CreateMessageRequestSchema.safeParse({
-            model: "",
-            max_tokens: 5,
-            messages: [{ role: "user", content: "hi" }],
-        });
-        expect(result.success).toBe(false);
-        if (!result.success) {
-            expect(result.error.issues[0]?.path).toContain("model");
-        }
-    });
+    it.each([
+        [
+            "/v1/messages",
+            { max_tokens: 256, messages: [{ role: "user", content: "hi" }] },
+        ],
+        [
+            "/v1/chat/completions",
+            { messages: [{ role: "user", content: "hi" }] },
+        ],
+        ["/v1/responses", { input: "hi" }],
+    ] as const)(
+        "rejects an empty model on %s before any charge",
+        async (path, body) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const { events, providerBodies } = mockUpstream();
+            const { response, text } = await call(
+                path,
+                { ...body, model: "" },
+                caller.key,
+            );
+            expect(response.status, text).toBe(400);
+            expect(providerBodies).toEqual([]);
+            expect(events).toEqual([]);
+            const balance = await getUserBalance(
+                drizzle(env.DB),
+                caller.userId,
+            );
+            expect(balance.tierBalance).toBe(100);
+        },
+    );
 });

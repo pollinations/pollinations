@@ -1054,6 +1054,10 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/kimi-k3",
             serviceTier: "default",
         }),
+    "moonshotai/kimi-k3.1-pro-highspeed": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro-highspeed",
+        }),
     // -- Fireworks AI (Qwen) ------------------------------------------------
     "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
         createFireworksModelConfig({

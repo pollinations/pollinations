@@ -10,12 +10,6 @@ const BooleanQueryParamSchema = z.preprocess(
     z.boolean(),
 );
 
-const FloatQueryParamSchema = z.preprocess((value) => {
-    if (value == null) return undefined;
-    const parsed = Number.parseFloat(String(value));
-    return Number.isNaN(parsed) ? undefined : parsed;
-}, z.number().optional());
-
 const IntQueryParamSchema = z.preprocess((value) => {
     if (value == null) return undefined;
     const parsed = Number.parseInt(String(value), 10);
@@ -31,7 +25,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed.",
     }),
-    system: z.string().optional().meta({
+    system: z.string().min(1).optional().meta({
         description:
             "System prompt to set the model's behavior and context. Acts as initial instructions before the user prompt.",
     }),
@@ -39,14 +33,30 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "When true, the model returns valid JSON. Useful for structured data extraction.",
     }),
-    temperature: z.coerce.number().optional().meta({
+    temperature: z.coerce.number().min(0).max(2).optional().meta({
         description:
             "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
     }),
-    top_p: FloatQueryParamSchema,
-    presence_penalty: FloatQueryParamSchema,
-    frequency_penalty: FloatQueryParamSchema,
-    repetition_penalty: FloatQueryParamSchema,
+    top_p: z.preprocess((value) => {
+        if (value == null) return undefined;
+        const parsed = Number.parseFloat(String(value));
+        return Number.isNaN(parsed) ? undefined : parsed;
+    }, z.number().min(0).max(1).optional()),
+    presence_penalty: z.preprocess((value) => {
+        if (value == null) return undefined;
+        const parsed = Number.parseFloat(String(value));
+        return Number.isNaN(parsed) ? undefined : parsed;
+    }, z.number().min(-2).max(2).optional()),
+    frequency_penalty: z.preprocess((value) => {
+        if (value == null) return undefined;
+        const parsed = Number.parseFloat(String(value));
+        return Number.isNaN(parsed) ? undefined : parsed;
+    }, z.number().min(-2).max(2).optional()),
+    repetition_penalty: z.preprocess((value) => {
+        if (value == null) return undefined;
+        const parsed = Number.parseFloat(String(value));
+        return Number.isNaN(parsed) ? undefined : parsed;
+    }, z.number().min(-2).max(2).optional()),
     max_tokens: IntQueryParamSchema,
     max_completion_tokens: IntQueryParamSchema,
     reasoning_effort: z

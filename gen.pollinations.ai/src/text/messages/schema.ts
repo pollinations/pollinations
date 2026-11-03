@@ -158,7 +158,7 @@ const MessageSchema = z
 
 export const CreateMessageRequestSchema = z
     .object({
-        model: z.string().meta({
+        model: z.string().min(1).meta({
             description:
                 "Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`.",
         }),

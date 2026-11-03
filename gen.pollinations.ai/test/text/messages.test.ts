@@ -1509,4 +1509,16 @@ describe("POST /v1/messages", () => {
             "/v1/messages",
         );
     });
+
+    it("rejects an empty model string", () => {
+        const result = CreateMessageRequestSchema.safeParse({
+            model: "",
+            max_tokens: 5,
+            messages: [{ role: "user", content: "hi" }],
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]?.path).toContain("model");
+        }
+    });
 });

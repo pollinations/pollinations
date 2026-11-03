@@ -366,12 +366,16 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialPack,
 }) => (
     <>
-        <TopUpPanel
-            initialBilling={initialBilling}
-            returnToTopUp={returnToTopUp}
-            onWalletChange={onWalletChange}
-            initialPack={initialPack}
-        />
+        {/* The packs and their choices in an inner card, the small print
+            under it, as in every other section. */}
+        <Surface variant="card">
+            <TopUpPanel
+                initialBilling={initialBilling}
+                returnToTopUp={returnToTopUp}
+                onWalletChange={onWalletChange}
+                initialPack={initialPack}
+            />
+        </Surface>
         <Footnotes>
             {/* When auto top-up charges, stated before anyone turns it on.
                 "Paid": Quest Pollen doesn't trigger it. */}
@@ -430,30 +434,34 @@ export const PaymentHelp: FC = () => (
         <MailIcon aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>
             Payment help:{" "}
-            {/* Styled like Terms and Refund; a copy icon where theirs has
-                the arrow. The icon says copy and the text says Copied,
-                so no tooltip. */}
-            <CopyButton
-                value="billing@pollinations.ai"
-                className="polli-link"
-                data-tone="accent"
-                tooltip={null}
-            >
-                {(copied) => (
-                    <>
-                        {copied ? "Copied" : "billing@pollinations.ai"}
-                        <CopyStateIcon
-                            copied={copied}
-                            aria-hidden="true"
-                            className="polli-link-external-icon"
-                        />
-                    </>
-                )}
-            </CopyButton>
-            <LinkSeparator />
-            <InlineLink href={TERMS_URL}>Terms</InlineLink>
-            <LinkSeparator />
-            <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+            {/* The address, Terms and Refund wrap as one piece: on a phone
+                the line breaks after "Payment help:", never inside. */}
+            <span className="whitespace-nowrap">
+                {/* Styled like Terms and Refund; a copy icon where theirs
+                    has the arrow. The icon says copy and the text says
+                    Copied, so no tooltip. */}
+                <CopyButton
+                    value="billing@pollinations.ai"
+                    className="polli-link"
+                    data-tone="accent"
+                    tooltip={null}
+                >
+                    {(copied) => (
+                        <>
+                            {copied ? "Copied" : "billing@pollinations.ai"}
+                            <CopyStateIcon
+                                copied={copied}
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
+                            />
+                        </>
+                    )}
+                </CopyButton>
+                <LinkSeparator />
+                <InlineLink href={TERMS_URL}>Terms</InlineLink>
+                <LinkSeparator />
+                <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+            </span>
         </span>
     </p>
 );

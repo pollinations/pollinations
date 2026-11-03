@@ -6,33 +6,25 @@ import {
     CheckIcon,
     Chip,
     ClockIcon,
-    DiscordIcon,
     formatCount,
-    GitHubIcon,
     InlineLink,
     LoadingStatus,
     OutageNotice,
-    RocketIcon,
     Section,
     SparkleIcon,
     SproutIcon,
     Surface,
     TargetIcon,
-    TerminalIcon,
     Text,
-    TrendUpIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
-import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
-    type ComponentType,
-    type FC,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+    formatPollen,
+    WalletBalanceCard,
+    WalletKindIcon,
+} from "@pollinations/ui/wallet";
+import { useLoaderData, useRouter } from "@tanstack/react-router";
+import { type FC, useEffect, useMemo, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
@@ -93,7 +85,6 @@ const INITIAL_STATE: FetchState = {
     anonymous: false,
 };
 
-type IconComponent = ComponentType<{ className?: string }>;
 type RewardIconKind = "paid" | "tier";
 
 // ── Category model ──────────────────────────────────────────────────────────
@@ -104,39 +95,32 @@ type CategoryKey = QuestCatalogItem["category"];
 type CategoryMeta = {
     key: CategoryKey;
     label: string;
-    icon: IconComponent;
 };
 
 const CATEGORIES: CategoryMeta[] = [
     {
         key: "setup",
         label: "Setup",
-        icon: RocketIcon,
     },
     {
         key: "grow",
         label: "Grow",
-        icon: TrendUpIcon,
     },
     {
         key: "build",
         label: "Build",
-        icon: TerminalIcon,
     },
     {
         key: "contribute",
         label: "Contribute",
-        icon: GitHubIcon,
     },
     {
         key: "community",
         label: "Community",
-        icon: DiscordIcon,
     },
     {
         key: "easteregg",
         label: "Easter eggs",
-        icon: SproutIcon,
     },
 ];
 
@@ -173,12 +157,13 @@ function deriveCardStatus(
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
     switch (card.status) {
+        // Waiting for Claim, then still to do, then done.
         case "claimable":
             return 0;
         case "claimed":
-            return 1;
-        default:
             return 2;
+        default:
+            return 1;
     }
 }
 
@@ -373,6 +358,14 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
     const formatValue = (value: number) =>
         progress.unit === "pollen" ? formatPollen(value) : formatCount(value);
 
+    // Nothing done yet: just the count, an empty bar reads as decoration.
+    if (progress.current <= 0)
+        return (
+            <span className="text-xs tabular-nums text-theme-text-muted">
+                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
+                {progress.unit}
+            </span>
+        );
     return (
         <div className="mt-1 flex max-w-sm items-center gap-2">
             <div
@@ -396,57 +389,42 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
     );
 }
 
-// Leading marker for a quest row, by lifecycle stage:
-//   open      → ambient theme tile + section icon (vanilla amber — the row's
-//                bucket lives on the reward chip; the marker is just "do this")
-//   claimable → muted theme well + check (works in light and dark — receded
-//                relative to the open tile, but readable on either surface)
-//   claimed   → no tile, muted check (banked already, fully receded)
+// Leading marker for a quest row: one icon per state, so the left column
+// reads as where you stand.
+//   open        → target, theme colour ("go for it")
+//   claimable   → sparkle, strong (matches the Claim button)
+//   claimed     → check, muted
+//   coming soon → clock, muted
 function QuestMarker({
-    icon: Icon,
     status,
     comingSoon,
 }: {
-    icon: IconComponent;
     status: QuestCardStatus;
     comingSoon?: boolean;
 }) {
-    // coming_soon → clock; open → the lane's section icon;
-    // otherwise the earned/banked check.
-    function resolveIcon(): IconComponent {
-        if (comingSoon) return ClockIcon;
-        if (status === "open") return Icon;
-        return CheckIcon;
-    }
-    // open → ambient active tile; claimable → muted well; claimed (and
-    // coming_soon, which always renders claimed) → no tile, muted glyph.
-    function resolveTile(): string {
-        if (!comingSoon && status === "open")
-            return "bg-theme-bg-active text-theme-text-strong";
-        if (status === "claimable")
-            return "bg-theme-bg-subtle text-theme-text-muted";
-        return "text-theme-text-muted";
-    }
-    const MarkerIcon = resolveIcon();
-    const tile = resolveTile();
+    const [Icon, tone] = comingSoon
+        ? [ClockIcon, "text-theme-text-muted"]
+        : status === "open"
+          ? [TargetIcon, "text-theme-text-soft"]
+          : status === "claimable"
+            ? [SparkleIcon, "text-theme-text-strong"]
+            : [CheckIcon, "text-theme-text-muted"];
     return (
         <span
             aria-hidden="true"
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tile}`}
+            className={`flex h-5 w-5 shrink-0 items-center justify-center ${tone}`}
         >
-            <MarkerIcon className="h-5 w-5" />
+            <Icon className="h-5 w-5" />
         </span>
     );
 }
 
 export function QuestRow({
     card,
-    icon,
     claiming,
     onClaim,
 }: {
     card: QuestCard;
-    icon: IconComponent;
     claiming: boolean;
     onClaim(rewardId: string): void;
 }) {
@@ -485,13 +463,9 @@ export function QuestRow({
                 #{card.issueNumber}
             </InlineLink>
         ) : null;
-    // One reward badge in every state, so it holds the same spot on the right —
-    // only its emphasis shifts. Open/claimable show the live bucket chip;
-    // claimed recedes to a transparent, muted-grey badge (no fill, no sign),
-    // so the badge never jumps when a quest is claimed. Raw glyph (not
-    // WalletKindIcon) so the icon inherits the chip's currentColor — bucket
-    // deep when open, muted grey when claimed — instead of being forced to
-    // the bucket hue regardless of state.
+    // One plain reward in every state, so it holds the same spot on the right;
+    // only the bucket icon carries colour, and a claimed reward goes muted grey
+    // (raw glyph, so it inherits the muted text colour).
     const RewardKindIcon = rewardIcon === "paid" ? CardIcon : SproutIcon;
     const rewardChip = card.comingSoon ? (
         <Chip
@@ -503,100 +477,86 @@ export function QuestRow({
             Coming soon
         </Chip>
     ) : (
-        <Chip
-            intent="neutral"
-            size="lg"
-            className={`gap-1.5 tabular-nums ${
-                claimed
-                    ? "bg-transparent text-theme-text-muted"
-                    : BUCKET_CHIP_CLASS[rewardIcon]
+        <span
+            className={`flex items-center gap-1 text-sm font-semibold tabular-nums ${
+                claimed ? "text-theme-text-muted" : "text-theme-text-strong"
             }`}
         >
-            <RewardKindIcon className="h-4 w-4 shrink-0" />
+            {claimed ? (
+                <RewardKindIcon className="h-4 w-4 shrink-0" />
+            ) : (
+                <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
+            )}
             {rewardLabel}
-        </Chip>
+        </span>
     );
+    // A claimable quest's left icon becomes the Claim button: the standard
+    // large action button, its sparkle over "Claim". The reward on the right
+    // stays as on any other row.
     const claimButton = claimableRewardId ? (
         <Button
             type="button"
             intent="commit"
+            size="lg"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
-            className="gap-1.5"
+            aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
+            className="flex-col justify-center gap-0.5 px-5 py-2 font-bold"
         >
             <SparkleIcon className="h-4 w-4 shrink-0" />
-            {claiming ? "Claiming" : "Claim"}
+            <span className="text-sm leading-none">
+                {claiming ? "Claiming" : "Claim"}
+            </span>
         </Button>
     ) : null;
-    // Both layouts place the claim button and reward chip separately: claim
-    // beside the text, chip pinned to the right edge (ml-auto).
+    const details = (description || issueLink || progress) && (
+        <div className="flex min-w-0 flex-col gap-1">
+            {(description || issueLink) && (
+                <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
+                    {description && (
+                        <QuestDescription>{description}</QuestDescription>
+                    )}
+                    {description && issueLink ? " " : null}
+                    {issueLink}
+                </div>
+            )}
+            {progress}
+        </div>
+    );
+    const marker = claimButton ?? (
+        <QuestMarker status={card.status} comingSoon={card.comingSoon} />
+    );
 
     return (
-        <Surface variant="card">
-            {/* Mobile: stacked. Icon centered with the (wrappable) title; the
-                description (issue link at its end) full-width below; action row
-                last, mirroring desktop — Claim on the left, reward chip pinned
-                right. */}
-            <div className="flex flex-col gap-3 sm:hidden">
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-4">
-                        <QuestMarker
-                            icon={icon}
-                            status={card.status}
-                            comingSoon={card.comingSoon}
-                        />
-                        <div className="min-w-0 flex-1">{title}</div>
-                    </div>
-                    {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted">
-                            {description && (
-                                <QuestDescription>
-                                    {description}
-                                </QuestDescription>
-                            )}
-                            {description && issueLink ? " " : null}
-                            {issueLink}
-                        </div>
-                    )}
-                    {progress}
+        // Open and claimable quests are white cards; done ones sit flat, in
+        // their muted colours.
+        <Surface
+            variant="card"
+            className={claimed ? "polli:bg-transparent" : undefined}
+        >
+            {/* Mobile: the title full width, then the description beside the
+                claim panel (about a quarter) or above the reward. */}
+            <div className="flex flex-col gap-2 sm:hidden">
+                <div className="flex items-center gap-4">
+                    {marker}
+                    <div className="min-w-0 flex-1">{title}</div>
                 </div>
-                <div className="flex items-center gap-2.5">
-                    {claimButton}
-                    <div className="ml-auto flex items-center gap-2.5">
-                        {rewardChip}
-                    </div>
+                {/* Indented past the icon, under the title. */}
+                <div className="flex flex-col gap-2 pl-9">
+                    {details}
+                    <div className="ml-auto">{rewardChip}</div>
                 </div>
             </div>
 
-            {/* Desktop: icon | content (title + description, with the issue link
-                at the end of the description) | claim | reward. The content is
-                sized to its text (no flex-1), so the claim button sits right
-                beside it; the reward chip is pushed to the far-right edge with
-                ml-auto so amounts line up in a column. Keeps the card to two
-                text rows. */}
+            {/* Desktop: icon | title and description | reward, or a claim
+                panel the card's full height. */}
             <div className="hidden items-center gap-4 sm:flex">
-                <QuestMarker
-                    icon={icon}
-                    status={card.status}
-                    comingSoon={card.comingSoon}
-                />
-                <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex items-center">{marker}</div>
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
                     <div>{title}</div>
-                    {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted">
-                            {description && (
-                                <QuestDescription>
-                                    {description}
-                                </QuestDescription>
-                            )}
-                            {description && issueLink ? " " : null}
-                            {issueLink}
-                        </div>
-                    )}
-                    {progress}
+                    {details}
                 </div>
-                {claimButton}
-                <div className="ml-auto flex shrink-0 items-center gap-2.5">
+                <div className="ml-auto flex shrink-0 items-center">
                     {rewardChip}
                 </div>
             </div>
@@ -850,16 +810,10 @@ function QuestOverviewContent({
             });
         }
 
-        // Order per lane by lifecycle rank; within a rank, cheaper reward first.
+        // Order per lane by lifecycle rank only: a claim moves its own row and
+        // nothing else; within a rank the catalog's order stays (stable sort).
         for (const key of Object.keys(byCat) as CategoryKey[]) {
-            byCat[key].sort((a, b) => {
-                const rankDelta = cardSortRank(a) - cardSortRank(b);
-                if (rankDelta !== 0) return rankDelta;
-                return (
-                    (a.reward ?? Number.POSITIVE_INFINITY) -
-                    (b.reward ?? Number.POSITIVE_INFINITY)
-                );
-            });
+            byCat[key].sort((a, b) => cardSortRank(a) - cardSortRank(b));
         }
         return byCat;
     }, [
@@ -875,27 +829,32 @@ function QuestOverviewContent({
     // no synthetic catalog entry or special balance path.
     const bonusRewardCards = useMemo(() => {
         const catalogIds = new Set(state.catalog.map((quest) => quest.id));
-        return state.rewards
-            .filter(
-                (reward) =>
-                    reward.questId == null || !catalogIds.has(reward.questId),
-            )
-            .map<QuestCard>((reward) => ({
-                key: reward.id,
-                rewardId: reward.id,
-                title: reward.title,
-                description: reward.questId?.startsWith(
-                    "github:reported_issue:",
+        return (
+            state.rewards
+                .filter(
+                    (reward) =>
+                        reward.questId == null ||
+                        !catalogIds.has(reward.questId),
                 )
-                    ? "Your issue was closed by a merged pull request."
-                    : undefined,
-                url: reward.url ?? undefined,
-                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
-                reward: reward.pollenAmount,
-                balanceBucket: reward.balanceBucket,
-                status: reward.claimedAt ? "claimed" : "claimable",
-                earnedAmount: reward.pollenAmount,
-            }));
+                .map<QuestCard>((reward) => ({
+                    key: reward.id,
+                    rewardId: reward.id,
+                    title: reward.title,
+                    description: reward.questId?.startsWith(
+                        "github:reported_issue:",
+                    )
+                        ? "Your issue was closed by a merged pull request."
+                        : undefined,
+                    url: reward.url ?? undefined,
+                    issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                    reward: reward.pollenAmount,
+                    balanceBucket: reward.balanceBucket,
+                    status: reward.claimedAt ? "claimed" : "claimable",
+                    earnedAmount: reward.pollenAmount,
+                }))
+                // Same order as the sections: to claim first, done last.
+                .sort((a, b) => cardSortRank(a) - cardSortRank(b))
+        );
     }, [state.catalog, state.rewards]);
 
     // Logged-out totals show what the public catalog offers, not an owned balance.
@@ -1098,7 +1057,6 @@ function QuestOverviewContent({
                                 <QuestRow
                                     key={card.key}
                                     card={card}
-                                    icon={category.icon}
                                     claiming={state.claimingRewardIds.includes(
                                         card.rewardId ?? "",
                                     )}
@@ -1128,7 +1086,6 @@ function QuestOverviewContent({
                             <QuestRow
                                 key={card.key}
                                 card={card}
-                                icon={SparkleIcon}
                                 claiming={state.claimingRewardIds.includes(
                                     card.rewardId ?? "",
                                 )}

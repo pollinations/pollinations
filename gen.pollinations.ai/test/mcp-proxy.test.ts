@@ -53,7 +53,8 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Inspect and validate the structure and complexity of Pollinations-hosted GLB 3D models.",
                 url: "https://gen.pollinations.ai/mcp/glb-inspector",
                 pricing: {
-                    description: "Free structural inspection; no model or third-party API calls.",
+                    description:
+                        "Free structural inspection; no model or third-party API calls.",
                     rates: [],
                 },
             },

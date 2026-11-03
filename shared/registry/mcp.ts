@@ -138,7 +138,8 @@ export const MCP_SERVERS = [
         binding: "GLB_INSPECTOR_MCP",
         billing: "downstream",
         pricing: {
-            description: "Free structural inspection; no model or third-party API calls.",
+            description:
+                "Free structural inspection; no model or third-party API calls.",
             rates: [],
         },
     },

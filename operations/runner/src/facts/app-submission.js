@@ -5,7 +5,7 @@ import {
     checkScreenshot,
     parseSubmission,
     submissionErrors,
-} from "../../../app-management/ingestion/submission.js";
+} from "../../../app-management/submissions/submission.js";
 import { redact } from "../checker.js";
 import { catalog, relatedApps } from "./catalog.js";
 import { pageFacts } from "./page.js";

@@ -69,10 +69,10 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
         run: |
           TODAY=$(date -u +%F)
-          APPROVED_DATE="$TODAY" node operations/app-management/ingestion/validate-submission.js > "$RUNNER_TEMP/app-validation.json"
+          APPROVED_DATE="$TODAY" node operations/app-management/submissions/validate-submission.js > "$RUNNER_TEMP/app-validation.json"
           jq -e '.valid == true' "$RUNNER_TEMP/app-validation.json" >/dev/null
           SCREENSHOT_URL=$(jq -r .submission.screenshotUrl "$RUNNER_TEMP/app-validation.json") \
-            node operations/app-management/ingestion/upload-screenshot.js > "$RUNNER_TEMP/screenshot-url"
+            node operations/app-management/submissions/upload-screenshot.js > "$RUNNER_TEMP/screenshot-url"
           APP_JSON=$(jq -c --arg screenshotUrl "$(cat "$RUNNER_TEMP/screenshot-url")" '.app + {screenshotUrl: $screenshotUrl}' "$RUNNER_TEMP/app-validation.json")
           # A named quest closes with the submission, paying the submitter.
           QUEST=$(jq -r '.submission.quest // ""' "$RUNNER_TEMP/app-validation.json")

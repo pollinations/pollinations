@@ -87,7 +87,7 @@ function createDecisionsMock() {
                     body,
                 });
                 if (state.vercelResponse) return state.vercelResponse.clone();
-                if (state.response && body.model === "typesafe-ai/jev-latest")
+                if (state.response && body.model === "typesafe-ai/jev-1.14.0")
                     return state.response.clone();
                 return Response.json({
                     model: body.model,
@@ -95,7 +95,7 @@ function createDecisionsMock() {
                     usage: {
                         input_tokens: 452,
                         output_tokens:
-                            body.model === "typesafe-ai/jev-latest" ? 73 : 0,
+                            body.model === "typesafe-ai/jev-1.14.0" ? 73 : 0,
                     },
                 });
             },
@@ -107,7 +107,7 @@ function createDecisionsMock() {
                 });
                 if (state.response) return state.response.clone();
                 return Response.json({
-                    model: "typesafe/jev-latest-20260917",
+                    model: "typesafe/jev-1.14-20260917",
                     answers,
                     usage: {
                         input_tokens: 452,
@@ -147,7 +147,7 @@ beforeEach(async () => {
         "model-stats-v3",
         JSON.stringify({
             value: {
-                data: [{ model: "typesafe/jev-latest", avg_cost_usd: 0.001 }],
+                data: [{ model: "typesafe/jev-1.14", avg_cost_usd: 0.001 }],
             },
             ttl: 3600,
         }),
@@ -184,7 +184,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     mocks,
 }) => {
     const { response, wait } = await post("/alpha/decisions", apiKey, {
-        model: "typesafe/jev-latest",
+        model: "typesafe/jev-1.14",
         state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
         questions,
     });
@@ -194,7 +194,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     expect(body).toMatchObject({
         id: expect.stringMatching(/^dec-/),
         // Our canonical id, not the provider's dated build.
-        model: "typesafe/jev-latest",
+        model: "typesafe/jev-1.14",
         provider: "TypeSafe",
         answers,
         usage: { input_tokens: 452, output_tokens: 73 },
@@ -208,7 +208,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
         authorization: "Bearer vercel-test-key",
         // Forwarded untouched, under the upstream's pinned model id.
         body: {
-            model: "typesafe-ai/jev-latest",
+            model: "typesafe-ai/jev-1.14.0",
             providerOptions: {
                 gateway: { only: ["typesafe-ai"] },
                 typesafe: { longContext: true },
@@ -223,7 +223,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
         responseStatus: 200,
-        modelRequested: "typesafe/jev-latest",
+        modelRequested: "typesafe/jev-1.14",
         tokenCountPromptText: 452,
         tokenCountCompletionText: 73,
         isBilledUsage: true,
@@ -235,14 +235,14 @@ test("answers the same decision on TypeSafe's /v1/systemone path", async ({
     mocks,
 }) => {
     const { response, wait } = await post("/v1/systemone", apiKey, {
-        model: "typesafe/jev-latest",
+        model: "typesafe/jev-1.14",
         state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
         questions,
     });
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-        model: "typesafe/jev-latest",
+        model: "typesafe/jev-1.14",
         provider: "TypeSafe",
         answers,
         usage: { input_tokens: 452, output_tokens: 73 },
@@ -250,7 +250,7 @@ test("answers the same decision on TypeSafe's /v1/systemone path", async ({
     expect(mocks.decisions.state.requests).toHaveLength(1);
     expect(mocks.decisions.state.requests[0]).toMatchObject({
         pathname: "/typesafe/v1/systemone",
-        body: { model: "typesafe-ai/jev-latest", questions },
+        body: { model: "typesafe-ai/jev-1.14.0", questions },
     });
 
     await wait();
@@ -260,7 +260,7 @@ test("answers the same decision on TypeSafe's /v1/systemone path", async ({
         eventType: "generate.text",
         requestPath: "/v1/systemone",
         responseStatus: 200,
-        modelRequested: "typesafe/jev-latest",
+        modelRequested: "typesafe/jev-1.14",
         isBilledUsage: true,
     });
 });
@@ -591,7 +591,7 @@ test("defaults to jev and accepts the alias", async ({
     });
     expect(withoutModel.response.status).toBe(200);
     await expect(withoutModel.response.json()).resolves.toMatchObject({
-        model: "typesafe/jev-latest",
+        model: "typesafe/jev-1.14",
     });
     await withoutModel.wait();
 
@@ -602,14 +602,14 @@ test("defaults to jev and accepts the alias", async ({
     });
     expect(viaAlias.response.status).toBe(200);
     await expect(viaAlias.response.json()).resolves.toMatchObject({
-        model: "typesafe/jev-latest",
+        model: "typesafe/jev-1.14",
     });
     await viaAlias.wait();
 
     expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
-test("a decision key reaches Jev by its canonical ID and both aliases", async ({
+test("a decision key reaches Jev by its canonical ID and every alias", async ({
     mocks,
 }) => {
     const { key } = await createTestApiKey({
@@ -618,7 +618,7 @@ test("a decision key reaches Jev by its canonical ID and both aliases", async ({
     });
 
     for (const model of [
-        "typesafe/jev-latest",
+        "typesafe/jev-1.14",
         "typesafe/jev-1.13",
         "typesafe/jev",
         "jev",
@@ -630,7 +630,7 @@ test("a decision key reaches Jev by its canonical ID and both aliases", async ({
         });
         expect(response.status).toBe(200);
         await expect(response.json()).resolves.toMatchObject({
-            model: "typesafe/jev-latest",
+            model: "typesafe/jev-1.14",
         });
         await wait();
     }
@@ -892,7 +892,7 @@ test("returns an upstream HTTP 502 when Jev omits usage", async ({
         mocks.decisions.state.requests.map(
             (request) => (request.body as { model: string }).model,
         ),
-    ).toEqual(["typesafe-ai/jev-latest", "typesafe/jev-latest"]);
+    ).toEqual(["typesafe-ai/jev-1.14.0", "typesafe/jev-1.14"]);
     expect(
         mocks.tinybird.state.events.some((event) => event.isBilledUsage),
     ).toBe(false);

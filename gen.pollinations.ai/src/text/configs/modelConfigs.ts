@@ -109,11 +109,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         },
     }),
     // Both gateways preserve the native TypeSafe Decisions protocol.
-    "jev-latest": () =>
+    "jev-1.14": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-            model: "typesafe-ai/jev-latest",
+            model: "typesafe-ai/jev-1.14.0",
             defaultOptions: {
                 providerOptions: {
                     gateway: { only: ["typesafe-ai"] },
@@ -121,11 +121,11 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "typesafe/jev-latest:openrouter:typesafe": () => ({
+    "typesafe/jev-1.14:openrouter:typesafe": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "typesafe/jev-latest",
+        model: "typesafe/jev-1.14",
         defaultOptions: {
             provider: {
                 only: ["typesafe"],
@@ -134,9 +134,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
-    "jev-1.13": () => portkeyConfig["jev-latest"](),
-    "typesafe/jev-1.13:openrouter:typesafe": () =>
-        portkeyConfig["typesafe/jev-latest:openrouter:typesafe"](),
     "kev-4b": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",

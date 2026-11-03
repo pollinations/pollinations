@@ -216,9 +216,9 @@ export const TEXT_FALLBACKS = {
             priceMultiplier: 1,
         },
     },
-    "typesafe/jev-latest": {
+    "typesafe/jev-1.14": {
         // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
-        "typesafe/jev-latest:openrouter:typesafe": {
+        "typesafe/jev-1.14:openrouter:typesafe": {
             provider: "openrouter",
             priceMultiplier: 1,
             cost: {

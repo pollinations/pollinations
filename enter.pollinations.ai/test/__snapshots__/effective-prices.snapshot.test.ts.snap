@@ -4507,7 +4507,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 1.1,
     },
   },
-  "typesafe/jev-latest": {
+  "typesafe/jev-1.14": {
     "cost": {
       "completionTextTokens": 0,
       "promptTextTokens": 0.000000042,
@@ -4517,7 +4517,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000042,
     },
   },
-  "typesafe/jev-latest:openrouter:typesafe": {
+  "typesafe/jev-1.14:openrouter:typesafe": {
     "cost": {
       "completionTextTokens": 0,
       "promptTextTokens": 0.00000004431,

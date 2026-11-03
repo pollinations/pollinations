@@ -714,17 +714,17 @@ describe("resolveModelConfig", () => {
 
     it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
         const primary = resolveModelConfig(messages, {
-            model: "typesafe/jev-latest",
+            model: "typesafe/jev-1.14",
         });
-        expect(primary.options.model).toBe("typesafe-ai/jev-latest");
+        expect(primary.options.model).toBe("typesafe-ai/jev-1.14.0");
         expect(primary.options.providerOptions).toEqual({
             gateway: { only: ["typesafe-ai"] },
             typesafe: { longContext: true },
         });
         const backup = resolveModelConfig(messages, {
-            model: "typesafe/jev-latest:openrouter:typesafe",
+            model: "typesafe/jev-1.14:openrouter:typesafe",
         });
-        expect(backup.options.model).toBe("typesafe/jev-latest");
+        expect(backup.options.model).toBe("typesafe/jev-1.14");
         expect(backup.options.provider).toEqual({
             only: ["typesafe"],
             ignore: ["cloudflare"],

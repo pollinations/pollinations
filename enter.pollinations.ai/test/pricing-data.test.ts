@@ -1312,8 +1312,7 @@ test("Google text model providers match their configured routes", () => {
 // These low-cost models are approved for Quest Pollen. A new OpenRouter model
 // must be reviewed before it joins this exception.
 const OPENROUTER_QUEST_POLLEN_MODELS = new Set([
-    "typesafe/jev-latest",
-    "typesafe/jev-1.13",
+    "typesafe/jev-1.14",
     "jaredpalmer/kev-4b",
     "respan/span-01-lite",
 ]);

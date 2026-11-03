@@ -7,7 +7,7 @@ import { callSystemOne } from "../../src/text/systemOneClient.js";
 const modelConfig = {
     authKey: "test-key",
     directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-    model: "typesafe/jev-latest",
+    model: "typesafe/jev-1.14",
 };
 
 // Native TypeSafe shapes: instructions and rubric entries may be strings,
@@ -111,12 +111,7 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
-    it.each([
-        "typesafe/jev-latest",
-        "typesafe/jev-latest:openrouter:typesafe",
-        "typesafe/jev-1.13",
-        "typesafe/jev-1.13:openrouter:typesafe",
-    ])(
+    it.each(["typesafe/jev-1.14", "typesafe/jev-1.14:openrouter:typesafe"])(
         "forwards Jev route pins without changing native question shapes: %s",
         async (model) => {
             const config: Record<string, unknown> = {
@@ -369,15 +364,12 @@ describe("System One adapter", () => {
             }
         },
     );
-    it.each([
-        "typesafe/jev-latest",
-        "typesafe/jev-1.13",
-        "typesafe/jev",
-        "jev",
-        "jev-latest",
-    ])("resolves %s to the canonical model", (name) => {
-        expect(findModelByName(name)?.name).toBe("typesafe/jev-latest");
-    });
+    it.each(["typesafe/jev-1.14", "typesafe/jev-1.13", "typesafe/jev", "jev"])(
+        "resolves %s to the versioned canonical model",
+        (name) => {
+            expect(findModelByName(name)?.name).toBe("typesafe/jev-1.14");
+        },
+    );
 
     it("resolves Kev 4B only by its OpenRouter id", () => {
         expect(findModelByName("jaredpalmer/kev-4b")?.name).toBe(
@@ -858,7 +850,7 @@ describe("System One adapter", () => {
                     "application/json",
                 );
                 expect(JSON.parse(String(init?.body))).toEqual({
-                    model: "typesafe/jev-latest",
+                    model: "typesafe/jev-1.14",
                     state: nativeState,
                     questions: nativeQuestions,
                 });
@@ -903,7 +895,7 @@ describe("System One adapter", () => {
         );
     });
 
-    it("routes typesafe/jev-latest directly with the configured upstream model", async () => {
+    it("routes typesafe/jev-1.14 directly with the configured upstream model", async () => {
         const payloadWithModel = JSON.stringify({
             model: "inner-model-must-not-route",
             state: nativeState,
@@ -933,7 +925,7 @@ describe("System One adapter", () => {
         await generateTextPortkey(
             [{ role: "user", content: payloadWithModel }],
             {
-                model: "typesafe/jev-latest",
+                model: "typesafe/jev-1.14",
                 modelConfig: { ...modelConfig, model: "jev-1.13.0" },
             },
             portkeyFetcher,
@@ -1016,7 +1008,7 @@ describe("System One adapter", () => {
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (_input, init) => {
                 expect(JSON.parse(String(init?.body))).toEqual({
-                    model: "typesafe/jev-latest",
+                    model: "typesafe/jev-1.14",
                     state: nativeState,
                     questions: nativeQuestions,
                 });

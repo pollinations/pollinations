@@ -70,7 +70,7 @@ export const Generate3dRequestBodySchema = z
                     "Model to use for 3D generation. See /3d/models for the full list and per-model input requirements.",
             }),
         image: z
-            .union([z.string(), z.array(z.string())])
+            .union([z.string().min(1), z.array(z.string()).min(1)])
             .optional()
             .refine(
                 (value) => {

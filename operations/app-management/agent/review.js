@@ -270,7 +270,23 @@ function relatedApps(submission, apps, max = 5) {
         }));
 }
 
-async function buildContext(submission, apps) {
+// The model fails the whole call on an image it cannot download, so a missing
+// screenshot becomes a fact instead. The URL is a GitHub or media host:
+// parseSubmission accepts nothing else.
+async function screenshotError(url) {
+    try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+        res.body?.cancel();
+        const type = res.headers.get("content-type") ?? "";
+        return res.ok && type.startsWith("image/")
+            ? null
+            : `HTTP ${res.status}`;
+    } catch (error) {
+        return error.message;
+    }
+}
+
+async function buildContext(submission, apps, submittedDate) {
     let n = 0;
     const nextId = () => `F${++n}`;
     const facts = [];
@@ -278,6 +294,17 @@ async function buildContext(submission, apps) {
         facts.push(...(await pageFacts(submission.appUrl, nextId)));
     if (submission.repoUrl) facts.push(repoFact(submission.repoUrl, nextId));
     if (submission.quest) facts.push(questFact(submission.quest, nextId));
+    let screenshot = submission.screenshotUrl || null;
+    const error = screenshot && (await screenshotError(screenshot));
+    if (error) {
+        facts.push({
+            id: nextId(),
+            kind: "screenshot",
+            url: screenshot,
+            error,
+        });
+        screenshot = null;
+    }
     return {
         job: "submission",
         app: {
@@ -288,9 +315,11 @@ async function buildContext(submission, apps) {
             category: submission.category,
             platform: submission.platform,
             quest: submission.quest || null,
+            submittedDate: submittedDate ?? null,
         },
         facts,
         related: relatedApps(submission, apps),
+        screenshot,
     };
 }
 
@@ -468,12 +497,16 @@ async function main() {
         );
         return;
     }
-    const { submission } = validation;
-    const context = await buildContext(submission, readApps());
+    const { submission, metadata } = validation;
+    const context = await buildContext(
+        submission,
+        readApps(),
+        metadata.submittedDate,
+    );
     const ids = new Set(
         [...context.facts, ...context.related].map((f) => f.id),
     );
-    const answer = await askAgent(context, submission.screenshotUrl, key);
+    const answer = await askAgent(context, context.screenshot, key);
     const result = checkReport(parseReport(answer.text), {
         ids,
         fetched: answer.fetched,

@@ -10,6 +10,14 @@ import { publicAgentSyncRoutes } from "../src/routes/agents.ts";
 
 afterEach(() => vi.unstubAllGlobals());
 
+const bindings = {
+    ...env,
+    ENVIRONMENT: "test",
+    CLOUDFLARE_ACCOUNT_ID: "test-account",
+    CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
+    CODE_AGENT_DISPATCH_NAMESPACE: "test-code-agents",
+};
+
 describe("code agent sync", () => {
     it.each(["Same description", "Updated description"])(
         "refreshes the platform runtime at the same owner commit (%s)",
@@ -32,6 +40,7 @@ describe("code agent sync", () => {
                         repository,
                         deployedCommitSha: commit,
                     }),
+                    updatedAt: new Date(Date.now() - 60_000),
                 });
 
             const calls: string[] = [];
@@ -64,13 +73,6 @@ describe("code agent sync", () => {
                 return Response.json({ success: true });
             });
 
-            const bindings = {
-                ...env,
-                ENVIRONMENT: "test",
-                CLOUDFLARE_ACCOUNT_ID: "test-account",
-                CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
-                CODE_AGENT_DISPATCH_NAMESPACE: "test-code-agents",
-            };
             const response = await publicAgentSyncRoutes.request(
                 `/${id}/sync`,
                 { method: "POST" },
@@ -102,6 +104,62 @@ describe("code agent sync", () => {
             expect(calls).toHaveLength(4);
         },
     );
+
+    it("deploys once when one agent is synced concurrently", async () => {
+        const id = crypto.randomUUID();
+        const commit = "c".repeat(40);
+        await drizzle(env.DB)
+            .insert(communityEndpoint)
+            .values({
+                id,
+                ownerUserId: await createTestUser(),
+                name: "agent",
+                title: "agent",
+                type: "code_agent",
+                baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+                upstreamModel: id,
+                payload: JSON.stringify({
+                    repository: "https://github.com/example/agent",
+                    deployedCommitSha: commit,
+                }),
+                updatedAt: new Date(Date.now() - 60_000),
+            });
+
+        let deploys = 0;
+        vi.stubGlobal("fetch", async (input) => {
+            const url = String(input);
+            if (url.endsWith("/commits/HEAD")) {
+                return Response.json({ sha: commit });
+            }
+            if (url.startsWith("https://api.github.com/")) {
+                return Response.json({
+                    name: "agent",
+                    full_name: "example/agent",
+                    description: null,
+                    private: false,
+                });
+            }
+            if (url.startsWith("https://raw.githubusercontent.com/")) {
+                return new Response("export default () => new Response('a');");
+            }
+            deploys++;
+            return Response.json({ success: true });
+        });
+
+        const responses = await Promise.all(
+            Array.from({ length: 5 }, () =>
+                publicAgentSyncRoutes.request(
+                    `/${id}/sync`,
+                    { method: "POST" },
+                    bindings,
+                ),
+            ),
+        );
+        expect(responses.map((response) => response.status).sort()).toEqual([
+            200, 429, 429, 429, 429,
+        ]);
+        expect(deploys).toBe(1);
+    });
 });
 
 describe("admin code agent redeploy", () => {

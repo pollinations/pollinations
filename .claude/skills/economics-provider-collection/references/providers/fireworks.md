@@ -101,7 +101,7 @@ Collection steps:
 - Fireworks account IDs (pass with `-a`; `firectl account list --api-key`
   prints the ID the key can reach):
 
-  | Registry id | Fireworks account ID | Display name | Key (sops `operations/economics/ingest/secrets/env.json`) |
+  | Registry id | Fireworks account ID | Display name | Key (sops `operations/dashboards/economics/ingest/secrets/env.json`) |
   |---|---|---|---|
   | `myceli` | `elliot-l6mb8f24ewds` | Myceli AI | `FIREWORKS_API_KEY_MYCELI` |
   | `pollinations` | `pollinations` | Pollinations.AI | `FIREWORKS_API_KEY` |

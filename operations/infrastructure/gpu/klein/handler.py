@@ -95,12 +95,6 @@ async def health():
 async def generate(request: ImageRequest, _=Depends(verify_backend_token)):
     prompt = request.prompts[0] if request.prompts else ""
 
-    generator = None
-    seed = request.seed
-    if seed is None:
-        seed = int(torch.randint(0, 2**32, (1,)).item())
-    generator = torch.Generator(device="cuda").manual_seed(seed)
-
     # Decode reference images if provided
     reference_images = None
     if request.images:
@@ -112,6 +106,8 @@ async def generate(request: ImageRequest, _=Depends(verify_backend_token)):
             try:
                 img_bytes = base64.b64decode(img_b64)
                 img = Image.open(BytesIO(img_bytes)).convert("RGB")
+                # The pipeline's size/aspect checks are input errors too.
+                pipe.image_processor.check_image_input(img)
             except (UnidentifiedImageError, base64.binascii.Error, ValueError) as e:
                 raise HTTPException(
                     status_code=400, detail=f"Invalid reference image: {e}"
@@ -119,6 +115,11 @@ async def generate(request: ImageRequest, _=Depends(verify_backend_token)):
             reference_images.append(img)
         if len(reference_images) == 1:
             reference_images = reference_images[0]
+
+    seed = request.seed
+    if seed is None:
+        seed = int(torch.randint(0, 2**32, (1,)).item())
+    generator = torch.Generator(device="cuda").manual_seed(seed)
 
     reference_count = min(len(request.images), 10)
     logger.info(

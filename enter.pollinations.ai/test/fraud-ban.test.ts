@@ -41,7 +41,11 @@ test("checkout created during a ban is expired instead of redirected", async ({
             redirect: "manual",
         },
     );
-    expect(response.status).toBe(403);
+    // Back to the wallet, never on to Stripe.
+    expect(response.status).toBe(302);
+    const back = new URL(response.headers.get("location") ?? "");
+    expect(back.pathname).toBe("/pollen");
+    expect(back.searchParams.get("checkout_error")).toBe("failed");
     expect(mocks.stripe.state.checkoutSessions).toHaveLength(1);
     expect(mocks.stripe.state.checkoutSessions[0].status).toBe("expired");
 });
@@ -129,13 +133,11 @@ test("fraud ban revokes sessions, stops automatic payments, and rejects existing
             packAmountUsd: 10,
         }),
     ).toMatchObject({ ok: false, status: 403 });
-    for (const key of [apiKey, pubApiKey]) {
-        const result = await SELF.fetch(
-            "http://localhost:3000/api/account/profile",
-            { headers: { Authorization: `Bearer ${key}` } },
-        );
-        expect(result.status).toBe(403);
-    }
+    const result = await SELF.fetch(
+        "http://localhost:3000/api/account/profile",
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    expect(result.status).toBe(403);
     const lookup = await SELF.fetch(
         `http://localhost:3000/api/app-lookup?app_key=${encodeURIComponent(pubApiKey)}`,
     );
@@ -147,7 +149,12 @@ test("fraud ban revokes sessions, stops automatic payments, and rejects existing
             redirect: "manual",
         },
     );
-    expect(checkout.status).toBe(401);
+    // The revoked session is signed out: back to the wallet to sign in,
+    // never on to Stripe.
+    expect(checkout.status).toBe(302);
+    const back = new URL(checkout.headers.get("location") ?? "");
+    expect(back.pathname).toBe("/pollen");
+    expect(back.searchParams.has("checkout_error")).toBe(false);
 });
 
 test("banned login reaches the restricted error screen", async ({

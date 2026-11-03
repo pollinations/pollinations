@@ -32,6 +32,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
+          check-latest: true
 
       - name: Sync traffic
         env:
@@ -39,4 +40,4 @@ jobs:
           TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
           DAYS: ${{ inputs.days || '1' }}
           DATASET: ${{ inputs.dataset || 'all' }}
-        run: node operations/cloudflare/sync-traffic-to-tinybird.mjs --days "$DAYS" --dataset "$DATASET"
+        run: node operations/data-sync/cloudflare-traffic-to-tinybird.mjs --days "$DAYS" --dataset "$DATASET"

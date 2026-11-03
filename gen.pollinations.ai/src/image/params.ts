@@ -91,7 +91,12 @@ export const ImageParamsSchema = z
         safe: sanitizedBoolean.catch(false),
         quality: z.string().min(1).catch("medium"),
         image: z
-            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .union([
+                z.array(z.string().min(1)),
+                z.string().min(1),
+                z.null(),
+                z.undefined(),
+            ])
             .transform((value?: string[] | string | null) => {
                 if (!value) return [];
                 // Already an array (from POST JSON body)

@@ -107,7 +107,8 @@ function parseScreenshotUrl(value) {
 
 function parseSubmission(body) {
     const name = clean(line(body, "App Name"), 80);
-    const description = clean(section(body, "App Description"), 200);
+    // Read up to 2000 characters so the length error can quote the real length.
+    const description = clean(section(body, "App Description"), 2000);
     const appUrl = normalizeUrl(line(body, "App URL"));
     const repoUrl = normalizeUrl(line(body, "GitHub Repository URL"));
     const category = clean(line(body, "App Category"), 30).toLowerCase();
@@ -138,6 +139,10 @@ function validateSubmission(submission) {
     if (submission.description.length < 20)
         errors.push(
             "App Description must explain what the app does and how it uses Pollinations.",
+        );
+    if (submission.description.length > 200)
+        errors.push(
+            `App Description is ${submission.description.length} characters; the catalog shows 200. Shorten it.`,
         );
     if (!submission.appUrl && !submission.repoUrl)
         errors.push(

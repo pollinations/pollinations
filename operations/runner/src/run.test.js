@@ -153,7 +153,7 @@ test("matchRoute wakes Community app only for open submission issues", () => {
     });
     assert.equal(
         matchRoute("issues", payload({}), repo)?.id,
-        "community-app/review",
+        "community-apps/review",
     );
     assert.equal(
         matchRoute(
@@ -161,7 +161,7 @@ test("matchRoute wakes Community app only for open submission issues", () => {
             payload({ labels: [], title: "[App Submission]" }),
             repo,
         )?.id,
-        "community-app/review",
+        "community-apps/review",
     );
     assert.equal(
         matchRoute("issues", payload({ labels: [], title: "Bug" }), repo),

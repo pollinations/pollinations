@@ -8,9 +8,9 @@ const BADGE =
 
 export const ROUTES = [
     {
-        id: "community-app/review",
-        agent: "community/pollinations-ai/community-app",
-        keyEnv: "COMMUNITY_APP_KEY",
+        id: "community-apps/review",
+        agent: "community/pollinations-ai/community-apps",
+        keyEnv: "COMMUNITY_APPS_KEY",
         door: {
             event: "issues",
             actions: ["opened", "edited"],

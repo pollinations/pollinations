@@ -2,12 +2,12 @@
 // and one Durable Object per issue does the work, so a request returns at
 // once while the run keeps going for up to 15 minutes. WRITE=1 lets runs post.
 import { DurableObject } from "cloudflare:workers";
-import communityAppReview from "../../agents/community-app/REVIEW.md";
+import communityAppsReview from "../../agents/community-apps/REVIEW.md";
 import { githubClient, verifySignature } from "./github.js";
 import { matchRoute, ROUTES } from "./routes.js";
 import { run } from "./run.js";
 
-const RULEBOOKS = { "community-app/review": communityAppReview };
+const RULEBOOKS = { "community-apps/review": communityAppsReview };
 
 export class Job extends DurableObject {
     start(job) {

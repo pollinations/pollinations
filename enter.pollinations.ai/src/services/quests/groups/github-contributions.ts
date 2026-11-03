@@ -21,19 +21,22 @@ import {
  * in its body; it is payable once a merged PR closes it. There is no local
  * GitHub mirror and no materialized quest table.
  *
- * Other merged PRs and fixed issues earn the amount the project manager quoted
- * when the item was opened, in a comment signed with CONTRIBUTION_REWARD_KEY.
- * Elliot or Thomas can replace that amount with a `Reward: N` comment.
+ * Other merged PRs earn 3, and an issue someone else's merged PR fixes earns
+ * its author 1, three days after the merge. Elliot or Thomas can change either
+ * with a `Reward: N` comment; the project manager only announces the default.
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
 const REWARD_MAINTAINERS = new Set([5099901, 36901823]); // Thomas, Elliot
-const REWARD_MARKER = "<!-- pollinations-reward -->";
 const CONTRIBUTION_REWARD_LIMIT = 100;
+const PR_REWARD = 3;
+const ISSUE_REWARD = 1;
+// Time for Elliot or Thomas to change a reward before it is recorded.
+const PAYOUT_DELAY_MS = 3 * 24 * 60 * 60 * 1000;
 // Issues and PRs opened before this keep the old fixed rewards: 3 for each
 // reported issue a merged PR fixes, 5 for a first merged PR. Same date as
-// REWARDS_START in operations/github/project_manager.py.
-const REWARDS_START = "2026-11-02T00:00:00Z";
+// REWARDS_START in operations/infrastructure/project-manager/project_manager.py.
+const REWARDS_START = "2026-11-04T00:00:00Z";
 const LEGACY_REPORTED_ISSUE_REWARD = 3;
 const LEGACY_FIRST_PR_REWARD = 5;
 const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
@@ -53,9 +56,8 @@ const REPO = `${REPO_OWNER}/${REPO_NAME}`;
 const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
 // An approved app submission can close a quest. The bot opens that catalog PR
 // on an auto/app-<issue>- branch and credits the submitter as commit co-author.
-// The same bot posts reward quotes. A GitHub user also owns the login
-// "pollinations-ai", so the type must be Bot.
-const POLLINATIONS_BOT = "pollinations-ai";
+// A GitHub user also owns the login "pollinations-ai", so the type must be Bot.
+const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 // The GitHub App's GraphQL budget is 5,000 points an hour, and listing the
@@ -106,20 +108,20 @@ const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
     description:
-        "Earn a reward for each merged pull request. The project manager comments with the assessed amount; claim it here after merge.",
+        "Earn 3 Quest Pollen for each pull request merged into the Pollinations [repository](https://github.com/pollinations/pollinations), claimable 3 days after merge.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 0,
+    rewardAmount: PR_REWARD,
     balanceBucket: "tier",
 };
 
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose). The project manager comments with the assessed reward; claim it here when a merged PR closes your issue.`,
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose). Earn 1 Quest Pollen when someone else's merged PR fixes it, claimable 3 days after merge.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 0,
+    rewardAmount: ISSUE_REWARD,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -248,7 +250,7 @@ type RewardComments = {
     nodes: RewardComment[];
     pageInfo: { hasPreviousPage: boolean; startCursor: string | null };
 };
-type AssessedReward = Pick<QuestDefinition, "rewardAmount" | "balanceBucket">;
+type Reward = Pick<QuestDefinition, "rewardAmount" | "balanceBucket">;
 
 // An issue or PR the user opened on or after REWARDS_START.
 type Contribution = {
@@ -271,7 +273,9 @@ type MergedPrNode = Contribution & {
     };
 };
 type ClosedIssueNode = Contribution & {
-    closedByPullRequestsReferences: { nodes: ClosingMerge[] };
+    closedByPullRequestsReferences: {
+        nodes: (ClosingMerge & { author: RewardActor | null })[];
+    };
 };
 type UserContributionsData<TNode> = {
     user: {
@@ -402,7 +406,9 @@ query($login:String!,$after:String,$before:String){
       repository{ nameWithOwner }
       author{ __typename login ... on User{ databaseId } }
       ${REWARD_COMMENTS}
-      closedByPullRequestsReferences(first:10){ nodes{ mergedAt repository{ nameWithOwner } } }
+      closedByPullRequestsReferences(first:10){
+        nodes{ mergedAt repository{ nameWithOwner } author{ __typename login ... on User{ databaseId } } }
+      }
     }
   } }
 }`;
@@ -445,7 +451,7 @@ function isRewardMaintainer(actor: RewardActor | null): boolean {
 }
 
 // `Reward: 3`, `Reward: 3 quest` or `Reward: 3 paid`, alone on its line.
-function parseAssessment(text: string): AssessedReward | undefined {
+function parseOverride(text: string): Reward | undefined {
     const match = text
         .trim()
         .match(/^Reward:[ \t]*(\d+(?:\.\d+)?)(?:[ \t]+(quest|paid))?[ \t]*$/);
@@ -456,42 +462,10 @@ function parseAssessment(text: string): AssessedReward | undefined {
     };
 }
 
-// Only the project manager holds CONTRIBUTION_REWARD_KEY, so no other bot
-// reply can pass as a quote. Without the key, no quote pays.
-async function rewardQuoteKey(
-    env: CloudflareBindings,
-): Promise<CryptoKey | null> {
-    const { CONTRIBUTION_REWARD_KEY: secret } = env as CloudflareBindings & {
-        CONTRIBUTION_REWARD_KEY?: string;
-    };
-    if (!secret) return null;
-    return await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(secret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["verify"],
-    );
-}
-
-function verifyQuote(
-    key: CryptoKey,
-    number: number,
-    line: string,
-    signature: string,
-): Promise<boolean> {
-    const bytes = Uint8Array.from(signature.match(/../g) ?? [], (byte) =>
-        Number.parseInt(byte, 16),
-    );
-    return crypto.subtle.verify(
-        "HMAC",
-        key,
-        bytes,
-        new TextEncoder().encode(`${REPO}#${number}\n${line}`),
-    );
-}
-
-// All comments in creation order; long threads hide the quote on older pages.
+// All comments in creation order, up to the newest 100.
+// ponytail: an override older than the newest 100 comments is ignored, so a
+// comment flood cannot burn the GitHub budget. Raise the cap if a real thread
+// needs it.
 async function allComments(
     token: string,
     number: number,
@@ -499,7 +473,7 @@ async function allComments(
 ): Promise<RewardComment[]> {
     const comments = [...newest.nodes];
     let page = newest;
-    while (page.pageInfo.hasPreviousPage) {
+    for (let pages = 1; pages < 5 && page.pageInfo.hasPreviousPage; pages++) {
         const data = await graphql<{
             repository: { issueOrPullRequest: { comments: RewardComments } };
         }>(token, COMMENTS_PAGE_QUERY, {
@@ -512,54 +486,40 @@ async function allComments(
     return comments;
 }
 
-// Elliot's or Thomas's newest `Reward:` comment decides. Otherwise the signed
-// quote posted before the merge does, unless a quest bounty replaces it.
+// Elliot's or Thomas's newest `Reward:` comment replaces the default.
 async function contributionReward(
     token: string,
-    quoteKey: CryptoKey | null,
     item: Contribution,
-    mergedAt: string,
-    useQuote: boolean,
-): Promise<AssessedReward | undefined> {
+    defaultAmount: number,
+): Promise<Reward> {
     const comments = await allComments(token, item.number, item.comments);
-    const override = comments
-        .filter(
-            (comment) =>
-                isRewardMaintainer(comment.author) &&
-                (!comment.lastEditedAt || isRewardMaintainer(comment.editor)),
-        )
-        .sort(
-            (a, b) =>
-                Date.parse(b.lastEditedAt ?? b.createdAt) -
-                Date.parse(a.lastEditedAt ?? a.createdAt),
-        )
-        .map((comment) => parseAssessment(comment.body))
-        .find((reward) => reward !== undefined);
-    if (override || !useQuote || !quoteKey) return override;
+    return (
+        comments
+            .filter(
+                (comment) =>
+                    isRewardMaintainer(comment.author) &&
+                    (!comment.lastEditedAt ||
+                        isRewardMaintainer(comment.editor)),
+            )
+            .sort(
+                (a, b) =>
+                    Date.parse(b.lastEditedAt ?? b.createdAt) -
+                    Date.parse(a.lastEditedAt ?? a.createdAt),
+            )
+            .map((comment) => parseOverride(comment.body))
+            .find((reward) => reward !== undefined) ?? {
+            rewardAmount: defaultAmount,
+            balanceBucket: "tier",
+        }
+    );
+}
 
-    for (const comment of comments) {
-        const [marker, line = "", signature = ""] = comment.body.split("\n");
-        const hex = signature.match(
-            /^<!-- signature: ([0-9a-f]{64}) -->$/,
-        )?.[1];
-        if (
-            comment.author?.__typename !== "Bot" ||
-            comment.author.login !== POLLINATIONS_BOT ||
-            marker !== REWARD_MARKER ||
-            !hex ||
-            Date.parse(comment.createdAt) > Date.parse(mergedAt) ||
-            !(await verifyQuote(quoteKey, item.number, line, hex))
-        )
-            continue;
-        const reward = parseAssessment(line);
-        // The model never authorizes Paid Pollen; that takes an override.
-        return reward?.balanceBucket === "tier" ? reward : undefined;
-    }
-    return undefined;
+function pastPayoutDelay(mergedAt: string): boolean {
+    return Date.parse(mergedAt) <= Date.now() - PAYOUT_DELAY_MS;
 }
 
 // The user's issues or PRs from REWARDS_START on, in this repository. Older
-// items have no quotes, so a check never walks a contributor's whole history.
+// items keep the old rules, so a check never walks a contributor's history.
 async function recentContributions<TNode extends Contribution>(
     token: string,
     query: string,
@@ -630,7 +590,7 @@ function mergedClosers(issue: GitHubIssueNode) {
 function isAppPublishPr(pr: ClosingPullRequest): boolean {
     return (
         pr.author?.__typename === "Bot" &&
-        pr.author.login === POLLINATIONS_BOT &&
+        pr.author.login === APP_PUBLISH_BOT &&
         APP_PUBLISH_BRANCH.test(pr.headRefName)
     );
 }
@@ -786,7 +746,7 @@ export async function listQuestCards(
 
 function reportedIssueProposal(
     issue: { number: number; title: string; url: string },
-    reward: AssessedReward,
+    reward: Reward,
     user: QuestUser,
 ): QuestEvaluation["proposals"][number] {
     return {
@@ -801,11 +761,7 @@ function reportedIssueProposal(
     };
 }
 
-async function reportedIssueProposals(
-    token: string,
-    quoteKey: CryptoKey | null,
-    user: QuestUser,
-) {
+async function reportedIssueProposals(token: string, user: QuestUser) {
     if (!user.githubUsername) return [];
     const proposals: QuestEvaluation["proposals"] = [];
     for (const issue of await recentContributions<ClosedIssueNode>(
@@ -813,34 +769,30 @@ async function reportedIssueProposals(
         CLOSED_ISSUES_QUERY,
         user,
     )) {
-        // The first merge accepts the report; a quote must come before it.
-        const mergedAt = issue.closedByPullRequestsReferences.nodes
-            .flatMap((pr) =>
-                pr.mergedAt && pr.repository.nameWithOwner === REPO
-                    ? [pr.mergedAt]
-                    : [],
-            )
-            .sort()[0];
-        if (!mergedAt) continue;
+        const merges = issue.closedByPullRequestsReferences.nodes.filter(
+            (pr) => pr.mergedAt && pr.repository.nameWithOwner === REPO,
+        );
+        const firstMerge = merges.map((pr) => pr.mergedAt ?? "").sort()[0];
+        if (!firstMerge || !pastPayoutDelay(firstMerge)) continue;
+        // A report its own author fixed earns nothing by default.
+        const fixedBySomeoneElse = merges.some(
+            (pr) =>
+                pr.author?.__typename === "User" &&
+                pr.author.databaseId !== user.githubId,
+        );
         const reward = await contributionReward(
             token,
-            quoteKey,
             issue,
-            mergedAt,
-            true,
+            fixedBySomeoneElse ? ISSUE_REWARD : 0,
         );
-        if (reward?.rewardAmount) {
+        if (reward.rewardAmount) {
             proposals.push(reportedIssueProposal(issue, reward, user));
         }
     }
     return proposals;
 }
 
-async function mergedPrProposals(
-    token: string,
-    quoteKey: CryptoKey | null,
-    user: QuestUser,
-) {
+async function mergedPrProposals(token: string, user: QuestUser) {
     if (!user.githubUsername) return [];
     const proposals: QuestEvaluation["proposals"] = [];
     for (const pr of await recentContributions<MergedPrNode>(
@@ -848,8 +800,9 @@ async function mergedPrProposals(
         MERGED_PRS_QUERY,
         user,
     )) {
-        // A closed quest pays its bounty through the issue, replacing the
-        // quote. Beyond the first page, assume one does rather than pay twice.
+        if (!pastPayoutDelay(pr.mergedAt)) continue;
+        // A closed quest pays its bounty through the issue instead of the
+        // default. Beyond the first page, assume one does rather than pay twice.
         const closesQuest =
             pr.closingIssuesReferences.pageInfo.hasNextPage ||
             pr.closingIssuesReferences.nodes.some(
@@ -859,12 +812,10 @@ async function mergedPrProposals(
             );
         const reward = await contributionReward(
             token,
-            quoteKey,
             pr,
-            pr.mergedAt,
-            !closesQuest,
+            closesQuest ? 0 : PR_REWARD,
         );
-        if (!reward?.rewardAmount) continue;
+        if (!reward.rewardAmount) continue;
         proposals.push({
             quest: {
                 ...mergedPrQuest,
@@ -998,10 +949,7 @@ export async function evaluateUser(
     const githubId = user.githubId;
     if (githubId === null) return { proposals: [] };
 
-    const [token, quoteKey] = await Promise.all([
-        githubToken(ctx.env),
-        rewardQuoteKey(ctx.env),
-    ]);
+    const token = await githubToken(ctx.env);
     const [
         issues,
         mergedPrs,
@@ -1012,8 +960,8 @@ export async function evaluateUser(
         honeyCensus,
     ] = await Promise.all([
         cachedQuestIssues(ctx.env),
-        mergedPrProposals(token, quoteKey, user),
-        reportedIssueProposals(token, quoteKey, user),
+        mergedPrProposals(token, user),
+        reportedIssueProposals(token, user),
         hasLegacyMergedPr(token, user),
         legacyReportedIssueProposals(token, user),
         answeredSurvey(token, user, BEE_CENSUS),

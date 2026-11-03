@@ -34,7 +34,6 @@ export default defineConfig(async ({ mode }) => {
                 miniflare: {
                     bindings: {
                         TEST_MIGRATIONS: migrations,
-                        CONTRIBUTION_REWARD_KEY: "test-contribution-reward-key",
                     },
                     serviceBindings: {
                         COMPOSIO_MCP: async (request: Request) => {

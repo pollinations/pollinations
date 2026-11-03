@@ -1054,6 +1054,10 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/kimi-k3",
             serviceTier: "default",
         }),
+    "moonshotai/kimi-k3.1-pro-highspeed": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro-highspeed",
+        }),
     // -- Fireworks AI (Qwen) ------------------------------------------------
     "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
         createFireworksModelConfig({
@@ -1310,10 +1314,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 max_tokens: 16384,
                 providerOptions: { gateway: { only: ["deepinfra"] } },
             },
-        }),
-    "moonshotai/kimi-k3.1-pro-highspeed": () =>
-        createVercelAIGatewayModelConfig({
-            model: "moonshotai/kimi-k3.1-pro-highspeed",
         }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({

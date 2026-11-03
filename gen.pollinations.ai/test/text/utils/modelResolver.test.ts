@@ -765,6 +765,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mercury to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-2",
+        });
+
+        expect(result.options.model).toBe("inception/mercury-2");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Kimi K3.1 Pro Highspeed through Vercel AI Gateway without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "moonshotai/kimi-k3.1-pro-highspeed",
@@ -776,18 +788,6 @@ describe("resolveModelConfig", () => {
             "custom-host": "https://ai-gateway.vercel.sh/v1",
         });
         expect(result.options.provider).toBeUndefined();
-    });
-
-    it("pins Mercury to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-2",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-2");
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
     });
 
     it("pins Mercury 3 to Inception on OpenRouter without fallback", () => {

@@ -2,9 +2,9 @@
 
 const { execFileSync } = require("node:child_process");
 const { readApps } = require("../app.js");
+const { downloadScreenshot, screenshotErrors } = require("./screenshot.js");
 const {
     buildApp,
-    checkScreenshot,
     parseSubmission,
     submissionErrors,
 } = require("./submission.js");
@@ -37,6 +37,16 @@ function isOpenQuest(number) {
         issue.state === "OPEN" &&
         issue.labels.some((label) => label.name === "POLLEN-QUEST")
     );
+}
+
+async function checkScreenshot(url) {
+    try {
+        return await screenshotErrors(await downloadScreenshot(url));
+    } catch {
+        return [
+            "Screenshot could not be downloaded; upload it again in the Screenshot field.",
+        ];
+    }
 }
 
 async function main() {

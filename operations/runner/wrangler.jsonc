@@ -10,7 +10,7 @@
     "compatibility_flags": ["nodejs_compat"],
     "observability": { "enabled": true },
     "rules": [{ "type": "Text", "globs": ["**/*.md"], "fallthrough": true }],
-    "vars": { "WRITE": "0" },
+    "vars": { "WRITE": "0", "REPO": "pollinations/pollinations" },
     "durable_objects": {
         "bindings": [{ "name": "JOBS", "class_name": "Job" }]
     },

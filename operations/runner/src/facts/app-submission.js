@@ -10,12 +10,16 @@ import { redact } from "../checker.js";
 import { catalog, relatedApps } from "./catalog.js";
 import { pageFacts } from "./page.js";
 
-async function repoFact(repoUrl, github, nextId) {
+// The submitter names the repository, and the bot's token can see private
+// repositories it is installed on, so only a public one is ever read.
+export async function repoFact(repoUrl, github, nextId) {
     const parts = new URL(repoUrl).pathname.split("/").filter(Boolean);
     const name = `${parts[0]}/${parts[1]?.replace(/\.git$/, "")}`;
     const folder = parts[2] === "tree" ? parts.slice(4).join("/") : "";
     try {
-        const { default_branch: branch } = await github.repo(name);
+        const { private: hidden, default_branch: branch } =
+            await github.repo(name);
+        if (hidden !== false) throw new Error("not a public repository");
         const { tree } = await github.tree(name, branch);
         const files = tree
             .filter((f) => f.type === "blob" && f.path.startsWith(folder))

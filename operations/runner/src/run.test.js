@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import test from "node:test";
+import { repoFact } from "./facts/app-submission.js";
 import { verifySignature } from "./github.js";
 import { matchRoute, ROUTES } from "./routes.js";
 import { run } from "./run.js";
@@ -144,26 +145,68 @@ test("a failed run says the check is unavailable and sets no status", async () =
 });
 
 test("matchRoute wakes Community app only for open submission issues", () => {
-    const payload = (overrides) => ({
+    const repo = "pollinations/pollinations";
+    const payload = (overrides, fullName = repo) => ({
         action: "opened",
+        repository: { full_name: fullName },
         issue: { ...issue, ...overrides },
     });
-    assert.equal(matchRoute("issues", payload({}))?.id, "community-app/review");
     assert.equal(
-        matchRoute("issues", payload({ labels: [], title: "[App Submission]" }))
-            ?.id,
+        matchRoute("issues", payload({}), repo)?.id,
         "community-app/review",
     );
     assert.equal(
-        matchRoute("issues", payload({ labels: [], title: "Bug" })),
+        matchRoute(
+            "issues",
+            payload({ labels: [], title: "[App Submission]" }),
+            repo,
+        )?.id,
+        "community-app/review",
+    );
+    assert.equal(
+        matchRoute("issues", payload({ labels: [], title: "Bug" }), repo),
         null,
     );
     assert.equal(
-        matchRoute("issues", payload({ labels: [{ name: "APP-APPROVED" }] })),
+        matchRoute(
+            "issues",
+            payload({ labels: [{ name: "APP-APPROVED" }] }),
+            repo,
+        ),
         null,
     );
-    assert.equal(matchRoute("issues", payload({ pull_request: {} })), null);
-    assert.equal(matchRoute("issue_comment", payload({})), null);
+    assert.equal(
+        matchRoute("issues", payload({ pull_request: {} }), repo),
+        null,
+    );
+    assert.equal(matchRoute("issue_comment", payload({}), repo), null);
+});
+
+test("matchRoute ignores events from any other repository", () => {
+    const payload = {
+        action: "opened",
+        repository: { full_name: "pollinations/security-triage" },
+        issue,
+    };
+    assert.equal(
+        matchRoute("issues", payload, "pollinations/pollinations"),
+        null,
+    );
+});
+
+test("repoFact reads only public repositories", async () => {
+    let n = 0;
+    const github = {
+        repo: async () => ({ private: true, default_branch: "main" }),
+        tree: () => assert.fail("read a private repository"),
+    };
+    const fact = await repoFact(
+        "https://github.com/pollinations/security-triage",
+        github,
+        () => `F${++n}`,
+    );
+    assert.equal(fact.error, "not a public repository");
+    assert.equal(fact.files, undefined);
 });
 
 test("verifySignature accepts GitHub's signature and nothing else", async () => {

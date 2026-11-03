@@ -59,8 +59,11 @@ export const ROUTES = [
     },
 ];
 
-export function matchRoute(event, payload) {
+// Only events from the one repository the runner serves start a run, even if
+// the app is installed on others.
+export function matchRoute(event, payload, repo) {
     const issue = payload.issue;
+    if (payload.repository?.full_name !== repo) return null;
     if (!issue || issue.pull_request || issue.state !== "open") return null;
     const labels = issue.labels.map((l) => l.name);
     return (

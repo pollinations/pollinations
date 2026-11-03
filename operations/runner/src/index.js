@@ -55,9 +55,10 @@ export default {
         const route = matchRoute(
             request.headers.get("x-github-event"),
             payload,
+            env.REPO,
         );
         if (!route) return new Response("ignored", { status: 202 });
-        const repo = payload.repository.full_name;
+        const repo = env.REPO;
         await env.JOBS.getByName(`${repo}#${payload.issue.number}`).start({
             delivery: request.headers.get("x-github-delivery"),
             routeId: route.id,

@@ -1,7 +1,6 @@
 import type { ComponentPropsWithoutRef, FC } from "react";
 import { cn } from "../lib/cn.ts";
-import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
-import { CopyButton } from "./CopyButton.tsx";
+import { CopyButton, CopyStateIcon } from "./CopyButton.tsx";
 
 type CodeBlockOwnProps = {
     code: string;
@@ -41,11 +40,10 @@ export const CodeBlock: FC<CodeBlockProps> = ({
                 >
                     {(copied) => (
                         <>
-                            {copied ? (
-                                <CheckIcon className="polli:size-3.5" />
-                            ) : (
-                                <ClipboardIcon className="polli:size-3.5" />
-                            )}
+                            <CopyStateIcon
+                                copied={copied}
+                                className="polli:size-3.5"
+                            />
                             <span>{copied ? "Copied" : "Copy"}</span>
                         </>
                     )}

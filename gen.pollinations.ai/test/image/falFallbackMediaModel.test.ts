@@ -16,6 +16,11 @@ const STATUS_URL = "https://queue.fal.run/requests/test/status";
 const RESULT_URL = "https://queue.fal.run/requests/test";
 const MEDIA_URL = "https://fal.media/output";
 const MEDIA_BYTES = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]);
+// PNG signature and IHDR of a 720x544 image: enough for readImageDimensions.
+const PNG_720x544 = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48,
+    0x44, 0x52, 0, 0, 0x02, 0xd0, 0, 0, 0x02, 0x20,
+]);
 
 const baseParams: ImageParams = {
     model: "bytedance/seedream-5.0-lite:fal",
@@ -67,6 +72,11 @@ function mockFal(
         if (href === MEDIA_URL) {
             return new Response(MEDIA_BYTES, {
                 headers: { "content-type": "video/mp4" },
+            });
+        }
+        if (href.endsWith(".png")) {
+            return new Response(PNG_720x544, {
+                headers: { "content-type": "image/png" },
             });
         }
         return Response.json({
@@ -582,7 +592,7 @@ describe("Fal fallback media models", () => {
         });
     });
 
-    it("maps Wan 2.2 start and end frames to the Fal turbo endpoint", async () => {
+    it("maps Wan 2.2 start and end frames to the Fal turbo endpoint with the start frame's ratio", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },
         });
@@ -597,13 +607,17 @@ describe("Fal fallback media models", () => {
         await vi.advanceTimersByTimeAsync(5_000);
         const result = await resultPromise;
 
-        expect(requests[0]).toEqual({
+        // Fal's "auto" rejects a 720x544 start frame, so the closest
+        // supported ratio is sent instead.
+        expect(requests[0].url).toBe("https://example.com/start.png");
+        expect(requests[1]).toEqual({
             url: "https://queue.fal.run/fal-ai/wan/v2.2-a14b/image-to-video/turbo",
             body: {
                 prompt: "move",
                 resolution: "480p",
                 end_image_url: "https://example.com/end.png",
                 image_url: "https://example.com/start.png",
+                aspect_ratio: "1:1",
                 seed: 42,
             },
         });

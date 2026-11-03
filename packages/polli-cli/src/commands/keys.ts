@@ -47,7 +47,6 @@ interface SingleKeyInfo {
     permissions: { models?: string[]; account?: string[] } | null;
     pollenBudget: number | null;
     questPollenOnly?: boolean;
-    rateLimitEnabled: boolean;
 }
 
 const MODELS_HELP =
@@ -142,7 +141,6 @@ const info = new Command("info")
                 expires: keyInfo.expiresAt ?? "never",
                 budget: keyInfo.pollenBudget ?? "unlimited",
                 quest_pollen_only: keyInfo.questPollenOnly ?? false,
-                rate_limited: keyInfo.rateLimitEnabled,
                 model_restrictions:
                     keyInfo.permissions?.models?.join(", ") ??
                     "none (all models)",

@@ -24,7 +24,7 @@ export const RealtimeRequestQueryParamsSchema = z
             .meta({
                 description: `Realtime model to use. Supported models: ${REALTIME_MODEL_NAMES.join(", ")}.`,
             }),
-        key: z.string().optional().meta({
+        key: z.string().min(1).optional().meta({
             description:
                 "Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers.",
         }),

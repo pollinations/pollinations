@@ -1107,7 +1107,7 @@ export const proxyRoutes = new Hono<Env>()
             "query",
             z
                 .object({
-                    key: z.string().optional().meta({
+                    key: z.string().min(1).optional().meta({
                         description:
                             "API key (alternative to Authorization header)",
                     }),

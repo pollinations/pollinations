@@ -714,17 +714,17 @@ describe("resolveModelConfig", () => {
 
     it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
         const primary = resolveModelConfig(messages, {
-            model: "typesafe/jev-1.13",
+            model: "typesafe/jev-1.14",
         });
-        expect(primary.options.model).toBe("typesafe-ai/jev-1.13.0");
+        expect(primary.options.model).toBe("typesafe-ai/jev-1.14.0");
         expect(primary.options.providerOptions).toEqual({
             gateway: { only: ["typesafe-ai"] },
             typesafe: { longContext: true },
         });
         const backup = resolveModelConfig(messages, {
-            model: "typesafe/jev-1.13:openrouter:typesafe",
+            model: "typesafe/jev-1.14:openrouter:typesafe",
         });
-        expect(backup.options.model).toBe("typesafe/jev-1.13");
+        expect(backup.options.model).toBe("typesafe/jev-1.14");
         expect(backup.options.provider).toEqual({
             only: ["typesafe"],
             ignore: ["cloudflare"],
@@ -763,6 +763,19 @@ describe("resolveModelConfig", () => {
             ignore: ["cloudflare"],
             allow_fallbacks: false,
         });
+    });
+
+    it("routes Kimi K3.1 Pro through Vercel AI Gateway without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k3.1-pro",
+        });
+
+        expect(result.options.model).toBe("moonshotai/kimi-k3.1-pro");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("pins Mercury to Inception on OpenRouter without fallback", () => {

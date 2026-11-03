@@ -1732,9 +1732,9 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         isSpecialized: true,
     },
-    "typesafe/jev-1.13": {
+    "typesafe/jev-1.14": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev", "typesafe/jev"],
+        aliases: ["jev", "typesafe/jev", "typesafe/jev-1.13"],
         provider: "vercel",
         publisher: "TypeSafe",
         category: "decision",
@@ -1742,7 +1742,7 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // Vercel TypeSafe route (2026-10-24), with no gateway surcharge.
+            // Vercel TypeSafe route (2026-11-03), with no gateway surcharge.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
@@ -1760,7 +1760,7 @@ const TEXT_BASE_SERVICES = {
         tools: false,
         reasoning: false,
         // 64k for state + questions together; 32k for state + the longest
-        // question. https://docs.typesafe.ai/model-jaggedness/jev-1.13
+        // question. https://docs.typesafe.ai/models#context-length
         contextLength: 64000,
         isSpecialized: true,
     },
@@ -2538,6 +2538,35 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
+        isSpecialized: false,
+    },
+    "moonshotai/kimi-k3.1-pro": {
+        supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vercel AI Gateway list rates (2026-11-03), no gateway fee; cache writes
+        // bill at the input rate (Moonshot 5-minute TTL). Moonshot AI is the
+        // only endpoint.
+        // https://ai-gateway.vercel.sh/v1/models/moonshotai/kimi-k3.1-pro/endpoints
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2),
+            completionTextTokens: perMillion(10),
+        },
+        title: "Kimi K3.1 Pro",
+        description:
+            "Reasoning and agentic coding model with 1M context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "moonshotai/kimi-k3": {

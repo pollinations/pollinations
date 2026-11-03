@@ -66,6 +66,7 @@ async function call(path, { token, method = "GET", body } = {}) {
             ...(body && { "content-type": "application/json" }),
         },
         body: body && JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) {
         const error = new Error(`GitHub ${method} ${path} -> ${res.status}`);
@@ -75,13 +76,17 @@ async function call(path, { token, method = "GET", body } = {}) {
     return res.status === 204 ? null : res.json();
 }
 
-// The Worker signs in as the Polly bot app. A local run uses GITHUB_TOKEN
-// instead, so it can read real issues without the app's key.
-export async function githubClient(env, repo) {
+// The Worker signs in as the Polly bot app, with a token limited to the one
+// repository and the permissions its route needs. A local run may read with
+// GITHUB_TOKEN instead, but never write with it.
+export async function githubClient(env, repo, permissions) {
     let token = env.GITHUB_TOKEN;
     let self;
-    if (token) self = (await call("/user", { token })).login;
-    else {
+    if (token) {
+        if (env.WRITE === "1")
+            throw new Error("GITHUB_TOKEN is only for silent local runs");
+        self = (await call("/user", { token })).login;
+    } else {
         const jwt = await appJwt(env.GITHUB_APP_ID, env.GITHUB_APP_PRIVATE_KEY);
         const { id } = await call(`/repos/${repo}/installation`, {
             token: jwt,
@@ -89,18 +94,18 @@ export async function githubClient(env, repo) {
         ({ token } = await call(`/app/installations/${id}/access_tokens`, {
             token: jwt,
             method: "POST",
+            body: { repositories: [repo.split("/")[1]], permissions },
         }));
         self = `${(await call("/app", { token: jwt })).slug}[bot]`;
     }
     const get = (path) => call(path, { token });
-    const all = async (path, pages = 5) => {
+    const all = async (path) => {
         const items = [];
-        for (let page = 1; page <= pages; page++) {
+        for (let page = 1; ; page++) {
             const batch = await get(`${path}&per_page=100&page=${page}`);
             items.push(...batch);
-            if (batch.length < 100) break;
+            if (batch.length < 100) return items;
         }
-        return items;
     };
     return {
         issue: (number) => get(`/repos/${repo}/issues/${number}`),
@@ -112,26 +117,27 @@ export async function githubClient(env, repo) {
             all(
                 `/repos/${repo}/issues?state=open&labels=${encodeURIComponent(label)}`,
             ).then((items) => items.filter((i) => !i.pull_request)),
-        async upsertComment(number, marker, body) {
-            const mine = (
-                await all(`/repos/${repo}/issues/${number}/comments?`)
-            ).filter((c) => c.user?.login === self && c.body?.includes(marker));
-            if (mine.length)
-                await call(`/repos/${repo}/issues/comments/${mine.at(-1).id}`, {
-                    token,
-                    method: "PATCH",
-                    body: { body },
-                });
-            else
-                await call(`/repos/${repo}/issues/${number}/comments`, {
-                    token,
-                    method: "POST",
-                    body: { body },
-                });
-        },
-        // Removes every status label the route owns, then adds the new ones.
-        async setStatusLabel(number, owned, add) {
-            for (const name of owned) {
+        // The newest comment of ours that carries the marker, if any.
+        markerComment: async (number, marker) =>
+            (await all(`/repos/${repo}/issues/${number}/comments?`))
+                .filter(
+                    (c) => c.user?.login === self && c.body?.includes(marker),
+                )
+                .at(-1),
+        saveComment: (number, comment, body) =>
+            comment
+                ? call(`/repos/${repo}/issues/comments/${comment.id}`, {
+                      token,
+                      method: "PATCH",
+                      body: { body },
+                  })
+                : call(`/repos/${repo}/issues/${number}/comments`, {
+                      token,
+                      method: "POST",
+                      body: { body },
+                  }),
+        async removeLabels(number, names) {
+            for (const name of names) {
                 try {
                     await call(
                         `/repos/${repo}/issues/${number}/labels/${encodeURIComponent(name)}`,
@@ -141,13 +147,12 @@ export async function githubClient(env, repo) {
                     if (error.status !== 404) throw error;
                 }
             }
-            const labels = add.filter(Boolean);
-            if (labels.length)
-                await call(`/repos/${repo}/issues/${number}/labels`, {
-                    token,
-                    method: "POST",
-                    body: { labels },
-                });
         },
+        addLabels: (number, labels) =>
+            call(`/repos/${repo}/issues/${number}/labels`, {
+                token,
+                method: "POST",
+                body: { labels },
+            }),
     };
 }

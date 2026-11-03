@@ -38,35 +38,54 @@ export async function askAgent({ model, rulebook, context, image, key }) {
     return { text, fetched: readUrls(output), usage: body.usage };
 }
 
-// The URLs the agent actually read: asked for in a tool call AND returned in
-// that call's result. Exa reports each page it read as "URL: <url>" and each
-// failure as "Could not fetch <url>"; a failed or missing result counts for
-// nothing.
+// The URLs the agent actually read: asked for in a fetch call AND listed as a
+// page in that call's successful result. exa lists each page it read as a
+// "# <title>" line followed by "URL: <url>"; an error result, a failed fetch or
+// a URL that only shares a prefix counts for nothing.
+const bare = (url) => url.replace(/\/$/, "");
+
+function returnedPages(output) {
+    const pages = new Set();
+    for (const part of [output].flat()) {
+        let result;
+        try {
+            result = JSON.parse(typeof part === "string" ? part : part?.text);
+        } catch {
+            continue;
+        }
+        if (result?.isError) continue;
+        for (const { text } of result?.content ?? []) {
+            const lines = String(text ?? "").split("\n");
+            lines.forEach((line, i) => {
+                const url = line.match(/^URL: (\S+)$/)?.[1];
+                if (url && lines[i - 1]?.startsWith("# ")) pages.add(bare(url));
+            });
+        }
+    }
+    return pages;
+}
+
 export function readUrls(output) {
     const results = new Map(
         output
             .filter((item) => item.type === "function_call_output")
-            .map((item) => [item.call_id, JSON.stringify(item.output ?? "")]),
+            .map((item) => [item.call_id, returnedPages(item.output)]),
     );
     return output
         .filter((item) => item.type === "function_call")
         .flatMap((item) => {
-            const result = results.get(item.call_id);
-            if (!result) return [];
-            let urls;
+            const pages = results.get(item.call_id);
+            if (!pages) return [];
+            let args;
             try {
-                const args = JSON.parse(item.arguments);
-                urls = args.urls ?? [args.url];
+                args = JSON.parse(item.arguments);
             } catch {
                 return [];
             }
-            return urls.filter((url) => {
-                if (typeof url !== "string") return false;
-                const bare = url.replace(/\/$/, "");
-                const read = [bare, `${bare}/`].some((u) =>
-                    result.includes(`URL: ${u}`),
+            return [args.urls ?? args.url]
+                .flat()
+                .filter(
+                    (url) => typeof url === "string" && pages.has(bare(url)),
                 );
-                return read && !result.includes(`Could not fetch ${url}`);
-            });
         });
 }

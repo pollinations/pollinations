@@ -4,8 +4,7 @@
     "type": "module",
     "scripts": {
         "dev": "wrangler dev",
-        "test": "node --test src/*.test.js",
-        "deploy": "sops exec-file --no-fifo secrets/secrets.vars.json 'wrangler deploy --secrets-file {}'"
+        "test": "node --test src/*.test.js"
     },
     "devDependencies": {
         "wrangler": "^4.156.0"

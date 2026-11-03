@@ -1,5 +1,8 @@
 // One status comment per issue, written from a route's texts and the checked
-// outcome. Every agent-written line arrives already cleaned by the checker.
+// outcome. Agent lines arrive cleaned by the checker; form errors, which can
+// quote catalog names, are cleaned here.
+import { cleanLine } from "./checker.js";
+
 const STATUS_TEXT = {
     supported: "✅ supported",
     contradicted: "❌ contradicted",
@@ -15,7 +18,7 @@ export function renderComment(texts, outcome, author) {
     if (outcome.kind === "unavailable")
         return `${head(texts.unavailableTitle)}${texts.unavailable}`;
     if (outcome.kind === "invalid")
-        return `${head(texts.needsInfoTitle)}\n\n${bullets(outcome.errors)}\n\n${texts.invalidClosing}`;
+        return `${head(texts.needsInfoTitle)}\n\n${bullets(outcome.errors.map((e) => cleanLine(e, 300)))}\n\n${texts.invalidClosing}`;
     const { result } = outcome;
     const table = [
         "| Check | Result | Note |",

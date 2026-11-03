@@ -1,47 +1,43 @@
 // One issue's pending job, kept in its Durable Object's storage so a restart
-// loses nothing. Each event replaces the job and waits out a quiet period, so a
-// burst of edits costs one agent call; a redelivered event or an unchanged body
-// costs none. A failed agent call is retried, spaced out, before anything is
-// posted; any other throw falls to Cloudflare's own alarm retries.
+// loses nothing. An event only says "look at this issue again": it replaces the
+// job and waits out a quiet period, so a burst of edits costs one review, and
+// the review reads the issue as it is then. A computed review is stored, so a
+// failed write is retried without asking the agent again. Every failure is
+// retried, spaced out; a review that fails on the last attempt posts
+// "unavailable", and a write that does is logged.
 const QUIET_MS = 30_000;
-export const RETRY_MS = [60_000, 300_000];
-
-async function digest(text) {
-    const bytes = await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(text),
-    );
-    return Buffer.from(bytes).toString("hex");
-}
+export const RETRY_MS = [60_000, 300_000, 1_800_000];
 
 export async function receive(storage, job) {
-    if ((await storage.get("done"))?.delivery === job.delivery) return false;
     await storage.put("job", { ...job, attempt: 0 });
     await storage.setAlarm(Date.now() + QUIET_MS);
-    return true;
 }
 
-export async function work(storage, execute) {
+export async function work(storage, { review, deliver, log = console.error }) {
     const job = await storage.get("job");
     if (!job) return;
     const isLatest = async () =>
         (await storage.get("job"))?.delivery === job.delivery;
-    const body = await digest(job.issue.body ?? "");
-    if ((await storage.get("done"))?.body !== body) {
-        const result = await execute(job, {
-            lastAttempt: job.attempt >= RETRY_MS.length,
-            isLatest,
-        });
-        if (result.retry) {
-            if (await isLatest()) {
-                await storage.put("job", { ...job, attempt: job.attempt + 1 });
-                await storage.setAlarm(Date.now() + RETRY_MS[job.attempt]);
-            }
+    const lastAttempt = job.attempt >= RETRY_MS.length;
+    try {
+        const result = job.result ?? (await review(job, { lastAttempt }));
+        if (result.retry) throw new Error(result.error);
+        if (!result.skip) {
+            if (!(await isLatest())) return;
+            await storage.put("job", { ...job, result });
+            await deliver(job, result, { isLatest });
+        }
+    } catch (error) {
+        if (!(await isLatest())) return;
+        if (!lastAttempt) {
+            await storage.put("job", {
+                ...(await storage.get("job")),
+                attempt: job.attempt + 1,
+            });
+            await storage.setAlarm(Date.now() + RETRY_MS[job.attempt]);
             return;
         }
-        // An unavailable check or a run overtaken by a newer event is not done.
-        if (result.outcome.kind !== "unavailable" && !result.skipped)
-            await storage.put("done", { delivery: job.delivery, body });
+        log(`job for issue ${job.number} failed: ${error.message}`);
     }
     if (await isLatest()) await storage.delete("job");
 }

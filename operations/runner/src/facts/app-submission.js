@@ -2,7 +2,6 @@
 // they reject stops the run before any agent call. Otherwise the agent gets
 // the page, the repository, the quest and the related catalog apps.
 import {
-    checkScreenshot,
     parseSubmission,
     submissionErrors,
 } from "../../../app-management/submissions/submission.js";
@@ -44,10 +43,49 @@ export async function repoFact(repoUrl, github, nextId) {
     }
 }
 
+const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
+const SCREENSHOT_RULES = "PNG, JPEG, or WebP, at most 5 MB";
+
+// The screenshot judged by its size and first bytes: a Worker has no image
+// decoder, and publishing decodes it fully before it is listed. Only a missing
+// file is the submitter's error; a server or network failure is retried.
+export async function screenshotErrors(url) {
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (res.status >= 400 && res.status < 500)
+        return [
+            "Screenshot could not be downloaded; upload it again in the Screenshot field.",
+        ];
+    if (!res.ok) throw new Error(`screenshot -> ${res.status}`);
+    const tooBig = (bytes) => [
+        `Screenshot is ${(bytes / 1024 / 1024).toFixed(1)} MB; it must be ${SCREENSHOT_RULES}.`,
+    ];
+    const declared = Number(res.headers.get("content-length"));
+    if (declared > MAX_SCREENSHOT_BYTES) {
+        res.body?.cancel();
+        return tooBig(declared);
+    }
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length > MAX_SCREENSHOT_BYTES) return tooBig(bytes.length);
+    const head = String.fromCharCode(...bytes.subarray(0, 12));
+    const image =
+        head.startsWith("\x89PNG\r\n\x1a\n") ||
+        head.startsWith("\xff\xd8\xff") ||
+        (head.startsWith("RIFF") && head.slice(8, 12) === "WEBP");
+    return image
+        ? []
+        : [
+              `Screenshot is not a PNG, JPEG or WebP image; it must be ${SCREENSHOT_RULES}.`,
+          ];
+}
+
 export async function appSubmission({ issue, github, repo }) {
     const submission = parseSubmission(issue.body);
+    // Only a quest that doesn't exist is the submitter's error.
     const quest = /^\d+$/.test(submission.quest)
-        ? await github.issue(submission.quest).catch(() => null)
+        ? await github.issue(submission.quest).catch((error) => {
+              if (error.status === 404) return null;
+              throw error;
+          })
         : null;
     const questOpen =
         quest?.state === "open" &&
@@ -70,7 +108,7 @@ export async function appSubmission({ issue, github, repo }) {
         })),
         questOpen,
         screenshot: submission.screenshotUrl
-            ? await checkScreenshot(submission.screenshotUrl)
+            ? await screenshotErrors(submission.screenshotUrl)
             : [],
     });
     if (errors.length) return { stop: errors };
@@ -110,6 +148,10 @@ export async function appSubmission({ issue, github, repo }) {
             related,
         },
         image: submission.screenshotUrl || null,
-        ids: new Set([...facts, ...related].map((f) => f.id)),
+        // A fact whose fetch failed explains what couldn't be checked; it is
+        // never evidence.
+        ids: new Set(
+            [...facts.filter((f) => !f.error), ...related].map((f) => f.id),
+        ),
     };
 }

@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
+import { createHmac, generateKeyPairSync } from "node:crypto";
 import test from "node:test";
 import { readUrls } from "./agent.js";
-import { repoFact } from "./facts/app-submission.js";
-import { verifySignature } from "./github.js";
+import { renderComment } from "./comment.js";
+import { appSubmission, repoFact } from "./facts/app-submission.js";
+import { githubClient, verifySignature } from "./github.js";
 import { RETRY_MS, receive, work } from "./jobs.js";
 import { matchRoute, ROUTES } from "./routes.js";
-import { run } from "./run.js";
+import { deliver, review } from "./run.js";
 
 const route = ROUTES[0];
 const issue = {
@@ -18,18 +19,24 @@ const issue = {
     user: { login: "alice" },
 };
 
-// A GitHub stand-in that records writes; `now` is the issue as GitHub sees it
-// when the run is about to write.
-function fakeGithub(now = issue) {
-    const writes = [];
-    return {
-        writes,
-        issue: async () => now,
-        upsertComment: async (_number, _marker, body) =>
-            writes.push({ comment: body }),
-        setStatusLabel: async (_number, _owned, add) =>
-            writes.push({ labels: add.filter(Boolean) }),
+// A GitHub stand-in that records writes. `now` is the issue as GitHub returns
+// it; `onLookup` runs while the status comment is being looked up.
+function fakeGithub(now = issue, onLookup = () => {}) {
+    const github = {
+        now,
+        writes: [],
+        issue: async () => github.now,
+        markerComment: async () => {
+            onLookup(github);
+            return undefined;
+        },
+        saveComment: async (_number, _comment, body) =>
+            github.writes.push({ comment: body }),
+        removeLabels: async (_number, names) =>
+            github.writes.push({ removed: names }),
+        addLabels: async (_number, labels) => github.writes.push({ labels }),
     };
+    return github;
 }
 
 const withFacts = (facts) => ({ ...route, facts: async () => facts });
@@ -47,19 +54,32 @@ const answer =
     });
 const quiet = () => {};
 
-test("an invalid form posts its errors and never calls the agent", async () => {
-    const github = fakeGithub();
-    const result = await run({
-        route: withFacts({ stop: ["App Name is required."] }),
-        issue,
-        github,
-        write: true,
-        ask: () => assert.fail("agent called"),
+async function reviewAndDeliver(options) {
+    const result = await review({ number: 7, log: quiet, ...options });
+    await deliver({
+        route: options.route,
+        number: 7,
+        github: options.github,
+        result,
         log: quiet,
     });
+    return result;
+}
+
+test("an invalid form gets its errors and never calls the agent", async () => {
+    const github = fakeGithub();
+    const result = await reviewAndDeliver({
+        route: withFacts({ stop: ["App Name is required."] }),
+        github,
+        ask: () => assert.fail("agent called"),
+    });
     assert.equal(result.label, "APP-NEEDS-INFO");
-    assert.match(github.writes[0].comment, /- App Name is required\./);
-    assert.deepEqual(github.writes[1].labels, [
+    assert.deepEqual(github.writes[0].removed, [
+        "APP-REVIEW",
+        "APP-NEEDS-INFO",
+    ]);
+    assert.match(github.writes[1].comment, /- App Name is required\./);
+    assert.deepEqual(github.writes[2].labels, [
         "APP-SUBMISSION",
         "APP-NEEDS-INFO",
     ]);
@@ -67,11 +87,9 @@ test("an invalid form posts its errors and never calls the agent", async () => {
 
 test("a contradicted check asks its question and labels needs-info", async () => {
     const github = fakeGithub();
-    const result = await run({
+    const result = await reviewAndDeliver({
         route: withFacts({ context: {}, ids: new Set(["F1"]) }),
-        issue,
         github,
-        write: true,
         ask: answer(
             [
                 supported("works"),
@@ -84,45 +102,60 @@ test("a contradicted check asks its question and labels needs-info", async () =>
             ],
             ["Use the redirect flow."],
         ),
-        log: quiet,
     });
     assert.equal(result.label, "APP-NEEDS-INFO");
-    assert.match(github.writes[0].comment, /^<!-- APP_PRE_REVIEW -->/);
-    assert.match(github.writes[0].comment, /- Use the redirect flow\./);
+    assert.match(github.writes[1].comment, /^<!-- APP_PRE_REVIEW -->/);
+    assert.match(github.writes[1].comment, /- Use the redirect flow\./);
     assert.match(
-        github.writes[0].comment,
+        github.writes[1].comment,
         /\| Sign-in returns to the app \| ❌ contradicted \| Device page\. \|/,
     );
 });
 
-test("silent mode logs the comment and writes nothing", async () => {
-    const github = fakeGithub();
+test("review reads the issue as it is now, logs, and never writes", async () => {
+    const github = fakeGithub({ ...issue, body: "current form" });
     const logs = [];
-    const result = await run({
+    const result = await review({
         route: withFacts({ context: {}, ids: new Set(["F1"]) }),
-        issue,
+        number: 7,
         github,
-        write: false,
         ask: answer(route.requirements.map(supported)),
         log: (line) => logs.push(line),
     });
+    assert.equal(result.issueBody, "current form");
     assert.equal(result.label, "APP-REVIEW");
     assert.equal(github.writes.length, 0);
     assert.match(logs[0], /ready for human review/);
 });
 
-test("an edit, an approval or closing during the run stops the writes", async () => {
+test("review skips an issue that is no longer an open submission", async () => {
+    for (const now of [
+        { ...issue, state: "closed" },
+        { ...issue, labels: [{ name: "APP-APPROVED" }] },
+    ]) {
+        const result = await review({
+            route: withFacts({ stop: ["x"] }),
+            number: 7,
+            github: fakeGithub(now),
+            ask: () => assert.fail("agent called"),
+            log: quiet,
+        });
+        assert.deepEqual(result, { skip: true });
+    }
+});
+
+test("an edit, an approval or closing before the write stops it", async () => {
     for (const now of [
         { ...issue, body: "edited" },
         { ...issue, labels: [{ name: "APP-APPROVED" }] },
         { ...issue, state: "closed" },
     ]) {
         const github = fakeGithub(now);
-        const result = await run({
-            route: withFacts({ stop: ["x"] }),
-            issue,
+        const result = await deliver({
+            route,
+            number: 7,
             github,
-            write: true,
+            result: { issueBody: "form", label: "APP-REVIEW", body: "x" },
             log: quiet,
         });
         assert.equal(result.skipped, true);
@@ -130,30 +163,54 @@ test("an edit, an approval or closing during the run stops the writes", async ()
     }
 });
 
-test("a failed run says the check is unavailable and sets no status", async () => {
-    const github = fakeGithub();
-    const result = await run({
-        route: withFacts({ context: {}, ids: new Set() }),
-        issue,
+test("closing while the comment is looked up stops the write", async () => {
+    const github = fakeGithub(issue, (gh) => {
+        gh.now = { ...issue, state: "closed" };
+    });
+    const result = await deliver({
+        route,
+        number: 7,
         github,
-        write: true,
+        result: { issueBody: "form", label: "APP-REVIEW", body: "x" },
+        log: quiet,
+    });
+    assert.equal(result.skipped, true);
+    assert.equal(github.writes.length, 0);
+});
+
+test("a failed last attempt says unavailable and clears the status", async () => {
+    const github = fakeGithub();
+    const result = await reviewAndDeliver({
+        route: withFacts({ context: {}, ids: new Set() }),
+        github,
+        ask: async () => {
+            throw new Error("gen down");
+        },
+    });
+    assert.equal(result.label, null);
+    assert.match(github.writes[1].comment, /App pre-review unavailable/);
+    assert.deepEqual(github.writes[2].labels, ["APP-SUBMISSION"]);
+});
+
+test("a failed attempt with retries left returns a retry", async () => {
+    const result = await review({
+        route: withFacts({ context: {}, ids: new Set() }),
+        number: 7,
+        github: fakeGithub(),
+        lastAttempt: false,
         ask: async () => {
             throw new Error("gen down");
         },
         log: quiet,
     });
-    assert.equal(result.outcome.kind, "unavailable");
-    assert.match(github.writes[0].comment, /App pre-review unavailable/);
-    assert.deepEqual(github.writes[1].labels, ["APP-SUBMISSION"]);
+    assert.deepEqual(result, { retry: true, error: "gen down" });
 });
 
 test("a report that confirms nothing is incomplete, never ready", async () => {
     const github = fakeGithub();
-    const result = await run({
+    const result = await reviewAndDeliver({
         route: withFacts({ context: {}, ids: new Set(["F1"]) }),
-        issue,
         github,
-        write: true,
         // Claims citing nothing the agent had become unverified.
         ask: answer(
             route.requirements.map((requirement) => ({
@@ -161,66 +218,252 @@ test("a report that confirms nothing is incomplete, never ready", async () => {
                 evidence: ["https://never-read.example"],
             })),
         ),
-        log: quiet,
     });
-    assert.equal(result.outcome.kind, "incomplete");
     assert.equal(result.label, "APP-REVIEW");
-    assert.match(github.writes[0].comment, /not enough could be checked/);
-    assert.doesNotMatch(github.writes[0].comment, /ready for human review/);
+    assert.match(github.writes[1].comment, /not enough could be checked/);
+    assert.doesNotMatch(github.writes[1].comment, /ready for human review/);
 });
 
-test("a failed attempt with retries left writes nothing", async () => {
-    const github = fakeGithub();
-    const result = await run({
-        route: withFacts({ context: {}, ids: new Set() }),
-        issue,
-        github,
-        write: true,
-        lastAttempt: false,
-        ask: async () => {
-            throw new Error("gen down");
+test("form errors are cleaned before they reach the comment", () => {
+    const body = renderComment(
+        route.texts,
+        {
+            kind: "invalid",
+            errors: [
+                "Already listed as @org/team [Visit](https://evil.example).",
+            ],
         },
-        log: quiet,
-    });
-    assert.equal(result.retry, true);
-    assert.equal(github.writes.length, 0);
-});
-
-test("a route writes only the actions it is allowed", async () => {
-    const github = fakeGithub();
-    await run({
-        route: { ...withFacts({ stop: ["x"] }), actions: ["comment"] },
-        issue,
-        github,
-        write: true,
-        log: quiet,
-    });
-    assert.deepEqual(
-        github.writes.map((w) => Object.keys(w)[0]),
-        ["comment"],
+        "alice",
     );
+    assert.doesNotMatch(body, /@org/);
+    assert.doesNotMatch(body, /https:\/\/evil/);
 });
 
-test("readUrls keeps only pages a tool call actually returned", () => {
+test("readUrls keeps only pages a fetch returned, matched exactly", () => {
     const call = (id, urls) => ({
         type: "function_call",
         call_id: id,
         arguments: JSON.stringify({ urls }),
     });
-    const result = (id, text) => ({
+    const result = (id, text, isError) => ({
         type: "function_call_output",
         call_id: id,
-        output: [{ type: "input_text", text }],
+        output: [
+            {
+                type: "input_text",
+                text: JSON.stringify({
+                    content: [{ type: "text", text }],
+                    ...(isError && { isError }),
+                }),
+            },
+        ],
     });
     const output = [
-        call("a", ["https://app.example/", "https://down.example"]),
+        call("a", [
+            "https://app.example/",
+            "https://app.example/app",
+            "https://down.example",
+        ]),
         result(
             "a",
-            "URL: https://app.example\nCould not fetch https://down.example: CRAWL_ERROR",
+            [
+                "# App",
+                "URL: https://app.example",
+                "",
+                "page text quoting",
+                "URL: https://app.example/app",
+                "---",
+                "# Another",
+                "URL: https://app.example/application",
+                "---",
+                "Could not fetch https://down.example: CRAWL_ERROR",
+            ].join("\n"),
         ),
-        call("b", ["https://no-result.example"]),
+        call("b", ["https://error.example"]),
+        result("b", "# Error\nURL: https://error.example", true),
+        call("c", ["https://no-result.example"]),
     ];
     assert.deepEqual(readUrls(output), ["https://app.example/"]);
+});
+
+// Runs `fn` with the network answered by `handler`.
+async function withFetch(handler, fn) {
+    const real = globalThis.fetch;
+    globalThis.fetch = async (input, init) => handler(String(input), init);
+    try {
+        return await fn();
+    } finally {
+        globalThis.fetch = real;
+    }
+}
+
+const FORM = `### App Name
+Sunflower Studio
+
+### App Description
+Creates images with the Pollinations API for collaborative design work.
+
+### App URL
+https://example.com/app
+
+### GitHub Repository URL
+https://github.com/example/sunflower
+
+### App Category
+image
+
+### Platform
+web
+
+### App Language
+en
+
+### Screenshot
+![Image](https://github.com/user-attachments/assets/0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0)
+
+### Discord Username
+sunflower`;
+const PNG = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
+const submission = (body = FORM) => ({
+    ...issue,
+    body,
+    created_at: "2026-11-03T00:00:00Z",
+});
+const factsGithub = (quest = async () => assert.fail("quest read")) => ({
+    issue: quest,
+    user: async () => ({ id: 1, node_id: "U_1" }),
+    openIssues: async () => [],
+    repo: async () => ({ private: false, default_branch: "main" }),
+    tree: async () => ({ tree: [] }),
+});
+// The catalog, the screenshot and the app page, each answered by its own rule.
+const network =
+    ({ screenshot = () => new Response(PNG), page }) =>
+    (url) => {
+        if (url.endsWith("/app.json")) return Response.json([]);
+        if (url.includes("user-attachments")) return screenshot();
+        return page();
+    };
+
+test("a failed page fetch is context, never evidence", async () => {
+    const gathered = await withFetch(
+        network({
+            page: () => {
+                throw new TypeError("connection timed out");
+            },
+        }),
+        () =>
+            appSubmission({
+                issue: submission(),
+                github: factsGithub(),
+                repo: "pollinations/pollinations",
+            }),
+    );
+    const page = gathered.context.facts.find((f) => f.kind === "page");
+    assert.match(page.error, /timed out/);
+    assert.equal(gathered.ids.has(page.id), false);
+});
+
+test("only a missing quest or screenshot is the submitter's error", async () => {
+    const quested = submission(`${FORM}\n\n### Quest\n#123`);
+    const gone = Object.assign(new Error("404"), { status: 404 });
+    const down = Object.assign(new Error("503"), { status: 503 });
+    const run = (github, screenshot) =>
+        withFetch(
+            network({
+                screenshot,
+                page: () => new Response("<title>x</title>"),
+            }),
+            () =>
+                appSubmission({
+                    issue: quested,
+                    github,
+                    repo: "pollinations/pollinations",
+                }),
+        );
+    const missing = await run(
+        factsGithub(async () => {
+            throw gone;
+        }),
+    );
+    assert.match(missing.stop.join(), /Quest #123 is not an open/);
+    await assert.rejects(
+        run(
+            factsGithub(async () => {
+                throw down;
+            }),
+        ),
+        /503/,
+    );
+    const open = factsGithub(async () => ({
+        state: "open",
+        labels: [{ name: "POLLEN-QUEST" }],
+        title: "q",
+        body: "",
+    }));
+    await assert.rejects(
+        run(open, () => new Response("", { status: 503 })),
+        /screenshot -> 503/,
+    );
+    const deleted = await run(open, () => new Response("", { status: 404 }));
+    assert.match(deleted.stop.join(), /could not be downloaded/);
+    const gif = await run(open, () => new Response("GIF89a......"));
+    assert.match(gif.stop.join(), /not a PNG, JPEG or WebP/);
+});
+
+test("the token covers one repository, and comments are read past page five", async () => {
+    const { privateKey } = generateKeyPairSync("rsa", {
+        modulusLength: 2048,
+        privateKeyEncoding: { type: "pkcs8", format: "pem" },
+        publicKeyEncoding: { type: "spki", format: "pem" },
+    });
+    let tokenRequest;
+    const handler = (url, init) => {
+        const path = new URL(url).pathname;
+        if (path === "/repos/pollinations/pollinations/installation")
+            return Response.json({ id: 42 });
+        if (path === "/app/installations/42/access_tokens") {
+            tokenRequest = JSON.parse(init.body);
+            return Response.json({ token: "t" });
+        }
+        if (path === "/app") return Response.json({ slug: "polly" });
+        const page = Number(new URL(url).searchParams.get("page"));
+        if (page < 6)
+            return Response.json(
+                Array.from({ length: 100 }, (_, i) => ({
+                    id: page * 100 + i,
+                    user: { login: "someone" },
+                    body: "hi",
+                })),
+            );
+        return Response.json([
+            {
+                id: 999,
+                user: { login: "polly[bot]" },
+                body: route.texts.marker,
+            },
+        ]);
+    };
+    const comment = await withFetch(handler, async () => {
+        const github = await githubClient(
+            { GITHUB_APP_ID: "1", GITHUB_APP_PRIVATE_KEY: privateKey },
+            "pollinations/pollinations",
+            route.permissions,
+        );
+        return github.markerComment(7, route.texts.marker);
+    });
+    assert.deepEqual(tokenRequest, {
+        repositories: ["pollinations"],
+        permissions: { issues: "write" },
+    });
+    assert.equal(comment.id, 999);
+    await assert.rejects(
+        githubClient(
+            { GITHUB_TOKEN: "pat", WRITE: "1" },
+            "pollinations/pollinations",
+        ),
+        /only for silent local runs/,
+    );
 });
 
 // A Durable Object storage stand-in: values plus the one pending alarm.
@@ -237,64 +480,117 @@ function fakeStorage() {
         },
     };
 }
-const job = (delivery, body = "form") => ({
+const job = (delivery) => ({
     delivery,
     routeId: route.id,
     repo: "pollinations/pollinations",
-    issue: { ...issue, body },
+    number: 7,
 });
-const ran = (kind, extra = {}) => ({ outcome: { kind }, ...extra });
+const reviewed = { issueBody: "form", label: "APP-REVIEW", body: "ok" };
 
-test("a stored job runs once per body and skips redeliveries", async () => {
+test("a burst of events costs one review", async () => {
     const storage = fakeStorage();
-    let calls = 0;
-    const execute = async () => {
-        calls++;
-        return ran("report");
-    };
-    assert.equal(await receive(storage, job("d1")), true);
-    assert.ok(storage.alarm > Date.now());
-    await work(storage, execute);
-    assert.equal(calls, 1);
-    assert.equal(storage.values.has("job"), false);
-    assert.equal(await receive(storage, job("d1")), false);
+    let reviews = 0;
+    const delivered = [];
+    await receive(storage, job("d1"));
     await receive(storage, job("d2"));
-    await work(storage, execute);
-    assert.equal(calls, 1, "an unchanged body costs no agent call");
-    await receive(storage, job("d3", "edited form"));
-    await work(storage, execute);
-    assert.equal(calls, 2);
+    assert.ok(storage.alarm > Date.now());
+    await work(storage, {
+        review: async () => {
+            reviews++;
+            return reviewed;
+        },
+        deliver: async (j) => delivered.push(j.delivery),
+    });
+    assert.equal(reviews, 1);
+    assert.deepEqual(delivered, ["d2"]);
+    assert.equal(storage.values.has("job"), false);
 });
 
-test("a failed agent call is retried, then the last attempt reports", async () => {
+test("a failed review is retried, spaced out, and the last attempt reports", async () => {
     const storage = fakeStorage();
     const attempts = [];
-    const execute = async (_job, { lastAttempt }) => {
-        attempts.push(lastAttempt);
-        return lastAttempt
-            ? ran("unavailable")
-            : ran("unavailable", { retry: true });
-    };
+    let delivered = 0;
     await receive(storage, job("d1"));
-    for (let i = 0; i <= RETRY_MS.length; i++) await work(storage, execute);
-    assert.deepEqual(attempts, [false, false, true]);
-    assert.equal(storage.values.has("done"), false, "unavailable is not done");
+    for (let i = 0; i <= RETRY_MS.length; i++)
+        await work(storage, {
+            review: async (_job, { lastAttempt }) => {
+                attempts.push(lastAttempt);
+                return lastAttempt
+                    ? { ...reviewed, label: null }
+                    : { retry: true, error: "gen down" };
+            },
+            deliver: async () => delivered++,
+        });
+    assert.deepEqual(attempts, [false, false, false, true]);
+    assert.equal(delivered, 1);
     assert.equal(storage.values.has("job"), false);
 });
 
-test("an event during a run keeps the newer job", async () => {
+test("a failed write is retried without asking the agent again", async () => {
     const storage = fakeStorage();
+    let reviews = 0;
+    let writes = 0;
+    const handlers = {
+        review: async () => {
+            reviews++;
+            return reviewed;
+        },
+        deliver: async () => {
+            if (++writes === 1) throw new Error("GitHub 429");
+        },
+    };
     await receive(storage, job("d1"));
-    await work(storage, async (_job, { isLatest }) => {
-        await receive(storage, job("d2", "edited form"));
-        assert.equal(await isLatest(), false);
-        return ran("report", { skipped: true });
-    });
-    assert.equal(storage.values.get("job").delivery, "d2");
-    assert.equal(storage.values.has("done"), false);
+    await work(storage, handlers);
+    assert.equal(storage.values.get("job").attempt, 1);
+    await work(storage, handlers);
+    assert.equal(reviews, 1);
+    assert.equal(writes, 2);
+    assert.equal(storage.values.has("job"), false);
 });
 
-test("matchRoute wakes Community app only for open submission issues", () => {
+test("a write still failing on the last attempt is logged and dropped", async () => {
+    const storage = fakeStorage();
+    const logs = [];
+    await receive(storage, job("d1"));
+    for (let i = 0; i <= RETRY_MS.length; i++)
+        await work(storage, {
+            review: async () => reviewed,
+            deliver: async () => {
+                throw new Error("GitHub down");
+            },
+            log: (line) => logs.push(line),
+        });
+    assert.equal(logs.length, 1);
+    assert.match(logs[0], /GitHub down/);
+    assert.equal(storage.values.has("job"), false);
+});
+
+test("an event during a review keeps the newer job", async () => {
+    const storage = fakeStorage();
+    await receive(storage, job("d1"));
+    await work(storage, {
+        review: async () => {
+            await receive(storage, job("d2"));
+            return reviewed;
+        },
+        deliver: () => assert.fail("stale review delivered"),
+    });
+    assert.equal(storage.values.get("job").delivery, "d2");
+    assert.equal(storage.values.get("job").result, undefined);
+});
+
+test("a skipped review writes nothing and clears the job", async () => {
+    const storage = fakeStorage();
+    await receive(storage, job("d1"));
+    await work(storage, {
+        review: async () => ({ skip: true }),
+        deliver: () => assert.fail("delivered a skip"),
+    });
+    assert.equal(storage.values.has("job"), false);
+});
+
+test("matchRoute wakes Community apps only for open submission issues", () => {
     const repo = "pollinations/pollinations";
     const payload = (overrides, fullName = repo) => ({
         action: "opened",
@@ -313,37 +609,16 @@ test("matchRoute wakes Community app only for open submission issues", () => {
         )?.id,
         "community-apps/review",
     );
-    assert.equal(
-        matchRoute("issues", payload({ labels: [], title: "Bug" }), repo),
-        null,
-    );
-    assert.equal(
-        matchRoute(
-            "issues",
-            payload({ labels: [{ name: "APP-APPROVED" }] }),
-            repo,
-        ),
-        null,
-    );
-    assert.equal(
-        matchRoute("issues", payload({ pull_request: {} }), repo),
-        null,
-    );
-    assert.equal(
-        matchRoute("issues", payload({ state: "closed" }), repo),
-        null,
-    );
+    for (const overrides of [
+        { labels: [], title: "Bug" },
+        { labels: [{ name: "APP-APPROVED" }] },
+        { pull_request: {} },
+        { state: "closed" },
+    ])
+        assert.equal(matchRoute("issues", payload(overrides), repo), null);
     assert.equal(matchRoute("issue_comment", payload({}), repo), null);
-});
-
-test("matchRoute ignores events from any other repository", () => {
-    const payload = {
-        action: "opened",
-        repository: { full_name: "pollinations/security-triage" },
-        issue,
-    };
     assert.equal(
-        matchRoute("issues", payload, "pollinations/pollinations"),
+        matchRoute("issues", payload({}, "pollinations/security-triage"), repo),
         null,
     );
 });

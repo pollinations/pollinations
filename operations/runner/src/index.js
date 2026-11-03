@@ -6,7 +6,7 @@ import communityAppsReview from "../../agents/community-apps/REVIEW.md";
 import { githubClient, verifySignature } from "./github.js";
 import { receive, work } from "./jobs.js";
 import { matchRoute, ROUTES } from "./routes.js";
-import { run } from "./run.js";
+import { deliver, review } from "./run.js";
 
 const RULEBOOKS = { "community-apps/review": communityAppsReview };
 
@@ -16,22 +16,28 @@ export class Job extends DurableObject {
     }
 
     alarm() {
-        return work(
-            this.ctx.storage,
-            async ({ routeId, repo, issue }, options) => {
-                const route = ROUTES.find((r) => r.id === routeId);
-                return run({
-                    route,
-                    rulebook: RULEBOOKS[routeId],
-                    issue,
-                    repo,
-                    github: await githubClient(this.env, repo),
-                    key: this.env[route.keyEnv],
-                    write: this.env.WRITE === "1",
-                    ...options,
-                });
-            },
-        );
+        let github;
+        // Everything a review or a delivery needs, with one GitHub token per alarm.
+        const setup = async ({ routeId, repo, number }) => {
+            const route = ROUTES.find((r) => r.id === routeId);
+            github ??= await githubClient(this.env, repo, route.permissions);
+            return {
+                route,
+                repo,
+                number,
+                github,
+                rulebook: RULEBOOKS[routeId],
+                key: this.env[route.keyEnv],
+            };
+        };
+        return work(this.ctx.storage, {
+            review: async (job, { lastAttempt }) =>
+                review({ ...(await setup(job)), lastAttempt }),
+            // Silent mode stops here: the review is already in the logs.
+            deliver: async (job, result, { isLatest }) =>
+                this.env.WRITE === "1" &&
+                deliver({ ...(await setup(job)), result, isLatest }),
+        });
     }
 }
 
@@ -63,7 +69,7 @@ export default {
             delivery: request.headers.get("x-github-delivery"),
             routeId: route.id,
             repo,
-            issue: payload.issue,
+            number: payload.issue.number,
         });
         return new Response("started", { status: 202 });
     },

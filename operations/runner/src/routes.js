@@ -29,10 +29,10 @@ export const ROUTES = [
             "quest_fits",
         ],
         optional: ["sign_in", "quest_fits"],
-        // Standing permission: a status comment and the route's own labels on
-        // the submission issue. Publishing stays behind a maintainer's
-        // APP-APPROVED and the existing publish workflow.
-        actions: ["comment", "labels"],
+        // The GitHub token's whole grant: issues on the runner's one repository,
+        // for the status comment and labels. Publishing stays behind a
+        // maintainer's APP-APPROVED and the existing publish workflow.
+        permissions: { issues: "write" },
         typeLabel: "APP-SUBMISSION",
         labels: { ready: "APP-REVIEW", needsInfo: "APP-NEEDS-INFO" },
         texts: {

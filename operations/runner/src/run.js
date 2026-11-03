@@ -1,23 +1,24 @@
-// One run of one route on one issue: facts, the agent, the checker, then the
-// route's allowed writes. With write off it only logs what it would post.
+// One review of one issue, then its delivery. review() reads the issue as it
+// is now, gathers facts, asks the agent and checks the answer; deliver() writes
+// the result, unless the issue moved on in the meantime.
 import { askAgent } from "./agent.js";
 import { checkReport, parseReport } from "./checker.js";
 import { renderComment } from "./comment.js";
 import { eligible } from "./routes.js";
 
-export async function run({
+export async function review({
     route,
     rulebook,
-    issue,
+    number,
     repo,
     github,
     key,
-    write,
     lastAttempt = true,
-    isLatest = async () => true,
     ask = askAgent,
     log = console.log,
 }) {
+    const issue = await github.issue(number);
+    if (!eligible(route, issue)) return { skip: true };
     let outcome;
     try {
         const gathered = await route.facts({ issue, github, repo });
@@ -58,12 +59,12 @@ export async function run({
         log(
             JSON.stringify({
                 route: route.id,
-                issue: issue.number,
+                issue: number,
                 outcome: "retry",
                 error: outcome.error,
             }),
         );
-        return { outcome, retry: true };
+        return { retry: true, error: outcome.error };
     }
     const label =
         outcome.kind === "unavailable"
@@ -75,8 +76,7 @@ export async function run({
     log(
         JSON.stringify({
             route: route.id,
-            issue: issue.number,
-            write,
+            issue: number,
             outcome: outcome.kind,
             label,
             error: outcome.error,
@@ -86,26 +86,40 @@ export async function run({
                 [f.requirement]: f.status,
                 cited: f.evidence,
             })),
-            ...(!write && { body }),
+            body,
         }),
     );
-    if (!write) return { outcome, label, body };
-    // A newer event, an edit, closing or approval since this run started wins.
-    const fresh = await github.issue(issue.number);
+    return { issueBody: issue.body, label, body };
+}
+
+export async function deliver({
+    route,
+    number,
+    github,
+    result,
+    isLatest = async () => true,
+    log = console.log,
+}) {
+    // Look up our comment first, so the freshness check sits right before the
+    // writes. GitHub has no conditional write, so a change landing during the
+    // last few calls can still race them.
+    const comment = await github.markerComment(number, route.texts.marker);
+    const fresh = await github.issue(number);
     if (
         !(await isLatest()) ||
-        fresh.body !== issue.body ||
+        fresh.body !== result.issueBody ||
         !eligible(route, fresh)
     ) {
-        log(`issue ${issue.number} changed during the run; nothing written`);
-        return { outcome, label, body, skipped: true };
+        log(`issue ${number} changed before writing; nothing written`);
+        return { skipped: true };
     }
-    if (route.actions.includes("comment"))
-        await github.upsertComment(issue.number, route.texts.marker, body);
-    if (route.actions.includes("labels"))
-        await github.setStatusLabel(issue.number, Object.values(route.labels), [
-            route.typeLabel,
-            label,
-        ]);
-    return { outcome, label, body };
+    // Old status off first: a failure part-way leaves no label rather than an
+    // old label beside a new comment, and the retry finishes the job.
+    await github.removeLabels(number, Object.values(route.labels));
+    await github.saveComment(number, comment, result.body);
+    await github.addLabels(
+        number,
+        [route.typeLabel, result.label].filter(Boolean),
+    );
+    return { written: true };
 }

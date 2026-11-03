@@ -1,0 +1,22 @@
+{
+  "name": "glb-inspector-mcp",
+  "main": "worker.js",
+  "workers_dev": false,
+  "compatibility_date": "2026-08-14",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "staging": {
+      "name": "glb-inspector-mcp-staging",
+      "workers_dev": false,
+      "observability": {
+        "enabled": true
+      }
+    }
+  }
+}

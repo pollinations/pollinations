@@ -45,6 +45,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "GLB_INSPECTOR_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -126,6 +127,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "glb-inspector",
+        name: "GLB Inspector",
+        description:
+            "Inspect and validate the structure and complexity of Pollinations-hosted GLB 3D models.",
+        binding: "GLB_INSPECTOR_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free structural inspection; no model or third-party API calls.",
             rates: [],
         },
     },

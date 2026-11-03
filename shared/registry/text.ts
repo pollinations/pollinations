@@ -3493,7 +3493,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-10-15").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
             // Fireworks serverless standard rates, verified 2026-11-03 after the

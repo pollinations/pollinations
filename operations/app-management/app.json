@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Roast My Pic",
+    "url": "https://roast-my-pic.pollinations.app",
+    "description": "Upload a pic and an AI roaster (Comedian, Grandma, Chef, Shakespeare, Sports Commentator) roasts it out loud. Get a 9:16 card + video. Pollinations vision + TTS, pay with your own Pollen.",
+    "language": "en",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "opengenifzr-sudo",
+    "githubUserId": "349456099",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-03",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19065",
+    "approvedDate": "2026-11-03",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/1d4459b3-d39c-4aaf-82ae-ba7f7ef20113"
+  },
+  {
     "emoji": "🛠️",
     "name": "Delivery proof checklist",
     "url": "https://agentes-que-entregam.pollinations.app/app",

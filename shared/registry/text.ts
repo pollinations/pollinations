@@ -3502,7 +3502,7 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             completionTextTokens: perMillion(4.25),
         },
-        title: "Meta Muse Spark Open",
+        title: "Muse Spark Open",
         description:
             "Agentic coding and tool use with reasoning controls and 1M context",
         inputModalities: ["text", "image"],

@@ -149,7 +149,7 @@ const CreateSpeechRequestSchema = z
                 "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
             example: 42,
         }),
-        instructions: z.string().optional().meta({
+        instructions: z.string().min(1).optional().meta({
             description:
                 "Emotion/style instruction (Gemini TTS and qwen/qwen3-tts-instruct-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
@@ -2457,8 +2457,8 @@ const GeminiSpeechResponseSchema = z.object({
                 .array(
                     z.object({
                         type: z.string(),
-                        mime_type: z.string().optional(),
-                        data: z.string().optional(),
+                        mime_type: z.string().min(1).optional(),
+                        data: z.string().min(1).optional(),
                     }),
                 )
                 .optional(),

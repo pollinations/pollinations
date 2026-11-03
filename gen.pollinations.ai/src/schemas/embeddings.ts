@@ -40,7 +40,7 @@ const VideoUrlContentPartSchema = z.object({
                 "Video URL or base64 data URI. Supports mp4 and mpeg. Max 120s.",
             example: "https://example.com/video.mp4",
         }),
-        mime_type: z.string().optional().meta({
+        mime_type: z.string().min(1).optional().meta({
             description:
                 "Video MIME type (auto-detected if omitted). Supported: video/mp4, video/mpeg.",
             example: "video/mp4",

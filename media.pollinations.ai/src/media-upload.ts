@@ -6,9 +6,10 @@ const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 
 // R2 rejects a put with more than 8,192 bytes of object metadata, so every
 // upload path stores at most 253 characters of the filename. Counting code
-// points keeps an emoji at the cut whole.
+// points keeps an emoji at the cut whole; 506 UTF-16 units always hold 253
+// of them, so a huge name is never split into a huge array.
 export function storedFileName(fileName: string | undefined): string {
-    return Array.from(fileName ?? "")
+    return Array.from((fileName ?? "").slice(0, 506))
         .slice(0, 253)
         .join("");
 }

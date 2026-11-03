@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Meme Forge",
+    "url": "https://meme-forge.pollinations.app",
+    "description": "Type an idea, get a classic Impact-style meme: a Pollinations text model writes the captions and Flux Schnell / Z-Image Turbo paints the image. Sign in and pay with your own Pollen (BYOP).",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "opengenifzr-sudo",
+    "githubUserId": "349456099",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-03",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19061",
+    "approvedDate": "2026-11-03",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/25e99b04-c55f-4df2-b7c6-5428ca7e49f1"
+  },
+  {
     "emoji": "🎬",
     "name": "Roast My Pic",
     "url": "https://roast-my-pic.pollinations.app",

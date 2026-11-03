@@ -489,16 +489,23 @@ test("the token covers one repository, and comments are read past page five", as
     );
 });
 
-// A Durable Object storage stand-in: values plus the one pending alarm.
+// A Durable Object storage stand-in: values plus the one pending alarm. Set
+// `failing` to a key (or "alarm") to make that write throw, as a crashed
+// write would.
 function fakeStorage() {
     const values = new Map();
     return {
         values,
         alarm: null,
+        failing: null,
         get: async (key) => values.get(key),
-        put: async (key, value) => values.set(key, value),
+        async put(key, value) {
+            if (key === this.failing) throw new Error(`write ${key} failed`);
+            values.set(key, value);
+        },
         delete: async (key) => values.delete(key),
         async setAlarm(at) {
+            if (this.failing === "alarm") throw new Error("alarm failed");
             this.alarm = at;
         },
     };
@@ -527,6 +534,20 @@ test("a redelivered event costs no review, pending or finished", async () => {
     assert.equal(await receive(storage, job("d1")), false);
     await work(storage, handlers);
     assert.equal(reviews, 1);
+});
+
+test("an event whose job or alarm failed to save can be redelivered", async () => {
+    for (const failing of ["job", "alarm"]) {
+        const storage = fakeStorage();
+        storage.failing = failing;
+        await assert.rejects(receive(storage, job("d1")));
+        assert.equal(storage.values.has("seen"), false);
+        // Restarted: the same storage, now working, gets the redelivery.
+        storage.failing = null;
+        assert.equal(await receive(storage, job("d1")), true);
+        assert.equal(storage.values.get("job").delivery, "d1");
+        assert.ok(storage.alarm > Date.now());
+    }
 });
 
 test("a burst of events costs one review", async () => {

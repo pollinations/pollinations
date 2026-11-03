@@ -8,13 +8,16 @@
 const QUIET_MS = 30_000;
 export const RETRY_MS = [60_000, 300_000, 1_800_000];
 
-// Each delivery is taken once, so a redelivered event costs no review.
+// Each delivery is taken once, so a redelivered event costs no review. It is
+// marked as taken only after its job and alarm are stored: a failure part-way
+// leaves it unmarked, so a redelivery queues it again. The worst case is one
+// extra review, never a lost event.
 export async function receive(storage, job) {
     const seen = (await storage.get("seen")) ?? [];
     if (seen.includes(job.delivery)) return false;
-    await storage.put("seen", [...seen, job.delivery].slice(-100));
     await storage.put("job", { ...job, attempt: 0 });
     await storage.setAlarm(Date.now() + QUIET_MS);
+    await storage.put("seen", [...seen, job.delivery].slice(-100));
     return true;
 }
 

@@ -38,14 +38,17 @@ export async function askAgent({ model, rulebook, context, image, key }) {
     return { text, fetched: readUrls(output), usage: body.usage };
 }
 
-// The URLs the agent actually read: asked for in a fetch call AND listed as a
-// page in that call's successful result. exa lists each page it read as a
-// "# <title>" line followed by "URL: <url>"; an error result, a failed fetch or
-// a URL that only shares a prefix counts for nothing.
+// The URLs the agent actually read: asked for in a fetch call AND returned as
+// a page in that call's successful result. exa starts each page it read with
+// "# <title>" then "URL: <url>", at the top of the text or after a "---" line
+// and a blank line, and reports each failure as "Could not fetch <url>: ...".
+// A page header anywhere else is page text; an error result, a reported
+// failure or a URL that only shares a prefix counts for nothing.
 const bare = (url) => url.replace(/\/$/, "");
 
 function returnedPages(output) {
     const pages = new Set();
+    const failed = new Set();
     for (const part of [output].flat()) {
         let result;
         try {
@@ -56,12 +59,18 @@ function returnedPages(output) {
         if (result?.isError) continue;
         for (const { text } of result?.content ?? []) {
             const lines = String(text ?? "").split("\n");
+            const pageStart = (j) =>
+                lines[j]?.startsWith("# ") &&
+                (j === 0 || (lines[j - 2] === "---" && lines[j - 1] === ""));
             lines.forEach((line, i) => {
+                const missing = line.match(/^Could not fetch (\S+): /)?.[1];
+                if (missing) failed.add(bare(missing));
                 const url = line.match(/^URL: (\S+)$/)?.[1];
-                if (url && lines[i - 1]?.startsWith("# ")) pages.add(bare(url));
+                if (url && pageStart(i - 1)) pages.add(bare(url));
             });
         }
     }
+    for (const url of failed) pages.delete(url);
     return pages;
 }
 

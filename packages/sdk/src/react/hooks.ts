@@ -7,7 +7,10 @@ import {
     useState,
 } from "react";
 import { Pollinations } from "../client.js";
-import { pollinationsErrorFromResponse } from "../error-response.js";
+import {
+    isOutageError,
+    pollinationsErrorFromResponse,
+} from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
 import type {
     AccountBalance,
@@ -51,6 +54,9 @@ export type UseAccountKeyValue = AccountResourceValue<KeyInfo>;
 export type UseAccountKeyUsageValue = AccountResourceValue<UsageResponse>;
 
 type AccountFetcher<T> = (apiBaseUrl: string, apiKey: string) => Promise<T>;
+
+/** How often an account hook retries while Pollinations is down. */
+const OUTAGE_RETRY_MS = 30_000;
 
 function useRequiredAuth(): AuthContextValue {
     const ctx = useContext(AuthContext);
@@ -103,9 +109,15 @@ async function fetchAccountJson<T>(
     path: string,
     params?: URLSearchParams,
 ): Promise<T> {
-    const response = await fetch(accountUrl(apiBaseUrl, path, params), {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    let response: Response;
+    try {
+        response = await fetch(accountUrl(apiBaseUrl, path, params), {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+    } catch {
+        // No response at all: an outage to isOutageError, like a 5xx.
+        throw new PollinationsError("Network error", "NETWORK_ERROR", 0);
+    }
 
     if (!response.ok) {
         throw await pollinationsErrorFromResponse(response);
@@ -155,6 +167,13 @@ function useAccountResource<T>(
     useEffect(() => {
         void refresh();
     }, [refresh]);
+
+    // While Pollinations is down, check again on a timer.
+    useEffect(() => {
+        if (!isOutageError(error)) return;
+        const timer = setTimeout(() => void refresh(), OUTAGE_RETRY_MS);
+        return () => clearTimeout(timer);
+    }, [error, refresh]);
 
     return useMemo(
         () => ({ data, isLoading, error, refresh }),

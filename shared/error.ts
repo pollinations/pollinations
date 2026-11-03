@@ -50,7 +50,7 @@ type UpstreamErrorOptions = {
      * surface a stable, machine-readable code (e.g. `content_policy_violation`)
      * that callers can detect regardless of the HTTP status.
      */
-    errorCode?: string;
+    errorCode?: OverrideErrorCode;
     /**
      * Usage the provider billed even though the request failed, such as an
      * xAI video rejected after generation. Tracking charges it.
@@ -66,7 +66,7 @@ export class UpstreamError extends HTTPException {
     public readonly upstreamStatus?: number;
     public readonly responseBody?: string;
     public readonly upstreamHeaders?: UpstreamHeaders;
-    public readonly errorCode?: string;
+    public readonly errorCode?: OverrideErrorCode;
     public readonly billedUsage?: Usage;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
@@ -162,22 +162,38 @@ export type ImageInputErrorCode =
 /**
  * Codes we emit in place of the status-derived code, keyed by the status they
  * are emitted with. The response envelope's `code` is therefore not always
- * `getErrorCode(status)`, and the published schema must say so.
+ * `getErrorCode(status)`, and the published schema must say so. `errorCode`
+ * is typed from this map, so a code missing here fails the typecheck.
  */
-const OVERRIDE_ERROR_CODES: Record<number, readonly string[]> = {
-    402: ["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE", "QUEST_POLLEN_ONLY"],
+const OVERRIDE_ERROR_CODES = {
+    402: [
+        "KEY_BUDGET_EXHAUSTED",
+        "INSUFFICIENT_BALANCE",
+        "QUEST_POLLEN_RESTRICTED",
+        "QUEST_POLLEN_ONLY",
+    ],
     400: [
         "content_blocked",
+        // Vertex, Vercel Google and xAI video moderation; the rest use 422.
+        "content_policy_violation",
         "failed_to_download_image",
         "invalid_image_url",
         "image_too_large",
         "unsupported_image_media_type",
+        "output_token_limit_exceeded",
+        "unsupported_parameter",
     ],
     422: ["content_policy_violation"],
-};
+    429: ["community_model_rate_limit"],
+    502: ["empty_response"],
+} as const;
+
+export type OverrideErrorCode =
+    (typeof OVERRIDE_ERROR_CODES)[keyof typeof OVERRIDE_ERROR_CODES][number];
 
 export function getErrorCodesForStatus(status: number): [string, ...string[]] {
-    return [getErrorCode(status), ...(OVERRIDE_ERROR_CODES[status] ?? [])];
+    const overrides: Record<number, readonly string[]> = OVERRIDE_ERROR_CODES;
+    return [getErrorCode(status), ...(overrides[status] ?? [])];
 }
 
 const GenericErrorDetailsSchema = z
@@ -212,9 +228,11 @@ const FixUrlSchema = z
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,
 ): z.ZodObject {
+    // An upstream input error keeps its 400 status but carries upstream details,
+    // so a 400 has two possible shapes.
     const errorDetailsSchema =
         status === 400
-            ? ValidationErrorDetailsSchema
+            ? z.union([ValidationErrorDetailsSchema, GenericErrorDetailsSchema])
             : GenericErrorDetailsSchema;
     return z.object({
         status: z.literal(status),
@@ -284,6 +302,10 @@ type ServerErrorEnvelope = {
 const MAX_ERROR_MESSAGE_LENGTH = 2000;
 const MAX_STACK_LENGTH = 12000;
 const MAX_UPSTREAM_BODY_LENGTH = 16000;
+
+// Drizzle/D1 errors embed the failing SQL text and its bound parameters, which
+// include stored API key hashes. They belong in the logs, never in a response.
+const QUERY_ERROR_PATTERN = /Failed query:|\nparams: /;
 
 export async function handleError<TEnv extends ErrorHandlerEnv>(
     err: Error,
@@ -370,16 +392,18 @@ function createErrorResponse(
         details,
         code,
         fixUrl,
+        message,
     }: {
         details?: Record<string, unknown>;
-        code?: string;
+        code?: OverrideErrorCode;
         fixUrl?: string;
+        message?: string;
     } = {},
 ): ErrorResponse {
     return {
         success: false,
         error: {
-            message: error.message || getDefaultErrorMessage(status),
+            message: message ?? publicErrorMessage(error, status),
             code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
@@ -387,6 +411,22 @@ function createErrorResponse(
         },
         status,
     };
+}
+
+/**
+ * A 5xx body may carry the error message, but a database failure describes the
+ * query and its bound parameters. `emitServerError` has already logged the full
+ * error, so answer with the generic message instead of leaking the SQL text and
+ * stored API key hashes.
+ */
+function publicErrorMessage(
+    error: Error,
+    status: ContentfulStatusCode,
+): string {
+    const message = error.message || getDefaultErrorMessage(status);
+    return status >= 500 && QUERY_ERROR_PATTERN.test(message)
+        ? getDefaultErrorMessage(status)
+        : message;
 }
 
 function createValidationErrorResponse(
@@ -400,6 +440,8 @@ function createValidationErrorResponse(
     });
 }
 
+// Unexpected errors can carry any internal detail, not only query dumps.
+// Callers get the default message; the server_error log keeps the error.
 function createInternalErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
@@ -407,6 +449,7 @@ function createInternalErrorResponse(
 ): ErrorResponse {
     return createErrorResponse(error, status, timestamp, {
         details: { name: error.name },
+        message: getDefaultErrorMessage(status),
     });
 }
 

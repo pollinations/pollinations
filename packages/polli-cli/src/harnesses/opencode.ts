@@ -271,7 +271,7 @@ const openCodeInstalled = (ctx: HarnessContext) =>
         join(ctx.home, ".opencode", "bin", "opencode"),
     ]);
 
-export const opencode: HarnessAdapter = {
+export const opencode = {
     id: ID,
     label: LABEL,
     description: "Configure OpenCode to use Pollinations",
@@ -284,8 +284,9 @@ export const opencode: HarnessAdapter = {
                 "OpenCode was not found. Install it first: curl -fsSL https://opencode.ai/install | bash",
             );
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels(model);
+        const { model, models } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
         const apiKey = await resolveHarnessKey(
             {
                 id: ID,
@@ -299,4 +300,4 @@ export const opencode: HarnessAdapter = {
 
     off: disableOpenCode,
     status: result,
-};
+} satisfies HarnessAdapter;

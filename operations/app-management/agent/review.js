@@ -497,6 +497,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+    askAgent,
+    buildContext,
     checkReport,
     isPublicIp,
     parseReport,

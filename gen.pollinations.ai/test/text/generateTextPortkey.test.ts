@@ -116,6 +116,33 @@ describe("generateTextPortkey", () => {
         },
     );
 
+    it("keeps Muse Spark Open on Fireworks Standard", async () => {
+        const bodies: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_, init) => {
+            bodies.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                choices: [
+                    {
+                        message: { role: "assistant", content: "Hello" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { prompt_tokens: 10, completion_tokens: 1 },
+            });
+        });
+
+        await generateTextPortkey([{ role: "user", content: "Hello" }], {
+            model: "meta/muse-spark-open",
+            service_tier: "priority",
+        });
+
+        expect(bodies).toHaveLength(1);
+        expect(bodies[0]).toMatchObject({
+            model: "accounts/fireworks/models/muse-spark-open",
+            service_tier: "default",
+        });
+    });
+
     it.each([0, 1, 2, 3])(
         "uses the GLM 5.3 chain with %i failed providers",
         async (failures) => {

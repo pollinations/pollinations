@@ -1050,6 +1050,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/muse-spark-open": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/muse-spark-open",
+            serviceTier: "default",
         }),
 
     // -- Kimi K3 (global Bedrock, then Fireworks) -----------------------------

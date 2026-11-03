@@ -1311,11 +1311,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["deepinfra"] } },
             },
         }),
-    // Moonshot rejects remote image URLs.
     "moonshotai/kimi-k3.1-pro-highspeed": () =>
         createVercelAIGatewayModelConfig({
             model: "moonshotai/kimi-k3.1-pro-highspeed",
-            requiresBase64ImageUrls: true,
         }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({

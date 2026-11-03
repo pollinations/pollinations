@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-02T06:10:23.572646+00:00",
+  "generated_at": "2026-11-03T06:10:28.960354+00:00",
   "models": [
     {
       "id": "2026-10-06:elevenlabs/eleven-v4",
@@ -6859,6 +6859,27 @@
   ],
   "daily": [
     {
+      "date": "2026-11-02",
+      "emoji": "🎯",
+      "title": "Clearer community model results",
+      "text": "The Trust tab labels community models that error on more than half their eval questions as \"endpoint errors\" instead of showing a score gap. Score comparisons use answered questions as well as published scores.",
+      "prs": [
+        18985
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-02",
+      "emoji": "🔗",
+      "title": "Model alerts reach their publishers",
+      "text": "Community Watch sends a separate Discord message for each model incident and pings the publisher's linked Discord account when available. Each message points to the model it concerns.",
+      "prs": [
+        19007,
+        19012
+      ],
+      "kind": "product"
+    },
+    {
       "date": "2026-11-01",
       "emoji": "📱",
       "title": "Usage and earnings together",
@@ -8310,67 +8331,6 @@
       "text": "Use `polli harness claude-code on` to configure Claude Code for Gen’s `/v1/messages` endpoint without Claude Code Router. Pollinations settings stay separate from your native Claude login and settings. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16311
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-03",
-      "emoji": "🎨",
-      "title": "Larger inline chat media",
-      "text": "Send inline PDFs in chat requests to OpenRouter models, or base64 audio to `thinkingmachines/inkling`, even when the request exceeds 32 MiB. Individual media items remain limited to 20 MiB. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16308
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-03",
-      "emoji": "🤖",
-      "title": "Account tools for MCP",
-      "text": "MCP agents can check usage, earnings, and Quest status, or list, create, and revoke API keys when granted the relevant permissions. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        15731
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-03",
-      "emoji": "🚀",
-      "title": "Sandbox commands in polli",
-      "text": "`polli` 0.1.23 includes commands to create, list, and kill sandboxes, plus `ssh-config` for connecting to them. [Find the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        16296
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-03",
-      "emoji": "💡",
-      "title": "Jev context-trimmer agent",
-      "text": "Explore a community code agent that uses Jev to select relevant archived outputs before GPT-5.4 Nano answers, and returns what it kept alongside the answer. Its example shows how to deploy and call the owner-accessible agent through `/v1/responses`. [Browse the code](https://github.com/pollinations/pollinations).",
-      "prs": [
-        15963
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-03",
-      "emoji": "🎯",
-      "title": "Nomic Player code agent",
-      "text": "Explore a community agent that asks Jev for a yes-or-no vote on a Nomic rule proposal, then generates an argument without changing the verdict. It returns the vote and probabilities through chat or responses inputs. [Browse the code](https://github.com/pollinations/pollinations).",
-      "prs": [
-        16202
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-03",
-      "emoji": "🤖",
-      "title": "Cerberus security-triage agent",
-      "text": "Explore a community agent that maps a finding to a contain, investigate, or maintain playbook using Jev, then explains the choice. The code and setup example are available; public access to the agent is not established. [Browse the code](https://github.com/pollinations/pollinations).",
-      "prs": [
-        16164,
-        16312
       ],
       "kind": "product"
     }

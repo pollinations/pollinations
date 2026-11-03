@@ -21,6 +21,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Wanderpost](https://kreggscode.github.io/wanderpost) | **Explorable postcard worlds.** You type a scene, and the first postcard is painted from it. Then you click the doors, paths and windows **in the picture** to step into the next view — one painted pos | [@kreggscode](https://github.com/kreggscode) |
+| [🖼️ Pollinations Image Studio](https://lahoucine98-pollinations-image-studio.static.hf.space) | Pollinations Image Studio is a web app that allows users to generate AI images using the Pollinations API. Users can connect their Pollinations account through OAuth and create images directly in thei | [@lahoucinebathoum](https://github.com/lahoucinebathoum) |
 | [🖼️ Ai photo editor](https://ai-photo-editor-rmfxo.puter.site) | Experience the ultimate AI photo editor, offering background removal and changing, object removal, color changing, clothing adjustments, and advanced masking. Generate stunning photos with incredible | [@rajapurking4-dotcom](https://github.com/rajapurking4-dotcom) |
 | [🖼️ Polli Garden](https://jacobcreation.github.io/polli-garden) | Polli Garden is a small prompt-to-image creative tool. Users enter an idea, choose a Pollinations image model, and grow a generated image in the browser. It uses the Pollinations image API directly, i | [@jacobcreation](https://github.com/jacobcreation) |
 | [🛠️ Pollen Bomb 💣](https://guest453.github.io/pollen-bomb) | A BYOP (Bring Your Own Pollen) "race the fuse" coding arena: you wind a custom fuse (5s up to 24h), arm the bomb, and a Pollinations text model streams code against it live. How it uses Pollinations: | [@Guest453](https://github.com/Guest453) |
@@ -29,8 +31,6 @@
 | [🎬 Roast My Pic](https://roast-my-pic.pollinations.app) | Upload a pic and an AI roaster (Comedian, Grandma, Chef, Shakespeare, Sports Commentator) roasts it out loud. Get a 9:16 card + video. Pollinations vision + TTS, pay with your own Pollen. | [@opengenifzr-sudo](https://github.com/opengenifzr-sudo) |
 | [🎮 2048 AI Edition](https://boofan126.github.io/mini2048-ai) | 2048 AI Edition is a single-file browser game that integrates Pollinations AI. The "AI Skin" button calls the flux-2-dev-free image model to generate custom game themes on demand; the "AI Hint" button | [@boofan126](https://github.com/boofan126) |
 | [🖼️ Chatbot v2](https://pollinations-chatbot-2.vercel.app) | This app only ai assistant | [@amancrypto12-pixel](https://github.com/amancrypto12-pixel) |
-| [🖼️ Polli Snap - Text to Image Meme Maker](https://mhmdrizzzki.github.io/polli-snap) | A fast text-to-image meme generator. Type a prompt and instantly get a generated image with quick meme presets. Built directly on the Pollinations image API (flux). Live public app, no login required. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
-| [🛠️ Websim](https://websim.pollinations.app) | Generate, preview, and download single-file HTML pages using Pollinations models and your own Pollen. | [@pollinations-ai](https://github.com/pollinations-ai) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

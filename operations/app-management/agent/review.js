@@ -6,6 +6,8 @@
 const { execFileSync } = require("node:child_process");
 const dns = require("node:dns/promises");
 const fs = require("node:fs");
+const http = require("node:http");
+const https = require("node:https");
 const net = require("node:net");
 const path = require("node:path");
 const { readApps } = require("../app.js");
@@ -53,9 +55,12 @@ const redact = (value) =>
         "sk_[redacted]",
     );
 
+// Any address in a private, loopback, link-local, shared, test, benchmark,
+// multicast or reserved range, or one that can tunnel to such a range
+// (IPv4-mapped, NAT64, 6to4, Teredo), is not public.
 function isPublicIp(ip) {
     if (net.isIPv4(ip)) {
-        const [a, b] = ip.split(".").map(Number);
+        const [a, b, c] = ip.split(".").map(Number);
         return !(
             a === 0 ||
             a === 10 ||
@@ -64,20 +69,60 @@ function isPublicIp(ip) {
             (a === 100 && b >= 64 && b <= 127) ||
             (a === 169 && b === 254) ||
             (a === 172 && b >= 16 && b <= 31) ||
-            (a === 192 && b === 168)
+            (a === 192 && b === 168) ||
+            (a === 192 && b === 0 && (c === 0 || c === 2)) ||
+            (a === 198 && (b === 18 || b === 19)) ||
+            (a === 198 && b === 51 && c === 100) ||
+            (a === 203 && b === 0 && c === 113)
         );
     }
     const v = ip.toLowerCase();
     return !(
         v === "::" ||
         v === "::1" ||
-        /^(fc|fd|fe8|fe9|fea|feb)/.test(v) ||
-        v.startsWith("::ffff:")
+        /^(fc|fd|fe[89ab]|ff)/.test(v) ||
+        /^(::ffff:|64:ff9b:|2002:|2001:db8:|2001:0:|2001::)/.test(v)
     );
 }
 
-// ponytail: checks DNS before each hop, but fetch resolves again (rebinding
-// window); the security review after v1 decides whether to pin addresses.
+// One GET that connects only to the address we already checked, so a second
+// DNS answer cannot point it somewhere else.
+function getPinned(url, { address, family }, maxBytes) {
+    const lookup = (_host, options, callback) =>
+        options?.all
+            ? callback(null, [{ address, family }])
+            : callback(null, address, family);
+    const client = url.protocol === "https:" ? https : http;
+    return new Promise((resolve, reject) => {
+        const request = client.get(
+            url,
+            {
+                lookup,
+                timeout: 15_000,
+                headers: { "user-agent": "pollinations-community-app-manager" },
+            },
+            (res) => {
+                const chunks = [];
+                let size = 0;
+                res.on("data", (chunk) => {
+                    size += chunk.length;
+                    if (size <= maxBytes) chunks.push(chunk);
+                    else res.destroy();
+                });
+                res.on("close", () =>
+                    resolve({
+                        status: res.statusCode,
+                        location: res.headers.location,
+                        text: Buffer.concat(chunks).toString("utf8"),
+                    }),
+                );
+            },
+        );
+        request.on("timeout", () => request.destroy(new Error("timeout")));
+        request.on("error", reject);
+    });
+}
+
 async function fetchText(url, maxBytes = 600_000) {
     let current = new URL(url);
     for (let hop = 0; hop < 4; hop++) {
@@ -86,19 +131,12 @@ async function fetchText(url, maxBytes = 600_000) {
         const addresses = await dns.lookup(current.hostname, { all: true });
         if (!addresses.length || !addresses.every((a) => isPublicIp(a.address)))
             throw new Error("not a public address");
-        const res = await fetch(current, {
-            redirect: "manual",
-            signal: AbortSignal.timeout(15_000),
-            headers: { "user-agent": "pollinations-community-app-manager" },
-        });
-        const location = res.headers.get("location");
-        if (res.status >= 300 && res.status < 400 && location) {
-            res.body?.cancel();
-            current = new URL(location, current);
+        const res = await getPinned(current, addresses[0], maxBytes);
+        if (res.status >= 300 && res.status < 400 && res.location) {
+            current = new URL(res.location, current);
             continue;
         }
-        const text = (await res.text()).slice(0, maxBytes);
-        return { url: current.href, status: res.status, text };
+        return { url: current.href, status: res.status, text: res.text };
     }
     throw new Error("too many redirects");
 }
@@ -387,12 +425,18 @@ function parseReport(text) {
     return report;
 }
 
+// Agent text goes into a public comment: no links of any kind, no mentions, no
+// HTML, and Markdown punctuation escaped so it shows as plain text.
 const cleanLine = (value, max = 200) =>
     redact(value)
-        .replace(/https?:\/\/\S+/g, "[link omitted]")
+        .replace(
+            /\b[a-z][a-z0-9+.-]*:\/\/\S+|\/\/\S+|\bwww\.\S+/gi,
+            "(link omitted)",
+        )
         .replace(/@/g, "@​")
         .replace(/[<>]/g, "")
         .replace(/\p{Cc}/gu, " ")
+        .replace(/[\\`*_[\]()#!~]/g, "\\$&")
         .trim()
         .slice(0, max);
 
@@ -645,6 +689,8 @@ if (require.main === module) {
 
 module.exports = {
     askAgent,
+    cleanLine,
+    getPinned,
     buildContext,
     changedDuring,
     checkReport,

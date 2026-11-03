@@ -99,7 +99,7 @@ test("checkReport asks questions only for a contradiction, cleaned", () => {
     assert.equal(result.questions.length, 4);
     assert.equal(
         result.questions[0],
-        "Please use [link omitted] and ping @​bob bnow/b",
+        "Please use \\(link omitted\\) and ping @​bob bnow/b",
     );
 });
 
@@ -281,4 +281,48 @@ test("changedDuring stops writes after an edit or an approval", () => {
         changedDuring(before, { body: "a", labels: ["APP-APPROVED"] }),
         true,
     );
+});
+
+const http = require("node:http");
+const { cleanLine, getPinned } = require("./review.js");
+
+test("cleanLine removes every kind of link and escapes Markdown", () => {
+    const line = cleanLine(
+        "see //evil.example/x, www.evil.example, ftp://x.y and [click](javascript:alert(1)) **bold** `code`",
+        400,
+    );
+    assert.doesNotMatch(line, /evil\.example|ftp:/);
+    assert.match(line, /\\\[click\\\]/);
+    assert.match(line, /\\\*\\\*bold\\\*\\\*/);
+    assert.match(line, /\\`code\\`/);
+});
+
+test("isPublicIp rejects test, benchmark and tunnel ranges", () => {
+    for (const ip of [
+        "198.18.0.1",
+        "192.0.2.1",
+        "203.0.113.5",
+        "64:ff9b::a00:1",
+        "2002:a00:1::",
+        "2001:db8::1",
+        "ff02::1",
+    ])
+        assert.equal(isPublicIp(ip), false, ip);
+});
+
+test("getPinned connects to the checked address, not what DNS says", async () => {
+    const server = http.createServer((_req, res) => res.end("x".repeat(50)));
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const { port } = server.address();
+    try {
+        const res = await getPinned(
+            new URL(`http://pinned.invalid:${port}/`),
+            { address: "127.0.0.1", family: 4 },
+            10,
+        );
+        assert.equal(res.status, 200);
+        assert.ok(res.text.length <= 50);
+    } finally {
+        server.close();
+    }
 });

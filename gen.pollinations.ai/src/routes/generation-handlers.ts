@@ -76,7 +76,7 @@ export const simpleAudioQuerySchema = z.object({
             "Sampling steps (`stability-ai/stable-audio-3-medium` 1-100, `stability-ai/stable-audio-3` 4-8)",
         example: "8",
     }),
-    negative_prompt: z.string().optional().meta({
+    negative_prompt: z.string().min(1).optional().meta({
         description: "Negative prompt for `stability-ai/stable-audio-3`",
         example: "distortion, vocals",
     }),
@@ -89,7 +89,7 @@ export const simpleAudioQuerySchema = z.object({
                 "If true, guarantees instrumental output (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` only)",
             example: "false",
         }),
-    instructions: z.string().optional().meta({
+    instructions: z.string().min(1).optional().meta({
         description:
             "Emotion/style instruction (Gemini TTS and `qwen/qwen3-tts-instruct-flash`)",
         example: "speak softly and warmly",

@@ -136,6 +136,7 @@ const CreateKeySchema = z.object({
         ),
     pollenBudget: z
         .number()
+        .min(0)
         .nullable()
         .optional()
         .describe(

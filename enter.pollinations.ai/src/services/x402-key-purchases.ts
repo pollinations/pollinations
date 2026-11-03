@@ -4,6 +4,7 @@ import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { decodePaymentSignatureHeader } from "@x402/core/http";
 import type { PaymentPayload } from "@x402/core/types";
 import stableStringify from "fast-json-stable-stringify";
+import { HTTPException } from "hono/http-exception";
 import { CompactEncrypt, compactDecrypt } from "jose";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
@@ -88,7 +89,9 @@ export async function preparePurchase(
     const existing = await getPurchase(env.DB, id);
     if (existing) {
         if (existing.user_id !== userId || existing.pack_key !== packKey) {
-            throw new Error("Payment already belongs to another purchase");
+            throw new HTTPException(409, {
+                message: "Payment already belongs to another purchase",
+            });
         }
         return {
             id: existing.key_id,

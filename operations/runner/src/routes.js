@@ -44,6 +44,8 @@ export const ROUTES = [
                 "The automated check could not confirm or rule out anything, so a maintainer will review it by hand.",
             needsInfoTitle: "App pre-review: more information needed",
             unavailableTitle: "App pre-review unavailable",
+            superseded:
+                "This pre-review no longer applies: the issue was closed or approved while it was being posted.",
             unavailable:
                 "The automated check could not finish. A maintainer will look at it; no submitter action is required yet.",
             readyClosing:

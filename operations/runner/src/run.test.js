@@ -20,8 +20,9 @@ const issue = {
 };
 
 // A GitHub stand-in that records writes. `now` is the issue as GitHub returns
-// it; `onLookup` runs while the status comment is being looked up.
-function fakeGithub(now = issue, onLookup = () => {}) {
+// it; `onLookup` runs while the status comment is being looked up, `onLabel`
+// when labels are added.
+function fakeGithub(now = issue, onLookup = () => {}, onLabel = () => {}) {
     const github = {
         now,
         writes: [],
@@ -30,11 +31,16 @@ function fakeGithub(now = issue, onLookup = () => {}) {
             onLookup(github);
             return undefined;
         },
-        saveComment: async (_number, _comment, body) =>
-            github.writes.push({ comment: body }),
+        saveComment: async (_number, comment, body) => {
+            github.writes.push({ comment: body, to: comment?.id ?? "new" });
+            return { id: comment?.id ?? 1 };
+        },
         removeLabels: async (_number, names) =>
             github.writes.push({ removed: names }),
-        addLabels: async (_number, labels) => github.writes.push({ labels }),
+        addLabels: async (_number, labels) => {
+            github.writes.push({ labels });
+            onLabel(github);
+        },
     };
     return github;
 }
@@ -176,6 +182,33 @@ test("closing while the comment is looked up stops the write", async () => {
     });
     assert.equal(result.skipped, true);
     assert.equal(github.writes.length, 0);
+});
+
+test("closing or approving during the writes is undone right after", async () => {
+    for (const now of [
+        { ...issue, state: "closed" },
+        { ...issue, labels: [...issue.labels, { name: "APP-APPROVED" }] },
+    ]) {
+        const github = fakeGithub(issue, undefined, (gh) => {
+            gh.now = now;
+        });
+        const result = await deliver({
+            route,
+            number: 7,
+            github,
+            result: { issueBody: "form", label: "APP-REVIEW", body: "x" },
+            log: quiet,
+        });
+        assert.equal(result.superseded, true);
+        const [, posted, , cleared, replaced] = github.writes;
+        assert.equal(posted.comment, "x");
+        assert.deepEqual(cleared.removed, ["APP-REVIEW", "APP-NEEDS-INFO"]);
+        assert.equal(replaced.to, posted.to === "new" ? 1 : posted.to);
+        assert.match(
+            replaced.comment,
+            /^<!-- APP_PRE_REVIEW -->\n.*no longer applies/,
+        );
+    }
 });
 
 test("a failed last attempt says unavailable and clears the status", async () => {

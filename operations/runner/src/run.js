@@ -101,8 +101,8 @@ export async function deliver({
     log = console.log,
 }) {
     // Look up our comment first, so the freshness check sits right before the
-    // writes. GitHub has no conditional write, so a change landing during the
-    // last few calls can still race them.
+    // writes. GitHub has no conditional write, so the writes are checked again
+    // after they land.
     const comment = await github.markerComment(number, route.texts.marker);
     const fresh = await github.issue(number);
     if (
@@ -116,10 +116,22 @@ export async function deliver({
     // Old status off first: a failure part-way leaves no label rather than an
     // old label beside a new comment, and the retry finishes the job.
     await github.removeLabels(number, Object.values(route.labels));
-    await github.saveComment(number, comment, result.body);
+    const saved = await github.saveComment(number, comment, result.body);
     await github.addLabels(
         number,
         [route.typeLabel, result.label].filter(Boolean),
     );
+    // Closed or approved while we wrote: take our status back off and say so.
+    // If this cleanup fails, its retry sees the closed issue and stops.
+    if (!eligible(route, await github.issue(number))) {
+        await github.removeLabels(number, Object.values(route.labels));
+        await github.saveComment(
+            number,
+            saved,
+            `${route.texts.marker}\n${route.texts.superseded}`,
+        );
+        log(`issue ${number} closed or approved during the writes; undone`);
+        return { superseded: true };
+    }
     return { written: true };
 }

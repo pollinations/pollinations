@@ -1,0 +1,121 @@
+{
+  "date": "2026-11-02",
+  "period_start": "2026-11-02",
+  "period_end": "2026-11-02",
+  "title": "Clearer signals for community models",
+  "summary": "Community model signals got clearer, media requests got stricter about what they send, and reopened quests stayed on the board.\n\nThe Trust tab now labels community models with errors on more than half their eval questions as \"endpoint errors\" rather than treating failures as a score gap. Community Watch also sends a separate Discord message for each model incident, pings the publisher's linked Discord account when available, and wraps long cards to fit phone screens. Score-gap findings go to maintainers for human review, not directly to publishers.\n\nWan 3.0 video now passes an explicit aspect ratio to its providers. Play omits Mirelo's catalog-only \"source\" resolution from generation requests. Reference image URL lists accept spaces around separators, while multipart image edits reject unsupported image counts before generation.\n\nReopened, unassigned multi-winner quests remain on the board despite earlier merged PRs. App submissions no longer fail because notes follow a field value. Usage CSVs respect selected key and model filters, and disabled actions fit narrow model and agent dialogs.",
+  "pr_count": 22,
+  "prs": [
+    {
+      "number": 18183,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18388,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18639,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18640,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18641,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18642,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18643,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18644,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18667,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18683,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18698,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18770,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18833,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18870,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18871,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18920,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18960,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18985,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18998,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 19003,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 19007,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 19012,
+      "date": "2026-11-02"
+    }
+  ],
+  "generated_at": "2026-11-03T06:09:23.417305+00:00",
+  "daily": [
+    {
+      "emoji": "🎯",
+      "title": "Clearer community model results",
+      "text": "The Trust tab labels community models that error on more than half their eval questions as \"endpoint errors\" instead of showing a score gap. Score comparisons use answered questions as well as published scores.",
+      "prs": [
+        18985
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Model alerts reach their publishers",
+      "text": "Community Watch sends a separate Discord message for each model incident and pings the publisher's linked Discord account when available. Each message points to the model it concerns.",
+      "prs": [
+        19007,
+        19012
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

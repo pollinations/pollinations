@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-02",
+  "period_start": "2026-11-02",
+  "period_end": "2026-11-02",
+  "generated_at": "2026-11-03T06:09:23.417305+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/4fff7dcd5847e002ebbd7ca7ce1adb775dfb7dbec35ed944ce3085f608808f6e"
+    }
+  ],
+  "text": "Added clearer community model signals. If over half a model's eval questions hit errors, Trust labels it 'endpoint errors' instead of a score gap. Community Watch sends each incident separately on Discord and pings linked publishers. Score gaps go to maintainers."
+}

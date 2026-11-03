@@ -106,7 +106,7 @@ const CreateSpeechRequestSchema = z
                 "Sampling steps (stability-ai/stable-audio-3-medium 1-100, stability-ai/stable-audio-3 4-8).",
             example: 8,
         }),
-        negative_prompt: z.string().max(10000).optional().meta({
+        negative_prompt: z.string().min(1).max(10000).optional().meta({
             description: "Negative prompt for stability-ai/stable-audio-3.",
             example: "distortion, vocals",
         }),
@@ -2456,7 +2456,7 @@ const GeminiSpeechResponseSchema = z.object({
             content: z
                 .array(
                     z.object({
-                        type: z.string(),
+                        type: z.string().min(1),
                         mime_type: z.string().min(1).optional(),
                         data: z.string().min(1).optional(),
                     }),

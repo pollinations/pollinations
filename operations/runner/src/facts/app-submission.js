@@ -48,10 +48,11 @@ const SCREENSHOT_RULES = "PNG, JPEG, or WebP, at most 5 MB";
 
 // The screenshot judged by its size and first bytes: a Worker has no image
 // decoder, and publishing decodes it fully before it is listed. Only a missing
-// file is the submitter's error; a server or network failure is retried.
+// file (404, 410) is the submitter's error; anything else, a rate limit
+// included, is retried.
 export async function screenshotErrors(url) {
     const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
-    if (res.status >= 400 && res.status < 500)
+    if (res.status === 404 || res.status === 410)
         return [
             "Screenshot could not be downloaded; upload it again in the Screenshot field.",
         ];
@@ -80,10 +81,10 @@ export async function screenshotErrors(url) {
 
 export async function appSubmission({ issue, github, repo }) {
     const submission = parseSubmission(issue.body);
-    // Only a quest that doesn't exist is the submitter's error.
+    // Only a quest that doesn't exist (404, 410) is the submitter's error.
     const quest = /^\d+$/.test(submission.quest)
         ? await github.issue(submission.quest).catch((error) => {
-              if (error.status === 404) return null;
+              if (error.status === 404 || error.status === 410) return null;
               throw error;
           })
         : null;

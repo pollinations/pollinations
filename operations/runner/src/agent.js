@@ -43,7 +43,9 @@ export async function askAgent({ model, rulebook, context, image, key }) {
 // "# <title>" then "URL: <url>", at the top of the text or after a "---" line
 // and a blank line, and reports each failure as "Could not fetch <url>: ...".
 // A page header anywhere else is page text; an error result, a reported
-// failure or a URL that only shares a prefix counts for nothing.
+// failure or a URL that only shares a prefix counts for nothing. This is read
+// from exa's text, which a page can imitate: it stops the agent citing pages
+// it never fetched, not a page that fakes exa's format.
 const bare = (url) => url.replace(/\/$/, "");
 
 function returnedPages(output) {

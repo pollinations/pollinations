@@ -29,8 +29,9 @@ export const ROUTES = [
             "quest_fits",
         ],
         optional: ["sign_in", "quest_fits"],
-        // The GitHub token's whole grant: issues on the runner's one repository,
-        // for the status comment and labels. Publishing stays behind a
+        // The GitHub token's grant: issues on the runner's one repository. The
+        // code narrows it further: deliver() writes only this route's marker
+        // comment and its own status labels. Publishing stays behind a
         // maintainer's APP-APPROVED and the existing publish workflow.
         permissions: { issues: "write" },
         typeLabel: "APP-SUBMISSION",

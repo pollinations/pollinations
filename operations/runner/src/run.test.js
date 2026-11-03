@@ -422,8 +422,14 @@ test("only a missing quest or screenshot is the submitter's error", async () => 
         run(open, () => new Response("", { status: 503 })),
         /screenshot -> 503/,
     );
-    const deleted = await run(open, () => new Response("", { status: 404 }));
-    assert.match(deleted.stop.join(), /could not be downloaded/);
+    for (const status of [404, 410]) {
+        const missingFile = await run(open, () => new Response("", { status }));
+        assert.match(missingFile.stop.join(), /could not be downloaded/);
+    }
+    await assert.rejects(
+        run(open, () => new Response("", { status: 429 })),
+        /screenshot -> 429/,
+    );
     const gif = await run(open, () => new Response("GIF89a......"));
     assert.match(gif.stop.join(), /not a PNG, JPEG or WebP/);
 });
@@ -504,6 +510,24 @@ const job = (delivery) => ({
     number: 7,
 });
 const reviewed = { issueBody: "form", label: "APP-REVIEW", body: "ok" };
+
+test("a redelivered event costs no review, pending or finished", async () => {
+    const storage = fakeStorage();
+    let reviews = 0;
+    const handlers = {
+        review: async () => {
+            reviews++;
+            return reviewed;
+        },
+        deliver: async () => {},
+    };
+    assert.equal(await receive(storage, job("d1")), true);
+    assert.equal(await receive(storage, job("d1")), false);
+    await work(storage, handlers);
+    assert.equal(await receive(storage, job("d1")), false);
+    await work(storage, handlers);
+    assert.equal(reviews, 1);
+});
 
 test("a burst of events costs one review", async () => {
     const storage = fakeStorage();

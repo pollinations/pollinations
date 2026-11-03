@@ -29,11 +29,18 @@ export const ROUTES = [
             "quest_fits",
         ],
         optional: ["sign_in", "quest_fits"],
+        // Standing permission: a status comment and the route's own labels on
+        // the submission issue. Publishing stays behind a maintainer's
+        // APP-APPROVED and the existing publish workflow.
+        actions: ["comment", "labels"],
         typeLabel: "APP-SUBMISSION",
         labels: { ready: "APP-REVIEW", needsInfo: "APP-NEEDS-INFO" },
         texts: {
             marker: "<!-- APP_PRE_REVIEW -->",
             readyTitle: "App pre-review: ready for human review",
+            incompleteTitle: "App pre-review: not enough could be checked",
+            incompleteClosing:
+                "The automated check could not confirm or rule out anything, so a maintainer will review it by hand.",
             needsInfoTitle: "App pre-review: more information needed",
             unavailableTitle: "App pre-review unavailable",
             unavailable:
@@ -59,21 +66,29 @@ export const ROUTES = [
     },
 ];
 
+// Whether a route may act on an issue as it stands now: checked when the
+// event arrives and again right before writing.
+export function eligible(route, issue) {
+    if (!issue || issue.pull_request || issue.state !== "open") return false;
+    const labels = issue.labels.map((l) => l.name);
+    const { door } = route;
+    return (
+        !labels.some((l) => door.skipLabels.includes(l)) &&
+        (labels.some((l) => door.labels.includes(l)) ||
+            issue.title.startsWith(door.titlePrefix))
+    );
+}
+
 // Only events from the one repository the runner serves start a run, even if
 // the app is installed on others.
 export function matchRoute(event, payload, repo) {
-    const issue = payload.issue;
     if (payload.repository?.full_name !== repo) return null;
-    if (!issue || issue.pull_request || issue.state !== "open") return null;
-    const labels = issue.labels.map((l) => l.name);
     return (
         ROUTES.find(
-            ({ door }) =>
-                event === door.event &&
-                door.actions.includes(payload.action) &&
-                !labels.some((l) => door.skipLabels.includes(l)) &&
-                (labels.some((l) => door.labels.includes(l)) ||
-                    issue.title.startsWith(door.titlePrefix)),
+            (route) =>
+                event === route.door.event &&
+                route.door.actions.includes(payload.action) &&
+                eligible(route, payload.issue),
         ) ?? null
     );
 }

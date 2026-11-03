@@ -28,18 +28,6 @@ export async function askAgent({ model, rulebook, context, image, key }) {
     if (!res.ok)
         throw new Error(`agent -> ${res.status} ${body.error?.message ?? ""}`);
     const output = body.output ?? [];
-    // What the agent read through its tools: the only URLs it may cite.
-    const fetched = output
-        .filter((item) => item.type === "function_call")
-        .flatMap((item) => {
-            try {
-                const args = JSON.parse(item.arguments);
-                return args.urls ?? [args.url];
-            } catch {
-                return [];
-            }
-        })
-        .filter(Boolean);
     const text =
         body.output_text ??
         output
@@ -47,5 +35,38 @@ export async function askAgent({ model, rulebook, context, image, key }) {
             .flatMap((item) => item.content ?? [])
             .map((part) => part.text ?? "")
             .join("");
-    return { text, fetched, usage: body.usage };
+    return { text, fetched: readUrls(output), usage: body.usage };
+}
+
+// The URLs the agent actually read: asked for in a tool call AND returned in
+// that call's result. Exa reports each page it read as "URL: <url>" and each
+// failure as "Could not fetch <url>"; a failed or missing result counts for
+// nothing.
+export function readUrls(output) {
+    const results = new Map(
+        output
+            .filter((item) => item.type === "function_call_output")
+            .map((item) => [item.call_id, JSON.stringify(item.output ?? "")]),
+    );
+    return output
+        .filter((item) => item.type === "function_call")
+        .flatMap((item) => {
+            const result = results.get(item.call_id);
+            if (!result) return [];
+            let urls;
+            try {
+                const args = JSON.parse(item.arguments);
+                urls = args.urls ?? [args.url];
+            } catch {
+                return [];
+            }
+            return urls.filter((url) => {
+                if (typeof url !== "string") return false;
+                const bare = url.replace(/\/$/, "");
+                const read = [bare, `${bare}/`].some((u) =>
+                    result.includes(`URL: ${u}`),
+                );
+                return read && !result.includes(`Could not fetch ${url}`);
+            });
+        });
 }

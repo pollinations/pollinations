@@ -1,8 +1,9 @@
 // One run of one route on one issue: facts, the agent, the checker, then the
-// route's writes. With write off it only logs what it would post.
+// route's allowed writes. With write off it only logs what it would post.
 import { askAgent } from "./agent.js";
 import { checkReport, parseReport } from "./checker.js";
 import { renderComment } from "./comment.js";
+import { eligible } from "./routes.js";
 
 export async function run({
     route,
@@ -12,7 +13,8 @@ export async function run({
     github,
     key,
     write,
-    isLatest = () => true,
+    lastAttempt = true,
+    isLatest = async () => true,
     ask = askAgent,
     log = console.log,
 }) {
@@ -42,6 +44,27 @@ export async function run({
     } catch (error) {
         outcome = { kind: "unavailable", error: error.message };
     }
+    // A report that confirms or rules out nothing goes to a person as
+    // incomplete; "ready for human review" never stands for "passed".
+    if (
+        outcome.kind === "report" &&
+        !outcome.result.findings.some(
+            (f) => f.status === "supported" || f.status === "contradicted",
+        )
+    )
+        outcome.kind = "incomplete";
+    // A failed attempt that will be retried writes nothing.
+    if (outcome.kind === "unavailable" && !lastAttempt) {
+        log(
+            JSON.stringify({
+                route: route.id,
+                issue: issue.number,
+                outcome: "retry",
+                error: outcome.error,
+            }),
+        );
+        return { outcome, retry: true };
+    }
     const label =
         outcome.kind === "unavailable"
             ? null
@@ -58,24 +81,31 @@ export async function run({
             label,
             error: outcome.error,
             usage: outcome.usage,
+            // Kept for inspection: what each claim cited.
+            evidence: outcome.result?.findings.map((f) => ({
+                [f.requirement]: f.status,
+                cited: f.evidence,
+            })),
             ...(!write && { body }),
         }),
     );
     if (!write) return { outcome, label, body };
-    // A newer event, an edit or an approval since this run started wins.
+    // A newer event, an edit, closing or approval since this run started wins.
     const fresh = await github.issue(issue.number);
     if (
-        !isLatest() ||
+        !(await isLatest()) ||
         fresh.body !== issue.body ||
-        fresh.labels.some((l) => route.door.skipLabels.includes(l.name))
+        !eligible(route, fresh)
     ) {
         log(`issue ${issue.number} changed during the run; nothing written`);
         return { outcome, label, body, skipped: true };
     }
-    await github.upsertComment(issue.number, route.texts.marker, body);
-    await github.setStatusLabel(issue.number, Object.values(route.labels), [
-        route.typeLabel,
-        label,
-    ]);
+    if (route.actions.includes("comment"))
+        await github.upsertComment(issue.number, route.texts.marker, body);
+    if (route.actions.includes("labels"))
+        await github.setStatusLabel(issue.number, Object.values(route.labels), [
+            route.typeLabel,
+            label,
+        ]);
     return { outcome, label, body };
 }

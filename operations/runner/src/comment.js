@@ -28,6 +28,8 @@ export function renderComment(texts, outcome, author) {
     const notChecked = result.couldNotCheck.length
         ? `\n\nCould not check:\n\n${bullets(result.couldNotCheck)}`
         : "";
+    if (outcome.kind === "incomplete")
+        return `${head(texts.incompleteTitle)}\n\n${table}${notChecked}\n\n${texts.incompleteClosing}`;
     if (!result.contradicted)
         return `${head(texts.readyTitle)}\n\n${table}${notChecked}\n\n${texts.readyClosing}`;
     const snippet = result.findings.some(

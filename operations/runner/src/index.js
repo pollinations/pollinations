@@ -1,9 +1,10 @@
 // The agent runner: GitHub posts each webhook here, a route picks the agent,
-// and one Durable Object per issue does the work, so a request returns at
-// once while the run keeps going for up to 15 minutes. WRITE=1 lets runs post.
+// and one Durable Object per issue keeps the job and runs it from an alarm, so
+// a request returns at once and a restart loses nothing. WRITE=1 lets runs post.
 import { DurableObject } from "cloudflare:workers";
 import communityAppsReview from "../../agents/community-apps/REVIEW.md";
 import { githubClient, verifySignature } from "./github.js";
+import { receive, work } from "./jobs.js";
 import { matchRoute, ROUTES } from "./routes.js";
 import { run } from "./run.js";
 
@@ -11,27 +12,26 @@ const RULEBOOKS = { "community-apps/review": communityAppsReview };
 
 export class Job extends DurableObject {
     start(job) {
-        // The newest event for this issue wins; an older run writes nothing.
-        this.latest = job.delivery;
-        this.ctx.waitUntil(this.execute(job));
+        return receive(this.ctx.storage, job);
     }
 
-    async execute({ delivery, routeId, repo, issue }) {
-        const route = ROUTES.find((r) => r.id === routeId);
-        try {
-            await run({
-                route,
-                rulebook: RULEBOOKS[routeId],
-                issue,
-                repo,
-                github: await githubClient(this.env, repo),
-                key: this.env[route.keyEnv],
-                write: this.env.WRITE === "1",
-                isLatest: () => this.latest === delivery,
-            });
-        } catch (error) {
-            console.error(`${routeId} #${issue.number}: ${error.message}`);
-        }
+    alarm() {
+        return work(
+            this.ctx.storage,
+            async ({ routeId, repo, issue }, options) => {
+                const route = ROUTES.find((r) => r.id === routeId);
+                return run({
+                    route,
+                    rulebook: RULEBOOKS[routeId],
+                    issue,
+                    repo,
+                    github: await githubClient(this.env, repo),
+                    key: this.env[route.keyEnv],
+                    write: this.env.WRITE === "1",
+                    ...options,
+                });
+            },
+        );
     }
 }
 

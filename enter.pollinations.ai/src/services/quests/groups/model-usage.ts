@@ -60,7 +60,7 @@ const useVideoModelQuest: QuestDefinition = {
         "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models. Every video model is paid-only, so this needs a Paid Pollen balance — Quest Pollen does not cover them.",
     category: "setup",
     scope: "perUser",
-    rewardAmount: 0.25,
+    rewardAmount: 1,
     balanceBucket: "tier",
 };
 

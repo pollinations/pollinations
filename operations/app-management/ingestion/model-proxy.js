@@ -12,7 +12,7 @@ const MODEL = "openai/gpt-6-luna";
 const MAX_REQUESTS = 60;
 let requests = 0;
 
-http.createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
     try {
         const chunks = [];
         for await (const chunk of req) chunks.push(chunk);
@@ -50,9 +50,14 @@ http.createServer(async (req, res) => {
         for await (const chunk of upstream.body ?? []) res.write(chunk);
         res.end();
     } catch (error) {
-        // Logged for the workflow run, never sent back to the agent.
-        console.error(error);
+        // Logged for the workflow run, never sent back to the agent. On one
+        // line, so a request body quoted in it can't start a workflow command.
+        console.error(JSON.stringify(String(error)));
         if (!res.headersSent) res.writeHead(502);
         res.end();
     }
-}).listen(8711, "172.17.0.1");
+});
+
+if (require.main === module) server.listen(8711, "172.17.0.1");
+
+module.exports = server;

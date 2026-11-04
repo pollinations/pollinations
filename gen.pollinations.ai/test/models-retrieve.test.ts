@@ -473,6 +473,15 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     const list = (await listResponse.json()) as {
         data: Record<string, unknown>[];
     };
+    const registry = await getGenerationModelRegistry(env);
+    for (const model of list.data) {
+        const entry = registry.resolve(String(model.id));
+        expect(entry).not.toBeNull();
+        expect(model.top_provider).toEqual({
+            max_completion_tokens: entry?.info.max_completion_tokens ?? null,
+        });
+        expect(model).not.toHaveProperty("max_completion_tokens");
+    }
     const listed = list.data.find((m) => m.id === "openai/gpt-5-nano");
     expect(listed).toBeDefined();
 

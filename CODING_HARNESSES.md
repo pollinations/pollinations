@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, Claude Code, Codex (through Codex Router), DeepSeek Harness, Hermes Agent, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, Claude Code, Codex (through Codex Router), DeepSeek Harness, Hermes Agent, Mistral Vibe, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -32,6 +32,7 @@ claude update
 # Codex Router: rerun its official installer/update flow
 npx @deepseek-ai/dsh@latest web
 hermes update
+uv tool upgrade mistral-vibe
 opencode upgrade
 openclaw update
 pi update self
@@ -51,6 +52,7 @@ Polli defaults to `openai/gpt-6-sol` unless you pass `--model <id>` (a model ID 
 | [Codex](https://github.com/openai/codex) + [Codex Router](https://github.com/duolahypercho/codex-router) | **Available now**: `polli harness codex on` | Uses Codex Router's generic-provider/curation path, protected credential storage and compatibility probe; native Codex ChatGPT login is left untouched. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now**: `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `openai/gpt-6-sol` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
 | [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now**: `polli harness hermes on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, discovering models from the live catalog. Install the hosted MCP servers with `polli mcp install hermes --all`. Defaults to `openai/gpt-6-sol`. |
+| [Mistral Vibe](https://github.com/mistralai/mistral-vibe) | **Available now**: `polli harness vibe on` | Adds a native OpenAI-compatible provider, the live tool-calling model catalog, a dedicated key, and the Polli skill. Routes session titles and smart approval through Pollinations too. |
 | [OpenCode](https://opencode.ai) | **Available now**: `polli harness opencode on` | Adds the Pollinations provider through `@ai-sdk/openai-compatible`, discovering models from the live catalog. The same config serves OpenCode 1.x and 2.0. Add hosted MCP servers with `polli mcp install opencode --all`. Defaults to `openai/gpt-6-sol`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now**: `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `openai/gpt-6-sol`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now**: `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Add hosted MCP servers with `polli mcp install pi --all` (Pi 0.99+). Defaults to `openai/gpt-6-sol`. |
@@ -127,6 +129,20 @@ polli harness hermes off
 ```
 
 `on` requires Hermes Agent to be installed with its official installer (`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash` on Linux/macOS/WSL, or `iex (irm https://hermes-agent.nousresearch.com/install.ps1)` on native Windows). It registers a `pollinations` provider in `$HERMES_HOME/config.yaml` (`~/.hermes/config.yaml`, or `%LOCALAPPDATA%\hermes\config.yaml` on native Windows), stores a dedicated key in `$HERMES_HOME/.env` as `POLLI_HERMES_API_KEY`, and installs the Polli skill under `skills/polli/`. Hermes discovers the current Pollinations models from the provider endpoint rather than a bundled list, so there is no second model catalog to keep in sync. Choose the default with `--model <id>` and switch later with `hermes model`. To add the hosted Pollinations MCP servers, run `polli mcp install hermes --all` (or pick server ids from `polli mcp list`). `off` restores the previous files byte-for-byte, or (if you edited them) removes only the Pollinations provider, key, and skill, leaving your other providers, fallbacks, memories, and skills untouched.
+
+## Mistral Vibe
+
+```bash
+uv tool install mistral-vibe
+polli harness vibe on
+vibe
+polli harness vibe status
+polli harness vibe off
+```
+
+`on` registers a native OpenAI-compatible `pollinations` provider in `$VIBE_HOME/config.toml` (default `~/.vibe/config.toml`), stores its dedicated key as `POLLI_VIBE_API_KEY` in `.env`, and installs the Polli skill under `skills/polli/`. It lists current tool-calling text models with their context lengths and image support from the live catalog. The default is `openai/gpt-6-sol`; use `--model <id>` to choose another. Session-title generation and smart approval also use the selected Pollinations model, avoiding Vibe's automatic Mistral utility-model selection.
+
+Start a new Vibe session after setup; `/model` switches among configured models. This is user-level configuration: project, agent, admin, and environment settings can override it. Existing providers and credentials are preserved. Setup reformats TOML; `off` restores untouched files byte-for-byte, or removes only the Pollinations setup after user edits. It does not revoke keys.
 
 ## OpenCode
 

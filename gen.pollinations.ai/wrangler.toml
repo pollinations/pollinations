@@ -15,6 +15,10 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
+    { binding = "RESEARCH_MCP", service = "pollinations-research-mcp" },
+    { binding = "NEWS_MCP", service = "pollinations-news-mcp" },
+    { binding = "PACKAGES_MCP", service = "pollinations-packages-mcp" },
+    { binding = "NETWORK_MCP", service = "pollinations-network-mcp" },
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
@@ -23,6 +27,7 @@ services = [
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
+    { binding = "CALCULATORS_MCP", service = "pollinations-calculators-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -149,6 +154,10 @@ service = "pollinations-computer-mcp"
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp"
 
+[[env.production.services]]
+binding = "CALCULATORS_MCP"
+service = "pollinations-calculators-mcp"
+
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-production"
@@ -227,6 +236,7 @@ deleted_classes = ["PollenRateLimiter"]
 [env.production.vars]
 ENVIRONMENT = "production"
 SITES_HOST_SUFFIX = ".pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 # Public OAuth app identifier; user credentials stay in their browser tab.
 DOCS_APP_KEY = "pk_zM4Wvtd1rgWXRmLP"
 # Durable Object fetches get a 125 s proxy read timeout; requests through
@@ -265,7 +275,7 @@ pattern = "staging.gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
-# User sites (src/sites.ts). Hosts starting with a digit stay with sandbox ports.
+# User sites and sandbox ports (src/sites.ts and src/routes/e2b.ts).
 [[env.staging.routes]]
 pattern = "*--staging.pollinations.app/*"
 zone_name = "pollinations.app"
@@ -301,6 +311,10 @@ service = "pollinations-computer-mcp-staging"
 [[env.staging.services]]
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp-staging"
+
+[[env.staging.services]]
+binding = "CALCULATORS_MCP"
+service = "pollinations-calculators-mcp-staging"
 
 [[env.staging.dispatch_namespaces]]
 binding = "CODE_AGENTS"
@@ -373,6 +387,7 @@ deleted_classes = ["PollenRateLimiter"]
 [env.staging.vars]
 ENVIRONMENT = "staging"
 SITES_HOST_SUFFIX = "--staging.pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
@@ -425,6 +440,10 @@ service = "pollinations-computer-mcp"
 [[env.test.services]]
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp"
+
+[[env.test.services]]
+binding = "CALCULATORS_MCP"
+service = "pollinations-calculators-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"
@@ -491,6 +510,8 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
 AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
 E2B_API_KEY = "not-a-secret-workers-test-only"
+SITES_HOST_SUFFIX = ".pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"
@@ -522,3 +543,71 @@ XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"
 BEDROCK_GUARDRAIL_VERSION = "1"
+
+[[env.production.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp"
+
+
+
+
+[[env.staging.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp-staging"
+
+
+
+
+[[env.test.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp"
+
+[[env.production.services]]
+binding = "PACKAGES_MCP"
+service = "pollinations-packages-mcp"
+
+
+
+
+[[env.staging.services]]
+binding = "PACKAGES_MCP"
+service = "pollinations-packages-mcp-staging"
+
+
+
+
+[[env.test.services]]
+binding = "PACKAGES_MCP"
+service = "pollinations-packages-mcp"
+
+[[env.production.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp"
+
+
+
+[[env.staging.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp-staging"
+
+
+
+[[env.test.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp"
+
+[[env.production.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp"
+
+
+
+[[env.staging.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp-staging"
+
+
+
+[[env.test.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp"

@@ -1216,6 +1216,41 @@ test("a cold shared-port cache does not buy more time before the lease is nearly
         expect(Date.parse(e2b.sandboxes[0].endAt)).toBe(now + 421_000);
         await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
         expect(await questPollen(owner.userId)).toBeLessThan(balance);
+
+        // A longer upstream lease must not turn this token-only connect into
+        // a new keep paid by the key that shared the port.
+        const portPayer = await createTestApiKey({
+            userId: owner.userId,
+            accountPermissions: ["machines"],
+        });
+        const longEndAt = inSeconds(610);
+        const until = new Date(
+            Math.floor(Date.now() / 1000) * 1000 + 86_400_000,
+        );
+        e2b.sandboxes.push(
+            keptSandbox("longlease", owner.userId, { endAt: longEndAt }),
+        );
+        await drizzle(env.DB).insert(sandboxKeep).values({
+            sandboxId: "longlease",
+            apiKeyId: owner.id,
+            until,
+            idleTimeout: 900,
+        });
+        await sharePort(portPayer.key, "longlease", 8080);
+        const beforeLongVisit = await questPollen(owner.userId);
+        expect((await visit("8080-longlease.pollinations.app")).status).toBe(
+            200,
+        );
+        expect(e2b.sandboxes[1].endAt).toBe(longEndAt);
+        expect(await questPollen(owner.userId)).toBe(beforeLongVisit);
+        expect(e2b.leases()).toHaveLength(1);
+        expect(
+            (await keeps()).find((keep) => keep.sandboxId === "longlease"),
+        ).toMatchObject({
+            apiKeyId: owner.id,
+            until,
+            idleTimeout: 900,
+        });
     } finally {
         vi.useRealTimers();
     }
@@ -1568,7 +1603,7 @@ test("a request to a shared port wakes a sandbox paused while idle, and a connec
 test("failed or public envd requests do not keep an idle sandbox awake", async () => {
     const e2b = stubE2b();
     const owner = await sandboxKey();
-    const longAgo = new Date(Date.now() - 1000_000);
+    const longAgo = new Date(Math.floor((Date.now() - 1000_000) / 1000) * 1000);
     const requests = [
         {
             id: "envdpaused",
@@ -1687,7 +1722,9 @@ test("failed activity writes do not hide paid connect or port responses and are 
     } as D1Database;
     for (const mode of ["connect", "port"]) {
         const id = `activity${mode}`;
-        const longAgo = new Date(Date.now() - 1000_000);
+        const longAgo = new Date(
+            Math.floor((Date.now() - 1000_000) / 1000) * 1000,
+        );
         e2b.sandboxes.push(
             keptSandbox(id, owner.userId, {
                 state: "paused",

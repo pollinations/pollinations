@@ -46,17 +46,18 @@ describe("edge rate limit", () => {
             throw new Error("Sandbox lookup ran before the edge limit");
         });
         const ctx = createExecutionContext();
+        const portBindings = {
+            ...env,
+            ENVIRONMENT: "production" as const,
+            SANDBOX_DOMAIN: "pollinations.app",
+            EDGE_RATE_LIMITER: limiter(0),
+        };
         try {
             const response = await worker.fetch(
                 new Request("https://8080-limitprobe.pollinations.app/", {
                     headers: { "CF-Connecting-IP": "203.0.113.7" },
                 }),
-                {
-                    ...env,
-                    ENVIRONMENT: "production",
-                    SANDBOX_DOMAIN: "pollinations.app",
-                    EDGE_RATE_LIMITER: limiter(0),
-                },
+                portBindings,
                 ctx,
             );
             await waitOnExecutionContext(ctx);

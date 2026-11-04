@@ -529,7 +529,7 @@ async function noteActivity(env: CloudflareBindings, sandboxID: string) {
 // A failed activity write must not hide work whose lease has already been paid.
 function noteRequestActivity(
     env: CloudflareBindings,
-    ctx: ExecutionContext,
+    ctx: Pick<ExecutionContext, "waitUntil">,
     sandboxID: string,
 ) {
     ctx.waitUntil(
@@ -1105,7 +1105,10 @@ async function wakePort(
         sandbox.state === "running" ? Date.parse(sandbox.endAt) : 0;
     const timeout =
         paidUntil - now >= WAKE_MARGIN_MS
-            ? Math.floor((paidUntil - now) / 1000)
+            ? Math.min(
+                  DEFAULT_TIMEOUT_SECONDS,
+                  Math.floor((paidUntil - now) / 1000),
+              )
             : DEFAULT_TIMEOUT_SECONDS;
     const response = await payerApi(env, ctx, payer)(sandboxID, "connect", {
         timeout,
@@ -1261,12 +1264,12 @@ async function forwardPort(
     // sandbox have stopped inside the cached lease.
     const length = request.headers.get("content-length");
     const small = length !== null && Number(length) <= 1_000_000;
-    let replay: Request | null = null;
-    if (request.body === null) {
-        replay = request;
-    } else if (woken === cached && small) {
-        replay = request.clone();
-    }
+    const replay =
+        request.body === null
+            ? request
+            : woken === cached && small
+              ? request.clone()
+              : null;
     const response = await send(request, woken.origin, woken.token);
     // E2B answers 502 "The sandbox was not found" for a sandbox that stopped
     // inside the cached lease: paused idle or by its owner, or killed. A

@@ -64,10 +64,7 @@ export const CreateEmbeddingRequestSchema = z
         input: z
             .union([
                 z.string(),
-                z
-                    .array(z.string())
-                    .min(1)
-                    .max(MAX_EMBEDDING_BATCH_SIZE),
+                z.array(z.string()).min(1).max(MAX_EMBEDDING_BATCH_SIZE),
                 ContentPartSchema,
                 z.array(ContentPartSchema).min(1),
             ])

@@ -97,7 +97,7 @@ jobs:
             -e ANTHROPIC_BASE_URL=http://172.17.0.1:8711 -e ANTHROPIC_API_KEY=proxy \
             -e CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
             node:22 sh -c 'npm install -g --no-audit --no-fund @anthropic-ai/claude-code@2.1.301 < /dev/null >&2 &&
-              exec claude -p --bare --model openai/gpt-6-luna --max-turns 30 --output-format stream-json --verbose \
+              exec claude -p --bare --model openai/gpt-6-luna --max-turns 30 --permission-mode dontAsk --output-format stream-json --verbose \
                 --tools Bash,Read,Grep,Glob --allowedTools "Bash(curl:*),Bash(git clone:*)"' \
             < "$RUNNER_TEMP/prompt.txt" > "$RUNNER_TEMP/agent.jsonl" || true
           # Log each tool call and failure, then the verdict.

@@ -1,0 +1,237 @@
+{
+  "date": "2026-11-03",
+  "period_start": "2026-11-03",
+  "period_end": "2026-11-03",
+  "title": "New reasoning models and a Jev update",
+  "summary": "New reasoning models and a Mistral Vibe harness joined a larger community catalog, while API and account fixes made edge cases less surprising.\n\nMiniMax M3.1 Flash and two paid Kimi K3.1 Pro variants were added with image input, tool use, reasoning, and 1,048,576-token context windows. Jev decision requests now use the pinned 1.14 release; existing Jev names resolve to it.\n\n`polli harness vibe on|status|off` adds Pollinations model setup for Mistral Vibe, with a default model and `--model` overrides. Two CLI fixes also allow key expirations beyond 365 days and show the account profile name when GitHub is not linked.\n\nTwelve community apps were added to the catalog, spanning image tools, an interactive postcard, coding games, and a Home Assistant display integration. App descriptions now get a clear 200-character limit. Community model and agent validation was tightened, and Quest cards make claimable rewards and the paid-model requirement clearer. The README was refreshed with earlier news and app listings.",
+  "pr_count": 34,
+  "prs": [
+    {
+      "number": 16405,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 17241,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 17840,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18160,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18197,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18198,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18199,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18428,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18483,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18608,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18622,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18656,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18657,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18658,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18726,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18761,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18805,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18863,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18975,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19038,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19048,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19050,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19063,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19069,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19074,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19080,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19081,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19088,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19089,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19090,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19092,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19093,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19096,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19097,
+      "date": "2026-11-03"
+    }
+  ],
+  "generated_at": "2026-11-04T06:08:26.895761+00:00",
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "MiniMax M3.1 Flash",
+      "text": "Use `minimax/minimax-m3.1-flash` with text or image input, tools, reasoning, and a 1,048,576-token context window. It does not require a paid balance. [View the model](https://enter.pollinations.ai/models?q=minimax/minimax-m3.1-flash).",
+      "prs": [
+        18197
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Two Kimi K3.1 Pro variants",
+      "text": "Try `moonshotai/kimi-k3.1-pro` or `moonshotai/kimi-k3.1-pro-highspeed` for text and image input, tools, reasoning, and 1,048,576-token context windows. Both require a paid balance. [View Kimi K3.1 Pro](https://enter.pollinations.ai/models?q=moonshotai/kimi-k3.1-pro).",
+      "prs": [
+        18198,
+        18199
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Jev moves to 1.14",
+      "text": "Jev decision requests now use the pinned `typesafe/jev-1.14` release. Existing `jev`, `typesafe/jev`, and `typesafe/jev-1.13` names resolve to 1.14 too. [View the model](https://enter.pollinations.ai/models?q=typesafe/jev-1.14).",
+      "prs": [
+        19038
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Polli supports Mistral Vibe",
+      "text": "Use `polli harness vibe on|status|off` to set up Pollinations models in Mistral Vibe. It selects `openai/gpt-6-sol` by default, and `--model` lets you choose another tool-calling model. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        18975
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": [
+    {
+      "pr_number": 19080,
+      "url": "https://github.com/pollinations/pollinations/pull/19080",
+      "merged_at": "2026-11-03T06:19:29Z",
+      "api_changes": [
+        {
+          "id": "pr-19080:PATCH /account/keys/{id}",
+          "endpoint": "PATCH /account/keys/{id}",
+          "summary": "Update API Key",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:accountPermissions",
+              "before": {
+                "type": "string[]|null",
+                "required": false
+              },
+              "after": {
+                "type": "\"profile\"|\"usage\"|\"keys\"|\"machines\"[]|null",
+                "required": false
+              },
+              "breaking": true
+            }
+          ]
+        },
+        {
+          "id": "pr-19080:POST /account/keys",
+          "endpoint": "POST /account/keys",
+          "summary": "Create API Key",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:accountPermissions",
+              "before": {
+                "type": "string[]|null",
+                "required": false
+              },
+              "after": {
+                "type": "\"profile\"|\"usage\"|\"keys\"|\"machines\"[]|null",
+                "required": false
+              },
+              "breaking": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

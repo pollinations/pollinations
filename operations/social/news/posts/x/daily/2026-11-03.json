@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-03",
+  "period_start": "2026-11-03",
+  "period_end": "2026-11-03",
+  "generated_at": "2026-11-04T06:08:26.895761+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/e48142490e23918b5988670e44dee0910201f436d49d3e8d7e94f560e695f407"
+    }
+  ],
+  "text": "Added MiniMax M3.1 Flash and paid Kimi K3.1 Pro and Kimi K3.1 Pro Highspeed. All three support image input, tools, reasoning, and 1,048,576-token context. Polli also gained `polli harness vibe on` for Mistral Vibe."
+}

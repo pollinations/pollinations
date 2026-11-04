@@ -16,7 +16,7 @@ import {
     questStandingsResponseSchema,
 } from "./quest-leaderboard.ts";
 
-// Contribution rewards are assessed per issue and PR by the project manager.
+// Bumped to v31: every merged PR earns 5, and the issue placeholder card is gone.
 const CACHE_KEY = "quests:catalog:v31";
 const CACHE_TTL = 60;
 

@@ -6,15 +6,6 @@ import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 
 const REPO = "pollinations/pollinations";
-const LEGACY_CREATED_AT = "2026-06-01T00:00:00Z";
-
-export type MockRewardComment = {
-    body: string;
-    createdAt: string;
-    lastEditedAt: string | null;
-    author: { __typename: string; login: string; databaseId?: number } | null;
-    editor: MockRewardComment["author"];
-};
 
 export type MockGithubState = {
     secretScanningPublicKeys: Array<{
@@ -41,7 +32,6 @@ export type MockGithubState = {
         user: { login: string; databaseId?: number | null } | null;
         assignees?: { login: string; databaseId?: number | null }[];
         labels?: Array<{ name: string }>;
-        comments?: MockRewardComment[];
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
@@ -58,12 +48,9 @@ export type MockGithubState = {
         number: number;
         authorLogin: string;
         mergedAt: string;
-        // Defaults to a PR opened before contribution assessments began.
-        createdAt?: string;
         authorId?: number;
-        repository?: string;
-        comments?: MockRewardComment[];
-        closingIssueLabels?: string[][];
+        base?: string;
+        closingIssues?: number[];
     }>;
     // Commit author GitHub ids per PR number, including co-authors.
     commitAuthors: Record<number, number[]>;
@@ -137,124 +124,8 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 variables?: {
                     query?: string;
                     after?: string | null;
-                    before?: string | null;
-                    number?: number;
-                    login?: string;
                 };
             };
-            const variables = body.variables ?? {};
-            const closers = (issue: MockGithubState["questIssues"][number]) =>
-                (issue.closedByPullRequestsReferences ?? []).map((pr) => ({
-                    ...pr,
-                    repository: { nameWithOwner: pr.repository ?? REPO },
-                }));
-            // The newest 20 comments before the cursor, as `comments(last:20)`.
-            const commentPage = (comments: MockRewardComment[] = []) => {
-                const end = Number(variables.before ?? comments.length);
-                const start = Math.max(0, end - 20);
-                return {
-                    nodes: comments.slice(start, end),
-                    pageInfo: {
-                        hasPreviousPage: start > 0,
-                        startCursor: String(start),
-                    },
-                };
-            };
-            if (body.query?.includes("issueOrPullRequest")) {
-                const item = [
-                    ...state.questIssues,
-                    ...state.mergedPullRequests,
-                ].find((entry) => entry.number === variables.number);
-                return c.json({
-                    data: {
-                        repository: {
-                            issueOrPullRequest: {
-                                comments: commentPage(item?.comments),
-                            },
-                        },
-                    },
-                });
-            }
-            // A user's own merged PRs or closed issues, newest first.
-            if (body.query?.includes("contributions:")) {
-                const nodes: { createdAt: string }[] = body.query.includes(
-                    "contributions:pullRequests",
-                )
-                    ? state.mergedPullRequests
-                          .filter((pr) => pr.authorLogin === variables.login)
-                          .map((pr) => ({
-                              number: pr.number,
-                              title: `PR ${pr.number}`,
-                              url: `https://github.com/${pr.repository ?? REPO}/pull/${pr.number}`,
-                              createdAt: pr.createdAt ?? LEGACY_CREATED_AT,
-                              mergedAt: pr.mergedAt,
-                              repository: {
-                                  nameWithOwner: pr.repository ?? REPO,
-                              },
-                              author: {
-                                  __typename: "User",
-                                  login: pr.authorLogin,
-                                  databaseId: pr.authorId ?? state.user.id,
-                              },
-                              comments: commentPage(pr.comments),
-                              closingIssuesReferences: {
-                                  pageInfo: {
-                                      hasNextPage:
-                                          (pr.closingIssueLabels ?? []).length >
-                                          20,
-                                  },
-                                  nodes: (pr.closingIssueLabels ?? [])
-                                      .slice(0, 20)
-                                      .map((labels) => ({
-                                          repository: { nameWithOwner: REPO },
-                                          labels: {
-                                              nodes: labels.map((name) => ({
-                                                  name,
-                                              })),
-                                          },
-                                      })),
-                              },
-                          }))
-                    : state.questIssues
-                          .filter(
-                              (issue) =>
-                                  issue.state === "closed" &&
-                                  issue.user?.login === variables.login,
-                          )
-                          .map((issue) => ({
-                              number: issue.number,
-                              title: issue.title,
-                              url: issue.html_url,
-                              createdAt: issue.created_at,
-                              repository: { nameWithOwner: REPO },
-                              author: {
-                                  __typename: "User",
-                                  login: issue.user?.login,
-                                  databaseId: issue.user?.databaseId ?? null,
-                              },
-                              comments: commentPage(issue.comments),
-                              closedByPullRequestsReferences: {
-                                  nodes: closers(issue),
-                              },
-                          }));
-                nodes.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-                const start = Number(variables.after ?? 0);
-                const page = nodes.slice(start, start + 50);
-                return c.json({
-                    data: {
-                        user: {
-                            contributions: {
-                                nodes: page,
-                                pageInfo: {
-                                    hasNextPage:
-                                        start + page.length < nodes.length,
-                                    endCursor: String(start + page.length),
-                                },
-                            },
-                        },
-                    },
-                });
-            }
             // Commit authors arrive as one query with a `pr<number>:` alias
             // per pull request.
             const prNumbers = [
@@ -288,23 +159,43 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ data: { repository } });
             }
             const search = body.variables?.query ?? "";
-            const createdBefore = search.match(/\bcreated:<(\S+)/)?.[1];
             if (search.includes("is:pr")) {
                 const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+                const base = search.match(/\bbase:([^\s]+)/)?.[1];
+                const mergedFrom = search.match(/\bmerged:>=(\S+)/)?.[1];
+                const mergedBefore = search.match(/\bmerged:<(\S+)/)?.[1];
                 const nodes = state.mergedPullRequests
                     .filter(
                         (pr) =>
                             (!author || pr.authorLogin === author) &&
-                            (!createdBefore ||
-                                (pr.createdAt ?? LEGACY_CREATED_AT) <
-                                    createdBefore),
+                            (!base || (pr.base ?? "main") === base) &&
+                            (!mergedFrom ||
+                                Date.parse(pr.mergedAt) >=
+                                    Date.parse(mergedFrom)) &&
+                            (!mergedBefore ||
+                                Date.parse(pr.mergedAt) <
+                                    Date.parse(mergedBefore)),
                     )
-                    .slice(0, 1)
                     .map((pr) => ({
                         number: pr.number,
+                        title: `PR ${pr.number}`,
+                        url: `https://github.com/${REPO}/pull/${pr.number}`,
                         mergedAt: pr.mergedAt,
+                        author: { databaseId: pr.authorId ?? state.user.id },
+                        closingIssuesReferences: {
+                            nodes: (pr.closingIssues ?? []).map((number) => ({
+                                number,
+                            })),
+                        },
                     }));
-                return c.json({ data: { search: { nodes } } });
+                return c.json({
+                    data: {
+                        search: {
+                            nodes,
+                            pageInfo: { hasNextPage: false, endCursor: null },
+                        },
+                    },
+                });
             }
 
             const author = search.match(/\bauthor:([^\s]+)/)?.[1];
@@ -312,7 +203,6 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             const issues = state.questIssues.filter(
                 (issue) =>
                     (!author || issue.user?.login === author) &&
-                    (!createdBefore || issue.created_at < createdBefore) &&
                     (!label ||
                         issue.labels?.some(({ name }) => name === label)),
             );
@@ -322,6 +212,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 state: issue.state.toUpperCase(),
                 title: issue.title,
                 url: issue.html_url,
+                createdAt: issue.created_at,
                 body: issue.body,
                 author: issue.user
                     ? { databaseId: issue.user.databaseId ?? null }
@@ -334,7 +225,14 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 },
                 labels: { nodes: issue.labels ?? [] },
                 closedByPullRequestsReferences: {
-                    nodes: closers(issue),
+                    nodes: (issue.closedByPullRequestsReferences ?? []).map(
+                        (pr) => ({
+                            ...pr,
+                            repository: {
+                                nameWithOwner: pr.repository ?? REPO,
+                            },
+                        }),
+                    ),
                 },
             }));
             const next = start + nodes.length;

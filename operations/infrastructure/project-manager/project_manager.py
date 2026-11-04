@@ -62,8 +62,8 @@ LABEL_SOURCES = [("Apps", "APP-SUBMISSION"), ("Quests", "POLLEN-QUEST")]
 NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
 # Same date as REWARDS_START in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
-REWARDS_START = "2026-11-04T00:00:00Z"
-# Thomas and Elliot set contribution rewards and earn none.
+REWARDS_START = "2026-11-05T00:00:00Z"
+# Thomas's and Elliot's own items get no announcement.
 REWARD_MAINTAINERS = {5099901, 36901823}
 
 
@@ -368,17 +368,16 @@ def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
 
 
 def write_reward_comment():
-    """Announce the default reward. Enter pays it without reading this comment."""
-    # Only when opened, so a re-run never repeats it; older items keep the old rewards.
+    """Announce the reward. Enter pays it without reading this comment."""
+    # Only when opened, so a re-run never repeats it.
     if (GITHUB_EVENT.get("action") != "opened" or ITEM_DATA.get("user", {}).get("type") == "Bot"
             or ISSUE_AUTHOR_ID in REWARD_MAINTAINERS or ITEM_DATA.get("created_at", "") < REWARDS_START):
         return
     if IS_PULL_REQUEST:
-        reward, rule = 3, "The PR author can claim this after merge. If the PR closes a POLLEN-QUEST issue, that quest's bounty is paid instead."
+        reward, rule = 5, "The PR author can claim this once it is merged into main. If the PR closes a POLLEN-QUEST issue, that quest's bounty is paid instead."
     else:
-        reward, rule = 1, "The issue author can claim this once a merged PR from someone else closes this issue."
-    body = (f"Reward: {reward} pollen\n\n{rule} Claim at https://enter.pollinations.ai/quests.\n\n"
-            "Elliot or Thomas can change it with a comment containing only `Reward: 2` or `Reward: 2 paid`.")
+        reward, rule = 3, "The issue author can claim this once a merged PR closes this issue, also when they wrote the fix."
+    body = f"Reward: {reward} pollen\n\n{rule} Claim at https://enter.pollinations.ai/quests."
     try:
         r = requests.post(f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/comments",
                           headers=GITHUB_HEADERS, json={"body": body}, timeout=10)
@@ -443,8 +442,9 @@ def main():
         with open(output, "w") as stream:
             json.dump({"area": answer["area"], "type": answer["type"], "source": source}, stream)
 
-    # App listings have their own reward.
-    if IS_PULL_REQUEST or "APP-SUBMISSION" not in labels:
+    # App listings have their own reward; access requests earn none. Same rules as
+    # ISSUE_REPORT_EXCLUDED_TITLE in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
+    if IS_PULL_REQUEST or not ("APP-SUBMISSION" in labels or re.match(r"\[Community(?: Model)? Publisher Access\]", ISSUE_TITLE, re.I)):
         write_reward_comment()
 
 

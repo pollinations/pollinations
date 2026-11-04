@@ -2499,7 +2499,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
 });
 
-test("a self-fixed issue pays once per own PR; fixes elsewhere or before the report pay nothing", async ({
+test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or before the report pay nothing", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2512,7 +2512,7 @@ test("a self-fixed issue pays once per own PR; fixes elsewhere or before the rep
         other: { number: 9301, author: { databaseId: 999999 } },
     };
     const issues = [
-        // One own PR closes three of the user's issues: only the first pays.
+        // One own PR closes three of the user's issues: all three pay.
         { number: 9201, closer: closers.own },
         { number: 9202, closer: closers.own },
         { number: 9203, closer: closers.own },
@@ -2564,6 +2564,8 @@ test("a self-fixed issue pays once per own PR; fixes elsewhere or before the rep
             .sort(),
     ).toEqual([
         "github:reported_issue:9201",
+        "github:reported_issue:9202",
+        "github:reported_issue:9203",
         "github:reported_issue:9204",
         "github:reported_issue:9205",
     ]);
@@ -2683,7 +2685,7 @@ test("Elliot's or Thomas's newest Reward comment sets a PR or issue reward; 0 ca
             9604,
             [
                 comment("Reward: 50", 999),
-                comment("Reward: 101", ELLIOT),
+                comment("Reward: 10001", ELLIOT),
                 comment("Reward: 1e2", ELLIOT),
                 comment("Example:\nReward: 30 paid", THOMAS),
                 {
@@ -2714,7 +2716,7 @@ test("Elliot's or Thomas's newest Reward comment sets a PR or issue reward; 0 ca
         });
     }
 
-    // Two issues the user fixed with one PR: an override pays the second too.
+    // An override replaces an issue's 3, also on a self-fix; 0 cancels it.
     const issues: [number, number, MockRewardComment[]][] = [
         [9701, user.githubId ?? 0, []],
         [9702, user.githubId ?? 0, [comment("Reward: 4", ELLIOT)]],

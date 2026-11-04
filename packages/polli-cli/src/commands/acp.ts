@@ -13,14 +13,13 @@ import type { CallToolResult, Client } from "@modelcontextprotocol/client";
 import { Command } from "commander";
 import pkg from "../../package.json";
 import { ApiError, gen, genResponse } from "../lib/api.js";
-import { resolveApiKey } from "../lib/config.js";
+import { resolveApiKey, setKeyOverride } from "../lib/config.js";
 import { printWarn } from "../lib/output.js";
 import { sseEvents } from "../lib/stream.js";
 import { loginWithDeviceFlow } from "./auth.js";
 
 // Each round is one /v1/responses call; editor tool calls start the next one.
 const MAX_ROUNDS = 20;
-const LOGIN_METHOD = "pollinations-login";
 
 /** A Responses item. Output items go back to gen unchanged as history. */
 type Item = { type?: string; [key: string]: unknown };
@@ -36,7 +35,6 @@ interface AgentModel {
     id: string;
     title?: string;
     description?: string;
-    agent?: boolean;
 }
 
 /** An MCP tool from the editor, offered to the agent as a function. */
@@ -122,10 +120,8 @@ export const userMessage = (prompt: ContentBlock[]): Item => ({
 });
 
 /** Gen sends a hosted tool's MCP result as JSON text. */
-const hostedResult = (output: unknown) => {
-    const text = Array.isArray(output)
-        ? output.map((part) => String(part?.text ?? "")).join("")
-        : String(output ?? "");
+const hostedResult = (output: { text?: string }[]) => {
+    const text = output.map((part) => part.text ?? "").join("");
     const result = parseJson(text) as Partial<CallToolResult> | string;
     if (typeof result !== "object" || !Array.isArray(result?.content)) {
         return { text, failed: false };
@@ -158,7 +154,9 @@ const itemUpdate = (
         };
     }
     if (item.type === "function_call_output") {
-        const { text, failed } = hostedResult(item.output);
+        const { text, failed } = hostedResult(
+            item.output as { text?: string }[],
+        );
         return {
             sessionUpdate: "tool_call_update",
             toolCallId: String(item.call_id),
@@ -170,9 +168,7 @@ const itemUpdate = (
 };
 
 const listAgents = async () =>
-    (await gen<{ data: AgentModel[] }>("/v1/models")).data.filter(
-        (model) => model.agent,
-    );
+    (await gen<{ data: AgentModel[] }>("/v1/models?agent=true")).data;
 
 const agentOption = (session: Session): SessionConfigOption => ({
     id: "agent",
@@ -202,7 +198,7 @@ const connectServers = async (servers: McpServer[], cwd: string) => {
     const { Client, StreamableHTTPClientTransport } = await import(
         "@modelcontextprotocol/client"
     );
-    const { StdioClientTransport, getDefaultEnvironment } = await import(
+    const { StdioClientTransport } = await import(
         "@modelcontextprotocol/client/stdio"
     );
     const tools = new Map<string, EditorTool>();
@@ -226,42 +222,32 @@ const connectServers = async (servers: McpServer[], cwd: string) => {
                           command: server.command,
                           args: server.args,
                           cwd,
-                          // Not process.env: it can hold the Pollinations key.
-                          env: {
-                              ...getDefaultEnvironment(),
-                              ...Object.fromEntries(
-                                  server.env.map((v) => [v.name, v.value]),
-                              ),
-                          },
+                          // The SDK adds a safe default env (PATH, HOME…),
+                          // never process.env, which can hold the key.
+                          env: Object.fromEntries(
+                              server.env.map((v) => [v.name, v.value]),
+                          ),
                       }),
             );
             clients.push(client);
-            let cursor: string | undefined;
-            do {
-                const page = await client.listTools(
-                    cursor ? { cursor } : undefined,
-                );
-                for (const tool of page.tools) {
-                    const name = toolName(tools, server.name, tool.name);
-                    if (!name) {
-                        printWarn(
-                            `Skipping MCP tool ${server.name}/${tool.name}`,
-                        );
-                        continue;
-                    }
-                    tools.set(name, {
-                        client,
-                        name: tool.name,
-                        definition: {
-                            type: "function",
-                            name,
-                            description: tool.description,
-                            parameters: tool.inputSchema,
-                        },
-                    });
+            // Without a cursor, listTools returns every page.
+            for (const tool of (await client.listTools()).tools) {
+                const name = toolName(tools, server.name, tool.name);
+                if (!name) {
+                    printWarn(`Skipping MCP tool ${server.name}/${tool.name}`);
+                    continue;
                 }
-                cursor = page.nextCursor;
-            } while (cursor);
+                tools.set(name, {
+                    client,
+                    name: tool.name,
+                    definition: {
+                        type: "function",
+                        name,
+                        description: tool.description,
+                        parameters: tool.inputSchema,
+                    },
+                });
+            }
         } catch (error) {
             printWarn(
                 `MCP server ${server.name} failed: ${errorMessage(error)}`,
@@ -346,8 +332,9 @@ const runEditorTool = async (
             ],
         });
         if (outcome.outcome === "cancelled") return undefined;
-        if (outcome.optionId === "always") session.alwaysAllowed.add(call.name);
-        if (outcome.optionId === "reject") {
+        const { optionId } = outcome;
+        if (optionId === "always") session.alwaysAllowed.add(call.name);
+        if (optionId !== "allow" && optionId !== "always") {
             const text = "The user rejected this tool call.";
             await update({
                 sessionUpdate: "tool_call_update",
@@ -392,7 +379,19 @@ const runEditorTool = async (
     return JSON.stringify(result);
 };
 
-/** Runs one prompt turn. History is kept only when the turn finishes. */
+/** Drops function calls without a result; gen rejects them in history. */
+const answered = (items: Item[]) => {
+    const done = new Set(
+        items
+            .filter((item) => item.type === "function_call_output")
+            .map((item) => item.call_id),
+    );
+    return items.filter(
+        (item) => item.type !== "function_call" || done.has(item.call_id),
+    );
+};
+
+/** Runs one prompt turn and adds what finished to the session's history. */
 const prompt = async (
     session: Session,
     blocks: ContentBlock[],
@@ -416,20 +415,19 @@ const prompt = async (
                 signal,
                 update,
             );
+            if (stop === "refusal") {
+                // ACP leaves a refused turn out of later prompts.
+                input.length = session.history.length;
+                return { stopReason: stop };
+            }
             input.push(...output);
-            const answered = new Set(
-                output
-                    .filter((item) => item.type === "function_call_output")
-                    .map((item) => item.call_id),
-            );
+            // Gen runs hosted tools (mcp__…); calls to editor tools come back.
             const calls = output.filter(
                 (item): item is Item & FunctionCall =>
                     item.type === "function_call" &&
-                    !answered.has(item.call_id) &&
                     session.tools.has(String(item.name)),
             );
             if (stop || !calls.length) {
-                session.history = input;
                 return { stopReason: stop ?? "end_turn" };
             }
             for (const call of calls) {
@@ -448,15 +446,13 @@ const prompt = async (
                 });
             }
         }
-        session.history = input;
         return { stopReason: "max_turn_requests" };
     } catch (error) {
         if (signal.aborted) return { stopReason: "cancelled" };
-        if (error instanceof ApiError && error.status === 401) {
-            const { RequestError } = await import("@agentclientprotocol/sdk");
-            throw RequestError.authRequired();
-        }
         throw error;
+    } finally {
+        // Also after a cancel or error, so tools that already ran stay known.
+        session.history = answered(input);
     }
 };
 
@@ -477,10 +473,11 @@ export const acpAgent = async (defaultAgent?: string) => {
             agentCapabilities: {
                 promptCapabilities: { image: true, embeddedContext: true },
                 mcpCapabilities: { http: true },
+                sessionCapabilities: { close: {} },
             },
             authMethods: [
                 {
-                    id: LOGIN_METHOD,
+                    id: "pollinations-login",
                     name: "Sign in to Pollinations",
                     description:
                         "Approve a key in your browser, or set POLLINATIONS_API_KEY.",
@@ -494,11 +491,13 @@ export const acpAgent = async (defaultAgent?: string) => {
         }))
         .onRequest("authenticate", async () => {
             try {
-                await loginWithDeviceFlow();
-            } catch (error) {
+                // Beats a stale POLLINATIONS_API_KEY from the editor's env.
+                setKeyOverride(await loginWithDeviceFlow());
+            } catch {
+                // The reason is already in the agent's log (stderr).
                 throw RequestError.internalError(
                     undefined,
-                    errorMessage(error),
+                    "Sign-in failed. Run polli auth login in a terminal, or set POLLINATIONS_API_KEY.",
                 );
             }
             return {};
@@ -532,14 +531,37 @@ export const acpAgent = async (defaultAgent?: string) => {
             ) {
                 throw RequestError.invalidParams(undefined, "Unknown option");
             }
-            found.agent = params.value;
+            if (found.agent !== params.value) {
+                found.agent = params.value;
+                // "Always allow" was granted to the previous agent's author.
+                found.alwaysAllowed.clear();
+            }
             return { configOptions: [agentOption(found)] };
         })
-        .onRequest("session/prompt", ({ params, client, signal }) =>
-            prompt(session(params.sessionId), params.prompt, client, signal),
-        )
+        .onRequest("session/prompt", async ({ params, client, signal }) => {
+            const found = session(params.sessionId);
+            try {
+                return await prompt(found, params.prompt, client, signal);
+            } catch (error) {
+                if (error instanceof ApiError && error.status === 401) {
+                    throw RequestError.authRequired();
+                }
+                // Otherwise the editor shows only "Internal error".
+                throw RequestError.internalError(
+                    undefined,
+                    errorMessage(error),
+                );
+            }
+        })
         .onNotification("session/cancel", ({ params }) => {
             sessions.get(params.sessionId)?.cancel?.abort();
+        })
+        .onRequest("session/close", async ({ params }) => {
+            const found = session(params.sessionId);
+            found.cancel?.abort();
+            sessions.delete(found.id);
+            await Promise.all(found.clients.map((client) => client.close()));
+            return {};
         });
     const close = () =>
         Promise.all(
@@ -553,15 +575,20 @@ export const acpAgent = async (defaultAgent?: string) => {
 const serve = async (agent?: string) => {
     const { ndJsonStream } = await import("@agentclientprotocol/sdk");
     const { app, close } = await acpAgent(agent);
-    // stdout carries the protocol; polli's messages already go to stderr.
+    // stdout carries the protocol. polli prints to stderr, but libraries log
+    // with console (the MCP client's listTools does), so send that there too.
+    console.log = console.info = console.debug = console.error;
     const connection = app.connect(
         ndJsonStream(
             Writable.toWeb(process.stdout) as WritableStream<Uint8Array>,
             Readable.toWeb(process.stdin) as ReadableStream<Uint8Array>,
         ),
     );
-    await connection.closed;
-    await close();
+    try {
+        await connection.closed;
+    } finally {
+        await close();
+    }
 };
 
 export const acpCommand = new Command("acp")

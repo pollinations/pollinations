@@ -13,6 +13,11 @@ const sse = (events: Record<string, unknown>[]) =>
         { headers: { "Content-Type": "text/event-stream" } },
     );
 
+const user = (text: string) => ({
+    role: "user",
+    content: [{ type: "input_text", text }],
+});
+
 const hostedCall = {
     type: "function_call",
     id: "fc_1",
@@ -43,6 +48,55 @@ const message = {
     content: [{ type: "output_text", text: "Hi", annotations: [] }],
 };
 
+const noteSchema = {
+    type: "object",
+    properties: { title: { type: "string" } },
+};
+
+/** Answers gen with `responses` in order, and http://mcp.test as an MCP
+ * server with one `read_note` tool. */
+const stubFetch = (responses: Response[]) => {
+    const bodies: { model: string; input: Record<string, unknown>[] }[] = [];
+    const toolCalls: unknown[] = [];
+    vi.stubGlobal("fetch", async (url: string | URL, init: RequestInit) => {
+        const href = String(url);
+        if (href.endsWith("/v1/models?agent=true")) {
+            return Response.json({
+                data: [{ id: "community/ada/helper", title: "Helper" }],
+            });
+        }
+        if (href.startsWith("http://mcp.test/")) {
+            if (init.method !== "POST")
+                return new Response(null, { status: 405 });
+            const request = JSON.parse(String(init.body));
+            if (request.id === undefined)
+                return new Response(null, { status: 202 });
+            if (request.method === "tools/call") toolCalls.push(request.params);
+            const results: Record<string, unknown> = {
+                initialize: {
+                    protocolVersion: request.params?.protocolVersion,
+                    capabilities: { tools: {} },
+                    serverInfo: { name: "notes", version: "1.0.0" },
+                },
+                "tools/list": {
+                    tools: [{ name: "read_note", inputSchema: noteSchema }],
+                },
+                "tools/call": {
+                    content: [{ type: "text", text: "buy apples" }],
+                },
+            };
+            return Response.json({
+                jsonrpc: "2.0",
+                id: request.id,
+                result: results[request.method],
+            });
+        }
+        bodies.push(JSON.parse(String(init.body)));
+        return responses.shift() as Response;
+    });
+    return { bodies, toolCalls };
+};
+
 afterEach(() => {
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
@@ -51,7 +105,7 @@ afterEach(() => {
 describe("polli acp", () => {
     it("streams a hosted agent's turn and replays it as history", async () => {
         vi.stubEnv("POLLINATIONS_API_KEY", "sk_test");
-        const responses = [
+        const { bodies } = stubFetch([
             sse([
                 { type: "response.output_item.done", item: hostedCall },
                 { type: "response.output_item.done", item: hostedOutput },
@@ -67,24 +121,8 @@ describe("polli acp", () => {
                     },
                 },
             ]),
-        ];
-        const bodies: { model: string; input: unknown[] }[] = [];
-        vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
-            if (url.endsWith("/v1/models")) {
-                return Response.json({
-                    data: [
-                        { id: "openai", agent: false },
-                        {
-                            id: "community/ada/helper",
-                            title: "Helper",
-                            agent: true,
-                        },
-                    ],
-                });
-            }
-            bodies.push(JSON.parse(String(init.body)));
-            return responses.shift() as Response;
-        });
+            sse([{ type: "response.completed" }]),
+        ]);
 
         const updates: SessionUpdate[] = [];
         const { app } = await acpAgent();
@@ -109,16 +147,14 @@ describe("polli acp", () => {
                     ],
                 });
 
-                const first = await ctx.request("session/prompt", {
-                    sessionId: session.sessionId,
-                    prompt: [{ type: "text", text: "Find bees" }],
-                });
-                expect(first.stopReason).toBe("end_turn");
-                const second = await ctx.request("session/prompt", {
-                    sessionId: session.sessionId,
-                    prompt: [{ type: "text", text: "Again" }],
-                });
-                expect(second.stopReason).toBe("refusal");
+                const turn = (text: string) =>
+                    ctx.request("session/prompt", {
+                        sessionId: session.sessionId,
+                        prompt: [{ type: "text", text }],
+                    });
+                expect((await turn("Find bees")).stopReason).toBe("end_turn");
+                expect((await turn("Again")).stopReason).toBe("refusal");
+                expect((await turn("Third")).stopReason).toBe("end_turn");
             });
 
         expect(updates).toEqual([
@@ -146,21 +182,117 @@ describe("polli acp", () => {
                 content: { type: "text", text: "Hi" },
             },
         ]);
+        const firstTurn = [
+            user("Find bees"),
+            hostedCall,
+            hostedOutput,
+            message,
+        ];
         expect(bodies[1]).toMatchObject({
             model: "community/ada/helper",
-            input: [
-                {
-                    role: "user",
-                    content: [{ type: "input_text", text: "Find bees" }],
+            input: [...firstTurn, user("Again")],
+        });
+        // ACP leaves the refused turn out of later prompts.
+        expect(bodies[2].input).toEqual([...firstTurn, user("Third")]);
+    });
+
+    it("runs editor MCP tools only when the user allows them", async () => {
+        vi.stubEnv("POLLINATIONS_API_KEY", "sk_test");
+        const noteCall = (id: string) => ({
+            type: "function_call",
+            id: `fc_${id}`,
+            call_id: id,
+            name: "read_note",
+            arguments: '{"title":"groceries"}',
+            status: "completed",
+        });
+        const { bodies, toolCalls } = stubFetch([
+            sse([
+                { type: "response.output_item.done", item: noteCall("call_a") },
+                { type: "response.completed" },
+            ]),
+            sse([
+                { type: "response.output_item.done", item: message },
+                { type: "response.completed" },
+            ]),
+            sse([
+                { type: "response.output_item.done", item: noteCall("call_b") },
+                { type: "response.completed" },
+            ]),
+            sse([{ type: "response.completed" }]),
+        ]);
+
+        // The editor answers the first permission request with Allow and the
+        // second with an option the bridge never offered.
+        const answers = ["allow", "unknown"];
+        const { app, close } = await acpAgent();
+        await client({ name: "test" })
+            .onNotification("session/update", () => undefined)
+            .onRequest("session/request_permission", () => ({
+                outcome: {
+                    outcome: "selected",
+                    optionId: answers.shift() as string,
                 },
-                hostedCall,
-                hostedOutput,
-                message,
-                {
-                    role: "user",
-                    content: [{ type: "input_text", text: "Again" }],
-                },
+            }))
+            .connectWith(app, async (ctx) => {
+                await ctx.request("initialize", {
+                    protocolVersion: 1,
+                    clientCapabilities: {},
+                });
+                const { sessionId } = await ctx.request("session/new", {
+                    cwd: "/tmp",
+                    mcpServers: [
+                        {
+                            type: "http",
+                            name: "notes",
+                            url: "http://mcp.test/mcp",
+                            headers: [],
+                        },
+                    ],
+                });
+                for (const text of ["Read groceries", "Read it again"]) {
+                    const { stopReason } = await ctx.request("session/prompt", {
+                        sessionId,
+                        prompt: [{ type: "text", text }],
+                    });
+                    expect(stopReason).toBe("end_turn");
+                }
+            });
+        await close();
+
+        expect(bodies[0]).toMatchObject({
+            tools: [
+                { type: "function", name: "read_note", parameters: noteSchema },
             ],
         });
+        expect(toolCalls).toMatchObject([
+            { name: "read_note", arguments: { title: "groceries" } },
+        ]);
+        expect(
+            bodies[3].input.filter(
+                (item) => item.type === "function_call_output",
+            ),
+        ).toEqual([
+            {
+                type: "function_call_output",
+                call_id: "call_a",
+                output: JSON.stringify({
+                    content: [{ type: "text", text: "buy apples" }],
+                }),
+            },
+            {
+                type: "function_call_output",
+                call_id: "call_b",
+                output: JSON.stringify({
+                    isError: true,
+                    content: [
+                        {
+                            type: "text",
+                            text: "The user rejected this tool call.",
+                        },
+                    ],
+                }),
+            },
+        ]);
     });
 });

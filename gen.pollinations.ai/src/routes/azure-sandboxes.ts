@@ -63,6 +63,13 @@ type Row = typeof azureSandbox.$inferSelect;
 
 export const isAzureSandbox = (id: string) => AZURE_ID.test(id);
 
+// SDKs build port hosts from sandboxID + domain. Staging's public ID keeps
+// that host within the existing one-level wildcard certificate.
+export const rawSandboxId = (env: CloudflareBindings, id: string) =>
+    env.ENVIRONMENT === "staging" && id.endsWith("--staging")
+        ? id.slice(0, -"--staging".length)
+        : id;
+
 // Whether an E2B API path names an Azure sandbox.
 export const isAzurePath = (path: string) =>
     isAzureSandbox(
@@ -489,7 +496,7 @@ export async function stopExpiredAzureSandboxes(env: CloudflareBindings) {
 // reach both providers' sandboxes through here. envd checks the caller's
 // token itself.
 export async function proxyEnvd(c: Context<Env>, prefix: string) {
-    const id = c.req.header("e2b-sandbox-id") ?? "";
+    const id = rawSandboxId(c.env, c.req.header("e2b-sandbox-id") ?? "");
     if (c.req.header("e2b-sandbox-port") !== String(ENVD_PORT)) {
         return e2bError(400, `Only envd's port ${ENVD_PORT} is served here.`);
     }
@@ -502,7 +509,9 @@ export async function proxyEnvd(c: Context<Env>, prefix: string) {
               ? "https://sandbox.e2b.app"
               : null;
     if (!target) return notFound(id);
-    const response = await fetch(new Request(`${target}${rest}`, c.req.raw));
+    const request = new Request(`${target}${rest}`, c.req.raw);
+    request.headers.set("e2b-sandbox-id", id);
+    const response = await fetch(request);
     const headers = new Headers(response.headers);
     // Never let a sandbox's answer run as a page of gen's.
     headers.set("content-security-policy", "sandbox");

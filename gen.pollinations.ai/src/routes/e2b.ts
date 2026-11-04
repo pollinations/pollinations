@@ -50,6 +50,7 @@ import {
     isAzureSandbox,
     OWNER_KEY,
     proxyEnvd,
+    rawSandboxId,
     sandboxHost,
 } from "./azure-sandboxes.ts";
 import { sandboxDocs } from "./e2b-docs.ts";
@@ -164,8 +165,20 @@ type E2bContext = Context<Env>;
 // Gen serves every sandbox's envd and ports at <port>-<id>.<SANDBOX_DOMAIN>
 // (servePort), for both providers. E2B's SDKs build those URLs from the
 // `domain` they are given, so callers reach sandboxes through gen.
-const servedByGen = <T extends object>(env: Env["Bindings"], sandbox: T) =>
-    env.SANDBOX_DOMAIN ? { ...sandbox, domain: env.SANDBOX_DOMAIN } : sandbox;
+const publicSandboxId = (env: CloudflareBindings, id: string) =>
+    env.ENVIRONMENT === "staging" ? `${id}--staging` : id;
+
+const servedByGen = <T extends { sandboxID: string }>(
+    env: Env["Bindings"],
+    sandbox: T,
+) =>
+    env.SANDBOX_DOMAIN
+        ? {
+              ...sandbox,
+              sandboxID: publicSandboxId(env, sandbox.sandboxID),
+              domain: env.SANDBOX_DOMAIN,
+          }
+        : sandbox;
 
 // Where the sandbox's provider serves `port`.
 const providerOrigin = (
@@ -176,6 +189,10 @@ const providerOrigin = (
     `https://${sandboxHost(sandboxID, port, isAzureSandbox(sandboxID) ? azureDomain(env) : null)}`;
 
 function e2b(env: CloudflareBindings, path: string, init: RequestInit = {}) {
+    path = path.replace(
+        /^(\/(?:v2\/)?sandboxes\/)([^/?]+)/,
+        (_, prefix, id) => `${prefix}${rawSandboxId(env, id)}`,
+    );
     if (isAzurePath(path)) return azureE2b(env, path, init);
     const headers = new Headers(init.headers);
     headers.set("x-api-key", env.E2B_API_KEY ?? "");
@@ -716,7 +733,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .post("/sandboxes/:id/pause", sandboxDocs.pause, async (c) => {
             const response = await ownerOnly(c);
             if (response.ok && !keeper) {
-                await setKeep(c, c.req.param("id"), null, null);
+                await setKeep(c, rawSandboxId(c.env, c.req.param("id")), null);
             }
             return response;
         })
@@ -835,7 +852,9 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     target: [sandboxPort.sandboxId, sandboxPort.port],
                     set: share,
                 });
-            return c.json({ url: `https://${port}-${sandboxID}.${domain}` });
+            return c.json({
+                url: `https://${port}-${publicSandboxId(c.env, sandboxID)}.${domain}`,
+            });
         })
         .delete(
             "/sandboxes/:id/ports/:port",
@@ -1027,7 +1046,11 @@ export function sandboxPortHost(env: Env["Bindings"], hostname: string) {
     if (!env.SANDBOX_DOMAIN || !hostname.endsWith(suffix)) return null;
     const match = hostname.slice(0, -suffix.length).match(/^(\d{1,5})-(.+)$/);
     const port = Number(match?.[1]);
-    const sandboxID = match?.[2] ?? "";
+    const publicID = match?.[2] ?? "";
+    if (env.ENVIRONMENT === "staging" && !publicID.endsWith("--staging")) {
+        return null;
+    }
+    const sandboxID = rawSandboxId(env, publicID);
     return port >= 1 &&
         port <= 65535 &&
         (/^[a-z0-9]+$/.test(sandboxID) || isAzureSandbox(sandboxID))
@@ -1131,6 +1154,14 @@ async function forwardPort(
     ctx: ExecutionContext,
     { port, sandboxID }: { port: number; sandboxID: string },
 ) {
+    if (
+        env.ENVIRONMENT === "staging" &&
+        request.headers.has("e2b-sandbox-id")
+    ) {
+        const headers = new Headers(request.headers);
+        headers.set("e2b-sandbox-id", sandboxID);
+        request = new Request(request, { headers });
+    }
     // envd checks its own token, so its port is never shared. A call it
     // accepts is the owner's work in the sandbox: activity.
     if (port === ENVD_PORT) {
@@ -1179,12 +1210,12 @@ async function forwardPort(
     // sandbox have stopped inside the cached lease.
     const length = request.headers.get("content-length");
     const small = length !== null && Number(length) <= 1_000_000;
-    const replay =
-        request.body === null
-            ? request
-            : woken === cached && small
-              ? request.clone()
-              : null;
+    let replay: Request | null = null;
+    if (request.body === null) {
+        replay = request;
+    } else if (woken === cached && small) {
+        replay = request.clone();
+    }
     const response = await send(request, woken.origin, woken.token);
     // E2B answers 502 "The sandbox was not found" for a sandbox that stopped
     // inside the cached lease: paused idle or by its owner, or killed. A

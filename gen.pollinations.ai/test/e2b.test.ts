@@ -42,6 +42,7 @@ type PortRequest = {
     path: string;
     trafficToken: string | null;
     body: string;
+    sandboxID?: string | null;
 };
 
 type WrittenFile = {
@@ -108,6 +109,9 @@ function stubE2b() {
                 path: url.pathname + url.search,
                 trafficToken: request.headers.get("e2b-traffic-access-token"),
                 body: await request.text(),
+                ...(request.headers.has("e2b-sandbox-id") && {
+                    sandboxID: request.headers.get("e2b-sandbox-id"),
+                }),
             });
             // Like polli's websocat in front of sshd, but an echo.
             if (request.headers.get("upgrade") === "websocket") {
@@ -943,6 +947,131 @@ test("only hosts of the form <port>-<sandbox id> under the sandbox domain name a
     ]) {
         expect(sandboxPortHost(env, host), host).toBeNull();
     }
+    const staging = { ...env, ENVIRONMENT: "staging" as const };
+    for (const sandboxID of ["ixyz123", azure]) {
+        expect(
+            sandboxPortHost(
+                staging,
+                `8080-${sandboxID}--staging.pollinations.app`,
+            ),
+        ).toEqual({ port: 8080, sandboxID });
+        expect(
+            sandboxPortHost(staging, `8080-${sandboxID}.pollinations.app`),
+        ).toBeNull();
+    }
+    expect(
+        sandboxPortHost(staging, "8080-ixyz123.staging.pollinations.app"),
+    ).toBeNull();
+});
+
+test("staging SDK IDs route single-level hosts while provider, keep and port IDs stay raw", async () => {
+    const e2b = stubE2b();
+    const ownerEmail = "sandbox-staging-owner@test.local";
+    const otherEmail = "sandbox-staging-other@test.local";
+    const owner = await createTestApiKey({
+        accountPermissions: ["machines"],
+        user: { tierBalance: 10, email: ownerEmail },
+    });
+    const other = await createTestApiKey({
+        accountPermissions: ["machines"],
+        user: { tierBalance: 10, email: otherEmail },
+    });
+    const staging = {
+        ...env,
+        ENVIRONMENT: "staging" as const,
+        STAGING_ALLOWED_EMAILS: `${ownerEmail},${otherEmail}`,
+    };
+    const fetchStaging = async (url: string, init: RequestInit = {}) => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(url, init),
+            staging,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response;
+    };
+    const api = (
+        path: string,
+        body?: unknown,
+        key = owner.key,
+        method = "POST",
+    ) =>
+        fetchStaging(`https://staging.gen.pollinations.ai/alpha/e2b${path}`, {
+            method,
+            headers: { "x-api-key": key, "content-type": "application/json" },
+            ...(body !== undefined && { body: JSON.stringify(body) }),
+        });
+    const created = await api("/v2/sandboxes", {
+        templateID: "base",
+        timeout: 1800,
+    });
+    expect(created.status).toBe(201);
+    const { sandboxID, domain } = await created.json<{
+        sandboxID: string;
+        domain: string;
+    }>();
+    const rawID = e2b.sandboxes[0].sandboxID;
+    expect(sandboxID).toBe(`${rawID}--staging`);
+    expect(domain).toBe("pollinations.app");
+    expect(await keeps()).toMatchObject([{ sandboxId: rawID }]);
+    const path = `/sandboxes/${sandboxID}`;
+    expect(
+        await (await api(path, undefined, owner.key, "GET")).json(),
+    ).toMatchObject({ sandboxID, domain });
+    expect(
+        await (await api("/v2/sandboxes", undefined, owner.key, "GET")).json(),
+    ).toMatchObject([{ sandboxID, domain }]);
+    expect((await api(path, undefined, other.key, "GET")).status).toBe(404);
+    const share = await api(
+        `${path}/ports/8080`,
+        { secret: SECRET },
+        owner.key,
+        "PUT",
+    );
+    expect(await share.json()).toEqual({
+        url: `https://8080-${sandboxID}.${domain}`,
+    });
+    expect(await drizzle(env.DB).select().from(sandboxPort)).toMatchObject([
+        { sandboxId: rawID },
+    ]);
+    expect((await api(`${path}/pause`)).status).toBe(204);
+    expect(await keeps()).toEqual([]);
+
+    const url = `https://8080-${sandboxID}.${domain}/hello`;
+    expect((await fetchStaging(url)).status).toBe(403);
+    expect(e2b.sandboxes[0].state).toBe("paused");
+    expect(e2b.portRequests).toEqual([]);
+    const awake = await fetchStaging(url, {
+        headers: {
+            "x-pollinations-secret": SECRET,
+            "e2b-sandbox-id": sandboxID,
+        },
+    });
+    expect(await awake.text()).toBe("port 8080 says hi");
+    expect(e2b.portRequests).toMatchObject([
+        { host: `8080-${rawID}.e2b.app`, sandboxID: rawID },
+    ]);
+    const connected = await api(`/v2/sandboxes/${sandboxID}/connect`, {
+        timeout: 1800,
+    });
+    expect(await connected.json()).toMatchObject({ sandboxID, domain });
+    expect(await keeps()).toMatchObject([{ sandboxId: rawID }]);
+    expect((await api(`${path}/timeout`, { timeout: 900 })).status).toBe(204);
+    expect(
+        await (
+            await api(`/sandboxes/${rawID}`, undefined, owner.key, "GET")
+        ).json(),
+    ).toMatchObject({ sandboxID });
+    expect(
+        (await api(`${path}/ports/8080`, undefined, owner.key, "DELETE"))
+            .status,
+    ).toBe(204);
+    expect(await drizzle(env.DB).select().from(sandboxPort)).toEqual([]);
+    expect((await api(`${path}/pause`)).status).toBe(204);
+    expect(await keeps()).toEqual([]);
+    expect((await api(path, undefined, owner.key, "DELETE")).status).toBe(204);
+    expect(e2b.sandboxes).toEqual([]);
 });
 
 test("a shared port wakes its paused sandbox, paid in advance by the key that shared it", async () => {

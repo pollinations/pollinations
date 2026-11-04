@@ -266,14 +266,9 @@ pattern = "staging.gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
-# User sites (src/sites.ts). Hosts starting with a digit stay with sandbox ports.
+# User sites and sandbox ports (src/sites.ts and src/routes/e2b.ts).
 [[env.staging.routes]]
 pattern = "*--staging.pollinations.app/*"
-zone_name = "pollinations.app"
-
-# Sandbox ports (src/routes/e2b.ts): E2B's SDKs put a dot before the domain.
-[[env.staging.routes]]
-pattern = "*.staging.pollinations.app/*"
 zone_name = "pollinations.app"
 
 [[env.staging.services]]
@@ -379,7 +374,7 @@ deleted_classes = ["PollenRateLimiter"]
 [env.staging.vars]
 ENVIRONMENT = "staging"
 SITES_HOST_SUFFIX = "--staging.pollinations.app"
-SANDBOX_DOMAIN = "staging.pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"

@@ -439,3 +439,87 @@ test("E2B's SDKs reach envd and ports in either provider's sandboxes through gen
     }
     expect((await visit(`8022-${id}.pollinations.app`)).status).toBe(404);
 });
+
+test("staging public IDs reach Azure control and both providers' envd without changing stored IDs", async () => {
+    const azure = stubAzure();
+    const email = "azure-staging-owner@test.local";
+    const owner = await createTestApiKey({
+        accountPermissions: ["machines", "keys"],
+        user: { tierBalance: 10, email },
+    });
+    const staging = {
+        ...azureEnv,
+        ENVIRONMENT: "staging" as const,
+        STAGING_ALLOWED_EMAILS: email,
+    };
+    const created = await fetchGen(
+        owner.key,
+        "/v2/sandboxes",
+        {
+            method: "POST",
+            body: JSON.stringify({
+                templateID: "pollinations-azure",
+                timeout: 300,
+            }),
+        },
+        staging,
+    );
+    expect(created.status).toBe(201);
+    const { sandboxID, domain } = await created.json<{
+        sandboxID: string;
+        domain: string;
+    }>();
+    const rawID = azure.boxes[0].id;
+    expect(sandboxID).toBe(`${rawID}--staging`);
+    expect(domain).toBe("pollinations.app");
+    expect(await rows()).toMatchObject([{ sandboxId: rawID }]);
+    expect(
+        await (
+            await fetchGen(owner.key, `/sandboxes/${sandboxID}`, {}, staging)
+        ).json(),
+    ).toMatchObject({ sandboxID });
+
+    for (const id of [sandboxID, "abc123--staging"]) {
+        const response = await fetchGen(
+            "",
+            "/sandbox/files?path=/x",
+            {
+                headers: {
+                    "e2b-sandbox-id": id,
+                    "e2b-sandbox-port": "49983",
+                    "x-access-token": "token",
+                },
+            },
+            staging,
+        );
+        expect(response.status).toBe(200);
+        expect(azure.envd.at(-1)?.headers.get("e2b-sandbox-id")).toBe(
+            id.slice(0, -"--staging".length),
+        );
+    }
+    const ctx = createExecutionContext();
+    const port = await worker.fetch(
+        new Request(`https://49983-${sandboxID}.${domain}/files?path=/x`, {
+            headers: { "e2b-sandbox-id": sandboxID, "x-access-token": "token" },
+        }),
+        staging,
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(port.status).toBe(200);
+    expect(azure.envd.at(-1)?.url).toBe(
+        `https://${rawID}--49983.eastus.adcproxy.io/files?path=/x`,
+    );
+    expect(azure.envd.at(-1)?.headers.get("e2b-sandbox-id")).toBe(rawID);
+    expect(
+        (
+            await fetchGen(
+                owner.key,
+                `/sandboxes/${sandboxID}`,
+                { method: "DELETE" },
+                staging,
+            )
+        ).status,
+    ).toBe(204);
+    expect(await rows()).toEqual([]);
+});

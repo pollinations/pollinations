@@ -174,6 +174,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "research",
+                alpha: true,
+                name: "Research",
+                description:
+                    "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+                url: "https://gen.pollinations.ai/mcp/research",
+                pricing: {
+                    description:
+                        "Research lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

@@ -54,7 +54,8 @@ export type McpBindingName =
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
     | "MACHINES_MCP"
-    | "CALCULATORS_MCP";
+    | "CALCULATORS_MCP"
+    | "RESEARCH_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -255,6 +256,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Local utilities and public ECB rates. No Pollen charge.",
+            rates: [],
+        },
+    },
+    {
+        id: "research",
+        alpha: true,
+        name: "Research",
+        description:
+            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+        binding: "RESEARCH_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Research lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

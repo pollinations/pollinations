@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { MAX_REWARD_AMOUNT } from "@shared/billing/rewards.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -32,8 +33,6 @@ const PR_REWARD = 5;
 // Set it to the production deploy day: old Enter pays a first PR merged after
 // this date once more, under the old quest id.
 const REWARDS_START = "2026-11-05T00:00:00Z";
-// Bounties come from an editable issue body, so cap what an edit can pay.
-const BOUNTY_LIMIT = 100;
 const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
     "DRAFT-QUEST",
     "APP-SUBMISSION",
@@ -222,10 +221,8 @@ type ReportedIssueNode = {
     labels: { nodes: { name: string }[] };
     closedByPullRequestsReferences: {
         nodes: {
-            number: number;
             mergedAt: string | null;
             repository: { nameWithOwner: string };
-            author: GitHubUser | null;
         }[];
     };
 };
@@ -312,7 +309,7 @@ query($query:String!,$after:String){
         number title url createdAt author{ ... on User{ databaseId } }
         labels(first:20){ nodes{ name } }
         closedByPullRequestsReferences(first:10){
-          nodes{ number mergedAt repository{ nameWithOwner } author{ ... on User{ databaseId } } }
+          nodes{ mergedAt repository{ nameWithOwner } }
         }
       }
     }
@@ -338,9 +335,10 @@ function parseReward(body: string): number | null {
     const match = body.match(QUEST_REWARD_REGEX);
     if (!match) return null;
     const amount = Number(match[1]);
-    // An out-of-range amount must not become a payable quest: recordRewards
-    // also throws on amounts it can't record, and one throw fails the check.
-    if (!Number.isFinite(amount) || amount <= 0 || amount > BOUNTY_LIMIT)
+    // The body is author-editable. An out-of-range amount must not become a
+    // payable quest: recordRewards throws on amounts outside
+    // (0, MAX_REWARD_AMOUNT], and one throw fails the whole quest check.
+    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_REWARD_AMOUNT)
         return null;
     return amount;
 }
@@ -558,12 +556,8 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
         REPORTED_ISSUES_QUERY,
         `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-06-25`,
     );
-    // Each of the user's own PRs pays for one of their issues at most, so a
-    // batch of reports closed by one self-made PR pays once. Oldest issue
-    // first, so every check picks the same one.
-    const ownPrsUsed = new Set<number>();
     const proposals: QuestEvaluation["proposals"] = [];
-    for (const issue of issues.sort((a, b) => a.number - b.number)) {
+    for (const issue of issues) {
         if (
             issue.author?.databaseId !== user.githubId ||
             ISSUE_REPORT_EXCLUDED_TITLE.test(issue.title) ||
@@ -574,19 +568,14 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
             continue;
         }
         // Only a merge into this repository after the issue opened fixed it.
-        const merges = issue.closedByPullRequestsReferences.nodes.filter(
+        const fixed = issue.closedByPullRequestsReferences.nodes.some(
             (pr) =>
                 pr.mergedAt !== null &&
                 pr.repository.nameWithOwner === REPO &&
                 Date.parse(pr.mergedAt) >= Date.parse(issue.createdAt) &&
                 Date.parse(pr.mergedAt) >= ISSUE_REPORT_START,
         );
-        if (merges.length === 0) continue;
-        if (merges.every((pr) => pr.author?.databaseId === user.githubId)) {
-            const ownPr = merges.find((pr) => !ownPrsUsed.has(pr.number));
-            if (!ownPr) continue;
-            ownPrsUsed.add(ownPr.number);
-        }
+        if (!fixed) continue;
         proposals.push({
             quest: {
                 ...reportedIssueQuest,

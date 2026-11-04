@@ -2499,7 +2499,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
 });
 
-test("a self-fixed issue pays once per own PR; fixes elsewhere or before the report pay nothing", async ({
+test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or before the report pay nothing", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2512,7 +2512,7 @@ test("a self-fixed issue pays once per own PR; fixes elsewhere or before the rep
         other: { number: 9301, author: { databaseId: 999999 } },
     };
     const issues = [
-        // One own PR closes three of the user's issues: only the first pays.
+        // One own PR closes three of the user's issues: all three pay.
         { number: 9201, closer: closers.own },
         { number: 9202, closer: closers.own },
         { number: 9203, closer: closers.own },
@@ -2564,6 +2564,8 @@ test("a self-fixed issue pays once per own PR; fixes elsewhere or before the rep
             .sort(),
     ).toEqual([
         "github:reported_issue:9201",
+        "github:reported_issue:9202",
+        "github:reported_issue:9203",
         "github:reported_issue:9204",
         "github:reported_issue:9205",
     ]);

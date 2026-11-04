@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pollinations-excalidraw-mcp",
+  "account_id": "b6ec751c0862027ba269faf7029b2501",
+  "main": "worker.js",
+  "workers_dev": false,
+  "compatibility_date": "2026-08-26",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "observability": { "enabled": true },
+  // Diagram checkpoints (production-pollinations-excalidraw-mcp-kv).
+  "kv_namespaces": [
+    { "binding": "DIAGRAMS", "id": "5b4d1e6fa948452a9ca9633e5cf5de0c" }
+  ],
+  "env": {
+    "staging": {
+      "name": "pollinations-excalidraw-mcp-staging",
+      "workers_dev": false,
+      "kv_namespaces": [
+        { "binding": "DIAGRAMS", "id": "6ddf902f807b40f089a8056ce48d6c41" }
+      ],
+      "observability": { "enabled": true }
+    }
+  }
+}

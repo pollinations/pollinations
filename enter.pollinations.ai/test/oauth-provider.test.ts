@@ -291,20 +291,9 @@ test("fresh GitHub sign-in resumes the signed OAuth request through the actual c
         redirect: "manual",
     });
     expect(completed.status).toBe(302);
-    const resume = new URL(completed.headers.get("Location") || "");
-    expect(resume.pathname).toBe("/api/auth/oauth2/authorize");
-    const resumed = await SELF.fetch(resume, {
-        headers: {
-            Cookie:
-                completed.headers
-                    .get("Set-Cookie")
-                    ?.match(/better-auth\.session_token=[^;]+/)?.[0] || "",
-            Accept: "text/html",
-        },
-        redirect: "manual",
-    });
-    expect(resumed.status).toBe(302);
-    const app = new URL(resumed.headers.get("Location") || "", BASE);
+    // The provider plugin resumes the signed request inside the callback, so
+    // GitHub's return lands on the app with a code.
+    const app = new URL(completed.headers.get("Location") || "", BASE);
     expect(app.origin + app.pathname).toBe(REDIRECT_URI);
     expect(app.searchParams.get("state")).toBe("test-state");
     expect(app.searchParams.get("code")).toBeTruthy();

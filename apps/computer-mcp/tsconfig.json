@@ -6,7 +6,7 @@
     "lib": ["ES2022", "ESNext.Disposable"],
     "types": [
       "@cloudflare/workers-types",
-      "@cloudflare/vitest-pool-workers/types",
+      "@cloudflare/vitest-plugin/types",
       "vitest/globals"
     ],
     "allowImportingTsExtensions": true,

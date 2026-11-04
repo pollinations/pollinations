@@ -27,6 +27,7 @@ import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-models'
+import { Route as DashboardMyAppsRouteImport } from './routes/_dashboard.my-apps'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
@@ -121,6 +122,11 @@ const DashboardMyModelsRoute = DashboardMyModelsRouteImport.update({
   path: '/my-models',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMyAppsRoute = DashboardMyAppsRouteImport.update({
+  id: '/my-apps',
+  path: '/my-apps',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardModelsRoute = DashboardModelsRouteImport.update({
   id: '/models',
   path: '/models',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
+  '/my-apps': typeof DashboardMyAppsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
+  '/my-apps': typeof DashboardMyAppsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
+  '/_dashboard/my-apps': typeof DashboardMyAppsRoute
   '/_dashboard/my-models': typeof DashboardMyModelsRoute
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/keys'
     | '/models'
+    | '/my-apps'
     | '/my-models'
     | '/news'
     | '/pollen'
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/keys'
     | '/models'
+    | '/my-apps'
     | '/my-models'
     | '/news'
     | '/pollen'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/_dashboard/activity'
     | '/_dashboard/keys'
     | '/_dashboard/models'
+    | '/_dashboard/my-apps'
     | '/_dashboard/my-models'
     | '/_dashboard/news'
     | '/_dashboard/pollen'
@@ -429,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardMyModelsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/my-apps': {
+      id: '/_dashboard/my-apps'
+      path: '/my-apps'
+      fullPath: '/my-apps'
+      preLoaderRoute: typeof DashboardMyAppsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/models': {
       id: '/_dashboard/models'
       path: '/models'
@@ -465,6 +484,7 @@ interface DashboardRouteChildren {
   DashboardActivityRoute: typeof DashboardActivityRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
+  DashboardMyAppsRoute: typeof DashboardMyAppsRoute
   DashboardMyModelsRoute: typeof DashboardMyModelsRoute
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardPollenRoute: typeof DashboardPollenRoute
@@ -478,6 +498,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardActivityRoute: DashboardActivityRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
+  DashboardMyAppsRoute: DashboardMyAppsRoute,
   DashboardMyModelsRoute: DashboardMyModelsRoute,
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardPollenRoute: DashboardPollenRoute,

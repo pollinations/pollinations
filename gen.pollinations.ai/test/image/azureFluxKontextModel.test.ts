@@ -31,6 +31,9 @@ const baseParams: ImageParams = {
 };
 
 beforeEach(() => {
+    // The Workers env fills process.env as in production. These tests cover
+    // the provider call alone, so Content Safety stays unconfigured.
+    vi.stubEnv("AZURE_CONTENT_SAFETY_ENDPOINT", "");
     syncImageEnv(
         {
             AZURE_MYCELI_PROD_API_KEY: "test-azure-key",
@@ -42,6 +45,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
 });
 
 describe("callAzureFluxKontext", () => {
@@ -343,6 +347,24 @@ describe("callAzureFlux11Pro", () => {
             ),
         ).rejects.toMatchObject({
             status: 422,
+            errorCode: "content_policy_violation",
+        });
+    });
+
+    it("maps an explicit refusal to a content policy error", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ data: [], stop_reason: "refusal" }),
+        );
+
+        await expect(
+            callAzureFlux11Pro(
+                "refused request",
+                { ...baseParams, model: "black-forest-labs/flux.1.1-pro" },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 422,
+            upstreamStatus: 200,
             errorCode: "content_policy_violation",
         });
     });

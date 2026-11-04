@@ -46,6 +46,7 @@ interface InferenceportJobResponse {
     status?: "pending" | "processing" | "completed" | "failed";
     data?: InferenceportJobData[];
     error?: string;
+    usage?: { payg_credits_charged?: number };
 }
 
 interface RunOptions {
@@ -59,6 +60,7 @@ export interface InferenceportResult {
     glbBase64?: string;
     plyBase64?: string;
     orbitVideoBase64?: string;
+    cost?: number;
 }
 
 function requireInferenceportToken(): string {
@@ -109,6 +111,13 @@ export async function runInferenceport(
         );
 
         if (job.status === "completed") {
+            const cost = job.usage?.payg_credits_charged;
+            if (cost !== undefined && (!Number.isFinite(cost) || cost < 0)) {
+                throw new InferenceportError(
+                    "InferencePort returned an invalid charge",
+                    502,
+                );
+            }
             const output = job.data?.[0];
             if (!output?.model_glb_b64_bytes && !output?.model_ply_b64_bytes) {
                 throw new InferenceportError(
@@ -120,6 +129,7 @@ export async function runInferenceport(
                 glbBase64: output.model_glb_b64_bytes,
                 plyBase64: output.model_ply_b64_bytes,
                 orbitVideoBase64: output.orbit_video_b64_bytes,
+                cost,
             };
         }
         if (job.status === "failed") {

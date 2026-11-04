@@ -1,7 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { printEstimate } from "../../lib/estimate.js";
 import {
     ExitSignal,
     getOutputMode,
@@ -9,6 +9,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 
 // The response's Content-Type, not the model name, decides the file
 // extension: zimage, flux and most other models return JPEG.
@@ -37,6 +38,7 @@ export function createImageCommand() {
             "Reference image URL(s) for editing/i2i (repeatable)",
         )
         .option("--output <path>", "Save to file (extension inferred)")
+        .option("--estimate", "Show the estimated Pollen cost; don't generate")
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
@@ -61,12 +63,19 @@ export function createImageCommand() {
                 params.set("image", opts.image.join("|"));
             }
 
+            if (opts.estimate)
+                return printEstimate(opts.model, {
+                    kind: "image",
+                    width: Number(opts.width),
+                    height: Number(opts.height),
+                    references: opts.image?.length ?? 0,
+                });
+
             const encodedPrompt = encodeURIComponent(prompt);
             const path = `/image/${encodedPrompt}?${params}`;
 
             // Before the paid request, so a bad --output folder costs nothing.
-            if (opts.output)
-                mkdirSync(dirname(opts.output), { recursive: true });
+            if (opts.output) prepareOutputPath(opts.output);
             if (isHuman) printInfo("Generating image...");
 
             try {

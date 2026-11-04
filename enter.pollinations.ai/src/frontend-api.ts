@@ -12,6 +12,7 @@ import { referralRoutes } from "./routes/referral.ts";
 import { sessionTokenRoutes } from "./routes/session-token.ts";
 import { statusNoticeRoutes } from "./routes/status-notice.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
+import { unsubscribeRoutes } from "./routes/unsubscribe.ts";
 import { x402KeysRoutes } from "./routes/x402-keys.ts";
 
 export const frontendApi = new Hono<Env>()
@@ -27,6 +28,7 @@ export const frontendApi = new Hono<Env>()
     .route("/referral", referralRoutes)
     .route("/analytics", productAnalyticsRoutes)
     .route("/status-notice", statusNoticeRoutes)
-    .route("/quests", questsRoutes);
+    .route("/quests", questsRoutes)
+    .route("/unsubscribe", unsubscribeRoutes);
 
 export type FrontendApiRoutes = typeof frontendApi;

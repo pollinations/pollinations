@@ -17,6 +17,7 @@
 
 // Main client class
 export { Pollinations } from "./client.js";
+export { isOutageError } from "./error-response.js";
 // Extra utilities
 export {
     type AudioResponseExt,
@@ -39,6 +40,8 @@ export {
     configure,
     createKey,
     decision,
+    deleteSite,
+    deploySite,
     editImage,
     embeddings,
     generateAudio,
@@ -55,6 +58,7 @@ export {
     imageGenerate,
     imageUrl,
     listKeys,
+    listSites,
     resetClient,
     revokeKey,
     transcribe,
@@ -68,7 +72,6 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
-
 // Export all types
 export type {
     AccountBalance,
@@ -168,6 +171,9 @@ export type {
     ResponseFormat,
     ScoreAnswer,
     ScoreQuestion,
+    Site,
+    SiteFile,
+    SitesResponse,
     SpeechAlignment,
     SpeechWordTiming,
     TextContentPart,
@@ -194,6 +200,5 @@ export type {
     VideoModel,
     VideoResponse,
 } from "./types.js";
-
 // Export runtime constants and the error class
 export { CHAT_ROUTING_CAPABILITIES, PollinationsError } from "./types.js";

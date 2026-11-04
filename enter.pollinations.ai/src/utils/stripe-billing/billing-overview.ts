@@ -44,15 +44,6 @@ export async function getBillingOverview(
     const lastIssue = await getLastAutoTopUpIssue(env.DB, stripe, userId);
     const packAmountUsd =
         user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD;
-    // Checkouts credit their pack's USD amount as Pollen.
-    const lastCheckout = await env.DB.prepare(
-        `SELECT pollen_credited FROM stripe_checkout_credits
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 1`,
-    )
-        .bind(userId)
-        .first<{ pollen_credited: number }>();
 
     return {
         autoTopUp: {
@@ -60,7 +51,7 @@ export async function getBillingOverview(
             packAmountUsd,
             lastIssue,
         },
-        lastPackAmountUsd: lastCheckout?.pollen_credited ?? null,
+        lastPackPollen: user.lastPackPollen,
         paymentMethods: (savedMethods?.data ?? [])
             .map((method) => toSavedPaymentMethod(method, paymentMethod?.id))
             .sort((a, b) => Number(b.isDefault) - Number(a.isDefault)),

@@ -13,6 +13,7 @@ import discord
 
 from .ai.client import pollinations_client
 from .context import ConversationSession, session_manager
+from .context.evidence import tool_evidence
 from .core.config import config
 from .discord.replies import deliver_reply, deliver_working_reactions
 from .discord.media import (
@@ -1155,6 +1156,9 @@ async def handle_inline_polli_mention(message: discord.Message):
 
             # Build history with system prompt
             full_history = [inline_system_prompt] + channel_history
+            # Channel history only carries Polli's prose; hand back this requester's earlier lookups here.
+            evidence_key = (message.channel.id, message.author.id)
+            full_history += tool_evidence.replay(*evidence_key)
 
             # Process with tools AND history for context
             result = await pollinations_client.process_with_tools(
@@ -1167,6 +1171,7 @@ async def handle_inline_polli_mention(message: discord.Message):
                 is_admin=user_is_admin,
                 tool_context=tool_context,
             )
+            tool_evidence.record(*evidence_key, result.get("tool_calls", []), result.get("tool_results", []))
 
             response_text = result.get("response", "")
             content_blocks = result.get("content_blocks", [])
@@ -1343,13 +1348,20 @@ async def _process_message(
         "discord_message": source_message,
     }
 
+    # Discord history only carries Polli's prose; hand back the lookups behind it as tool data.
+    evidence = tool_evidence.replay(session.thread_id, user.id)
+    if evidence:
+        thread_history = [*(thread_history or []), *evidence]
+
     def take_pending(*, allow_mixed):
         queue = _conversation_queues.get(channel.id, [])
         pending = []
         remaining = []
         for item in queue:
             same_user = item["user"].id == user.id
-            permissions = channel.permissions_for(item["user"]) if not same_user and allow_mixed else None
+            # A turn carrying this requester's earlier tool evidence must not absorb other users.
+            mixable = allow_mixed and not evidence
+            permissions = channel.permissions_for(item["user"]) if not same_user and mixable else None
             if item["source_message"] and (same_user or (permissions and permissions.view_channel and permissions.read_message_history)):
                 pending.append(item)
             else:
@@ -1392,6 +1404,7 @@ async def _process_message(
         tool_calls = result.get("tool_calls", [])
         tool_results = result.get("tool_results", [])
         content_blocks = result.get("content_blocks", [])
+        tool_evidence.record(session.thread_id, user.id, tool_calls, tool_results)
 
         # Decode any base64 images from content_blocks (e.g., from code_execution)
         image_files = decode_base64_images(content_blocks, max_images=10)
@@ -1435,6 +1448,7 @@ async def _process_message(
 
                     # Clear session after successful creation
                     session_manager.clear_session(session)
+                    tool_evidence.clear(session.thread_id)
 
                     # Archive thread after issue creation
                     # Pending requests must survive issue creation and thread archival.

@@ -1,0 +1,42 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+One agent's runs from its owner's own calls in the last 7 days, newest first.
+A run is the agent call plus the model and tool calls made with its run token,
+which carry the call's request id as `parent_request_id`. Other callers' runs
+are left out. `error` is the agent call's error, or else the latest failed
+step's.
+
+NODE endpoint
+SQL >
+    %
+    SELECT
+        if(parent_request_id = '', request_id, parent_request_id) AS run_id,
+        minIf(start_time, parent_request_id = '') AS started_at,
+        anyIf(response_status, parent_request_id = '') AS status,
+        anyIf(response_time, parent_request_id = '') AS duration_ms,
+        anyIf(api_key_name, parent_request_id = '') AS key_name,
+        sum(total_price) AS cost,
+        countIf(parent_request_id != '' AND startsWith(event_type, 'generate.')) AS model_calls,
+        countIf(event_type = 'mcp.call') AS tool_calls,
+        countIf(parent_request_id != '' AND response_status >= 400) AS failed_calls,
+        substring(
+            if(
+                anyIf(error_message, parent_request_id = '') NOT IN ('', 'undefined'),
+                anyIf(error_message, parent_request_id = ''),
+                argMaxIf(error_message, start_time, parent_request_id != '' AND response_status >= 400)
+            ),
+            1,
+            300
+        ) AS error
+    FROM generation_event_v2
+    WHERE user_id = {{String(owner_user_id, required=True)}}
+        AND start_time >= now() - interval 7 day
+        AND is_final
+        AND (parent_request_id != '' OR resolved_model_requested = {{String(model, required=True)}})
+    GROUP BY run_id
+    HAVING countIf(parent_request_id = '') > 0
+    ORDER BY started_at DESC
+    LIMIT 50
+
+TYPE endpoint

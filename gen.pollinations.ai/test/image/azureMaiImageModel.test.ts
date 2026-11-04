@@ -42,6 +42,9 @@ function successResponse(usage: Record<string, number>): Response {
 }
 
 beforeEach(() => {
+    // The Workers env fills process.env as in production. These tests cover
+    // the provider call alone, so Content Safety stays unconfigured.
+    vi.stubEnv("AZURE_CONTENT_SAFETY_ENDPOINT", "");
     syncImageEnv(
         { AZURE_MYCELI_PROD_API_KEY: "test-azure-key" } as CloudflareBindings,
         ["AZURE_MYCELI_PROD_API_KEY"],
@@ -50,6 +53,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
 });
 
 describe("callAzureMaiImage", () => {

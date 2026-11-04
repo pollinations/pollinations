@@ -32,6 +32,8 @@ export default defineConfig([
             "!theme.css",
             "!index.browser.min.js",
             "!index.browser.min.js.map",
+            "!connect.js",
+            "!connect.js.map",
         ],
         minify: false,
         external: [
@@ -70,6 +72,25 @@ export default defineConfig([
                 "react/jsx-dev-runtime":
                     "./src/browser/react-jsx-runtime-global.ts",
             };
+        },
+    },
+    // <polli-connect> as one script for any page: React, the SDK and the
+    // account menu are bundled in; the stylesheet loads from beside it.
+    {
+        entry: { connect: "src/browser/connect.tsx" },
+        format: ["iife"],
+        outDir: "dist",
+        platform: "browser",
+        splitting: false,
+        sourcemap: true,
+        minify: true,
+        dts: false,
+        clean: false,
+        noExternal: [/.*/],
+        outExtension: () => ({ js: ".js" }),
+        define: { "process.env.NODE_ENV": '"production"' },
+        loader: {
+            ".svg": "dataurl",
         },
     },
 ]);

@@ -87,6 +87,10 @@ Collection steps:
 
 3. Query the Neoglyph balance with `firectl account get`. Do not refresh the
    four inactive accounts during normal monthly collection.
+   With CLI 1.7.26, `account get -o json` prints a JSON account object followed
+   by a `Balance: <currency> <amount>` line; parse both rather than treating the
+   entire output as JSON. `billing list-invoices` uses its default text output
+   and does not accept `-o json`. Keep invoice access URLs private.
 4. For monthly usage, sum `account_costs.cost_data_items[].total`.
 5. Attribute invoices by usage month: postpaid invoices dated on the 1st usually cover the previous month.
 6. Keep prepaid credit top-ups separate from usage cost.
@@ -97,7 +101,7 @@ Collection steps:
 - Fireworks account IDs (pass with `-a`; `firectl account list --api-key`
   prints the ID the key can reach):
 
-  | Registry id | Fireworks account ID | Display name | Key (sops `operations/economics/ingest/secrets/env.json`) |
+  | Registry id | Fireworks account ID | Display name | Key (sops `operations/dashboards/economics/ingest/secrets/env.json`) |
   |---|---|---|---|
   | `myceli` | `elliot-l6mb8f24ewds` | Myceli AI | `FIREWORKS_API_KEY_MYCELI` |
   | `pollinations` | `pollinations` | Pollinations.AI | `FIREWORKS_API_KEY` |

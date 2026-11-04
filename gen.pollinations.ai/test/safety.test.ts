@@ -17,7 +17,15 @@ import {
 } from "@shared/schemas/safety.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { Hono, type MiddlewareHandler } from "hono";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    type Mock,
+    vi,
+} from "vitest";
 import type { Env } from "@/env.ts";
 import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -47,7 +55,7 @@ const testLog = {
 } as unknown as LoggerVariables["log"];
 
 let guardrailResponse: BedrockResponse;
-let fetchMock: ReturnType<typeof vi.fn>;
+let fetchMock: Mock<typeof fetch>;
 
 const configuredEnv = {
     AWS_ACCESS_KEY_ID: "test-access-key",
@@ -151,7 +159,9 @@ describe("safety schema", () => {
 describe("applySafetyToInput text", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
-        fetchMock = vi.fn(async () => Response.json(guardrailResponse));
+        fetchMock = vi.fn<typeof fetch>(async () =>
+            Response.json(guardrailResponse),
+        );
         vi.stubGlobal("fetch", fetchMock);
     });
 
@@ -568,7 +578,9 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
 describe("applySafetyToInput", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
-        fetchMock = vi.fn(async () => Response.json(guardrailResponse));
+        fetchMock = vi.fn<typeof fetch>(async () =>
+            Response.json(guardrailResponse),
+        );
         vi.stubGlobal("fetch", fetchMock);
     });
 

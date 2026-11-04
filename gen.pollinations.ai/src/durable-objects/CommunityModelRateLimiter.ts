@@ -11,7 +11,7 @@ type RateLimitState = {
 };
 
 /** One token bucket per model and Pollinations user. */
-export class CommunityModelRateLimiter extends DurableObject {
+export class CommunityModelRateLimiter extends DurableObject<CloudflareBindings> {
     private state: RateLimitState | null = null;
 
     constructor(ctx: DurableObjectState, env: CloudflareBindings) {

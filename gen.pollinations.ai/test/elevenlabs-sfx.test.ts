@@ -14,7 +14,10 @@ describe("ElevenLabs sound effects", () => {
     it("posts prompt, duration, loop and prompt_influence to /v1/sound-generation", async () => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array(16000), {
-                headers: { "content-type": "audio/mpeg" },
+                headers: {
+                    "content-type": "audio/mpeg",
+                    "character-cost": "60",
+                },
             }),
         );
 
@@ -28,9 +31,9 @@ describe("ElevenLabs sound effects", () => {
         });
 
         expect(response.status).toBe(200);
-        // 16000 bytes / 16000 B/s = ~1s of audio billed.
+        // 60 metered credits / 12 per second = 5 billed seconds.
         expect(response.headers.get("x-usage-completion-audio-seconds")).toBe(
-            "1",
+            "5",
         );
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -53,7 +56,10 @@ describe("ElevenLabs sound effects", () => {
     it("clamps duration into the 0.5-30s ElevenLabs range", async () => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array(16000), {
-                headers: { "content-type": "audio/mpeg" },
+                headers: {
+                    "content-type": "audio/mpeg",
+                    "character-cost": "60",
+                },
             }),
         );
 
@@ -89,10 +95,29 @@ describe("ElevenLabs sound effects", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it("allows the default mp3 response_format", async () => {
+    it("rejects a response without ElevenLabs metering", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array(16000), {
                 headers: { "content-type": "audio/mpeg" },
+            }),
+        );
+
+        await expect(
+            generateSoundEffect({
+                prompt: "door creak",
+                apiKey: "test-eleven-key",
+                log: { info: vi.fn(), error: vi.fn() } as never,
+            }),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("allows the default mp3 response_format", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(new Uint8Array(16000), {
+                headers: {
+                    "content-type": "audio/mpeg",
+                    "character-cost": "60",
+                },
             }),
         );
 

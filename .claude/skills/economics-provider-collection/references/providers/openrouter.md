@@ -35,41 +35,48 @@ Current balance snapshot:
 
 - `/credits` returns `total_credits` and `total_usage`; current remaining credit
   is `total_credits - total_usage`.
-- Save a snapshot only when the user asks for balance now. The all-time counters
-  do not prove month-to-date usage without a separately evidenced baseline.
+- Collect a current balance snapshot for each active balance-tracked account
+  during every monthly close, and for an explicit balance request. Verify paid
+  versus grant funding and expiry separately. The all-time counters do not
+  prove month-to-date usage without a separately evidenced baseline.
 
-## Verified — 2026-09-06
+## Verified — 2026-10-02
 
-- Completed months for the Myceli organization: open the Activity Explore
-  view with explicit UTC bounds in the `elliot@myceli.ai` browser session,
+- For either organization, open Activity → Explore with explicit UTC bounds
+  in its own verified browser session,
 
   ```
   https://openrouter.ai/activity/explore?from=<YYYY-MM-01>T00:00:00.000Z&to=<next-YYYY-MM-01>T00:00:00.000Z
   ```
 
-  The table lists every model with rounded values; the exact figures come from
-  the page's own `POST /api/frontend/v1/private/analytics-query` responses.
-  The app does not use `window.fetch`, so capture them by wrapping
-  `Response.prototype.json` and `Response.prototype.text` in the page, then
-  switching the metric (Request Count, then back to Total Usage). Union the
-  `total_usage` and `request_count` rows by model; the total must equal the
-  month's credits-usage line. Book one row per model with the display name as
-  the label and the slug in `resource_id`.
+  Select `Total Usage ($)` by `Model`, `Rollup: Total`, then Chart display
+  settings → Download CSV. The original CSV includes every model and exact
+  values, including rows hidden from the on-screen table. Sum its `Value`
+  column and compare with the rounded Activity Overview total for the same
+  organization and UTC range. The CSV has display names but no model slugs;
+  preserve those names rather than inventing IDs.
 
 Known traps:
 
 - Use the management API key. Runtime keys cannot read activity.
 - The activity endpoint only reaches back a limited recent window, roughly 30 days.
 - Do not emit a completed-month total from a truncated API window. Use dashboard/manual evidence for older completed months.
-- Activity Explorer: set exact UTC month bounds; export `top_n=30` descending
-  and ascending; union by `(date, model)`; discard `Other`; assert overlapping
-  rows are identical and the union total equals the dashboard total.
+- Activity Explorer CSV: select `Rollup: Total` before download. A Daily
+  rollup changes the table grain and does not give a single row per model.
 - Activity “Spend” includes OpenRouter credits plus estimated BYOK spend. Check
   the BYOK keys page. If keys exist, separate BYOK before booking OpenRouter
   spend; if none exist, the exported total is OpenRouter spend.
 - Collect `PollinationsAI` only in its matching signed-in browser workspace.
   Never reuse the Myceli browser or management key for that account.
 - Read the grant's displayed expiry; a grant receipt date is not an expiry.
+- On the organization's Credits page, inspect each transaction separately:
+  `Receipt` opens the original Stripe-hosted receipt; `Get invoice` may create
+  a supplier invoice and then change to `View Invoice`. From the hosted invoice,
+  use `Download invoice` for the original PDF. Verify the transaction date,
+  invoice issue date, receipt number, and account independently; a newly
+  generated invoice can have a later issue date than its credit purchase.
+  If Chrome blocks the supplier PDF download, keep the original hosted
+  receipt and email, and mark the PDF missing rather than recreating one.
 - Never proportionally allocate completed-month totals. Keep missing detail as
   an explicit gap.
 - Do not reproduce the retired mutable month-open usage cache. Prefer bounded

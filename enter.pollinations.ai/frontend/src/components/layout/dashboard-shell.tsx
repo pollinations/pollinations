@@ -4,17 +4,15 @@ import {
     BookIcon,
     BrandMark,
     BugIcon,
-    CheckIcon,
     Chip,
-    ClipboardIcon,
     ColorModeToggle,
     CopyButton,
+    CopyStateIcon,
     cn,
     DiscordIcon,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
-    LoadingStatus,
     McpIcon,
     MenuIcon,
     NavItem,
@@ -29,16 +27,15 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
     CSSProperties,
-    Dispatch,
     FC,
     PropsWithChildren,
     ReactNode,
     RefObject,
-    SetStateAction,
 } from "react";
-import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
+import { pageMeta } from "../../page-meta.ts";
 import {
     QUEST_STATUS_UPDATED_EVENT,
     questNavLabel,
@@ -48,11 +45,6 @@ import {
     type DashboardPage,
     type DashboardPath,
 } from "./dashboard-theme.ts";
-
-/** Counts what the page still waits for; the shell shows one status while > 0. */
-export const PendingCount = createContext<Dispatch<SetStateAction<number>>>(
-    () => {},
-);
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -87,8 +79,6 @@ type SupportAction = {
     label: string;
     icon: ReactNode;
     copyLabel: string;
-    idleIcon: ReactNode;
-    successIcon: ReactNode;
     copyValue: string | (() => string | Promise<string>);
 };
 
@@ -161,7 +151,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [pendingCount, setPendingCount] = useState(0);
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -170,35 +159,16 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         (item) => item.to === location.pathname,
     );
     const activePage = activeNavItem?.id;
-    const activePageLabel =
-        location.pathname === "/account"
-            ? "Account"
-            : (activeNavItem?.label ?? "Dashboard");
     const questStatus = useQuestNavStatus(showQuestStatus);
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
 
     useEffect(() => {
-        const canonicalUrl = new URL(
-            location.pathname,
-            window.location.origin,
-        ).toString();
-        const title = `${activePageLabel} | pollinations.ai`;
-        document.title = title;
-        document
-            .querySelector('link[rel="canonical"]')
-            ?.setAttribute("href", canonicalUrl);
-        document
-            .querySelector('meta[property="og:url"]')
-            ?.setAttribute("content", canonicalUrl);
-        document
-            .querySelector('meta[property="og:title"]')
-            ?.setAttribute("content", title);
-        document
-            .querySelector('meta[name="twitter:title"]')
-            ?.setAttribute("content", title);
-    }, [activePageLabel, location.pathname]);
+        const meta = pageMeta(location.pathname);
+        if (!meta) return;
+        document.title = meta.title;
+    }, [location.pathname]);
 
     const closeDrawer = useCallback(() => {
         const activeElement = document.activeElement;
@@ -255,8 +225,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "Connect User Wallets",
-            href: `${genDocsUrl()}#tag/connect-user-wallets`,
+            label: "Pollinations Pay",
+            href: `${genDocsUrl()}#tag/pollinations-pay`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -294,10 +264,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         label: "Docs",
         icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
         copyLabel: "Copy All",
-        // No colour on the icons — they inherit the button's text colour so they
-        // match the filled idle/copied states.
-        idleIcon: <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />,
-        successIcon: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
         copyValue: async () => {
             const res = await fetch(`${genDocsUrl()}/llm.txt`);
             return res.text();
@@ -319,85 +285,74 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
 
     return (
-        <PendingCount.Provider value={setPendingCount}>
-            <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
-                <div className="hidden lg:block">{rail}</div>
-                <div
-                    ref={drawerRef}
+        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
+            <div className="hidden lg:block">{rail}</div>
+            <div
+                ref={drawerRef}
+                className={cn(
+                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
+                    isDrawerOpen
+                        ? "pointer-events-auto visible delay-0"
+                        : "pointer-events-none invisible delay-[420ms]",
+                )}
+                aria-hidden={!isDrawerOpen}
+                inert={!isDrawerOpen}
+            >
+                <button
+                    type="button"
                     className={cn(
-                        "fixed inset-0 z-40 transition-[visibility] lg:hidden",
-                        isDrawerOpen
-                            ? "pointer-events-auto visible delay-0"
-                            : "pointer-events-none invisible delay-[420ms]",
+                        "absolute inset-0 bg-black/40 transition-opacity ease-out",
+                        "duration-[420ms]",
+                        isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}
-                    aria-hidden={!isDrawerOpen}
-                    inert={!isDrawerOpen}
+                    onClick={closeDrawer}
+                    aria-label="Close navigation"
+                />
+                <div
+                    className={cn(
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "duration-[420ms]",
+                        isDrawerOpen ? "translate-x-0" : "-translate-x-full",
+                    )}
                 >
-                    <button
-                        type="button"
-                        className={cn(
-                            "absolute inset-0 bg-black/40 transition-opacity ease-out",
-                            "duration-[420ms]",
-                            isDrawerOpen ? "opacity-100" : "opacity-0",
-                        )}
-                        onClick={closeDrawer}
-                        aria-label="Close navigation"
-                    />
-                    <div
-                        className={cn(
-                            "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
-                            "duration-[420ms]",
-                            isDrawerOpen
-                                ? "translate-x-0"
-                                : "-translate-x-full",
-                        )}
-                    >
-                        <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
-                            <div className="flex items-center justify-between gap-2">
-                                <DashboardBrand size="drawer" />
-                                <button
-                                    type="button"
-                                    className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
-                                    onClick={closeDrawer}
-                                    aria-label="Close navigation"
-                                >
-                                    <XIcon className="h-5 w-5" />
-                                </button>
-                            </div>
-                            <BrandLinks links={brandLinks} />
+                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
+                        <div className="flex items-center justify-between gap-2">
+                            <DashboardBrand size="drawer" />
+                            <button
+                                type="button"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                                onClick={closeDrawer}
+                                aria-label="Close navigation"
+                            >
+                                <XIcon className="h-5 w-5" />
+                            </button>
                         </div>
-                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                            {rail}
-                        </div>
+                        <BrandLinks links={brandLinks} />
+                    </div>
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                        {rail}
                     </div>
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
-                    <MobileMenuButton
-                        buttonRef={menuButtonRef}
-                        onOpen={() => setIsDrawerOpen(true)}
-                    />
-                    {/* One status for everything the page waits for, floating at
-                    the bottom centre of the content column. */}
-                    {pendingCount > 0 && (
-                        <div className="fixed bottom-6 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:left-[calc(50%+7.5rem)] lg:h-8 lg:px-3">
-                            <LoadingStatus>Loading…</LoadingStatus>
-                        </div>
-                    )}
-                    <ScrollArea
-                        ref={mainScrollRef}
-                        className={cn(
-                            "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
-                            signInBanner ? "pt-3" : "pt-16",
-                        )}
-                    >
-                        <main className="mx-auto flex max-w-[800px] flex-col gap-3">
-                            {signInBanner}
-                            {children}
-                        </main>
-                    </ScrollArea>
-                </div>
             </div>
-        </PendingCount.Provider>
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
+                <MobileMenuButton
+                    buttonRef={menuButtonRef}
+                    onOpen={() => setIsDrawerOpen(true)}
+                />
+                <ScrollArea
+                    ref={mainScrollRef}
+                    className={cn(
+                        "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
+                        signInBanner ? "pt-3" : "pt-16",
+                    )}
+                >
+                    <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                        {signInBanner}
+                        {children}
+                    </main>
+                </ScrollArea>
+            </div>
+        </div>
     );
 };
 
@@ -575,11 +530,13 @@ const BrandLinks: FC<{ links: readonly BrandLink[] }> = ({ links }) => (
     </div>
 );
 
+// No noreferrer: GitHub's traffic report credits enter.pollinations.ai only
+// when the referrer travels, and it is our only count of clicks to the repo.
 const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
     <a
         href={href}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener"
         aria-label={label}
         className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
     >
@@ -615,7 +572,12 @@ const DashboardSupport: FC<{
                 >
                     {(copied) => (
                         <>
-                            {copied ? action.successIcon : action.idleIcon}
+                            {/* No colour: the icon inherits the button's
+                                text colour in both states. */}
+                            <CopyStateIcon
+                                copied={copied}
+                                className="h-3.5 w-3.5 shrink-0"
+                            />
                             {copied ? "Copied" : action.copyLabel}
                         </>
                     )}

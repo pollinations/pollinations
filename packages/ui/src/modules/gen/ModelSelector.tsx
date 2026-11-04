@@ -20,6 +20,7 @@ const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
     image: "Image",
     video: "Video",
     text: "Text",
+    decision: "Decision",
     audio: "Audio",
     "3d": "3D",
     embedding: "Embeddings",

@@ -7,7 +7,11 @@
             "46607014",
             "47789794",
             "48108043",
-            "49063196"
+            "49063196",
+            "51216179",
+            "51216212",
+            "52739129",
+            "52741049"
         ],
         "flux": [
             "30822967",
@@ -80,11 +84,21 @@
             "45313816",
             "46003779",
             "46598648",
-            "47267292"
+            "47267292",
+            "51212460",
+            "51215095",
+            "51216164",
+            "51216808",
+            "51217502",
+            "51225744",
+            "51226229",
+            "51226625",
+            "52731560"
         ]
     },
     "sources": [
         "Historical op_cloud resource labels captured before the instance-detail migration",
-        "operations/infrastructure/gpu/GPU_INSTANCES.md and its git history"
+        "operations/infrastructure/gpu/GPU_INSTANCES.md and its git history",
+        "Vast invoice-v1 instance charge metadata labels for the September 2026 close"
     ]
 }

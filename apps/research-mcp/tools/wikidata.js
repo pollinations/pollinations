@@ -177,7 +177,7 @@ export const wikidataTools = [
             metadataUrl.search = new URLSearchParams({
                 action: "wbgetentities",
                 ids: entityId,
-                props: "labels|descriptions|aliases|sitelinks",
+                props: "labels|descriptions|aliases|sitelinks/urls",
                 languages: `${language}|en`,
                 sitefilter: `${language}wiki|enwiki`,
                 format: "json",

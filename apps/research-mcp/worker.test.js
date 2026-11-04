@@ -102,7 +102,7 @@ test("Wikidata filters metadata and claims at source and preserves time calendar
         if (action === "wbgetentities") {
             assert.equal(
                 q.get("props"),
-                "labels|descriptions|aliases|sitelinks",
+                "labels|descriptions|aliases|sitelinks/urls",
             );
             assert.equal(q.get("languages"), "de|en");
             return Response.json({
@@ -110,7 +110,12 @@ test("Wikidata filters metadata and claims at source and preserves time calendar
                     Q42: {
                         type: "item",
                         labels: { en: { value: "Douglas Adams" } },
-                        sitelinks: { enwiki: { title: "Douglas Adams" } },
+                        sitelinks: {
+                            enwiki: {
+                                title: "Douglas Adams",
+                                url: "https://en.wikipedia.org/wiki/Douglas_Adams",
+                            },
+                        },
                     },
                 },
             });
@@ -150,6 +155,10 @@ test("Wikidata filters metadata and claims at source and preserves time calendar
     });
     assert.notEqual(result.isError, true, JSON.stringify(result));
     assert.equal(value(result).label, "Douglas Adams");
+    assert.equal(
+        value(result).wikipedia.url,
+        "https://en.wikipedia.org/wiki/Douglas_Adams",
+    );
     assert.equal(value(result).returned_properties, 1);
     assert.equal(
         value(result).claims.P569[0].value.calendar,

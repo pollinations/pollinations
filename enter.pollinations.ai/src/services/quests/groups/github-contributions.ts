@@ -22,7 +22,8 @@ import {
  * Amounts come only from reward-N labels, which only maintainers can add. A PR
  * merged into main earns its own label, else the bounty of the POLLEN-QUEST
  * issue it closes, else 5. Every issue a merged PR closes earns its author 3,
- * also when they fixed it themselves.
+ * also when they fixed it themselves. App submissions and quest PRs merged
+ * before REWARDS_START earn the quest's label, read from the quest issue.
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
@@ -153,13 +154,16 @@ type DerivedQuestIssue = {
     title: string;
     description: string;
     url: string;
-    // 0 without a reward label: the quest is off the board and pays the default.
+    // 0 without a reward label: the quest is off the board, and its PRs merged
+    // from REWARDS_START pay the default.
     rewardAmount: number;
     // "completed" issues stay off the open board once assigned or closed.
     // Multi-winner quests are reopened after each merge and stay available.
     state: "available" | "completed";
-    // App submitters credited on an app-publish PR that closed the quest.
-    appSubmitterGithubIds: number[];
+    // Paid from the quest issue: app submitters, because the bot authors their
+    // PRs, and authors of PRs merged before REWARDS_START, which the PR search
+    // doesn't cover.
+    winnerGithubIds: number[];
 };
 
 type GitHubUser = {
@@ -170,7 +174,7 @@ type ClosingPullRequest = {
     number: number;
     mergedAt: string | null;
     headRefName: string;
-    author: { __typename: string; login: string } | null;
+    author: (GitHubUser & { __typename: string; login: string }) | null;
 };
 
 type CommitAuthorsData = {
@@ -256,7 +260,7 @@ query($query:String!,$after:String){
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
         closedByPullRequestsReferences(first:100){
-          nodes{ number mergedAt headRefName author{ __typename login } }
+          nodes{ number mergedAt headRefName author{ __typename login ... on User{ databaseId } } }
         }
       }
     }
@@ -377,15 +381,13 @@ function hasQuestLabel(labels: { name: string }[]): boolean {
 
 function mergedClosers(issue: GitHubIssueNode) {
     return issue.closedByPullRequestsReferences.nodes.filter(
-        (pr) => pr.mergedAt !== null,
+        (pr): pr is ClosingPullRequest & { mergedAt: string } =>
+            pr.mergedAt !== null,
     );
 }
 
-// Like any other PR, an app-publish PR pays only from REWARDS_START.
 function isAppPublishPr(pr: ClosingPullRequest): boolean {
     return (
-        pr.mergedAt !== null &&
-        Date.parse(pr.mergedAt) >= Date.parse(REWARDS_START) &&
         pr.author?.__typename === "Bot" &&
         pr.author.login === APP_PUBLISH_BOT &&
         APP_PUBLISH_BRANCH.test(pr.headRefName)
@@ -438,9 +440,13 @@ function toDerivedQuestIssue(
         url: issue.url,
         rewardAmount: labelReward(issue.labels.nodes),
         state,
-        appSubmitterGithubIds: mergedClosers(issue)
-            .filter(isAppPublishPr)
-            .flatMap((pr) => appPublishPayees.get(pr.number) ?? []),
+        winnerGithubIds: mergedClosers(issue).flatMap((pr) => {
+            if (isAppPublishPr(pr))
+                return appPublishPayees.get(pr.number) ?? [];
+            return Date.parse(pr.mergedAt) < Date.parse(REWARDS_START)
+                ? githubIds([pr.author])
+                : [];
+        }),
     };
 }
 
@@ -700,10 +706,13 @@ export async function evaluateUser(
         ),
     ]);
 
-    // The bot authors app-publish PRs, so their submitters are paid from the
-    // quest issue.
-    const appQuestProposals = issues
-        .filter((issue) => issue.appSubmitterGithubIds.includes(githubId))
+    // Only labelled quests pay from the issue; old unlabelled ones have no amount.
+    const issueProposals = issues
+        .filter(
+            (issue) =>
+                issue.rewardAmount > 0 &&
+                issue.winnerGithubIds.includes(githubId),
+        )
         .map((issue) => ({
             quest: toIssueQuestDefinition(issue),
             userId: user.id,
@@ -737,7 +746,7 @@ export async function evaluateUser(
 
     return {
         proposals: [
-            ...appQuestProposals,
+            ...issueProposals,
             ...prProposals,
             ...reportedIssues,
             ...(mergedPr ? [{ quest: mergedPrQuest, userId: user.id }] : []),

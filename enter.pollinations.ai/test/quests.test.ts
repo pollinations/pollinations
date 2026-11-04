@@ -2206,7 +2206,7 @@ test("issue bounties beyond the first 100 quest issues still record", async ({
 // An approved app submission closes a quest through the bot's catalog PR, which
 // credits the submitter as commit co-author. Co-authors on other PRs earn nothing,
 // even when a GitHub user with the bot's login opens one on a catalog branch.
-// Catalog PRs merged before the start date pay nothing, like other PRs.
+// Catalog PRs merged before the start date pay too.
 test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only their author", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -2298,11 +2298,9 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
                 "github:issue:933",
             ]),
         );
-    expect(rewards).toEqual([
-        {
-            idempotencyKey: `quest:github:issue:931:github:${user.githubId}`,
-            userId: user.id,
-        },
+    expect(rewards.map(({ idempotencyKey }) => idempotencyKey).sort()).toEqual([
+        `quest:github:issue:931:github:${user.githubId}`,
+        `quest:github:issue:933:github:${user.githubId}`,
     ]);
 });
 
@@ -2622,16 +2620,26 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
     expect(await prRewards()).toEqual(paid);
 
     // A label added after the payout changes nothing. A PR merged before the
-    // start date earns only the old one-time reward, also when it closes a quest.
+    // start date earns the old one-time reward, and the quests it closed pay
+    // their labels.
     mocks.github.state.questIssues
         .find((issue) => issue.number === 9404)
         ?.labels?.push({ name: "reward-25" });
+    mocks.github.state.questIssues
+        .find((issue) => issue.number === 9401)
+        ?.closedByPullRequestsReferences?.push({
+            number: 9500,
+            mergedAt: "2026-11-01T00:00:00Z",
+            author: { databaseId: user.githubId },
+        });
     await env.KV.delete("quests:github-issues:v2");
     mocks.github.state.mergedPullRequests.push(
         pr(9500, { mergedAt: "2026-11-01T00:00:00Z", closingIssues: [9401] }),
     );
     expect(await prRewards()).toEqual([
-        ...paid,
+        paid[0],
+        { questId: "github:issue:9401", pollenAmount: 3 },
+        ...paid.slice(1),
         { questId: "merged_pr", pollenAmount: 5 },
     ]);
 });

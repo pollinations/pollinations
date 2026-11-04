@@ -6,11 +6,23 @@ import {
     getSimpleTextRequestData,
 } from "../../src/text/requestUtils.js";
 import { chatToResponsesRequest } from "../../src/text/responses/chatRequest.js";
-import { SENTINEL_SEED } from "../../src/util.js";
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("getChatRequestData", () => {
+    it("randomizes seed -1 without changing the caller's request", () => {
+        vi.spyOn(Math, "random")
+            .mockReturnValueOnce(0.25)
+            .mockReturnValueOnce(0.75);
+        const body = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+            seed: -1,
+        });
+        expect(getChatRequestData(body).seed).toBe(536870912);
+        expect(getChatRequestData(body).seed).toBe(1610612736);
+        expect(body.seed).toBe(-1);
+    });
+
     it.each([undefined, false, true])(
         "does not invent parallel_tool_calls (%s)",
         (parallel_tool_calls) => {
@@ -74,7 +86,7 @@ describe("getChatRequestData", () => {
                 safe: "privacy",
                 system: "Be concise",
                 json: true,
-                seed: -1,
+                seed: 12,
                 thinking: { type: "enabled", budget_tokens: 1024 },
                 thinking_budget: 1024,
                 reasoning_effort: "medium",
@@ -86,7 +98,7 @@ describe("getChatRequestData", () => {
             { role: "user", content: "hello" },
         ]);
         expect(request.response_format).toEqual({ type: "json_object" });
-        expect(request.seed).toBe(SENTINEL_SEED);
+        expect(request.seed).toBe(12);
         expect(request.reasoning_effort).toBe("medium");
         for (const field of [
             "safe",
@@ -113,6 +125,14 @@ describe("getChatRequestData", () => {
 });
 
 describe("getSimpleTextRequestData", () => {
+    it("replaces seed -1 with a supported random seed", () => {
+        vi.spyOn(Math, "random").mockReturnValue(0.5);
+        const query = GenerateTextRequestQueryParamsSchema.parse({ seed: -1 });
+        expect(getSimpleTextRequestData("hello", "openai", query).seed).toBe(
+            1073741824,
+        );
+    });
+
     it("uses the validated GET query without reparsing it", () => {
         const query = GenerateTextRequestQueryParamsSchema.parse({
             model: "openai/gpt-5-nano",
@@ -153,10 +173,10 @@ describe("getSimpleTextRequestData", () => {
         });
     });
 
-    it.each([0, 12, -1])("preserves an explicit seed %s", (seed) => {
+    it.each([0, 12])("preserves an explicit seed %s", (seed) => {
         const query = GenerateTextRequestQueryParamsSchema.parse({ seed });
         expect(getSimpleTextRequestData("hello", "openai", query).seed).toBe(
-            seed === -1 ? SENTINEL_SEED : seed,
+            seed,
         );
     });
 

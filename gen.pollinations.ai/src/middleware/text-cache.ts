@@ -41,13 +41,23 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        // Agents carry a scope; everything else stays shared. An agent run gets
-        // its own entry, so a repeat runs its tools again; the coordinator still
-        // hands a non-streaming result to its caller through that entry.
+        const seed =
+            c.req.method === "GET" || c.req.method === "HEAD"
+                ? Number(c.req.query("seed"))
+                : (
+                      c.req.valid("json" as never) as
+                          | { seed?: number }
+                          | undefined
+                  )?.seed;
+        if (seed === -1) {
+            c.set("textSeedScope", c.var.textSeedScope ?? crypto.randomUUID());
+        }
+        // Agent runs and random seeds get their own entries. Keep the entry
+        // so the coordinator can still deliver a non-streaming result.
         const cacheScope = variables.model?.cacheScope;
         const partition = cacheScope
-            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
-            : undefined;
+            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.textSeedScope ?? c.var.requestId}`
+            : c.var.textSeedScope;
         return generateCacheKey(
             c.req.raw,
             bodyText,
@@ -73,6 +83,13 @@ const textCacheAdapter: GenerationCacheAdapter = {
     },
 };
 
-export const textCache = createGenerationCache(textCacheAdapter);
+const cacheText = createGenerationCache(textCacheAdapter);
+export const textCache: typeof cacheText = async (c, next) => {
+    const response = await cacheText(c, next);
+    if (response) c.res = response;
+    if (c.var.textSeedScope) {
+        c.header("Cache-Control", "private, no-store");
+    }
+};
 export const textExecutionCache =
     createGenerationExecutionCache(textCacheAdapter);

@@ -11,6 +11,8 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 
 **Available models:** {{TEXT_MODELS}}
 
+For Chat Completions and simple text requests, `seed: -1` requests a fresh random seed and generation each time. Other explicit seeds remain reproducible on models that support them; omitted seeds retain the existing cache behavior.
+
 ### Responses API
 
 Every text model that lists `/v1/chat/completions` in `supported_endpoints` from [`GET /v1/models`](https://gen.pollinations.ai/v1/models) or [`GET /text/models`](https://gen.pollinations.ai/text/models) also lists `/v1/responses`. Models with a Responses upstream (configured built-in providers, community models and endpoint agents registered with a Responses URL, managed prompt agents) call it directly. All other text models, including community models registered with Chat Completions, run each Responses request through the Chat Completions pipeline and translate the answer back, with the same billing, key permissions, safety, rate limits, caching and fallback as Chat Completions.

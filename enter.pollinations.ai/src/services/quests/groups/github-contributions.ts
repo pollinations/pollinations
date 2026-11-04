@@ -213,6 +213,12 @@ type ReportedIssueNode = {
     author: GitHubUser | null;
     labels: { nodes: { name: string }[] };
     closedByPullRequestsReferences: { nodes: { mergedAt: string | null }[] };
+    timelineItems: {
+        nodes: ({
+            willCloseTarget: boolean;
+            source: { mergedAt: string | null } | null;
+        } | null)[];
+    };
 };
 
 type SurveyIssueNode = {
@@ -283,6 +289,14 @@ query($query:String!,$after:String){
         labels(first:20){ nodes{ name } }
         closedByPullRequestsReferences(first:10){
           nodes{ mergedAt }
+        }
+        timelineItems(first:100,itemTypes:[CROSS_REFERENCED_EVENT]){
+          nodes{
+            ... on CrossReferencedEvent{
+              willCloseTarget
+              source{ ... on PullRequest{ mergedAt } }
+            }
+          }
         }
       }
     }
@@ -530,7 +544,16 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
                 issue.labels.nodes.some((label) =>
                     ISSUE_REPORT_EXCLUDED_LABELS.has(label.name),
                 ) ||
-                !issue.closedByPullRequestsReferences.nodes.some(
+                // A manual close can win the merge race and leave the direct
+                // closer list empty; keep GitHub's closing-keyword intent.
+                ![
+                    ...issue.closedByPullRequestsReferences.nodes,
+                    ...issue.timelineItems.nodes.flatMap((event) =>
+                        event?.willCloseTarget && event.source
+                            ? [event.source]
+                            : [],
+                    ),
+                ].some(
                     (pr) =>
                         pr.mergedAt !== null &&
                         Date.parse(pr.mergedAt) >= ISSUE_REPORT_START,

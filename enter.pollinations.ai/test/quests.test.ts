@@ -2434,6 +2434,8 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         { number: 9109, labels: [], mergedAt: afterLaunch },
         { number: 9110, labels: [], mergedAt: afterLaunch },
         { number: 9111, labels: [], mergedAt: afterLaunch },
+        { number: 9112, labels: [], mergedAt: null },
+        { number: 9113, labels: [], mergedAt: null },
     ];
     for (const issue of issues) {
         mocks.github.state.questIssues.push({
@@ -2457,6 +2459,15 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
                     author: { databaseId: 999999 },
                 },
             ],
+            crossReferencedPullRequests:
+                issue.number === 9112 || issue.number === 9113
+                    ? [
+                          {
+                              mergedAt: afterLaunch,
+                              willCloseTarget: issue.number === 9112,
+                          },
+                      ]
+                    : [],
         });
     }
 
@@ -2482,10 +2493,11 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
             `quest:github:reported_issue:9105:github:${user.githubId}`,
             `quest:github:reported_issue:9108:github:${user.githubId}`,
             `quest:github:reported_issue:9111:github:${user.githubId}`,
+            `quest:github:reported_issue:9112:github:${user.githubId}`,
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2501,7 +2513,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 18);
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

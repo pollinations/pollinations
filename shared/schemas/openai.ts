@@ -854,6 +854,25 @@ export const CreateImageRequestSchema = z
         reference_audios: z.never().optional(),
         resolution: imageResolutionField,
         safe: SafeSchema,
+        width: z.coerce.number().int().positive().optional().meta({
+            description:
+                "Width in pixels. Must be a positive integer. (Pollinations extension)",
+        }),
+        height: z.coerce.number().int().positive().optional().meta({
+            description:
+                "Height in pixels. Must be a positive integer. (Pollinations extension)",
+        }),
+        aspect_ratio: z
+            .string()
+            .regex(/^\d+:\d+$/, {
+                message:
+                    "Invalid aspect ratio. Expected format WIDTH:HEIGHT (e.g., 16:9, 1:1).",
+            })
+            .optional()
+            .meta({
+                description:
+                    "Aspect ratio as WIDTH:HEIGHT. (Pollinations extension)",
+            }),
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.
     .meta({ $id: "CreateImageRequest" });
@@ -918,6 +937,25 @@ export const CreateImageEditRequestSchema = z
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,
+        width: z.coerce.number().int().positive().optional().meta({
+            description:
+                "Width in pixels. Must be a positive integer. (Pollinations extension)",
+        }),
+        height: z.coerce.number().int().positive().optional().meta({
+            description:
+                "Height in pixels. Must be a positive integer. (Pollinations extension)",
+        }),
+        aspect_ratio: z
+            .string()
+            .regex(/^\d+:\d+$/, {
+                message:
+                    "Invalid aspect ratio. Expected format WIDTH:HEIGHT (e.g., 16:9, 1:1).",
+            })
+            .optional()
+            .meta({
+                description:
+                    "Aspect ratio as WIDTH:HEIGHT. (Pollinations extension)",
+            }),
     })
     .passthrough()
     .meta({ $id: "CreateImageEditRequest" });

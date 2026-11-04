@@ -158,15 +158,25 @@ const MessageSchema = z
 
 export const CreateMessageRequestSchema = z
     .object({
-        model: z.string().meta({
+        model: z.string().min(1).meta({
             description:
                 "Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`.",
         }),
-        max_tokens: z.number().int().min(1),
+        max_tokens: z
+            .number()
+            .int()
+            .min(1)
+            .describe(
+                "Maximum generated tokens, including reasoning for reasoning models. Non-streaming requests that exhaust the limit without an answer return 400 invalid_request_error; reported usage, including reasoning tokens, is billed. Increase the limit or reduce thinking effort. Partial answers retain stop_reason max_tokens.",
+            ),
         messages: z.array(MessageSchema).min(1),
         system: z.union([z.string(), z.array(TextBlockSchema)]).optional(),
         stream: z.boolean().optional(),
-        stop_sequences: z.array(z.string()).optional(),
+        stop_sequences: z
+            .array(z.string())
+            .max(4)
+            .optional()
+            .describe("Custom text sequences that stop generation (up to 4)."),
         temperature: z.number().optional(),
         top_p: z.number().optional(),
         tools: z.array(ToolSchema).optional(),

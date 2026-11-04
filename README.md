@@ -21,16 +21,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🎮 2048 AI Edition](https://boofan126.github.io/mini2048-ai) | 2048 AI Edition is a single-file browser game that integrates Pollinations AI. The "AI Skin" button calls the flux-2-dev-free image model to generate custom game themes on demand; the "AI Hint" button | [@boofan126](https://github.com/boofan126) |
-| [🖼️ Chatbot v2](https://pollinations-chatbot-2.vercel.app) | This app only ai assistant | [@amancrypto12-pixel](https://github.com/amancrypto12-pixel) |
-| [🖼️ Polli Snap - Text to Image Meme Maker](https://mhmdrizzzki.github.io/polli-snap) | A fast text-to-image meme generator. Type a prompt and instantly get a generated image with quick meme presets. Built directly on the Pollinations image API (flux). Live public app, no login required. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
-| [🛠️ Websim](https://websim.pollinations.app) | Generate, preview, and download single-file HTML pages using Pollinations models and your own Pollen. | [@pollinations-ai](https://github.com/pollinations-ai) |
-| [🖼️ Image Remix](https://image-remix.pollinations.app) | Upload a photo (PNG, JPEG or WebP) and describe the change, or pick an idea such as "Winter night" or "Watercolor painting". A Pollinations image-editing model returns the edited image at the source's | [@danhquach](https://github.com/danhquach) |
-| [🛠️ Screenshot to Bug Report](https://screenshot-to-bug-report.pollinations.app) | Paste, drop or upload a screenshot and add rough notes. The community prompt agent community/danhquach/bug-report-writer reads the screenshot and writes a clean Markdown bug report: title, what happen | [@danhquach](https://github.com/danhquach) |
-| [🖼️ Prompt to Image](https://prompt-to-image.pollinations.app) | Type a rough image idea and pick a style. The community prompt agent community/danhquach/prompt-enhancer expands it into a detailed prompt, which you can edit, and a Pollinations image model renders i | [@danhquach](https://github.com/danhquach) |
-| [🎬 Reel Hook Generator](https://anojan-va.github.io/reel-hook-generator) | Type a reel topic and get five scroll-stopping hooks in different styles (curiosity gap, shock fact, direct question, bold claim, mini story), each read aloud with Pollinations text-to-speech so you c | [@anojan-va](https://github.com/anojan-va) |
-| [🎮 Tiny Fighter Arena](https://kreggscode.github.io/tiny-fighter-arena) | Describe a fighter in one line, the AI designs the whole thing from it, then sends it into a short commentated battle up a five-rung ladder. One line in ( a shy storm cloud that apologises before it s | [@kreggscode](https://github.com/kreggscode) |
-| [💬 Radio Bloom](https://mrunknowne09-radio-bloom.static.hf.space) | Radio Bloom is a duplicate-ready voice character playground. Visitors sign in with their own Pollen, then speak or type to three AI characters powered by Pollinations chat, transcription, and voice mo | [@ismailbanouigu](https://github.com/ismailbanouigu) |
+| [🖼️ ZEEK AI Girl Lab - BYOK Public Edition](https://hwoarangkang.github.io/zeek-ai-girl-lab) | ZEEK AI Girl Lab is a 100% client-side BYOK prompt forge for generating AI girl photos. Users bring their own Pollinations sk_... key (stored only in localStorage, zero server), expand prompts with QW | [@hwoarangkang](https://github.com/hwoarangkang) |
+| [💼 Jev AI - Chat with Jev](https://jev-ai.on.websim.com) | **Jev AI - Chat with Jev** is a lightweight browser-based interface for TypeSafe AI's Jev decision model through Pollinations. It allows users to define structured questions and application context, t | [@alexsasha2750](https://github.com/alexsasha2750) |
+| [🖼️ PIXOO64 Media Art](https://github.com/idodov/pixoo64_art) | Pixoo64 Media Album Art is a native Home Assistant custom integration that transforms the Divoom Pixoo64 64×64 LED matrix into an intelligent media and visual display hub. Beyond traditional cover art | [@idodov](https://github.com/idodov) |
+| [🎮 Prompt Brawl](https://lotxo1.github.io/prompt-brawl) | Describe a fighter in one line: the AI designs it (portrait, stats, moves, a weakness) and commentates the brawl. Ladder, daily boss, voice and share links. Players pay with their own Pollen. | [@lotxo1](https://github.com/lotxo1) |
+| [🎮 Wanderpost](https://kreggscode.github.io/wanderpost) | **Explorable postcard worlds.** You type a scene, and the first postcard is painted from it. Then you click the doors, paths and windows **in the picture** to step into the next view — one painted pos | [@kreggscode](https://github.com/kreggscode) |
+| [🖼️ Pollinations Image Studio](https://lahoucine98-pollinations-image-studio.static.hf.space) | Pollinations Image Studio is a web app that allows users to generate AI images using the Pollinations API. Users can connect their Pollinations account through OAuth and create images directly in thei | [@lahoucinebathoum](https://github.com/lahoucinebathoum) |
+| [🖼️ Ai photo editor](https://ai-photo-editor-rmfxo.puter.site) | Experience the ultimate AI photo editor, offering background removal and changing, object removal, color changing, clothing adjustments, and advanced masking. Generate stunning photos with incredible | [@rajapurking4-dotcom](https://github.com/rajapurking4-dotcom) |
+| [🖼️ Polli Garden](https://jacobcreation.github.io/polli-garden) | Polli Garden is a small prompt-to-image creative tool. Users enter an idea, choose a Pollinations image model, and grow a generated image in the browser. It uses the Pollinations image API directly, i | [@jacobcreation](https://github.com/jacobcreation) |
+| [🛠️ Pollen Bomb 💣](https://guest453.github.io/pollen-bomb) | A BYOP (Bring Your Own Pollen) "race the fuse" coding arena: you wind a custom fuse (5s up to 24h), arm the bomb, and a Pollinations text model streams code against it live. How it uses Pollinations: | [@Guest453](https://github.com/Guest453) |
+| [🖼️ PitLane Image Studio](https://pitlaneauctions.app/studio) | PitLane Image Studio generates motorsport and die-cast car images from a text prompt. Users describe a scene, pick a preset style (four-panel race collage, die-cast macro, retro race poster), and get | [@jnjolstad](https://github.com/jnjolstad) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -53,6 +53,8 @@
 
 <!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
 <!-- news:start -->
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Clearer community model results** <sub>Nov 2</sub><br>The Trust tab labels community models that error on more than half their eval questions as "endpoint errors" instead of showing a score gap. Score comparisons use answered questions as well as published scores.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Model alerts reach their publishers** <sub>Nov 2</sub><br>Community Watch sends a separate Discord message for each model incident and pings the publisher's linked Discord account when available. Each message points to the model it concerns.
 - <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Usage and earnings together** <sub>Nov 1</sub><br>Explore Usage and Earnings in one Activity view. Switch metrics, filter by model or key, inspect chart and table data, and export CSV.
 - <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Claimable Quests come first** <sub>Nov 1</sub><br>Claimable Quests now appear at the top with a prominent Claim button. Open and completed Quests follow in that order.
 - <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Community model checks** <sub>Nov 1</sub><br>Scheduled probes check public community text and image models with little traffic or poor health. Owners can get warnings for repeated model errors or frequent fallback rescues.
@@ -61,8 +63,6 @@
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Community model status notices**](https://discord.gg/k9F7SyTgqn) <sub>Oct 31</sub><br>Community Watch posts when a listed community model relies substantially on fallbacks or moves in or out of model listings. A filtered model remains callable by its exact ID.
 - <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Request a Setup reward review** <sub>Oct 31</sub><br>If your Setup Quest rewards are on hold, you can request an account review from the dashboard and see whether it is pending or declined. Other Quest rewards remain claimable.
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Verify a published Site**](https://www.npmjs.com/package/@pollinations/cli) <sub>Oct 30</sub><br>Run `polli sites deploy --verify` to publish a Site, then check that every public file matches your local build. A failed check exits nonzero, but the Site remains published.
-- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Read model billing units**](https://enter.pollinations.ai/models) <sub>Oct 30</sub><br>`/v1/models` and `/v1/models/:model` can now return `pricing_units` when a model defines them. For some image and video models, this identifies `completionImageTokens` as priced per megapixel.
-- <img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Grant missing key permissions** <sub>Oct 28</sub><br>Owners can use the grant link in Enter's 403 error, also returned as JSON `fixUrl`, to add missing `keys`, `machines`, or `usage` permission to an existing key. For keys obtained through a website redirect, add `keys` permission on the Keys page instead.
 <!-- news:end -->
 
 [More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
@@ -126,7 +126,7 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
+Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, Mistral Vibe, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on

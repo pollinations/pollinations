@@ -390,9 +390,10 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
 }
 
 // Leading marker for a quest row: one icon per state, so the left column
-// reads as where you stand.
-//   open        → target, theme colour ("go for it")
-//   claimable   → sparkle, strong (matches the Claim button)
+// reads as where you stand. Only a claimable row takes the amber accent;
+// the rest follow their title's text colour.
+//   open        → target, strong
+//   claimable   → sparkle, amber (matches the Claim button)
 //   claimed     → check, muted
 //   coming soon → clock, muted
 function QuestMarker({
@@ -405,9 +406,9 @@ function QuestMarker({
     const [Icon, tone] = comingSoon
         ? [ClockIcon, "text-theme-text-muted"]
         : status === "open"
-          ? [TargetIcon, "text-theme-text-soft"]
+          ? [TargetIcon, "text-theme-text-strong"]
           : status === "claimable"
-            ? [SparkleIcon, "text-theme-text-strong"]
+            ? [SparkleIcon, "text-theme-text-soft"]
             : [CheckIcon, "text-theme-text-muted"];
     return (
         <span
@@ -446,9 +447,14 @@ export function QuestRow({
     // "pollen" would just repeat it. formatRewardAmount renders null as "TBD".
     const rewardLabel = formatRewardAmount(rewardAmount);
 
-    // Shared pieces, placed differently per breakpoint below.
+    // Shared pieces, placed differently per breakpoint below. A claimable
+    // title takes the amber accent, like its icon.
     const title = (
-        <Text as="span" weight="semibold" tone={claimed ? "muted" : "strong"}>
+        <Text
+            as="span"
+            weight="semibold"
+            tone={claimed ? "muted" : claimableRewardId ? "soft" : "strong"}
+        >
             {card.title}
         </Text>
     );
@@ -490,9 +496,8 @@ export function QuestRow({
             {rewardLabel}
         </span>
     );
-    // A claimable quest's left icon becomes the Claim button: the standard
-    // large action button, its sparkle over "Claim". The reward on the right
-    // stays as on any other row.
+    // A claimable quest's reward becomes the Claim button on the right: the
+    // standard large action button, "Claim" over its reward.
     const claimButton = claimableRewardId ? (
         <Button
             type="button"
@@ -503,10 +508,10 @@ export function QuestRow({
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
             className="flex-col justify-center gap-0.5 px-5 py-2 font-bold"
         >
-            <SparkleIcon className="h-4 w-4 shrink-0" />
             <span className="text-sm leading-none">
                 {claiming ? "Claiming" : "Claim"}
             </span>
+            {rewardChip}
         </Button>
     ) : null;
     const details = (description || issueLink || progress) && (
@@ -523,9 +528,10 @@ export function QuestRow({
             {progress}
         </div>
     );
-    const marker = claimButton ?? (
+    const marker = (
         <QuestMarker status={card.status} comingSoon={card.comingSoon} />
     );
+    const reward = claimButton ?? rewardChip;
 
     return (
         // Open and claimable quests are white cards; done ones sit flat, in
@@ -534,8 +540,8 @@ export function QuestRow({
             variant="card"
             className={claimed ? "polli:bg-transparent" : undefined}
         >
-            {/* Mobile: the title full width, then the description beside the
-                claim panel (about a quarter) or above the reward. */}
+            {/* Mobile: the title full width, then the description above the
+                reward or Claim button. */}
             <div className="flex flex-col gap-2 sm:hidden">
                 <div className="flex items-center gap-4">
                     {marker}
@@ -544,12 +550,12 @@ export function QuestRow({
                 {/* Indented past the icon, under the title. */}
                 <div className="flex flex-col gap-2 pl-9">
                     {details}
-                    <div className="ml-auto">{rewardChip}</div>
+                    <div>{reward}</div>
                 </div>
             </div>
 
-            {/* Desktop: icon | title and description | reward, or a claim
-                panel the card's full height. */}
+            {/* Desktop: icon | title and description | reward, or the Claim
+                button holding it. */}
             <div className="hidden items-center gap-4 sm:flex">
                 <div className="flex items-center">{marker}</div>
                 <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
@@ -557,7 +563,7 @@ export function QuestRow({
                     {details}
                 </div>
                 <div className="ml-auto flex shrink-0 items-center">
-                    {rewardChip}
+                    {reward}
                 </div>
             </div>
         </Surface>

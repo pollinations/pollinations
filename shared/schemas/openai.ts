@@ -342,7 +342,7 @@ const ChatOutputTokenLimitSchema = z
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
-        model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
@@ -462,7 +462,7 @@ const ResponseFunctionToolSchema = z
  */
 export const CreateResponseRequestSchema = z
     .object({
-        model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+        model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL),
         input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),

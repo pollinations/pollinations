@@ -252,6 +252,27 @@ describe("gen worker routing", () => {
         expect(post.status).toBe(404);
     });
 
+    it("answers 405 with Allow for a known path called with the wrong method", async () => {
+        for (const [path, method, allow] of [
+            ["/v1/chat/completions", "GET", "POST"],
+            ["/v1/images/generations", "DELETE", "POST"],
+            ["/v1/models", "POST", "GET, HEAD"],
+            ["/image/a%20cat", "POST", "GET, HEAD"],
+        ]) {
+            const response = await fetchWorker(path, envWithEnter(), {
+                method,
+            });
+            expect(response.status, `${method} ${path}`).toBe(405);
+            expect(response.headers.get("Allow")).toBe(allow);
+            const body = (await response.json()) as {
+                error: { code: string };
+            };
+            expect(body.error.code).toBe("METHOD_NOT_ALLOWED");
+        }
+
+        expect((await fetchWorker("/v1/no-such-endpoint")).status).toBe(404);
+    });
+
     it("serves the docs web app manifest", async () => {
         const response = await fetchWorker("/manifest.webmanifest");
 

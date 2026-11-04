@@ -156,20 +156,6 @@ export const CreateMessageRequestSchema = z
             .optional(),
     })
     .passthrough()
-    .superRefine((request, context) => {
-        const budget = request.thinking?.budget_tokens;
-        if (
-            request.thinking?.type === "enabled" &&
-            budget !== undefined &&
-            budget >= request.max_tokens
-        ) {
-            context.addIssue({
-                code: "custom",
-                path: ["thinking", "budget_tokens"],
-                message: "budget_tokens must be less than max_tokens",
-            });
-        }
-    })
     .meta({ $id: "CreateMessageRequest" });
 
 export type CreateMessageRequest = z.infer<typeof CreateMessageRequestSchema>;

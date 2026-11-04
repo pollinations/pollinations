@@ -37,6 +37,7 @@ export type MockGithubState = {
             mergedAt: string | null;
             repository?: string;
             headRefName?: string;
+            baseRefName?: string;
             author: {
                 __typename?: string;
                 login?: string;
@@ -232,6 +233,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                     nodes: (issue.closedByPullRequestsReferences ?? []).map(
                         (pr) => ({
                             ...pr,
+                            baseRefName: pr.baseRefName ?? "main",
                             repository: {
                                 nameWithOwner: pr.repository ?? REPO,
                             },

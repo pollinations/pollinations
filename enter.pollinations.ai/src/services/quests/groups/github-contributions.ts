@@ -22,8 +22,9 @@ import {
  * Amounts come only from reward-N labels, which only maintainers can add. A PR
  * merged into main earns its own label, else the bounty of the POLLEN-QUEST
  * issue it closes, else 5. Every issue a merged PR closes earns its author 3,
- * also when they fixed it themselves. App submissions and quest PRs merged
- * before REWARDS_START earn the quest's label, read from the quest issue.
+ * also when they fixed it themselves. Both are read from the quest issue: app
+ * submissions earn the quest's label, else 5, and quest PRs merged before
+ * REWARDS_START earn the quest's label.
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
@@ -161,8 +162,8 @@ type DerivedQuestIssue = {
     // Multi-winner quests are reopened after each merge and stay available.
     state: "available" | "completed";
     // Paid from the quest issue: app submitters, because the bot authors their
-    // PRs, and authors of PRs merged before REWARDS_START, which the PR search
-    // doesn't cover.
+    // PRs, and authors of PRs merged before REWARDS_START into a labelled
+    // quest, which the PR search doesn't cover.
     winnerGithubIds: number[];
 };
 
@@ -174,6 +175,8 @@ type ClosingPullRequest = {
     number: number;
     mergedAt: string | null;
     headRefName: string;
+    baseRefName: string;
+    repository: { nameWithOwner: string };
     author: (GitHubUser & { __typename: string; login: string }) | null;
 };
 
@@ -260,7 +263,7 @@ query($query:String!,$after:String){
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
         closedByPullRequestsReferences(first:100){
-          nodes{ number mergedAt headRefName author{ __typename login ... on User{ databaseId } } }
+          nodes{ number mergedAt headRefName baseRefName repository{ nameWithOwner } author{ __typename login ... on User{ databaseId } } }
         }
       }
     }
@@ -379,10 +382,13 @@ function hasQuestLabel(labels: { name: string }[]): boolean {
     return labels.some((label) => label.name === QUEST_LABEL);
 }
 
+// PRs merged into this repository's main branch; a fork's PR can close an issue too.
 function mergedClosers(issue: GitHubIssueNode) {
     return issue.closedByPullRequestsReferences.nodes.filter(
         (pr): pr is ClosingPullRequest & { mergedAt: string } =>
-            pr.mergedAt !== null,
+            pr.mergedAt !== null &&
+            pr.repository.nameWithOwner === REPO &&
+            pr.baseRefName === "main",
     );
 }
 
@@ -429,6 +435,7 @@ function toDerivedQuestIssue(
     appPublishPayees: Map<number, number[]>,
 ): DerivedQuestIssue {
     const body = issue.body ?? "";
+    const rewardAmount = labelReward(issue.labels.nodes);
     const state: DerivedQuestIssue["state"] =
         issue.state === "CLOSED" || issue.assignees.nodes.length > 0
             ? "completed"
@@ -438,12 +445,14 @@ function toDerivedQuestIssue(
         title: issue.title,
         description: extractDescription(body),
         url: issue.url,
-        rewardAmount: labelReward(issue.labels.nodes),
+        rewardAmount,
         state,
         winnerGithubIds: mergedClosers(issue).flatMap((pr) => {
             if (isAppPublishPr(pr))
                 return appPublishPayees.get(pr.number) ?? [];
-            return Date.parse(pr.mergedAt) < Date.parse(REWARDS_START)
+            // Old unlabelled quests had no amount, so their early PRs earn nothing.
+            return rewardAmount > 0 &&
+                Date.parse(pr.mergedAt) < Date.parse(REWARDS_START)
                 ? githubIds([pr.author])
                 : [];
         }),
@@ -706,13 +715,8 @@ export async function evaluateUser(
         ),
     ]);
 
-    // Only labelled quests pay from the issue; old unlabelled ones have no amount.
     const issueProposals = issues
-        .filter(
-            (issue) =>
-                issue.rewardAmount > 0 &&
-                issue.winnerGithubIds.includes(githubId),
-        )
+        .filter((issue) => issue.winnerGithubIds.includes(githubId))
         .map((issue) => ({
             quest: toIssueQuestDefinition(issue),
             userId: user.id,

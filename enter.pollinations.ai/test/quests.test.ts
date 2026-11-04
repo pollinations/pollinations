@@ -2237,10 +2237,12 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
         5001: [247793354, user.githubId],
         5002: [616161, coAuthorGithubId],
         5003: [247793354, user.githubId],
+        5004: [247793354, user.githubId],
     };
-    for (const [issueNumber, pr] of [
+    for (const [issueNumber, reward, pr] of [
         [
             931,
+            10,
             {
                 number: 5001,
                 mergedAt,
@@ -2250,6 +2252,7 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
         ],
         [
             932,
+            10,
             {
                 number: 5002,
                 mergedAt,
@@ -2263,10 +2266,22 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
         ],
         [
             933,
+            10,
             {
                 number: 5003,
                 mergedAt: "2026-11-04T23:59:59Z",
                 headRefName: "auto/app-4003-123-1",
+                author: { __typename: "Bot", login: "pollinations-ai" },
+            },
+        ],
+        // A quest without a reward label pays an app submission 5.
+        [
+            934,
+            null,
+            {
+                number: 5004,
+                mergedAt,
+                headRefName: "auto/app-4004-123-1",
                 author: { __typename: "Bot", login: "pollinations-ai" },
             },
         ],
@@ -2275,7 +2290,7 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
             issueNumber,
             title: `Plug-in quest #${issueNumber}`,
             goal: "Publish the plug-in.",
-            reward: 10,
+            reward,
             closed: true,
         });
         const issue = mocks.github.state.questIssues.at(-1);
@@ -2296,11 +2311,13 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
                 "github:issue:931",
                 "github:issue:932",
                 "github:issue:933",
+                "github:issue:934",
             ]),
         );
     expect(rewards.map(({ idempotencyKey }) => idempotencyKey).sort()).toEqual([
         `quest:github:issue:931:github:${user.githubId}`,
         `quest:github:issue:933:github:${user.githubId}`,
+        `quest:github:issue:934:github:${user.githubId}`,
     ]);
 });
 
@@ -2632,6 +2649,24 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
             mergedAt: "2026-11-01T00:00:00Z",
             author: { databaseId: user.githubId },
         });
+    // Early PRs into a fork or another branch can close a quest but earn nothing.
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 9405,
+        title: "Quest 9405",
+        goal: "Build it.",
+        reward: 10,
+        closed: true,
+    });
+    const quest9405 = mocks.github.state.questIssues.at(-1);
+    if (quest9405)
+        quest9405.closedByPullRequestsReferences = [
+            { repository: "someone/fork", number: 9509 },
+            { baseRefName: "feat/x", number: 9510 },
+        ].map((closer) => ({
+            ...closer,
+            mergedAt: "2026-11-01T00:00:00Z",
+            author: { databaseId: user.githubId },
+        }));
     await env.KV.delete("quests:github-issues:v2");
     mocks.github.state.mergedPullRequests.push(
         pr(9500, { mergedAt: "2026-11-01T00:00:00Z", closingIssues: [9401] }),

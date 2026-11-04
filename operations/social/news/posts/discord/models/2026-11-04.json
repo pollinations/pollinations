@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-11-04",
+  "previous_date": "2026-10-28",
+  "generated_at": "2026-11-04T14:04:32.923990+00:00",
+  "text": "<@&1424461167883194418> Model updates: 2026-11-04\n\n### ⬇️ Price cuts (~25% off)\n- 🧠 Text: GPT-6.1 Sol · GPT-6 Luna · GPT-6 Sol · GPT-6 Astra\n\n### ⬆️ Price increases\n- 🧠 Text: Claude Opus 5.5 (~35%) · Claude Fable 5.1 (~35%) · GPT-5.6 Sol (~125%)\n\n### ✨ API updates\n- Video models in this diff added `/video/{prompt}`. Those that previously listed `/v1/images/edits` no longer list it.\n- The four changed 3D models now list `/3d/{prompt}` instead of their image endpoints.\n- `x-ai/grok-4.7` no longer lists `logprobs` or `top_logprobs` as supported parameters. `moonshotai/kimi-k3` also lists fewer supported parameters. Check the docs before sending optional parameters.\n\nExplore at https://gen.pollinations.ai/docs"
+}

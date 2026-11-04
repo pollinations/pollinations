@@ -91,7 +91,7 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
         run: |
           node operations/app-management/ingestion/model-proxy.js &
-          sudo iptables -I DOCKER-USER -d 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,100.64.0.0/10 -j REJECT
+          sudo iptables -I DOCKER-USER -i docker0 -d 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,100.64.0.0/10 -j REJECT
           { cat operations/app-management/ingestion/review-prompt.txt; jq .submission "$RUNNER_TEMP/app-validation.json"; } > "$RUNNER_TEMP/prompt.txt"
           docker run --rm -i -w /review \
             -e ANTHROPIC_BASE_URL=http://172.17.0.1:8711 -e ANTHROPIC_API_KEY=proxy \
@@ -105,6 +105,7 @@ jobs:
             elif .type == "user" then .message.content[]? | select(.is_error? == true) | "  failed: \(.content | tostring | .[0:200])"
             elif .type == "result" then "turns: \(.num_turns)", .result else empty end' "$RUNNER_TEMP/agent.jsonl"
           echo "result=$(jq -r 'select(.type == "result") | .result' "$RUNNER_TEMP/agent.jsonl" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          grep -q '"type":"result"' "$RUNNER_TEMP/agent.jsonl"
 
   post:
     needs: review

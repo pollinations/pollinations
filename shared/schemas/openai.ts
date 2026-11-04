@@ -850,7 +850,7 @@ export const CreateImageRequestSchema = z
             description: "End-user identifier for abuse tracking",
         }),
         image: z
-            .union([z.string(), z.array(z.string())])
+            .union([z.string().min(1), z.array(z.string().min(1))])
             .optional()
             .meta({
                 description:

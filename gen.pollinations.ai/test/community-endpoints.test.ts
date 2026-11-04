@@ -3271,7 +3271,7 @@ for (const api of ["chat_completions", "responses"] as const) {
                 env.BETTER_AUTH_SECRET,
             );
             expect(nested.parentApiKeyId).toBe(caller.id);
-            expect(nested.expiresAt).toBeLessThanOrEqual(run.expiresAt);
+            expect(nested.expiresAt).toBe(run.expiresAt);
         },
     );
 }

@@ -145,7 +145,7 @@ export const CreateMessageRequestSchema = z
             .optional(),
         thinking: z
             .object({
-                type: z.enum(["enabled", "disabled"]),
+                type: z.enum(["enabled", "disabled", "adaptive"]),
                 budget_tokens: z.number().int().min(1024).optional(),
             })
             .passthrough()

@@ -12,6 +12,7 @@ import type { Env } from "../env.ts";
 import {
     creditPurchase,
     getPurchase,
+    legacyPaymentId,
     PAYMENT_USED,
     paymentId,
     preparePurchase,
@@ -108,7 +109,13 @@ export const x402KeysRoutes = new Hono<Env>()
                 }
                 // Settlement publishes the signed payment, so anyone can
                 // rebuild this header: never return a stored key or resume.
-                if (await getPurchase(c.env.DB, id))
+                if (
+                    (await getPurchase(c.env.DB, id)) ||
+                    (await getPurchase(
+                        c.env.DB,
+                        await legacyPaymentId(signature),
+                    ))
+                )
                     throw new HTTPException(409, { message: PAYMENT_USED });
             }
 

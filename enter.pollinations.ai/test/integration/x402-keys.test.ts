@@ -12,6 +12,7 @@ import { x402KeysRoutes } from "../../src/routes/x402-keys.ts";
 import {
     creditPurchase,
     getPurchase,
+    legacyPaymentId,
     paymentId,
     preparePurchase,
 } from "../../src/services/x402-key-purchases.ts";
@@ -340,9 +341,15 @@ describe("x402 prepaid API keys", () => {
                 number
             >;
 
-        // Facilitator stand-in that logs every call. It verifies and settles
-        // everything, so the route alone must keep payments single-use.
-        function stubFacilitator(onVerify?: () => Promise<void>) {
+        const payer = "0x1111111111111111111111111111111111111111";
+
+        // Facilitator stand-in that logs every call. Unless told to refuse,
+        // it verifies and settles everything, so the route alone must keep
+        // payments single-use.
+        function stubFacilitator(
+            onVerify?: () => Promise<void>,
+            refusals: Record<string, unknown> = {},
+        ) {
             const calls: string[] = [];
             const originalFetch = globalThis.fetch;
             vi.stubGlobal(
@@ -355,7 +362,6 @@ describe("x402 prepaid API keys", () => {
                         return originalFetch(input, init);
                     calls.push(url.pathname);
                     if (url.pathname === "/verify") await onVerify?.();
-                    const payer = "0x1111111111111111111111111111111111111111";
                     const body = {
                         "/supported": {
                             kinds: [
@@ -375,6 +381,7 @@ describe("x402 prepaid API keys", () => {
                             network: "eip155:84532",
                             payer,
                         },
+                        ...refusals,
                     }[url.pathname];
                     return body
                         ? Response.json(body)
@@ -468,6 +475,83 @@ describe("x402 prepaid API keys", () => {
             expect(
                 (await getPurchase(env.DB, pending.id))?.credited_at,
             ).toBeNull();
+        });
+
+        // Purchases recorded before transfer ids are stored under the hash of
+        // the whole envelope.
+        async function oldPurchase(owner: string) {
+            const buyer = await payment(owner, "p2");
+            const oldId = await legacyPaymentId(buyer.signature);
+            expect(oldId).not.toBe(buyer.id);
+            const issued = await preparePurchase(
+                env,
+                undefined,
+                oldId,
+                owner,
+                "p2",
+            );
+            await creditPurchase(env.DB, oldId, owner, issued.id);
+            return buyer;
+        }
+
+        test("an old purchase replayed as recorded gets 409 before verify", async ({
+            accountToken,
+        }) => {
+            const owner = await holdingOwner(accountToken, "old-replay");
+            const buyer = await oldPurchase(owner);
+            const before = await ledger(owner);
+            const calls = stubFacilitator();
+
+            const response = await send(owner, "p2", {
+                "payment-signature": buyer.signature,
+            });
+            vi.unstubAllGlobals();
+
+            expect(response.status).toBe(409);
+            expect(await response.text()).not.toContain("sk_");
+            expect(calls).not.toContain("/verify");
+            expect(calls).not.toContain("/settle");
+            expect(await ledger(owner)).toEqual(before);
+        });
+
+        // Other unsigned fields give another old id, so only the facilitator
+        // refusing the spent nonce stops this replay.
+        test("an old purchase in another envelope gets no key when its nonce is refused", async ({
+            accountToken,
+        }) => {
+            const owner = await holdingOwner(accountToken, "old-variant");
+            const reason = "invalid_exact_evm_nonce_already_used";
+            for (const refusal of [
+                { "/verify": { isValid: false, invalidReason: reason, payer } },
+                {
+                    "/settle": {
+                        success: false,
+                        errorReason: reason,
+                        transaction: "",
+                        network: "eip155:84532",
+                        payer,
+                    },
+                },
+            ]) {
+                const buyer = await oldPurchase(owner);
+                const before = await ledger(owner);
+                const calls = stubFacilitator(undefined, refusal);
+
+                const response = await send(owner, "p2", {
+                    "payment-signature": variant(buyer),
+                });
+                vi.unstubAllGlobals();
+
+                expect(response.status).toBe(402);
+                expect(await response.text()).not.toContain("sk_");
+                expect(calls).toContain("/verify");
+                const after = await ledger(owner);
+                expect(after.paid).toBe(before.paid);
+                expect(after.key_pollen).toBe(before.key_pollen);
+                expect(
+                    (await getPurchase(env.DB, buyer.id))?.credited_at ?? null,
+                ).toBeNull();
+            }
         });
 
         test("one transfer in two envelopes verified at once is one purchase", async ({

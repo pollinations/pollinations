@@ -3,6 +3,7 @@ import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { decodePaymentSignatureHeader } from "@x402/core/http";
 import type { PaymentPayload } from "@x402/core/types";
+import stableStringify from "fast-json-stable-stringify";
 import { HTTPException } from "hono/http-exception";
 import { CompactEncrypt } from "jose";
 import { createAuth } from "../auth.ts";
@@ -42,8 +43,22 @@ async function encryptKey(key: string, secret: string): Promise<string> {
         .encrypt(await encryptionKey(secret));
 }
 
+async function sha256Hex(text: string): Promise<string> {
+    const digest = await crypto.subtle.digest("SHA-256", encoder.encode(text));
+    return Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+    ).join("");
+}
+
 export async function paymentId(signature: string): Promise<string> {
     return paymentIdForPayload(decodePaymentSignatureHeader(signature));
+}
+
+// Purchases recorded before transfer ids are stored under a hash of the whole
+// envelope. This only matches the original envelope: one with changed
+// unsigned fields hashes differently and relies on Weft refusing the nonce.
+export async function legacyPaymentId(signature: string): Promise<string> {
+    return sha256Hex(stableStringify(decodePaymentSignatureHeader(signature)));
 }
 
 // One purchase per signed transfer. The EIP-3009 nonce is unique per token
@@ -60,21 +75,16 @@ export async function paymentIdForPayload(
         !/^0x[0-9a-fA-F]{64}$/.test(authorization.nonce ?? "")
     )
         throw new Error("x402 payment has no EIP-3009 authorization");
-    const transfer = [
-        payment.accepted.network,
-        payment.accepted.asset,
-        authorization.from,
-        authorization.nonce,
-    ]
-        .join(":")
-        .toLowerCase();
-    const digest = await crypto.subtle.digest(
-        "SHA-256",
-        encoder.encode(transfer),
+    return sha256Hex(
+        [
+            payment.accepted.network,
+            payment.accepted.asset,
+            authorization.from,
+            authorization.nonce,
+        ]
+            .join(":")
+            .toLowerCase(),
     );
-    return Array.from(new Uint8Array(digest), (byte) =>
-        byte.toString(16).padStart(2, "0"),
-    ).join("");
 }
 
 export async function getPurchase(

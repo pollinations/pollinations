@@ -331,7 +331,13 @@ export default {
     fetch: (request: Request, env, ctx) => {
         // A port host belongs to a sandbox, a site's host to the site.
         const port = sandboxPortHost(env, new URL(request.url).hostname);
-        if (port) return servePort(request, env, ctx, port);
+        if (port) {
+            return new Hono<Env>()
+                .use("*", edgeRateLimit)
+                .all("*", () => servePort(request, env, ctx, port))
+                .onError(handleError)
+                .fetch(request, env, ctx);
+        }
         return serveSite(request, env) ?? app.fetch(request, env, ctx);
     },
     // The only cron, every 5 minutes (wrangler.toml). Leases end only after

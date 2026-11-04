@@ -1189,6 +1189,54 @@ test("a WebSocket to a shared port wakes the sandbox and passes through", async 
     socket.close();
 });
 
+test("a cold shared-port cache does not buy more time before the lease is nearly over", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const now = Date.now();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    try {
+        const endAt = new Date(now + 180_000).toISOString();
+        e2b.sandboxes.push(keptSandbox("coldlease", owner.userId, { endAt }));
+        await sharePort(owner.key, "coldlease", 8080);
+        const balance = await questPollen(owner.userId);
+
+        expect(
+            await (await visit("8080-coldlease.pollinations.app")).text(),
+        ).toBe("port 8080 says hi");
+        expect(e2b.sandboxes[0].endAt).toBe(endAt);
+        expect(await questPollen(owner.userId)).toBe(balance);
+        expect(e2b.leases()).toEqual([]);
+
+        // The cached lease must end at the time already paid, not at now + 300s.
+        vi.setSystemTime(now + 121_000);
+        expect((await visit("8080-coldlease.pollinations.app")).status).toBe(
+            200,
+        );
+        expect(Date.parse(e2b.sandboxes[0].endAt)).toBe(now + 421_000);
+        await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
+        expect(await questPollen(owner.userId)).toBeLessThan(balance);
+    } finally {
+        vi.useRealTimers();
+    }
+});
+
+test("ports of team sandboxes without a Pollinations owner are not forwarded", async () => {
+    const e2b = stubE2b();
+    e2b.sandboxes.push(
+        keptSandbox("teamonly", "", { metadata: {} }),
+        keptSandbox("emptyowner", ""),
+    );
+    for (const id of ["teamonly", "emptyowner"]) {
+        for (const port of [8080, 49983]) {
+            expect((await visit(`${port}-${id}.pollinations.app`)).status).toBe(
+                404,
+            );
+        }
+    }
+    expect(e2b.portRequests).toEqual([]);
+});
+
 test("an unshared port is served like E2B's own host and wakes nothing, nor do a gone sandbox or a payer who can't pay", async () => {
     const e2b = stubE2b();
     const db = drizzle(env.DB);
@@ -1491,6 +1539,7 @@ test("a request to a shared port wakes a sandbox paused while idle, and a connec
     await visit("49983-scripted.pollinations.app", "/process.Process/Start", {
         method: "POST",
         body: "{}",
+        headers: { "x-access-token": "envd" },
     });
     await vi.waitFor(async () => {
         const activeAt = Object.fromEntries(
@@ -1514,4 +1563,189 @@ test("a request to a shared port wakes a sandbox paused while idle, and a connec
     expect(Date.parse(e2b.sandboxes[0].endAt) - Date.now()).toBeGreaterThan(
         590_000,
     );
+});
+
+test("failed or public envd requests do not keep an idle sandbox awake", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const longAgo = new Date(Date.now() - 1000_000);
+    const requests = [
+        {
+            id: "envdpaused",
+            path: "/process.Process/Start",
+            method: "POST",
+            token: "envd",
+            paused: true,
+        },
+        {
+            id: "envdunsigned",
+            path: "/process.Process/Start",
+            method: "POST",
+            token: "",
+        },
+        { id: "envdhealth", path: "/health", method: "GET", token: "garbage" },
+        {
+            id: "envdencodedhealth",
+            path: "/%68ealth",
+            method: "GET",
+            token: "garbage",
+        },
+        {
+            id: "envdoptions",
+            path: "/process.Process/Start",
+            method: "OPTIONS",
+            token: "envd",
+        },
+        { id: "envdinit", path: "/init", method: "POST", token: "envd" },
+    ];
+    for (const { id, paused } of requests) {
+        e2b.sandboxes.push(
+            keptSandbox(id, owner.userId, {
+                state: paused ? "paused" : "running",
+                ...(paused && { endAt: inSeconds(-600) }),
+                cpuUsedPct: 2,
+            }),
+        );
+    }
+    await drizzle(env.DB)
+        .insert(sandboxKeep)
+        .values(
+            requests.map(({ id }) => ({
+                sandboxId: id,
+                apiKeyId: owner.id,
+                until: new Date(Date.now() + 86_400_000),
+                idleTimeout: 900,
+                activeAt: longAgo,
+            })),
+        );
+    for (const { id, path, method, token, paused } of requests) {
+        const response = await visit(`49983-${id}.pollinations.app`, path, {
+            method,
+            headers: { "x-access-token": token },
+        });
+        expect(response.status).toBe(paused ? 502 : 200);
+    }
+    await runCron();
+    expect(
+        (await keeps()).every(
+            (keep) => keep.activeAt?.getTime() === longAgo.getTime(),
+        ),
+    ).toBe(true);
+    expect(e2b.sandboxes.every((sandbox) => sandbox.state === "paused")).toBe(
+        true,
+    );
+    expect(e2b.leases()).toEqual([]);
+});
+
+test("provider-accepted signed file requests count as envd activity without a token header", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    e2b.sandboxes.push(keptSandbox("signedfiles", owner.userId));
+    const longAgo = new Date(Date.now() - 1000_000);
+    await drizzle(env.DB)
+        .insert(sandboxKeep)
+        .values({
+            sandboxId: "signedfiles",
+            apiKeyId: owner.id,
+            until: new Date(Date.now() + 86_400_000),
+            idleTimeout: 900,
+            activeAt: longAgo,
+        });
+    const body = new FormData();
+    body.append("file", new File(["hello"], "hello.txt"));
+    const response = await visit(
+        "49983-signedfiles.pollinations.app",
+        "/files?signature=provider-accepted",
+        {
+            method: "POST",
+            body,
+        },
+    );
+    expect(response.status).toBe(200);
+    await vi.waitFor(async () =>
+        expect((await keeps())[0].activeAt?.getTime()).toBeGreaterThan(
+            longAgo.getTime(),
+        ),
+    );
+});
+
+test("failed activity writes do not hide paid connect or port responses and are retried", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    let failActivity = true;
+    let activityWrites = 0;
+    const DB = {
+        prepare: (sql: string) => {
+            if (sql.startsWith('update "sandbox_keep" set "active_at"')) {
+                activityWrites++;
+                if (failActivity)
+                    throw new Error("D1_ERROR: Activity write failed.");
+            }
+            return env.DB.prepare(sql);
+        },
+        batch: env.DB.batch.bind(env.DB),
+    } as D1Database;
+    for (const mode of ["connect", "port"]) {
+        const id = `activity${mode}`;
+        const longAgo = new Date(Date.now() - 1000_000);
+        e2b.sandboxes.push(
+            keptSandbox(id, owner.userId, {
+                state: "paused",
+                endAt: inSeconds(-600),
+            }),
+        );
+        await drizzle(env.DB)
+            .insert(sandboxKeep)
+            .values({
+                sandboxId: id,
+                apiKeyId: owner.id,
+                until: new Date(Date.now() + 86_400_000),
+                idleTimeout: 900,
+                activeAt: longAgo,
+            });
+        if (mode === "port") await sharePort(owner.key, id, 8080);
+        const request = () =>
+            mode === "connect"
+                ? new Request(
+                      `https://gen.pollinations.ai/alpha/e2b/sandboxes/${id}/connect`,
+                      {
+                          method: "POST",
+                          headers: {
+                              "x-api-key": owner.key,
+                              "content-type": "application/json",
+                          },
+                          body: "{}",
+                      },
+                  )
+                : new Request(`https://8080-${id}.pollinations.app`, {
+                      headers: { "x-pollinations-secret": SECRET },
+                  });
+        const fetchWithActivityFailure = async () => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(request(), { ...env, DB }, ctx);
+            await waitOnExecutionContext(ctx);
+            return response;
+        };
+        failActivity = true;
+        const before = activityWrites;
+        const response = await fetchWithActivityFailure();
+        expect(response.status).toBe(mode === "connect" ? 201 : 200);
+        if (mode === "port")
+            expect(await response.text()).toBe("port 8080 says hi");
+        expect(activityWrites).toBe(before + 1);
+        expect(
+            (await keeps())
+                .find((keep) => keep.sandboxId === id)
+                ?.activeAt?.getTime(),
+        ).toBe(longAgo.getTime());
+
+        failActivity = false;
+        expect((await fetchWithActivityFailure()).status).toBe(200);
+        expect(activityWrites).toBe(before + 2);
+        expect(
+            (await keeps())
+                .find((keep) => keep.sandboxId === id)
+                ?.activeAt?.getTime(),
+        ).toBeGreaterThan(longAgo.getTime());
+    }
 });

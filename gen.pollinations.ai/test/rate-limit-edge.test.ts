@@ -1,7 +1,13 @@
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { rateLimit } from "@shared/rate-limit.ts";
 import { Hono } from "hono";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
+import worker from "../src/index.ts";
 
 /** Counts calls per key within one window, like the Cloudflare binding. */
 function limiter(limit: number): RateLimit {
@@ -35,6 +41,33 @@ function send(
 }
 
 describe("edge rate limit", () => {
+    it("limits sandbox port hosts before any D1 or provider lookup", async () => {
+        const prepare = vi.spyOn(env.DB, "prepare").mockImplementation(() => {
+            throw new Error("Sandbox lookup ran before the edge limit");
+        });
+        const ctx = createExecutionContext();
+        try {
+            const response = await worker.fetch(
+                new Request("https://8080-limitprobe.pollinations.app/", {
+                    headers: { "CF-Connecting-IP": "203.0.113.7" },
+                }),
+                {
+                    ...env,
+                    ENVIRONMENT: "production",
+                    SANDBOX_DOMAIN: "pollinations.app",
+                    EDGE_RATE_LIMITER: limiter(0),
+                },
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(429);
+            expect(response.headers.get("Retry-After")).toBe("10");
+            expect(prepare).not.toHaveBeenCalled();
+        } finally {
+            prepare.mockRestore();
+        }
+    });
+
     it("caps rotating keys from one IP at the IP limit", async () => {
         const env = bindings();
         const statuses = [];

@@ -519,11 +519,31 @@ const noted = new Map<string, number>();
 async function noteActivity(env: CloudflareBindings, sandboxID: string) {
     const now = Date.now();
     if (now - (noted.get(sandboxID) ?? 0) < 60_000) return;
-    noted.set(sandboxID, now);
     await drizzle(env.DB)
         .update(sandboxKeep)
         .set({ activeAt: new Date(now) })
         .where(eq(sandboxKeep.sandboxId, sandboxID));
+    noted.set(sandboxID, now);
+}
+
+// A failed activity write must not hide work whose lease has already been paid.
+function noteRequestActivity(
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+    sandboxID: string,
+) {
+    ctx.waitUntil(
+        noteActivity(env, sandboxID).catch(async (error) => {
+            await ensureConfigured({
+                level: env.LOG_LEVEL || "debug",
+                format: env.LOG_FORMAT || "text",
+            });
+            getLogger(["gen", "sandbox-activity"]).warn(
+                "Recording activity for sandbox {sandboxID} failed: {error}",
+                { sandboxID, error: String(error) },
+            );
+        }),
+    );
 }
 
 // Writes polli's login into a new sandbox: a key of its own, created with the
@@ -793,7 +813,11 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 if (until) {
                     await setKeep(c, sandbox.sandboxID, until, idle);
                 } else if (!keeper) {
-                    await noteActivity(c.env, sandbox.sandboxID);
+                    noteRequestActivity(
+                        c.env,
+                        c.executionCtx,
+                        sandbox.sandboxID,
+                    );
                 }
                 const connected = await response.json<CreatedSandbox>();
                 return c.json(
@@ -1028,7 +1052,9 @@ const gensSandboxes = new Map<string, { ours: boolean; until: number }>();
 async function madeByGen(env: CloudflareBindings, sandboxID: string) {
     const known = gensSandboxes.get(sandboxID);
     if (known && known.until > Date.now()) return known.ours;
-    const ours = Boolean(await getSandbox(env, sandboxID));
+    const ours = Boolean(
+        (await getSandbox(env, sandboxID))?.metadata?.[OWNER_KEY],
+    );
     if (gensSandboxes.size > 10_000) gensSandboxes.clear();
     gensSandboxes.set(sandboxID, {
         ours,
@@ -1074,8 +1100,15 @@ async function wakePort(
         await unsharePort(env, sandboxID, port);
         return notShared();
     }
+    const now = Date.now();
+    const paidUntil =
+        sandbox.state === "running" ? Date.parse(sandbox.endAt) : 0;
+    const timeout =
+        paidUntil - now >= WAKE_MARGIN_MS
+            ? Math.floor((paidUntil - now) / 1000)
+            : DEFAULT_TIMEOUT_SECONDS;
     const response = await payerApi(env, ctx, payer)(sandboxID, "connect", {
-        timeout: DEFAULT_TIMEOUT_SECONDS,
+        timeout,
     });
     if (!response.ok) {
         const { message } = await response
@@ -1087,15 +1120,11 @@ async function wakePort(
         );
     }
     const connected = await response.json<CreatedSandbox>();
-    const now = Date.now();
     const woken = {
         origin: providerOrigin(env, sandboxID, port),
         token: connected.trafficAccessToken ?? undefined,
         // Connect never shortens a running sandbox's lease.
-        until: Math.max(
-            now + DEFAULT_TIMEOUT_SECONDS * 1000,
-            sandbox.state === "running" ? Date.parse(sandbox.endAt) : 0,
-        ),
+        until: Math.max(now + timeout * 1000, paidUntil),
     };
     wokenPorts.set(`${port}-${sandboxID}`, woken);
     return woken;
@@ -1148,6 +1177,28 @@ function send(
     });
 }
 
+// envd authenticates protected calls and file signatures itself. Public
+// health checks and CORS probes cannot keep a sandbox awake, even with a token.
+function authenticatedEnvdActivity(request: Request, response: Response) {
+    if (!response.ok || request.method === "OPTIONS") return false;
+    const url = new URL(request.url);
+    let path: string;
+    try {
+        path = decodeURIComponent(url.pathname).replace(/\/+$/, "");
+    } catch {
+        return false;
+    }
+    return (
+        path !== "/health" &&
+        path !== "/init" &&
+        Boolean(
+            request.headers.get("x-access-token")?.trim() ||
+                (path === "/files" &&
+                    url.searchParams.get("signature")?.trim()),
+        )
+    );
+}
+
 async function forwardPort(
     request: Request,
     env: CloudflareBindings,
@@ -1170,8 +1221,8 @@ async function forwardPort(
             request,
             providerOrigin(env, sandboxID, port),
         );
-        if (response.status !== 401 && response.status !== 403) {
-            ctx.waitUntil(noteActivity(env, sandboxID));
+        if (authenticatedEnvdActivity(request, response)) {
+            noteRequestActivity(env, ctx, sandboxID);
         }
         return response;
     }
@@ -1205,7 +1256,7 @@ async function forwardPort(
             ? cached
             : await wake();
     if (woken instanceof Response) return woken;
-    await noteActivity(env, sandboxID);
+    noteRequestActivity(env, ctx, sandboxID);
     // A small body (a webhook's) is kept for sending again, should the
     // sandbox have stopped inside the cached lease.
     const length = request.headers.get("content-length");

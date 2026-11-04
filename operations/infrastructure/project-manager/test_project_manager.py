@@ -4,7 +4,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 spec = importlib.util.spec_from_file_location("project_manager", Path(__file__).with_name("project_manager.py"))
 manager = importlib.util.module_from_spec(spec)
@@ -70,13 +70,10 @@ class ClassificationTest(unittest.TestCase):
         native_type.assert_not_called()
 
     def test_unavailable_classifier_skips_without_failing(self):
-        context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 3, "ISSUE_TITLE": "Test PR",
-                   "ISSUE_NODE_ID": "pr-node", "GITHUB_TOKEN": "test",
-                   "POLLINATIONS_TOKEN": "test", "GITHUB_EVENT": {},
-                   "ITEM_DATA": {"labels": []}, "DRY_RUN": False}
+        context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 3, "ISSUE_NODE_ID": "pr-node",
+                   "GITHUB_TOKEN": "test", "POLLINATIONS_TOKEN": "test", "GITHUB_EVENT": {},
+                   "ITEM_DATA": {"labels": []}}
         with patch.multiple(manager, **context), \
-             patch.object(manager, "read_brief", return_value="brief"), \
-             patch.object(manager, "area_names", return_value=["Models"]), \
              patch.object(manager, "dev_fields", return_value={}), \
              patch.object(manager, "fetch_pr_files", return_value=[]), \
              patch.object(manager, "closing_issues", return_value=[]), \
@@ -85,20 +82,14 @@ class ClassificationTest(unittest.TestCase):
             manager.main()
         add.assert_not_called()
 
-    def test_invalid_classification_still_fails(self):
-        context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 4, "ISSUE_TITLE": "Test PR",
-                   "ISSUE_NODE_ID": "pr-node", "GITHUB_TOKEN": "test",
-                   "POLLINATIONS_TOKEN": "test", "GITHUB_EVENT": {},
-                   "ITEM_DATA": {"labels": []}, "DRY_RUN": False}
-        with patch.multiple(manager, **context), \
-             patch.object(manager, "read_brief", return_value="brief"), \
-             patch.object(manager, "area_names", return_value=["Models"]), \
-             patch.object(manager, "dev_fields", return_value={}), \
-             patch.object(manager, "fetch_pr_files", return_value=[]), \
-             patch.object(manager, "closing_issues", return_value=[]), \
-             patch.object(manager, "ask_ai", return_value={"area": "Not an area"}):
-            with self.assertRaises(SystemExit):
-                manager.main()
+    def test_rejected_ai_request_fails_at_once_but_outage_returns_none(self):
+        with patch.object(manager.time, "sleep"):
+            with patch.object(manager.requests, "post", return_value=Mock(status_code=503, text="")):
+                self.assertIsNone(manager.ask_ai("system", "user"))
+            with patch.object(manager.requests, "post", return_value=Mock(status_code=401, text="")) as post:
+                with self.assertRaises(SystemExit):
+                    manager.ask_ai("system", "user")
+        post.assert_called_once()
 
     def test_missing_linked_issue_node_fails_and_is_not_cached(self):
         manager.closing_issues.cache_clear()

@@ -77,10 +77,6 @@ def fail(msg: str):
     sys.exit(1)
 
 
-class ClassificationUnavailable(Exception):
-    """The classifier could not run, so the item is left unclassified."""
-
-
 def read_brief() -> str:
     with open(BRIEF_PATH, "r") as f:
         return f.read()
@@ -115,6 +111,9 @@ def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
                 },
                 timeout=120,
             )
+            # A rejected key or request won't fix itself; only outages are retried.
+            if 400 <= r.status_code < 500 and r.status_code != 429:
+                fail(f"AI HTTP {r.status_code}: {r.text[:500]}")
             if r.status_code != 200:
                 log_error(f"AI HTTP {r.status_code}: {r.text[:500]}")
             else:
@@ -323,8 +322,8 @@ def fetch_pr_files() -> list:
         page += 1
 
 
-def classify(brief: str, areas: list) -> dict:
-    """Area and type for work; priority only for issues."""
+def classify(brief: str, areas: list) -> Optional[dict]:
+    """Area and type for work; priority only for issues. None while the classifier is down."""
     if IS_PULL_REQUEST:
         files = fetch_pr_files()
         facts = f"Changed files ({len(files)}):\n" + "\n".join(files[:300])
@@ -342,9 +341,7 @@ Body: {ISSUE_BODY[:2000]}
 {facts}
 """)
     if raw is None:
-        raise ClassificationUnavailable(
-            f"AI classification unavailable for #{ISSUE_NUMBER}"
-        )
+        return None
     try:
         return classification_answer(raw, areas, IS_PULL_REQUEST)
     except ValueError as error:
@@ -391,13 +388,9 @@ def main():
     if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
         answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
     else:
-        try:
-            answer = classify(brief, areas)
-        except ClassificationUnavailable as error:
-            # A model or API outage is not the contributor's failure. Leave the
-            # item unclassified instead of turning their check red; the
-            # workflow_dispatch run re-classifies later.
-            log_error(str(error))
+        answer = classify(brief, areas)
+        if answer is None:
+            # An outage is not the contributor's failure: leave the item for a workflow_dispatch run.
             print(f"SKIP #{ISSUE_NUMBER}\tclassifier unavailable\t{ISSUE_TITLE}")
             return
         if not IS_PULL_REQUEST and answer["area"] is None:

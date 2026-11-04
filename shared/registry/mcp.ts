@@ -57,7 +57,8 @@ export type McpBindingName =
     | "CALCULATORS_MCP"
     | "NETWORK_MCP"
     | "PACKAGES_MCP"
-    | "NEWS_MCP";
+    | "NEWS_MCP"
+    | "RESEARCH_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -297,6 +298,19 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Free public sources. Upstream limits apply.",
+            rates: [],
+        },
+    },
+    {
+        id: "research",
+        alpha: true,
+        name: "Research",
+        description:
+            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+        binding: "RESEARCH_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Research lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

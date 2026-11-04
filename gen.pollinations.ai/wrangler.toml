@@ -15,6 +15,7 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
+    { binding = "RESEARCH_MCP", service = "pollinations-research-mcp" },
     { binding = "NEWS_MCP", service = "pollinations-news-mcp" },
     { binding = "PACKAGES_MCP", service = "pollinations-packages-mcp" },
     { binding = "NETWORK_MCP", service = "pollinations-network-mcp" },
@@ -594,3 +595,19 @@ service = "pollinations-news-mcp-staging"
 [[env.test.services]]
 binding = "NEWS_MCP"
 service = "pollinations-news-mcp"
+
+[[env.production.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp"
+
+
+
+[[env.staging.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp-staging"
+
+
+
+[[env.test.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp"

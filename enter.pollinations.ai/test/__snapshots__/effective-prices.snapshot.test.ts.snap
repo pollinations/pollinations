@@ -4497,18 +4497,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "thinkingmachines/inkling": {
     "cost": {
-      "completionTextTokens": 0.00000405,
-      "promptAudioTokens": 0.000001,
-      "promptCachedTokens": 0.00000017,
-      "promptImageTokens": 0.000001,
-      "promptTextTokens": 0.000001,
+      "completionTextTokens": 0.00000427275,
+      "promptAudioTokens": 0.000001055,
+      "promptCachedTokens": 0.00000017935,
+      "promptImageTokens": 0.000001055,
+      "promptTextTokens": 0.000001055,
     },
     "price": {
-      "completionTextTokens": 0.00000405,
-      "promptAudioTokens": 0.000001,
-      "promptCachedTokens": 0.00000017,
-      "promptImageTokens": 0.000001,
-      "promptTextTokens": 0.000001,
+      "completionTextTokens": 0.00000427275,
+      "promptAudioTokens": 0.000001055,
+      "promptCachedTokens": 0.00000017935,
+      "promptImageTokens": 0.000001055,
+      "promptTextTokens": 0.000001055,
     },
   },
   "thinkingmachines/inkling-small": {
@@ -4521,6 +4521,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.000001266,
       "promptCachedTokens": 0.0000001055,
       "promptTextTokens": 0.00000047475,
+    },
+  },
+  "thinkingmachines/inkling:vercel:togetherai": {
+    "cost": {
+      "completionTextTokens": 0.00000405,
+      "promptAudioTokens": 0.000001,
+      "promptCachedTokens": 0.00000017,
+      "promptImageTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.00000405,
+      "promptAudioTokens": 0.000001,
+      "promptCachedTokens": 0.00000017,
+      "promptImageTokens": 0.000001,
+      "promptTextTokens": 0.000001,
     },
   },
   "tongyi-mai/z-image-turbo": {

@@ -18,7 +18,7 @@ http.createServer(async (req, res) => {
         for await (const chunk of req) chunks.push(chunk);
         // Parsed and sent to a fixed URL, so neither /v1/messages/../.. nor an
         // absolute request URL can take the key anywhere else.
-        const { pathname, search } = new URL(req.url, "http://proxy");
+        const { pathname } = new URL(req.url, "http://proxy");
         if (
             req.method !== "POST" ||
             pathname !== "/v1/messages" ||
@@ -30,7 +30,7 @@ http.createServer(async (req, res) => {
         const body = { ...JSON.parse(Buffer.concat(chunks)), model: MODEL };
         const beta = req.headers["anthropic-beta"];
         const upstream = await fetch(
-            `https://gen.pollinations.ai/v1/messages${search}`,
+            "https://gen.pollinations.ai/v1/messages",
             {
                 method: "POST",
                 headers: {
@@ -50,7 +50,9 @@ http.createServer(async (req, res) => {
         for await (const chunk of upstream.body ?? []) res.write(chunk);
         res.end();
     } catch (error) {
+        // Logged for the workflow run, never sent back to the agent.
+        console.error(error);
         if (!res.headersSent) res.writeHead(502);
-        res.end(String(error));
+        res.end();
     }
 }).listen(8711, "172.17.0.1");

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-03T06:10:28.960354+00:00",
+  "generated_at": "2026-11-04T06:09:32.681712+00:00",
   "models": [
     {
       "id": "2026-10-06:elevenlabs/eleven-v4",
@@ -6855,9 +6855,98 @@
       "date": "2026-10-30",
       "pr": 18797,
       "url": "https://github.com/pollinations/pollinations/pull/18797"
+    },
+    {
+      "id": "pr-19080:PATCH /account/keys/{id}",
+      "endpoint": "PATCH /account/keys/{id}",
+      "summary": "Update API Key",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:accountPermissions",
+          "before": {
+            "type": "string[]|null",
+            "required": false
+          },
+          "after": {
+            "type": "\"profile\"|\"usage\"|\"keys\"|\"machines\"[]|null",
+            "required": false
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-11-03",
+      "pr": 19080,
+      "url": "https://github.com/pollinations/pollinations/pull/19080"
+    },
+    {
+      "id": "pr-19080:POST /account/keys",
+      "endpoint": "POST /account/keys",
+      "summary": "Create API Key",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:accountPermissions",
+          "before": {
+            "type": "string[]|null",
+            "required": false
+          },
+          "after": {
+            "type": "\"profile\"|\"usage\"|\"keys\"|\"machines\"[]|null",
+            "required": false
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-11-03",
+      "pr": 19080,
+      "url": "https://github.com/pollinations/pollinations/pull/19080"
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-03",
+      "emoji": "🤖",
+      "title": "MiniMax M3.1 Flash",
+      "text": "Use `minimax/minimax-m3.1-flash` with text or image input, tools, reasoning, and a 1,048,576-token context window. It does not require a paid balance. [View the model](https://enter.pollinations.ai/models?q=minimax/minimax-m3.1-flash).",
+      "prs": [
+        18197
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-03",
+      "emoji": "🤖",
+      "title": "Two Kimi K3.1 Pro variants",
+      "text": "Try `moonshotai/kimi-k3.1-pro` or `moonshotai/kimi-k3.1-pro-highspeed` for text and image input, tools, reasoning, and 1,048,576-token context windows. Both require a paid balance. [View Kimi K3.1 Pro](https://enter.pollinations.ai/models?q=moonshotai/kimi-k3.1-pro).",
+      "prs": [
+        18198,
+        18199
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-03",
+      "emoji": "🎯",
+      "title": "Jev moves to 1.14",
+      "text": "Jev decision requests now use the pinned `typesafe/jev-1.14` release. Existing `jev`, `typesafe/jev`, and `typesafe/jev-1.13` names resolve to 1.14 too. [View the model](https://enter.pollinations.ai/models?q=typesafe/jev-1.14).",
+      "prs": [
+        19038
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-03",
+      "emoji": "💡",
+      "title": "Polli supports Mistral Vibe",
+      "text": "Use `polli harness vibe on|status|off` to set up Pollinations models in Mistral Vibe. It selects `openai/gpt-6-sol` by default, and `--model` lets you choose another tool-calling model. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        18975
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-11-02",
       "emoji": "🎯",
@@ -8313,26 +8402,6 @@
         16450
       ],
       "kind": "api"
-    },
-    {
-      "date": "2026-10-04",
-      "emoji": "✨",
-      "title": "Open WebUI chat starters",
-      "text": "New chats start with `openai/gpt-5.4-nano`, and people without custom pins get four everyday models in the picker. Four general-purpose prompts offer a place to start.",
-      "prs": [
-        16249
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-04",
-      "emoji": "🤖",
-      "title": "Direct Claude Code harness",
-      "text": "Use `polli harness claude-code on` to configure Claude Code for Gen’s `/v1/messages` endpoint without Claude Code Router. Pollinations settings stay separate from your native Claude login and settings. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        16311
-      ],
-      "kind": "product"
     }
   ]
 }

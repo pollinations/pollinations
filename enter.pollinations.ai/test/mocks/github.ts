@@ -7,6 +7,14 @@ import { createMiddleware } from "hono/factory";
 
 const REPO = "pollinations/pollinations";
 
+export type MockRewardComment = {
+    body: string;
+    createdAt: string;
+    lastEditedAt: string | null;
+    author: { databaseId?: number } | null;
+    editor: { databaseId?: number } | null;
+};
+
 export type MockGithubState = {
     secretScanningPublicKeys: Array<{
         key_identifier: string;
@@ -32,6 +40,7 @@ export type MockGithubState = {
         user: { login: string; databaseId?: number | null } | null;
         assignees?: { login: string; databaseId?: number | null }[];
         labels?: Array<{ name: string }>;
+        comments?: MockRewardComment[];
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
@@ -51,6 +60,7 @@ export type MockGithubState = {
         authorId?: number;
         base?: string;
         closingIssues?: number[];
+        comments?: MockRewardComment[];
     }>;
     // Commit author GitHub ids per PR number, including co-authors.
     commitAuthors: Record<number, number[]>;
@@ -182,6 +192,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                         url: `https://github.com/${REPO}/pull/${pr.number}`,
                         mergedAt: pr.mergedAt,
                         author: { databaseId: pr.authorId ?? state.user.id },
+                        comments: { nodes: (pr.comments ?? []).slice(-20) },
                         closingIssuesReferences: {
                             nodes: (pr.closingIssues ?? []).map((number) => ({
                                 number,
@@ -224,6 +235,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                     })),
                 },
                 labels: { nodes: issue.labels ?? [] },
+                comments: { nodes: (issue.comments ?? []).slice(-20) },
                 closedByPullRequestsReferences: {
                     nodes: (issue.closedByPullRequestsReferences ?? []).map(
                         (pr) => ({

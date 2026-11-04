@@ -16,7 +16,7 @@ import * as discordCommunity from "../src/services/quests/groups/discord-communi
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
-import type { MockGithubState } from "./mocks/github.ts";
+import type { MockGithubState, MockRewardComment } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
 const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
@@ -2638,6 +2638,137 @@ test("each PR merged into main from the start date pays 5; quest PRs, other bran
         ...paid,
         { questId: "merged_pr", pollenAmount: 5 },
     ]);
+});
+
+test("Elliot's or Thomas's newest Reward comment sets a PR or issue reward; 0 cancels it", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const login = user.githubUsername ?? "";
+    const [ELLIOT, THOMAS, MERGED] = [
+        36901823,
+        5099901,
+        "2026-11-06T00:00:00Z",
+    ];
+    const comment = (
+        body: string,
+        databaseId?: number,
+        createdAt = MERGED,
+    ): MockRewardComment => ({
+        body,
+        createdAt,
+        lastEditedAt: null,
+        author: { databaseId },
+        editor: null,
+    });
+
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 9800,
+        title: "A quest",
+        goal: "Build it.",
+        reward: 12,
+        completedByPrNumber: 9607,
+        completedByGithubId: user.githubId,
+        updatedAt: new Date(MERGED),
+    });
+    const prs: [number, MockRewardComment[], number[]?][] = [
+        [9601, []],
+        [9602, [comment("Reward: 0", ELLIOT)]],
+        [9603, [comment("Reward: 20 paid", THOMAS)]],
+        // Only a whole, in-range comment from Elliot or Thomas that nobody
+        // else edited counts.
+        [
+            9604,
+            [
+                comment("Reward: 50", 999),
+                comment("Reward: 101", ELLIOT),
+                comment("Reward: 1e2", ELLIOT),
+                comment("Example:\nReward: 30 paid", THOMAS),
+                {
+                    ...comment("Reward: 40 paid", THOMAS),
+                    lastEditedAt: MERGED,
+                    editor: { databaseId: 999 },
+                },
+                comment("Reward: 100"),
+            ],
+        ],
+        [
+            9605,
+            [
+                comment("Reward: 10 paid", THOMAS),
+                comment("Reward: 2", ELLIOT, "2026-11-07T00:00:00Z"),
+            ],
+        ],
+        // The quest's bounty is the whole reward.
+        [9607, [comment("Reward: 9", ELLIOT)], [9800]],
+    ];
+    for (const [number, comments, closingIssues] of prs) {
+        mocks.github.state.mergedPullRequests.push({
+            number,
+            authorLogin: login,
+            mergedAt: MERGED,
+            comments,
+            closingIssues,
+        });
+    }
+
+    // Two issues the user fixed with one PR: an override pays the second too.
+    const issues: [number, number, MockRewardComment[]][] = [
+        [9701, user.githubId ?? 0, []],
+        [9702, user.githubId ?? 0, [comment("Reward: 4", ELLIOT)]],
+        [9703, 999, [comment("Reward: 0", THOMAS)]],
+    ];
+    for (const [number, fixer, comments] of issues) {
+        mocks.github.state.questIssues.push({
+            number,
+            state: "closed",
+            title: `Issue ${number}`,
+            html_url: `https://github.com/pollinations/pollinations/issues/${number}`,
+            body: "A useful issue report",
+            created_at: "2026-11-05T00:00:00Z",
+            updated_at: MERGED,
+            closed_at: MERGED,
+            user: { login, databaseId: user.githubId },
+            comments,
+            closedByPullRequestsReferences: [
+                {
+                    number: fixer === 999 ? 9711 : 9710,
+                    mergedAt: MERGED,
+                    author: { databaseId: fixer },
+                },
+            ],
+        });
+    }
+
+    await checkQuestsForUser(env, user.id);
+    const rows = await drizzle(env.DB, { schema })
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(
+        Object.fromEntries(
+            rows
+                .filter((row) =>
+                    /^github:(merged_pr|reported_issue|issue):/.test(
+                        row.questId,
+                    ),
+                )
+                .map((row) => [
+                    row.questId,
+                    [row.pollenAmount, row.balanceBucket],
+                ]),
+        ),
+    ).toEqual({
+        "github:issue:9800": [12, "tier"],
+        "github:merged_pr:9601": [5, "tier"],
+        "github:merged_pr:9603": [20, "pack"],
+        "github:merged_pr:9604": [5, "tier"],
+        "github:merged_pr:9605": [2, "tier"],
+        "github:reported_issue:9701": [3, "tier"],
+        "github:reported_issue:9702": [4, "tier"],
+    });
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

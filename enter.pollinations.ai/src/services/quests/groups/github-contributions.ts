@@ -22,18 +22,21 @@ import {
  * GitHub mirror and no materialized quest table.
  *
  * Every other PR merged into main earns 5, and every issue a merged PR closes
- * earns its author 3, also when they fixed it themselves.
+ * earns its author 3, also when they fixed it themselves. Elliot or Thomas can
+ * change either with a `Reward: N` comment; the project manager only
+ * announces the default.
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
+const REWARD_MAINTAINERS = new Set([5099901, 36901823]); // Thomas, Elliot
 const PR_REWARD = 5;
 // PRs merged before this earn the old one-time first-PR reward instead. Same
 // date as REWARDS_START in operations/infrastructure/project-manager/project_manager.py.
 // Set it to the production deploy day: old Enter pays a first PR merged after
 // this date once more, under the old quest id.
 const REWARDS_START = "2026-11-05T00:00:00Z";
-// Bounties come from an editable issue body, so cap what an edit can pay.
-const BOUNTY_LIMIT = 100;
+// Bounties and `Reward:` comments are editable text, so cap what an edit can pay.
+const REWARD_LIMIT = 100;
 const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
     "DRAFT-QUEST",
     "APP-SUBMISSION",
@@ -205,11 +208,22 @@ type GitHubPullRequestNode = {
     mergedAt: string | null;
 };
 
+type RewardComment = {
+    body: string;
+    createdAt: string;
+    lastEditedAt: string | null;
+    author: GitHubUser | null;
+    editor: GitHubUser | null;
+};
+
+type Reward = Pick<QuestDefinition, "rewardAmount" | "balanceBucket">;
+
 type MergedPrNode = {
     number: number;
     title: string;
     url: string;
     author: GitHubUser | null;
+    comments: { nodes: RewardComment[] };
     closingIssuesReferences: { nodes: { number: number }[] };
 };
 
@@ -219,6 +233,7 @@ type ReportedIssueNode = {
     url: string;
     createdAt: string;
     author: GitHubUser | null;
+    comments: { nodes: RewardComment[] };
     labels: { nodes: { name: string }[] };
     closedByPullRequestsReferences: {
         nodes: {
@@ -288,6 +303,12 @@ query($query:String!){
   }
 }`;
 
+// The newest 20 comments, for a maintainer's `Reward:` override.
+const REWARD_COMMENTS = `comments(last:20){
+  nodes{ body createdAt lastEditedAt
+    author{ ... on User{ databaseId } } editor{ ... on User{ databaseId } } }
+}`;
+
 // Closing issue numbers only: their labels would cost about ten times more,
 // and the cached quest issues already say which numbers are quests.
 const MERGED_PRS_QUERY = `
@@ -297,6 +318,7 @@ query($query:String!,$after:String){
     nodes{
       ... on PullRequest{
         number title url author{ ... on User{ databaseId } }
+        ${REWARD_COMMENTS}
         closingIssuesReferences(first:10){ nodes{ number } }
       }
     }
@@ -310,6 +332,7 @@ query($query:String!,$after:String){
     nodes{
       ... on Issue{
         number title url createdAt author{ ... on User{ databaseId } }
+        ${REWARD_COMMENTS}
         labels(first:20){ nodes{ name } }
         closedByPullRequestsReferences(first:10){
           nodes{ number mergedAt repository{ nameWithOwner } author{ ... on User{ databaseId } } }
@@ -340,9 +363,42 @@ function parseReward(body: string): number | null {
     const amount = Number(match[1]);
     // An out-of-range amount must not become a payable quest: recordRewards
     // also throws on amounts it can't record, and one throw fails the check.
-    if (!Number.isFinite(amount) || amount <= 0 || amount > BOUNTY_LIMIT)
+    if (!Number.isFinite(amount) || amount <= 0 || amount > REWARD_LIMIT)
         return null;
     return amount;
+}
+
+// `Reward: 3`, `Reward: 3 quest` or `Reward: 3 paid`, alone in the comment.
+function parseOverride(text: string): Reward | undefined {
+    const match = text
+        .trim()
+        .match(/^Reward:[ \t]*(\d+(?:\.\d+)?)(?:[ \t]+(quest|paid))?[ \t]*$/);
+    if (!match || Number(match[1]) > REWARD_LIMIT) return;
+    return {
+        rewardAmount: Number(match[1]),
+        balanceBucket: match[2] === "paid" ? "pack" : "tier",
+    };
+}
+
+// Elliot's or Thomas's newest `Reward:` comment that nobody else edited.
+// ponytail: only the newest 20 comments count; page further back if a long
+// thread ever buries an override.
+function rewardOverride(comments: RewardComment[]): Reward | undefined {
+    const isMaintainer = (actor: GitHubUser | null) =>
+        REWARD_MAINTAINERS.has(actor?.databaseId ?? 0);
+    return comments
+        .filter(
+            (comment) =>
+                isMaintainer(comment.author) &&
+                (!comment.lastEditedAt || isMaintainer(comment.editor)),
+        )
+        .sort(
+            (a, b) =>
+                Date.parse(b.lastEditedAt ?? b.createdAt) -
+                Date.parse(a.lastEditedAt ?? a.createdAt),
+        )
+        .map((comment) => parseOverride(comment.body))
+        .find((reward) => reward !== undefined);
 }
 
 // Pull a short human description out of the issue body: prefer a Goal/Scope
@@ -582,7 +638,13 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
                 Date.parse(pr.mergedAt) >= ISSUE_REPORT_START,
         );
         if (merges.length === 0) continue;
-        if (merges.every((pr) => pr.author?.databaseId === user.githubId)) {
+        // A maintainer's override also lifts the one-issue-per-own-PR limit.
+        const override = rewardOverride(issue.comments.nodes);
+        if (override?.rewardAmount === 0) continue;
+        if (
+            !override &&
+            merges.every((pr) => pr.author?.databaseId === user.githubId)
+        ) {
             const ownPr = merges.find((pr) => !ownPrsUsed.has(pr.number));
             if (!ownPr) continue;
             ownPrsUsed.add(ownPr.number);
@@ -590,6 +652,7 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
         proposals.push({
             quest: {
                 ...reportedIssueQuest,
+                ...override,
                 id: `github:reported_issue:${issue.number}`,
                 title: `Reported issue #${issue.number}: ${issue.title}`,
                 url: issue.url,
@@ -720,7 +783,8 @@ export async function evaluateUser(
             userId: user.id,
         }));
 
-    // A PR that closes a quest issue earns that bounty instead.
+    // A PR that closes a quest issue earns that bounty instead, whatever its
+    // comments say: the bounty itself is set in the quest issue.
     const questNumbers = new Set(issues.map((issue) => issue.issueNumber));
     const prProposals = mergedPrs
         .filter(
@@ -732,12 +796,14 @@ export async function evaluateUser(
         .map((pr) => ({
             quest: {
                 ...mergedPrQuest,
+                ...rewardOverride(pr.comments.nodes),
                 id: `github:merged_pr:${pr.number}`,
                 title: `Merged PR #${pr.number}: ${pr.title}`,
                 url: pr.url,
             },
             userId: user.id,
-        }));
+        }))
+        .filter((proposal) => proposal.quest.rewardAmount > 0);
 
     return {
         proposals: [

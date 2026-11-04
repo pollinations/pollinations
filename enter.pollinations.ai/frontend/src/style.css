@@ -48,7 +48,3 @@
     );
     color: var(--polli-color-text-strong);
 }
-
-.dashboard-add-button {
-    gap: 0.25rem;
-}

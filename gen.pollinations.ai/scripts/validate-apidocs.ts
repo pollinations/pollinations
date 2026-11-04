@@ -40,6 +40,11 @@ const BODYLESS_POSTS = [
         origin: "https://gen.pollinations.ai",
         path: /^\/account\/agents\/[^/]+\/sync$/,
     },
+    // Test reuses the saved model's stored endpoint, model and token.
+    {
+        origin: "https://gen.pollinations.ai",
+        path: /^\/account\/my-models\/[^/]+\/test$/,
+    },
     // Pause only stops the sandbox's lease renewal.
     {
         origin: "https://gen.pollinations.ai",

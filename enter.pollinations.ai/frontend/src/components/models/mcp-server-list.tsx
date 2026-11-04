@@ -1,5 +1,6 @@
 import {
     BeakerIcon,
+    Chip,
     InlineLink,
     KeyIcon,
     McpIcon,
@@ -51,8 +52,13 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                     className="h-10 w-px shrink-0 bg-divider"
                                 />
                                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                                    <span className="text-sm font-medium leading-tight text-theme-text-strong @2xl:text-base">
+                                    <span className="flex flex-wrap items-center gap-2 text-sm font-medium leading-tight text-theme-text-strong @2xl:text-base">
                                         {server.name} MCP
+                                        {server.alpha && (
+                                            <Chip intent="alpha" size="sm">
+                                                alpha
+                                            </Chip>
+                                        )}
                                     </span>
                                     <p className="text-sm text-theme-text-muted">
                                         {server.description}{" "}

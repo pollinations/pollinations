@@ -1,4 +1,4 @@
-import { isPublishableKey, readRedirectUris } from "./key-type.ts";
+import { isAppKey, readRedirectUris } from "./key-type.ts";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 type KeyEditValues = Omit<ApiKeyUpdateParams, "expiresAt"> & {
@@ -9,7 +9,7 @@ export function initialKeyEditValues(
     apiKey: ApiKey,
     now = Date.now(),
 ): KeyEditValues {
-    if (isPublishableKey(apiKey)) {
+    if (isAppKey(apiKey)) {
         return {
             name: apiKey.name ?? "",
             redirectUris: readRedirectUris(apiKey.metadata)

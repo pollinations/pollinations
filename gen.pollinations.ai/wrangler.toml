@@ -16,6 +16,7 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
     { binding = "PACKAGES_MCP", service = "pollinations-packages-mcp" },
+    { binding = "NETWORK_MCP", service = "pollinations-network-mcp" },
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
@@ -538,14 +539,34 @@ BEDROCK_GUARDRAIL_ID = "test-guardrail"
 BEDROCK_GUARDRAIL_VERSION = "1"
 
 [[env.production.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp"
+
+
+
+
+[[env.staging.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp-staging"
+
+
+
+
+[[env.test.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp"
+
+[[env.production.services]]
 binding = "PACKAGES_MCP"
 service = "pollinations-packages-mcp"
+
 
 
 
 [[env.staging.services]]
 binding = "PACKAGES_MCP"
 service = "pollinations-packages-mcp-staging"
+
 
 
 

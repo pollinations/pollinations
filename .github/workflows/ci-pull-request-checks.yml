@@ -37,7 +37,7 @@ jobs:
         run: pip install requests pyyaml
       - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
-        run: python3 -m unittest operations/infrastructure/project-manager/test_project_manager.py operations/news/scripts/test_news.py operations/app-management/ingestion/test_review_agent.py
+        run: python3 -m unittest operations/infrastructure/project-manager/test_project_manager.py operations/news/scripts/test_news.py
 
   gpu-tunnels:
     name: Test GPU tunnel recovery

@@ -174,6 +174,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "news",
+                alpha: true,
+                name: "News & Feeds",
+                description:
+                    "Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes.",
+                url: "https://gen.pollinations.ai/mcp/news",
+                pricing: {
+                    description: "Free public sources. Upstream limits apply.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

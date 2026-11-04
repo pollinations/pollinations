@@ -54,7 +54,8 @@ export type McpBindingName =
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
     | "MACHINES_MCP"
-    | "CALCULATORS_MCP";
+    | "CALCULATORS_MCP"
+    | "NEWS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -255,6 +256,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Local utilities and public ECB rates. No Pollen charge.",
+            rates: [],
+        },
+    },
+    {
+        id: "news",
+        alpha: true,
+        name: "News & Feeds",
+        description:
+            "Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes.",
+        binding: "NEWS_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free public sources. Upstream limits apply.",
             rates: [],
         },
     },

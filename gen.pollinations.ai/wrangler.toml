@@ -15,6 +15,7 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
+    { binding = "NEWS_MCP", service = "pollinations-news-mcp" },
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
@@ -535,3 +536,17 @@ XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"
 BEDROCK_GUARDRAIL_VERSION = "1"
+
+[[env.production.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp"
+
+
+[[env.staging.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp-staging"
+
+
+[[env.test.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp"

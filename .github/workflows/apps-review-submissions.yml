@@ -81,8 +81,8 @@ jobs:
             exit 1
           fi
 
-      # The agent runs as its own user without secrets. The key stays in the
-      # proxy, which this user can call but not read; private networks are off.
+      # The agent runs in a container without secrets or private networks. The
+      # key stays in the proxy on this host, which the container can call but not read.
       - name: Review with an agent
         id: agent
         if: inputs.dry_run || fromJSON(steps.validate.outputs.result).valid
@@ -91,23 +91,20 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
         run: |
           node operations/app-management/ingestion/model-proxy.js &
-          npm install -g --no-audit --no-fund @anthropic-ai/claude-code@2.1.301
-          sudo useradd -m reviewer
-          sudo iptables -A OUTPUT -m owner --uid-owner reviewer -d 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,168.63.129.16 -j REJECT
+          sudo iptables -I DOCKER-USER -d 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,100.64.0.0/10 -j REJECT
           { cat operations/app-management/ingestion/review-prompt.txt; jq .submission "$RUNNER_TEMP/app-validation.json"; } > "$RUNNER_TEMP/prompt.txt"
-          sudo -u reviewer env -i -C /home/reviewer HOME=/home/reviewer PATH="$PATH" \
-            ANTHROPIC_BASE_URL=http://127.0.0.1:8711 ANTHROPIC_API_KEY=proxy \
-            ANTHROPIC_DEFAULT_HAIKU_MODEL=openai/gpt-6-luna \
-            CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
-            claude -p --bare --model openai/gpt-6-luna --max-turns 30 --output-format json \
-              --tools Bash,Read,Grep,Glob --allowedTools "Bash(curl:*),Bash(git clone:*)" \
-            < "$RUNNER_TEMP/prompt.txt" > "$RUNNER_TEMP/agent.json"
-          jq -r '"turns: \(.num_turns)", .result' "$RUNNER_TEMP/agent.json"
-          {
-            echo 'result<<APP_REVIEW_EOF'
-            jq -r .result "$RUNNER_TEMP/agent.json"
-            echo 'APP_REVIEW_EOF'
-          } >> "$GITHUB_OUTPUT"
+          docker run --rm -i -w /review \
+            -e ANTHROPIC_BASE_URL=http://172.17.0.1:8711 -e ANTHROPIC_API_KEY=proxy \
+            -e CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
+            node:22 sh -c 'npm install -g --no-audit --no-fund @anthropic-ai/claude-code@2.1.301 < /dev/null >&2 &&
+              exec claude -p --bare --model openai/gpt-6-luna --max-turns 30 --output-format stream-json --verbose \
+                --tools Bash,Read,Grep,Glob --allowedTools "Bash(curl:*),Bash(git clone:*)"' \
+            < "$RUNNER_TEMP/prompt.txt" > "$RUNNER_TEMP/agent.jsonl" || true
+          # Log each tool call and failure, then the verdict.
+          jq -r 'if .type == "assistant" then .message.content[]? | select(.type == "tool_use") | "\(.name): \(.input | tostring | .[0:200])"
+            elif .type == "user" then .message.content[]? | select(.is_error? == true) | "  failed: \(.content | tostring | .[0:200])"
+            elif .type == "result" then "turns: \(.num_turns)", .result else empty end' "$RUNNER_TEMP/agent.jsonl"
+          echo "result=$(jq -r 'select(.type == "result") | .result' "$RUNNER_TEMP/agent.jsonl" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
 
   post:
     needs: review

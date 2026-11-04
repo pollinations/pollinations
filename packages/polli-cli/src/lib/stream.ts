@@ -55,3 +55,40 @@ export async function* streamSSE(
         }
     }
 }
+
+/** Yields each SSE data payload as parsed JSON until [DONE] or the end of
+ * the body; callers decide whether the stream finished. */
+export async function* sseEvents(
+    response: Response,
+): AsyncGenerator<Record<string, unknown>, void> {
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body");
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) return;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+
+            for (const line of lines) {
+                if (!line.startsWith("data:")) continue;
+                const data = line.slice(5).trim();
+                if (data === "[DONE]") return;
+                let parsed: Record<string, unknown>;
+                try {
+                    parsed = JSON.parse(data);
+                } catch {
+                    continue;
+                }
+                yield parsed;
+            }
+        }
+    } finally {
+        await reader.cancel().catch(() => undefined);
+    }
+}

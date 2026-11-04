@@ -199,6 +199,29 @@ setup when files were edited. Install Vibe first with `uv tool install mistral-v
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 
+## Editors (ACP)
+
+`polli acp` makes Pollinations agents available in editors that speak the
+[Agent Client Protocol](https://agentclientprotocol.com), such as Zed and
+JetBrains IDEs. The editor starts it; the agent itself runs on Pollinations.
+Add it to Zed's `settings.json`:
+
+```json
+"agent_servers": {
+  "Pollinations": {
+    "type": "custom",
+    "command": "npx",
+    "args": ["-y", "@pollinations/cli", "acp", "community/<owner>/<name>"]
+  }
+}
+```
+
+The agent argument is optional; the editor's model picker lists every agent.
+Sign in with `polli auth login` first, or set `POLLINATIONS_API_KEY` in the
+entry's `env`. MCP servers configured in the editor are connected locally and
+offered to the agent as tools; each call asks for permission. Each thread
+keeps its history while the editor runs.
+
 ## Sandboxes
 
 Linux VMs on E2B or Azure, paid from your wallet (alpha).

@@ -54,7 +54,8 @@ export type McpBindingName =
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
     | "MACHINES_MCP"
-    | "CALCULATORS_MCP";
+    | "CALCULATORS_MCP"
+    | "NETWORK_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -255,6 +256,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Local utilities and public ECB rates. No Pollen charge.",
+            rates: [],
+        },
+    },
+    {
+        id: "network",
+        alpha: true,
+        name: "Network",
+        description:
+            "Public DNS records, HTTP diagnostics, IPv4/IPv6 subnets and RDAP registration data.",
+        binding: "NETWORK_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Network diagnostics. No Pollen charge.",
             rates: [],
         },
     },

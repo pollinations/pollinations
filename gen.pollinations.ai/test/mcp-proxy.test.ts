@@ -174,6 +174,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "network",
+                alpha: true,
+                name: "Network",
+                description:
+                    "Public DNS records, HTTP diagnostics, IPv4/IPv6 subnets and RDAP registration data.",
+                url: "https://gen.pollinations.ai/mcp/network",
+                pricing: {
+                    description: "Network diagnostics. No Pollen charge.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

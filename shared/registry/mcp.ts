@@ -26,6 +26,8 @@ type McpServerDefinitionBase = {
     description: string;
     /** Experimental server; uses the same maturity flag as model catalogs. */
     alpha?: boolean;
+    /** Forward the caller key only when this server calls Gen on their behalf. */
+    forwardAuthorization?: true;
     binding: McpBindingName;
     pricing: McpPricingDefinition;
     userScoped?: boolean;
@@ -108,6 +110,7 @@ export const MCP_SERVERS = [
     {
         id: "pollinations",
         alpha: true,
+        forwardAuthorization: true,
         name: "Pollinations",
         description:
             "Access Pollinations models and API capabilities through agent tools.",
@@ -122,6 +125,7 @@ export const MCP_SERVERS = [
     {
         id: "ask-jev",
         alpha: true,
+        forwardAuthorization: true,
         name: "Ask Jev",
         description:
             "Evaluate state with typed choice, score, and probability questions.",
@@ -227,6 +231,7 @@ export const MCP_SERVERS = [
     {
         id: "machines",
         alpha: true,
+        forwardAuthorization: true,
         name: "Machines",
         description:
             "Start, pause, resume, and run commands and file operations in Linux sandboxes.",

@@ -4,6 +4,12 @@ import { jwtVerify, SignJWT } from "jose";
 
 export const AGENT_RUN_TOKEN_PREFIX = "ag_";
 export const AGENT_RUN_TOKEN_TTL_SECONDS = 1800;
+// An agent run can call another agent (baseModel, the pollinations MCP
+// generateText tool, a code agent). Allow one level of that: a run can make 48
+// tool calls, so each further level multiplies the worst case by 48, and a
+// loop such as an agent that calls itself would otherwise only stop at
+// Cloudflare's Worker loop limit.
+export const MAX_AGENT_RUN_DEPTH = 2;
 
 const AGENT_RUN_TOKEN_ISSUER = "gen.pollinations.ai";
 const AGENT_RUN_TOKEN_AUDIENCE = "pollinations-api";
@@ -21,6 +27,8 @@ export type AgentRunClaims = {
     // The community model id of the agent the token was minted for, so a
     // refusal during the run can name the agent that asked.
     agentModelId?: string;
+    // 1 for an agent the caller called directly, +1 for each agent it calls.
+    depth: number;
     issuedAt: number;
     expiresAt: number;
 };
@@ -37,6 +45,7 @@ export async function signAgentRunToken(opts: {
     parentRequestId: string;
     managedAgentId?: string;
     agentModelId?: string;
+    depth?: number;
     expiresIn?: number;
     now?: number;
 }): Promise<string> {
@@ -49,6 +58,7 @@ export async function signAgentRunToken(opts: {
     const token = await new SignJWT({
         version: 1,
         parentRequestId: opts.parentRequestId,
+        depth: opts.depth ?? 1,
         ...(opts.managedAgentId ? { managedAgentId: opts.managedAgentId } : {}),
         ...(opts.agentModelId ? { agentModelId: opts.agentModelId } : {}),
     })
@@ -98,6 +108,9 @@ export async function verifyAgentRunToken(
         typeof payload.exp !== "number" ||
         typeof payload.parentRequestId !== "string" ||
         !payload.parentRequestId ||
+        typeof payload.depth !== "number" ||
+        !Number.isInteger(payload.depth) ||
+        payload.depth < 1 ||
         (payload.managedAgentId !== undefined &&
             (typeof payload.managedAgentId !== "string" ||
                 !payload.managedAgentId)) ||
@@ -110,6 +123,7 @@ export async function verifyAgentRunToken(
     return {
         parentApiKeyId: payload.sub,
         parentRequestId: payload.parentRequestId,
+        depth: payload.depth,
         ...(typeof payload.managedAgentId === "string"
             ? { managedAgentId: payload.managedAgentId }
             : {}),

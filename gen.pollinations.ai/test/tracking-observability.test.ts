@@ -655,6 +655,7 @@ describe("tracking observability", () => {
         await createTestApp(trackingUser, undefined, undefined, {}, undefined, {
             parentApiKeyId: "parent-key-id",
             parentRequestId: "req-parent",
+            depth: 1,
             issuedAt: 0,
             expiresAt: 0,
         }).fetch(

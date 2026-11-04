@@ -212,12 +212,15 @@ describe("docs routes", () => {
         );
         expect(routes.length).toBeGreaterThan(0);
         for (const { method, path } of routes) {
-            const docPath = `${E2B_PATH}${path.replace(":id", "{id}")}`;
+            const docPath = `${E2B_PATH}${path
+                .replace(":id", "{id}")
+                .replace(":port", "{port}")}`;
             const operation = schema.paths[docPath]?.[method.toLowerCase()];
             expect(operation, `${method} ${docPath}`).toMatchObject({
                 tags: ["Sandboxes API"],
             });
-            if (path !== "/pricing") {
+            // Pollinations' own routes have no E2B page.
+            if (path !== "/pricing" && !path.endsWith("/ports/:port")) {
                 expect(operation.description).toContain(
                     "https://docs.e2b.dev/api-reference/sandboxes/",
                 );

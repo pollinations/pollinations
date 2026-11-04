@@ -36,7 +36,7 @@ function requestForMcp(
     user: AuthUser,
 ): Request {
     const headers = new Headers(request.headers);
-    if (server.billing === "usage_receipt") {
+    if (server.forwardAuthorization !== true) {
         headers.delete("authorization");
     }
     headers.delete("cookie");
@@ -167,6 +167,7 @@ export const mcpRoutes = new Hono<Env>()
                 id: server.id,
                 name: server.name,
                 description: server.description,
+                alpha: server.alpha,
                 url: `${getPublicOrigin(c)}/mcp/${server.id}`,
                 pricing: getMcpPricingInfo(server),
             })),

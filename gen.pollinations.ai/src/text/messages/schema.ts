@@ -142,6 +142,16 @@ export const CreateMessageRequestSchema = z
                 name: z.string().optional(),
                 disable_parallel_tool_use: z.boolean().optional(),
             })
+            .superRefine((choice, context) => {
+                if (choice.type === "tool" && !choice.name) {
+                    context.addIssue({
+                        code: "custom",
+                        path: ["name"],
+                        message:
+                            'tool_choice.name is required when type is "tool"',
+                    });
+                }
+            })
             .optional(),
         thinking: z
             .object({

@@ -34,11 +34,13 @@ import type { RequestData, TransformOptions } from "./types.js";
 async function mintDelegatedToken({
     endpoint,
     parentApiKeyId,
+    parentRunExpiresAt,
     parentRequestId,
     secret,
 }: {
     endpoint: CommunityEndpointRuntime;
     parentApiKeyId: string | undefined;
+    parentRunExpiresAt?: number;
     parentRequestId: string;
     secret: string;
 }): Promise<string | undefined> {
@@ -64,6 +66,14 @@ async function mintDelegatedToken({
                 ? endpoint.id
                 : undefined,
         agentModelId: endpoint.modelId,
+        // A token minted inside an agent run expires no later than that run.
+        expiresIn:
+            parentRunExpiresAt === undefined
+                ? undefined
+                : Math.max(
+                      1,
+                      parentRunExpiresAt - Math.floor(Date.now() / 1000),
+                  ),
     });
 }
 
@@ -76,6 +86,7 @@ export async function communityEndpointGatewayContext({
     userApiKey,
     parentRequestId,
     parentApiKeyId,
+    parentRunExpiresAt,
 }: {
     endpoint: CommunityEndpointRuntime;
     modelDefinition: ModelDefinition;
@@ -85,6 +96,7 @@ export async function communityEndpointGatewayContext({
     userApiKey: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    parentRunExpiresAt?: number;
 }): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const modelConfig = await communityEndpointModelConfig({
@@ -92,6 +104,7 @@ export async function communityEndpointGatewayContext({
         secret,
         parentRequestId,
         parentApiKeyId,
+        parentRunExpiresAt,
     });
     return {
         ...requestDataWithoutMessages,
@@ -108,15 +121,18 @@ export async function communityEndpointModelConfig({
     secret,
     parentRequestId,
     parentApiKeyId,
+    parentRunExpiresAt,
 }: {
     endpoint: CommunityEndpointRuntime;
     secret: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    parentRunExpiresAt?: number;
 }): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
+        parentRunExpiresAt,
         parentRequestId,
         secret,
     });

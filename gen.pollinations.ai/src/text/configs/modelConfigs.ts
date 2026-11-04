@@ -109,11 +109,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         },
     }),
     // Both gateways preserve the native TypeSafe Decisions protocol.
-    "jev-1.13": () =>
+    "jev-1.14": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-            model: "typesafe-ai/jev-1.13.0",
+            model: "typesafe-ai/jev-1.14.0",
             defaultOptions: {
                 providerOptions: {
                     gateway: { only: ["typesafe-ai"] },
@@ -121,11 +121,11 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "typesafe/jev-1.13:openrouter:typesafe": () => ({
+    "typesafe/jev-1.14:openrouter:typesafe": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         defaultOptions: {
             provider: {
                 only: ["typesafe"],
@@ -1054,6 +1054,10 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/kimi-k3",
             serviceTier: "default",
         }),
+    "moonshotai/kimi-k3.1-pro-highspeed": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro-highspeed",
+        }),
     // -- Fireworks AI (Qwen) ------------------------------------------------
     "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
         createFireworksModelConfig({
@@ -1286,6 +1290,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
         }),
+    "accounts/fireworks/models/minimax-m3p1-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m3p1-flash",
+            serviceTier: "default",
+        }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
@@ -1310,6 +1319,10 @@ export const portkeyConfig: PortkeyConfigMap = {
                 max_tokens: 16384,
                 providerOptions: { gateway: { only: ["deepinfra"] } },
             },
+        }),
+    "moonshotai/kimi-k3.1-pro": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro",
         }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({

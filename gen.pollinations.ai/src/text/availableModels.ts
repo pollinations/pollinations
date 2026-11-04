@@ -957,13 +957,13 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "typesafe/jev-1.13",
-        config: portkeyConfig["jev-1.13"],
+        name: "typesafe/jev-1.14",
+        config: portkeyConfig["jev-1.14"],
         useSystemOneApi: true,
     },
     {
-        name: "typesafe/jev-1.13:openrouter:typesafe",
-        config: portkeyConfig["typesafe/jev-1.13:openrouter:typesafe"],
+        name: "typesafe/jev-1.14:openrouter:typesafe",
+        config: portkeyConfig["typesafe/jev-1.14:openrouter:typesafe"],
         useSystemOneApi: true,
     },
     {
@@ -1103,6 +1103,10 @@ const models: ModelDefinition[] = [
         name: "moonshotai/kimi-k3:deepinfra",
         config: portkeyConfig["moonshotai/Kimi-K3"],
         transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "moonshotai/kimi-k3.1-pro-highspeed",
+        config: portkeyConfig["moonshotai/kimi-k3.1-pro-highspeed"],
     },
     {
         name: "poolside/laguna-s-2.1",
@@ -1307,6 +1311,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
+        name: "minimax/minimax-m3.1-flash",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m3p1-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
         name: "meta/muse-glimmer-30b",
         config: portkeyConfig["meta-models/Muse-Glimmer-30B"],
         transform: fireworksThinking,
@@ -1319,6 +1328,10 @@ const models: ModelDefinition[] = [
     {
         name: "meta/muse-spark-1.2",
         config: portkeyConfig["meta/muse-spark-1.2"],
+    },
+    {
+        name: "moonshotai/kimi-k3.1-pro",
+        config: portkeyConfig["moonshotai/kimi-k3.1-pro"],
     },
     {
         name: "meta/muse-spark-1.3",

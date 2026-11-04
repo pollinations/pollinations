@@ -55,7 +55,7 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
-| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt\|vibe> on` (available adapters: `polli harness --help`) |
 | Start a Linux sandbox (alpha) | `polli sandbox create` (`--timeout <seconds>` to keep it running without ssh, `0` until you pause or kill it; `pollinations-large` as the template for 4 vCPU and 8 GB; then `list`, `logs <id>`, `timeout <id> <seconds>`, `pause <id>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
 | ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli`. Port forwarding (`ssh -L 3000:localhost:3000 <sandbox-id>.polli`) and VS Code Remote-SSH work. An open connection keeps the sandbox running and paid; it pauses 15–20 minutes after the last one closes (5–10 on Windows) |
 | Publish a static site | `polli sites deploy ./dist --name my-app` (prints `https://my-app.pollinations.app`; then `list`, `delete <name>`) |
@@ -298,8 +298,13 @@ polli harness openclaw on           # login if needed, mint key "polli-harness-o
 polli harness openclaw off          # remove the Pollinations provider, key, and skill
 polli harness tgpt on               # use tgpt's Pollinations provider with a dedicated key
 polli harness tgpt off              # restore tgpt's previous configuration
+polli harness vibe on               # Mistral Vibe provider, live models, dedicated key, and Polli skill
+polli harness vibe on --model deepseek/deepseek-v4-flash
+polli harness vibe off              # restore Vibe's previous user configuration
 ```
-Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, Hermes Agent, OpenCode, OpenClaw, Pi, and tgpt require their installed commands.
+Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, Hermes Agent, OpenCode, OpenClaw, Pi, tgpt, and Mistral Vibe require their installed commands.
+
+Mistral Vibe writes `$VIBE_HOME/config.toml`, `.env`, and `skills/polli/` (default `~/.vibe`), using the native OpenAI-compatible provider. Session titles and smart approval use the selected Pollinations model too. Restart Vibe afterward; project, agent, admin, and environment overrides still take precedence. Setup reformats TOML; `off` restores untouched files or strips only the Pollinations setup after edits. Install with `uv tool install mistral-vibe`.
 
 Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode adds a `pollinations` provider (read by both 1.x and 2.x) and stores its dedicated key in the provider's options. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 

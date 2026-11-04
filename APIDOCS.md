@@ -339,7 +339,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 | `POST /v1/messages` | Anthropic Messages API for Claude Code and the Anthropic SDKs |
 | `GET /text/{prompt}` | Simple GET for prototyping; returns plain text |
 
-**Available models:** stealth/glyph-cluster, openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-6.1-terra, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, inception/mercury-3, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-4-argon, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4.1-flash-1017, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, vllm-sr/d3, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, perplexity/pplx-decider-v1.2, liquid/d1, inferenceport-ai/lightning-text-v2.1, inferenceport-ai/lightning-text-v2, microsoft/microsoft-decision-1, openai/gpt-6-luna-decisions, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-opus-5.5:fast, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, nvidia/nemotron-3.5-super-vl, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, meta/muse-spark-1.3, meta/muse-wonder-1.0, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+**Available models:** stealth/glyph-cluster, openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-6.1-terra, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, inception/mercury-3, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-4-argon, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4.1-flash-1017, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, vllm-sr/d3, respan/span-01-lite, typesafe/jev-1.14, jaredpalmer/kev-4b, perplexity/pplx-decider-v1.2, liquid/d1, inferenceport-ai/lightning-text-v2.1, inferenceport-ai/lightning-text-v2, microsoft/microsoft-decision-1, openai/gpt-6-luna-decisions, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-opus-5.5:fast, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3.1-pro, moonshotai/kimi-k3, moonshotai/kimi-k3.1-pro-highspeed, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, nvidia/nemotron-3.5-super-vl, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, minimax/minimax-m3.1-flash, meta/muse-glimmer-30b, meta/muse-spark-1.2, meta/muse-spark-1.3, meta/muse-wonder-1.0, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
 
 ### Responses API
 
@@ -504,9 +504,9 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
-### Typed decisions (`typesafe/jev-1.13`)
+### Typed decisions (`typesafe/jev-1.14`)
 
-`typesafe/jev-1.13` (aliases `jev` and `typesafe/jev`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
+`typesafe/jev-1.14` (aliases `jev`, `typesafe/jev`, and `typesafe/jev-1.13`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
 
 ```json
 {
@@ -527,7 +527,7 @@ The response carries `answers`, one field per question, each with `type` and its
 ```json
 {
   "id": "dec-…",
-  "model": "typesafe/jev-1.13",
+  "model": "typesafe/jev-1.14",
   "provider": "TypeSafe",
   "answers": {
     "department": {
@@ -1049,8 +1049,8 @@ Browse all available models and their capabilities at [`/image/models`](https://
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the image to generate |
 | `model` | `query` | `string` | Model to use. See /image/models for the current canonical IDs and aliases. · default: `"tongyi-mai/z-image-turbo"` |
-| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
-| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, black-forest-labs/flux.1.1-pro, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`. · default: `"medium"` |
@@ -1197,8 +1197,8 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the video to generate |
 | `model` | `query` | `string` | Model to use. See /image/models for the current canonical IDs and aliases. · default: `"google/veo-3.1-fast"` |
-| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
-| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, black-forest-labs/flux.1.1-pro, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support. |
@@ -1967,6 +1967,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `data[].pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `data[].pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
+| `data[].top_provider` * | `object` | — |
 | `data[].capabilities` | `string`[] | — |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
@@ -2075,6 +2076,8 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
+| `top_provider` * | `object` | — |
+| `top_provider.max_completion_tokens` * | `integer` \| `null` | Maximum output tokens; null when no limit is declared. |
 | `capabilities` | `string`[] | — |
 | `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `tools` | `boolean` | — |
@@ -3062,7 +3065,7 @@ Create a prompt agent or deploy `agent.ts` from a public GitHub repository. Code
 |---|---|---|
 | `systemPrompt` * | `string` | length: `1…8000` |
 | `baseModel` * | `string` | length: `1…253` |
-| `mcpServers` | enum (6) — `"pollinations"`, `"ask-jev"`, `"ffmpeg"`, …[] | default: `[]` |
+| `mcpServers` | enum (11) — `"pollinations"`, `"ask-jev"`, `"ffmpeg"`, …[] | default: `[]` |
 | `name` * | `string` | length: `1…120` |
 | `title` * | `string` | length: `1…42` |
 | `description` | `string` | default: `""` · max length: `1000` |
@@ -3616,9 +3619,11 @@ E2B's SDKs and CLI work unchanged:
 ```bash
 export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
 export E2B_API_KEY=sk_...
-# Sandboxes on Azure (pollinations-azure, pollinations-azure-large, pollinations-azure-xl) also need this; it serves E2B's too:
-export E2B_SANDBOX_URL=https://gen.pollinations.ai/alpha/e2b/sandbox
 ```
+
+Sandboxes come back with `domain` set to `pollinations.app`, so the SDKs reach a sandbox and its ports at `https://<port>-<id>.pollinations.app`, on E2B and Azure alike. Each request there is at most 100 MB. The providers' hosts still serve sandboxes directly: `https://<port>-<id>.e2b.app` on E2B, `https://<id>--<port>.<region>.adcproxy.io` on Azure.
+
+Staging returns sandbox IDs ending in `--staging`, so their port hosts are `https://<port>-<id>--staging.pollinations.app`. Use the returned ID for subsequent API calls and SDK connections.
 
 Setup with polli, credits and runtime: [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes).
 
@@ -3638,7 +3643,7 @@ curl "https://gen.pollinations.ai/alpha/e2b/pricing"
 
 #### `POST` `/alpha/e2b/sandboxes` — Create sandbox (v1)
 
-Kept for E2B's CLI; prefer v2. Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
+Kept for E2B's CLI; prefer v2. Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
 
 Request and response fields: [E2B · Create sandbox](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox)
 
@@ -3659,7 +3664,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes" \
 
 #### `POST` `/alpha/e2b/v2/sandboxes` — Create sandbox
 
-Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
+Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
 
 Request and response fields: [E2B · Create sandbox (v2)](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox-v2)
 
@@ -3831,7 +3836,7 @@ curl -X PUT "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/net
 
 #### `POST` `/alpha/e2b/sandboxes/{id}/timeout` — Set sandbox timeout
 
-Extra runtime is prepaid from your credits; a shorter timeout refunds nothing. Over 600 seconds keeps the sandbox running until then; 600 or less ends that.
+Extra runtime is prepaid from your credits; a shorter timeout refunds nothing. Over 600 seconds keeps the sandbox running until then; 600 or less ends that. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.
 
 Request and response fields: [E2B · Set sandbox timeout](https://docs.e2b.dev/api-reference/sandboxes/set-sandbox-timeout)
 
@@ -3858,7 +3863,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/ti
 
 #### `POST` `/alpha/e2b/sandboxes/{id}/connect` — Connect or resume sandbox (v1)
 
-Kept for E2B's CLI; prefer v2. Resumes a paused sandbox. Only `timeout` is used, 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then.
+Kept for E2B's CLI; prefer v2. Resumes a paused sandbox. Only `timeout` and `idleTimeout` are used, `timeout` 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.
 
 Request and response fields: [E2B · Connect to sandbox](https://docs.e2b.dev/api-reference/sandboxes/connect-to-sandbox)
 
@@ -3885,7 +3890,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/co
 
 #### `POST` `/alpha/e2b/v2/sandboxes/{id}/connect` — Connect or resume sandbox
 
-Resumes a paused sandbox. Only `timeout` is used, 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then.
+Resumes a paused sandbox. Only `timeout` and `idleTimeout` are used, `timeout` 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.
 
 Request and response fields: [E2B · Connect sandbox (v2)](https://docs.e2b.dev/api-reference/sandboxes/connect-sandbox-v2)
 
@@ -3906,6 +3911,58 @@ curl -X POST "https://gen.pollinations.ai/alpha/e2b/v2/sandboxes/example-sandbox
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{"timeout":600}'
+```
+
+---
+
+#### `PUT` `/alpha/e2b/sandboxes/{id}/ports/{port}` — Share sandbox port
+
+Not part of E2B's API. Makes the port at `https://{port}-{id}.pollinations.app`, returned as `url`, take only requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. E2B sandboxes only; envd's port 49983 can't be shared.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+| `port` * | `path` | `integer` | Port the sandbox serves, 1 to 65535. |
+
+<sub>`*` = required parameter</sub>
+
+📥 **Request body** · `application/json`
+
+📤 **Response** · `200` — `url`: where the port is served.
+
+💻 **Example**
+
+```bash
+curl -X PUT "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/ports/8080" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"a-long-random-string","header":"X-Telegram-Bot-Api-Secret-Token"}'
+```
+
+---
+
+#### `DELETE` `/alpha/e2b/sandboxes/{id}/ports/{port}` — Unshare sandbox port
+
+Not part of E2B's API. Stops serving a shared port.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+| `port` * | `path` | `integer` | Port the sandbox serves, 1 to 65535. |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `204` — The port is no longer served.
+
+💻 **Example**
+
+```bash
+curl -X DELETE "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/ports/8080" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
 ### Account

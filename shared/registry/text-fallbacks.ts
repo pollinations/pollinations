@@ -208,6 +208,21 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "thinkingmachines/inkling": {
+        // Same Together deployment through Vercel, which adds no fee. Covers
+        // OpenRouter failures, not Together outages; Vercel caps context at
+        // 256k and does not enforce json_schema (2026-11-04).
+        "thinkingmachines/inkling:vercel:togetherai": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(1),
+                promptCachedTokens: perMillion(0.17),
+                promptAudioTokens: perMillion(1),
+                promptImageTokens: perMillion(1),
+                completionTextTokens: perMillion(4.05),
+            },
+        },
+    },
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
     "openai/gpt-5.6-sol": {

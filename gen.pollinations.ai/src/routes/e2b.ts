@@ -1106,11 +1106,20 @@ async function wakePort(
     // Connect cannot shorten a running lease. Its minimum timeout gets a
     // traffic token without buying more time, with the renewal margin left
     // for the provider calls rather than copying a stale remaining duration.
-    const timeout =
+    let timeout =
         paidUntil - now >= WAKE_MARGIN_MS ? 1 : DEFAULT_TIMEOUT_SECONDS;
-    const response = await payerApi(env, ctx, payer)(sandboxID, "connect", {
+    const connect = payerApi(env, ctx, payer);
+    let response = await connect(sandboxID, "connect", {
         timeout,
     });
+    const resumed = response.status === 201;
+    // The keeper may pause between the two provider reads. A token-only
+    // connect that resumed it needs a full lease before forwarding work.
+    if (timeout === 1 && resumed) {
+        await response.body?.cancel();
+        timeout = DEFAULT_TIMEOUT_SECONDS;
+        response = await connect(sandboxID, "connect", { timeout });
+    }
     if (!response.ok) {
         const { message } = await response
             .json<{ message: string }>()
@@ -1125,7 +1134,7 @@ async function wakePort(
         origin: providerOrigin(env, sandboxID, port),
         token: connected.trafficAccessToken ?? undefined,
         // Connect never shortens a running sandbox's lease.
-        until: Math.max(now + timeout * 1000, paidUntil),
+        until: Math.max(now + timeout * 1000, resumed ? 0 : paidUntil),
     };
     wokenPorts.set(`${port}-${sandboxID}`, woken);
     return woken;

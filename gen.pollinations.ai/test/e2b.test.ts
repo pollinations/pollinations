@@ -1287,6 +1287,69 @@ test("a cold shared-port cache does not buy more time before the lease is nearly
     }
 });
 
+test("an idle pause racing a shared-port connect gets a full resumed lease and discards the old expiry", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const now = Date.now();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    try {
+        const sandbox = keptSandbox("racedlease", owner.userId, {
+            endAt: inSeconds(610),
+        });
+        e2b.sandboxes.push(sandbox);
+        await sharePort(owner.key, sandbox.sandboxID, 8080);
+        const balance = await questPollen(owner.userId);
+        const providerFetch = globalThis.fetch;
+        let reads = 0;
+        let pausedBetweenReads = false;
+        vi.stubGlobal(
+            "fetch",
+            async (input: RequestInfo, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (
+                    request.method === "GET" &&
+                    request.url === `${E2B}/sandboxes/racedlease` &&
+                    ++reads === 2
+                ) {
+                    sandbox.state = "paused";
+                    sandbox.endAt = inSeconds(0);
+                    pausedBetweenReads = true;
+                }
+                return providerFetch(request);
+            },
+        );
+
+        const host = "8080-racedlease.pollinations.app";
+        expect(await (await visit(host)).text()).toBe("port 8080 says hi");
+        expect(pausedBetweenReads).toBe(true);
+        expect(sandbox.state).toBe("running");
+        expect(Date.parse(sandbox.startedAt)).toBe(now);
+        expect(Date.parse(sandbox.endAt)).toBe(now + 300_000);
+        expect(await questPollen(owner.userId)).toBeCloseTo(
+            balance - LEASE_300S,
+            7,
+        );
+
+        // The 610s lease was given up by the pause. The new 300s lease needs
+        // renewing when only 59s remain, even though the old expiry is far away.
+        vi.setSystemTime(now + 241_000);
+        expect(await (await visit(host)).text()).toBe("port 8080 says hi");
+        expect(Date.parse(sandbox.endAt)).toBe(now + 541_000);
+        const price = LEASE_300S * (1 + 241 / 300);
+        expect(await questPollen(owner.userId)).toBeCloseTo(balance - price, 7);
+        await vi.waitFor(() =>
+            expect(
+                e2b
+                    .leases()
+                    .reduce((sum, event) => sum + Number(event.totalPrice), 0),
+            ).toBeCloseTo(price, 7),
+        );
+    } finally {
+        vi.useRealTimers();
+    }
+});
+
 test("ports of team sandboxes without a Pollinations owner are not forwarded", async () => {
     const e2b = stubE2b();
     e2b.sandboxes.push(

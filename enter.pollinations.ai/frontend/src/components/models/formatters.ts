@@ -2,6 +2,8 @@
  * Price formatting utilities
  */
 
+import type { PriceUnit } from "./types.ts";
+
 export const formatPricePer1M = (price: number): string =>
     formatPriceFlat(Number((price * 1_000_000).toPrecision(15)));
 
@@ -12,13 +14,29 @@ const smallDisplayPriceNumber = new Intl.NumberFormat("en", {
     maximumSignificantDigits: 6,
 });
 
+const PRICE_UNIT_SUFFIX: Record<PriceUnit, string> = {
+    token: "/M",
+    second: "/sec",
+    request: "/gen",
+    megapixel: "/MP",
+    character: "/K chars",
+    byte: "/K bytes",
+    image: "/image",
+};
+
 export const formatDisplayPrice = (
     price: string,
-    tokenPrice = false,
-): { value: string; tokenScale: "K" | "M" } => {
+    unit: PriceUnit = "request",
+    audio = false,
+): { value: string; suffix: string } => {
     const numericPrice = Number(price);
-    const tokenScale = tokenPrice && numericPrice >= 100 ? "K" : "M";
-    const scaledPrice = tokenScale === "K" ? numericPrice / 1000 : numericPrice;
+    const perThousand = unit === "token" && numericPrice >= 100;
+    const perHour = unit === "second" && audio && numericPrice < 0.01;
+    const scaledPrice = perHour
+        ? numericPrice * 3600
+        : perThousand
+          ? numericPrice / 1000
+          : numericPrice;
 
     return {
         value: Number.isFinite(scaledPrice)
@@ -27,7 +45,7 @@ export const formatDisplayPrice = (
                   : displayPriceNumber
               ).format(scaledPrice)
             : price,
-        tokenScale,
+        suffix: perHour ? "/hr" : perThousand ? "/K" : PRICE_UNIT_SUFFIX[unit],
     };
 };
 

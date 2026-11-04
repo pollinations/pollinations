@@ -67,6 +67,7 @@ const EDIT_DIMENSION_STEP = 16;
 const MIN_EDIT_DIMENSION = 256;
 
 const IMAGE_ENV_KEYS = [
+    "AI_GATEWAY_API_KEY",
     "AWS_ACCESS_KEY_ID",
     "AWS_REGION",
     "AWS_SECRET_ACCESS_KEY",
@@ -96,6 +97,7 @@ const IMAGE_ENV_KEYS = [
     "NOVA_REEL_S3_BUCKET",
     "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
+    "AI_GATEWAY_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
@@ -167,6 +169,19 @@ function parseImageParams(
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // A reference image the model cannot consume used to be dropped silently,
+    // billing a fresh generation that ignored the caller's picture. Reject it
+    // like the text protocols already do (docs/text-generation.md). Community
+    // endpoints get the image and decide for themselves.
+    if (
+        parseResult.data.image.length > 0 &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.inputModalities?.includes("image")
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: ${resolvedModel} does not accept image input. Choose a model that lists "image" under input_modalities.`,
         });
     }
     // Community endpoints receive the flag and decide for themselves.
@@ -478,7 +493,7 @@ function extractRegisterToken(
     return null;
 }
 
-async function isAuthorizedRegisterWrite(
+async function isAuthorizedRegisterRequest(
     c: ImageContext,
     body: Record<string, unknown>,
 ): Promise<boolean> {
@@ -492,6 +507,10 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
     syncImageEnvironment(c.env);
 
     if (c.req.method === "GET") {
+        // The list exposes worker hostnames, so reads need the token too.
+        if (!(await isAuthorizedRegisterRequest(c, {}))) {
+            return c.json({ success: false, message: "Unauthorized" }, 401);
+        }
         const params = new URL(c.req.url).searchParams;
         const directUrl = params.get("url");
         const ip = params.get("ip");
@@ -504,9 +523,6 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        if (!(await isAuthorizedRegisterWrite(c, {}))) {
-            return c.json({ success: false, message: "Unauthorized" }, 401);
-        }
         if (!isValidType(typeParam)) {
             return c.json(
                 { success: false, message: `Invalid type "${typeParam}"` },
@@ -528,7 +544,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
 
-    if (!(await isAuthorizedRegisterWrite(c, body))) {
+    if (!(await isAuthorizedRegisterRequest(c, body))) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
     }
 

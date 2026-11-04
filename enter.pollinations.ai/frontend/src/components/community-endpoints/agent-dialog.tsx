@@ -132,7 +132,7 @@ export function AgentDialog({
         (form.type === "code_agent" ||
             (form.name.trim() !== "" && form.title.trim() !== "")) &&
         hasRuntimeConfiguration;
-    const submitLabel = agent ? "Save changes" : "Create agent";
+    const submitLabel = agent ? "Save" : "Create";
     const submitDisabledReason =
         isSubmitting || canSubmit
             ? null

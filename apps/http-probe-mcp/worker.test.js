@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import worker from "./worker.js";
-
-const TOKEN = "sk_test_request_scoped";
 
 function localFetch(input, init) {
     const request = input instanceof Request ? input : new Request(input, init);
@@ -19,13 +18,8 @@ async function connectClient(options = {}) {
         { capabilities: {}, ...options },
     );
     const transport = new StreamableHTTPClientTransport(
-        new URL("https://http-probe-mcp.pollinations.ai"),
-        {
-            fetch: localFetch,
-            requestInit: {
-                headers: { Authorization: `Bearer ${TOKEN}` },
-            },
-        },
+        new URL("https://http-probe.internal/"),
+        { fetch: localFetch },
     );
     await client.connect(transport);
     return client;
@@ -43,21 +37,26 @@ function mockTargets(t, targets) {
     return calls;
 }
 
-test("serves health and requires bearer auth", async () => {
-    const health = await worker.fetch(
-        new Request("https://http-probe-mcp.pollinations.ai/health"),
+test("private deployment has no public routes or preview URLs", () => {
+    const config = JSON.parse(
+        readFileSync(
+            new URL("./wrangler.jsonc", import.meta.url),
+            "utf8",
+        ).replace(/^\s*\/\/.*$/gm, ""),
     );
-    assert.equal(health.status, 200);
-    assert.equal((await health.json()).endpoint, "/");
+    for (const env of [config, config.env.staging]) {
+        assert.equal(env.workers_dev, false);
+        assert.equal(env.preview_urls, false);
+        assert.deepEqual(env.routes, []);
+    }
+});
 
-    const unauthorized = await worker.fetch(
-        new Request("https://http-probe-mcp.pollinations.ai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: "{}",
-        }),
+test("private Worker leaves other routes to Gen", async () => {
+    assert.equal(
+        (await worker.fetch(new Request("https://http-probe.internal/mcp")))
+            .status,
+        404,
     );
-    assert.equal(unauthorized.status, 401);
 });
 
 test("serves current and 2025 Streamable HTTP without sessions", async () => {

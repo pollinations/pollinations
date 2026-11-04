@@ -1,4 +1,5 @@
 interface CloudflareBindings {
+    ASSETS: Fetcher;
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
     ASK_JEV_MCP: Fetcher;
@@ -7,6 +8,7 @@ interface CloudflareBindings {
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
     MACHINES_MCP: Fetcher;
+    CALCULATORS_MCP: Fetcher;
     HTTP_PROBE_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
@@ -17,12 +19,21 @@ interface CloudflareBindings {
     OVHCLOUD_API_KEY: string;
     PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
+    D3_KEY?: string;
     DASHSCOPE_API_KEY: string;
     DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     E2B_API_KEY?: string;
+    // Azure sandboxes (src/routes/azure-sandboxes.ts): off without the secret.
+    AZURE_SANDBOX_CLIENT_SECRET?: string;
+    AZURE_SANDBOX_CLIENT_ID?: string;
+    AZURE_SANDBOX_TENANT_ID?: string;
+    // The sandbox group's data-plane URL, which names its region.
+    AZURE_SANDBOX_GROUP_URL?: string;
+    // The disk image every Azure sandbox boots.
+    AZURE_SANDBOX_IMAGE?: string;
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
@@ -88,10 +99,9 @@ interface CloudflareBindings {
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
     XAI_API_KEY: string;
-    POLLEN_REFILL_PER_HOUR?: number;
-    POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
+    EDGE_IP_RATE_LIMITER?: RateLimit;
 }
 
 declare namespace Cloudflare {

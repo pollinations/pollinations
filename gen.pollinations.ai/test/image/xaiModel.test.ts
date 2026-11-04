@@ -95,6 +95,35 @@ describe("xaiModel usage accounting", () => {
         });
     });
 
+    it("forwards Grok Imagine Image 2.0 quality and resolution", async () => {
+        syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+            "XAI_API_KEY",
+        ]);
+        const requests: XaiRequest[] = [];
+        mockXaiFetch(requests);
+
+        const result = await callXaiImageAPI(
+            "test prompt",
+            {
+                ...baseParams,
+                model: "x-ai/grok-imagine-image-2.0",
+                quality: "low",
+                resolution: "2k",
+            },
+            "grok-imagine-image-2.0",
+        );
+
+        expect(requests[0].body).toMatchObject({
+            model: "grok-imagine-image-2.0",
+            quality: "low",
+            resolution: "2k",
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "x-ai/grok-imagine-image-2.0",
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
     it("forwards and bills every reference image", async () => {
         syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
             "XAI_API_KEY",

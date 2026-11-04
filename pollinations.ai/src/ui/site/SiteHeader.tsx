@@ -8,6 +8,7 @@ import {
     Drawer,
     DropdownItem,
     ExternalLinkButton,
+    formatCount,
     GitHubIcon,
     IconButton,
     LiveDot,
@@ -21,7 +22,6 @@ import {
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
-import { compact } from "../../data/publicStats";
 import { DOCS_URL, SOCIAL } from "./links";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
@@ -91,7 +91,7 @@ function MenuUtilities({
                 aria-label={
                     discordOnline === null
                         ? "Discord"
-                        : `Discord — ${discordOnline.toLocaleString()} users online now`
+                        : `Discord: ${discordOnline.toLocaleString()} users online now`
                 }
                 className="site-drawer-social-link"
             >
@@ -101,7 +101,7 @@ function MenuUtilities({
                 </span>
                 {discordOnline !== null && (
                     <SocialCount as="span" network="discord" showIcon={false}>
-                        {compact(discordOnline)} online
+                        {formatCount(discordOnline)} online
                         <LiveDot />
                     </SocialCount>
                 )}
@@ -129,8 +129,8 @@ function MenuUtilities({
 function GitHubStarsButton({ stars }: { stars: number | null }) {
     if (stars === null) return null;
 
-    const displayedStars = compact(stars);
-    const label = `Star us on GitHub — ${stars.toLocaleString()} stars`;
+    const displayedStars = formatCount(stars);
+    const label = `Star us on GitHub (${stars.toLocaleString()} stars)`;
 
     return (
         <SocialCount
@@ -150,7 +150,7 @@ function GitHubStarsButton({ stars }: { stars: number | null }) {
 function DiscordLiveButton({ online }: { online: number | null }) {
     if (online === null) return null;
 
-    const label = `Join the Discord — ${online.toLocaleString()} users online now`;
+    const label = `Join the Discord (${online.toLocaleString()} users online now)`;
 
     return (
         <SocialCount
@@ -161,7 +161,7 @@ function DiscordLiveButton({ online }: { online: number | null }) {
             aria-label={label}
             title={label}
         >
-            {compact(online)} online
+            {formatCount(online)} online
             <LiveDot />
         </SocialCount>
     );
@@ -170,7 +170,8 @@ function DiscordLiveButton({ online }: { online: number | null }) {
 export function SiteHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { data: repoStars } = useRepoStars();
-    const displayedRepoStars = repoStars === null ? null : compact(repoStars);
+    const displayedRepoStars =
+        repoStars === null ? null : formatCount(repoStars);
     const { data: discordOnline } = useDiscordPresence({
         refreshMs: 300_000,
     });
@@ -201,7 +202,7 @@ export function SiteHeader() {
                         <Link
                             to="/"
                             className="site-home-logo hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[880px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-                            aria-label="pollinations.ai — home"
+                            aria-label="pollinations.ai home"
                         >
                             <BrandMark className="size-8" />
                         </Link>

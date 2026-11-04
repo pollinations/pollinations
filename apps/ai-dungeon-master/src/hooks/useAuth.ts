@@ -14,7 +14,7 @@ const credentialStore = {
 
 /** Validates Pollinations API key format */
 const isValidApiKey = (token: string): boolean =>
-    typeof token === "string" && /^(sk_|plln_pk_|pk_)/.test(token);
+    typeof token === "string" && token.startsWith("sk_");
 
 /**
  * BYOP authentication hook for AI Dungeon Master.
@@ -48,7 +48,7 @@ export function useAuth() {
                 );
             } else if (key) {
                 console.error(
-                    "Invalid API key format in URL fragment. Expected sk_, plln_pk_, or pk_ prefix.",
+                    "Invalid API key format in URL fragment. Expected an sk_ key.",
                 );
             }
         } catch (error) {

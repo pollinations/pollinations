@@ -27,9 +27,9 @@ function assertNamedHost(url) {
     }
 }
 
-// Follows redirects by hand so every hop is reported. The caller's key never
-// leaves this Worker. global_fetch_strictly_public sends even pollinations.ai
-// URLs over the public internet, so probes see what any visitor sees.
+// Follows redirects by hand so every hop is reported. Probes send no
+// credentials. global_fetch_strictly_public sends even pollinations.ai URLs
+// over the public internet, so probes see what any visitor sees.
 async function probe(url, method) {
     const startedAt = Date.now();
     const signal = AbortSignal.timeout(TIMEOUT_MS);
@@ -129,77 +129,12 @@ const mcpHandler = createMcpHandler(() => buildServer(), {
     onerror: (error) => console.error(error),
 });
 
-function readBearerToken(request) {
-    const authorization = request.headers.get("authorization");
-    if (!authorization) return null;
-
-    const [scheme, token] = authorization.trim().split(/\s+/, 2);
-    if (scheme?.toLowerCase() !== "bearer" || !token) {
-        return null;
-    }
-    return token;
-}
-
-function unauthorizedResponse() {
-    return Response.json(
-        {
-            error: "unauthorized",
-            message: "Send a Pollinations API key as a bearer token.",
-        },
-        {
-            status: 401,
-            headers: {
-                "WWW-Authenticate":
-                    'Bearer realm="http-probe-mcp.pollinations.ai"',
-            },
-        },
-    );
-}
-
+// Private service binding only. Gen owns authentication, quotas and batch
+// rejection, and does not forward the caller's key to this Worker.
 export default {
-    async fetch(request) {
-        const url = new URL(request.url);
-
-        if (url.pathname === "/health" && request.method === "GET") {
-            return Response.json({
-                name: "http-probe-mcp",
-                transport: "streamable-http",
-                endpoint: "/",
-                stateless: true,
-            });
-        }
-
-        if (url.pathname !== "/") {
-            return new Response("Not found", { status: 404 });
-        }
-
-        const token = readBearerToken(request);
-        if (!token) return unauthorizedResponse();
-
-        if (
-            request.method === "POST" &&
-            Array.isArray(
-                await request
-                    .clone()
-                    .json()
-                    .catch(() => null),
-            )
-        ) {
-            return Response.json(
-                {
-                    error: "invalid_request",
-                    message: "Batch requests are not supported.",
-                },
-                { status: 400 },
-            );
-        }
-
-        return mcpHandler.fetch(request, {
-            authInfo: {
-                token,
-                clientId: "pollinations-api-key",
-                scopes: [],
-            },
-        });
+    fetch(request) {
+        return new URL(request.url).pathname === "/"
+            ? mcpHandler.fetch(request)
+            : new Response("Not found", { status: 404 });
     },
 };

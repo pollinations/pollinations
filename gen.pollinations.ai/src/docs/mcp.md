@@ -4,6 +4,9 @@ Use Pollinations-hosted MCP servers from any
 [Model Context Protocol](https://modelcontextprotocol.io) client that supports
 Streamable HTTP.
 
+Hosted MCP servers are **alpha**: experimental and may be unstable.
+The `/mcp` catalog marks experimental servers with `alpha: true`.
+
 ### Quick start
 
 Get an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys),
@@ -18,7 +21,14 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Calculators | `https://gen.pollinations.ai/mcp/calculators` | Time, cron previews, Unicode, contrast checks, SVG QR codes, and ECB currency rates | [Source](https://github.com/pollinations/pollinations/tree/main/apps/calculators-mcp) |
 | HTTP Probe | `https://gen.pollinations.ai/mcp/http-probe` | Check a public URL's status, redirect chain, response time, and security headers | [Source](https://github.com/pollinations/pollinations/tree/main/apps/http-probe-mcp) |
+
+Calculators is free but still requires a key. Time conversion rejects ambiguous or
+skipped local times: include an explicit
+offset to select an instant. Cron previews do not schedule jobs.
+Currency tools return ECB reference rates and their publication date; weekends
+and holidays resolve to the previous working day.
 
 Send the key with every request:
 
@@ -128,6 +138,9 @@ model health, usage, earnings, quests, and API keys.
 | `listKeys` | List API keys; requires `account:keys` permission |
 | `createKey` | Create a secret or publishable app key; requires `account:keys` permission |
 | `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
+| `listSites` | List the account's static sites and their limits; requires `account:machines` permission |
+| `deploySite` | Publish a static site at `https://<name>.pollinations.app` from inline files; requires `account:machines` permission |
+| `deleteSite` | Take a static site offline and free its name; requires `account:machines` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
 clients should not rely on a hardcoded model list.
@@ -149,9 +162,8 @@ MCP fee.
 `runFfmpeg` accepts public HTTPS media inputs and ordinary FFmpeg arguments. It
 supports multiple inputs and returns the output as a hosted MCP resource link.
 Pollinations saves sources as `input0`, `input1`, and so on. Reference those
-exact names in arguments—for example, `["-i", "input0", "-vf",
-"scale=1280:-2"]`—and omit the `ffmpeg` executable, source URLs, and output
-path.
+exact names in arguments, such as `["-i", "input0", "-vf", "scale=1280:-2"]`.
+Omit the `ffmpeg` executable, source URLs, and output path.
 
 ### Exa Search MCP
 
@@ -163,17 +175,16 @@ path.
 ### Connectors MCP
 
 The Connectors MCP uses Composio to discover and run tools in each user's own
-accounts. Enable it in your agent or connect the MCP endpoint, then ask for a
-specific task, such as “Summarize my unread Gmail”, “Find open issues in my
-GitHub repository” or “Commit this fix to a new branch in my fork.” GitHub
+accounts. Connect the MCP endpoint, then ask for a specific task, such as
+“Summarize my unread Gmail”, “Find open issues in my GitHub repository” or
+“Commit this fix to a new branch in my fork.” Hosted agents can't use it. GitHub
 commits go through Composio's tools, such as `GITHUB_COMMIT_MULTIPLE_FILES`,
 which commits several files at once and can create the branch. `git` in the
 Computer shell can't use the connection.
 
-When an app is not connected, the agent can return a sign-in link. You can also
+When an app is not connected, the client can return a sign-in link. You can also
 [connect apps in your account](https://enter.pollinations.ai/account#connectors).
 Sign-in links expire after 10 minutes; select Connect again for a fresh link.
-Connecting an app does not automatically enable it in an agent.
 
 ### Computer MCP
 

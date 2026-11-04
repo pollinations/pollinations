@@ -44,6 +44,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -67,6 +68,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -89,8 +91,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run push-secrets:staging --workspace pollinations-enter
 
-  deploy-gen:
-    needs: migrate
+  # Gen staging binds POLLINATIONS_MCP to this Worker, so it ships before gen,
+  # as in production. Deploy it from here so it stays current with main.
+  deploy-mcp:
     if: inputs.service == 'all' || inputs.service == 'gen'
     runs-on: ubuntu-latest
     env:
@@ -103,6 +106,33 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          check-latest: true
+
+      - name: Install dependencies
+        working-directory: ./apps/mcp
+        run: npm ci && npm ci --prefix ../../packages/mcp
+
+      - name: Deploy to Cloudflare
+        working-directory: ./apps/mcp
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run deploy:staging
+
+  deploy-gen:
+    needs: [migrate, deploy-mcp]
+    if: inputs.service == 'all' || inputs.service == 'gen'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          check-latest: true
 
       - name: Install dependencies
         run: npm ci

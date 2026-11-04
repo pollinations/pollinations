@@ -53,7 +53,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "CALCULATORS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -240,6 +241,20 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "calculators",
+        alpha: true,
+        name: "Calculators",
+        description:
+            "Time, cron schedules, Unicode, color contrast, QR codes, and ECB currency rates.",
+        binding: "CALCULATORS_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Local utilities and public ECB rates. No Pollen charge.",
             rates: [],
         },
     },

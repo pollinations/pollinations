@@ -50,6 +50,7 @@ export type MockGithubState = {
         mergedAt: string;
         authorId?: number;
         base?: string;
+        labels?: string[];
         closingIssues?: number[];
     }>;
     // Commit author GitHub ids per PR number, including co-authors.
@@ -182,6 +183,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                         url: `https://github.com/${REPO}/pull/${pr.number}`,
                         mergedAt: pr.mergedAt,
                         author: { databaseId: pr.authorId ?? state.user.id },
+                        labels: {
+                            nodes: (pr.labels ?? []).map((name) => ({ name })),
+                        },
                         closingIssuesReferences: {
                             nodes: (pr.closingIssues ?? []).map((number) => ({
                                 number,

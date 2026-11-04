@@ -49,17 +49,11 @@ test("omits the Discord quest when its configuration is incomplete", async () =>
     ).resolves.toEqual({ proposals: [] });
 });
 
-// Build an issue body the deriver can parse: a "### Reward" heading (when a
-// reward is given) plus a short Goal section for the description.
-function questIssueBody(reward: number | null, goal: string): string {
-    const rewardBlock = reward !== null ? `### Reward\n${reward}\n\n` : "";
-    return `${rewardBlock}### Goal\n${goal}`;
-}
-
 type SeedQuestIssue = {
     issueNumber: number;
     title: string;
     goal: string;
+    // Adds the reward-<reward> label.
     reward: number | null;
     assigneeGithubId?: number | null;
     assigneeLogin?: string | null;
@@ -84,7 +78,7 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
     const completedByGithubId = issue.completedByGithubId ?? null;
     const completedByLogin = issue.completedByLogin ?? null;
     const created = issue.createdAt ?? new Date("2026-06-01T00:00:00Z");
-    const updated = issue.updatedAt ?? new Date("2026-06-02T00:00:00Z");
+    const updated = issue.updatedAt ?? new Date("2026-11-06T00:00:00Z");
     const isClosed =
         !issue.reopened && (completedBy !== null || issue.closed === true);
 
@@ -93,7 +87,7 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
         state: isClosed ? "closed" : "open",
         title: issue.title,
         html_url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
-        body: questIssueBody(issue.reward, issue.goal),
+        body: `### Goal\n${issue.goal}`,
         created_at: created.toISOString(),
         updated_at: updated.toISOString(),
         closed_at: isClosed ? updated.toISOString() : null,
@@ -101,7 +95,12 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
         assignees: assigneeLogin
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
             : [],
-        labels: [{ name: "POLLEN-QUEST" }],
+        labels: [
+            { name: "POLLEN-QUEST" },
+            ...(issue.reward !== null
+                ? [{ name: `reward-${issue.reward}` }]
+                : []),
+        ],
         closedByPullRequestsReferences:
             completedBy !== null
                 ? [
@@ -118,7 +117,9 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
         github.mergedPullRequests.push({
             number: completedBy,
             authorLogin: completedByLogin,
+            authorId: completedByGithubId ?? undefined,
             mergedAt: updated.toISOString(),
+            closingIssues: [issue.issueNumber],
         });
     }
 }
@@ -330,7 +331,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v31");
+    await env.KV.delete("quests:catalog:v32");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -475,7 +476,7 @@ test("catalog lists the pull request and issue rewards", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v31");
+    await env.KV.delete("quests:catalog:v32");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -517,7 +518,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v31");
+    await env.KV.delete("quests:catalog:v32");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -531,7 +532,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
         issueNumber: 802,
         title: "Closed without merge",
         goal: "Closed by maintainers without a merged quest PR.",
-        reward: 4,
+        reward: 5,
         closed: true,
     });
     seedQuestIssue(mocks.github.state, {
@@ -545,7 +546,13 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
         issueNumber: 804,
         title: "Unassigned bounty",
         goal: "Still available.",
-        reward: 6,
+        reward: 10,
+    });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 808,
+        title: "Quest without a reward label",
+        goal: "Not a bounty yet.",
+        reward: null,
     });
 
     const response = await SELF.fetch(
@@ -564,6 +571,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
     expect(byId.has("github:issue:802")).toBe(false);
     expect(byId.get("github:issue:803")?.state).toBe("completed");
     expect(byId.get("github:issue:804")?.state).toBe("available");
+    expect(byId.has("github:issue:808")).toBe(false);
 });
 
 test("catalog keeps the last GitHub quest issues while GitHub is rate limited", async ({
@@ -575,10 +583,10 @@ test("catalog keeps the last GitHub quest issues while GitHub is rate limited", 
         issueNumber: 805,
         title: "Listed bounty",
         goal: "Still available.",
-        reward: 6,
+        reward: 10,
     });
     const catalogIds = async () => {
-        await env.KV.delete("quests:catalog:v31");
+        await env.KV.delete("quests:catalog:v32");
         const response = await SELF.fetch(
             "http://localhost:3000/api/quests/catalog",
         );
@@ -610,12 +618,12 @@ test("quest checks reuse the GitHub quest issues the catalog just fetched", asyn
         issueNumber: 806,
         title: "Merged bounty",
         goal: "Merge the quest PR.",
-        reward: 7,
+        reward: 10,
         completedByPrNumber: 1806,
         completedByGithubId: user.githubId,
         completedByLogin: user.githubUsername,
     });
-    await env.KV.delete("quests:catalog:v31");
+    await env.KV.delete("quests:catalog:v32");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -639,7 +647,7 @@ test("catalog keeps a reopened multi-winner quest available", async ({
     mocks,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v31");
+    await env.KV.delete("quests:catalog:v32");
 
     // Multi-winner quests are reopened after each winner, but GitHub keeps the
     // merged PRs that closed them before the reopen.
@@ -672,7 +680,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v31");
+    await env.KV.delete("quests:catalog:v32");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(
@@ -1985,7 +1993,7 @@ test("quest check rewards every merged author without duplicating a legacy assig
         issueNumber,
         title: issueTitle,
         goal: "Merge the quest PR.",
-        reward: 17,
+        reward: 25,
         assigneeGithubId: secondAuthorGithubId,
         assigneeLogin: "second-author",
         completedByPrNumber: 888,
@@ -1997,13 +2005,15 @@ test("quest check rewards every merged author without duplicating a legacy assig
     );
     seededIssue?.closedByPullRequestsReferences?.push({
         number: 889,
-        mergedAt: new Date("2026-06-03T00:00:00Z").toISOString(),
+        mergedAt: "2026-11-07T00:00:00Z",
         author: { databaseId: secondAuthorGithubId },
     });
     mocks.github.state.mergedPullRequests.push({
         number: 889,
         authorLogin: "second-author",
-        mergedAt: new Date("2026-06-03T00:00:00Z").toISOString(),
+        authorId: secondAuthorGithubId,
+        mergedAt: "2026-11-07T00:00:00Z",
+        closingIssues: [issueNumber],
     });
 
     // The migration gives an existing winner the same per-author key that new
@@ -2015,7 +2025,7 @@ test("quest check rewards every merged author without duplicating a legacy assig
         userId: "github-quest-second-author",
         questId: issueQuestId,
         title: `Ship bounty #${issueNumber}: ${issueTitle}`,
-        pollenAmount: 17,
+        pollenAmount: 25,
         balanceBucket: "tier",
         earnedAt: new Date(),
     });
@@ -2058,7 +2068,7 @@ test("quest check rewards every merged author without duplicating a legacy assig
                 idempotencyKey: `quest:${issueQuestId}:github:${user.githubId}`,
                 userId: user.id,
                 title: `Ship bounty #${issueNumber}: ${issueTitle}`,
-                pollenAmount: 17,
+                pollenAmount: 25,
                 balanceBucket: "tier",
             }),
         ]),
@@ -2096,13 +2106,13 @@ test("two lazy GitHub issue bounties each record independently", async ({
             issueNumber: 901,
             authorGithubId: user.githubId,
             authorLogin: user.githubUsername,
-            reward: 11,
+            reward: 10,
         },
         {
             issueNumber: 902,
             authorGithubId: secondGithubId,
             authorLogin: "second-dev",
-            reward: 13,
+            reward: 15,
         },
     ];
     for (const issue of issues) {
@@ -2146,59 +2156,11 @@ test("two lazy GitHub issue bounties each record independently", async ({
     // Both PR authors have their own issue's reward (901→user, 902→other).
     expect(
         issueRewards.find((g) => g.userId === user.id)?.pollenAmount,
-    ).toBeCloseTo(11);
+    ).toBeCloseTo(10);
     expect(
         issueRewards.find((g) => g.userId === "community-issue-second-user")
             ?.pollenAmount,
-    ).toBeCloseTo(13);
-});
-
-test("issue bounties with out-of-range rewards record nothing and do not fail the check", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    mocks.github.state.user.created_at = new Date().toISOString();
-    await mocks.enable("github", "tinybird");
-
-    // The issue body is author-editable, so a reward of 0 or above the
-    // MAX_REWARD_AMOUNT cap can appear at any time. Before the fix both
-    // parsed into a quest definition and recordRewards threw on the amount,
-    // failing every bounty in the same check, including the valid one.
-    for (const issue of [
-        { issueNumber: 951, reward: 10001 },
-        { issueNumber: 953, reward: 0 },
-        { issueNumber: 952, reward: 17 },
-    ]) {
-        seedQuestIssue(mocks.github.state, {
-            issueNumber: issue.issueNumber,
-            title: `Bounty #${issue.issueNumber}`,
-            goal: "Merge the linked PR.",
-            reward: issue.reward,
-            completedByPrNumber: issue.issueNumber + 1000,
-            completedByGithubId: user.githubId,
-            completedByLogin: user.githubUsername,
-        });
-    }
-
-    await checkQuestsForUser(env, user.id);
-
-    const rewards = await db
-        .select({
-            idempotencyKey: schema.rewards.idempotencyKey,
-            pollenAmount: schema.rewards.pollenAmount,
-        })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.balanceBucket, "tier"));
-    const issueRewards = rewards.filter((g) =>
-        g.idempotencyKey.startsWith("quest:github:issue:"),
-    );
-    expect(issueRewards).toHaveLength(1);
-    expect(issueRewards[0].idempotencyKey).toBe(
-        `quest:github:issue:952:github:${user.githubId}`,
-    );
-    expect(issueRewards[0].pollenAmount).toBeCloseTo(17);
+    ).toBeCloseTo(15);
 });
 
 // Regression guard: GitHub search returns at most 100 issues per page, so a
@@ -2224,7 +2186,7 @@ test("issue bounties beyond the first 100 quest issues still record", async ({
         issueNumber: 1999,
         title: "Bounty on the second page",
         goal: "Merge the linked PR.",
-        reward: 9,
+        reward: 10,
         completedByPrNumber: 3999,
         completedByGithubId: user.githubId,
         completedByLogin: user.githubUsername,
@@ -2244,6 +2206,7 @@ test("issue bounties beyond the first 100 quest issues still record", async ({
 // An approved app submission closes a quest through the bot's catalog PR, which
 // credits the submitter as commit co-author. Co-authors on other PRs earn nothing,
 // even when a GitHub user with the bot's login opens one on a catalog branch.
+// Catalog PRs merged before the start date pay nothing, like other PRs.
 test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only their author", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -2269,10 +2232,11 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
         packBalance: 0,
     });
 
-    const mergedAt = new Date("2026-06-03T00:00:00Z").toISOString();
+    const mergedAt = "2026-11-06T00:00:00Z";
     mocks.github.state.commitAuthors = {
         5001: [247793354, user.githubId],
         5002: [616161, coAuthorGithubId],
+        5003: [247793354, user.githubId],
     };
     for (const [issueNumber, pr] of [
         [
@@ -2297,12 +2261,21 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
                 },
             },
         ],
+        [
+            933,
+            {
+                number: 5003,
+                mergedAt: "2026-11-04T23:59:59Z",
+                headRefName: "auto/app-4003-123-1",
+                author: { __typename: "Bot", login: "pollinations-ai" },
+            },
+        ],
     ] as const) {
         seedQuestIssue(mocks.github.state, {
             issueNumber,
             title: `Plug-in quest #${issueNumber}`,
             goal: "Publish the plug-in.",
-            reward: 9,
+            reward: 10,
             closed: true,
         });
         const issue = mocks.github.state.questIssues.at(-1);
@@ -2322,6 +2295,7 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
             inArray(schema.rewards.questId, [
                 "github:issue:931",
                 "github:issue:932",
+                "github:issue:933",
             ]),
         );
     expect(rewards).toEqual([
@@ -2354,7 +2328,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
             issueNumber,
             title: `Plug-in quest #${issueNumber}`,
             goal: "Publish the plug-in.",
-            reward: 9,
+            reward: 10,
             closed: true,
         });
         const issue = mocks.github.state.questIssues.at(-1);
@@ -2362,7 +2336,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
             issue.closedByPullRequestsReferences = [
                 {
                     number: prNumber,
-                    mergedAt: new Date("2026-06-03T00:00:00Z").toISOString(),
+                    mergedAt: "2026-11-06T00:00:00Z",
                     headRefName: `auto/app-${prNumber}-123-1`,
                     author: { __typename: "Bot", login: "pollinations-ai" },
                 },
@@ -2370,7 +2344,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
         }
     }
 
-    await env.KV.delete("quests:catalog:v31");
+    await env.KV.delete("quests:catalog:v32");
     mocks.github.state.requests = [];
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -2571,7 +2545,7 @@ test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or be
     ]);
 });
 
-test("each PR merged into main from the start date pays 5; quest PRs, other branches and older PRs don't", async ({
+test("a merged PR pays its own reward label, else the highest bounty it closes, else 5", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2580,30 +2554,44 @@ test("each PR merged into main from the start date pays 5; quest PRs, other bran
     await mocks.enable("github", "tinybird");
     const login = user.githubUsername ?? "";
 
-    seedQuestIssue(mocks.github.state, {
-        issueNumber: 9400,
-        title: "A quest",
-        goal: "Build it.",
-        reward: 12,
-        completedByPrNumber: 9503,
-        completedByGithubId: user.githubId,
-        updatedAt: new Date("2026-11-06T00:00:00Z"),
+    for (const [issueNumber, reward] of [
+        [9400, 10],
+        [9401, 3],
+        [9402, 25],
+        [9403, 5],
+        [9404, null],
+    ] as const) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber,
+            title: `Quest ${issueNumber}`,
+            goal: "Build it.",
+            reward,
+        });
+    }
+    // Only the seven reward labels count; the highest one wins.
+    mocks.github.state.questIssues
+        .find((issue) => issue.number === 9404)
+        ?.labels?.push({ name: "reward-100" });
+    mocks.github.state.questIssues
+        .find((issue) => issue.number === 9401)
+        ?.labels?.push({ name: "reward-1" });
+    const pr = (number: number, rest: object = {}) => ({
+        number,
+        authorLogin: login,
+        mergedAt: "2026-11-06T00:00:00Z",
+        ...rest,
     });
     mocks.github.state.mergedPullRequests.push(
-        { number: 9501, authorLogin: login, mergedAt: "2026-11-05T00:00:00Z" },
-        { number: 9502, authorLogin: login, mergedAt: "2026-11-06T00:00:00Z" },
-        {
-            number: 9503,
-            authorLogin: login,
-            mergedAt: "2026-11-06T00:00:00Z",
-            closingIssues: [9400],
-        },
-        {
-            number: 9504,
-            authorLogin: login,
-            mergedAt: "2026-11-06T00:00:00Z",
-            base: "production",
-        },
+        pr(9501, { mergedAt: "2026-11-05T00:00:00Z" }),
+        pr(9502, { labels: ["reward-15", "BUG"] }),
+        pr(9503, { closingIssues: [9400] }),
+        // The same quest pays its author once.
+        pr(9507, { closingIssues: [9400] }),
+        pr(9505, { closingIssues: [9401, 9402] }),
+        pr(9506, { labels: ["reward-50"], closingIssues: [9403] }),
+        // A quest without a reward label pays 5, still under the quest's id.
+        pr(9508, { closingIssues: [9404] }),
+        pr(9504, { base: "production" }),
     );
 
     const prRewards = async () => {
@@ -2624,18 +2612,24 @@ test("each PR merged into main from the start date pays 5; quest PRs, other bran
             .sort((a, b) => a.questId.localeCompare(b.questId));
     };
     const paid = [
-        { questId: "github:issue:9400", pollenAmount: 12 },
+        { questId: "github:issue:9400", pollenAmount: 10 },
+        { questId: "github:issue:9402", pollenAmount: 25 },
+        { questId: "github:issue:9403", pollenAmount: 50 },
+        { questId: "github:issue:9404", pollenAmount: 5 },
         { questId: "github:merged_pr:9501", pollenAmount: 5 },
-        { questId: "github:merged_pr:9502", pollenAmount: 5 },
+        { questId: "github:merged_pr:9502", pollenAmount: 15 },
     ];
     expect(await prRewards()).toEqual(paid);
 
-    // A PR merged before the start date earns the old one-time reward.
-    mocks.github.state.mergedPullRequests.push({
-        number: 9500,
-        authorLogin: login,
-        mergedAt: "2026-11-01T00:00:00Z",
-    });
+    // A label added after the payout changes nothing. A PR merged before the
+    // start date earns only the old one-time reward, also when it closes a quest.
+    mocks.github.state.questIssues
+        .find((issue) => issue.number === 9404)
+        ?.labels?.push({ name: "reward-25" });
+    await env.KV.delete("quests:github-issues:v2");
+    mocks.github.state.mergedPullRequests.push(
+        pr(9500, { mergedAt: "2026-11-01T00:00:00Z", closingIssues: [9401] }),
+    );
     expect(await prRewards()).toEqual([
         ...paid,
         { questId: "merged_pr", pollenAmount: 5 },

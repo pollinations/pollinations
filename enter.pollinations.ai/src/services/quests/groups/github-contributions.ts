@@ -1,5 +1,4 @@
 import { getLogger } from "@logtape/logtape";
-import { MAX_REWARD_AMOUNT } from "@shared/billing/rewards.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -17,13 +16,13 @@ import {
 } from "../types.ts";
 
 /**
- * GitHub contribution rewards are checked lazily against GitHub itself. A
- * community bounty is a POLLEN-QUEST-labelled issue with a "### Reward" amount
- * in its body; it is payable once a merged PR closes it. There is no local
- * GitHub mirror and no materialized quest table.
+ * GitHub contribution rewards are checked lazily against GitHub itself. There
+ * is no local GitHub mirror and no materialized quest table.
  *
- * Every other PR merged into main earns 5, and every issue a merged PR closes
- * earns its author 3, also when they fixed it themselves.
+ * Amounts come only from reward-N labels, which only maintainers can add. A PR
+ * merged into main earns its own label, else the bounty of the POLLEN-QUEST
+ * issue it closes, else 5. Every issue a merged PR closes earns its author 3,
+ * also when they fixed it themselves.
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
@@ -45,9 +44,8 @@ const ISSUE_REPORT_EXCLUDED_TITLE =
 const REPO_OWNER = "pollinations";
 const REPO_NAME = "pollinations";
 const REPO = `${REPO_OWNER}/${REPO_NAME}`;
-// Matches `### Reward\n<number>` in an issue body. Kept identical to the legacy
-// GitHub Actions parser so already-parsed bounties keep their reward amount.
-const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
+// The amounts of the reward-N labels; any other reward-N label is ignored.
+const REWARD_AMOUNTS = [1, 3, 5, 10, 15, 25, 50];
 // An approved app submission can close a quest. The bot opens that catalog PR
 // on an auto/app-<issue>- branch and credits the submitter as commit co-author.
 // A GitHub user also owns the login "pollinations-ai", so the type must be Bot.
@@ -61,7 +59,7 @@ const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 // ponytail: refreshes are not coordinated, so a burst or another location can
 // fetch again before the new copy is visible. Move the list to a Durable Object
 // if those refreshes exhaust the budget.
-const QUEST_ISSUES_CACHE_KEY = "quests:github-issues:v1";
+const QUEST_ISSUES_CACHE_KEY = "quests:github-issues:v2";
 const QUEST_ISSUES_CACHE_MS = 5 * 60 * 1000;
 
 const log = getLogger(["enter", "quests"]);
@@ -101,7 +99,7 @@ const HONEY_CENSUS_MIN_POLLEN_BOUGHT = 2;
 const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
-    description: `Earn ${PR_REWARD} Quest Pollen for each pull request merged into the main branch of the Pollinations [repository](https://github.com/${REPO}). A PR that closes a POLLEN-QUEST issue earns that quest's bounty instead.`,
+    description: `Earn ${PR_REWARD} Quest Pollen for each pull request merged into the main branch of the Pollinations [repository](https://github.com/${REPO}). A PR that closes a POLLEN-QUEST issue earns that quest's bounty instead, and a maintainer can set another amount with a reward label.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: PR_REWARD,
@@ -155,11 +153,13 @@ type DerivedQuestIssue = {
     title: string;
     description: string;
     url: string;
-    rewardAmount: number | null;
+    // 0 without a reward label: the quest is off the board and pays the default.
+    rewardAmount: number;
     // "completed" issues stay off the open board once assigned or closed.
     // Multi-winner quests are reopened after each merge and stay available.
     state: "available" | "completed";
-    completedByGithubIds: number[];
+    // App submitters credited on an app-publish PR that closed the quest.
+    appSubmitterGithubIds: number[];
 };
 
 type GitHubUser = {
@@ -170,7 +170,7 @@ type ClosingPullRequest = {
     number: number;
     mergedAt: string | null;
     headRefName: string;
-    author: (GitHubUser & { __typename: string; login: string }) | null;
+    author: { __typename: string; login: string } | null;
 };
 
 type CommitAuthorsData = {
@@ -209,6 +209,7 @@ type MergedPrNode = {
     title: string;
     url: string;
     author: GitHubUser | null;
+    labels: { nodes: { name: string }[] };
     closingIssuesReferences: { nodes: { number: number }[] };
 };
 
@@ -255,7 +256,7 @@ query($query:String!,$after:String){
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
         closedByPullRequestsReferences(first:100){
-          nodes{ number mergedAt headRefName author{ __typename login ... on User{ databaseId } } }
+          nodes{ number mergedAt headRefName author{ __typename login } }
         }
       }
     }
@@ -286,7 +287,8 @@ query($query:String!){
 }`;
 
 // Closing issue numbers only: their labels would cost about ten times more,
-// and the cached quest issues already say which numbers are quests.
+// and the cached quest issues already carry the bounties. Asking for 100
+// labels and closing issues costs the same 2 points as asking for 10.
 const MERGED_PRS_QUERY = `
 query($query:String!,$after:String){
   search(query:$query,type:ISSUE,first:100,after:$after){
@@ -294,7 +296,8 @@ query($query:String!,$after:String){
     nodes{
       ... on PullRequest{
         number title url author{ ... on User{ databaseId } }
-        closingIssuesReferences(first:10){ nodes{ number } }
+        labels(first:100){ nodes{ name } }
+        closingIssuesReferences(first:100){ nodes{ number } }
       }
     }
   }
@@ -331,16 +334,13 @@ async function githubToken(env: CloudflareBindings): Promise<string> {
     );
 }
 
-function parseReward(body: string): number | null {
-    const match = body.match(QUEST_REWARD_REGEX);
-    if (!match) return null;
-    const amount = Number(match[1]);
-    // The body is author-editable. An out-of-range amount must not become a
-    // payable quest: recordRewards throws on amounts outside
-    // (0, MAX_REWARD_AMOUNT], and one throw fails the whole quest check.
-    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_REWARD_AMOUNT)
-        return null;
-    return amount;
+// The highest reward-N label, or 0 without one.
+function labelReward(labels: { name: string }[]): number {
+    const names = new Set(labels.map((label) => label.name));
+    return Math.max(
+        0,
+        ...REWARD_AMOUNTS.filter((amount) => names.has(`reward-${amount}`)),
+    );
 }
 
 // Pull a short human description out of the issue body: prefer a Goal/Scope
@@ -381,8 +381,11 @@ function mergedClosers(issue: GitHubIssueNode) {
     );
 }
 
+// Like any other PR, an app-publish PR pays only from REWARDS_START.
 function isAppPublishPr(pr: ClosingPullRequest): boolean {
     return (
+        pr.mergedAt !== null &&
+        Date.parse(pr.mergedAt) >= Date.parse(REWARDS_START) &&
         pr.author?.__typename === "Bot" &&
         pr.author.login === APP_PUBLISH_BOT &&
         APP_PUBLISH_BRANCH.test(pr.headRefName)
@@ -424,7 +427,6 @@ function toDerivedQuestIssue(
     appPublishPayees: Map<number, number[]>,
 ): DerivedQuestIssue {
     const body = issue.body ?? "";
-    const closers = mergedClosers(issue);
     const state: DerivedQuestIssue["state"] =
         issue.state === "CLOSED" || issue.assignees.nodes.length > 0
             ? "completed"
@@ -434,13 +436,11 @@ function toDerivedQuestIssue(
         title: issue.title,
         description: extractDescription(body),
         url: issue.url,
-        rewardAmount: parseReward(body),
+        rewardAmount: labelReward(issue.labels.nodes),
         state,
-        completedByGithubIds: closers.flatMap((pr) =>
-            isAppPublishPr(pr)
-                ? (appPublishPayees.get(pr.number) ?? [])
-                : githubIds([pr.author]),
-        ),
+        appSubmitterGithubIds: mergedClosers(issue)
+            .filter(isAppPublishPr)
+            .flatMap((pr) => appPublishPayees.get(pr.number) ?? []),
     };
 }
 
@@ -471,12 +471,13 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
         `repo:${REPO} label:${QUEST_LABEL} is:issue`,
     );
 
-    const filteredIssues = issues
-        .filter((issue) => hasQuestLabel(issue.labels.nodes))
-        .filter(
-            (issue) =>
-                issue.state === "OPEN" || mergedClosers(issue).length > 0,
-        );
+    // Quests without a reward label stay too: their PRs then keep the quest's
+    // reward id, so a label added after a payout can't pay a second time.
+    const filteredIssues = issues.filter(
+        (issue) =>
+            hasQuestLabel(issue.labels.nodes) &&
+            (issue.state === "OPEN" || mergedClosers(issue).length > 0),
+    );
     const appPublishPrs = new Set(
         filteredIssues
             .flatMap(mergedClosers)
@@ -484,9 +485,9 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
             .map((pr) => pr.number),
     );
     const appPublishPayees = await commitAuthorIds(token, [...appPublishPrs]);
-    return filteredIssues
-        .map((issue) => toDerivedQuestIssue(issue, appPublishPayees))
-        .filter((issue) => issue.rewardAmount !== null);
+    return filteredIssues.map((issue) =>
+        toDerivedQuestIssue(issue, appPublishPayees),
+    );
 }
 
 async function cachedQuestIssues(
@@ -528,7 +529,7 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
         description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
         scope: "perUser",
-        rewardAmount: issue.rewardAmount ?? 0,
+        rewardAmount: issue.rewardAmount || PR_REWARD,
         balanceBucket: "tier",
         url: issue.url,
         state: issue.state,
@@ -544,7 +545,10 @@ export async function listQuestCards(
         questToCard(reportedIssueQuest),
         questToCard(beeCensusQuest),
         questToCard(honeyCensusQuest),
-        ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
+        // A quest shows on the board once it has a reward label.
+        ...issues
+            .filter((issue) => issue.rewardAmount > 0)
+            .map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }
 
@@ -696,41 +700,44 @@ export async function evaluateUser(
         ),
     ]);
 
-    // Payable issue bounties: completed by a merged PR authored by the current
-    // user's linked GitHub account, with a positive reward.
-    const issueProposals = issues
-        .filter(
-            (issue) =>
-                issue.completedByGithubIds.includes(githubId) &&
-                (issue.rewardAmount ?? 0) > 0,
-        )
+    // The bot authors app-publish PRs, so their submitters are paid from the
+    // quest issue.
+    const appQuestProposals = issues
+        .filter((issue) => issue.appSubmitterGithubIds.includes(githubId))
         .map((issue) => ({
             quest: toIssueQuestDefinition(issue),
             userId: user.id,
         }));
 
-    // A PR that closes a quest issue earns that bounty instead.
-    const questNumbers = new Set(issues.map((issue) => issue.issueNumber));
-    const prProposals = mergedPrs
-        .filter(
-            (pr) =>
-                !pr.closingIssuesReferences.nodes.some((issue) =>
-                    questNumbers.has(issue.number),
-                ),
-        )
-        .map((pr) => ({
+    // A PR's own reward label wins, then the highest bounty among the quests
+    // it closes, then 5; never a sum. A quest pays each author once, however
+    // many of their PRs close it.
+    const quests = new Map(issues.map((issue) => [issue.issueNumber, issue]));
+    const prProposals = mergedPrs.map((pr) => {
+        const quest = pr.closingIssuesReferences.nodes
+            .flatMap((issue) => quests.get(issue.number) ?? [])
+            .sort((a, b) => b.rewardAmount - a.rewardAmount)[0];
+        const definition = quest
+            ? toIssueQuestDefinition(quest)
+            : {
+                  ...mergedPrQuest,
+                  id: `github:merged_pr:${pr.number}`,
+                  title: `Merged PR #${pr.number}: ${pr.title}`,
+                  url: pr.url,
+              };
+        return {
             quest: {
-                ...mergedPrQuest,
-                id: `github:merged_pr:${pr.number}`,
-                title: `Merged PR #${pr.number}: ${pr.title}`,
-                url: pr.url,
+                ...definition,
+                rewardAmount:
+                    labelReward(pr.labels.nodes) || definition.rewardAmount,
             },
             userId: user.id,
-        }));
+        };
+    });
 
     return {
         proposals: [
-            ...issueProposals,
+            ...appQuestProposals,
             ...prProposals,
             ...reportedIssues,
             ...(mergedPr ? [{ quest: mergedPrQuest, userId: user.id }] : []),

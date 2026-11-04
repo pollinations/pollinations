@@ -16,8 +16,8 @@ import {
     questStandingsResponseSchema,
 } from "./quest-leaderboard.ts";
 
-// Bumped to v31: every merged PR earns 5, and the issue placeholder card is gone.
-const CACHE_KEY = "quests:catalog:v31";
+// Bumped to v32: quest bounties come from reward-N labels.
+const CACHE_KEY = "quests:catalog:v32";
 const CACHE_TTL = 60;
 
 export type QuestCatalogResponse = {

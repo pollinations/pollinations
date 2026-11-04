@@ -930,6 +930,154 @@ describe("GenerationCoordinator", () => {
         });
     });
 
+    it.each(["startAndWait", "submit"] as const)(
+        "%s keeps status responsive while the first caller uploads its body",
+        async (method) => {
+            vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `slow-upload-${crypto.randomUUID()}`,
+            );
+            const job = testJob(`upload-${crypto.randomUUID()}`, "POST");
+            const body = new TransformStream<Uint8Array, Uint8Array>();
+            const writer = body.writable.getWriter();
+            const owner = stub[method](job, body.readable);
+            await writer.write(new TextEncoder().encode("owner body"));
+            // A completed smaller upload must not replace the first body.
+            const joiner = stub[method](
+                job,
+                new Response("joiner body").body ?? undefined,
+            );
+            const status = stub.status("user-1");
+            let responsive: boolean;
+            try {
+                responsive = await Promise.race([
+                    status.then(() => true),
+                    new Promise<false>((resolve) =>
+                        setTimeout(() => resolve(false), 1_000),
+                    ),
+                ]);
+            } finally {
+                await writer.close();
+            }
+            await status;
+            if (method === "submit") await Promise.all([owner, joiner]);
+            await vi.waitFor(() =>
+                runInDurableObject(stub, async (coordinator, state) => {
+                    if (method === "startAndWait") {
+                        expect(Reflect.get(coordinator, "waiters").size).toBe(
+                            2,
+                        );
+                    }
+                    expect(await state.storage.get("body:0")).toEqual(
+                        new TextEncoder().encode("owner body"),
+                    );
+                }),
+            );
+            await runInDurableObject(stub, async (coordinator, state) => {
+                await coordinator.alarm();
+                await state.storage.deleteAlarm();
+            });
+            await Promise.all([owner, joiner]);
+            expect(responsive).toBe(true);
+        },
+    );
+
+    it.each(["startAndWait", "submit"] as const)(
+        "%s releases admission after an upload fails without persisting partial data",
+        async (method) => {
+            vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `failed-upload-${crypto.randomUUID()}`,
+            );
+            const job = testJob(`upload-${crypto.randomUUID()}`, "POST");
+            await runInDurableObject(stub, async (coordinator, state) => {
+                let reads = 0;
+                const body = new ReadableStream<Uint8Array>(
+                    {
+                        pull(controller) {
+                            if (reads++ === 0) {
+                                controller.enqueue(new Uint8Array(1_100_000));
+                            } else {
+                                controller.error(new Error("upload failed"));
+                            }
+                        },
+                    },
+                    { highWaterMark: 0 },
+                );
+                const owner = coordinator[method](job, body);
+                const rejected = expect(owner).rejects.toThrow("upload failed");
+                const replacement = coordinator.submit(
+                    job,
+                    new Response("replacement body").body ?? undefined,
+                );
+                await rejected;
+                expect(await replacement).toBe("pending");
+                expect(reads).toBe(2);
+                expect([...(await state.storage.list()).keys()]).toEqual([
+                    "async",
+                    "body:0",
+                    "job",
+                ]);
+                expect(await state.storage.get("body:0")).toEqual(
+                    new TextEncoder().encode("replacement body"),
+                );
+                await coordinator.alarm();
+                await state.storage.deleteAlarm();
+                expect([...(await state.storage.list()).keys()]).toEqual([
+                    "async",
+                ]);
+            });
+        },
+    );
+
+    it.each(["startAndWait", "submit"] as const)(
+        "%s lets admissions and the alarm finish while a discarded body cancels",
+        async (method) => {
+            vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `cancel-upload-${crypto.randomUUID()}`,
+            );
+            const job = testJob(`upload-${crypto.randomUUID()}`, "POST");
+            await runInDurableObject(stub, async (coordinator, state) => {
+                const owner = coordinator.startAndWait(job);
+                await waitForAlarm(state);
+                let release!: () => void;
+                let cancelling = false;
+                let reads = 0;
+                const blocked = new Promise<void>((resolve) => {
+                    release = resolve;
+                });
+                const body = new ReadableStream<Uint8Array>(
+                    {
+                        pull() {
+                            reads++;
+                        },
+                        cancel() {
+                            cancelling = true;
+                            return blocked;
+                        },
+                    },
+                    { highWaterMark: 0 },
+                );
+                const joiner = coordinator[method](job, body);
+                try {
+                    await vi.waitFor(() => expect(cancelling).toBe(true));
+                    expect(await coordinator.submit(job)).toBe("pending");
+                    await coordinator.alarm();
+                    expect((await owner).status).toBe("failed");
+                    expect(await coordinator.status("user-1")).toMatchObject({
+                        status: "failed",
+                    });
+                    expect(reads).toBe(0);
+                } finally {
+                    release();
+                    await joiner;
+                    await state.storage.deleteAlarm();
+                }
+            });
+        },
+    );
+
     it("streams request bodies above the 32 MiB RPC limit into storage", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(

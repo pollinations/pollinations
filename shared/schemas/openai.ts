@@ -388,6 +388,10 @@ export const CreateChatCompletionRequestSchema = z
             .min(1)
             .max(128)
             .optional(), // deprecated, supported
+        service_tier: z
+            .enum(["auto", "default", "flex", "scale", "priority"])
+            .nullable()
+            .optional(),
     })
     .passthrough();
 
@@ -450,7 +454,10 @@ export const CreateResponseRequestSchema = z
         prompt_cache_key: z.string().optional(),
         prompt_cache_options: PromptCacheOptionsSchema,
         prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
-        service_tier: z.string().optional(),
+        service_tier: z
+            .enum(["auto", "default", "flex", "scale", "priority"])
+            .nullable()
+            .optional(),
         temperature: z.number().min(0).max(2).nullish(),
         top_p: z.number().min(0).max(1).nullish(),
         top_logprobs: z.number().int().min(0).max(20).nullish(),

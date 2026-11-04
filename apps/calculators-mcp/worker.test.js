@@ -7,17 +7,16 @@ import {
 } from "@modelcontextprotocol/client";
 import { Resvg } from "@resvg/resvg-js";
 import jsQR from "jsqr";
-import { convertUnits, UNITS } from "./tools/units.js";
 import worker from "./worker.js";
 
 async function clientFor(t, modern = false) {
     const client = new Client(
-        { name: "toolbox-test", version: "1" },
+        { name: "calculators-test", version: "1" },
         modern ? { versionNegotiation: { mode: "auto" } } : {},
     );
     await client.connect(
         new StreamableHTTPClientTransport(
-            new URL("https://toolbox.internal/"),
+            new URL("https://calculators.internal/"),
             {
                 fetch: (input, init) =>
                     worker.fetch(
@@ -36,125 +35,6 @@ async function call(client, name, args = {}) {
     assert.notEqual(result.isError, true, JSON.stringify(result));
     return JSON.parse(result.content[0].text);
 }
-test("engineering unit conversions match reference values and preserve range", () => {
-    for (const [quantity, from, to, expected] of [
-        ["pressure", "bar", "kPa", 100],
-        ["pressure", "psi", "Pa", 6894.757293168361],
-        ["pressure", "atm", "Pa", 101325],
-        ["pressure", "kgf/cm2", "Pa", 98066.5],
-        ["volume_flow", "L/min", "m3/h", 0.06],
-        ["volume_flow", "US_gal/min", "L/min", 3.785411784],
-        ["volume_flow", "imp_gal/min", "L/min", 4.54609],
-        ["power", "hp_mechanical", "W", 745.6998715822702],
-        ["power", "hp_metric", "W", 735.49875],
-        ["energy", "kWh", "MJ", 3.6],
-        ["energy", "Btu_IT", "J", 1055.05585262],
-    ]) {
-        const result = convertUnits({ quantity, value: 1, from, to });
-        assert.ok(Math.abs(result.converted / expected - 1) < 1e-12);
-        assert.equal(result.factor, result.converted);
-    }
-    for (const [quantity, units] of Object.entries(UNITS)) {
-        for (const from of Object.keys(units)) {
-            for (const to of Object.keys(units)) {
-                const converted = convertUnits({
-                    quantity,
-                    from,
-                    to,
-                    value: -12.5,
-                }).converted;
-                assert.ok(
-                    Math.abs(
-                        convertUnits({
-                            quantity,
-                            from: to,
-                            to: from,
-                            value: converted,
-                        }).converted + 12.5,
-                    ) < 1e-12,
-                );
-                assert.equal(
-                    convertUnits({ quantity, from, to, value: 0 }).converted,
-                    0,
-                );
-            }
-        }
-    }
-    for (const value of [NaN, Infinity, -Infinity, "1"]) {
-        assert.throws(() =>
-            convertUnits({ quantity: "energy", from: "J", to: "kWh", value }),
-        );
-    }
-    assert.equal(
-        convertUnits({
-            quantity: "energy",
-            from: "MWh",
-            to: "MWh",
-            value: Number.MAX_VALUE,
-        }).converted,
-        Number.MAX_VALUE,
-    );
-});
-for (const modern of [false, true])
-    test(`engineering units over ${modern ? "modern" : "legacy"} MCP`, async (t) => {
-        const client = await clientFor(t, modern);
-        assert.deepEqual(await call(client, "list_units"), UNITS);
-        assert.deepEqual(
-            await call(client, "list_units", { quantity: "power" }),
-            { power: UNITS.power },
-        );
-        const converted = await call(client, "convert_units", {
-            quantity: "energy",
-            from: "Wh",
-            to: "J",
-            value: -2,
-        });
-        assert.deepEqual(converted, {
-            quantity: "energy",
-            from: "Wh",
-            to: "J",
-            value: -2,
-            factor: 3600,
-            converted: -7200,
-        });
-        for (const [from, to] of [
-            ["kWh", "Pa"],
-            ["BAR", "Pa"],
-            ["gpm", "Pa"],
-            ["constructor", "Pa"],
-            ["__proto__", "Pa"],
-            ["Pa", "J"],
-        ]) {
-            const error = await client.callTool({
-                name: "convert_units",
-                arguments: { quantity: "pressure", from, to, value: 1 },
-            });
-            assert.equal(error.isError, true);
-            assert.match(error.content[0].text, /Unsupported pressure unit/);
-        }
-        for (const [from, to, value] of [
-            ["MWh", "J", Number.MAX_VALUE],
-            ["J", "MWh", Number.MIN_VALUE],
-        ]) {
-            const error = await client.callTool({
-                name: "convert_units",
-                arguments: { quantity: "energy", from, to, value },
-            });
-            assert.equal(error.isError, true);
-            assert.match(error.content[0].text, /numeric range/);
-        }
-        for (const [name, args] of [
-            ["list_units", { quantity: "length" }],
-            [
-                "convert_units",
-                { quantity: "energy", from: "J", to: "kWh", value: "1" },
-            ],
-        ])
-            assert.equal(
-                (await client.callTool({ name, arguments: args })).isError,
-                true,
-            );
-    });
 test("private deployment has no public routes or preview URLs", () => {
     const config = JSON.parse(
         readFileSync(
@@ -168,26 +48,10 @@ test("private deployment has no public routes or preview URLs", () => {
         assert.deepEqual(env.routes, []);
     }
 });
-test("health, unknown paths, and batches", async () => {
+test("private Worker leaves other routes to Gen", async () => {
     assert.equal(
-        (await worker.fetch(new Request("https://toolbox/health"))).status,
-        200,
-    );
-    assert.equal(
-        (await worker.fetch(new Request("https://toolbox/mcp"))).status,
+        (await worker.fetch(new Request("https://calculators/mcp"))).status,
         404,
-    );
-    assert.equal(
-        (
-            await worker.fetch(
-                new Request("https://toolbox/", {
-                    method: "POST",
-                    body: "[]",
-                    headers: { "Content-Type": "application/json" },
-                }),
-            )
-        ).status,
-        400,
     );
 });
 for (const modern of [false, true])
@@ -197,23 +61,24 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "currency_convert",
+                "currency_list",
+                "currency_rates",
                 "check_contrast",
-                "convert_units",
                 "create_qr",
                 "inspect_unicode",
-                "list_units",
                 "next_cron_runs",
                 "rank_palette",
                 "time_convert",
                 "time_math",
-                "time_now",
-            ],
+            ].sort(),
         );
-        const now = await call(client, "time_now", {
-            timezones: ["Asia/Kathmandu"],
+        const converted = await call(client, "time_convert", {
+            time: "2026-01-01T00:00:00Z",
+            to_timezones: ["Asia/Kathmandu"],
         });
-        assert.ok(Math.abs(now.unixMillis - Date.now()) < 5000);
-        assert.match(now.zones["Asia/Kathmandu"], /\+05:45/);
+        assert.equal(converted.utc, "2026-01-01T00:00:00Z");
+        assert.match(converted.zones["Asia/Kathmandu"], /\+05:45/);
     });
 test("time conversion handles DST, fractional offsets and invalid dates", async (t) => {
     const client = await clientFor(t);
@@ -479,4 +344,50 @@ test("QR generates real SVG and rejects empty or oversized UTF-8 payloads", asyn
         });
         assert.equal(result.isError, true);
     }
+});
+
+test("time duration preserves nanoseconds", async (t) => {
+    const result = await call(await clientFor(t), "time_math", {
+        start: "2026-01-01T00:00:00.000000001Z",
+        end: "2026-01-01T00:00:00.000000002Z",
+    });
+    assert.equal(result.totalSeconds, 1e-9);
+});
+
+test("currency tools use fixed public rates without forwarding caller credentials", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const target = new URL(url);
+        requests.push(target);
+        assert.equal(target.hostname, "api.frankfurter.dev");
+        assert.equal(new Headers(options.headers).get("authorization"), null);
+        assert.equal(new Headers(options.headers).get("cookie"), null);
+        assert.ok(options.signal instanceof AbortSignal);
+        return Response.json(
+            target.pathname.endsWith("currencies")
+                ? { EUR: "Euro", USD: "US Dollar" }
+                : { base: "EUR", date: "2025-01-03", rates: { USD: 1.0299 } },
+        );
+    });
+    const client = await clientFor(t);
+    const converted = await call(client, "currency_convert", {
+        amount: 100,
+        from: "EUR",
+        to: "USD",
+        date: "2025-01-03",
+    });
+    assert.equal(converted.converted, 102.99);
+    assert.equal(requests[0].searchParams.get("base"), "EUR");
+    assert.equal(requests[0].searchParams.get("symbols"), "USD");
+    assert.deepEqual(
+        (
+            await call(client, "currency_rates", {
+                base: "EUR",
+                symbols: ["USD"],
+                date: "2025-01-03",
+            })
+        ).rates,
+        { USD: 1.0299 },
+    );
+    assert.equal((await call(client, "currency_list")).EUR, "Euro");
 });

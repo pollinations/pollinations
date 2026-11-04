@@ -2,7 +2,11 @@ import { env, SELF } from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
+import {
+    MCP_SERVERS,
+    MCP_USAGE_HEADERS,
+    type McpServerDefinition,
+} from "@shared/registry/mcp.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
@@ -158,13 +162,15 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
-                id: "toolbox",
-                name: "Toolbox",
+                id: "calculators",
+                alpha: true,
+                name: "Calculators",
                 description:
-                    "Time, cron schedules, Unicode, color contrast, QR codes, and engineering unit conversion.",
-                url: "https://gen.pollinations.ai/mcp/toolbox",
+                    "Time, cron schedules, Unicode, color contrast, QR codes, and ECB currency rates.",
+                url: "https://gen.pollinations.ai/mcp/calculators",
                 pricing: {
-                    description: "Local utilities. No Pollen charge.",
+                    description:
+                        "Local utilities and public ECB rates. No Pollen charge.",
                     rates: [],
                 },
             },
@@ -281,7 +287,7 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines", "toolbox"])(
+test.for(MCP_SERVERS.map(({ id }) => id))(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(
@@ -296,32 +302,47 @@ test.for(["pollinations", "ask-jev", "machines", "toolbox"])(
     },
 );
 
-test("Toolbox remains callable with an empty wallet and does not charge", async () => {
-    const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 0, packBalance: 0 },
-    });
-    const payload = {
-        ...MCP_REQUEST,
-        params: { name: "time_now", arguments: {} },
-    };
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/toolbox",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${key}`,
-                "Content-Type": "application/json",
+test.for(
+    MCP_SERVERS.filter(
+        (server: McpServerDefinition) =>
+            server.billing === "downstream" &&
+            server.forwardAuthorization !== true,
+    ).map(({ id }) => id),
+)(
+    "free %s strips caller credentials and remains callable with zero balance",
+    async (serverId) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 0 },
+        });
+        const payload = {
+            ...MCP_REQUEST,
+            params: { name: "opaque_proxy_test", arguments: {} },
+        };
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    Cookie: "session=private",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
             },
-            body: JSON.stringify(payload),
-        },
-    );
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ payload });
-    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
-        tierBalance: 0,
-        packBalance: 0,
-    });
-});
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            pathname: "/",
+            authorization: null,
+            cookie: null,
+            payload,
+        });
+        expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+            tierBalance: 0,
+            packBalance: 0,
+        });
+    },
+);
 
 test("proxies FFmpeg without caller credentials and bills reported usage", async () => {
     const { key, userId } = await createTestApiKey({

@@ -47,12 +47,6 @@ function views(value, timezones) {
 
 export const timeTools = [
     [
-        "time_now",
-        "Read the current UTC instant and its local time in requested IANA zones.",
-        { timezones: zones.default([]) },
-        ({ timezones }) => views(Temporal.Now.instant(), timezones),
-    ],
-    [
         "time_convert",
         "Convert an instant or local date/time to IANA zones. Ambiguous or nonexistent local times are rejected; supply an explicit offset to disambiguate.",
         {
@@ -106,7 +100,8 @@ export const timeTools = [
                         .until(to, { largestUnit: "years" })
                         .toString(),
                     totalSeconds:
-                        (to.epochMilliseconds - from.epochMilliseconds) / 1000,
+                        Number(to.epochNanoseconds - from.epochNanoseconds) /
+                        1e9,
                 };
             }
             return {

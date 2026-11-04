@@ -8,7 +8,7 @@ interface CloudflareBindings {
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
     MACHINES_MCP: Fetcher;
-    TOOLBOX_MCP: Fetcher;
+    CALCULATORS_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;

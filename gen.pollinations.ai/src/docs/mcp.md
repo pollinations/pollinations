@@ -21,16 +21,13 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
-| Toolbox | `https://gen.pollinations.ai/mcp/toolbox` | Time, cron previews, Unicode, contrast checks, SVG QR codes, and engineering unit conversion | [Source](https://github.com/pollinations/pollinations/tree/main/apps/toolbox-mcp) |
+| Calculators | `https://gen.pollinations.ai/mcp/calculators` | Time, cron previews, Unicode, contrast checks, SVG QR codes, and ECB currency rates | [Source](https://github.com/pollinations/pollinations/tree/main/apps/calculators-mcp) |
 
-Toolbox is free but still requires a key. Time conversion rejects ambiguous or
+Calculators is free but still requires a key. Time conversion rejects ambiguous or
 skipped local times: include an explicit
 offset to select an instant. Cron previews do not schedule jobs.
-Unit conversion covers pressure, volumetric flow, power, and energy. Use
-`list_units` for case-sensitive identifiers and SI factors; US and imperial
-gallons and mechanical and metric horsepower are distinct. Conversions preserve
-the pressure reference (gauge or absolute), without inferring fluid properties
-or electrical power factor.
+Currency tools return ECB reference rates and their publication date; weekends
+and holidays resolve to the previous working day.
 
 Send the key with every request:
 

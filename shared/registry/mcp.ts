@@ -54,7 +54,7 @@ export type McpBindingName =
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
     | "MACHINES_MCP"
-    | "TOOLBOX_MCP";
+    | "CALCULATORS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -245,14 +245,16 @@ export const MCP_SERVERS = [
         },
     },
     {
-        id: "toolbox",
-        name: "Toolbox",
+        id: "calculators",
+        alpha: true,
+        name: "Calculators",
         description:
-            "Time, cron schedules, Unicode, color contrast, QR codes, and engineering unit conversion.",
-        binding: "TOOLBOX_MCP",
+            "Time, cron schedules, Unicode, color contrast, QR codes, and ECB currency rates.",
+        binding: "CALCULATORS_MCP",
         billing: "downstream",
         pricing: {
-            description: "Local utilities. No Pollen charge.",
+            description:
+                "Local utilities and public ECB rates. No Pollen charge.",
             rates: [],
         },
     },

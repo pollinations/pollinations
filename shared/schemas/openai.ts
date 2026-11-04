@@ -113,7 +113,7 @@ const CacheControlSchema = z
 
 const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     type: z.literal("text"),
-    text: z.string(),
+    text: z.string().min(1),
     cache_control: CacheControlSchema,
     prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
@@ -173,7 +173,7 @@ const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
 const ChatCompletionRequestSystemMessageSchema = z
     .object({
         content: z.union([
-            z.string(),
+            z.string().min(1),
             z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
         ]),
         role: z.literal("system"),
@@ -185,7 +185,7 @@ const ChatCompletionRequestSystemMessageSchema = z
 const ChatCompletionRequestDeveloperMessageSchema = z
     .object({
         content: z.union([
-            z.string(),
+            z.string().min(1),
             z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
         ]),
         role: z.literal("developer"),
@@ -197,7 +197,7 @@ const ChatCompletionRequestDeveloperMessageSchema = z
 const ChatCompletionRequestUserMessageSchema = z
     .object({
         content: z.union([
-            z.string(),
+            z.string().min(1),
             z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
         ]),
         role: z.literal("user"),
@@ -338,7 +338,10 @@ export const CreateChatCompletionRequestSchema = z
         response_format: ResponseFormatUnionSchema.optional(),
         seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
         stop: z
-            .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
+            .union([
+                z.string().min(1).nullable(),
+                z.array(z.string()).min(1).max(4),
+            ])
             .optional(),
         stream: z.boolean().nullable().optional().default(false),
         stream_options: ChatCompletionStreamOptionsSchema,
@@ -367,10 +370,10 @@ export const CreateChatCompletionRequestSchema = z
                 "Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
             ),
         top_p: z.number().min(0).max(1).nullable().optional(),
-        tools: z.array(ChatCompletionToolSchema).optional(),
+        tools: z.array(ChatCompletionToolSchema).min(1).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
         parallel_tool_calls: z.boolean().optional(),
-        user: z.string().optional(),
+        user: z.string().min(1).optional(),
         prompt_cache_key: z.string().optional(),
         prompt_cache_options: PromptCacheOptionsSchema,
         prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
@@ -442,7 +445,7 @@ export const CreateResponseRequestSchema = z
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
         metadata: z.record(z.string(), z.string()).nullish(),
-        user: z.string().optional(),
+        user: z.string().min(1).optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
         prompt_cache_options: PromptCacheOptionsSchema,
@@ -836,7 +839,7 @@ export const CreateImageRequestSchema = z
         size: imageSizeField,
         quality: imageQualityField,
         response_format: imageResponseFormatField,
-        user: z.string().optional().meta({
+        user: z.string().min(1).optional().meta({
             description: "End-user identifier for abuse tracking",
         }),
         image: z

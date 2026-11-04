@@ -1,4 +1,7 @@
-import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import {
+    AGENT_RUN_TOKEN_TTL_SECONDS,
+    signAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
     isFreeCommunityEndpoint,
@@ -55,6 +58,21 @@ async function mintDelegatedToken({
             `Community endpoint '${endpoint.modelId}' delegates generation but the request has no API key to bill`,
         );
     }
+    // A token minted inside an agent run expires when that run does. Clock
+    // skew can put that expiry just behind us (the run token is accepted for a
+    // few seconds past it) or just over a full lifetime ahead, so the issue
+    // time is clamped rather than the expiry moved.
+    const now = Math.floor(Date.now() / 1000);
+    const issuedAt =
+        parentRunExpiresAt === undefined
+            ? now
+            : Math.min(
+                  Math.max(
+                      now,
+                      parentRunExpiresAt - AGENT_RUN_TOKEN_TTL_SECONDS,
+                  ),
+                  parentRunExpiresAt - 1,
+              );
     return signAgentRunToken({
         secret,
         parentApiKeyId,
@@ -66,14 +84,11 @@ async function mintDelegatedToken({
                 ? endpoint.id
                 : undefined,
         agentModelId: endpoint.modelId,
-        // A token minted inside an agent run expires no later than that run.
+        now: issuedAt,
         expiresIn:
             parentRunExpiresAt === undefined
                 ? undefined
-                : Math.max(
-                      1,
-                      parentRunExpiresAt - Math.floor(Date.now() / 1000),
-                  ),
+                : parentRunExpiresAt - issuedAt,
     });
 }
 

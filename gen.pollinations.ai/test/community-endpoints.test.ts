@@ -2787,27 +2787,37 @@ describe("community endpoint helpers", () => {
             );
         });
 
-        it("caps a run token minted inside a run to the caller's remaining time", async () => {
+        it("expires a run token minted inside a run when that run does", async () => {
             const endpoint = endpointAgent();
-            const parentRunExpiresAt = Math.floor(Date.now() / 1000) + 60;
-            const nested = await communityEndpointGatewayContext({
-                endpoint,
-                modelDefinition: communityModelDefinition(endpoint),
-                requestData: { messages: [{ role: "user", content: "hi" }] },
-                secret,
-                portkeyGatewayUrl: "https://portkey.test",
-                userApiKey: "sk_user_key",
-                parentRequestId: "parent-request-id",
-                parentApiKeyId: "parent-key-id",
-                parentRunExpiresAt,
-            });
-            const nestedClaims = await verifyAgentRunToken(
-                String(nested.modelConfig?.authKey),
-                secret,
-            );
-            expect(nestedClaims.expiresAt).toBeLessThanOrEqual(
-                parentRunExpiresAt,
-            );
+            // Time left; just past expiry, which verification still accepts
+            // within its clock-skew tolerance; and a run token minted on a
+            // clock running a second ahead.
+            for (const secondsLeft of [
+                60,
+                -2,
+                AGENT_RUN_TOKEN_TTL_SECONDS + 1,
+            ]) {
+                const parentRunExpiresAt =
+                    Math.floor(Date.now() / 1000) + secondsLeft;
+                const nested = await communityEndpointGatewayContext({
+                    endpoint,
+                    modelDefinition: communityModelDefinition(endpoint),
+                    requestData: {
+                        messages: [{ role: "user", content: "hi" }],
+                    },
+                    secret,
+                    portkeyGatewayUrl: "https://portkey.test",
+                    userApiKey: "sk_user_key",
+                    parentRequestId: "parent-request-id",
+                    parentApiKeyId: "parent-key-id",
+                    parentRunExpiresAt,
+                });
+                const nestedClaims = await verifyAgentRunToken(
+                    String(nested.modelConfig?.authKey),
+                    secret,
+                );
+                expect(nestedClaims.expiresAt).toBe(parentRunExpiresAt);
+            }
 
             const topLevelClaims = await verifyAgentRunToken(
                 String(

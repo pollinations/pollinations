@@ -342,7 +342,7 @@ const ChatOutputTokenLimitSchema = z
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
-        model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
@@ -462,7 +462,7 @@ const ResponseFunctionToolSchema = z
  */
 export const CreateResponseRequestSchema = z
     .object({
-        model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+        model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL),
         input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
@@ -816,6 +816,14 @@ export const OpenAIModelSchema = z
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        top_provider: z.object({
+            max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
+                .unwrap()
+                .nullable()
+                .describe(
+                    "Maximum output tokens; null when no limit is declared.",
+                ),
+        }),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())

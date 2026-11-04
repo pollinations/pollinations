@@ -69,6 +69,28 @@ class ClassificationTest(unittest.TestCase):
         write.assert_any_call("item", fields["Work type"], None)
         native_type.assert_not_called()
 
+    def test_unavailable_classifier_skips_without_failing(self):
+        context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 3, "ISSUE_NODE_ID": "pr-node",
+                   "GITHUB_TOKEN": "test", "POLLINATIONS_TOKEN": "test", "GITHUB_EVENT": {},
+                   "ITEM_DATA": {"labels": []}}
+        with patch.multiple(manager, **context), \
+             patch.object(manager, "dev_fields", return_value={}), \
+             patch.object(manager, "fetch_pr_files", return_value=[]), \
+             patch.object(manager, "closing_issues", return_value=[]), \
+             patch.object(manager, "ask_ai", return_value=None), \
+             patch.object(manager, "add_to_dev") as add:
+            manager.main()
+        add.assert_not_called()
+
+    def test_rejected_ai_request_fails_at_once_but_outage_returns_none(self):
+        with patch.object(manager.time, "sleep"):
+            with patch.object(manager.requests, "post", return_value=Mock(status_code=503, text="")):
+                self.assertIsNone(manager.ask_ai("system", "user"))
+            with patch.object(manager.requests, "post", return_value=Mock(status_code=401, text="")) as post:
+                with self.assertRaises(SystemExit):
+                    manager.ask_ai("system", "user")
+        post.assert_called_once()
+
     def test_missing_linked_issue_node_fails_and_is_not_cached(self):
         manager.closing_issues.cache_clear()
         linked = {"node": {"closingIssuesReferences": {"nodes": []}}}

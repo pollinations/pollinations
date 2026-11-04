@@ -24,6 +24,7 @@ test("lists the MCP servers exposed through Gen", async () => {
         data: [
             {
                 id: "pollinations",
+                alpha: true,
                 name: "Pollinations",
                 description:
                     "Access Pollinations models and API capabilities through agent tools.",
@@ -36,6 +37,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "ask-jev",
+                alpha: true,
                 name: "Ask Jev",
                 description:
                     "Evaluate state with typed choice, score, and probability questions.",
@@ -48,6 +50,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "ffmpeg",
+                alpha: true,
                 name: "FFmpeg",
                 description:
                     "Trim, convert, resize, compress, and remix audio and video.",
@@ -68,6 +71,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "exa",
+                alpha: true,
                 name: "Exa Search",
                 description:
                     "Search the live web and fetch clean content from source pages.",
@@ -98,6 +102,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "composio",
+                alpha: true,
                 name: "Connectors",
                 description:
                     "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
@@ -119,6 +124,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "computer",
+                alpha: true,
                 name: "Computer",
                 description:
                     "A private persistent computer: files that survive between runs, a bash shell and JavaScript.",
@@ -140,6 +146,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "machines",
+                alpha: true,
                 name: "Machines",
                 description:
                     "Start, pause, resume, and run commands and file operations in Linux sandboxes.",

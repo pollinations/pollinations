@@ -186,6 +186,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "packages",
+                alpha: true,
+                name: "Packages",
+                description:
+                    "Package versions, known vulnerabilities and public Hugging Face models and Spaces.",
+                url: "https://gen.pollinations.ai/mcp/packages",
+                pricing: {
+                    description: "Public registry lookups. No Pollen charge.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

@@ -55,7 +55,8 @@ export type McpBindingName =
     | "COMPUTER_MCP"
     | "MACHINES_MCP"
     | "CALCULATORS_MCP"
-    | "NETWORK_MCP";
+    | "NETWORK_MCP"
+    | "PACKAGES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -269,6 +270,19 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Network diagnostics. No Pollen charge.",
+            rates: [],
+        },
+    },
+    {
+        id: "packages",
+        alpha: true,
+        name: "Packages",
+        description:
+            "Package versions, known vulnerabilities and public Hugging Face models and Spaces.",
+        binding: "PACKAGES_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Public registry lookups. No Pollen charge.",
             rates: [],
         },
     },

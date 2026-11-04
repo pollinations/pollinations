@@ -1251,6 +1251,37 @@ test("a cold shared-port cache does not buy more time before the lease is nearly
             until,
             idleTimeout: 900,
         });
+
+        // Reading the sandbox again inside connect can take time. The
+        // token-only connect must not turn that delay into a lease charge.
+        const delayedEndAt = inSeconds(120.5);
+        e2b.sandboxes.push(
+            keptSandbox("latencylease", owner.userId, { endAt: delayedEndAt }),
+        );
+        await sharePort(owner.key, "latencylease", 8080);
+        const beforeDelayedVisit = await questPollen(owner.userId);
+        const providerFetch = globalThis.fetch;
+        let reads = 0;
+        vi.stubGlobal(
+            "fetch",
+            async (input: RequestInfo, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (
+                    request.method === "GET" &&
+                    request.url === `${E2B}/sandboxes/latencylease`
+                ) {
+                    if (++reads === 2) vi.setSystemTime(Date.now() + 1000);
+                }
+                return providerFetch(request);
+            },
+        );
+        expect((await visit("8080-latencylease.pollinations.app")).status).toBe(
+            200,
+        );
+        expect(reads).toBe(2);
+        expect(e2b.sandboxes[2].endAt).toBe(delayedEndAt);
+        expect(await questPollen(owner.userId)).toBe(beforeDelayedVisit);
+        expect(e2b.leases()).toHaveLength(1);
     } finally {
         vi.useRealTimers();
     }

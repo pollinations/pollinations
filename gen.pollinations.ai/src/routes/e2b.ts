@@ -1103,13 +1103,11 @@ async function wakePort(
     const now = Date.now();
     const paidUntil =
         sandbox.state === "running" ? Date.parse(sandbox.endAt) : 0;
+    // Connect cannot shorten a running lease. Its minimum timeout gets a
+    // traffic token without buying more time, with the renewal margin left
+    // for the provider calls rather than copying a stale remaining duration.
     const timeout =
-        paidUntil - now >= WAKE_MARGIN_MS
-            ? Math.min(
-                  DEFAULT_TIMEOUT_SECONDS,
-                  Math.floor((paidUntil - now) / 1000),
-              )
-            : DEFAULT_TIMEOUT_SECONDS;
+        paidUntil - now >= WAKE_MARGIN_MS ? 1 : DEFAULT_TIMEOUT_SECONDS;
     const response = await payerApi(env, ctx, payer)(sandboxID, "connect", {
         timeout,
     });

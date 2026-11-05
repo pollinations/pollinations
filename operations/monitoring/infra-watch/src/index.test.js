@@ -75,7 +75,7 @@ async function fake(input, init = {}) {
     if (url.pathname === "/") return new Response("ok");
     // Enter's key check, made with the probe key.
     if (url.href === "https://enter.pollinations.ai/api/account/key") {
-        world.enterKeys.push(init.headers.authorization);
+        world.enterKey = init.headers.authorization;
         if (world.enter === "reset") throw new Error("connection reset");
         return new Response(null, { status: world.enter });
     }
@@ -165,7 +165,6 @@ beforeEach(() => {
         legacy: [],
         legacyReads: 0,
         enter: 200,
-        enterKeys: [],
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
         aiGate: null,
@@ -1012,9 +1011,10 @@ it("opens an Enter card after three failed key checks, never for a refused key, 
     await stub.check();
     const card = await enter();
     const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
     expect(post.text).toContain("DOWN: enter.pollinations.ai");
     expect(post.text).toContain("connection reset");
-    expect(world.enterKeys.at(-1)).toBe("Bearer probe-test");
+    expect(world.enterKey).toBe("Bearer probe-test");
     world.enter = 200;
     await stub.check();
     await settle(stub);

@@ -249,10 +249,10 @@ export class Watch extends DurableObject {
             isUp(UPSTREAM),
             enterError(this.env.COMMUNITY_PROBE_KEY),
         ]);
-        const live = { hosts: { public: pub, upstream: up }, enterDown };
+        const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
         const gen = pub ? PUBLIC : UPSTREAM;
-        if (!pub && !up) found = conditions(live);
+        if (!pub && !up) found = conditions({ hosts });
         else
             try {
                 const [r15, r10, r60, catalog] = await Promise.all([
@@ -273,13 +273,15 @@ export class Watch extends DurableObject {
                 ]);
                 found = conditions({
                     ...data,
-                    ...live,
+                    hosts,
                     signups: signups ?? [],
                 });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
-                found = conditions({ ...live, analyticsDown: true });
+                found = conditions({ hosts, analyticsDown: true });
             }
+        // Enter is checked on its own, so it is judged whatever gen does.
+        if (enterDown) found.enter = { kind: "ENTER_DOWN", error: enterDown };
 
         const sweeps = await sweepDomains(
             this.env.DB,

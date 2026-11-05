@@ -72,8 +72,7 @@ const totalRequests = (rows) =>
         .reduce((sum, row) => sum + row.total_requests, 0);
 
 // Returns the conditions true right now, keyed by alert key.
-// `gen` = gen's own liveness; `analytics` = /models/status (Tinybird) reads;
-// `enterDown` = why Enter's key check failed, if it did.
+// `gen` = gen's own liveness; `analytics` = /models/status (Tinybird) reads.
 export function conditions({
     recent,
     last10,
@@ -81,17 +80,12 @@ export function conditions({
     official,
     hosts = { public: true, upstream: true },
     analyticsDown,
-    enterDown,
     signups = [],
 }) {
-    // Enter is checked on its own, so it is judged whatever gen does.
-    const found = enterDown
-        ? { enter: { kind: "ENTER_DOWN", error: enterDown } }
-        : {};
     // Same gen Worker behind two custom domains: gen.pollinations.ai (public)
     // and gen.myceli.ai (Myceli upstream). Which one fails tells where.
-    if (!hosts.public && !hosts.upstream)
-        return { ...found, gen: { kind: "GEN_DOWN" } };
+    if (!hosts.public && !hosts.upstream) return { gen: { kind: "GEN_DOWN" } };
+    const found = {};
     if (!hosts.public) found.public = { kind: "PUBLIC_DOWN" };
     if (!hosts.upstream) found.upstream = { kind: "UPSTREAM_DOWN" };
     if (analyticsDown) {
@@ -257,7 +251,7 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, incident] of Object.entries(open)) {
         if (found[key]) continue;
-        if (found.gen && key !== "gen" && key !== "enter") continue;
+        if (found.gen && key !== "enter") continue;
         if (found.analytics && !HOSTS[key]) continue;
         // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
         // sample neither counts nor resets the run.
@@ -587,7 +581,6 @@ function openRows(incident, now) {
         return [
             ["WHY", `key check failing ${CONFIRM_CHECKS}x`],
             ["ERROR", info.error],
-            ["", "-> its database or Worker"],
             ["", "API keys, sign-in, billing fail"],
         ];
     if (kind === "ANALYTICS_DOWN")

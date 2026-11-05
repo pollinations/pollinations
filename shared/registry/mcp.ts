@@ -306,7 +306,7 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Research",
         description:
-            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv preprints and World Bank indicators.",
         binding: "RESEARCH_MCP",
         billing: "downstream",
         pricing: {

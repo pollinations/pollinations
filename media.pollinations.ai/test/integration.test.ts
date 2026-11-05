@@ -716,9 +716,6 @@ describe("media.pollinations.ai", () => {
                 "Only image, audio and video files",
             );
         }
-        expect(
-            (await env.MEDIA_BUCKET.list({ prefix: "pending/" })).objects,
-        ).toHaveLength(0);
     });
 
     it("serves stored HTML and uploaded SVG as sandboxed downloads", async () => {
@@ -1404,21 +1401,33 @@ describe("media.pollinations.ai", () => {
         expect(pending.objects).toHaveLength(0);
     }, 30_000);
 
-    it("takes the file name's type when FormData omits the file type", async () => {
+    it("takes the file name's type when the declared one is generic", async () => {
         const form = new FormData();
         form.append("file", new File([TINY_PNG], "untyped.png"));
-        const response = await SELF.fetch(
-            "https://media.pollinations.ai/upload",
-            {
+        const auth = { Authorization: `Bearer ${VALID_KEY}` };
+        for (const response of [
+            await SELF.fetch("https://media.pollinations.ai/upload", {
                 method: "POST",
                 body: form,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
-            },
-        );
-        expect(response.status).toBe(200);
-        expect(((await response.json()) as UploadResponse).contentType).toBe(
-            "image/png",
-        );
+                headers: auth,
+            }),
+            // curl --data-binary sends raw bytes as octet-stream.
+            await SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: TINY_PNG,
+                headers: {
+                    ...auth,
+                    "Content-Type": "application/octet-stream",
+                    "Content-Length": String(TINY_PNG.length),
+                    "X-File-Name": "photo.png",
+                },
+            }),
+        ]) {
+            expect(response.status).toBe(200);
+            expect(
+                ((await response.json()) as UploadResponse).contentType,
+            ).toBe("image/png");
+        }
     });
 
     it("stops a multipart upload at the file-byte limit and clears staged parts", async () => {

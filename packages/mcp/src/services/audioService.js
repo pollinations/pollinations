@@ -6,6 +6,7 @@ import {
     createTextContent,
     fetchJsonWithAuth,
     fetchMediaLink,
+    fetchResponseWithAuth,
 } from "../utils/coreUtils.js";
 
 function publicAudioUrl(source) {
@@ -37,9 +38,8 @@ function publicAudioUrl(source) {
     return url;
 }
 
-export async function transcribeAudio(params, context) {
-    requireApiKey(context);
-    const source = publicAudioUrl(params.source);
+/** Fetch the audio bytes we were asked to process from a validated public URL. */
+async function fetchPublicAudio(source) {
     let response;
     try {
         // Workers reject redirect: "error"; use "manual" and refuse 3xx below.
@@ -63,13 +63,55 @@ export async function transcribeAudio(params, context) {
     if (!response.ok) {
         throw new Error(`Source returned HTTP ${response.status}`);
     }
+    return {
+        blob: await response.blob(),
+        filename: source.pathname.split("/").pop() || "audio",
+    };
+}
+
+/**
+ * Audio the gateway stored comes back as its enclosure link. Without one, hand
+ * the bytes back as an audio block instead of dropping the result.
+ */
+async function audioResult(response, name) {
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+    const mediaUrl = response.headers
+        .get("Link")
+        ?.match(/^<([^>]+)>; rel="enclosure"$/)?.[1];
+    if (mediaUrl) {
+        await response.body?.cancel();
+        return createMCPResponse([
+            {
+                type: "resource_link",
+                uri: mediaUrl,
+                name,
+                mimeType: contentType,
+            },
+            createTextContent({ url: mediaUrl, mimeType: contentType }, true),
+        ]);
+    }
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    let binary = "";
+    for (let index = 0; index < bytes.length; index += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+    }
+    return createMCPResponse([
+        { type: "audio", data: btoa(binary), mimeType: contentType },
+        createTextContent(
+            { mimeType: contentType, sizeBytes: bytes.length },
+            true,
+        ),
+    ]);
+}
+
+export async function transcribeAudio(params, context) {
+    requireApiKey(context);
+    const { blob, filename } = await fetchPublicAudio(
+        publicAudioUrl(params.source),
+    );
 
     const form = new FormData();
-    form.append(
-        "file",
-        await response.blob(),
-        source.pathname.split("/").pop() || "audio",
-    );
+    form.append("file", blob, filename);
     if (params.model) form.append("model", params.model);
     if (params.language) form.append("language", params.language);
     if (params.prompt) form.append("prompt", params.prompt);
@@ -86,6 +128,43 @@ export async function transcribeAudio(params, context) {
         createTextContent(result.text),
         createTextContent({ usage: result.usage }, true),
     ]);
+}
+
+export async function isolateVocals({ source, model }, context) {
+    requireApiKey(context);
+    const { blob, filename } = await fetchPublicAudio(publicAudioUrl(source));
+
+    const form = new FormData();
+    form.append("file", blob, filename);
+    if (model) form.append("model", model);
+
+    const response = await fetchResponseWithAuth(
+        buildUrl("/v1/audio/voice-isolator"),
+        { method: "POST", body: form },
+        context,
+    );
+    return audioResult(response, "Isolated vocals");
+}
+
+export async function changeVoice(
+    { source, voice, model, response_format },
+    context,
+) {
+    requireApiKey(context);
+    const { blob, filename } = await fetchPublicAudio(publicAudioUrl(source));
+
+    const form = new FormData();
+    form.append("file", blob, filename);
+    form.append("voice", voice);
+    if (model) form.append("model", model);
+    if (response_format) form.append("response_format", response_format);
+
+    const response = await fetchResponseWithAuth(
+        buildUrl("/v1/audio/voice-changer"),
+        { method: "POST", body: form },
+        context,
+    );
+    return audioResult(response, "Voice-changed audio");
 }
 
 async function generateAudio(params, context) {
@@ -205,5 +284,46 @@ export const audioTools = [
                 ),
         },
         transcribeAudio,
+    ],
+    [
+        "isolateVocals",
+        "Remove music and background noise from a public audio or video URL, leaving the isolated vocals, and return the audio as a resource link.",
+        {
+            source: z
+                .url()
+                .describe("Direct public HTTPS URL of an audio or video file"),
+            model: z
+                .string()
+                .optional()
+                .describe(
+                    "Voice-isolation model. Use listModels with type=audio for the live list",
+                ),
+        },
+        isolateVocals,
+    ],
+    [
+        "changeVoice",
+        "Re-speak spoken audio from a public HTTPS URL in another voice and return the audio as a resource link.",
+        {
+            source: z
+                .url()
+                .describe("Direct public HTTPS URL of an audio file"),
+            voice: z
+                .string()
+                .describe(
+                    "Target voice name or voice ID. Use listModels with type=audio for voice metadata",
+                ),
+            model: z
+                .string()
+                .optional()
+                .describe(
+                    "Voice-change model. Use listModels with type=audio for the live list",
+                ),
+            response_format: z
+                .enum(["mp3", "opus", "aac", "wav", "pcm"])
+                .optional()
+                .describe("Audio output format (default: mp3)"),
+        },
+        changeVoice,
     ],
 ];

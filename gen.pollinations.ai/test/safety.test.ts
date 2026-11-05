@@ -931,9 +931,9 @@ describe("safety cache keys", () => {
         const request = new Request(
             "https://gen.pollinations.ai/text/hello?model=openai",
         );
-        expect(
-            await generateTextCacheKey(request, undefined, undefined, []),
-        ).toBe(await generateTextCacheKey(request));
+        expect(await generateTextCacheKey(request, undefined, [])).toBe(
+            await generateTextCacheKey(request),
+        );
 
         const url = new URL("https://gen.pollinations.ai/image/hello");
         expect(await generateMediaCacheKey(url, undefined, [])).toBe(
@@ -946,23 +946,18 @@ describe("safety cache keys", () => {
             "https://gen.pollinations.ai/text/hello?model=openai",
         );
         const withoutSafety = await generateTextCacheKey(request);
-        const harmfulContent = await generateTextCacheKey(
-            request,
-            undefined,
-            undefined,
-            ["violence", "sexual"],
-        );
-        const privacy = await generateTextCacheKey(
-            request,
-            undefined,
-            undefined,
-            ["privacy"],
-        );
+        const harmfulContent = await generateTextCacheKey(request, undefined, [
+            "violence",
+            "sexual",
+        ]);
+        const privacy = await generateTextCacheKey(request, undefined, [
+            "privacy",
+        ]);
 
         expect(harmfulContent).not.toBe(withoutSafety);
         expect(harmfulContent).not.toBe(privacy);
         expect(harmfulContent).toBe(
-            await generateTextCacheKey(request, undefined, undefined, [
+            await generateTextCacheKey(request, undefined, [
                 "sexual",
                 "violence",
             ]),

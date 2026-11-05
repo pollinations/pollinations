@@ -10,6 +10,7 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -44,7 +45,9 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables & Partial<ModelVariables>;
+    Variables: LoggerVariables &
+        RequestIdVariables &
+        Partial<AuthVariables & ModelVariables>;
 };
 
 function createTextCacheApp() {
@@ -156,35 +159,6 @@ function chatInit(body: unknown): RequestInit {
 }
 
 describe("text cache", () => {
-    it("partitions managed-agent cache keys by caller API key", async () => {
-        const request = new Request(
-            "https://gen.pollinations.ai/v1/chat/completions",
-            chatInit({
-                model: "owner/agent",
-                messages: [{ role: "user", content: "hello" }],
-            }),
-        );
-        const body = await request.clone().text();
-        const first = await generateCacheKey(
-            request,
-            body,
-            "agent:agent-id:key:key-one",
-        );
-        const sameCaller = await generateCacheKey(
-            request,
-            body,
-            "agent:agent-id:key:key-one",
-        );
-        const otherCaller = await generateCacheKey(
-            request,
-            body,
-            "agent:agent-id:key:key-two",
-        );
-
-        expect(sameCaller).toBe(first);
-        expect(otherCaller).not.toBe(first);
-    });
-
     it("serves cached responses before auth while misses still require auth", async () => {
         let originHits = 0;
         const app = new Hono<TestEnv>()
@@ -399,6 +373,66 @@ describe("text cache", () => {
         expect(second.response.headers.get("X-Cache")).not.toBe("HIT");
         expect(cache.originHits).toBe(2);
     });
+
+    it.each(["key", "account"] as const)(
+        "never reads or fills the shared cache when the %s turned it off",
+        async (level) => {
+            let originHits = 0;
+            const app = new Hono<TestEnv>()
+                .use("*", async (c, next) => {
+                    c.set("log", testLog);
+                    // Like Hono's requestId(), reuse the client's id when sent.
+                    c.set(
+                        "requestId",
+                        c.req.header("X-Request-Id") ?? crypto.randomUUID(),
+                    );
+                    const off = c.req.header("X-Test-Cache-Off") === "true";
+                    c.set("auth", {
+                        user: { cacheDisabled: off && level === "account" },
+                        apiKey: {
+                            id: c.req.header("X-Test-Key") ?? "key-1",
+                            cacheDisabled: off && level === "key",
+                        },
+                    } as AuthVariables["auth"]);
+                    await next();
+                })
+                .get("/text/:prompt", textCache, () => {
+                    originHits += 1;
+                    return new Response(`hit:${originHits}`, {
+                        headers: { "Content-Type": "text/plain" },
+                    });
+                });
+            const env = createTextCacheEnv();
+            const get = async (
+                cacheOff: boolean,
+                headers: Record<string, string> = {},
+            ) =>
+                consumeAndWait(
+                    await dispatch(
+                        app,
+                        "/text/hello",
+                        {
+                            headers: {
+                                ...headers,
+                                "X-Test-Cache-Off": String(cacheOff),
+                            },
+                        },
+                        env,
+                    ),
+                );
+
+            expect(await get(false)).toBe("hit:1");
+            expect(await get(true)).toBe("hit:2");
+            expect(await get(true)).toBe("hit:3");
+            expect(await get(false)).toBe("hit:1");
+            // A reused request id never hands one caller another's result.
+            const sameId = { "X-Request-Id": "same-id" };
+            expect(await get(true, sameId)).toBe("hit:4");
+            expect(await get(true, { ...sameId, "X-Test-Key": "key-2" })).toBe(
+                "hit:5",
+            );
+        },
+    );
 
     it("treats different POST bodies as different cache entries", async () => {
         const cache = createTextCacheApp();

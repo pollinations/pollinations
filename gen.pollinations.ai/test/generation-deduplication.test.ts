@@ -3,6 +3,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
+import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import { type ErrorVariables, handleError } from "@shared/error.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
@@ -85,6 +86,7 @@ function createApp(
     adapter: GenerationCacheAdapter,
     stream = false,
     executorBody?: string,
+    apiKey: Partial<AuthenticatedApiKey> = {},
 ) {
     let preflights = 0;
     let originHits = 0;
@@ -108,7 +110,7 @@ function createApp(
             if (executorBody) c.set("generationRequestBody", executorBody);
             c.set("auth", {
                 user: { id: "user-1", tier: "seed" } as never,
-                apiKey: { id: "key-1", rawKey: "pk-secret" },
+                apiKey: { id: "key-1", rawKey: "pk-secret", ...apiKey },
                 requireUser: () => ({ id: "user-1", tier: "seed" }) as never,
                 requireModelAccess: () => {},
             });
@@ -271,6 +273,40 @@ describe("generation request deduplication", () => {
         expect(response.headers.get("X-Cache")).toBe("MISS");
         // The detached executor already saved it; the outer cache must not.
         expect(capture).not.toHaveBeenCalled();
+    });
+
+    it("hands a caller with the cache off its own generation", async () => {
+        const cache = new Map([["same-request", "shared"]]);
+        const keys: string[] = [];
+        const coordinator = {
+            async startAndWait(head: GenerationJobHead) {
+                keys.push(head.cache.key);
+                cache.set(head.cache.key, "fresh");
+                return { status: "generated" as const };
+            },
+        };
+        const bindings = {
+            GENERATION_COORDINATOR: { getByName: () => coordinator },
+        } as unknown as CloudflareBindings;
+
+        const response = await createApp(
+            createAdapter(cache),
+            false,
+            undefined,
+            {
+                cacheDisabled: true,
+            },
+        ).app.fetch(
+            new Request("https://gen.pollinations.ai/generate"),
+            bindings,
+            executionContext(),
+        );
+
+        expect(await response.text()).toBe("fresh");
+        expect(response.headers.get("X-Cache")).toBe("MISS");
+        expect(keys).toHaveLength(1);
+        expect(keys[0]).not.toBe("same-request");
+        expect(cache.get("same-request")).toBe("shared");
     });
 
     it("preserves raw JSON and binary request bodies", async () => {

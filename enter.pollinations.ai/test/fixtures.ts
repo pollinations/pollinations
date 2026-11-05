@@ -74,6 +74,7 @@ export const createApiKeyViaApi = async (
         pollenBudget?: number | null;
         accountPermissions?: string[];
         questPollenOnly?: boolean;
+        cacheDisabled?: boolean;
     },
 ) => {
     const response = await SELF.fetch(

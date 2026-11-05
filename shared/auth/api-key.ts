@@ -40,6 +40,8 @@ export interface AuthenticatedApiKey {
     expiresAt?: Date | null;
     /** Charges never fall through to the owner's paid balance. */
     questPollenOnly?: boolean;
+    /** Requests never use or fill the shared generation cache. */
+    cacheDisabled?: boolean;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
@@ -459,6 +461,7 @@ function toActiveAuthResult(
             pollenBalance: row.apiKey.pollenBalance ?? null,
             expiresAt: row.apiKey.expiresAt,
             questPollenOnly: row.apiKey.questPollenOnly,
+            cacheDisabled: row.apiKey.cacheDisabled,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,

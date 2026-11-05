@@ -54,6 +54,10 @@ export const user = sqliteTable("user", {
   lowBalanceNotifiedAt: integer("low_balance_notified_at"),
   emailUnsubscribedAt: integer("email_unsubscribed_at"),
   lastPackPollen: real("last_pack_pollen"),
+  // Every request by this account skips the shared generation cache.
+  cacheDisabled: integer("cache_disabled", { mode: "boolean" })
+    .default(false)
+    .notNull(),
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
@@ -156,6 +160,10 @@ export const apikey = sqliteTable("apikey", {
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
   questPollenOnly: integer("quest_pollen_only", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  // Every request by this key skips the shared generation cache.
+  cacheDisabled: integer("cache_disabled", { mode: "boolean" })
     .default(false)
     .notNull(),
   byopClientKeyId: text("byop_client_key_id"),

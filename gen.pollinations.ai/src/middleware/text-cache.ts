@@ -10,7 +10,6 @@ import {
     generateCacheKey,
     getCachedResponse,
 } from "@/utils/text-cache.ts";
-import type { AuthVariables } from "./auth.ts";
 import {
     createGenerationCache,
     createGenerationExecutionCache,
@@ -39,19 +38,10 @@ const textCacheAdapter: GenerationCacheAdapter = {
             bodyText = c.var.generationCacheBody ?? (await c.req.text());
         }
 
-        const variables = c.var as typeof c.var &
-            Partial<AuthVariables & ModelVariables>;
-        // Agents carry a scope; everything else stays shared. An agent run gets
-        // its own entry, so a repeat runs its tools again; the coordinator still
-        // hands a non-streaming result to its caller through that entry.
-        const cacheScope = variables.model?.cacheScope;
-        const partition = cacheScope
-            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
-            : undefined;
+        const variables = c.var as typeof c.var & Partial<ModelVariables>;
         return generateCacheKey(
             c.req.raw,
             bodyText,
-            partition,
             getRequiredSafetyFeatures(variables.model),
         );
     },

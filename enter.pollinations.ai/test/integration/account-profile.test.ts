@@ -91,3 +91,48 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("email");
     });
 });
+
+describe("PATCH /api/account/profile", () => {
+    test("turns the cache off for the account", async ({ accountToken }) => {
+        const headers = { Authorization: `Bearer ${accountToken}` };
+        const profile = async () =>
+            (
+                await (
+                    await SELF.fetch(
+                        "http://localhost:3000/api/account/profile",
+                        { headers },
+                    )
+                ).json<{ cacheDisabled: boolean }>()
+            ).cacheDisabled;
+        expect(await profile()).toBe(false);
+
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/profile",
+            {
+                method: "PATCH",
+                headers: { ...headers, "Content-Type": "application/json" },
+                body: JSON.stringify({ cacheDisabled: true }),
+            },
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ cacheDisabled: true });
+        expect(await profile()).toBe(true);
+    });
+
+    test("an API key without account:keys can't change it", async ({
+        apiKey,
+    }) => {
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/profile",
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({ cacheDisabled: true }),
+            },
+        );
+        expect(response.status).toBe(403);
+    });
+});

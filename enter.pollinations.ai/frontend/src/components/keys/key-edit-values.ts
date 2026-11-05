@@ -26,6 +26,7 @@ export function initialKeyEditValues(
         allowedModels: apiKey.permissions?.models ?? null,
         accountPermissions: apiKey.permissions?.account ?? [],
         questPollenOnly: apiKey.questPollenOnly ?? false,
+        cacheDisabled: apiKey.cacheDisabled ?? false,
         pollenBudget: apiKey.pollenBalance ?? null,
         // Only the editor display is rounded. Unchanged saves omit expiresAt.
         expiryDays: days === null ? null : Number(days.toPrecision(3)),

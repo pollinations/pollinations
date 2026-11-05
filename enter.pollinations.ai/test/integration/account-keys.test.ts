@@ -417,6 +417,40 @@ describe("Account Key Management API", () => {
             });
         });
 
+        test("turns the cache off and on for one key", async ({
+            accountToken,
+        }) => {
+            const key = await createApiKeyViaApi(accountToken, {
+                name: "cache-setting",
+            });
+            const url = `http://localhost:3000/api/account/keys/${key.id}`;
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            };
+            const listed = async () =>
+                (
+                    await (
+                        await SELF.fetch(
+                            "http://localhost:3000/api/account/keys",
+                            { headers },
+                        )
+                    ).json<{ data: ApiKey[] }>()
+                ).data.find(({ id }) => id === key.id)?.cacheDisabled;
+            expect(await listed()).toBe(false);
+
+            for (const cacheDisabled of [true, false]) {
+                const update = await SELF.fetch(url, {
+                    method: "PATCH",
+                    headers,
+                    body: JSON.stringify({ cacheDisabled }),
+                });
+                expect(update.status).toBe(200);
+                expect((await update.json()).cacheDisabled).toBe(cacheDisabled);
+                expect(await listed()).toBe(cacheDisabled);
+            }
+        });
+
         test("an overspent key can still be edited", async ({
             accountToken,
         }) => {

@@ -250,6 +250,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Quest pollen only
                                 </span>
                             )}
+                            {apiKey.cacheDisabled && (
+                                <span className="text-theme-text-muted">
+                                    Cache off
+                                </span>
+                            )}
                             <span className="flex items-center gap-1">
                                 <span className="text-theme-text-muted">
                                     Models:

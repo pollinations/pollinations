@@ -4,7 +4,9 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 
 export type GenerationCacheStorage = "media" | "text";
 
@@ -178,6 +180,34 @@ function replaceCapturedResponse(
     c.res = captured;
 }
 
+/**
+ * Identical requests share one entry. Agent runs, and callers who turned the
+ * cache off on their account or key, get an entry of their own instead: it
+ * never serves an earlier result, and the coordinator reads it back only to
+ * hand this request its own result.
+ */
+async function requestCacheKey(
+    c: Context<GenerationCacheEnv>,
+    adapter: GenerationCacheAdapter,
+): Promise<string> {
+    const key = await adapter.getKey(c);
+    const { auth, model } = c.var as GenerationCacheEnv["Variables"] &
+        Partial<AuthVariables & ModelVariables>;
+    if (
+        !model?.cacheScope &&
+        !auth?.user?.cacheDisabled &&
+        !auth?.apiKey?.cacheDisabled
+    ) {
+        return key;
+    }
+    // Clients may send their own X-Request-Id, so the caller is part of it too.
+    const caller = auth?.apiKey?.id ?? auth?.user?.id ?? "anonymous";
+    return hashGenerationCacheIdentity(
+        adapter.storage,
+        `${key}:caller:${caller}:run:${c.var.requestId}`,
+    );
+}
+
 async function lookup(
     c: Context<GenerationCacheEnv>,
     adapter: GenerationCacheAdapter,
@@ -218,7 +248,7 @@ function capture(
 export function createGenerationCache(adapter: GenerationCacheAdapter) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
         const log = c.get("log").getChild(adapter.label);
-        const cacheKey = await adapter.getKey(c);
+        const cacheKey = await requestCacheKey(c, adapter);
         const track = (
             c.var as GenerationCacheEnv["Variables"] & {
                 track?: {

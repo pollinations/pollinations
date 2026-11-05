@@ -74,7 +74,6 @@ function hasActiveSafety(value: unknown): boolean {
 export async function generateCacheKey(
     request: Request,
     bodyText?: string,
-    partition?: string,
     requiredSafetyFeatures: readonly SafetyFeature[] = [],
 ): Promise<string> {
     const url = new URL(request.url);
@@ -141,7 +140,6 @@ export async function generateCacheKey(
         parts.push(SAFETY_CACHE_VERSION);
     }
     if (streams) parts.push(STREAM_CACHE_VERSION);
-    if (partition) parts.push(`partition:${partition}`);
 
     // Generate a hash of all parts using Web Crypto API
     const text = parts.join("|");

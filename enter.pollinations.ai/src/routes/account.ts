@@ -151,6 +151,12 @@ const CreateKeySchema = z.object({
         .describe(
             "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only",
         ),
+    cacheDisabled: z
+        .boolean()
+        .optional()
+        .describe(
+            "Turn the cache off for this key: requests never get a cached result and never add theirs to the shared cache, so each one generates and is billed. `PATCH /account/profile` turns it off for every key",
+        ),
     accountPermissions: z
         .array(z.enum(CONSENT_PERMISSIONS))
         .nullable()
@@ -189,6 +195,7 @@ const UpdateKeySchema = CreateKeySchema.pick({
     allowedModels: true,
     pollenBudget: true,
     questPollenOnly: true,
+    cacheDisabled: true,
     accountPermissions: true,
     redirectUris: true,
     earningsEnabled: true,
@@ -306,6 +313,7 @@ function formatKey(key: typeof apikeyTable.$inferSelect) {
         metadata: parseMetadata(key.metadata),
         pollenBalance: key.pollenBalance,
         questPollenOnly: key.questPollenOnly,
+        cacheDisabled: key.cacheDisabled,
         enabled: key.enabled,
         byopClientKeyId: key.byopClientKeyId,
     };
@@ -930,6 +938,11 @@ const profileResponseSchema = z.object({
     discordAvailable: z
         .boolean()
         .describe("Whether Discord account connections are available."),
+    cacheDisabled: z
+        .boolean()
+        .describe(
+            "Whether the cache is off for every key of the account. Change it with `PATCH /account/profile`.",
+        ),
     name: z
         .string()
         .nullable()
@@ -943,6 +956,14 @@ const profileResponseSchema = z.object({
         .optional()
         .describe(
             "User's email address (only returned when the key has `account:profile`)",
+        ),
+});
+
+const UpdateProfileSchema = z.object({
+    cacheDisabled: z
+        .boolean()
+        .describe(
+            "Turn the cache off for every key of the account: requests never get a cached result and never add theirs to the shared cache, so each one generates and is billed. A key can turn it off for itself with `cacheDisabled` on `PATCH /account/keys/{id}`",
         ),
 });
 
@@ -1173,6 +1194,7 @@ export const accountRoutes = new Hono<Env>()
                     image: userTable.image,
                     name: userTable.name,
                     email: userTable.email,
+                    cacheDisabled: userTable.cacheDisabled,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -1189,11 +1211,38 @@ export const accountRoutes = new Hono<Env>()
                 communityEndpointsAllowed:
                     isCommunityEndpointOwnerAllowed(profile),
                 discordAvailable: Boolean(discordConfigFromEnv(c.env)),
+                cacheDisabled: profile.cacheDisabled,
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .patch(
+        "/profile",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Update Profile",
+            description:
+                "Change account settings. Requires `account:keys` permission when using API keys.",
+            responses: {
+                200: { description: "Updated settings" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", UpdateProfileSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c, "keys");
+            const { cacheDisabled } = c.req.valid("json");
+            await drizzle(c.env.DB)
+                .update(userTable)
+                .set({ cacheDisabled })
+                .where(eq(userTable.id, user.id));
+            return c.json({ cacheDisabled });
         },
     )
     .get(
@@ -1930,6 +1979,7 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 questPollenOnly,
+                cacheDisabled,
                 accountPermissions,
                 redirectUris,
                 earningsEnabled,
@@ -1990,6 +2040,7 @@ export const accountRoutes = new Hono<Env>()
                 questPollenOnly:
                     questPollenOnly ||
                     (c.var.auth.apiKey?.questPollenOnly ?? false),
+                cacheDisabled,
                 accountPermissions,
                 metadata,
                 defaultCreatedVia: createdVia,
@@ -2029,7 +2080,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update API Key",
             description:
-                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.",
+                "Update an API key's name, model access, budget, cache setting, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.",
             responses: {
                 200: { description: "Updated API key" },
                 400: { description: "Invalid update" },
@@ -2059,6 +2110,7 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 questPollenOnly,
+                cacheDisabled,
                 accountPermissions,
                 expiresAt,
                 description,
@@ -2183,6 +2235,7 @@ export const accountRoutes = new Hono<Env>()
                         ...(questPollenOnly !== undefined && {
                             questPollenOnly,
                         }),
+                        ...(cacheDisabled !== undefined && { cacheDisabled }),
                         ...(expiresAt !== undefined && { expiresAt }),
                         ...((allowedModels !== undefined ||
                             accountPermissions !== undefined) && {

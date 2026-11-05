@@ -2,13 +2,14 @@ import { prerelease, rcompare, valid } from "semver";
 import { z } from "zod";
 import { fetchJson, fetchText } from "../fetch.js";
 
+const patterns = {
+    npm: /^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/,
+    pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
+    crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
+};
+
 // Registry metadata selection from xiaotian1171 (#17699).
 export async function lookup({ ecosystem, name, version }) {
-    const patterns = {
-        npm: /^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/,
-        pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
-        crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
-    };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
     const encoded = encodeURIComponent(name);
@@ -106,5 +107,26 @@ export const packageTools = [
                 .describe("Exact version, or an npm dist-tag"),
         },
         lookup,
+    ],
+    [
+        "package_downloads",
+        "Read npm download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). npm packages only; PyPI and crates.io publish no comparable public counts.",
+        {
+            name: z.string().trim().min(1).max(214),
+            range: z
+                .string()
+                .trim()
+                .regex(
+                    /^(last-(day|week|month|year)|\d{4}-\d{2}-\d{2}:\d{4}-\d{2}-\d{2})$/,
+                )
+                .default("last-week"),
+        },
+        async ({ name, range }) => {
+            if (!patterns.npm.test(name))
+                throw new Error("Invalid npm package name");
+            return fetchJson(
+                `https://api.npmjs.org/downloads/range/${range}/${encodeURIComponent(name)}`,
+            );
+        },
     ],
 ];

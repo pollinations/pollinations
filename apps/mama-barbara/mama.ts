@@ -189,7 +189,7 @@ async function signIn(from: TgUser) {
                 const user = userOf(from.id);
                 user.key = token.access_token;
                 // A new sign-in gets its own warnings (checkSignIns).
-                delete user.warned;
+                user.warned = undefined;
                 save();
                 const bot = waitingBots.get(from.id);
                 waitingBots.delete(from.id);

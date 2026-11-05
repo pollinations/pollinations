@@ -860,7 +860,7 @@ test("the cron keeps the keeps while E2B blocks our team, and renews them after"
     const stubbed = globalThis.fetch;
     vi.stubGlobal("fetch", (input: RequestInfo, init?: RequestInit) => {
         const request = new Request(input, init);
-        return request.url.startsWith(E2B) && request.method === "POST"
+        return new URL(request.url).origin === E2B && request.method === "POST"
             ? Response.json(
                   { code: 403, message: "team is blocked" },
                   { status: 403 },

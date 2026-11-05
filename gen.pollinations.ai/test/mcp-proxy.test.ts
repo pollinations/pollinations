@@ -572,11 +572,11 @@ test("gives each agent run its own Computer on the account", async () => {
         return response.text();
     };
 
-    expect(await computerFor("owner/agent-one")).toContain(
-        `computer:${parent.userId}:agent:owner/agent-one:`,
+    expect(await computerFor("community/owner/agent-one")).toContain(
+        `computer:${parent.userId}:agent:community/owner/agent-one:`,
     );
-    expect(await computerFor("owner/agent-two")).toContain(
-        `computer:${parent.userId}:agent:owner/agent-two:`,
+    expect(await computerFor("community/owner/agent-two")).toContain(
+        `computer:${parent.userId}:agent:community/owner/agent-two:`,
     );
 });
 

@@ -198,6 +198,31 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "news",
+                alpha: true,
+                name: "News & Feeds",
+                description:
+                    "Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes.",
+                url: "https://gen.pollinations.ai/mcp/news",
+                pricing: {
+                    description: "Free public sources. Upstream limits apply.",
+                    rates: [],
+                },
+            },
+            {
+                id: "research",
+                alpha: true,
+                name: "Research",
+                description:
+                    "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+                url: "https://gen.pollinations.ai/mcp/research",
+                pricing: {
+                    description:
+                        "Research lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

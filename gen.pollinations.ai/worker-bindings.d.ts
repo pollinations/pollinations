@@ -11,6 +11,8 @@ interface CloudflareBindings {
     CALCULATORS_MCP: Fetcher;
     NETWORK_MCP: Fetcher;
     PACKAGES_MCP: Fetcher;
+    NEWS_MCP: Fetcher;
+    RESEARCH_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;

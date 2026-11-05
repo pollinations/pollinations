@@ -24,6 +24,8 @@ then choose a server:
 | Calculators | `https://gen.pollinations.ai/mcp/calculators` | Time, cron previews, Unicode, contrast checks, SVG QR codes, and ECB currency rates | [Source](https://github.com/pollinations/pollinations/tree/main/apps/calculators-mcp) |
 | Network | `https://gen.pollinations.ai/mcp/network` | Look up DNS records and RDAP registrations, inspect HTTP responses and redirects, and calculate IPv4/IPv6 subnets | [Source](https://github.com/pollinations/pollinations/tree/main/apps/network-mcp) |
 | Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates versions, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
+| News & Feeds | `https://gen.pollinations.ai/mcp/news` | Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
+| Research | `https://gen.pollinations.ai/mcp/research` | Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
 
 Calculators is free but still requires a key. Time conversion rejects ambiguous or
 skipped local times: include an explicit
@@ -46,6 +48,11 @@ index (versions, dependencies and runtime requirements); follow `registryUrl`
 for license and homepage details. Tools do not install packages or run models.
 Upstream responses over 8 MiB and tool results over 512 KiB fail explicitly;
 OSV records are never silently cut off.
+
+Research lookups are free and require a key. Public sources receive no caller
+credentials. Wikidata supports up to five selected claim properties per call;
+World Bank data requires an official indicator code. Large responses fail
+explicitly; narrow the query when asked.
 
 Send the key with every request:
 

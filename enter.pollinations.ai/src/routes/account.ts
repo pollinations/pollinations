@@ -30,6 +30,7 @@ import {
     rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { permissionRequired } from "@shared/http/permission-required-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
     keyAllowsModelPermissions,
@@ -48,6 +49,7 @@ import { discordConfigFromEnv } from "../services/discord.ts";
 import { listedAppSchema, listListedApps } from "../services/listed-apps.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
+import { attributeAppSignup } from "../services/quests/groups/referrals.ts";
 import {
     ACCOUNT_SETUP_QUEST_GROUP,
     listQuestCards,
@@ -1452,10 +1454,11 @@ export const accountRoutes = new Hono<Env>()
 
             // Unbudgeted keys cannot see any balance without account:usage.
             if (keyBudget == null && !canViewAccount) {
-                throw new HTTPException(403, {
-                    message:
-                        "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
-                });
+                throw permissionRequired(
+                    c,
+                    { permission: "usage" },
+                    "API key does not have 'account:usage' permission and no budget of its own to show instead.",
+                );
             }
 
             let accountBalance:
@@ -2010,6 +2013,17 @@ export const accountRoutes = new Hono<Env>()
                 }
                 throw error;
             });
+            if (created.byopClientKeyId) {
+                await attributeAppSignup(
+                    drizzle(c.env.DB, { schema }),
+                    user.id,
+                    created.byopClientKeyId,
+                ).catch((error) =>
+                    c.get("log").warn("App sign-up referral failed: {error}", {
+                        error,
+                    }),
+                );
+            }
 
             // Awarding the first-key quest is a few D1 queries; awaiting it
             // means the balance and quests the caller reads next include it.

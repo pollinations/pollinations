@@ -38,7 +38,6 @@ import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -441,7 +440,7 @@ export async function generateElevenLabsSpeech(opts: {
     // credits, not exact billable characters; verified against usage analytics.
     const characters = isV4 ? [...text].length : text.length;
 
-    if (isV4 && responseFormat === "flac") {
+    if (responseFormat === "flac") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
                 "This speech model supports mp3, opus, aac, wav, and pcm output; flac is not supported.",
@@ -4099,6 +4098,40 @@ export async function handleSpeechWithTimestamps(
     );
 }
 
+/** Multipart body for the OVH and DeepInfra whisper-large-v3 endpoints. */
+export function buildWhisperForm(opts: {
+    file: File;
+    language?: string | null;
+    prompt?: string | null;
+    temperature?: number;
+    isDeepInfra: boolean;
+}): FormData {
+    const { file, language, prompt, temperature, isDeepInfra } = opts;
+    const form = new FormData();
+    const filename =
+        file.name && file.name !== "blob" ? file.name : "audio.mp3";
+    form.append("file", file, filename);
+    if (language) form.append("language", language);
+    if (prompt) form.append("prompt", prompt);
+    if (temperature !== undefined)
+        form.append("temperature", String(temperature));
+    form.append("response_format", "verbose_json");
+    form.append(
+        "model",
+        isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+    );
+    if (isDeepInfra) {
+        // DeepInfra returns segments either way, and drops words when
+        // both granularities are requested.
+        form.append("timestamp_granularities", "word");
+    } else {
+        // OVH leaves segments empty unless asked; srt/vtt cues are those.
+        form.append("timestamp_granularities[]", "word");
+        form.append("timestamp_granularities[]", "segment");
+    }
+    return form;
+}
+
 export async function handleTranscription(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("transcription");
     const formData = c.get("formData");
@@ -4112,11 +4145,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     const language = formData.get("language") as string | null;
     const prompt = formData.get("prompt") as string | null;
     const responseFormat = formData.get("response_format") as string | null;
-    const temperatureRaw = formData.get("temperature") as string | null;
-    const temperature =
-        temperatureRaw !== null && temperatureRaw !== ""
-            ? Number(temperatureRaw)
-            : undefined;
+    const temperature = parseOptionalNumber(
+        formData.get("temperature"),
+        "temperature",
+    );
+    if (temperature !== undefined && (temperature < 0 || temperature > 1)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "temperature must be between 0 and 1",
+        });
+    }
     const speakersExpected = parsePositiveInt(
         formData.get("speakers_expected"),
         "speakers_expected",
@@ -4264,25 +4301,13 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "vtt",
         ]);
 
-        const whisperFormData = new FormData();
-        const filename =
-            file.name && file.name !== "blob" ? file.name : "audio.mp3";
-        whisperFormData.append("file", file, filename);
-        if (language) whisperFormData.append("language", language);
-        whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append(
-            "model",
-            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
-        );
-        if (isDeepInfra) {
-            // DeepInfra returns segments either way, and drops words when
-            // both granularities are requested.
-            whisperFormData.append("timestamp_granularities", "word");
-        } else {
-            // OVH leaves segments empty unless asked; srt/vtt cues are those.
-            whisperFormData.append("timestamp_granularities[]", "word");
-            whisperFormData.append("timestamp_granularities[]", "segment");
-        }
+        const whisperFormData = buildWhisperForm({
+            file,
+            language,
+            prompt,
+            temperature,
+            isDeepInfra,
+        });
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"
@@ -4342,7 +4367,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
-    .use("*", auth(), frontendKeyRateLimit, balance)
+    .use("*", auth(), balance)
     .post(
         "/voice-changer",
         describeRoute({

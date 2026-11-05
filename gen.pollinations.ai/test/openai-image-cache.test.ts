@@ -5,7 +5,10 @@ import {
 import type { Logger } from "@logtape/logtape";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
+import {
+    CreateImageEditRequestSchema,
+    CreateImageRequestSchema,
+} from "@shared/schemas/openai.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
@@ -65,6 +68,213 @@ describe("OpenAI image cache", () => {
             expect(response.status).toBe(400);
         },
     );
+    it.each(["json", "multipart"])(
+        "rejects an unparseable size instead of falling back to the default",
+        async (encoding) => {
+            const app = new Hono<Env>().post(
+                "/v1/images/edits",
+                prepareOpenAIImageEdit,
+                () => new Response("unexpected"),
+            );
+            const form = new FormData();
+            form.set("prompt", "make it blue");
+            form.set("size", "1024 by 1024");
+            form.append(
+                "image",
+                new Blob(["first"], { type: "image/png" }),
+                "one.png",
+            );
+            const input = {
+                prompt: "make it blue",
+                image: "https://example.com/one.png",
+                size: "1024 by 1024",
+            };
+            const response = await app.fetch(
+                new Request("https://gen.pollinations.ai/v1/images/edits", {
+                    method: "POST",
+                    ...(encoding === "json"
+                        ? {
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(input),
+                          }
+                        : { body: form }),
+                }),
+                {} as CloudflareBindings,
+            );
+            expect(response.status).toBe(400);
+        },
+    );
+
+    it("accepts a well-formed size on generation and edit requests", () => {
+        for (const size of ["512x512", "1024x1024", "512 x 768", "auto"]) {
+            expect(
+                CreateImageRequestSchema.safeParse({ prompt: "x", size })
+                    .success,
+            ).toBe(true);
+            expect(
+                CreateImageEditRequestSchema.safeParse({
+                    prompt: "x",
+                    image: "https://example.com/image.png",
+                    size,
+                }).success,
+            ).toBe(true);
+        }
+        const overflow = "9".repeat(309);
+        for (const size of [
+            "abc",
+            "1024 by 1024",
+            "1024",
+            "x",
+            "",
+            `${overflow}x768`,
+            `${overflow}x${overflow}`,
+        ]) {
+            expect(
+                CreateImageRequestSchema.safeParse({ prompt: "x", size })
+                    .success,
+            ).toBe(false);
+        }
+    });
+
+    it("generates an uppercase X size at both requested dimensions", async () => {
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("model", {
+                    requested: "flux",
+                    resolved: "flux",
+                    definition: {} as Env["Variables"]["model"]["definition"],
+                });
+                await next();
+            })
+            .post(
+                "/v1/images/generations",
+                validator("json", CreateImageRequestSchema),
+                prepareOpenAIImageGeneration,
+                (c) => c.json(c.req.valid("json" as never)),
+            );
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "a paper boat",
+                    size: "1024X768",
+                }),
+            }),
+            {} as CloudflareBindings,
+        );
+        expect(await response.json()).toMatchObject({
+            width: 1024,
+            height: 768,
+        });
+    });
+
+    it.each(["json", "multipart"])(
+        "passes an explicit seed through %s edits",
+        async (encoding) => {
+            const app = new Hono<Env>()
+                .use("*", async (c, next) => {
+                    c.set("model", {
+                        requested: "flux",
+                        resolved: "flux",
+                        definition:
+                            {} as Env["Variables"]["model"]["definition"],
+                    });
+                    await next();
+                })
+                .post("/v1/images/edits", prepareOpenAIImageEdit, (c) =>
+                    c.json({ input: c.req.valid("json" as never) }),
+                );
+            const form = new FormData();
+            form.set("prompt", "make it blue");
+            form.set("seed", "123");
+            form.append(
+                "image",
+                new Blob(["first"], { type: "image/png" }),
+                "one.png",
+            );
+            const response = await app.fetch(
+                new Request("https://gen.pollinations.ai/v1/images/edits", {
+                    method: "POST",
+                    ...(encoding === "json"
+                        ? {
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                  prompt: "make it blue",
+                                  seed: 123,
+                                  image: [
+                                      {
+                                          image_url:
+                                              "https://example.com/one.png",
+                                      },
+                                  ],
+                              }),
+                          }
+                        : { body: form }),
+                }),
+                {} as CloudflareBindings,
+            );
+            expect(response.status).toBe(200);
+            const result = await response.json<{ input: { seed?: number } }>();
+            expect(result.input.seed).toBe(123);
+        },
+    );
+    it.each(["0", "2", "1.5", "many"])(
+        "rejects unsupported multipart image count %s before generation",
+        async (count) => {
+            let generated = false;
+            const app = new Hono<Env>()
+                .use("*", async (c, next) => {
+                    c.set("model", {
+                        requested: "flux",
+                        resolved: "flux",
+                        definition:
+                            {} as Env["Variables"]["model"]["definition"],
+                    });
+                    await next();
+                })
+                .post("/v1/images/edits", prepareOpenAIImageEdit, () => {
+                    generated = true;
+                    return new Response("generated");
+                });
+            const form = new FormData();
+            form.set("prompt", "make it blue");
+            form.set("image", "https://example.com/image.png");
+            form.set("n", count);
+            const response = await app.fetch(
+                new Request("https://gen.pollinations.ai/v1/images/edits", {
+                    method: "POST",
+                    body: form,
+                }),
+                {} as CloudflareBindings,
+            );
+            expect(response.status).toBe(400);
+            expect(generated).toBe(false);
+        },
+    );
+    it("rejects an invalid seed on multipart edits", async () => {
+        const app = new Hono<Env>().post(
+            "/v1/images/edits",
+            prepareOpenAIImageEdit,
+            () => new Response("unexpected"),
+        );
+        const form = new FormData();
+        form.set("prompt", "make it blue");
+        form.set("seed", "not-a-number");
+        form.append(
+            "image",
+            new Blob(["first"], { type: "image/png" }),
+            "one.png",
+        );
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                body: form,
+            }),
+            {} as CloudflareBindings,
+        );
+        expect(response.status).toBe(400);
+    });
     it.each(["json", "multipart"])(
         "keeps %s edit identity stable across response formats and executor replay",
         async (encoding) => {

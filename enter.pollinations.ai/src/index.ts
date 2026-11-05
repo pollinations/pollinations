@@ -1,6 +1,7 @@
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
+import { rateLimit } from "@shared/rate-limit.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -51,6 +52,7 @@ const app = new Hono<Env>()
             c.header("X-Robots-Tag", "noindex, nofollow");
         }
     })
+    .use("/api/*", rateLimit({ byIp: false }))
     .route("/api/docs", createDocsRoutes(api))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)

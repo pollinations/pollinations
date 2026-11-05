@@ -88,43 +88,75 @@ test.for([
     },
 );
 
-test("Klein successful output is charged once and replayed from cache", async () => {
-    const { key, userId } = await createTestApiKey({
-        user: { packBalance: 100 },
-    });
-    const mocks = createFetchMock({ tinybird: createMockTinybird() });
-    await mocks.enable("tinybird");
-    const backend = vi.fn(async () => Response.json([{ image: png }]));
-    const bindings = withInlineGenerationCoordinator({
-        ...env,
-        KLEIN_VPC: { fetch: backend } as unknown as Fetcher,
-    });
-    const before = await getUserBalance(drizzle(env.DB), userId);
-    const url = `https://gen.pollinations.ai/image/klein-${crypto.randomUUID()}?model=${model}&seed=42`;
-    for (const cache of ["MISS", "HIT"]) {
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request(url, { headers: { authorization: `Bearer ${key}` } }),
-            bindings,
-            ctx,
+test.each([
+    undefined,
+    "https://res.cloudinary.com/demo/image/upload/w_512,h_512/sample.jpg",
+])(
+    "Klein output with reference %s is charged once and cached",
+    async (image) => {
+        const { key, userId } = await createTestApiKey({
+            user: { packBalance: 100 },
+        });
+        const downloads: string[] = [];
+        const mocks = createFetchMock({
+            tinybird: createMockTinybird(),
+            reference: {
+                state: downloads,
+                handlerMap: {
+                    "res.cloudinary.com": async (request: Request) => {
+                        downloads.push(request.url);
+                        return new Response(Buffer.from(png, "base64"), {
+                            headers: { "content-type": "image/png" },
+                        });
+                    },
+                },
+                reset: () => {
+                    downloads.length = 0;
+                },
+            },
+        });
+        await mocks.enable("tinybird", "reference");
+        const backend = vi.fn(async (_url: string, init: RequestInit) => {
+            const body = JSON.parse(init.body as string);
+            expect(body.images).toEqual(image ? [png] : undefined);
+            return Response.json([{ image: png }]);
+        });
+        const bindings = withInlineGenerationCoordinator({
+            ...env,
+            KLEIN_VPC: { fetch: backend } as unknown as Fetcher,
+        });
+        const before = await getUserBalance(drizzle(env.DB), userId);
+        const query = new URLSearchParams({ model, seed: "42" });
+        if (image) query.set("image", image);
+        const url = `https://gen.pollinations.ai/image/klein-${crypto.randomUUID()}?${query}`;
+        for (const cache of ["MISS", "HIT"]) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(url, {
+                    headers: { authorization: `Bearer ${key}` },
+                }),
+                bindings,
+                ctx,
+            );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("x-cache")).toBe(cache);
+            expect(Buffer.from(await response.arrayBuffer())).toEqual(
+                Buffer.from(png, "base64"),
+            );
+            await waitOnExecutionContext(ctx);
+        }
+        expect(backend).toHaveBeenCalledTimes(1);
+        expect([...new Set(downloads)]).toEqual(image ? [image] : []);
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
         );
-        expect(response.status).toBe(200);
-        expect(response.headers.get("x-cache")).toBe(cache);
-        expect(Buffer.from(await response.arrayBuffer())).toEqual(
-            Buffer.from(png, "base64"),
-        );
-        await waitOnExecutionContext(ctx);
-    }
-    expect(backend).toHaveBeenCalledTimes(1);
-    const billed = mocks.tinybird.state.events.filter(
-        (event) => event.isBilledUsage,
-    );
-    expect(billed).toHaveLength(1);
-    expect(billed[0]).toMatchObject({
-        modelProviderUsed: "vast",
-        totalCost: 0.005,
-        totalPrice: 0.005,
-    });
-    const after = await getUserBalance(drizzle(env.DB), userId);
-    expect(before.packBalance - after.packBalance).toBeCloseTo(0.005, 8);
-});
+        expect(billed).toHaveLength(1);
+        expect(billed[0]).toMatchObject({
+            modelProviderUsed: "vast",
+            totalCost: 0.005,
+            totalPrice: 0.005,
+        });
+        const after = await getUserBalance(drizzle(env.DB), userId);
+        expect(before.packBalance - after.packBalance).toBeCloseTo(0.005, 8);
+    },
+);

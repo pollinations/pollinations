@@ -109,7 +109,12 @@ export function DeploymentsPlaceholder({
         <>
             {titles.map((title) => (
                 <Section key={title} title={title}>
-                    <LoadError onRetry={onRetry}>{error}</LoadError>
+                    <LoadError
+                        onRetry={onRetry}
+                        paths={["/account/my-models", "/account/agents"]}
+                    >
+                        {error}
+                    </LoadError>
                 </Section>
             ))}
         </>
@@ -405,6 +410,7 @@ export function CommunityEndpoints({
 
     const agentAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<BotIcon />}
             aria-haspopup="dialog"
@@ -415,6 +421,7 @@ export function CommunityEndpoints({
     );
     const modelAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<BeakerIcon />}
             aria-haspopup="dialog"

@@ -615,8 +615,9 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
         // Provider retires this route on 2027-04-07.
-        priceMultiplier: 0.75,
-        paidOnly: false,
+        priceMultiplier: 1,
+        // Quest overflow spills onto the cash OpenAI fallback.
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
             promptCachedTokens: perMillion(0.2), // per 1M tokens
@@ -637,8 +638,9 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
         // Provider retires this route on 2026-12-16.
-        priceMultiplier: 0.75,
-        paidOnly: false,
+        priceMultiplier: 1,
+        // Quest overflow spills onto the cash OpenAI fallback.
+        paidOnly: true,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens
@@ -662,8 +664,9 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
         // Provider retires this route on 2027-10-21.
-        paidOnly: false,
-        priceMultiplier: 0.75,
+        // Quest overflow spills onto the cash OpenAI fallback.
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens
@@ -2275,7 +2278,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.005, // per image
         },
-        title: "Pruna p-image",
+        title: "P-Image",
         description: "Cheap, speedy text-to-image for rapid iteration",
         inputModalities: ["text"],
         outputModalities: ["image"],
@@ -2291,7 +2294,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.01, // per image
         },
-        title: "Pruna p-image-edit",
+        title: "P-Image-Edit",
         description: "Fast instruction-based photo editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -2362,7 +2365,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "1080p"],
-        title: "Pruna p-video",
+        title: "P-Video",
         description: "Affordable video from text or an image at 720p or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],

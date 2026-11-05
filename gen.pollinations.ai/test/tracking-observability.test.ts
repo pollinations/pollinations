@@ -79,7 +79,6 @@ afterEach(async () => {
 let trackingUser: AuthUser;
 
 function createTestApp(
-    consumePollen: (amount: number) => Promise<void>,
     user: AuthUser | undefined = trackingUser,
     model: ModelVariables["model"] = {
         requested: "openai/gpt-5.4-nano",
@@ -111,7 +110,6 @@ function createTestApp(
                 packBalance: 0,
             }),
         });
-        c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
         if (generationCache) c.set("generationCache", generationCache);
         await next();
@@ -197,7 +195,6 @@ function createCommunityEntry(
 
 // Minimal tracked app for exercising response parsing and billing directly.
 function createTrackedResponseApp(
-    consumePollen: (amount: number) => Promise<void>,
     eventType: "generate.image" | "generate.text" | "generate.audio",
     result: Response | Error,
     model: ModelName = "openai/gpt-5.4-nano",
@@ -215,7 +212,6 @@ function createTrackedResponseApp(
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
-        c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
             requested: model,
             resolved: model,
@@ -245,6 +241,7 @@ function createSseStreamApp(
     includeUsage = true,
     user: AuthUser = trackingUser,
     primaryDelayMs = 0,
+    primaryError?: Error,
 ) {
     const app = new Hono<Env>();
 
@@ -259,7 +256,6 @@ function createSseStreamApp(
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
-        c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
         c.set("model", model);
         await next();
     });
@@ -276,9 +272,11 @@ function createSseStreamApp(
                 startedAt,
                 endedAt: new Date(),
                 settled: false,
-                error: new HTTPException(503, {
-                    message: "primary unavailable",
-                }),
+                error:
+                    primaryError ??
+                    new HTTPException(503, {
+                        message: "primary unavailable",
+                    }),
             });
         }
         c.var.track.attempts.push({
@@ -340,7 +338,6 @@ function createHeaderApp(
     extraHeaders: Record<string, string>,
     user: AuthUser | null = trackingUser,
     status = 200,
-    consumePollen: (amount: number) => Promise<void> = async () => {},
     model: ModelName = "openai/gpt-5.4-nano",
     finalEntry?: GenerationModelEntry,
     body: unknown = { choices: [{ message: {} }] },
@@ -361,7 +358,6 @@ function createHeaderApp(
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
-        c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
             requested: model,
             resolved: model,
@@ -511,12 +507,9 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
 
         const ctx = createExecutionContext();
-        const response = await createTestApp(consumePollen).fetch(
+        const response = await createTestApp().fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -557,7 +550,7 @@ describe("tracking observability", () => {
         expect(response.headers.get("x-model-used")).toBe(
             "gpt-5-nano-2025-08-07",
         );
-        const event = await tinybirdRequests[0].json();
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
             requestPath: "/v1/chat/completions",
             environment: "test",
@@ -577,8 +570,7 @@ describe("tracking observability", () => {
         });
         expect(event).not.toHaveProperty("cacheHit");
         expect(event).not.toHaveProperty("cacheKey");
-        expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
-        expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+        expect(event.totalPrice).toBeGreaterThan(0);
     });
 
     it("tracks provider work but not coalesced cache hits", async () => {
@@ -588,12 +580,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const providerConsume = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
-        const joinerConsume = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
         const generationCache = {
             adapter: { storage: "text" } as GenerationCacheAdapter,
@@ -622,7 +608,6 @@ describe("tracking observability", () => {
 
         const providerCtx = createExecutionContext();
         await createTestApp(
-            providerConsume,
             trackingUser,
             undefined,
             undefined,
@@ -633,7 +618,6 @@ describe("tracking observability", () => {
 
         const joinerCtx = createExecutionContext();
         await createTestApp(
-            joinerConsume,
             trackingUser,
             undefined,
             undefined,
@@ -652,8 +636,7 @@ describe("tracking observability", () => {
         });
         expect(providerEvent.cacheKey).toMatch(/^[a-f0-9]{64}$/);
         expect(providerEvent.cacheKey).not.toContain("same-request");
-        expect(providerConsume.mock.calls[0]?.[0]).toBeGreaterThan(0);
-        expect(joinerConsume).toHaveBeenCalledWith(0);
+        expect(providerEvent.totalPrice).toBeGreaterThan(0);
     });
 
     it("tags a run token's generation with the parent request id", async () => {
@@ -676,20 +659,12 @@ describe("tracking observability", () => {
         } as CloudflareBindings;
 
         const ctx = createExecutionContext();
-        await createTestApp(
-            async () => {},
-            trackingUser,
-            undefined,
-            undefined,
-            {},
-            undefined,
-            {
-                parentApiKeyId: "parent-key-id",
-                parentRequestId: "req-parent",
-                issuedAt: 0,
-                expiresAt: 0,
-            },
-        ).fetch(
+        await createTestApp(trackingUser, undefined, undefined, {}, undefined, {
+            parentApiKeyId: "parent-key-id",
+            parentRequestId: "req-parent",
+            issuedAt: 0,
+            expiresAt: 0,
+        }).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -729,7 +704,6 @@ describe("tracking observability", () => {
             const entry = createCommunityEntry(endpoint);
             const ctx = createExecutionContext();
             const response = await createTestApp(
-                async () => {},
                 trackingUser,
                 {
                     requested: endpoint.modelId,
@@ -789,7 +763,7 @@ describe("tracking observability", () => {
         } as CloudflareBindings;
 
         const ctx = createExecutionContext();
-        await createTestApp(async () => {}).fetch(
+        await createTestApp().fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -823,16 +797,12 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
 
         const ctx = createExecutionContext();
         const response = await createHeaderApp(
             { "x-usage-missing": "true" },
             trackingUser,
             200,
-            consumePollen,
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -877,7 +847,6 @@ describe("tracking observability", () => {
             upstream_body: expect.any(String),
         });
         expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
-        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("records a stream ending with finish_reason error as failed", async () => {
@@ -887,9 +856,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
         const upstreamBody = [
             'data: {"model":"gpt-5-nano","choices":[{"index":0,"delta":{"content":"partial output"},"finish_reason":null}]}',
@@ -907,7 +873,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.text",
             upstream,
         ).fetch(
@@ -990,7 +955,6 @@ describe("tracking observability", () => {
                 },
             ],
         });
-        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("logs the head and tail of a long stream that ends without usage", async () => {
@@ -1023,7 +987,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            async () => {},
             "generate.text",
             upstream,
         ).fetch(
@@ -1101,7 +1064,6 @@ describe("tracking observability", () => {
                     return new Response("ok");
                 },
             );
-            const consumePollen = vi.fn(async (_amount: number) => {});
             const error = {
                 code: 400,
                 message,
@@ -1113,7 +1075,6 @@ describe("tracking observability", () => {
             const upstreamBody = `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`;
             const ctx = createExecutionContext();
             const response = await createTrackedResponseApp(
-                consumePollen,
                 "generate.text",
                 new Response(upstreamBody, {
                     headers: { "content-type": "text/event-stream" },
@@ -1156,7 +1117,6 @@ describe("tracking observability", () => {
                         ? "content_policy_violation"
                         : "upstream_finish_reason_error",
             });
-            expect(consumePollen).toHaveBeenCalledWith(0);
         },
     );
 
@@ -1168,10 +1128,8 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn(async (_amount: number) => {});
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.text",
             new HTTPException(503, {
                 message: "Generation coordination is unavailable",
@@ -1232,7 +1190,6 @@ describe("tracking observability", () => {
             error_code: "SERVICE_UNAVAILABLE",
             message: "Generation coordination is unavailable",
         });
-        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("tracks usage after a malformed SSE event", async () => {
@@ -1242,9 +1199,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
         const upstream = new Response(
             [
@@ -1262,7 +1216,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.text",
             upstream,
         ).fetch(
@@ -1292,14 +1245,15 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
             eventType: "generate.text",
             responseStatus: 200,
             isBilledUsage: true,
             tokenCountPromptText: 10,
             tokenCountCompletionText: 5,
         });
-        expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
+        expect(event.totalPrice).toBeGreaterThan(0);
     });
     it("records a flat provider fee but does not bill text with missing usage", async () => {
         const tinybirdRequests: Request[] = [];
@@ -1309,16 +1263,12 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
 
         const ctx = createExecutionContext();
         const response = await createHeaderApp(
             { "x-usage-missing": "true" },
             trackingUser,
             200,
-            consumePollen,
             GEMINI_SEARCH_MODEL,
             undefined,
             groundedReply,
@@ -1364,7 +1314,6 @@ describe("tracking observability", () => {
                 "google.gemini_3.search_query.v1": 1,
             },
         });
-        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("does not bill the quoted flat fee when a fallback omitted usage", async () => {
@@ -1374,9 +1323,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
 
         const ctx = createExecutionContext();
@@ -1388,7 +1334,6 @@ describe("tracking observability", () => {
             },
             trackingUser,
             200,
-            consumePollen,
             GEMINI_SEARCH_MODEL,
             createStaticEntry("openai/gpt-5.4-nano"),
             groundedReply,
@@ -1432,7 +1377,69 @@ describe("tracking observability", () => {
                 getRegistryModelDefinition(GEMINI_SEARCH_MODEL).priceMultiplier,
             12,
         );
-        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("notes why a text answer reported zero tokens, without its content", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        await createHeaderApp(
+            {
+                "x-usage-prompt-text-tokens": "0",
+                "x-usage-completion-text-tokens": "0",
+            },
+            trackingUser,
+            200,
+            undefined,
+            undefined,
+            {
+                choices: [
+                    { message: { content: "secret" }, finish_reason: "stop" },
+                ],
+                usage: { prompt_tokens: 0, completion_tokens: 0 },
+            },
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 200,
+            errorResponseCode: "usage_zero",
+            totalPrice: 0,
+        });
+        expect(JSON.parse(event.errorMessage as string)).toEqual({
+            finishReason: "stop",
+            contentChars: 6,
+            usage: { prompt_tokens: 0, completion_tokens: 0 },
+        });
     });
 
     it("records a served flat cost without marking a zero-price fallback as billed", async () => {
@@ -1442,9 +1449,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
 
         const ctx = createExecutionContext();
@@ -1456,7 +1460,6 @@ describe("tracking observability", () => {
             },
             trackingUser,
             200,
-            consumePollen,
             "openai/gpt-5.4-nano",
             createStaticEntry(GEMINI_SEARCH_MODEL),
             groundedReply,
@@ -1494,7 +1497,6 @@ describe("tracking observability", () => {
             totalPrice: 0,
             devPrice: 0,
         });
-        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("records and deducts the effective long-context price sheet", async () => {
@@ -1505,9 +1507,6 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
         const model: ModelVariables["model"] = {
             requested: "openai/gpt-5.4",
             resolved: "openai/gpt-5.4",
@@ -1515,17 +1514,11 @@ describe("tracking observability", () => {
         };
 
         const ctx = createExecutionContext();
-        const response = await createTestApp(
-            consumePollen,
-            trackingUser,
-            model,
-            undefined,
-            {
-                "x-model-used": "openai/gpt-5.4",
-                "x-usage-prompt-text-tokens": "272001",
-                "x-usage-completion-text-tokens": "1000",
-            },
-        ).fetch(
+        const response = await createTestApp(trackingUser, model, undefined, {
+            "x-model-used": "openai/gpt-5.4",
+            "x-usage-prompt-text-tokens": "272001",
+            "x-usage-completion-text-tokens": "1000",
+        }).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -1563,25 +1556,23 @@ describe("tracking observability", () => {
             tokenPriceCompletionText: (22.5 / 1e6) * 0.75,
             tokenCountPromptText: 272_001,
             tokenCountCompletionText: 1_000,
+            isBilledUsage: true,
             totalCost: expectedCost,
             totalPrice: expectedPrice,
             devPrice: expectedPrice,
         });
-        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
     });
 
     it("does not emit Tinybird generation events for cache hits", async () => {
         const tinybirdFetch = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValue(new Response("ok"));
-        const consumePollen = vi.fn(async (_amount: number) => {});
 
         const ctx = createExecutionContext();
         const response = await createHeaderApp(
             { "x-cache": "HIT" },
             trackingUser,
             200,
-            consumePollen,
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -1609,7 +1600,6 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-cache")).toBe("HIT");
-        expect(consumePollen).toHaveBeenCalledWith(0);
         expect(tinybirdFetch).not.toHaveBeenCalled();
     });
 
@@ -1621,15 +1611,9 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn(async (_amount: number) => {});
 
         const ctx = createExecutionContext();
-        const response = await createHeaderApp(
-            {},
-            trackingUser,
-            502,
-            consumePollen,
-        ).fetch(
+        const response = await createHeaderApp({}, trackingUser, 502).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -1727,12 +1711,9 @@ describe("tracking observability", () => {
         const enterFetch = vi.fn<typeof env.ENTER.fetch>(async () =>
             Response.json({ status: "created" }),
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
 
         const ctx = createExecutionContext();
-        const response = await createTestApp(consumePollen, user).fetch(
+        const response = await createTestApp(user).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -1797,7 +1778,7 @@ describe("tracking observability", () => {
         // second starts below, so only the first one calls Enter.
         for (let i = 0; i < 2; i++) {
             const ctx = createExecutionContext();
-            const response = await createTestApp(async () => {}, user).fetch(
+            const response = await createTestApp(user).fetch(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
                     method: "POST",
                     headers: {
@@ -1883,12 +1864,9 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
 
         const ctx = createExecutionContext();
-        const response = await createTestApp(consumePollen, payer, model).fetch(
+        const response = await createTestApp(payer, model).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -1990,12 +1968,7 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        const response = await createTestApp(
-            async () => {},
-            payer,
-            model,
-            fallbackEntry,
-        ).fetch(
+        const response = await createTestApp(payer, model, fallbackEntry).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -2108,12 +2081,7 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        const response = await createTestApp(
-            async () => {},
-            payer,
-            model,
-            fallbackEntry,
-        ).fetch(
+        const response = await createTestApp(payer, model, fallbackEntry).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -2168,9 +2136,6 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
 
         // Upstream returned a JSON error body with HTTP 200 instead of an image.
         const upstream = new Response(JSON.stringify({ error: "boom" }), {
@@ -2179,7 +2144,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.image",
             upstream,
         ).fetch(
@@ -2209,7 +2173,6 @@ describe("tracking observability", () => {
             isBilledUsage: false,
             modelUsed: "openai/gpt-5.4-nano",
         });
-        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("bills timestamped audio JSON without copying base64 audio into analytics", async () => {
@@ -2219,9 +2182,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
         const upstream = Response.json(
             {
@@ -2239,7 +2199,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.audio",
             upstream,
             "elevenlabs/eleven-v3",
@@ -2272,9 +2231,9 @@ describe("tracking observability", () => {
             eventType: "generate.audio",
             isBilledUsage: true,
             tokenCountCompletionAudio: 2,
+            totalPrice: 0.00016,
         });
         expect(JSON.stringify(event)).not.toContain("large-audio-payload");
-        expect(consumePollen).toHaveBeenCalledWith(0.00016);
     });
 
     it("bills plain-text speech-to-text responses from usage headers", async () => {
@@ -2284,9 +2243,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
         const upstream = new Response("hello world", {
             headers: {
@@ -2298,7 +2254,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.audio",
             upstream,
             "assemblyai/universal-3.5-pro",
@@ -2330,7 +2285,6 @@ describe("tracking observability", () => {
             totalCost: 0.00035,
             totalPrice: 0.00035,
         });
-        expect(consumePollen).toHaveBeenCalledWith(0.00035);
     });
 
     it("bills Wan reference-video seconds through headers and emits one event", async () => {
@@ -2340,9 +2294,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
         const upstream = new Response("video", {
             headers: {
@@ -2354,7 +2305,6 @@ describe("tracking observability", () => {
         });
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.image",
             upstream,
             "alibaba/wan-3.0",
@@ -2381,10 +2331,10 @@ describe("tracking observability", () => {
             tokenCountPromptVideoSeconds: 3,
             tokenPricePromptVideoSeconds: 0.068,
             tokenCountCompletionVideoSeconds: 5,
+            isBilledUsage: true,
             totalCost: 0.544,
             totalPrice: 0.544,
         });
-        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0.544);
     });
 
     it.each([
@@ -2399,9 +2349,6 @@ describe("tracking observability", () => {
                     tinybirdRequests.push(new Request(input, init));
                     return new Response("ok");
                 },
-            );
-            const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-                async () => {},
             );
             const model = "minimax/minimax-h3-max-turbo";
             const upstream = new Response("video", {
@@ -2420,7 +2367,6 @@ describe("tracking observability", () => {
             );
             const ctx = createExecutionContext();
             const response = await createTrackedResponseApp(
-                consumePollen,
                 "generate.image",
                 upstream,
                 model,
@@ -2457,7 +2403,6 @@ describe("tracking observability", () => {
                 totalCost,
                 totalPrice: totalCost,
             });
-            expect(consumePollen).toHaveBeenCalledExactlyOnceWith(totalCost);
             const balanceAfter = await getUserBalance(
                 drizzle(env.DB),
                 trackingUser.id,
@@ -2469,6 +2414,60 @@ describe("tracking observability", () => {
         },
     );
 
+    it("records JSON error usage as provider cost without a wallet debit", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const before = await getUserBalance(drizzle(env.DB), trackingUser.id);
+        const rejection = UpstreamError.fromProvider(422, {
+            responseBody: JSON.stringify({
+                error: { code: "content_policy_violation" },
+                usage: {
+                    prompt_tokens: 7,
+                    completion_tokens: 0,
+                    total_tokens: 7,
+                },
+            }),
+        });
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            "generate.text",
+            rejection,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream"),
+            {
+                ...env,
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(422);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 422,
+            isBilledUsage: false,
+            totalPrice: 0,
+            tokenCountPromptText: 7,
+            tokenCountCompletionText: 0,
+        });
+        expect(event.totalCost).toBeGreaterThan(0);
+        expect(await getUserBalance(drizzle(env.DB), trackingUser.id)).toEqual(
+            before,
+        );
+    });
+
     it("bills a failed video for the usage the provider charged", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -2477,16 +2476,12 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
         const rejection = UpstreamError.fromProvider(422, {
             message: "The generated video was rejected",
             billedUsage: { completionVideoSeconds: 5 },
         });
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.image",
             rejection,
             "x-ai/grok-imagine-video",
@@ -2519,7 +2514,6 @@ describe("tracking observability", () => {
             tokenCountCompletionVideoSeconds: 5,
         });
         expect(event.totalPrice).toBeGreaterThan(0);
-        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(event.totalPrice);
     });
 
     it("does not bill ordinary TTS when a provider returns JSON with HTTP 200", async () => {
@@ -2529,9 +2523,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
         const upstream = Response.json(
             { error: "unexpected provider response" },
@@ -2545,7 +2536,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         await createTrackedResponseApp(
-            consumePollen,
             "generate.audio",
             upstream,
             "elevenlabs/eleven-v3",
@@ -2573,7 +2563,6 @@ describe("tracking observability", () => {
             eventType: "generate.audio",
             isBilledUsage: false,
         });
-        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("bills 3D generation that returns a model/ content-type", async () => {
@@ -2583,9 +2572,6 @@ describe("tracking observability", () => {
                 tinybirdRequests.push(new Request(input, init));
                 return new Response("ok");
             },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
         );
 
         // 3D models share the "generate.image" EventType but respond with a
@@ -2600,7 +2586,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.image",
             upstream,
         ).fetch(
@@ -2639,9 +2624,6 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
 
         // stream: true was requested but upstream returned JSON, not SSE.
         const upstream = new Response(JSON.stringify({ error: "boom" }), {
@@ -2655,7 +2637,6 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.text",
             upstream,
         ).fetch(
@@ -2690,7 +2671,6 @@ describe("tracking observability", () => {
             responseStatus: 200,
             isBilledUsage: false,
         });
-        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("captures endTime at stream completion so responseTime covers the whole request", async () => {
@@ -2764,6 +2744,16 @@ describe("tracking observability", () => {
             true,
             trackingUser,
             100,
+            Object.assign(new Error("primary unavailable"), {
+                status: 503,
+                responseBody: JSON.stringify({
+                    usage: {
+                        prompt_tokens: 7,
+                        completion_tokens: 2,
+                        total_tokens: 9,
+                    },
+                }),
+            }),
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -2796,6 +2786,13 @@ describe("tracking observability", () => {
             ),
         );
         expect(primary.isFinal).toBe(false);
+        expect(primary).toMatchObject({
+            isBilledUsage: false,
+            totalPrice: 0,
+            tokenCountPromptText: 7,
+            tokenCountCompletionText: 2,
+        });
+        expect(primary.totalCost).toBeGreaterThan(0);
         expect(primary.attemptResponseTime).toBe(primary.responseTime);
         expect(primary.attemptResponseTime).toBeGreaterThanOrEqual(100);
         expect(fallback.fallbackUsed).toBe(true);
@@ -3018,7 +3015,6 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn(async (_amount: number) => {});
         const model = "anthropic/claude-haiku-4.5";
         const usage = {
             prompt_tokens: 1_000,
@@ -3044,7 +3040,6 @@ describe("tracking observability", () => {
         );
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.text",
             upstream,
             model,
@@ -3091,7 +3086,6 @@ describe("tracking observability", () => {
             totalPrice: expectedPrice,
             isBilledUsage: true,
         });
-        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
     });
 
     it("bills direct Responses stream terminal usage exactly once", async () => {
@@ -3102,7 +3096,6 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn(async (_amount: number) => {});
         const upstreamResponse = {
             object: "response",
             model: "upstream-model",
@@ -3129,7 +3122,6 @@ describe("tracking observability", () => {
         );
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
-            consumePollen,
             "generate.text",
             upstream,
         ).fetch(
@@ -3158,7 +3150,8 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
             eventType: "generate.text",
             modelUsed: "openai/gpt-5.4-nano",
             tokenCountPromptText: 800,
@@ -3167,8 +3160,7 @@ describe("tracking observability", () => {
             tokenCountCompletionReasoning: 100,
             isBilledUsage: true,
         });
-        expect(consumePollen).toHaveBeenCalledTimes(1);
-        expect(consumePollen.mock.calls[0][0]).toBeGreaterThan(0);
+        expect(event.totalPrice).toBeGreaterThan(0);
     });
 
     it("marks a community endpoint stream that ended without usage", async () => {
@@ -3368,6 +3360,73 @@ describe("trackResponse modelUsed", () => {
         );
         expect(tracking.modelUsed).toBe("qwen/qwen3.7-flash");
     });
+
+    it.each([
+        "not JSON",
+        "null",
+        JSON.stringify({ error: { message: "blocked" } }),
+        JSON.stringify({ usage: { prompt_tokens: 7, total_tokens: 7 } }),
+        JSON.stringify({
+            usage: { prompt_tokens: -1, completion_tokens: 0, total_tokens: 0 },
+        }),
+    ])(
+        "does not fabricate cost from invalid JSON error usage: %s",
+        async (responseBody) => {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(),
+                new Response(null, { status: 422 }),
+                candidateFixture(),
+                undefined,
+                UpstreamError.fromProvider(422, { responseBody }),
+            );
+            expect(tracking.isBilledUsage).toBe(false);
+            expect(tracking.usage).toBeUndefined();
+            expect(tracking.cost).toBeUndefined();
+        },
+    );
+
+    it("prices JSON error usage by the attempted route and preserves cache metadata", async () => {
+        const model = "qwen/qwen3.8-max" as const;
+        const candidate = candidateFixture(model);
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(),
+            new Response(null, { status: 422 }),
+            candidate,
+            undefined,
+            UpstreamError.fromProvider(422, {
+                responseBody: JSON.stringify({
+                    model: "untrusted-upstream-model-name",
+                    usage: {
+                        prompt_tokens: 1000,
+                        completion_tokens: 0,
+                        total_tokens: 1000,
+                        prompt_tokens_details: {
+                            cached_tokens: 1000,
+                            cache_type: "ephemeral",
+                        },
+                    },
+                }),
+            }),
+        );
+        expect(tracking).toMatchObject({
+            isBilledUsage: false,
+            modelUsed: model,
+            fallbackUsed: true,
+            usage: { promptCachedTokens: 1000 },
+        });
+        expect(tracking.cost?.totalCost).toBe(
+            calculateUsageBilling({
+                model: "openai/gpt-5.4-nano",
+                usage: { promptCachedTokens: 1000 },
+                servedBy: getRegistryModelDefinition(model),
+                quotedBy: getRegistryModelDefinition("openai/gpt-5.4-nano"),
+                input: { hasExplicitCacheHit: true },
+            }).cost.totalCost,
+        );
+    });
+
     it("attributes a failed generation to the resolved model", async () => {
         const tracking = await trackResponse(
             "generate.text",
@@ -4000,10 +4059,10 @@ describe("trackResponse model identity", () => {
     });
 
     it.each([200, 502])(
-        "distinguishes Azure and direct OpenAI routes on HTTP %i",
+        "distinguishes Azure and AWS routes on HTTP %i",
         async (status) => {
             const primary = "openai/gpt-6-astra" as const;
-            const fallback = "openai/gpt-6-astra:openai" as const;
+            const fallback = "openai/gpt-6-astra:aws" as const;
             for (const attempted of [primary, fallback]) {
                 const tracking = await trackResponse(
                     "generate.text",
@@ -4016,8 +4075,7 @@ describe("trackResponse model identity", () => {
                 expect(tracking).toMatchObject({
                     responseStatus: status,
                     modelUsed: attempted,
-                    modelProviderUsed:
-                        attempted === primary ? "azure" : "openai",
+                    modelProviderUsed: attempted === primary ? "azure" : "aws",
                     fallbackUsed: attempted !== primary,
                 });
             }

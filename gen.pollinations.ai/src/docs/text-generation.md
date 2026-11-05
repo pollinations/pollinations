@@ -180,9 +180,9 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
-### Typed decisions (`typesafe/jev-1.13`)
+### Typed decisions (`typesafe/jev-1.14`)
 
-`typesafe/jev-1.13` (aliases `jev` and `typesafe/jev`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
+`typesafe/jev-1.14` (aliases `jev`, `typesafe/jev`, and `typesafe/jev-1.13`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
 
 ```json
 {
@@ -203,7 +203,7 @@ The response carries `answers`, one field per question, each with `type` and its
 ```json
 {
   "id": "dec-…",
-  "model": "typesafe/jev-1.13",
+  "model": "typesafe/jev-1.14",
   "provider": "TypeSafe",
   "answers": {
     "department": {

@@ -8,7 +8,10 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
-import { CONSENT_PERMISSIONS } from "@shared/auth/authorize-config.ts";
+import {
+    CONSENT_PERMISSIONS,
+    canGrantKeysByLink,
+} from "@shared/auth/authorize-config.ts";
 import { parseCommunityModelId } from "@shared/community-endpoints.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -17,7 +20,10 @@ import { authClient } from "../auth.ts";
 import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
-import { accountPermissions } from "../components/keys/account-permissions-input.tsx";
+import {
+    accountPermissions,
+    KeysPermissionWarning,
+} from "../components/keys/account-permissions-input.tsx";
 import { KeySubject } from "../components/keys/key-subject.tsx";
 import type { ApiKey } from "../components/keys/types.ts";
 import {
@@ -36,6 +42,7 @@ import {
     ReturnToApp,
 } from "../lib/return-to-app.tsx";
 import { updateApiKey } from "../lib/update-api-key.ts";
+import { pageTitle } from "../page-meta.ts";
 
 type GrantSearch = {
     id: string;
@@ -54,7 +61,7 @@ type GrantSearch = {
  * the 403s and chat replies gen returns when a key lacks it.
  */
 export const Route = createFileRoute("/grant")({
-    head: () => ({ meta: [{ title: "Allow access | pollinations.ai" }] }),
+    head: () => ({ meta: [{ title: pageTitle("/grant") }] }),
     validateSearch: (search: Record<string, unknown>): GrantSearch => ({
         id: typeof search.id === "string" ? search.id : "",
         category: MODEL_CATEGORY_ORDER.find((c) => c === search.category),
@@ -208,6 +215,7 @@ function GrantPage() {
                 footnote="help"
                 title={title}
                 error="Couldn’t load this request. Check that you’re signed in as the key owner."
+                errorPaths={["/account/keys"]}
             />
         );
     }
@@ -240,6 +248,22 @@ function GrantPage() {
                 actions={
                     redirect ? <ReturnToApp returnUrl={redirect} /> : undefined
                 }
+            />
+        );
+    }
+
+    // As on the consent screen, an app that got this key by redirecting to a
+    // website can't ask for account admin. The owner can still add it by hand.
+    if (
+        permission === "keys" &&
+        !canGrantKeysByLink(key.metadata?.redirectOrigin)
+    ) {
+        return (
+            <AuthFlowScreen
+                footnote="back"
+                title={title}
+                subject={subject}
+                error="Websites can’t ask to manage your keys. If you trust this app, you can still allow it in the key’s permissions."
             />
         );
     }
@@ -333,6 +357,11 @@ function GrantPage() {
                     </Text>
                 </div>
             </Surface>
+            {permission === "keys" && (
+                <Text size="sm">
+                    <KeysPermissionWarning />
+                </Text>
+            )}
             {modelEntry && (
                 <Text size="sm">
                     {category ? "These models" : "This model"} may spend Pollen

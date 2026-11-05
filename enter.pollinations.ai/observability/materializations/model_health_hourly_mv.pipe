@@ -1,6 +1,8 @@
 DESCRIPTION >
     Materializes catalog health from final requests. Fallback rescues count as
-    successes for the requested model; caller 4xx are excluded. now() is
+    successes for the requested model; caller 4xx are excluded. In `recent`, a
+    text 2xx that reports prompt tokens but no output tokens is stored as 502:
+    the model read the request and answered with nothing. now() is
     evaluated at ingest, so it only bounds the backfill to the table's TTL.
 
 NODE model_health_hourly_mv_node
@@ -11,11 +13,24 @@ SQL >
         event_type,
         sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS status_2xx,
         sumState(toUInt64(response_status >= 500)) AS errors_5xx,
-        groupArraySortedState(50)(tuple(-toInt64(toUnixTimestamp(start_time)), request_id, response_status)) AS recent
+        groupArraySortedState(50)(tuple(
+            -toInt64(toUnixTimestamp(start_time)),
+            request_id,
+            if(
+                event_type = 'generate.text'
+                    AND response_status < 300
+                    AND token_count_prompt_text + token_count_prompt_cached > 0
+                    AND token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio = 0,
+                toUInt32(502),
+                response_status
+            )
+        )) AS recent
     FROM generation_event_v2
     WHERE is_final
         AND ((response_status >= 200 AND response_status < 300) OR response_status >= 500)
         AND start_time >= now() - INTERVAL 8 DAY
+        -- Feeds public catalog health; owner-only models stay out.
+        AND NOT private_model
     GROUP BY hour, model, event_type
 
 TYPE MATERIALIZED

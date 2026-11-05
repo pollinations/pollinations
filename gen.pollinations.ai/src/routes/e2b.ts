@@ -604,8 +604,8 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     message: "iam and volumeMounts are not supported.",
                 });
             }
-            const azure =
-                sandboxTemplate(body.templateID)?.provider === "azure";
+            const template = sandboxTemplate(body.templateID);
+            const azure = template?.provider === "azure";
             const until = keepUntil(body.timeout);
             const idle = idleTimeoutOf(idleTimeout, until, azure);
             // An empty wallet cannot pay for any lease.

@@ -1,3 +1,4 @@
+import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
@@ -13,13 +14,13 @@ export const BooleanQueryParamSchema = z.preprocess(
 const FloatQueryParamSchema = z.preprocess((value) => {
     if (value == null) return undefined;
     const parsed = Number.parseFloat(String(value));
-    return Number.isNaN(parsed) ? undefined : parsed;
+    return Number.isNaN(parsed) ? NaN : parsed;
 }, z.number().optional());
 
 const IntQueryParamSchema = z.preprocess((value) => {
     if (value == null) return undefined;
     const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? undefined : parsed;
+    return Number.isNaN(parsed) ? NaN : parsed;
 }, z.number().int().optional());
 
 export const GenerateTextRequestQueryParamsSchema = z.object({
@@ -31,7 +32,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed.",
     }),
-    system: z.string().optional().meta({
+    system: z.string().min(1).optional().meta({
         description:
             "System prompt to set the model's behavior and context. Acts as initial instructions before the user prompt.",
     }),
@@ -39,7 +40,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "When true, the model returns valid JSON. Useful for structured data extraction.",
     }),
-    temperature: z.coerce.number().optional().meta({
+    temperature: z.coerce.number().min(0).max(2).optional().meta({
         description:
             "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
     }),
@@ -50,7 +51,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     max_tokens: IntQueryParamSchema,
     max_completion_tokens: IntQueryParamSchema,
     reasoning_effort: z.string().optional(),
-    voice: z.string().optional(),
+    voice: z.enum(AUDIO_VOICES).optional(),
     stream: BooleanQueryParamSchema.optional().default(false).meta({
         description:
             "Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text.",

@@ -2629,21 +2629,19 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
     );
 
     const prRewards = () => checkPrRewards(user.id);
-    // Without an earlier PR, the first PR keeps the one-time reward's id, which
-    // Enter before this change also paid for it.
     const paid = [
         { questId: "github:issue:9400", pollenAmount: 10 },
         { questId: "github:issue:9402", pollenAmount: 25 },
         { questId: "github:issue:9403", pollenAmount: 50 },
         { questId: "github:issue:9404", pollenAmount: 5 },
+        { questId: "github:merged_pr:9501", pollenAmount: 5 },
         { questId: "github:merged_pr:9502", pollenAmount: 15 },
-        { questId: "merged_pr", pollenAmount: 5 },
     ];
     expect(await prRewards()).toEqual(paid);
 
     // A label added after the payout changes nothing. A PR merged before the
-    // start date takes the one-time reward, so the first new PR now pays as
-    // its own, and the quests the old PR closed pay their labels.
+    // start date earns the one-time reward, and the quest it closed pays its
+    // label.
     mocks.github.state.questIssues
         .find((issue) => issue.number === 9404)
         ?.labels?.push({ name: "reward-25" });
@@ -2679,9 +2677,8 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
     expect(await prRewards()).toEqual([
         paid[0],
         { questId: "github:issue:9401", pollenAmount: 3 },
-        ...paid.slice(1, 4),
-        { questId: "github:merged_pr:9501", pollenAmount: 5 },
-        ...paid.slice(4),
+        ...paid.slice(1),
+        { questId: "merged_pr", pollenAmount: 5 },
     ]);
 });
 
@@ -2691,6 +2688,18 @@ test("a merged PR pays once, whatever changes after it paid", async ({
 }) => {
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
+    // Before this change deployed, Enter paid the first PR the one-time reward.
+    const firstPrKey = `quest:merged_pr:github:${user.githubId}`;
+    await drizzle(env.DB, { schema }).insert(schema.rewards).values({
+        id: firstPrKey,
+        idempotencyKey: firstPrKey,
+        userId: user.id,
+        questId: "merged_pr",
+        title: "Contribute a pull request",
+        pollenAmount: 5,
+        balanceBucket: "tier",
+        earnedAt: new Date(),
+    });
     for (const [issueNumber, reward] of [
         [9700, 10],
         [9701, 25],
@@ -2717,12 +2726,12 @@ test("a merged PR pays once, whatever changes after it paid", async ({
             closingIssues: [{ number: 9700, repository: "someone/else" }],
         }),
     );
-    // The first merged PR keeps the one-time reward's id.
+    // The first PR, 9800, already earned the one-time reward.
     const paid = [
         { questId: "github:issue:9701", pollenAmount: 25 },
         { questId: "github:merged_pr:9802", pollenAmount: 5 },
         { questId: "github:merged_pr:9803", pollenAmount: 5 },
-        { questId: "merged_pr", pollenAmount: 50 },
+        { questId: "merged_pr", pollenAmount: 5 },
     ];
     expect(await checkPrRewards(user.id)).toEqual(paid);
 

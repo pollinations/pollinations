@@ -751,9 +751,9 @@ export async function evaluateUser(
     // it closes, then 5; never a sum. A quest pays each author once, however
     // many of their PRs close it.
     const quests = new Map(issues.map((issue) => [issue.issueNumber, issue]));
-    // Without an earlier PR, the first merged PR keeps the one-time reward's
-    // id: Enter before REWARDS_START paid that id for any first PR, and a PR
-    // merged before this change deploys must not pay twice.
+    // Until this change deploys, Enter pays the one-time reward for any first
+    // merged PR. Without a PR from before REWARDS_START, that paid the earliest
+    // PR since, which must not pay again.
     const firstPr = mergedPr
         ? undefined
         : mergedPrs.reduce<MergedPrNode | undefined>(
@@ -778,14 +778,12 @@ export async function evaluateUser(
             .sort((a, b) => b.rewardAmount - a.rewardAmount)[0];
         const definition = quest
             ? toIssueQuestDefinition(quest)
-            : pr === firstPr
-              ? mergedPrQuest
-              : {
-                    ...mergedPrQuest,
-                    id: `github:merged_pr:${pr.number}`,
-                    title: `Merged PR #${pr.number}: ${pr.title}`,
-                    url: pr.url,
-                };
+            : {
+                  ...mergedPrQuest,
+                  id: `github:merged_pr:${pr.number}`,
+                  title: `Merged PR #${pr.number}: ${pr.title}`,
+                  url: pr.url,
+              };
         return [
             {
                 quest: {

@@ -36,6 +36,7 @@ For all Pollinations-hosted MCP servers, see the
 | `createEmbeddings` | Create text or multimodal embeddings | `/v1/embeddings` |
 | `listModels` | Search and list live models, capabilities, voices, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` | Model registry routes |
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/models/status` |
+| `listMcpServers` | List the other hosted MCP servers, their endpoints and pricing | `/mcp` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
 | `getUsage` | Request history or daily summary; requires `account:usage` | `/account/usage`, `/account/usage/daily` |
 | `getEarnings` | Developer earnings from BYOP apps and community models; requires `account:usage` | `/account/earnings` |

@@ -186,11 +186,42 @@ export const CreateMessageRequestSchema = z
                 name: z.string().optional(),
                 disable_parallel_tool_use: z.boolean().optional(),
             })
+            .superRefine((tc, ctx) => {
+                if (
+                    tc.type === "tool" &&
+                    (tc.name == null || tc.name.trim() === "")
+                ) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        path: ["name"],
+                        message:
+                            "`name` is required when `tool_choice.type` is `tool`",
+                    });
+                }
+            })
             .optional(),
         thinking: z
             .object({
-                type: z.string(),
-                budget_tokens: z.number().int().optional(),
+                type: z.enum(["enabled", "disabled", "adaptive"]),
+                budget_tokens: z.number().int().min(1024).optional(),
+            })
+            .superRefine((t, ctx) => {
+                if (t.type === "enabled" && t.budget_tokens === undefined) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        path: ["budget_tokens"],
+                        message:
+                            "`budget_tokens` is required when `thinking.type` is `enabled`",
+                    });
+                }
+                if (t.type !== "enabled" && t.budget_tokens !== undefined) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        path: ["budget_tokens"],
+                        message:
+                            "`budget_tokens` is only allowed when `thinking.type` is `enabled`",
+                    });
+                }
             })
             .passthrough()
             .optional(),

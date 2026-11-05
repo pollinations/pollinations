@@ -215,7 +215,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 alpha: true,
                 name: "Research",
                 description:
-                    "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv preprints and World Bank indicators.",
+                    "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv and World Bank indicators.",
                 url: "https://gen.pollinations.ai/mcp/research",
                 pricing: {
                     description:

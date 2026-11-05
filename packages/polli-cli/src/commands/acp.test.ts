@@ -206,8 +206,19 @@ describe("polli acp", () => {
             arguments: '{"title":"groceries"}',
             status: "completed",
         });
+        // A code agent's own read_note already ran on the server.
+        const serverNoteOutput = {
+            type: "function_call_output",
+            call_id: "call_server",
+            output: [{ type: "input_text", text: "milk" }],
+        };
         const { bodies, toolCalls } = stubFetch([
             sse([
+                {
+                    type: "response.output_item.done",
+                    item: noteCall("call_server"),
+                },
+                { type: "response.output_item.done", item: serverNoteOutput },
                 { type: "response.output_item.done", item: noteCall("call_a") },
                 { type: "response.completed" },
             ]),
@@ -273,6 +284,7 @@ describe("polli acp", () => {
                 (item) => item.type === "function_call_output",
             ),
         ).toEqual([
+            serverNoteOutput,
             {
                 type: "function_call_output",
                 call_id: "call_a",

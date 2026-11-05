@@ -379,13 +379,17 @@ const runEditorTool = async (
     return JSON.stringify(result);
 };
 
-/** Drops function calls without a result; gen rejects them in history. */
-const answered = (items: Item[]) => {
-    const done = new Set(
+/** The call_ids that already have a result. */
+const resultIds = (items: Item[]) =>
+    new Set(
         items
             .filter((item) => item.type === "function_call_output")
             .map((item) => item.call_id),
     );
+
+/** Drops function calls without a result; gen rejects them in history. */
+const answered = (items: Item[]) => {
+    const done = resultIds(items);
     return items.filter(
         (item) => item.type !== "function_call" || done.has(item.call_id),
     );
@@ -421,10 +425,14 @@ const prompt = async (
                 return { stopReason: stop };
             }
             input.push(...output);
-            // Gen runs hosted tools (mcp__…); calls to editor tools come back.
+            // Gen runs hosted tools and returns their results, even when a
+            // code agent's own tool shares an editor tool's name. Calls to
+            // editor tools come back without one.
+            const done = resultIds(output);
             const calls = output.filter(
                 (item): item is Item & FunctionCall =>
                     item.type === "function_call" &&
+                    !done.has(item.call_id) &&
                     session.tools.has(String(item.name)),
             );
             if (stop || !calls.length) {

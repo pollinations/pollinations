@@ -304,6 +304,7 @@ describe("generation request deduplication", () => {
 
         expect(await response.text()).toBe("fresh");
         expect(response.headers.get("X-Cache")).toBe("MISS");
+        expect(response.headers.get("Cache-Control")).toBe("private, no-store");
         expect(keys).toHaveLength(1);
         expect(keys[0]).not.toBe("same-request");
         expect(cache.get("same-request")).toBe("shared");

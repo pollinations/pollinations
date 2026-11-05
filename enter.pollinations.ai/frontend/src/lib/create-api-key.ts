@@ -49,9 +49,16 @@ export async function createKeyWithPermissions({
     const type = prefix === "pk" ? "publishable" : "secret";
 
     const response = await accountClient.keys.$post({
-        // Forms hold permission names as plain strings; the API rejects
-        // unknown ones.
-        json: { ...fields, ...permissions, type, expiresIn } as CreateKeyJson,
+        json: {
+            ...fields,
+            ...permissions,
+            // Forms hold permission names as plain strings; the API rejects
+            // unknown ones.
+            accountPermissions:
+                permissions?.accountPermissions as CreateKeyJson["accountPermissions"],
+            type,
+            expiresIn,
+        },
     });
 
     if (!response.ok) {

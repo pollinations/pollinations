@@ -87,10 +87,10 @@ function createTextCacheApp() {
         .post(
             "/v1/chat/completions/agent",
             (c, next) => {
-                // resolveModel scopes agents; each request has its own id.
+                // resolveModel marks agents private; each request has its own id.
                 c.set("model", {
                     definition: {},
-                    cacheScope: "agent:agent-id",
+                    cachePrivate: true,
                 } as ModelVariables["model"]);
                 c.set("requestId", crypto.randomUUID());
                 return next();
@@ -381,18 +381,11 @@ describe("text cache", () => {
             const app = new Hono<TestEnv>()
                 .use("*", async (c, next) => {
                     c.set("log", testLog);
-                    // Like Hono's requestId(), reuse the client's id when sent.
-                    c.set(
-                        "requestId",
-                        c.req.header("X-Request-Id") ?? crypto.randomUUID(),
-                    );
+                    c.set("requestId", crypto.randomUUID());
                     const off = c.req.header("X-Test-Cache-Off") === "true";
                     c.set("auth", {
                         user: { cacheDisabled: off && level === "account" },
-                        apiKey: {
-                            id: c.req.header("X-Test-Key") ?? "key-1",
-                            cacheDisabled: off && level === "key",
-                        },
+                        apiKey: { cacheDisabled: off && level === "key" },
                     } as AuthVariables["auth"]);
                     await next();
                 })
@@ -402,35 +395,30 @@ describe("text cache", () => {
                         headers: { "Content-Type": "text/plain" },
                     });
                 });
-            const env = createTextCacheEnv();
-            const get = async (
-                cacheOff: boolean,
-                headers: Record<string, string> = {},
-            ) =>
-                consumeAndWait(
-                    await dispatch(
-                        app,
-                        "/text/hello",
-                        {
-                            headers: {
-                                ...headers,
-                                "X-Test-Cache-Off": String(cacheOff),
-                            },
-                        },
-                        env,
-                    ),
+            const bucket = createTestR2Bucket();
+            const env = createTextCacheEnv(bucket);
+            const get = async (cacheOff: boolean) => {
+                const result = await dispatch(
+                    app,
+                    "/text/hello",
+                    { headers: { "X-Test-Cache-Off": String(cacheOff) } },
+                    env,
                 );
+                return {
+                    text: await consumeAndWait(result),
+                    cacheControl: result.response.headers.get("Cache-Control"),
+                };
+            };
 
-            expect(await get(false)).toBe("hit:1");
-            expect(await get(true)).toBe("hit:2");
-            expect(await get(true)).toBe("hit:3");
-            expect(await get(false)).toBe("hit:1");
-            // A reused request id never hands one caller another's result.
-            const sameId = { "X-Request-Id": "same-id" };
-            expect(await get(true, sameId)).toBe("hit:4");
-            expect(await get(true, { ...sameId, "X-Test-Key": "key-2" })).toBe(
-                "hit:5",
-            );
+            expect((await get(false)).text).toBe("hit:1");
+            expect(await get(true)).toEqual({
+                text: "hit:2",
+                cacheControl: "private, no-store",
+            });
+            expect((await get(true)).text).toBe("hit:3");
+            // Only the shared entry was written.
+            expect(bucket.putCount).toBe(1);
+            expect((await get(false)).text).toBe("hit:1");
         },
     );
 

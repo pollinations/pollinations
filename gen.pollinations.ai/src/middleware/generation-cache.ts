@@ -180,31 +180,14 @@ function replaceCapturedResponse(
     c.res = captured;
 }
 
-/**
- * Identical requests share one entry. Agent runs, and callers who turned the
- * cache off on their account or key, get an entry of their own instead: it
- * never serves an earlier result, and the coordinator reads it back only to
- * hand this request its own result.
- */
-async function requestCacheKey(
-    c: Context<GenerationCacheEnv>,
-    adapter: GenerationCacheAdapter,
-): Promise<string> {
-    const key = await adapter.getKey(c);
+/** Agent runs, and callers who turned the cache off, never share results. */
+function sharesCache(c: Context<GenerationCacheEnv>): boolean {
     const { auth, model } = c.var as GenerationCacheEnv["Variables"] &
         Partial<AuthVariables & ModelVariables>;
-    if (
-        !model?.cacheScope &&
+    return (
+        !model?.cachePrivate &&
         !auth?.user?.cacheDisabled &&
         !auth?.apiKey?.cacheDisabled
-    ) {
-        return key;
-    }
-    // Clients may send their own X-Request-Id, so the caller is part of it too.
-    const caller = auth?.apiKey?.id ?? auth?.user?.id ?? "anonymous";
-    return hashGenerationCacheIdentity(
-        adapter.storage,
-        `${key}:caller:${caller}:run:${c.var.requestId}`,
     );
 }
 
@@ -248,7 +231,6 @@ function capture(
 export function createGenerationCache(adapter: GenerationCacheAdapter) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
         const log = c.get("log").getChild(adapter.label);
-        const cacheKey = await requestCacheKey(c, adapter);
         const track = (
             c.var as GenerationCacheEnv["Variables"] & {
                 track?: {
@@ -259,6 +241,27 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         ).track;
         const coordinate = track?.streamRequested !== true;
 
+        if (!sharesCache(c)) {
+            // A private request never reads or fills a shared entry. The
+            // coordinator still hands a non-streamed result back through the
+            // cache, so it gets a one-off entry named by this request's id.
+            if (coordinate) {
+                c.set("generationCache", {
+                    adapter,
+                    key: await hashGenerationCacheIdentity(
+                        adapter.storage,
+                        `run:${c.var.requestId}`,
+                    ),
+                });
+            }
+            await next();
+            // Nor may a browser or proxy replay it.
+            c.header("X-Cache", "MISS");
+            c.header("Cache-Control", "private, no-store");
+            return;
+        }
+
+        const cacheKey = await adapter.getKey(c);
         try {
             const cached = await lookup(c, adapter, cacheKey);
             if (cached) return cached;

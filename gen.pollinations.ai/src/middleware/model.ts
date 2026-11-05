@@ -39,11 +39,11 @@ export type ModelVariables = {
         /** The endpoint the route resolved the model for, when it names one. */
         endpoint?: string;
         /**
-         * Extra cache-key scope for models whose output is not shareable
-         * between callers. Unset means the response is cacheable platform-wide,
-         * which is the default for every static and external community model.
+         * The output is not shareable between callers. Unset means the
+         * response is cacheable platform-wide, which is the default for every
+         * static and external community model.
          */
-        cacheScope?: string;
+        cachePrivate?: boolean;
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
@@ -152,7 +152,7 @@ export async function resolveModelDefinition(
         // answer belongs to that caller and must never be replayed to another.
         ...(entry.communityEndpoint &&
             usesAgentRunToken(entry.communityEndpoint) && {
-                cacheScope: `agent:${entry.id}`,
+                cachePrivate: true,
             }),
         ...(entry.fallbackEntries && {
             fallbackEntries: entry.fallbackEntries,

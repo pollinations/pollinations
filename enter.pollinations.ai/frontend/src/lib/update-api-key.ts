@@ -13,15 +13,17 @@ export async function updateApiKey(
 ): Promise<void> {
     const response = await accountClient.keys[":id"].$patch({
         param: { id },
-        // Forms hold permission names as plain strings; the API rejects
-        // unknown ones.
         json: {
             ...updates,
+            // Forms hold permission names as plain strings; the API rejects
+            // unknown ones.
+            accountPermissions:
+                updates.accountPermissions as UpdateKeyJson["accountPermissions"],
             expiresAt:
                 updates.expiresAt instanceof Date
                     ? updates.expiresAt.toISOString()
                     : updates.expiresAt,
-        } as UpdateKeyJson,
+        },
     });
     if (!response.ok) {
         throw new Error(await readError(response));

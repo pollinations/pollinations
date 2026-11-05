@@ -21,19 +21,20 @@ import {
  *
  * Amounts come only from reward-N labels, which only maintainers can add. A PR
  * merged into main earns its own label, else the bounty of the POLLEN-QUEST
- * issue it closes, else 5. Every issue a merged PR closes earns its author 3,
- * also when they fixed it themselves. Both are read from the quest issue: app
- * submissions earn the quest's label, else 5, and quest PRs merged before
- * REWARDS_START earn the quest's label.
+ * issue it closes, else 5; maintainers' own PRs earn nothing. Every issue a
+ * merged PR closes earns its author 2, also when they fixed it themselves.
+ * Both are read from the quest issue: app submissions earn the quest's label,
+ * else 5, and quest PRs merged before REWARDS_START earn the quest's label.
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
 const PR_REWARD = 5;
 // PRs merged before this earn the old one-time first-PR reward instead. Same
 // date as REWARDS_START in operations/infrastructure/project-manager/project_manager.py.
-// Set it to the production deploy day: old Enter pays a first PR merged after
-// this date once more, under the old quest id.
 const REWARDS_START = "2026-11-05T00:00:00Z";
+// Thomas and Elliot merge most PRs themselves. Same ids as REWARD_MAINTAINERS
+// in operations/infrastructure/project-manager/project_manager.py.
+const MAINTAINER_GITHUB_IDS = new Set([5099901, 36901823]);
 const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
     "DRAFT-QUEST",
     "APP-SUBMISSION",
@@ -112,10 +113,10 @@ const mergedPrQuest: QuestDefinition = {
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions do not count.`,
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 2 Quest Pollen for each issue closed by a merged PR. App submissions do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 3,
+    rewardAmount: 2,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -615,7 +616,8 @@ async function mergedPrsSinceStart(
     token: string,
     user: QuestUser,
 ): Promise<MergedPrNode[]> {
-    if (!user.githubUsername) return [];
+    if (!user.githubUsername || MAINTAINER_GITHUB_IDS.has(user.githubId ?? 0))
+        return [];
     const prs = await searchAll<MergedPrNode>(
         token,
         MERGED_PRS_QUERY,
@@ -732,18 +734,30 @@ export async function evaluateUser(
     // it closes, then 5; never a sum. A quest pays each author once, however
     // many of their PRs close it.
     const quests = new Map(issues.map((issue) => [issue.issueNumber, issue]));
-    const prProposals = mergedPrs.map((pr) => {
-        const quest = pr.closingIssuesReferences.nodes
+    const questOf = (pr: MergedPrNode) =>
+        pr.closingIssuesReferences.nodes
             .flatMap((issue) => quests.get(issue.number) ?? [])
             .sort((a, b) => b.rewardAmount - a.rewardAmount)[0];
+    // Without an earlier PR, the first non-quest PR keeps the one-time
+    // reward's id: Enter before REWARDS_START paid that id for any first PR,
+    // and a PR merged before this change deploys must not pay twice.
+    const firstPr = mergedPr
+        ? undefined
+        : Math.min(
+              ...mergedPrs.filter((pr) => !questOf(pr)).map((pr) => pr.number),
+          );
+    const prProposals = mergedPrs.map((pr) => {
+        const quest = questOf(pr);
         const definition = quest
             ? toIssueQuestDefinition(quest)
-            : {
-                  ...mergedPrQuest,
-                  id: `github:merged_pr:${pr.number}`,
-                  title: `Merged PR #${pr.number}: ${pr.title}`,
-                  url: pr.url,
-              };
+            : pr.number === firstPr
+              ? mergedPrQuest
+              : {
+                    ...mergedPrQuest,
+                    id: `github:merged_pr:${pr.number}`,
+                    title: `Merged PR #${pr.number}: ${pr.title}`,
+                    url: pr.url,
+                };
         return {
             quest: {
                 ...definition,

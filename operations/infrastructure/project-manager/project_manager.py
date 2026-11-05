@@ -63,7 +63,8 @@ NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
 # Same date as REWARDS_START in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
 REWARDS_START = "2026-11-05T00:00:00Z"
-# Thomas's and Elliot's own items get no announcement.
+# Thomas's and Elliot's own items get no announcement. Same ids as
+# MAINTAINER_GITHUB_IDS in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
 REWARD_MAINTAINERS = {5099901, 36901823}
 
 
@@ -376,7 +377,7 @@ def write_reward_comment():
     if IS_PULL_REQUEST:
         reward, rule = 5, "The PR author can claim this once it is merged into main. A reward label on this PR, or else on the POLLEN-QUEST issue it closes, sets the amount instead."
     else:
-        reward, rule = 3, "The issue author can claim this once a merged PR closes this issue, also when they wrote the fix."
+        reward, rule = 2, "The issue author can claim this once a merged PR closes this issue, also when they wrote the fix."
     body = f"Reward: {reward} pollen\n\n{rule} Claim at https://enter.pollinations.ai/quests."
     try:
         r = requests.post(f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/comments",

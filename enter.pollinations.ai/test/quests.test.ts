@@ -508,7 +508,7 @@ test("catalog lists the pull request and issue rewards", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
-        rewardAmount: 3,
+        rewardAmount: 2,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });
@@ -2384,7 +2384,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
     expect(rewards).toEqual([{ questId: "github:issue:941" }]);
 });
 
-test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including converted quests", async ({
+test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, including converted quests", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2470,7 +2470,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        3, 3, 3, 3, 3,
+        2, 2, 2, 2, 2,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2486,7 +2486,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 10);
 });
 
 test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or before the report pay nothing", async ({
@@ -2627,19 +2627,21 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
             )
             .sort((a, b) => a.questId.localeCompare(b.questId));
     };
+    // Without an earlier PR, the first PR keeps the one-time reward's id, which
+    // Enter before this change also paid for it.
     const paid = [
         { questId: "github:issue:9400", pollenAmount: 10 },
         { questId: "github:issue:9402", pollenAmount: 25 },
         { questId: "github:issue:9403", pollenAmount: 50 },
         { questId: "github:issue:9404", pollenAmount: 5 },
-        { questId: "github:merged_pr:9501", pollenAmount: 5 },
         { questId: "github:merged_pr:9502", pollenAmount: 15 },
+        { questId: "merged_pr", pollenAmount: 5 },
     ];
     expect(await prRewards()).toEqual(paid);
 
     // A label added after the payout changes nothing. A PR merged before the
-    // start date earns the old one-time reward, and the quests it closed pay
-    // their labels.
+    // start date takes the one-time reward, so the first new PR now pays as
+    // its own, and the quests the old PR closed pay their labels.
     mocks.github.state.questIssues
         .find((issue) => issue.number === 9404)
         ?.labels?.push({ name: "reward-25" });
@@ -2675,9 +2677,40 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
     expect(await prRewards()).toEqual([
         paid[0],
         { questId: "github:issue:9401", pollenAmount: 3 },
-        ...paid.slice(1),
-        { questId: "merged_pr", pollenAmount: 5 },
+        ...paid.slice(1, 4),
+        { questId: "github:merged_pr:9501", pollenAmount: 5 },
+        ...paid.slice(4),
     ]);
+});
+
+test("maintainers' own merged PRs earn no PR reward", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const elliot = 36901823;
+    await db
+        .update(schema.user)
+        .set({ githubId: elliot })
+        .where(eq(schema.user.id, user.id));
+    mocks.github.state.mergedPullRequests.push({
+        number: 9601,
+        authorLogin: user.githubUsername ?? "",
+        authorId: elliot,
+        mergedAt: "2026-11-06T00:00:00Z",
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(
+        rewards.filter((reward) => reward.questId.includes("merged_pr")),
+    ).toEqual([]);
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

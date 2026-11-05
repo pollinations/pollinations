@@ -91,22 +91,27 @@ async function azure(url, init = {}) {
 const put = (url, body) =>
     azure(url, { method: "PUT", body: JSON.stringify(body) });
 
-// The boxes this run started. A cancelled or timed-out CI job gets SIGINT,
-// then SIGTERM, and Node skips `finally` on a signal, so these delete them.
+// The boxes this run asked for, from the moment it asks. A cancelled or
+// timed-out CI job gets SIGINT, then SIGTERM, and Node skips `finally` on a
+// signal, so one cleanup deletes them all, waiting for creates still in
+// flight. A box deleted already just answers 404 again.
 const boxes = new Map();
-async function newBox(group, body) {
-    const box = await put(`${group}/sandboxes`, body);
-    boxes.set(box.id, group);
+function newBox(group, body) {
+    const box = put(`${group}/sandboxes`, body);
+    boxes.set(box, group);
     return box;
 }
-function removeBox(group, id) {
-    boxes.delete(id);
-    return azure(`${group}/sandboxes/${id}`, { method: "DELETE" });
-}
+const removeBox = (group, id) =>
+    azure(`${group}/sandboxes/${id}`, { method: "DELETE" });
+let cleaningUp = false;
 for (const signal of ["SIGINT", "SIGTERM"]) {
-    process.once(signal, async () => {
+    process.on(signal, async () => {
+        if (cleaningUp) return;
+        cleaningUp = true;
         await Promise.allSettled(
-            [...boxes].map(([id, group]) => removeBox(group, id)),
+            [...boxes].map(async ([box, group]) =>
+                removeBox(group, (await box).id),
+            ),
         );
         process.exit(1);
     });

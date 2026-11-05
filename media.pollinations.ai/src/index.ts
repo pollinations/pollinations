@@ -35,6 +35,7 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 import {
+    isMediaType,
     rawUploadFileName,
     readMedia,
     storedFileName,
@@ -80,6 +81,7 @@ interface Env {
     MAX_FILE_SIZE: string;
     DB: D1Database;
     ENTER: Fetcher;
+    UPLOAD_RATE_LIMITER?: RateLimit;
 }
 
 /**
@@ -137,6 +139,16 @@ async function verifyApiKey(
         byopClientKeyId: data.byopApp?.clientKeyId ?? null,
     };
 }
+
+// The declared type, or the file name's when the declared one is not media:
+// curl and FormData send application/octet-stream for many files.
+function uploadType(declared: string, fileName: string | undefined): string {
+    return isMediaType(declared) ? declared : detectContentType(fileName ?? "");
+}
+
+const UNSUPPORTED_TYPE_ERROR = {
+    error: "Only image, audio and video files can be uploaded. Send the file's media type (such as image/png) or a file name with a matching extension.",
+};
 
 function fileTooLargeError(maxSize: number): { error: string } {
     return { error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` };
@@ -335,7 +347,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Image metadata is stripped only when requested with `safe=privacy` or the `Pollinations-Safe: privacy` header; `safe=true` also enables privacy. Without it, uploaded bytes are preserved. Privacy processing supports image uploads up to 32 MiB and returns an error for larger or unparseable images. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Only image, audio and video files are accepted; a generic declared type such as application/octet-stream falls back to the file name's extension. Each account can upload up to 30 files a minute. Returns an id and its retrieval URL. Image metadata is stripped only when requested with `safe=privacy` or the `Pollinations-Safe: privacy` header; `safe=true` also enables privacy. Without it, uploaded bytes are preserved. Privacy processing supports image uploads up to 32 MiB and returns an error for larger or unparseable images. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         parameters: [
             {
                 in: "query",
@@ -439,7 +451,16 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
-            429: RateLimitedResponse,
+            415: {
+                description: "Not an image, audio or video file",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            429: {
+                description:
+                    "Too many requests from this API key or IP address, or more than 30 uploads a minute from this account; retry after `Retry-After` seconds",
+            },
             500: {
                 description:
                     "Upload failed. The file may already have been stored, so retrying a custom ID can return 409.",
@@ -471,6 +492,21 @@ api.post(
             return c.json(
                 { error: "Uploading media requires a secret (sk_) API key" },
                 403,
+            );
+        }
+        // One account can hold many keys, so uploads are also capped per
+        // account; wrangler.toml sets the limit.
+        const account = authResult.userId ?? authResult.keyId ?? "unattributed";
+        if (
+            c.env.UPLOAD_RATE_LIMITER &&
+            !(await c.env.UPLOAD_RATE_LIMITER.limit({ key: account })).success
+        ) {
+            c.header("Retry-After", "60");
+            return c.json(
+                {
+                    error: "Too many uploads from this account. Please slow down.",
+                },
+                429,
             );
         }
         // Stored on the file and logged, so finding who uploaded it needs
@@ -561,10 +597,15 @@ api.post(
             if (size > uploadMaxSize) {
                 return c.json(fileTooLargeError(uploadMaxSize), 413);
             }
+            const rawFileName = rawUploadFileName(c.req.raw.headers);
+            const rawContentType = uploadType(requestContentType, rawFileName);
+            if (!isMediaType(rawContentType)) {
+                return c.json(UNSUPPORTED_TYPE_ERROR, 415);
+            }
 
             let body: ReadableStream<Uint8Array> = c.req.raw.body;
             let bodySize = size;
-            if (privacyRequested && isImage(requestContentType)) {
+            if (privacyRequested && isImage(rawContentType)) {
                 if (size > MAX_PRIVACY_IMAGE_SIZE) {
                     return c.json(
                         fileTooLargeError(MAX_PRIVACY_IMAGE_SIZE),
@@ -589,8 +630,8 @@ api.post(
 
             try {
                 const upload = await uploadUnlistedMedia(c.env, body, {
-                    contentType: requestContentType,
-                    fileName: rawUploadFileName(c.req.raw.headers),
+                    contentType: rawContentType,
+                    fileName: rawFileName,
                     size: bodySize,
                     ...uploader,
                 });
@@ -621,9 +662,10 @@ api.post(
                 }
                 requestedId = parsedId.data;
                 fileSize = stagedUpload.size;
-                contentType =
-                    stagedUpload.contentType ||
-                    detectContentType(stagedUpload.fileName);
+                contentType = uploadType(
+                    stagedUpload.contentType,
+                    stagedUpload.fileName,
+                );
                 fileName = stagedUpload.fileName;
                 rawTags.push(...splitTags(stagedUpload.rawTags));
             } else if (requestContentType.includes("application/json")) {
@@ -649,10 +691,12 @@ api.post(
                 const base64Data = body.data.includes(",")
                     ? body.data.split(",")[1]
                     : body.data;
-                contentType =
+                contentType = uploadType(
                     body.contentType ||
-                    body.data.match(/^data:(image\/[^;,]+)/i)?.[1] ||
-                    "application/octet-stream";
+                        body.data.match(/^data:([^;,]+)/i)?.[1] ||
+                        "",
+                    body.name,
+                );
                 if (
                     privacyRequested &&
                     isImage(contentType) &&
@@ -699,6 +743,10 @@ api.post(
                     },
                     400,
                 );
+            }
+
+            if (!isMediaType(contentType)) {
+                return c.json(UNSUPPORTED_TYPE_ERROR, 415);
             }
 
             let tags: string[];

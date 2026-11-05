@@ -118,17 +118,21 @@ export async function uploadUnlistedMedia(
     };
 }
 
-// media.pollinations.ai is same-site with the rest of pollinations.ai, so a
-// file must never run script there. Only images, audio and video open in the
-// browser; SVG and other XML, HTML and everything else download. Browsers
-// read "image/png,text/html" as its last type, so lists never open inline.
-function opensInline(contentType: string): boolean {
-    const essence = contentType.split(";")[0].trim().toLowerCase();
+// An image, audio or video type: the only files public uploads accept.
+// Browsers read "image/png,text/html" as its last type, so a list is none.
+export function isMediaType(contentType: string): boolean {
     return (
         !contentType.includes(",") &&
-        /^(image|audio|video)\//.test(essence) &&
-        !essence.endsWith("xml")
+        /^(image|audio|video)\//i.test(contentType.trim())
     );
+}
+
+// media.pollinations.ai is same-site with the rest of pollinations.ai, so a
+// file must never run script there. Only images, audio and video open in the
+// browser; SVG and other XML, HTML and everything else download.
+function opensInline(contentType: string): boolean {
+    const essence = contentType.split(";")[0].trim().toLowerCase();
+    return isMediaType(contentType) && !essence.endsWith("xml");
 }
 
 /** The same file response is served to browsers and to the generation cache. */

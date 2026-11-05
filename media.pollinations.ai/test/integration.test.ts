@@ -669,20 +669,69 @@ describe("media.pollinations.ai", () => {
         expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
     });
 
-    it("serves uploaded HTML and SVG as sandboxed downloads", async () => {
+    it("refuses files that are not images, audio or video", async () => {
         const html = new TextEncoder().encode(
             "<script>alert(document.domain)</script>",
         );
-        const rawUpload = (contentType: string) =>
+        const auth = { Authorization: `Bearer ${VALID_KEY}` };
+        const raw = (contentType: string, fileName?: string) =>
             SELF.fetch("https://media.pollinations.ai/upload", {
                 method: "POST",
                 body: html,
                 headers: {
-                    Authorization: `Bearer ${VALID_KEY}`,
+                    ...auth,
                     "Content-Type": contentType,
                     "Content-Length": String(html.length),
+                    ...(fileName && { "X-File-Name": fileName }),
                 },
             });
+        const form = (file: File) => {
+            const body = new FormData();
+            body.append("file", file);
+            return SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body,
+                headers: auth,
+            });
+        };
+        const json = (body: object) =>
+            SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: JSON.stringify(body),
+                headers: { ...auth, "Content-Type": "application/json" },
+            });
+
+        for (const res of [
+            await raw("text/html; charset=utf-8"),
+            // Browsers take the last type in a list.
+            await raw("image/png,text/html"),
+            await raw("application/octet-stream", "page.html"),
+            await form(new File([html], "page.html", { type: "text/html" })),
+            await form(new File([html], "notes.bin")),
+            await json({ data: "data:text/html;base64,PGI+aGk8L2I+" }),
+            await json({ data: "AQID", contentType: "application/pdf" }),
+        ]) {
+            expect(res.status).toBe(415);
+            expect(((await res.json()) as { error: string }).error).toContain(
+                "Only image, audio and video files",
+            );
+        }
+        expect(
+            (await env.MEDIA_BUCKET.list({ prefix: "pending/" })).objects,
+        ).toHaveLength(0);
+    });
+
+    it("serves stored HTML and uploaded SVG as sandboxed downloads", async () => {
+        // Trusted services such as Computer's assets publish still store any
+        // file over RPC, and older uploads remain.
+        const html = new TextEncoder().encode(
+            "<script>alert(document.domain)</script>",
+        );
+        const stored = await uploadUnlistedMedia(
+            env,
+            new Blob([html]).stream(),
+            { contentType: "text/html; charset=utf-8", size: html.length },
+        );
         const form = new FormData();
         form.append(
             "file",
@@ -702,16 +751,14 @@ describe("media.pollinations.ai", () => {
                 headers: { Authorization: `Bearer ${VALID_KEY}` },
             },
         );
+        expect(formRes.status).toBe(200);
+        const svg = (await formRes.json()) as UploadResponse;
 
-        for (const [uploadRes, disposition] of [
-            [await rawUpload("text/html; charset=utf-8"), "attachment"],
-            // Browsers take the last type in a list.
-            [await rawUpload("image/png,text/html"), "attachment"],
-            [formRes, "attachment; filename*=UTF-8''poc.svg"],
+        for (const [url, disposition] of [
+            [stored.url, "attachment"],
+            [svg.url, "attachment; filename*=UTF-8''poc.svg"],
         ] as const) {
-            expect(uploadRes.status).toBe(200);
-            const upload = (await uploadRes.json()) as UploadResponse;
-            const getRes = await SELF.fetch(upload.url);
+            const getRes = await SELF.fetch(url);
             expect(getRes.headers.get("content-disposition")).toBe(disposition);
             expect(getRes.headers.get("x-content-type-options")).toBe(
                 "nosniff",
@@ -1008,7 +1055,11 @@ describe("media.pollinations.ai", () => {
                 Authorization: "Bearer sk_alice",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ id: chosenId, data: "AQID" }),
+            body: JSON.stringify({
+                id: chosenId,
+                data: "AQID",
+                contentType: "image/png",
+            }),
         });
         expect(res.status).toBe(200);
         const uploaded = (await res.json()) as UploadResponse;
@@ -1235,8 +1286,8 @@ describe("media.pollinations.ai", () => {
         const form = new FormData();
         form.append(
             "file",
-            new File([new Uint8Array([1, 2])], "tiny.bin", {
-                type: "application/octet-stream",
+            new File([new Uint8Array([1, 2])], "tiny.png", {
+                type: "image/png",
             }),
         );
 
@@ -1302,9 +1353,7 @@ describe("media.pollinations.ai", () => {
         const form = new FormData();
         form.append(
             "file",
-            new File([bytes], "large.bin", {
-                type: "application/octet-stream",
-            }),
+            new File([bytes], "large.mp4", { type: "video/mp4" }),
         );
         form.append("tags", "large-test");
         form.append("id", id);
@@ -1339,7 +1388,7 @@ describe("media.pollinations.ai", () => {
         expect(gallery.items.some((item) => item.id === upload.id)).toBe(true);
 
         const retry = new FormData();
-        retry.append("file", new File([bytes], "large.bin"));
+        retry.append("file", new File([bytes], "large.mp4"));
         retry.append("id", id);
         const retryRes = await SELF.fetch(
             "https://media.pollinations.ai/upload",
@@ -1355,7 +1404,7 @@ describe("media.pollinations.ai", () => {
         expect(pending.objects).toHaveLength(0);
     }, 30_000);
 
-    it("preserves the default MIME type when FormData omits the file type", async () => {
+    it("takes the file name's type when FormData omits the file type", async () => {
         const form = new FormData();
         form.append("file", new File([TINY_PNG], "untyped.png"));
         const response = await SELF.fetch(
@@ -1368,7 +1417,7 @@ describe("media.pollinations.ai", () => {
         );
         expect(response.status).toBe(200);
         expect(((await response.json()) as UploadResponse).contentType).toBe(
-            "application/octet-stream",
+            "image/png",
         );
     });
 
@@ -2244,7 +2293,7 @@ describe("media.pollinations.ai", () => {
         }
 
         function send(
-            mediaEnv: ReturnType<typeof limitedEnv>,
+            mediaEnv: ReturnType<typeof createMediaEnv>,
             method: string,
             path: string,
             { key, ip }: { key: string; ip: string },
@@ -2258,6 +2307,7 @@ describe("media.pollinations.ai", () => {
                         Authorization: `Bearer ${key}`,
                         "CF-Connecting-IP": ip,
                         "Content-Type": "image/png",
+                        "Content-Length": String(TINY_PNG.length),
                     },
                 },
                 mediaEnv,
@@ -2312,6 +2362,26 @@ describe("media.pollinations.ai", () => {
             }
             expect(statuses).toEqual([200, 200, 429]);
             expect((await list("198.51.100.1")).status).toBe(200);
+        });
+
+        it("caps uploads per account across its keys", async () => {
+            const bucket = createTestR2Bucket();
+            const mediaEnv = {
+                ...createMediaEnv(bucket),
+                UPLOAD_RATE_LIMITER: limiter(2),
+            };
+            const upload = (key: string) =>
+                send(mediaEnv, "POST", "/upload", { key, ip: "203.0.113.7" });
+            const statuses = [];
+            for (const key of ["sk_app_alice", "sk_alice", "sk_app_alice"]) {
+                statuses.push((await upload(key)).status);
+            }
+            expect(statuses).toEqual([200, 200, 429]);
+            expect((await upload("sk_alice")).headers.get("retry-after")).toBe(
+                "60",
+            );
+            expect((await upload("sk_bob")).status).toBe(200);
+            expect(bucket.putCount).toBe(3);
         });
     });
 });

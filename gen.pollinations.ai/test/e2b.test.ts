@@ -716,7 +716,11 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     untouched.unshift(structuredClone(e2b.sandboxes[2]));
 
     const ctx = createExecutionContext();
-    await worker.scheduled(createScheduledController(), env, ctx);
+    await worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        env,
+        ctx,
+    );
     await waitOnExecutionContext(ctx);
 
     const [due, old, , ending, paused, dashboard] = e2b.sandboxes;

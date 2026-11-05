@@ -310,21 +310,20 @@ describe("/api/account/sites", () => {
         expect(await drizzle(env.DB).select().from(siteTable)).toEqual([]);
     });
 
-    test("API keys need account:machines, and the refusal links its grant", async ({
-        apiKey,
-    }) => {
-        const res = await sites(apiKey, "GET");
-        expect(res.status).toBe(403);
-        const { error } = await res.json<{
-            error: { message: string; fixUrl: string };
-        }>();
-        const fix = new URL(error.fixUrl);
-        expect(fix.pathname).toBe("/grant");
-        expect(fix.searchParams.get("permission")).toBe("machines");
-        expect(fix.searchParams.get("id")).toBeTruthy();
-        expect(error.message).toBe(
-            `API key does not have 'account:machines' permission. Allow it at ${error.fixUrl}`,
-        );
+    test("API keys need account:machines", async ({ apiKey }) => {
+        const response = await sites(apiKey, "GET");
+        expect(response.status).toBe(403);
+        const { id } = await (
+            await SELF.fetch("http://localhost:3000/api/account/key", {
+                headers: { Authorization: `Bearer ${apiKey}` },
+            })
+        ).json();
+        // Enter links to its own origin, localhost in tests.
+        const grant = `http://localhost:3000/grant?id=${id}&permission=machines&ref=agent_grant`;
+        expect((await response.json()).error).toMatchObject({
+            message: `API key does not have 'account:machines' permission. Allow it at ${grant}`,
+            fixUrl: grant,
+        });
     });
 
     test("a request without a valid key says where to get one", async () => {

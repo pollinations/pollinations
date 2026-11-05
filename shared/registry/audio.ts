@@ -342,7 +342,7 @@ const AUDIO_BASE_SERVICES = {
             // https://elevenlabs.io/pricing/api — regular rate after the launch offer.
             completionAudioTokens: 0.08 / 1000,
         },
-        title: "ElevenLabs v4",
+        title: "Eleven v4",
         description:
             "Expressive speech in 90+ languages with audio tags and character timestamps",
         inputModalities: ["text"],
@@ -366,7 +366,7 @@ const AUDIO_BASE_SERVICES = {
             // https://elevenlabs.io/pricing/api — regular rate after the launch offer.
             completionAudioTokens: 0.04 / 1000,
         },
-        title: "ElevenLabs v4 Turbo",
+        title: "Eleven v4 Turbo",
         description:
             "Low-latency expressive speech in 90+ languages with audio tags and character timestamps",
         inputModalities: ["text"],
@@ -391,7 +391,7 @@ const AUDIO_BASE_SERVICES = {
             // (2026-10-24); a 500-character probe metered 0.482 credits/char.
             completionAudioTokens: 0.08 / 1000,
         },
-        title: "ElevenLabs v3 TTS",
+        title: "Eleven v3",
         description:
             "Expressive speech with emotion controls, audio tags, and character timestamps",
         inputModalities: ["text"],
@@ -417,7 +417,7 @@ const AUDIO_BASE_SERVICES = {
             // credits/char.
             completionAudioTokens: 0.04 / 1000,
         },
-        title: "ElevenLabs Flash v2.5",
+        title: "Eleven Flash v2.5",
         description:
             "Low-latency speech in 32 languages with character timestamps",
         inputModalities: ["text"],
@@ -447,7 +447,7 @@ const AUDIO_BASE_SERVICES = {
             // (2026-10-24).
             completionAudioTokens: 0.08 / 1000,
         },
-        title: "ElevenLabs Multilingual v2",
+        title: "Eleven Multilingual v2",
         description:
             "Emotionally rich speech in 29 languages with character timestamps",
         inputModalities: ["text"],
@@ -472,7 +472,7 @@ const AUDIO_BASE_SERVICES = {
             // $0.08 per 1K characters (2026-10-24).
             completionAudioTokens: 0.08 / 1000,
         },
-        title: "ElevenLabs Text to Dialogue",
+        title: "Text to Dialogue",
         description:
             "Multi-speaker conversations with expressive voices and audio cues",
         inputModalities: ["text"],
@@ -491,7 +491,7 @@ const AUDIO_BASE_SERVICES = {
             // ElevenLabs Voice Changer: $0.12 per input minute.
             promptAudioSeconds: 0.12 / 60,
         },
-        title: "ElevenLabs Voice Changer",
+        title: "Voice Changer",
         description:
             "Preserves delivery and emotion while transforming speaker identity",
         inputModalities: ["audio"],
@@ -511,7 +511,7 @@ const AUDIO_BASE_SERVICES = {
             // ElevenLabs Voice Isolator: $0.12 per input minute.
             promptAudioSeconds: 0.12 / 60,
         },
-        title: "ElevenLabs Voice Isolator",
+        title: "Voice Isolator",
         description:
             "Removes background noise while preserving clear spoken audio",
         inputModalities: ["audio", "video"],
@@ -550,7 +550,7 @@ const AUDIO_BASE_SERVICES = {
                 },
             ],
         ),
-        title: "ElevenLabs Stem Separation",
+        title: "Stem Separation",
         description:
             "Separate vocals and instruments into two or six downloadable audio tracks",
         inputModalities: ["audio"],
@@ -573,7 +573,7 @@ const AUDIO_BASE_SERVICES = {
             // Scale plan $0.166/1k credits => 15.05 * 0.166/1000 ≈ $0.0025/sec ($0.15/min).
             completionAudioSeconds: 0.0025,
         },
-        title: "ElevenLabs Music",
+        title: "Eleven Music",
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
@@ -594,7 +594,7 @@ const AUDIO_BASE_SERVICES = {
             promptAudioSeconds: 0.0025,
             completionAudioSeconds: 0.0025,
         },
-        title: "ElevenLabs Music v2.5",
+        title: "Eleven Music v2.5",
         description:
             "Richer, better prompt-following music from text or a reference track",
         inputModalities: ["text", "audio"],
@@ -655,7 +655,7 @@ const AUDIO_BASE_SERVICES = {
             // no duration is set).
             completionAudioSeconds: 0.002,
         },
-        title: "ElevenLabs Sound Effects",
+        title: "Eleven Text to Sound v2",
         description: "Sound effects from a text description",
         inputModalities: ["text"],
         outputModalities: ["audio"],
@@ -809,7 +809,7 @@ const AUDIO_BASE_SERVICES = {
         paidOnly: false,
         priceMultiplier: 1,
         cost: { completionAudioTokens: 15 / 1_000_000 },
-        title: "OpenAI TTS",
+        title: "TTS-1",
         description:
             "Low-latency speech synthesis with six voices and six output formats",
         inputModalities: ["text"],
@@ -826,7 +826,7 @@ const AUDIO_BASE_SERVICES = {
         paidOnly: false,
         priceMultiplier: 1,
         cost: { completionAudioTokens: 30 / 1_000_000 },
-        title: "OpenAI TTS HD",
+        title: "TTS-1 HD",
         description:
             "Higher-quality speech synthesis with six voices and six output formats",
         inputModalities: ["text"],
@@ -915,7 +915,7 @@ const AUDIO_BASE_SERVICES = {
                 },
             ],
         ),
-        title: "AssemblyAI Universal-2",
+        title: "Universal-2",
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
         outputModalities: ["text"],
@@ -1003,7 +1003,7 @@ const AUDIO_BASE_SERVICES = {
                 },
             ],
         ),
-        title: "AssemblyAI Universal-3.5 Pro",
+        title: "Universal-3.5 Pro",
         description:
             "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],

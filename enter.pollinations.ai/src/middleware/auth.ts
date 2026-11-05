@@ -7,7 +7,7 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
-import { AUTHENTICATION_REQUIRED_MESSAGE } from "@shared/http/refusals.ts";
+import { AUTHENTICATION_REQUIRED_MESSAGE } from "@shared/http/fix-link.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Session, User } from "../auth.ts";
@@ -81,7 +81,6 @@ export const auth = (options: AuthOptions) =>
                 const result = await authenticateApiKeyRequest({
                     request: c.req.raw,
                     env: c.env,
-                    client,
                     ctx: c.executionCtx,
                 });
                 if (!result) return null;

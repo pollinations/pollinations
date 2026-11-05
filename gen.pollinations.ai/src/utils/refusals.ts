@@ -1,8 +1,8 @@
 import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import type { UserBalance } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { fixLink, type RefusalContext } from "@shared/http/fix-link.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
-import { fixLink, type RefusalContext } from "@shared/http/refusals.ts";
 
 /** The app to return to after a fix: the key's app, else the page that sent the request. */
 export function appOrigin(
@@ -45,6 +45,18 @@ export async function requireFunds(
         ? { ...balance, packBalance: 0 }
         : balance;
     if (canCoverEstimatedCharge(spendable, cost, paidOnly)) return balance;
+
+    if (balance.questPollenRestricted) {
+        const fixUrl = fixLink(c, "/top-up", {
+            ref: "quest_pollen_restricted",
+        });
+        throw new PaymentRequiredError(
+            "QUEST_POLLEN_RESTRICTED",
+            `We couldn't verify your account, so Quest pollen is locked. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
+            fixUrl,
+            true,
+        );
+    }
 
     if (questPollenOnly) {
         const fixUrl = fixLink(c, "/edit-key", {

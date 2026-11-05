@@ -12,8 +12,10 @@
  *    session the same way, mid-turn included. Without BARBARA_INJECT it
  *    behaves like upstream.
  *  - BARBARA_OWNER_IDS: she works in any group an owner is in, and only
- *    while they're in it (answering mentions and replies), so groups need no
- *    terminal work. Each message says whether its sender is the owner.
+ *    while they're in it (answering mentions and replies, or every message
+ *    with groupRequireMention: false in access.json), so groups need no
+ *    terminal work. Each message says whether its sender is the owner, and in
+ *    groups whether it mentions her.
  *  - Instructions: access follows the team's rules in AGENTS.md.
  *  - BARBARA_APPS: Mini App sites (kit/miniapp) polled for what group members
  *    did in them; each event arrives as <channel source="app" ...>.
@@ -130,6 +132,8 @@ type Access = {
   groups: Record<string, GroupPolicy>
   pending: Record<string, PendingEntry>
   mentionPatterns?: string[]
+  /** requireMention for groups without their own policy. Default: true. */
+  groupRequireMention?: boolean
   // delivery/UX config — optional, defaults live in the reply handler
   /** Emoji to react with on receipt. Empty string disables. Telegram only accepts its fixed whitelist. */
   ackReaction?: string
@@ -179,6 +183,7 @@ function readAccessFile(): Access {
       groups: parsed.groups ?? {},
       pending: parsed.pending ?? {},
       mentionPatterns: parsed.mentionPatterns,
+      groupRequireMention: parsed.groupRequireMention,
       ackReaction: parsed.ackReaction,
       replyToMode: parsed.replyToMode,
       textChunkLimit: parsed.textChunkLimit,
@@ -296,7 +301,9 @@ function gate(ctx: Context): GateResult {
     // With owners, handleInbound has already checked that one is in the group.
     const policy =
       access.groups[groupId] ??
-      (OWNER_IDS.size > 0 ? { requireMention: true, allowFrom: [] } : undefined)
+      (OWNER_IDS.size > 0
+        ? { requireMention: access.groupRequireMention ?? true, allowFrom: [] }
+        : undefined)
     if (!policy) return { action: 'drop' }
     const groupAllowFrom = policy.allowFrom ?? []
     const requireMention = policy.requireMention ?? true
@@ -989,8 +996,9 @@ async function handleInbound(
   attachment?: AttachmentMeta,
 ): Promise<void> {
   const chatType = ctx.chat?.type
+  const inGroup = chatType === 'group' || chatType === 'supergroup'
   if (
-    (chatType === 'group' || chatType === 'supergroup') &&
+    inGroup &&
     OWNER_IDS.size > 0 &&
     !(await ownerInGroup(String(ctx.chat!.id)))
   )
@@ -1035,13 +1043,17 @@ async function handleInbound(
     return
   }
 
+  // A group message that doesn't mention her may get no answer, so it gets
+  // no typing indicator or ack either.
+  const mentioned = !inGroup || isMentioned(ctx, access.mentionPatterns)
+
   // Typing indicator — signals "processing" until we reply (or ~5s elapses).
-  void bot.api.sendChatAction(chat_id, 'typing').catch(() => {})
+  if (mentioned) void bot.api.sendChatAction(chat_id, 'typing').catch(() => {})
 
   // Ack reaction — lets the user know we're processing. Fire-and-forget.
   // Telegram only accepts a fixed emoji whitelist — if the user configures
   // something outside that set the API rejects it and we swallow.
-  if (access.ackReaction && msgId != null) {
+  if (mentioned && access.ackReaction && msgId != null) {
     void bot.api
       .setMessageReaction(chat_id, msgId, [
         { type: 'emoji', emoji: access.ackReaction as ReactionTypeEmoji['emoji'] },
@@ -1064,6 +1076,7 @@ async function handleInbound(
       : access.allowFrom.includes(String(from.id))
         ? 'allowed'
         : 'group member',
+    ...(inGroup ? { mentioned: String(mentioned) } : {}),
     ts: new Date((ctx.message?.date ?? 0) * 1000).toISOString(),
     ...(imagePath ? { image_path: imagePath } : {}),
     ...(attachment ? {

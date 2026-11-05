@@ -31,7 +31,6 @@ const baseParams: ImageParams = {
     reasoning: "balanced",
     audio: false,
     duration: 5,
-    aspectRatio: "16:9",
 };
 
 type ProviderRequest = {
@@ -98,6 +97,24 @@ afterEach(() => {
 });
 
 describe("Wan 3.0 Prime via Fal", () => {
+    it("prefers an explicit ratio over width/height for text and reference video", async () => {
+        for (const reference_videos of [undefined, [REF_VIDEO_URL]]) {
+            const requests: ProviderRequest[] = [];
+            mockFalFetch(requests);
+            await callWan3FalAPI("a sailboat crossing a calm bay", {
+                ...baseParams,
+                width: 1024,
+                height: 1024,
+                aspectRatio: "16:9",
+                reference_videos,
+            });
+            expect(requests[0].url).toBe(
+                reference_videos ? R2V_ENDPOINT : TEXT_ENDPOINT,
+            );
+            expect(requests[0].body?.aspect_ratio).toBe("16:9");
+        }
+    });
+
     it("waits beyond five minutes without submitting another generation", async () => {
         vi.useFakeTimers();
         const requests: ProviderRequest[] = [];
@@ -211,6 +228,7 @@ describe("Wan 3.0 Prime via Fal", () => {
         await callWan3FalAPI("smooth transition", {
             ...baseParams,
             image: [START, END],
+            aspectRatio: "9:16",
         });
 
         expect(requests[0].url).toBe(IMAGE_ENDPOINT);

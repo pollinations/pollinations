@@ -1,6 +1,7 @@
 import { collectUpstreamHeaders } from "@shared/error.ts";
 import debug from "debug";
 import { createParser } from "eventsource-parser";
+import { bedrockCredentials, signBedrockHeaders } from "./auth/bedrock.js";
 import { apiErrorStatus } from "./errors.ts";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
@@ -344,7 +345,7 @@ export async function genericOpenAIClient(
                 : endpoint;
         requestUrl = new URL(endpointUrl);
 
-        const headers = {
+        let headers: Record<string, string> = {
             "Content-Type": "application/json",
             ...additionalHeaders,
         };
@@ -353,11 +354,31 @@ export async function genericOpenAIClient(
 
         let response: Response;
         try {
+            const body = JSON.stringify(requestBody);
+            if (
+                options.modelConfig?.provider === "bedrock" &&
+                typeof options.modelConfig.directEndpoint === "string"
+            ) {
+                const credentials = bedrockCredentials(options.modelConfig);
+                if (!credentials) {
+                    const error = new Error(
+                        "Bedrock credentials are not configured",
+                    ) as ServiceError;
+                    error.status = 500;
+                    throw error;
+                }
+                headers = await signBedrockHeaders(
+                    requestUrl,
+                    body,
+                    headers,
+                    credentials,
+                );
+            }
             response = await fetcher(endpointUrl, {
                 method: "POST",
                 redirect: "manual",
                 headers,
-                body: JSON.stringify(requestBody),
+                body,
             });
         } catch (thrown: unknown) {
             throw withUpstreamContext(thrown, requestUrl);

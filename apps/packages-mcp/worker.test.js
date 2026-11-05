@@ -85,6 +85,7 @@ for (const modern of [false, true])
                 "hf_space_info",
                 "osv_query",
                 "osv_vulnerability",
+                "package_downloads",
                 "package_lookup",
             ],
         );
@@ -476,4 +477,39 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
         "https://registry.npmjs.org/JSONStream/latest",
         "https://pypi.org/pypi/example/1!2.0/json",
     ]);
+});
+
+test("package_downloads passes through daily counts and validates names", async (t) => {
+    const expected = {
+        package: "@scope/pkg",
+        start: "2026-10-29",
+        end: "2026-11-04",
+        downloads: [{ day: "2026-11-04", downloads: 42 }],
+    };
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        assert.equal(
+            url,
+            "https://api.npmjs.org/downloads/range/last-week/%40scope%2Fpkg",
+        );
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        return Response.json(expected);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "package_downloads", { name: "@scope/pkg" }),
+        expected,
+    );
+
+    const bad = await client.callTool({
+        name: "package_downloads",
+        arguments: { name: "not a package!" },
+    });
+    assert.equal(bad.isError, true);
+
+    const badRange = await client.callTool({
+        name: "package_downloads",
+        arguments: { name: "zod", range: "since-forever" },
+    });
+    assert.equal(badRange.isError, true);
 });

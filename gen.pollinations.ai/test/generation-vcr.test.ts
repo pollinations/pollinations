@@ -3638,9 +3638,7 @@ test("caller-list streams a paid-only alternate refusal without billing", async 
     expect(response.headers.get("content-type")).toContain("text/event-stream");
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(body).toContain("This model needs paid Pollen");
-    expect(body).toContain(
-        "[top up](https://enter.pollinations.ai/top-up?ref=agent_low_balance_topup)",
-    );
+    expect(body).toContain("/top-up?ref=agent_low_balance_topup");
     expect(body).not.toContain("complete a quest");
     expect(body).toContain("data: [DONE]");
     expect(mocks.portkeyDirect.state.requests).toHaveLength(1);

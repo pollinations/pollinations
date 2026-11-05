@@ -558,7 +558,7 @@ for (const packBalance of [0, 1]) {
             user: { tierBalance: 1, packBalance },
         });
         mocks.decisions.state.failModel = "respan/span-01-lite";
-        const model = "respan/span-01-lite,typesafe/jev-1.13";
+        const model = "respan/span-01-lite,typesafe/jev-1.14";
         const { response, wait } = await post("/alpha/decisions", key, {
             model,
             state: "Disk at 93%.",
@@ -568,13 +568,13 @@ for (const packBalance of [0, 1]) {
         expect(response.status).toBe(packBalance ? 200 : 402);
         if (packBalance) {
             expect(response.headers.get("x-model-used")).toBe(
-                "typesafe/jev-1.13",
+                "typesafe/jev-1.14",
             );
             expect(response.headers.get("x-fallback-target")).toBe(
                 "config.targets[1]",
             );
             await expect(response.json()).resolves.toMatchObject({
-                model: "typesafe/jev-1.13",
+                model: "typesafe/jev-1.14",
                 provider: "TypeSafe",
             });
         } else {
@@ -588,7 +588,7 @@ for (const packBalance of [0, 1]) {
             mocks.decisions.state.requests.map((request) => request.body),
         ).toEqual(
             (packBalance
-                ? ["respan/span-01-lite", "typesafe-ai/jev-1.13.0"]
+                ? ["respan/span-01-lite", "typesafe-ai/jev-1.14.0"]
                 : ["respan/span-01-lite"]
             ).map((model) => expect.objectContaining({ model })),
         );
@@ -601,7 +601,7 @@ for (const packBalance of [0, 1]) {
         if (packBalance) {
             expect(billed[0]).toMatchObject({
                 modelRequested: model,
-                modelUsed: "typesafe/jev-1.13",
+                modelUsed: "typesafe/jev-1.14",
                 modelProviderUsed: "vercel",
             });
             expect(billed[0].totalPrice).toBeGreaterThan(0);

@@ -87,6 +87,8 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
 
+New users who sign up through your app count as your referrals. You earn 2 Quest Pollen for each one who buys more than 2 Pollen. This works whether or not earnings are enabled. Claim the reward from the Invite friends quest on the [Quests page](https://enter.pollinations.ai/quests).
+
 ## ⚙️ Web Apps (OAuth Code Flow)
 
 Use the OAuth authorization-code flow with PKCE for new web integrations. It keeps the `sk_...` key out of the browser callback URL and works with standard OAuth clients.

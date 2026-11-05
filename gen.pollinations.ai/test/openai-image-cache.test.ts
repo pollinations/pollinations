@@ -37,6 +37,44 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
+    it("preserves provider-only billing when wrapping a fallback image in JSON", async () => {
+        const model = "openai/gpt-image-2.6-flare";
+        const receipt = {
+            "x-usage-provider-billable-units": "0.0248",
+            "x-usage-provider-unit-cost": "1",
+            "x-model-used": `${model}:fal`,
+        };
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("model", {
+                    requested: model,
+                    resolved: model,
+                    definition: {} as never,
+                });
+                c.req.addValidatedData("json", {
+                    prompt: "a circle",
+                    response_format: "b64_json",
+                });
+                await next();
+            })
+            .post(
+                "/v1/images/generations",
+                formatOpenAIImageResponse,
+                () =>
+                    new Response("image", {
+                        headers: { "content-type": "image/png", ...receipt },
+                    }),
+            );
+        const response = await app.request("/v1/images/generations", {
+            method: "POST",
+        });
+        expect(response.status).toBe(200);
+        for (const [name, value] of Object.entries(receipt))
+            expect(response.headers.get(name)).toBe(value);
+        expect(response.headers.has("x-usage-completion-image-tokens")).toBe(
+            false,
+        );
+    });
     it.each(["json", "multipart"])(
         "rejects an invalid %s edit response format",
         async (encoding) => {

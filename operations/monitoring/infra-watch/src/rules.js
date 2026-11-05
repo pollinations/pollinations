@@ -177,10 +177,11 @@ const CONFIRMED = new Set([
     "gen",
     "public",
     "upstream",
+    "enter",
     "analytics",
     "platform",
 ]);
-const HOSTS = { gen: true, public: true, upstream: true };
+const HOSTS = { gen: true, public: true, upstream: true, enter: true };
 // A model incident's model, from its key; null for any other incident.
 export const modelOf = (key) =>
     key.startsWith("model:") ? key.slice(6) : null;
@@ -195,8 +196,8 @@ const SEVERITY = ["PRIMARY_WEAK", "DEGRADED"];
 const worse = (a, b) => (SEVERITY.indexOf(b) > SEVERITY.indexOf(a) ? b : a);
 
 export function step(state, found, now, recent = []) {
-    // With gen down, nothing else can be judged, not even a single hostname.
-    // With analytics down, only the hostname checks still have data.
+    // With gen down, only Enter's own check can be judged, not even a single
+    // hostname. With analytics down, the hostname and Enter checks still can.
     const open = { ...(state.open ?? {}) };
     const closed = Object.fromEntries(
         Object.entries(state.closed ?? {}).filter(
@@ -250,7 +251,7 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, incident] of Object.entries(open)) {
         if (found[key]) continue;
-        if (found.gen && key !== "gen") continue;
+        if (found.gen && key !== "enter") continue;
         if (found.analytics && !HOSTS[key]) continue;
         // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
         // sample neither counts nor resets the run.
@@ -425,6 +426,7 @@ const LABEL = {
     GEN_DOWN: "DOWN",
     PUBLIC_DOWN: "DOWN",
     UPSTREAM_DOWN: "DOWN",
+    ENTER_DOWN: "DOWN",
     ANALYTICS_DOWN: "BLIND",
     PLATFORM_DROP: "DEGRADED",
     DEGRADED: "DEGRADED",
@@ -438,6 +440,7 @@ const SUBJECT = {
     gen: "gen Worker",
     public: "gen.pollinations.ai",
     upstream: "gen.myceli.ai",
+    enter: "enter.pollinations.ai",
     analytics: "model status data",
     platform: "platform-wide",
     watch: "infra-watch",
@@ -461,6 +464,7 @@ export const COLOR = {
     GEN_DOWN: RED,
     PUBLIC_DOWN: RED,
     UPSTREAM_DOWN: RED,
+    ENTER_DOWN: RED,
     ANALYTICS_DOWN: RED,
     PLATFORM_DROP: RED,
     DEGRADED: 0xd85a30,
@@ -573,6 +577,12 @@ function openRows(incident, now) {
             ],
         ];
     }
+    if (kind === "ENTER_DOWN")
+        return [
+            ["WHY", `key check failing ${CONFIRM_CHECKS}x`],
+            ["ERROR", info.error],
+            ["", "API keys, sign-in, billing fail"],
+        ];
     if (kind === "ANALYTICS_DOWN")
         return [
             ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],

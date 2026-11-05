@@ -342,6 +342,16 @@ export const CHAT_PARAMETERS = {
         "top_p",
     ],
     museSpark: [...CHAT, "temperature", "tools"],
+    // Probed on Fireworks (2026-11-03); it rejects OpenRouter's `reasoning`.
+    fireworksMuseSparkOpen: [
+        ...CHAT,
+        ...TOOLS,
+        ...SAMPLING,
+        "stop",
+        ...PENALTIES,
+        "top_k",
+        "reasoning_effort",
+    ],
     // Vercel AI Gateway Kimi K3.1 endpoint parameters (2026-11-03). Moonshot
     // fixes temperature, top_p and penalties and always reasons (low/high/max).
     // https://platform.kimi.ai/docs/guide/kimi-k3-1-pro-quickstart

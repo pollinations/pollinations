@@ -93,6 +93,12 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-14").getTime(),
         },
     },
+    "openai/gpt-image-2.6-flare": {
+        "openai/gpt-image-2.6-flare:fal": { provider: "fal", cost: {} },
+    },
+    "openai/gpt-image-2.6-sunburst": {
+        "openai/gpt-image-2.6-sunburst:fal": { provider: "fal", cost: {} },
+    },
     "black-forest-labs/flux.1-kontext-pro": {
         "black-forest-labs/flux.1-kontext-pro:replicate": {
             provider: "replicate",

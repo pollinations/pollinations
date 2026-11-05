@@ -189,7 +189,7 @@ async function signIn(from: TgUser) {
                 const user = userOf(from.id);
                 user.key = token.access_token;
                 // A new sign-in gets its own warnings (checkSignIns).
-                user.warned = undefined;
+                delete user.warned;
                 save();
                 const bot = waitingBots.get(from.id);
                 waitingBots.delete(from.id);
@@ -260,9 +260,6 @@ type Pricing = {
     templates: Record<string, Size>;
 };
 
-const pricing = () =>
-    fetch(`${GEN}/alpha/e2b/pricing`).then((r) => r.json() as Promise<Pricing>);
-
 // What a computer of this size costs a day while it runs.
 const rentPerDay = (rates: Pricing, { cpuCount, memoryMB }: Size) =>
     (cpuCount * rates.vcpuSecond + (memoryMB / 1024) * rates.gibSecond) * 86400;
@@ -277,12 +274,14 @@ async function botLinkView(from: TgUser): Promise<View> {
         ? `${name}_barbara_bot`
         : `barbara_${from.id}_bot`;
     const chosen = userOf(from.id).size ?? DEFAULT_SIZE;
-    const rates = await pricing();
+    const pricing = (await fetch(`${GEN}/alpha/e2b/pricing`).then((r) =>
+        r.json(),
+    )) as Pricing;
     const sizes = Object.keys(SIZES).map((template) => {
-        const size = rates.templates[template];
+        const size = pricing.templates[template];
         return {
             template,
-            text: `<b>${SIZES[template]}</b>: ${size.cpuCount} CPUs, ${size.memoryMB / 1024} GB, about ${rentPerDay(rates, size).toFixed(1)} Pollen a day while she runs`,
+            text: `<b>${SIZES[template]}</b>: ${size.cpuCount} CPUs, ${size.memoryMB / 1024} GB, about ${rentPerDay(pricing, size).toFixed(1)} Pollen a day while she runs`,
         };
     });
     return {
@@ -1179,8 +1178,8 @@ type SignIn = { expiresAt: string | null; pollenBudget: number | null };
 const DAY_MS = 86_400_000;
 
 // What Mama says when a warning is due, or undefined.
-export const expiryWarning = ({ expiresAt }: SignIn, now = Date.now()) =>
-    expiresAt && Date.parse(expiresAt) - now < 2 * DAY_MS
+export const expiryWarning = ({ expiresAt }: SignIn) =>
+    expiresAt && Date.parse(expiresAt) - Date.now() < 2 * DAY_MS
         ? `My access to your account ends ${when(expiresAt)}, and your Barbaras stop then. To keep them running, send /signin and clear the expiry.`
         : undefined;
 
@@ -1214,8 +1213,8 @@ export async function checkSignIns() {
             if (user.key !== key) return;
             if (text && !user.warned?.includes(warning))
                 await say(Number(id), text, MENU);
-            const others = user.warned?.filter((w) => w !== warning) ?? [];
-            user.warned = text ? [...others, warning] : others;
+            user.warned = user.warned?.filter((w) => w !== warning) ?? [];
+            if (text) user.warned.push(warning);
             save();
         };
         try {

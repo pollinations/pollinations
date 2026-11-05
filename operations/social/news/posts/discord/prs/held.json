@@ -13,61 +13,6 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
-    },
-    "17634": {
-      "merge_sha": "870797edfaeba137a73adada480aee88491cda16",
-      "merged_at": "2026-11-04T09:44:15Z",
-      "required": []
-    },
-    "18370": {
-      "merge_sha": "9e3da25491d2f18e5a5b2a6b7a657f77b06cfd19",
-      "merged_at": "2026-11-05T06:17:02Z",
-      "required": []
-    },
-    "18420": {
-      "merge_sha": "5f2567bd8334d8e2b0dcd8a93ef23156e6059f62",
-      "merged_at": "2026-11-05T05:47:07Z",
-      "required": []
-    },
-    "18750": {
-      "merge_sha": "1a407fddca9ed359955a8149d3b21edc0bf9e8a0",
-      "merged_at": "2026-11-05T08:14:53Z",
-      "required": []
-    },
-    "19154": {
-      "merge_sha": "bda3add5e52aec26ae4ed74179dda015673f5b79",
-      "merged_at": "2026-11-05T05:00:37Z",
-      "required": []
-    },
-    "19155": {
-      "merge_sha": "3180fffc1ce35ad63ab4fa15de300d3dd84b315b",
-      "merged_at": "2026-11-05T02:00:25Z",
-      "required": []
-    },
-    "19157": {
-      "merge_sha": "7f967aa5c9468241639c421d76bef91fa2b1ac3c",
-      "merged_at": "2026-11-05T05:00:37Z",
-      "required": []
-    },
-    "19196": {
-      "merge_sha": "a1144e02babc95f1323ea218966458b96be817af",
-      "merged_at": "2026-11-05T05:59:22Z",
-      "required": []
-    },
-    "19200": {
-      "merge_sha": "09a77914c412756a96d06cf637d61627324b73f9",
-      "merged_at": "2026-11-05T07:05:56Z",
-      "required": []
-    },
-    "19203": {
-      "merge_sha": "7c6fc37bea42884a315087d9d3551d13a6b104a0",
-      "merged_at": "2026-11-05T07:05:00Z",
-      "required": []
-    },
-    "19224": {
-      "merge_sha": "b8c97f4a76e44574e0fd07880dc13e13d04ced35",
-      "merged_at": "2026-11-05T09:49:54Z",
-      "required": []
     }
   },
   "production": "37db85fd893303c63d66f5caf8b7afd63acc1956",

@@ -151,6 +151,11 @@ Pollinations saves sources as `input0`, `input1`, and so on. Reference those
 exact names in arguments, such as `["-i", "input0", "-vf", "scale=1280:-2"]`.
 Omit the `ffmpeg` executable, source URLs, and output path.
 
+`probeMedia` accepts one public HTTPS media URL and returns its `ffprobe`
+format and stream metadata (duration, codec, resolution, bitrate, frame rate)
+as JSON. Use it before `runFfmpeg` to confirm duration or dimensions instead
+of guessing them; it does not download, encode, or host any output.
+
 ### Exa Search MCP
 
 - `web_search_exa` searches the live web and returns relevant pages with

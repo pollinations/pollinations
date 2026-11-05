@@ -101,5 +101,37 @@ class ClassificationTest(unittest.TestCase):
         manager.closing_issues.cache_clear()
 
 
+class RewardCommentTest(unittest.TestCase):
+    def post(self, event, item, is_pr=True):
+        with patch.multiple(manager, GITHUB_EVENT=event, ITEM_DATA=item, IS_PULL_REQUEST=is_pr, ISSUE_NUMBER=42), \
+             patch.object(manager.requests, "post", return_value=Mock(status_code=201)) as create:
+            manager.write_reward_comment()
+        return create.call_args.kwargs["json"]["body"] if create.called else None
+
+    def test_default_reward_is_announced_once_on_opening(self):
+        opened, item = {"action": "opened"}, {"created_at": "2026-11-05T00:00:00Z", "user": {"type": "User"}}
+        self.assertTrue(self.post(opened, item).startswith("Reward: 5 pollen\n"))
+        self.assertTrue(self.post(opened, item, is_pr=False).startswith("Reward: 2 pollen\n"))
+        # Bots, Elliot and Thomas, re-runs (the manual dispatch has no action) and items from before the rollout get none.
+        self.assertIsNone(self.post(opened, {**item, "user": {"type": "Bot"}}))
+        with patch.object(manager, "ISSUE_AUTHOR_ID", 36901823):
+            self.assertIsNone(self.post(opened, item))
+        self.assertIsNone(self.post({}, item))
+        self.assertIsNone(self.post(opened, {**item, "created_at": "2026-11-04T23:59:59Z"}))
+
+    def test_app_submissions_access_requests_and_census_responses_get_no_reward_comment(self):
+        fields = {name: {"id": name, "options": {}} for name in ("Area", "Source", "Priority")}
+        for label, title in (("APP-SUBMISSION", ""), ("HONEY-CENSUS", ""), ("BUG", "[Community Model Publisher Access] me")):
+            item = {"created_at": "2026-11-05T00:00:00Z", "user": {"type": "User"}, "labels": [{"name": label}]}
+            with self.subTest(label=label), \
+                 patch.multiple(manager, IS_PULL_REQUEST=False, ISSUE_NUMBER=42, ISSUE_NODE_ID="issue", GITHUB_TOKEN="test", ISSUE_TITLE=title,
+                                POLLINATIONS_TOKEN="test", GITHUB_EVENT={"action": "opened"}, ITEM_DATA=item, DRY_RUN=True), \
+                 patch.object(manager, "dev_fields", return_value=fields), \
+                 patch.object(manager, "classify", return_value={"area": "Community models", "type": None, "priority": None}), \
+                 patch.object(manager.requests, "post") as create:
+                manager.main()
+            create.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

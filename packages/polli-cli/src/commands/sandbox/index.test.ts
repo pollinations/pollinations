@@ -178,6 +178,29 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
             "Host existing.example\n",
         );
     });
+
+    it("says which consent box to tick when the login lacks account:machines", async () => {
+        const grant =
+            "https://enter.pollinations.ai/grant?id=key1&permission=machines";
+        const command = await prepare(
+            Response.json(
+                {
+                    code: 403,
+                    message: `API key does not have 'account:machines' permission. Allow it at ${grant}`,
+                },
+                { status: 403 },
+            ),
+        );
+
+        await expect(command.run()).rejects.toMatchObject({ code: 1 });
+
+        const { stderr } = command.output();
+        expect(stderr).toContain(
+            'Run `polli auth login` again and tick "Run hosted sandboxes".',
+        );
+        expect(stderr).toContain(`Or allow it for this login: ${grant}`);
+        expect(stderr).not.toContain("403");
+    });
 });
 
 describe("sandbox timeout and pause", () => {
@@ -242,7 +265,7 @@ describe("ssh connections", () => {
         };
     }
 
-    it("writes a config that shares one connection between ssh, scp and rsync", async () => {
+    it("writes a config that shares one connection between ssh, scp and rsync and keeps idle ones open", async () => {
         const { setupSsh } = await import("./ssh.js");
 
         setupSsh();
@@ -253,6 +276,7 @@ describe("ssh connections", () => {
         );
         expect(config).toContain("ControlMaster auto");
         expect(config).toContain("ControlPersist 10m");
+        expect(config).toContain("ServerAliveInterval 30");
     });
 
     it("doesn't share connections when the socket path would be too long", async () => {
@@ -269,6 +293,60 @@ describe("ssh connections", () => {
             "utf8",
         );
         expect(config).not.toContain("ControlMaster");
+    });
+
+    it("reaches envd and sshd at the domain connect returns", async () => {
+        const { setKeyOverride } = await import("../../lib/config.js");
+        setKeyOverride("sk_test");
+        writeFileSync(
+            join(home, ".pollinations", "ssh", "id_ed25519.pub"),
+            "ssh-ed25519 AAAA polli-sandbox\n",
+        );
+        // envd's reply to the setup script: one message, its exit.
+        const exit = Buffer.from(JSON.stringify({ event: { end: {} } }));
+        const frame = Buffer.concat([Buffer.alloc(5), exit]);
+        frame.writeUInt32BE(exit.length, 1);
+        const calls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string) => {
+                calls.push(url);
+                return url.endsWith("/connect")
+                    ? Response.json({
+                          sandboxID: "box1",
+                          envdAccessToken: "envd",
+                          trafficAccessToken: "traffic",
+                          domain: "pollinations.app",
+                      })
+                    : new Response(frame);
+            }),
+        );
+        const sockets: unknown[] = [];
+        vi.stubGlobal(
+            "WebSocket",
+            class {
+                onclose?: () => void;
+                constructor(url: string, { headers }: { headers: object }) {
+                    sockets.push([url, headers]);
+                    setTimeout(() => this.onclose?.());
+                }
+            },
+        );
+        vi.spyOn(process.stdin, "destroy").mockReturnValue(process.stdin);
+        const { proxy } = await import("./ssh.js");
+
+        await proxy("box1.polli");
+
+        expect(calls).toEqual([
+            "https://gen.pollinations.ai/alpha/e2b/sandboxes/box1/connect",
+            "https://49983-box1.pollinations.app/process.Process/Start",
+        ]);
+        expect(sockets).toEqual([
+            [
+                "wss://8022-box1.pollinations.app",
+                { "e2b-traffic-access-token": "traffic" },
+            ],
+        ]);
     });
 
     it("prints Gen's refusal as a sentence on the terminal, where ssh doesn't hide it", async () => {

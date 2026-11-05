@@ -123,6 +123,34 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("lists registered GPU workers only with the GPU token", async () => {
+        const gpuAuth = { authorization: `Bearer ${env.PLN_GPU_TOKEN}` };
+        const registered = await fetchWorker("/register", env, {
+            method: "POST",
+            headers: { ...gpuAuth, "content-type": "application/json" },
+            body: JSON.stringify({ url: "https://worker.test", type: "flux" }),
+        });
+        expect(registered.status).toBe(200);
+
+        const anonymous = await fetchWorker("/register", env);
+        expect(anonymous.status).toBe(401);
+        await expect(anonymous.json()).resolves.toEqual({
+            success: false,
+            message: "Unauthorized",
+        });
+
+        const listed = await fetchWorker("/register", env, {
+            headers: gpuAuth,
+        });
+        expect(listed.status).toBe(200);
+        await expect(listed.json()).resolves.toContainEqual(
+            expect.objectContaining({
+                type: "flux",
+                url: "https://worker.test",
+            }),
+        );
+    });
+
     it("accepts a 28 MiB inline-image chat body before authentication", async () => {
         const body = JSON.stringify({
             model: "openai/gpt-5-nano",
@@ -516,6 +544,34 @@ describe("gen worker routing", () => {
         );
         expect(agentHome.headers.get("Vary")).toBe("Accept");
         expect(await agentHome.text()).toMatch(/^# Pollinations\n/);
+
+        const caseInsensitive = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "Text/Markdown" },
+        });
+        expect(caseInsensitive.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+
+        const rejectedMarkdown = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/html, text/markdown;q=0" },
+        });
+        expect(rejectedMarkdown.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const htmlPreferred = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.1, text/html;q=0.9" },
+        });
+        expect(htmlPreferred.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const markdownPreferred = await fetchWorker("/docs", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.9, text/html;q=0.1" },
+        });
+        expect(markdownPreferred.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
 
         const browserHome = await fetchWorker("/", envWithEnter(), {
             headers: { Accept: "text/html,application/xhtml+xml,*/*;q=0.8" },

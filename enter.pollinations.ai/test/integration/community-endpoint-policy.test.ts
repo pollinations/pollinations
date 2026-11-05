@@ -414,6 +414,65 @@ describe("community endpoint configuration policy", () => {
         );
     });
 
+    test("bounds each account's share of the community catalog", async ({
+        accountToken,
+    }) => {
+        const create = (url: string, body: Record<string, unknown>) =>
+            SELF.fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify(body),
+            });
+        const model = {
+            name: "token-limit",
+            title: "Token limit",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+        };
+        const oversized = await create(endpointUrl, {
+            ...model,
+            bearerToken: "t".repeat(4097),
+        });
+        expect(oversized.status).toBe(400);
+
+        await env.DB.prepare(
+            `INSERT INTO community_endpoint (id, owner_user_id, name, title, base_url, upstream_model)
+             WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 99)
+             SELECT 'filler-' || i, (SELECT id FROM user WHERE github_username = 'testuser'),
+                    'filler-' || i, 'Filler', 'https://text.example.com/v1', 'filler'
+             FROM n`,
+        ).run();
+        const hundredth = await create(endpointUrl, {
+            ...model,
+            bearerToken: "t".repeat(4096),
+        });
+        expect(hundredth.status, await hundredth.clone().text()).toBe(200);
+
+        const overLimit = [
+            await create(`${endpointUrl}/endpoint-agents`, {
+                name: "one-too-many",
+                title: "One too many",
+                api: "responses",
+                url: "https://agent.example.com/v1/responses",
+            }),
+            await create("http://localhost:3000/api/account/agents", {
+                name: "one-too-many",
+                title: "One too many",
+                systemPrompt: "Answer briefly.",
+                baseModel: "openai",
+            }),
+        ];
+        for (const response of overLimit) {
+            expect(response.status).toBe(400);
+            expect(await response.text()).toContain(
+                "at most 100 community models and agents",
+            );
+        }
+    });
+
     test("rejects an agent baseModel Gen cannot call", async ({
         accountToken,
     }) => {
@@ -448,14 +507,25 @@ describe("community endpoint configuration policy", () => {
             baseModel: "openai",
         });
         expect(created.status, await created.clone().text()).toBe(200);
-        const { id } = await created.json<{ id: string }>();
+        const { id, model } = await created.json<{
+            id: string;
+            model: string;
+        }>();
 
         const renamed = await request("PATCH", `/${id}`, { title: "Renamed" });
         expect(renamed.status, await renamed.clone().text()).toBe(200);
-        const retargeted = await request("PATCH", `/${id}`, {
-            baseModel: "no-such/model-xyz",
+        for (const baseModel of ["no-such/model-xyz", model]) {
+            const retargeted = await request("PATCH", `/${id}`, {
+                baseModel,
+            });
+            expect(retargeted.status).toBe(400);
+        }
+        const wrapped = await request("POST", "", {
+            ...agent,
+            name: "wrapped-agent",
+            baseModel: model,
         });
-        expect(retargeted.status).toBe(400);
+        expect(wrapped.status).toBe(400);
     });
 
     test("names the field when an agent update is invalid", async ({

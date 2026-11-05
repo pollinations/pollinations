@@ -1,7 +1,7 @@
 import type { FileRoutesByFullPath } from "./routeTree.gen";
 
-// Keep the Worker and dashboard navigation on the same page identity. The
-// generated route type makes adding a page require an entry here.
+// Keep the built page HTML and dashboard navigation on the same page identity.
+// The generated route type makes adding a page require an entry here.
 export const PAGE_TITLES: Record<keyof FileRoutesByFullPath, string> = {
     "/": "Dashboard",
     "/news": "News & FAQ",
@@ -57,4 +57,47 @@ export function pageMeta(pathname: string) {
             "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor Pollen, and connect apps across image, text, video, and audio.",
         canonical: `https://enter.pollinations.ai${page === "/" ? "" : page}`,
     };
+}
+
+type PageMeta =
+    | NonNullable<ReturnType<typeof pageMeta>>
+    | typeof NOT_FOUND_META;
+
+// [tag, key, name, attribute, value]; a null value removes the tag.
+export function metaTags(meta: PageMeta) {
+    return [
+        ["link", "rel", "canonical", "href", meta.canonical],
+        ["meta", "property", "og:url", "content", meta.canonical],
+        ["meta", "property", "og:title", "content", meta.title],
+        ["meta", "name", "twitter:title", "content", meta.title],
+        ["meta", "name", "description", "content", meta.description],
+        ["meta", "property", "og:description", "content", meta.description],
+        ["meta", "name", "twitter:description", "content", meta.description],
+    ] as const;
+}
+
+const escapeHtml = (value: string) =>
+    value
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;");
+
+// The build writes a copy of index.html per page (and 404.html) so crawlers
+// see each page's tags without running JavaScript. A missing tag fails the
+// build instead of shipping the homepage's metadata.
+export function pageHtml(html: string, meta: PageMeta) {
+    const swap = (pattern: RegExp, tag: string) => {
+        if (!pattern.test(html))
+            throw new Error(`index.html has no ${pattern}`);
+        html = html.replace(pattern, () => tag);
+    };
+    swap(/<title>[^<]*<\/title>/, `<title>${escapeHtml(meta.title)}</title>`);
+    for (const [tag, key, name, attribute, value] of metaTags(meta))
+        swap(
+            new RegExp(`<${tag} ${key}="${name}"[^>]*>`),
+            value === null
+                ? ""
+                : `<${tag} ${key}="${name}" ${attribute}="${escapeHtml(value)}">`,
+        );
+    return html;
 }

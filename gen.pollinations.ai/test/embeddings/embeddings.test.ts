@@ -34,8 +34,7 @@ const DEEPINFRA_HOST = "api.deepinfra.com";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "aiplatform.us.rep.googleapis.com";
 const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
-const AZURE_SWEDEN_HOST =
-    "myceli-prod-swedencentral.cognitiveservices.azure.com";
+const BEDROCK_HOST = "bedrock-runtime.us-east-1.amazonaws.com";
 const FIREWORKS_HOST = "api.fireworks.ai";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
 
@@ -72,7 +71,9 @@ function createEmbeddingMocks() {
     env.GOOGLE_PROJECT_ID = "test-project";
     env.OPENAI_API_KEY = "test-openai-api-key";
     env.AZURE_MYCELI_PROD_API_KEY = "test-azure-api-key";
-    env.AZURE_MYCELI_PROD_SWEDEN_API_KEY = "test-azure-sweden-api-key";
+    env.AWS_ACCESS_KEY_ID = "test-aws-access-key";
+    env.AWS_SECRET_ACCESS_KEY = "test-aws-secret-key";
+    env.AWS_REGION = "us-east-1";
     env.DEEPINFRA_API_KEY = "test-deepinfra-api-key";
     env.FIREWORKS_NEO_API_KEY = "test-fireworks-neo-api-key";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
@@ -151,6 +152,8 @@ function createOpenAIMock(host = AZURE_HOST): MockAPI<{
     requests: unknown[];
     urls: string[];
     apiKeys: (string | null)[];
+    bedrockRequests: unknown[];
+    bedrockUsage?: string | null;
     authorization: (string | null)[];
     failModel?: string;
 }> {
@@ -158,12 +161,15 @@ function createOpenAIMock(host = AZURE_HOST): MockAPI<{
         requests: unknown[];
         urls: string[];
         apiKeys: (string | null)[];
+        bedrockRequests: unknown[];
+        bedrockUsage?: string | null;
         authorization: (string | null)[];
         failModel?: string;
     } = {
         requests: [],
         urls: [],
         apiKeys: [],
+        bedrockRequests: [],
         authorization: [],
     };
     return {
@@ -226,18 +232,23 @@ function createOpenAIMock(host = AZURE_HOST): MockAPI<{
 function createCohereAzureMock(): MockAPI<{
     requests: unknown[];
     urls: string[];
-    failPrimary?: boolean;
+    failPrimary?: boolean | "network";
     apiKeys: (string | null)[];
+    bedrockRequests: unknown[];
+    bedrockUsage?: string | null;
 }> {
     const state: {
         requests: unknown[];
         urls: string[];
-        failPrimary?: boolean;
+        failPrimary?: boolean | "network";
         apiKeys: (string | null)[];
+        bedrockRequests: unknown[];
+        bedrockUsage?: string | null;
     } = {
         requests: [],
         urls: [],
         apiKeys: [],
+        bedrockRequests: [],
     };
     const handler = async (request: Request) => {
         const body = (await request.json()) as {
@@ -249,6 +260,8 @@ function createCohereAzureMock(): MockAPI<{
         state.urls.push(request.url);
         state.requests.push(body);
         state.apiKeys.push(request.headers.get("api-key"));
+        if (state.failPrimary === "network")
+            throw new Error("Network connection lost.");
         if (state.failPrimary && new URL(request.url).hostname === AZURE_HOST) {
             return Response.json(
                 { error: { message: "Primary unavailable" } },
@@ -282,13 +295,54 @@ function createCohereAzureMock(): MockAPI<{
         state,
         handlerMap: {
             [AZURE_HOST]: handler,
-            [AZURE_SWEDEN_HOST]: handler,
+            [BEDROCK_HOST]: async (request) => {
+                expect(request.url).toBe(
+                    `https://${BEDROCK_HOST}/model/global.cohere.embed-v4:0/invoke`,
+                );
+                expect(request.headers.get("authorization")).toContain(
+                    "AWS4-HMAC-SHA256",
+                );
+                expect(request.headers.has("api-key")).toBe(false);
+                const body = (await request.json()) as {
+                    texts?: string[];
+                    images?: string[];
+                    inputs?: unknown[];
+                    output_dimension: number;
+                };
+                state.bedrockRequests.push(body);
+                const count = (body.texts ?? body.images ?? body.inputs ?? [])
+                    .length;
+                const usage =
+                    state.bedrockUsage === undefined
+                        ? String(count * 4)
+                        : state.bedrockUsage;
+                return Response.json(
+                    {
+                        embeddings: {
+                            float: Array.from({ length: count }, (_, index) =>
+                                Array.from(
+                                    { length: body.output_dimension },
+                                    (_, coordinate) => index + coordinate / 10,
+                                ),
+                            ),
+                        },
+                    },
+                    {
+                        headers:
+                            usage === null
+                                ? {}
+                                : { "x-amzn-bedrock-input-token-count": usage },
+                    },
+                );
+            },
         },
         reset: () => {
             state.requests = [];
             state.urls = [];
             state.apiKeys = [];
             state.failPrimary = undefined;
+            state.bedrockRequests = [];
+            state.bedrockUsage = undefined;
         },
     };
 }
@@ -959,11 +1013,16 @@ describe("POST /v1/embeddings", () => {
         });
     });
 
-    test.for(["text", "image"])(
-        "rescues Cohere %s embeddings through Sweden without changing the quote",
-        async (modality, { apiKey, mocks }) => {
+    test.for([
+        ["text", true],
+        ["image", true],
+        ["text", "network"],
+        ["image", "network"],
+    ] as const)(
+        "rescues Cohere %s embeddings after %s failure through global AWS without changing the quote",
+        async ([modality, failure], { apiKey, mocks }) => {
             await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
-            mocks.cohereAzure.state.failPrimary = true;
+            mocks.cohereAzure.state.failPrimary = failure;
             const input =
                 modality === "image"
                     ? [
@@ -997,26 +1056,22 @@ describe("POST /v1/embeddings", () => {
                 data: { embedding: number[] }[];
             };
             expect(body.data[0].embedding).toHaveLength(256);
-            expect(
-                mocks.cohereAzure.state.urls.map(
-                    (url) => new URL(url).hostname,
-                ),
-            ).toEqual([AZURE_HOST, AZURE_SWEDEN_HOST]);
+            expect(mocks.cohereAzure.state.urls).toHaveLength(1);
             expect(mocks.cohereAzure.state.apiKeys).toEqual([
                 "test-azure-api-key",
-                "test-azure-sweden-api-key",
             ]);
-            expect(mocks.cohereAzure.state.requests).toEqual([
-                expect.objectContaining({
-                    model: TEST_COHERE_PROVIDER_MODEL,
-                    input_type: "query",
-                    dimensions: 256,
-                }),
-                expect.objectContaining({
-                    model: TEST_COHERE_PROVIDER_MODEL,
-                    input_type: "query",
-                    dimensions: 256,
-                }),
+            expect(mocks.cohereAzure.state.bedrockRequests).toEqual([
+                {
+                    input_type:
+                        modality === "image"
+                            ? "search_document"
+                            : "search_query",
+                    embedding_types: ["float"],
+                    output_dimension: 256,
+                    ...(modality === "image"
+                        ? { images: ["data:image/png;base64,aGVsbG8="] }
+                        : { texts: ["Hello", "World"] }),
+                },
             ]);
             await wait();
             const events = mocks.tinybird.state.events;
@@ -1025,13 +1080,38 @@ describe("POST /v1/embeddings", () => {
             expect(billed[0]).toMatchObject({
                 modelRequested: TEST_COHERE_MODEL,
                 resolvedModelRequested: TEST_COHERE_MODEL,
-                modelUsed: "cohere/embed-v4.0:azure:sweden",
+                modelUsed: "cohere/embed-v4.0:aws",
                 totalCost:
                     modality === "image"
-                        ? (4 * 0.47) / 1_000_000
+                        ? (4 * 0.12) / 1_000_000
                         : (8 * 0.12) / 1_000_000,
                 totalPrice: modality === "image" ? 0.00000141 : 0.00000072,
             });
+        },
+    );
+
+    test.for([null, "", "bad", "-1", "1.5"])(
+        "rejects invalid Bedrock embedding usage %s without charging",
+        async (usage, { apiKey, mocks }) => {
+            await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
+            mocks.cohereAzure.state.failPrimary = true;
+            mocks.cohereAzure.state.bedrockUsage = usage;
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({ model: TEST_COHERE_MODEL }),
+            });
+            expect(response.status).toBe(502);
+            await response.text();
+            await wait();
+            expect(
+                mocks.tinybird.state.events.filter(
+                    (event) => event.isBilledUsage,
+                ),
+            ).toHaveLength(0);
         },
     );
 
@@ -1549,7 +1629,7 @@ describe("embedding models", () => {
             context_length?: number;
         }[];
         expect(data.map((model) => model.name)).not.toContain(
-            "cohere/embed-v4.0:azure:sweden",
+            "cohere/embed-v4.0:aws",
         );
         expect(data).toEqual(
             expect.arrayContaining([
@@ -1589,7 +1669,7 @@ describe("embedding models", () => {
         };
         expect(data.object).toBe("list");
         expect(data.data.map((model) => model.id)).not.toContain(
-            "cohere/embed-v4.0:azure:sweden",
+            "cohere/embed-v4.0:aws",
         );
         expect(data.data).toEqual(
             expect.arrayContaining([

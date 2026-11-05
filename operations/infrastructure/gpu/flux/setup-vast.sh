@@ -100,16 +100,7 @@ if find /usr/local -maxdepth 3 -path '/usr/local/cuda-*/compat/libcuda.so*' -pri
     $SUDO ldconfig
 fi
 
-if ! command -v cloudflared >/dev/null || \
-    ! cloudflared tunnel run --help 2>&1 | grep -q -- '--token-file'; then
-    log "Installing cloudflared..."
-    curl -fsSL --retry 5 -o /tmp/cloudflared.deb \
-        https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-    $SUDO dpkg -i /tmp/cloudflared.deb >/dev/null
-fi
-
 # token-file keeps the remotely-managed tunnel token out of process listings.
-# It requires cloudflared 2025.4.0 or newer; fresh hosts install latest above.
 TUNNEL_TOKEN_FILE="$HOME/.cloudflared/tunnel-token"
 TUNNEL_ENABLED_FILE="$HOME/.cloudflared/tunnel-enabled"
 TUNNEL_DNS_FALLBACK_MARKER="$HOME/.cloudflared/use-local-doh"
@@ -159,6 +150,8 @@ else
     git clone --depth 1 --branch "$GIT_BRANCH" \
         https://github.com/pollinations/pollinations.git "$WORK_DIR"
 fi
+
+bash "$WORK_DIR/operations/infrastructure/gpu/install-cloudflared.sh"
 
 NUNCHAKU_DIR="$WORK_DIR/operations/infrastructure/gpu/flux"
 cd "$NUNCHAKU_DIR"

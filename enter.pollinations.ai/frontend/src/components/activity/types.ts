@@ -1,5 +1,3 @@
-import type { ActivityPeriod } from "./activity-period";
-
 export type DailyUsageRecord = {
     date: string;
     api_key_id: string;
@@ -10,16 +8,23 @@ export type DailyUsageRecord = {
     cost_usd: number;
 };
 
-export type Metric = "requests" | "pollen";
-
-export type FilterState = {
-    period: ActivityPeriod;
-    metric: Metric;
-    selectedKeyIds: string[];
-    selectedModels: string[];
+export type DeveloperEarningsRow = {
+    date: string;
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
 };
 
-export type UsageGroupBy = "model" | "key";
+export type Metric = "requests" | "pollen";
 
 export type DataPoint = {
     label: string;

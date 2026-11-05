@@ -23,6 +23,13 @@ export const EMBEDDING_FALLBACKS = {
         },
     },
     "cohere/embed-v4.0": {
-        "cohere/embed-v4.0:azure:sweden": { provider: "azure" },
+        "cohere/embed-v4.0:aws": {
+            provider: "aws",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(0.12),
+                promptImageTokens: perMillion(0.12),
+            },
+        },
     },
 } as const satisfies FallbackMap;

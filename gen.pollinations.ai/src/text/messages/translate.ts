@@ -419,6 +419,7 @@ export function chatToMessagesResponse(
         });
     }
     if (message?.content) content.push({ type: "text", text: message.content });
+    if (message?.refusal) content.push({ type: "text", text: message.refusal });
     const thoughtSignature = message?.tool_calls?.find(
         (call) => call.function.thought_signature,
     )?.function.thought_signature;

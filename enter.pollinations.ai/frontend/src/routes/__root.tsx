@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Analytics } from "../components/analytics.tsx";
-import { NOT_FOUND_META, pageMeta } from "../page-meta.ts";
+import { metaTags, NOT_FOUND_META, pageMeta } from "../page-meta.ts";
 
 type RouterContext = {};
 
@@ -19,21 +19,7 @@ function RootLayout() {
     useEffect(() => {
         const meta = pageMeta(pathname) ?? NOT_FOUND_META;
         if (meta === NOT_FOUND_META) document.title = meta.title;
-        for (const [tag, key, name, attribute, value] of [
-            ["link", "rel", "canonical", "href", meta.canonical],
-            ["meta", "property", "og:url", "content", meta.canonical],
-            ["meta", "property", "og:title", "content", meta.title],
-            ["meta", "name", "twitter:title", "content", meta.title],
-            ["meta", "name", "description", "content", meta.description],
-            ["meta", "property", "og:description", "content", meta.description],
-            [
-                "meta",
-                "name",
-                "twitter:description",
-                "content",
-                meta.description,
-            ],
-        ] as const) {
+        for (const [tag, key, name, attribute, value] of metaTags(meta)) {
             let element = document.querySelector(`${tag}[${key}="${name}"]`);
             if (value === null) {
                 element?.remove();

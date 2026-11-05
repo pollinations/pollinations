@@ -213,6 +213,14 @@ async function forward(c: E2bContext, search = new URL(c.req.url).search) {
             }),
         },
     );
+    return relay(response);
+}
+
+// E2B answers 403 when it refuses our team, as when it blocks it, which
+// says nothing about the caller. Passed on, it would read as the payer's own
+// refusal and end every keep (keepSandboxes).
+async function relay(response: Response) {
+    if (response.status === 403) throw await upstreamError(response);
     return new Response(response.body, response);
 }
 
@@ -417,7 +425,7 @@ async function extendLease(
         body: JSON.stringify({ timeout }),
     });
     if (response.ok && bill.price > 0) await charge(c, bill, startTime);
-    return new Response(response.body, response);
+    return relay(response);
 }
 
 // When E2B ends the sandbox's run: 24 hours after it started, or from now for

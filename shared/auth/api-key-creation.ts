@@ -88,6 +88,12 @@ export function validateRedirectUriFormat(redirectUri: string): void {
             message: "Redirect URI must not include a fragment",
         });
     }
+    // Catches two URLs run together, e.g. typed after a pre-filled default.
+    if (parsed.pathname.includes("://")) {
+        throw new HTTPException(400, {
+            message: "Redirect URI must be a single URL",
+        });
+    }
     if (!isAllowedRedirectUrl(parsed)) {
         throw new HTTPException(400, {
             message:
@@ -247,11 +253,12 @@ export async function createApiKeyForUser({
     const safeAccountPerms =
         sanitizeAuthorizeAccountPermissions(accountPermissions);
 
+    // An App Key (pk_) never authenticates requests, so it holds no scopes.
     const permissions: Record<string, string[]> = {};
-    if (allowedModels) {
+    if (allowedModels && !isPublishable) {
         permissions.models = await toModelPermissions(dbBinding, allowedModels);
     }
-    if (safeAccountPerms && safeAccountPerms.length > 0) {
+    if (safeAccountPerms && safeAccountPerms.length > 0 && !isPublishable) {
         permissions.account = safeAccountPerms;
     }
 

@@ -1,4 +1,4 @@
-import type { Usage } from "@shared/registry/registry.ts";
+import type { PricingInput, Usage } from "@shared/registry/registry.ts";
 import { callAssetHarvester } from "./models/assetHarvesterModel.ts";
 import { callRodinFalAPI } from "./models/rodinModel.ts";
 import { callTrellis2Fal } from "./models/trellis2FalModel.ts";
@@ -12,6 +12,7 @@ export interface Model3dGenerationResult {
     trackingData?: {
         actualModel?: string;
         usage?: Usage;
+        providerBilling?: PricingInput["providerBilling"];
     };
 }
 

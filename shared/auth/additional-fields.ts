@@ -4,6 +4,11 @@ export const INVITE_REF_COOKIE = "invite_ref";
 
 export const authAdditionalFields = {
     user: {
+        questPollenRestricted: {
+            type: "boolean",
+            required: false,
+            input: false,
+        },
         githubId: {
             type: "number",
             input: false,

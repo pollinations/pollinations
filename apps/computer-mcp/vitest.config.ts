@@ -39,6 +39,9 @@ export default defineConfig({
         }),
     ],
     test: {
+        // Vitest's console interception can deadlock the Workers pool when a
+        // handler logs during a file's last RPC (cloudflare/workers-sdk#15719).
+        disableConsoleIntercept: true,
         include: ["src/**/*.test.ts"],
     },
 });

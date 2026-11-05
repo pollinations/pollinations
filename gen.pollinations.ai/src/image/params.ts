@@ -99,10 +99,11 @@ export const ImageParamsSchema = z
                 if (!value) return [];
                 // Already an array (from POST JSON body)
                 if (Array.isArray(value)) return value;
-                // String: support both pipe (|) and comma (,) separators
-                return value.includes("|")
+                // Keep commas inside URLs, matching the public query schema.
+                const urls = value.includes("|")
                     ? value.split("|")
-                    : value.split(",");
+                    : value.split(/,(?=\s*https?:\/\/)/);
+                return urls.map((url) => url.trim()).filter(Boolean);
             })
             .catch([]),
         reference_images: referenceUrls.optional(),

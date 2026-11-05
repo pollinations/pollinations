@@ -99,7 +99,7 @@ Economics use:
 - Stripe payout cash belongs in `economics_bank_ledger`, category `revenue`, and
   should reconcile to Wise.
 - Staging financial facts belong in `economics_stripe_transactions`, keyed by
-  account and balance-transaction ID. Use `operations/economics/ingest/stripe-sync.mjs`
+  account and balance-transaction ID. Use `operations/dashboards/economics/ingest/stripe-sync.mjs`
   to refresh complete UTC ranges idempotently. Do not append monthly sales summaries.
   Enter `stripe_event` supplies charge identity, not a second revenue amount.
   Production still uses the legacy summaries until separately migrated.

@@ -24,7 +24,7 @@ import {
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -205,6 +205,24 @@ async function ensureModelNameAvailable(
     });
 }
 
+// Gen loads every community model and agent into one cached catalog, so each
+// account's share of it must stay bounded.
+const MAX_MODELS_PER_ACCOUNT = 100;
+
+export async function ensureModelLimit(
+    db: Db,
+    ownerUserId: string,
+): Promise<void> {
+    const [{ owned }] = await db
+        .select({ owned: count() })
+        .from(schema.communityEndpoint)
+        .where(eq(schema.communityEndpoint.ownerUserId, ownerUserId));
+    if (owned < MAX_MODELS_PER_ACCOUNT) return;
+    throw new HTTPException(400, {
+        message: `An account can register at most ${MAX_MODELS_PER_ACCOUNT} community models and agents. Delete one to add another.`,
+    });
+}
+
 function throwEndpointTestError(error: unknown): never {
     throw new HTTPException(400, {
         message:
@@ -286,6 +304,23 @@ type HealthRow = {
     message: string;
 };
 
+type RunRow = {
+    run_id: string;
+    started_at: string;
+    status: number;
+    duration_ms: number;
+    key_name: string;
+    cost: number;
+    model_calls: number;
+    tool_calls: number;
+    failed_calls: number;
+    error: string;
+};
+
+// Tinybird returns DateTime as "YYYY-MM-DD hh:mm:ss" in UTC.
+const tinybirdTimeToIso = (value: string) =>
+    new Date(`${value.replace(" ", "T")}Z`).toISOString();
+
 type EndpointProbeKind = "models" | "test";
 
 // Publishing is allowlist-gated. Pricing is independent: public endpoints may
@@ -355,7 +390,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const rows = await db
                 .select()
                 .from(schema.communityEndpoint)
@@ -423,7 +458,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             await requireCommunityEndpointPublishAccess(db, user.id);
 
             const name = input.name.trim();
@@ -489,7 +524,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -587,7 +622,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -598,6 +633,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ownerGithubUsername,
                 input.name,
             );
+            await ensureModelLimit(db, user.id);
             await enforcePublishingAccess(db, user.id, input.visibility);
             const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
@@ -660,7 +696,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -671,6 +707,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ownerGithubUsername,
                 input.name,
             );
+            await ensureModelLimit(db, user.id);
             const targetPolicy = deriveCreateProxyPolicy(input);
             const queuesPublication = input.visibility === "public";
             const modelId = communityModelId(ownerGithubUsername, input.name);
@@ -758,7 +795,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -801,7 +838,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -839,7 +876,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const endpoint = await requireOwnedEndpoint(
                 db,
                 c.req.param("id"),
@@ -894,7 +931,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Get Model Health",
             description:
-                "Calls a model's own upstream answered in the last seven UTC days: 2xx and 5xx per day, and the 5xx grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. API keys require `account:keys`.",
+                "Calls a model's own upstream answered in the last seven UTC days: 2xx and 5xx per day, and the 5xx grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. For an agent, also lists your own recent runs with the generations and tool calls each made. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Model health",
@@ -914,7 +951,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const endpoint = await requireOwnedEndpoint(
                 db,
                 c.req.param("id"),
@@ -924,15 +961,25 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            const rows = await fetchTinybirdRows<HealthRow>(
-                new URL(c.env.TINYBIRD_INGEST_URL).origin,
-                "/v0/pipes/my_model_health.json",
-                requireTinybirdReadToken(c.env),
-                {
-                    model: communityModelId(ownerGithubUsername, endpoint.name),
-                    owner_user_id: user.id,
-                },
-            );
+            const fetchRows = <Row>(pipe: string) =>
+                fetchTinybirdRows<Row>(
+                    new URL(c.env.TINYBIRD_INGEST_URL).origin,
+                    `/v0/pipes/${pipe}.json`,
+                    requireTinybirdReadToken(c.env),
+                    {
+                        model: communityModelId(
+                            ownerGithubUsername,
+                            endpoint.name,
+                        ),
+                        owner_user_id: user.id,
+                    },
+                );
+            const [rows, runs] = await Promise.all([
+                fetchRows<HealthRow>("my_model_health"),
+                endpoint.type === "proxy"
+                    ? []
+                    : fetchRows<RunRow>("my_model_runs"),
+            ]);
             const byDay = new Map(
                 rows
                     .filter((row) => !row.failure_group)
@@ -962,11 +1009,21 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         counted: row.counted,
                         fromPollinations: row.from_pollinations,
                         fromOwner: row.from_owner,
-                        lastAt: new Date(
-                            `${row.last_at.replace(" ", "T")}Z`,
-                        ).toISOString(),
+                        lastAt: tinybirdTimeToIso(row.last_at),
                         message: row.message,
                     })),
+                runs: runs.map((run) => ({
+                    id: run.run_id,
+                    startedAt: tinybirdTimeToIso(run.started_at),
+                    status: run.status,
+                    durationMs: run.duration_ms,
+                    keyName: run.key_name === "undefined" ? "" : run.key_name,
+                    cost: run.cost,
+                    modelCalls: run.model_calls,
+                    toolCalls: run.tool_calls,
+                    failedCalls: run.failed_calls,
+                    error: run.error === "undefined" ? "" : run.error,
+                })),
             });
         },
     )
@@ -998,7 +1055,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -1251,7 +1308,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
+            requireAccountPermission(c, "keys");
             const endpoint = await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

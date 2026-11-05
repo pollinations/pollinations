@@ -738,7 +738,7 @@ function requestTools(request: CreateResponseRequest): ToolSet {
             );
         }
         tools[definition.name] = {
-            description: definition.description,
+            description: definition.description ?? undefined,
             inputSchema: jsonSchema(
                 definition.parameters ?? { type: "object", properties: {} },
             ),

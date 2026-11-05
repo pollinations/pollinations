@@ -448,8 +448,8 @@ const ResponseFunctionToolSchema = z
     .object({
         type: z.literal("function"),
         name: z.string(),
-        description: z.string().optional(),
-        parameters: FunctionParametersSchema.optional(),
+        description: z.string().nullish(),
+        parameters: FunctionParametersSchema.nullish(),
         strict: z.boolean().nullable().optional(),
     })
     .passthrough();

@@ -47,7 +47,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .default("medium")
         .meta({
             description:
-                "Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`.",
+                "Image quality level. Supported by GPT Image models and `grok-imagine-image-2.0`.",
         }),
     image: z
         .string()
@@ -123,7 +123,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         }),
     transparent: BooleanQueryParamSchema.optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`; other models return 400.",
+            "Generate an image with a transparent background. Unsupported models return 400.",
     }),
 
     // Video-specific params

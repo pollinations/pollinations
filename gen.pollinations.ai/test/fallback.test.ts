@@ -777,6 +777,24 @@ describe("isRetryableFallbackError", () => {
             true,
         );
         expect(
+            isRetryableFallbackError(new Error("Network connection lost.")),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(new Error("connection handler failed")),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                new Error("Network connection lost. Invalid payload"),
+            ),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, {
+                    message: "Network connection lost.",
+                }),
+            ),
+        ).toBe(false);
+        expect(
             isRetryableFallbackError(
                 new TypeError("Cannot read properties of undefined"),
             ),

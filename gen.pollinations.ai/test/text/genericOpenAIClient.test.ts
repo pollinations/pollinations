@@ -261,6 +261,30 @@ describe("genericOpenAIClient", () => {
         expect(isRetryableFallbackError(error)).toBe(true);
     });
 
+    it.each([400, 429, 503])(
+        "does not classify an echoed prompt as moderation in an HTTP %s error",
+        async (status) => {
+            const responseBody = JSON.stringify({
+                error: { message: "Provider returned error", code: status },
+                request: { prompt: "Explain the NSFW label" },
+            });
+            const error = await genericOpenAIClient(
+                [{ role: "user", content: "Explain the NSFW label" }],
+                { model: "test-model" },
+                {
+                    endpoint: "https://provider.test/chat",
+                    fetcher: async () => new Response(responseBody, { status }),
+                },
+            ).catch((error) => error);
+            expect(error).toMatchObject({
+                status: status === 429 ? 502 : status,
+                upstreamStatus: status,
+                responseBody,
+            });
+            expect(isRetryableFallbackError(error)).toBe(status !== 400);
+        },
+    );
+
     it.each([200, 429])(
         "retains the complete raw provider envelope at HTTP %s",
         async (status) => {

@@ -14,6 +14,11 @@ function serializeDetails(details: unknown): string | undefined {
 
 /** Classify provider errors consistently for HTTP responses and stream metrics. */
 export function apiErrorStatus(details: unknown, status: number): number {
+    // Classify the provider's error, not echoed request data beside it. Keep
+    // nested diagnostics such as OpenRouter's error.metadata.raw available.
+    if (details && typeof details === "object" && "error" in details) {
+        details = details.error;
+    }
     const serialized = serializeDetails(details) ?? "";
     if (isContentPolicyViolation(serialized)) return CONTENT_POLICY_STATUS;
     if (

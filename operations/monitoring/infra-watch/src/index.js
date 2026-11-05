@@ -112,6 +112,20 @@ const isUp = (gen) =>
         return res.ok;
     }).catch(() => false);
 
+// Enter reads the key from its database (D1) to answer, so this fails when
+// API keys, sign-in and billing do. Why it failed, or null. Any answer under
+// 500 is Enter up: a refused probe key is the community monitor's card.
+const ENTER_KEY_CHECK = "https://enter.pollinations.ai/api/account/key";
+const enterError = (key) =>
+    withTimeout(20_000, async (signal) => {
+        const res = await fetch(ENTER_KEY_CHECK, {
+            signal,
+            headers: { authorization: `Bearer ${key}` },
+        });
+        res.body?.cancel();
+        return res.status < 500 ? null : `HTTP ${res.status}`;
+    }).catch((error) => error.message);
+
 const show = (label, body) =>
     console.log(
         `[${label}] ${body.content} color=#${body.embeds[0].color?.toString(16)}\n${body.embeds[0].description}`,
@@ -230,7 +244,11 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
+        const [pub, up, enterDown] = await Promise.all([
+            isUp(PUBLIC),
+            isUp(UPSTREAM),
+            enterError(this.env.COMMUNITY_PROBE_KEY),
+        ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
         const gen = pub ? PUBLIC : UPSTREAM;
@@ -262,6 +280,8 @@ export class Watch extends DurableObject {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
+        // Enter is checked on its own, so it is judged whatever gen does.
+        if (enterDown) found.enter = { kind: "ENTER_DOWN", error: enterDown };
 
         const sweeps = await sweepDomains(
             this.env.DB,

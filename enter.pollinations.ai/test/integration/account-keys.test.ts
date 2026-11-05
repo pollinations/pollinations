@@ -1069,7 +1069,8 @@ describe("Account Key Management API", () => {
                     headers: { Authorization: `Bearer ${apiKey}` },
                 })
             ).json();
-            const grant = `https://enter.pollinations.ai/grant?id=${id}&permission=keys&ref=agent_grant`;
+            // Enter links to its own origin, localhost in tests.
+            const grant = `http://localhost:3000/grant?id=${id}&permission=keys&ref=agent_grant`;
             expect((await response.json()).error).toMatchObject({
                 message: `API key does not have 'account:keys' permission. Allow it at ${grant}`,
                 fixUrl: grant,

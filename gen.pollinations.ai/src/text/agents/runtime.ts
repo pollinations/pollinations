@@ -2,6 +2,7 @@ import { createMCPClient } from "@ai-sdk/mcp";
 import { getLogger } from "@logtape/logtape";
 import { safeMcpModelOutput } from "@shared/agents/mcp-output.ts";
 import {
+    awaitsCaller,
     createAgentModelProvider,
     openAIFinishReason,
     strictAgentUsage,
@@ -192,12 +193,7 @@ function hitStepLimit(
     return (
         reason === "tool-calls" &&
         steps.length >= MAX_STEPS &&
-        !steps
-            .at(-1)
-            ?.toolCalls.some(
-                (call) =>
-                    !call.invalid && Object.hasOwn(callerTools, call.toolName),
-            )
+        !awaitsCaller(steps, callerTools)
     );
 }
 

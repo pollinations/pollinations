@@ -5,6 +5,7 @@ import { LISTING_TYPES } from "../community-endpoints.ts";
 import type { SafetyFeature } from "../schemas/safety.ts";
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
   check,
   sqliteTable,
   text,
@@ -58,8 +59,13 @@ export const user = sqliteTable("user", {
   cacheDisabled: integer("cache_disabled", { mode: "boolean" })
     .default(false)
     .notNull(),
+  // The invite link owner or BYOP app owner this user signed up through.
+  referredBy: text("referred_by").references((): AnySQLiteColumn => user.id, {
+    onDelete: "set null",
+  }),
 }, (table) => [
   index("idx_user_email").on(table.email),
+  index("idx_user_referred_by").on(table.referredBy),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // Quest pollen restriction sweeps: accounts made since a sign-up burst.
   index("idx_user_created_at").on(table.createdAt),

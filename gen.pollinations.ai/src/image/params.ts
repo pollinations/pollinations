@@ -276,7 +276,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "google/gemini-omni-1.1-flash") {
+        if (data.model.startsWith("google/gemini-omni-")) {
             if (
                 data.aspectRatio !== undefined &&
                 !["16:9", "9:16"].includes(data.aspectRatio)
@@ -284,16 +284,14 @@ export const ImageParamsSchema = z
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["aspectRatio"],
-                    message:
-                        "google/gemini-omni-1.1-flash supports 16:9 or 9:16.",
+                    message: `${data.model} supports 16:9 or 9:16.`,
                 });
             }
             if (data.fps !== undefined && data.fps !== 24) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
-                    message:
-                        "google/gemini-omni-1.1-flash outputs video at 24 FPS.",
+                    message: `${data.model} outputs video at 24 FPS.`,
                 });
             }
         }

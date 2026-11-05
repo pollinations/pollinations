@@ -922,6 +922,36 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 10,
         defaultDuration: 5,
     },
+    "google/gemini-omni-1.2-flash": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "video",
+        addedDate: new Date("2026-11-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vertex AI pricing verified 2026-11-05:
+        // https://cloud.google.com/model-garden/pricing
+        // Video output is priced per token: 1931, 5792, 8688 and 17376 tokens per
+        // second at 360p, 720p, 1080p and 4k (with audio).
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            completionTextTokens: perMillion(9),
+            completionVideoTokens: perMillion(12),
+        },
+        resolutions: ["720p", "360p", "1080p", "4k"],
+        title: "Gemini Omni 1.2 Flash",
+        description:
+            "Cinematic video from text or keyframes with synchronized audio at up to 4K",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
     "bytedance/seedance-1-pro-fast": {
         aliases: ["seedance-pro"],
         provider: "fal",

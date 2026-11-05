@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-04T06:09:32.681712+00:00",
+  "generated_at": "2026-11-05T06:07:41.704155+00:00",
   "models": [
     {
       "id": "2026-10-06:elevenlabs/eleven-v4",
@@ -5250,522 +5250,186 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-11-04:typesafe/jev-1.14",
+      "model_id": "typesafe/jev-1.14",
+      "title": "Jev",
+      "previous_title": "Jev",
+      "action": "UPDATE",
+      "category": "decision",
+      "date": "2026-11-04",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "model_id": {
+          "before": "typesafe/jev-1.13",
+          "after": "typesafe/jev-1.14"
+        }
+      }
+    },
+    {
+      "id": "2026-11-04:moonshotai/kimi-k3.1-pro",
+      "model_id": "moonshotai/kimi-k3.1-pro",
+      "title": "Kimi K3.1 Pro",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-04",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000002",
+            "completionTextTokens": "0.00001"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-04:moonshotai/kimi-k3.1-pro-highspeed",
+      "model_id": "moonshotai/kimi-k3.1-pro-highspeed",
+      "title": "Kimi K3.1 Pro Highspeed",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-04",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000004",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000004",
+            "completionTextTokens": "0.00002"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-04:minimax/minimax-m3.1-flash",
+      "model_id": "minimax/minimax-m3.1-flash",
+      "title": "MiniMax M3.1 Flash",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-04",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000015",
+            "completionTextTokens": "0.0000006"
+          }
+        }
+      }
     }
   ],
   "api": [
-    {
-      "id": "pr-16488:GET /3d/models",
-      "endpoint": "GET /3d/models",
-      "summary": "List 3D Models",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:agent",
-          "before": null,
-          "after": {
-            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:capabilities",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:limit",
-          "before": null,
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:query",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16488,
-      "url": "https://github.com/pollinations/pollinations/pull/16488"
-    },
-    {
-      "id": "pr-16537:GET /account/key/usage",
-      "endpoint": "GET /account/key/usage",
-      "summary": "Get API Key Usage",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:before",
-          "before": {
-            "type": "string",
-            "required": false
-          },
-          "after": {
-            "type": "string|string · date-time",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16537,
-      "url": "https://github.com/pollinations/pollinations/pull/16537"
-    },
-    {
-      "id": "pr-16537:GET /account/usage",
-      "endpoint": "GET /account/usage",
-      "summary": "Get Usage History",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:before",
-          "before": {
-            "type": "string",
-            "required": false
-          },
-          "after": {
-            "type": "string|string · date-time",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16537,
-      "url": "https://github.com/pollinations/pollinations/pull/16537"
-    },
-    {
-      "id": "pr-16488:GET /audio/models",
-      "endpoint": "GET /audio/models",
-      "summary": "List Audio Models",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:agent",
-          "before": null,
-          "after": {
-            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:capabilities",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:limit",
-          "before": null,
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:query",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16488,
-      "url": "https://github.com/pollinations/pollinations/pull/16488"
-    },
-    {
-      "id": "pr-16488:GET /embeddings/models",
-      "endpoint": "GET /embeddings/models",
-      "summary": "List Embedding Models",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:agent",
-          "before": null,
-          "after": {
-            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:capabilities",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:limit",
-          "before": null,
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:query",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16488,
-      "url": "https://github.com/pollinations/pollinations/pull/16488"
-    },
-    {
-      "id": "pr-16488:GET /image/models",
-      "endpoint": "GET /image/models",
-      "summary": "List Image & Video Models",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:agent",
-          "before": null,
-          "after": {
-            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:capabilities",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:limit",
-          "before": null,
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:query",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16488,
-      "url": "https://github.com/pollinations/pollinations/pull/16488"
-    },
-    {
-      "id": "pr-16488:GET /models",
-      "endpoint": "GET /models",
-      "summary": "List Models",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:agent",
-          "before": null,
-          "after": {
-            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:capabilities",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:limit",
-          "before": null,
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:query",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16488,
-      "url": "https://github.com/pollinations/pollinations/pull/16488"
-    },
-    {
-      "id": "pr-16488:GET /text/models",
-      "endpoint": "GET /text/models",
-      "summary": "List Text Models (Detailed)",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:agent",
-          "before": null,
-          "after": {
-            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:capabilities",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:limit",
-          "before": null,
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:query",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16488,
-      "url": "https://github.com/pollinations/pollinations/pull/16488"
-    },
-    {
-      "id": "pr-16488:GET /v1/models",
-      "endpoint": "GET /v1/models",
-      "summary": "List Models (OpenAI-compatible)",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:agent",
-          "before": null,
-          "after": {
-            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:capabilities",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:limit",
-          "before": null,
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:query",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16488,
-      "url": "https://github.com/pollinations/pollinations/pull/16488"
-    },
-    {
-      "id": "pr-16488:GET /video/models",
-      "endpoint": "GET /video/models",
-      "summary": "List Video Models",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:query:agent",
-          "before": null,
-          "after": {
-            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:capabilities",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:limit",
-          "before": null,
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:query",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16488,
-      "url": "https://github.com/pollinations/pollinations/pull/16488"
-    },
-    {
-      "id": "pr-16537:POST /account/my-models/{id}/update",
-      "endpoint": "POST /account/my-models/{id}/update",
-      "summary": "Update My Model",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "body:hidden",
-          "before": {
-            "type": "boolean",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16537,
-      "url": "https://github.com/pollinations/pollinations/pull/16537"
-    },
-    {
-      "id": "pr-16537:POST /v1/audio/voice-changer",
-      "endpoint": "POST /v1/audio/voice-changer",
-      "summary": "Transform a Voice",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "body:audio",
-          "before": {
-            "type": "string · binary",
-            "required": true
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "body:file",
-          "before": null,
-          "after": {
-            "type": "string · binary",
-            "required": true
-          },
-          "breaking": true
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16537,
-      "url": "https://github.com/pollinations/pollinations/pull/16537"
-    },
-    {
-      "id": "pr-16537:POST /v1/audio/voice-isolator",
-      "endpoint": "POST /v1/audio/voice-isolator",
-      "summary": "Isolate Speech",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "body:audio",
-          "before": {
-            "type": "string · binary",
-            "required": true
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "body:file",
-          "before": null,
-          "after": {
-            "type": "string · binary",
-            "required": true
-          },
-          "breaking": true
-        }
-      ],
-      "date": "2026-10-05",
-      "pr": 16537,
-      "url": "https://github.com/pollinations/pollinations/pull/16537"
-    },
     {
       "id": "pr-16569:POST /account/keys",
       "endpoint": "POST /account/keys",
@@ -6903,9 +6567,121 @@
       "date": "2026-11-03",
       "pr": 19080,
       "url": "https://github.com/pollinations/pollinations/pull/19080"
+    },
+    {
+      "id": "pr-19146:DELETE /alpha/e2b/sandboxes/{id}/ports/{port}",
+      "endpoint": "DELETE /alpha/e2b/sandboxes/{id}/ports/{port}",
+      "summary": "Unshare sandbox port",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-11-04",
+      "pr": 19146,
+      "url": "https://github.com/pollinations/pollinations/pull/19146"
+    },
+    {
+      "id": "pr-19146:PUT /alpha/e2b/sandboxes/{id}/ports/{port}",
+      "endpoint": "PUT /alpha/e2b/sandboxes/{id}/ports/{port}",
+      "summary": "Share sandbox port",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-11-04",
+      "pr": 19146,
+      "url": "https://github.com/pollinations/pollinations/pull/19146"
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-04",
+      "emoji": "🤖",
+      "title": "Muse Spark Open",
+      "text": "Try `meta/muse-spark-open` with text or images, tools, and reasoning controls. Its context limit is 1,048,576 tokens; it requires reasoning and does not support `response_format` or `seed`. [View the model](https://enter.pollinations.ai/models?q=meta/muse-spark-open).",
+      "prs": [
+        17634
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-04",
+      "emoji": "💡",
+      "title": "Calculators MCP",
+      "text": "Use alpha MCP tools for time zones, cron previews, color contrast, Unicode inspection, QR codes, and ECB currency rates. The tools require a Pollinations key but charge no Pollen. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18050
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-04",
+      "emoji": "🔗",
+      "title": "Network MCP",
+      "text": "Give an agent alpha tools for DNS lookups, public HTTP diagnostics, CIDR calculations, and domain or IP registration data. A Pollinations key is required, with no Pollen charge. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18118
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-04",
+      "emoji": "📱",
+      "title": "Packages MCP",
+      "text": "Look up npm, PyPI, and Rust crate dependencies, OSV advisories, and public Hugging Face model or Space metadata through read-only alpha tools. A Pollinations key is required, with no Pollen charge. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18306
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-04",
+      "emoji": "🌟",
+      "title": "News and Feeds MCP",
+      "text": "Read Hacker News, RSS and Atom feeds, Wayback capture links, and USGS earthquake data with alpha agent tools. A Pollinations key is required, with no Pollen charge. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18415
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-04",
+      "emoji": "🎯",
+      "title": "Research MCP",
+      "text": "Give an agent alpha lookup tools for Wikipedia, Wiktionary, RFCs, Wikidata, Europe PMC, and World Bank data. A Pollinations key is required, with no Pollen charge. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18417
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-04",
+      "emoji": "🚀",
+      "title": "Sandboxes That Pause",
+      "text": "Kept E2B sandboxes can opt into idle pause with `idleTimeout` of at least 300 seconds when their API timeout exceeds 600 seconds. A connection can resume a paused sandbox; waking it prepays a lease. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        18425
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-04",
+      "emoji": "🔗",
+      "title": "Share E2B Ports",
+      "text": "Share an E2B sandbox port with `PUT /alpha/e2b/sandboxes/<id>/ports/<port>` and reach it through a `pollinations.app` host. Authenticated requests can wake a paused sandbox, with the wake and lease prepaid through the sharing key. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        18425
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-11-04",
+      "emoji": "💡",
+      "title": "Output Limits in Model Listings",
+      "text": "Read `top_provider.max_completion_tokens` from `/v1/models` or `/v1/models/:model`. The field is `null` when no output-token limit is declared. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        18541
+      ],
+      "kind": "api"
+    },
     {
       "date": "2026-11-03",
       "emoji": "🤖",
@@ -8330,76 +8106,6 @@
       "text": "Agent run tokens now carry the account permissions granted to their parent key, including `machines` when allowed. Use a narrowly scoped key when an agent connects to a third-party endpoint. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         16413
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-05",
-      "emoji": "🎨",
-      "title": "FLUX.3 Image added",
-      "text": "Generate or edit at 1K or 2K with `black-forest-labs/flux-3-image`. It supports 15 aspect ratios, adaptive framing, and up to 10 reference images. [View the model](https://enter.pollinations.ai/models?q=black-forest-labs/flux-3-image).",
-      "prs": [
-        16245
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-05",
-      "emoji": "🎨",
-      "title": "Seedream 5.0 Flash added",
-      "text": "Generate and edit images with `bytedance/seedream-5.0-flash`, using 1K or 2K output and up to 10 references. [View the model](https://enter.pollinations.ai/models?q=bytedance/seedream-5.0-flash).",
-      "prs": [
-        16248
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-05",
-      "emoji": "🤖",
-      "title": "Liquid D1 decisions",
-      "text": "Ask `liquid/d1` structured choice, score, and probability questions through the decisions or chat API. [View the model](https://enter.pollinations.ai/models?q=liquid/d1).",
-      "prs": [
-        16244
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-05",
-      "emoji": "🤖",
-      "title": "Ling 3.1 Flash added",
-      "text": "Use `inclusionai/ling-3.1-flash` for text, tool use, and reasoning with a 262,144-token context window. It accepts Quest Pollen. [View the model](https://enter.pollinations.ai/models?q=inclusionai/ling-3.1-flash).",
-      "prs": [
-        16250
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-05",
-      "emoji": "✨",
-      "title": "Typed decisions in the SDK",
-      "text": "Call the existing decisions endpoint with the typed `decision({ state, questions, model? })` helper in `@pollinations/sdk`. Choice, score, and noul questions keep their API semantics. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        15410
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-05",
-      "emoji": "🎯",
-      "title": "Search the model catalog",
-      "text": "Filter model-list API results by `query`, `capabilities`, or `agent`, and set a `limit`. MCP's `listModels` tool accepts the same filters. [Browse the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16246
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-05",
-      "emoji": "🔗",
-      "title": "Model tags for Open WebUI",
-      "text": "`/v1/models` now includes category tags, plus `community` and `agent` where applicable, so Open WebUI can filter its model picker. [Browse the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16450
       ],
       "kind": "api"
     }

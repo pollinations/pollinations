@@ -128,3 +128,68 @@ test("rejects redirecting audio URLs without following them", async (t) => {
     );
     assert.deepEqual(calls, [SOURCE]);
 });
+
+test("transcribeAudio forwards response_format and returns srt as plain text", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        calls.push({ url, init });
+        if (url === SOURCE) {
+            return new Response(new Uint8Array([1]), {
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        }
+        return new Response("1\n00:00:00,000 --> 00:00:01,000\nHello\n", {
+            headers: { "Content-Type": "text/plain" },
+        });
+    };
+
+    const result = await transcribeAudio(
+        { source: SOURCE, response_format: "srt", temperature: 0.2 },
+        CONTEXT,
+    );
+
+    assert.equal(calls[1].init.body.get("response_format"), "srt");
+    assert.equal(calls[1].init.body.get("temperature"), "0.2");
+    assert.match(result.content[0].text, /Hello/);
+});
+
+test("transcribeAudio keeps diarized JSON that has no text field", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        calls.push({ url, init });
+        if (url === SOURCE) {
+            return new Response(new Uint8Array([1]), {
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        }
+        return Response.json({
+            segments: [{ speaker: "A", text: "hi" }],
+            speakers: ["A"],
+        });
+    };
+
+    const result = await transcribeAudio(
+        {
+            source: SOURCE,
+            response_format: "diarized_json",
+            speakers_expected: 2,
+        },
+        CONTEXT,
+    );
+
+    assert.equal(calls[1].init.body.get("speakers_expected"), "2");
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        segments: [{ speaker: "A", text: "hi" }],
+        speakers: ["A"],
+    });
+});

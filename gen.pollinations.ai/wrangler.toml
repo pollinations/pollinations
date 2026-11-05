@@ -15,6 +15,10 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
+    { binding = "RESEARCH_MCP", service = "pollinations-research-mcp" },
+    { binding = "NEWS_MCP", service = "pollinations-news-mcp" },
+    { binding = "PACKAGES_MCP", service = "pollinations-packages-mcp" },
+    { binding = "NETWORK_MCP", service = "pollinations-network-mcp" },
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
@@ -23,6 +27,7 @@ services = [
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
+    { binding = "CALCULATORS_MCP", service = "pollinations-calculators-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -44,10 +49,6 @@ binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
 [[durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
-[[durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
 class_name = "CommunityModelRateLimiter"
 
@@ -66,6 +67,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
+
+[[migrations]]
+tag = "v4"
+deleted_classes = ["PollenRateLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -149,6 +154,10 @@ service = "pollinations-computer-mcp"
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp"
 
+[[env.production.services]]
+binding = "CALCULATORS_MCP"
+service = "pollinations-calculators-mcp"
+
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-production"
@@ -190,11 +199,15 @@ bucket_name = "pollinations-text-enter"
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
+simple = { limit = 600, period = 10 }
 
-[[env.production.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts. Oct 20-27 peaks: busiest legitimate IP
+# 472 per 10 s, the shared Workers egress IP 209 per 10 s in one colo.
+[[env.production.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 1000, period = 10 }
 
 [[env.production.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
@@ -216,9 +229,14 @@ new_sqlite_classes = ["GenerationCoordinator"]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
 
+[[env.production.migrations]]
+tag = "v4"
+deleted_classes = ["PollenRateLimiter"]
+
 [env.production.vars]
 ENVIRONMENT = "production"
 SITES_HOST_SUFFIX = ".pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 # Public OAuth app identifier; user credentials stay in their browser tab.
 DOCS_APP_KEY = "pk_zM4Wvtd1rgWXRmLP"
 # Durable Object fetches get a 125 s proxy read timeout; requests through
@@ -227,7 +245,6 @@ GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
-POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
@@ -259,7 +276,7 @@ pattern = "staging.gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
-# User sites (src/sites.ts). Hosts starting with a digit stay with sandbox ports.
+# User sites and sandbox ports (src/sites.ts and src/routes/e2b.ts).
 [[env.staging.routes]]
 pattern = "*--staging.pollinations.app/*"
 zone_name = "pollinations.app"
@@ -296,6 +313,10 @@ service = "pollinations-computer-mcp-staging"
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp-staging"
 
+[[env.staging.services]]
+binding = "CALCULATORS_MCP"
+service = "pollinations-calculators-mcp-staging"
+
 [[env.staging.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-staging"
@@ -331,11 +352,14 @@ bucket_name = "pollinations-text-enter"
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
+simple = { limit = 600, period = 10 }
 
-[[env.staging.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.staging.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 1000, period = 10 }
 
 [[env.staging.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
@@ -357,9 +381,14 @@ new_sqlite_classes = ["GenerationCoordinator"]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
 
+[[env.staging.migrations]]
+tag = "v4"
+deleted_classes = ["PollenRateLimiter"]
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
 SITES_HOST_SUFFIX = "--staging.pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
@@ -374,8 +403,8 @@ AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscrip
 AZURE_SANDBOX_IMAGE = "fcab7587-ab59-46ce-932d-5c237c8ac747"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015,314960022"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid,polli@pollinations.ai"
 [env.test]
 
 [env.test.images]
@@ -413,6 +442,10 @@ service = "pollinations-computer-mcp"
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp"
 
+[[env.test.services]]
+binding = "CALCULATORS_MCP"
+service = "pollinations-calculators-mcp"
+
 [[env.test.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -437,9 +470,12 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.test.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
+# Per-IP cap on keyed requests, so rotating made-up keys can't dodge the
+# limit; see shared/rate-limit.ts.
+[[env.test.ratelimits]]
+name = "EDGE_IP_RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 10000, period = 10 }
 
 [[env.test.durable_objects.bindings]]
 name = "COMMUNITY_MODEL_RATE_LIMITER"
@@ -461,6 +497,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
 
+[[env.test.migrations]]
+tag = "v4"
+deleted_classes = ["PollenRateLimiter"]
+
 [env.test.vars]
 ENVIRONMENT = "test"
 LOG_LEVEL = "trace"
@@ -471,6 +511,8 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
 AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
 E2B_API_KEY = "not-a-secret-workers-test-only"
+SITES_HOST_SUFFIX = ".pollinations.app"
+SANDBOX_DOMAIN = "pollinations.app"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"
@@ -498,8 +540,75 @@ OPENAI_API_KEY = "not-a-secret-workers-test-only"
 PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"
 PLN_ENTER_TOKEN = "not-a-secret-workers-test-only"
 PLN_GPU_TOKEN = "not-a-secret-workers-test-only"
-POLLEN_REFILL_PER_HOUR = 1
 XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"
 BEDROCK_GUARDRAIL_VERSION = "1"
+
+[[env.production.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp"
+
+
+
+
+[[env.staging.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp-staging"
+
+
+
+
+[[env.test.services]]
+binding = "NETWORK_MCP"
+service = "pollinations-network-mcp"
+
+[[env.production.services]]
+binding = "PACKAGES_MCP"
+service = "pollinations-packages-mcp"
+
+
+
+
+[[env.staging.services]]
+binding = "PACKAGES_MCP"
+service = "pollinations-packages-mcp-staging"
+
+
+
+
+[[env.test.services]]
+binding = "PACKAGES_MCP"
+service = "pollinations-packages-mcp"
+
+[[env.production.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp"
+
+
+
+[[env.staging.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp-staging"
+
+
+
+[[env.test.services]]
+binding = "NEWS_MCP"
+service = "pollinations-news-mcp"
+
+[[env.production.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp"
+
+
+
+[[env.staging.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp-staging"
+
+
+
+[[env.test.services]]
+binding = "RESEARCH_MCP"
+service = "pollinations-research-mcp"

@@ -11,6 +11,7 @@ import {
     cn,
     ExternalLinkButton,
     ExternalLinkIcon,
+    formatCount,
     GlobeIcon,
     Heading,
     type IconProps,
@@ -178,14 +179,14 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["BYOP", "Earnings"],
         body: (
             <>
-                Your users sign in with Pollinations and set a spending limit.{" "}
-                <Em>They pay for their own usage.</Em>
+                Your users connect through Pollinations Connect and set a
+                spending limit. <Em>They pay for their own usage.</Em>
             </>
         ),
         links: [
             {
                 label: "Integration guide",
-                href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+                href: "https://gen.pollinations.ai/docs#tag/pollinations-pay",
             },
         ],
         icon: WalletIcon,
@@ -583,7 +584,7 @@ export function DevKit({ className }: { className?: string }) {
                             feature={feature}
                             countLabel={
                                 data && feature.catalogCount === "agents"
-                                    ? data.agents.toLocaleString()
+                                    ? formatCount(data.agents)
                                     : undefined
                             }
                         />

@@ -34,6 +34,38 @@ function errorResponse(status: number, message: string, headers?: Headers) {
     });
 }
 
+/**
+ * Names an unknown block type the way Anthropic does. Claude Code turns off
+ * the feature that sent a block when the rejection names its tag (for
+ * example `Input tag 'tool_addition'`), but zod reports an unknown tag inside
+ * a string-or-blocks union only as "Invalid input".
+ */
+function unknownBlockType(
+    issues: readonly z.core.$ZodIssue[],
+    body: unknown,
+    prefix: PropertyKey[] = [],
+): string | undefined {
+    for (const issue of issues) {
+        if (issue.code !== "invalid_union") continue;
+        const path = [...prefix, ...issue.path];
+        if (issue.discriminator && "options" in issue) {
+            const tag = path.reduce<unknown>(
+                (value, key) => (value as Record<PropertyKey, unknown>)?.[key],
+                body,
+            );
+            if (typeof tag !== "string") continue;
+            const expected = issue.options?.map(
+                (option) => `'${String(option)}'`,
+            );
+            return `${path.slice(0, -1).join(".")}: Input tag '${tag}' found using '${issue.discriminator}' does not match any of the expected tags: ${expected?.join(", ")}`;
+        }
+        for (const option of issue.errors) {
+            const message = unknownBlockType(option, body, path);
+            if (message) return message;
+        }
+    }
+}
+
 async function upstreamErrorMessage(response: Response): Promise<string> {
     const text = await response.text();
     try {
@@ -103,7 +135,11 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                 const issue = result.error[0];
                 return errorResponse(
                     400,
-                    `${issue?.path?.join(".") || "body"}: ${issue?.message ?? "Invalid request"}`,
+                    unknownBlockType(
+                        result.error as z.core.$ZodIssue[],
+                        result.data,
+                    ) ??
+                        `${issue?.path?.join(".") || "body"}: ${issue?.message ?? "Invalid request"}`,
                 );
             }
         }),

@@ -21,16 +21,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🎮 Tiny Fighter Arena](https://kreggscode.github.io/tiny-fighter-arena) | Describe a fighter in one line, the AI designs the whole thing from it, then sends it into a short commentated battle up a five-rung ladder. One line in ( a shy storm cloud that apologises before it s | [@kreggscode](https://github.com/kreggscode) |
-| [💬 Radio Bloom](https://mrunknowne09-radio-bloom.static.hf.space) | Radio Bloom is a duplicate-ready voice character playground. Visitors sign in with their own Pollen, then speak or type to three AI characters powered by Pollinations chat, transcription, and voice mo | [@ismailbanouigu](https://github.com/ismailbanouigu) |
-| [🎮 One Line Arena](https://drjacky.github.io/one-line-arena) | Describe a fighter in one line. Pollinations designs the whole fighter from it: name, title, portrait, stats, three moves, a quirk, a weakness and a catchphrase. Then it sends the fighter into a short | [@Drjacky](https://github.com/Drjacky) |
-| [🎬 AI ad video generator](https://github.com/zee7lubricantsoperations-collab/AI-ad-video-generator-free-no-cahrges-) | AI Ad Video Maker is a Windows desktop app that produces 7–10 s advertisement videos with AI‑generated scripts, visuals, voice‑overs, captions and background music. It supports 21 languages, multiple | [@zee7lubricantsoperations-collab](https://github.com/zee7lubricantsoperations-collab) |
-| [🖼️ Poster Iklan Pantas](https://poster.simetry.digital) | Malay-language ad poster maker for small sellers in Malaysia. Users type product, headline and offer, pick style and size (feed, story, banner), optionally upload a product photo, and get a ready-to-p | [@Syafixit](https://github.com/Syafixit) |
-| [🖼️ Pollinations Model Tester](https://polli-model-tester-9321atohv-scriptsnsenses-8753s-projects.vercel.app) | The app is [Pollinations.ai](https://pollinations.ai/) Models Tester — a single-file, browser-based playground for comparing Pollinations text models side-by-side. The app lets you enter any model ID | [@scriptsnsenses-sys](https://github.com/scriptsnsenses-sys) |
-| [🖼️ Teapot Art](https://svirepyibambr.github.io/teapot-art) | A one-page image generator: describe what you want in words — get a picture. Single static HTML file, no build step, no dependencies. Generation goes through the Pollinations image API; a user key is | [@SvirepyiBambr](https://github.com/SvirepyiBambr) |
-| [🖼️ StyleLens AI](https://pollination-studio.base44.app) | Transform your images instantly with AI-powered style conversion and custom artistic edits using POLLINATIONS AI. Restyle — a dark, single-page studio: drop a photo, pick one of 12 styles or describe | [@nalnd1](https://github.com/nalnd1) |
-| [🖼️ Pollen Postcard](https://pollen-postcard.jm716111.chatgpt.site) | Turns a small memory into a polished illustrated postcard. Pollinations writes the title and short note, then generates a matching square image. Visitors connect with BYOP and approve a 1 Pollen budge | [@ismailbanouigu](https://github.com/ismailbanouigu) |
-| [💬 Shimi Bechor (Firstborn Greeter)](https://aidoor.shimi.land/greeter.html) | A greeter agent that welcomes visitors and explains a small agent network (its charter, public board and API). It uses the current Pollinations integration: browser-only Connect User Wallets (BYOP) wi | [@sunraz2](https://github.com/sunraz2) |
+| [🖼️ ZEEK AI Girl Lab - BYOK Public Edition](https://hwoarangkang.github.io/zeek-ai-girl-lab) | ZEEK AI Girl Lab is a 100% client-side BYOK prompt forge for generating AI girl photos. Users bring their own Pollinations sk_... key (stored only in localStorage, zero server), expand prompts with QW | [@hwoarangkang](https://github.com/hwoarangkang) |
+| [💼 Jev AI - Chat with Jev](https://jev-ai.on.websim.com) | **Jev AI - Chat with Jev** is a lightweight browser-based interface for TypeSafe AI's Jev decision model through Pollinations. It allows users to define structured questions and application context, t | [@alexsasha2750](https://github.com/alexsasha2750) |
+| [🖼️ PIXOO64 Media Art](https://github.com/idodov/pixoo64_art) | Pixoo64 Media Album Art is a native Home Assistant custom integration that transforms the Divoom Pixoo64 64×64 LED matrix into an intelligent media and visual display hub. Beyond traditional cover art | [@idodov](https://github.com/idodov) |
+| [🎮 Prompt Brawl](https://lotxo1.github.io/prompt-brawl) | Describe a fighter in one line: the AI designs it (portrait, stats, moves, a weakness) and commentates the brawl. Ladder, daily boss, voice and share links. Players pay with their own Pollen. | [@lotxo1](https://github.com/lotxo1) |
+| [🎮 Wanderpost](https://kreggscode.github.io/wanderpost) | **Explorable postcard worlds.** You type a scene, and the first postcard is painted from it. Then you click the doors, paths and windows **in the picture** to step into the next view — one painted pos | [@kreggscode](https://github.com/kreggscode) |
+| [🖼️ Pollinations Image Studio](https://lahoucine98-pollinations-image-studio.static.hf.space) | Pollinations Image Studio is a web app that allows users to generate AI images using the Pollinations API. Users can connect their Pollinations account through OAuth and create images directly in thei | [@lahoucinebathoum](https://github.com/lahoucinebathoum) |
+| [🖼️ Ai photo editor](https://ai-photo-editor-rmfxo.puter.site) | Experience the ultimate AI photo editor, offering background removal and changing, object removal, color changing, clothing adjustments, and advanced masking. Generate stunning photos with incredible | [@rajapurking4-dotcom](https://github.com/rajapurking4-dotcom) |
+| [🖼️ Polli Garden](https://jacobcreation.github.io/polli-garden) | Polli Garden is a small prompt-to-image creative tool. Users enter an idea, choose a Pollinations image model, and grow a generated image in the browser. It uses the Pollinations image API directly, i | [@jacobcreation](https://github.com/jacobcreation) |
+| [🛠️ Pollen Bomb 💣](https://guest453.github.io/pollen-bomb) | A BYOP (Bring Your Own Pollen) "race the fuse" coding arena: you wind a custom fuse (5s up to 24h), arm the bomb, and a Pollinations text model streams code against it live. How it uses Pollinations: | [@Guest453](https://github.com/Guest453) |
+| [🖼️ PitLane Image Studio](https://pitlaneauctions.app/studio) | PitLane Image Studio generates motorsport and die-cast car images from a text prompt. Users describe a scene, pick a preset style (four-panel race collage, die-cast macro, retro race poster), and get | [@jnjolstad](https://github.com/jnjolstad) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -53,16 +53,16 @@
 
 <!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
 <!-- news:start -->
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Tripo P2 text-to-3D**](https://enter.pollinations.ai/models?q=tripo3d/p2) <sub>Oct 24</sub><br>Turn a text prompt of up to 1,024 characters into a GLB mesh with PBR textures using the alpha, paid-only `tripo3d/p2` model. It does not accept image input.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Qwen Image 2.1 Pro**](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-pro) <sub>Oct 24</sub><br>Generate or edit images with paid-balance model `qwen/qwen-image-2.1-pro`. The Alibaba route accepts up to 10 reference images and sizes up to 2560×2560; its fallback accepts at most four references and may return 2048×2048 for a 2560×2560 request.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **FLUX 3 Max video**](https://enter.pollinations.ai/models) <sub>Oct 24</sub><br>Make 5–20 second videos from text or up to two images used as start and end frames. Paid-balance model `black-forest-labs/flux-3-max` supports optional audio, 720p or 1080p output, and seven aspect ratios.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Muse Spark 1.3**](https://enter.pollinations.ai/models?q=meta/muse-spark-1.3) <sub>Oct 24</sub><br>Use paid-only `meta/muse-spark-1.3` for text and image input, reasoning, and tools. It has a 1,048,576-token context window; Muse Spark 1.2 remains a separate model.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Experimental Glyph Cluster**](https://enter.pollinations.ai/models?q=stealth/glyph-cluster) <sub>Oct 24</sub><br>Try `stealth/glyph-cluster` for coding, long-context reasoning, and automatic tool calling. It is free during stealth for Quest and Paid users, with an 8-request-per-minute limit. Its provider may use prompts and responses for training and does not offer zero data retention.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Nemotron 3.5 Super VL**](https://enter.pollinations.ai/models?q=nvidia/nemotron-3.5-super-vl) <sub>Oct 24</sub><br>Send text or images to paid-only `nvidia/nemotron-3.5-super-vl`. It supports tools, reasoning, structured output, and a 262,144-token context window.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Mercury 3**](https://enter.pollinations.ai/models?q=inception/mercury-3) <sub>Oct 24</sub><br>Use paid-balance `inception/mercury-3` for text requests with tools, reasoning, and a 1,000,000-token context window. Its configured maximum output is 131,072 tokens; structured output is not in its supported-parameter set.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **D3 for decisions**](https://enter.pollinations.ai/models?q=vllm-sr/d3) <sub>Oct 24</sub><br>Use free, Quest-accessible `vllm-sr/d3` for typed choices, yes/no probabilities, and scores through `/alpha/decisions` or `/v1/systemone`. It is limited to 30 requests per minute, and its provider may log inputs and outputs for training. Do not send confidential data.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Perplexity Decider V1.2**](https://enter.pollinations.ai/models?q=perplexity/pplx-decider-v1.2) <sub>Oct 24</sub><br>Use `perplexity/pplx-decider-v1.2` through decisions or chat requests. It replaces retired V1.1, and the old `perplexity/pplx-decider-v1.1-27b` ID remains an alias. Access is paid-only.
-- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Separate decision-key access**](https://enter.pollinations.ai/keys) <sub>Oct 24</sub><br>Grant an API key the `decision` category to use decision models through `/alpha/decisions` without granting access to every text model. The category also appears in model listings, the SDK, and `polli models --type decision`.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **MiniMax M3.1 Flash**](https://enter.pollinations.ai/models?q=minimax/minimax-m3.1-flash) <sub>Nov 3</sub><br>Use `minimax/minimax-m3.1-flash` with text or image input, tools, reasoning, and a 1,048,576-token context window. It does not require a paid balance.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Two Kimi K3.1 Pro variants**](https://enter.pollinations.ai/models?q=moonshotai/kimi-k3.1-pro) <sub>Nov 3</sub><br>Try `moonshotai/kimi-k3.1-pro` or `moonshotai/kimi-k3.1-pro-highspeed` for text and image input, tools, reasoning, and 1,048,576-token context windows. Both require a paid balance.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Jev moves to 1.14**](https://enter.pollinations.ai/models?q=typesafe/jev-1.14) <sub>Nov 3</sub><br>Jev decision requests now use the pinned `typesafe/jev-1.14` release. Existing `jev`, `typesafe/jev`, and `typesafe/jev-1.13` names resolve to 1.14 too.
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Polli supports Mistral Vibe**](https://www.npmjs.com/package/@pollinations/cli) <sub>Nov 3</sub><br>Use `polli harness vibe on|status|off` to set up Pollinations models in Mistral Vibe. It selects `openai/gpt-6-sol` by default, and `--model` lets you choose another tool-calling model.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Clearer community model results** <sub>Nov 2</sub><br>The Trust tab labels community models that error on more than half their eval questions as "endpoint errors" instead of showing a score gap. Score comparisons use answered questions as well as published scores.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Model alerts reach their publishers** <sub>Nov 2</sub><br>Community Watch sends a separate Discord message for each model incident and pings the publisher's linked Discord account when available. Each message points to the model it concerns.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Usage and earnings together** <sub>Nov 1</sub><br>Explore Usage and Earnings in one Activity view. Switch metrics, filter by model or key, inspect chart and table data, and export CSV.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Claimable Quests come first** <sub>Nov 1</sub><br>Claimable Quests now appear at the top with a prominent Claim button. Open and completed Quests follow in that order.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Community model checks** <sub>Nov 1</sub><br>Scheduled probes check public community text and image models with little traffic or poor health. Owners can get warnings for repeated model errors or frequent fallback rescues.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **A clearer My Apps view** <sub>Oct 31</sub><br>Browse your apps in a card grid with 24-hour request counts beside their titles. The grid uses two columns on wider screens and one on phones.
 <!-- news:end -->
 
 [More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
@@ -105,7 +105,7 @@
 
 | Guide | Purpose |
 | --- | --- |
-| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay with their own Pollen |
 | [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
 | [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
 | [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
@@ -126,7 +126,7 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
+Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, Mistral Vibe, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on
@@ -142,7 +142,7 @@ Community members connect their own OpenAI-compatible text, image, image-editing
 - **Automatic fallback routing**: nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
 - **Discover and monitor**: browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
-For billing details when building apps on top, see [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md).
+For billing details when building apps on top, see [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md).
 
 ## 🚀 Getting Started
 
@@ -254,10 +254,10 @@ Install globally and use the shorter `polli` command: `npm install -g @pollinati
 Stream AI responses over an OpenAI-compatible WebSocket:
 
 ```
-wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=pk_YOUR_API_KEY
+wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=sk_YOUR_API_KEY
 ```
 
-Browser clients pass the key as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
+Browser clients pass a user-authorized key from [Pollinations Pay](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
 
 ### MCP Servers
 
@@ -279,12 +279,12 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Browsers, mobile apps, public clients | Budget & permissions set at creation | Stable |
+| **App Key** | `pk_`  | Identifies your app in Pollinations Connect | Can't authenticate requests | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
-> 💡 **Building an app?** Use [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
+> 💡 **Building an app?** Use [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
 
 ### Model Restrictions
 
@@ -485,7 +485,7 @@ The main folders are:
 
 - [`media.pollinations.ai/`](./media.pollinations.ai/): Media upload service: upload files and get a URL to use with Pollinations models, with public tag galleries.
 
-- [`operations/social/`](./operations/social/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
+- [`operations/news/`](./operations/news/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
 
 - [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI for people and AI agents.
 

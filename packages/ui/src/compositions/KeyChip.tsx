@@ -1,7 +1,6 @@
 import { cn } from "../lib/cn.ts";
 import { Chip } from "../primitives/Chip.tsx";
-import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
-import { CopyButton } from "./CopyButton.tsx";
+import { CopyButton, CopyStateIcon } from "./CopyButton.tsx";
 
 export type KeyChipProps = {
     /** The visible start of the key, e.g. "sk_0ysBCkH". */
@@ -51,11 +50,7 @@ export function KeyChip({
                         className,
                     )}
                 >
-                    {copied ? (
-                        <CheckIcon aria-hidden="true" />
-                    ) : (
-                        <ClipboardIcon aria-hidden="true" />
-                    )}
+                    <CopyStateIcon copied={copied} aria-hidden="true" />
                     {copied ? "Copied" : text}
                 </Chip>
             )}

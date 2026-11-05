@@ -6,6 +6,7 @@ declare namespace Cloudflare {
 	}
 	interface LocalEnv {
 		KV: KVNamespace;
+		SETUP_HOLDS: KVNamespace;
 		DB: D1Database;
 		EMAIL: SendEmail;
 		ENVIRONMENT: "local";
@@ -46,6 +47,7 @@ declare namespace Cloudflare {
 	}
 	interface ProductionEnv {
 		KV: KVNamespace;
+		SETUP_HOLDS: KVNamespace;
 		DB: D1Database;
 		EMAIL: SendEmail;
 		ENVIRONMENT: "production";
@@ -88,6 +90,7 @@ declare namespace Cloudflare {
 	}
 	interface StagingEnv {
 		KV: KVNamespace;
+		SETUP_HOLDS: KVNamespace;
 		DB: D1Database;
 		EMAIL: SendEmail;
 		ENVIRONMENT: "staging";
@@ -132,6 +135,7 @@ declare namespace Cloudflare {
 	}
 	interface DevEnv {
 		KV: KVNamespace;
+		SETUP_HOLDS: KVNamespace;
 		DB: D1Database;
 		EMAIL: SendEmail;
 		ENVIRONMENT: "dev";
@@ -173,6 +177,7 @@ declare namespace Cloudflare {
 	}
 	interface TestEnv {
 		KV: KVNamespace;
+		SETUP_HOLDS: KVNamespace;
 		DB: D1Database;
 		EMAIL: SendEmail;
 		ENVIRONMENT: "test";
@@ -219,6 +224,7 @@ declare namespace Cloudflare {
 	}
 	interface Env {
 		KV: KVNamespace;
+		SETUP_HOLDS: KVNamespace;
 		DB: D1Database;
 		EMAIL: SendEmail;
 		ENVIRONMENT: "local" | "production" | "staging" | "dev" | "test" | "development";

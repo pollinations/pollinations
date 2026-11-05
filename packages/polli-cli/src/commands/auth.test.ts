@@ -114,7 +114,6 @@ describe("device login output", () => {
             expect(output).not.toContain("private-device-code");
             expect(saveCredentials).toHaveBeenCalledWith({
                 apiKey: "sk_local_test",
-                keyType: "sk",
             });
         },
     );
@@ -145,6 +144,27 @@ describe("auth status", () => {
             key_budget: 4.4691,
         });
     });
+
+    it("shows the profile name when no GitHub account is linked", async () => {
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        const stdout = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation(() => true);
+        vi.stubGlobal("fetch", async (url: string) =>
+            Response.json(
+                url.includes("/account/balance")
+                    ? { balance: 1, accountBalance: { total: 1 } }
+                    : { githubUsername: null, name: "Ada Lovelace" },
+            ),
+        );
+
+        await authCommand.parseAsync(["status"], { from: "user" });
+
+        expect(JSON.parse(String(stdout.mock.calls[0][0]))).toMatchObject({
+            name: "Ada Lovelace",
+        });
+    });
 });
 
 describe("auth login with a key", () => {
@@ -168,7 +188,6 @@ describe("auth login with a key", () => {
         expect(output).not.toContain("sk_local_test");
         expect(saveCredentials).toHaveBeenCalledWith({
             apiKey: "sk_local_test",
-            keyType: "sk",
         });
     });
 
@@ -182,6 +201,21 @@ describe("auth login with a key", () => {
             }),
         ).rejects.toThrow(ExitSignal);
 
+        expect(saveCredentials).not.toHaveBeenCalled();
+    });
+
+    it("refuses a pk_ App Key before calling the API", async () => {
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        const fetch = vi.fn();
+        vi.stubGlobal("fetch", fetch);
+
+        await expect(
+            authCommand.parseAsync(["login", "--token", "pk_app"], {
+                from: "user",
+            }),
+        ).rejects.toThrow(ExitSignal);
+
+        expect(fetch).not.toHaveBeenCalled();
         expect(saveCredentials).not.toHaveBeenCalled();
     });
 });

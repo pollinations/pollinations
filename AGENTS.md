@@ -1,5 +1,9 @@
 # Agent Guidelines for pollinations.ai
 
+For the live, machine-readable API/CLI/MCP/skills discovery surface (as opposed
+to this file's repo-editing conventions), see
+[gen.pollinations.ai/llms.txt](https://gen.pollinations.ai/llms.txt).
+
 ## App Submission Handling
 
 Two-phase review: AI evidence + human decision via `apps-review-submissions.yml`. Source of truth: `operations/app-management/app.json`.

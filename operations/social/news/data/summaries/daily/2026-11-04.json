@@ -1,0 +1,175 @@
+{
+  "date": "2026-11-04",
+  "period_start": "2026-11-04",
+  "period_end": "2026-11-04",
+  "title": "A new text model and clearer model limits",
+  "summary": "A new text model, five alpha MCP servers, and sandboxes that can pause and wake made this a busy day for builders.\n\nCommunity contributions added `meta/muse-spark-open`, which accepts text and images and supports tools, reasoning controls, and a 1,048,576-token context. Model listings now include `top_provider.max_completion_tokens`, or `null` when no output limit is declared. Another contributor was approved to publish public text and chat models.\n\nAlpha MCP servers now group tools for calculations, network diagnostics, package and model metadata, news feeds, and research sources. They require a Pollinations key but charge no Pollen. The MCP catalog also marks hosted servers as alpha.\n\nKept E2B sandboxes can opt into an idle pause and resume on connection or an authenticated request to a shared port. New `pollinations.app` hosts route SDK and port traffic, while direct provider hosts remain available. Shared-port wakes and lease renewals are prepaid.",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 17634,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 17636,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 17760,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18050,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18118,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18306,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18415,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18417,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18425,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18541,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 19124,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 19126,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 19127,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 19146,
+      "date": "2026-11-04"
+    }
+  ],
+  "generated_at": "2026-11-05T06:06:37.846212+00:00",
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Muse Spark Open",
+      "text": "Try `meta/muse-spark-open` with text or images, tools, and reasoning controls. Its context limit is 1,048,576 tokens; it requires reasoning and does not support `response_format` or `seed`. [View the model](https://enter.pollinations.ai/models?q=meta/muse-spark-open).",
+      "prs": [
+        17634
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Calculators MCP",
+      "text": "Use alpha MCP tools for time zones, cron previews, color contrast, Unicode inspection, QR codes, and ECB currency rates. The tools require a Pollinations key but charge no Pollen. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18050
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Network MCP",
+      "text": "Give an agent alpha tools for DNS lookups, public HTTP diagnostics, CIDR calculations, and domain or IP registration data. A Pollinations key is required, with no Pollen charge. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18118
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "📱",
+      "title": "Packages MCP",
+      "text": "Look up npm, PyPI, and Rust crate dependencies, OSV advisories, and public Hugging Face model or Space metadata through read-only alpha tools. A Pollinations key is required, with no Pollen charge. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18306
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🌟",
+      "title": "News and Feeds MCP",
+      "text": "Read Hacker News, RSS and Atom feeds, Wayback capture links, and USGS earthquake data with alpha agent tools. A Pollinations key is required, with no Pollen charge. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18415
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Research MCP",
+      "text": "Give an agent alpha lookup tools for Wikipedia, Wiktionary, RFCs, Wikidata, Europe PMC, and World Bank data. A Pollinations key is required, with no Pollen charge. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        18417
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Sandboxes That Pause",
+      "text": "Kept E2B sandboxes can opt into idle pause with `idleTimeout` of at least 300 seconds when their API timeout exceeds 600 seconds. A connection can resume a paused sandbox; waking it prepays a lease. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        18425
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Share E2B Ports",
+      "text": "Share an E2B sandbox port with `PUT /alpha/e2b/sandboxes/<id>/ports/<port>` and reach it through a `pollinations.app` host. Authenticated requests can wake a paused sandbox, with the wake and lease prepaid through the sharing key. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        18425
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "Output Limits in Model Listings",
+      "text": "Read `top_provider.max_completion_tokens` from `/v1/models` or `/v1/models/:model`. The field is `null` when no output-token limit is declared. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        18541
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": [
+    {
+      "pr_number": 19146,
+      "url": "https://github.com/pollinations/pollinations/pull/19146",
+      "merged_at": "2026-11-04T08:13:34Z",
+      "api_changes": [
+        {
+          "id": "pr-19146:DELETE /alpha/e2b/sandboxes/{id}/ports/{port}",
+          "endpoint": "DELETE /alpha/e2b/sandboxes/{id}/ports/{port}",
+          "summary": "Unshare sandbox port",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-19146:PUT /alpha/e2b/sandboxes/{id}/ports/{port}",
+          "endpoint": "PUT /alpha/e2b/sandboxes/{id}/ports/{port}",
+          "summary": "Share sandbox port",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
+}

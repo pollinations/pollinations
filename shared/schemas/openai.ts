@@ -413,7 +413,7 @@ export const CreateChatCompletionRequestSchema = z
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
         parallel_tool_calls: z.boolean().optional(),
         user: z.string().optional(),
-        prompt_cache_key: z.string().optional(),
+        prompt_cache_key: z.string().min(1).optional(),
         prompt_cache_options: PromptCacheOptionsSchema,
         prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
         function_call: z
@@ -496,7 +496,7 @@ export const CreateResponseRequestSchema = z
         client_metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
-        prompt_cache_key: z.string().optional(),
+        prompt_cache_key: z.string().min(1).optional(),
         prompt_cache_options: PromptCacheOptionsSchema,
         prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
         service_tier: z.string().optional(),

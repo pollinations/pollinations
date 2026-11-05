@@ -2665,7 +2665,7 @@ test("Honey Census quest pays 5 Pollen only once the survey author has bought mo
     ]);
 });
 
-test("Invite friends pays 2 Pollen once per referred user who bought more than 2 Pollen and is not banned", async ({
+test("Invite friends pays 2 Pollen once per referred user who bought more than 2 Pollen with a card of their own and is not banned", async ({
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
@@ -2676,6 +2676,7 @@ test("Invite friends pays 2 Pollen once per referred user who bought more than 2
         { name: "smallest-pack", pollen: 2, banned: false },
         { name: "banned-buyer", pollen: 5, banned: true },
         { name: "google-buyer", pollen: 5, banned: false },
+        { name: "referrers-card-buyer", pollen: 5, banned: false },
     ].map(({ name, pollen, banned }) => ({
         id: `invite-${name}`,
         githubId: name.startsWith("google")
@@ -2703,6 +2704,17 @@ test("Invite friends pays 2 Pollen once per referred user who bought more than 2
             eventType: "checkout.session.completed",
             userId: id,
             pollenCredited: pollen,
+        })),
+    );
+    await db.insert(schema.stripeCardFingerprintAttempt).values(
+        [
+            [referrer.id, "fp_referrer"],
+            ["invite-buyer", "fp_buyer"],
+            ["invite-referrers-card-buyer", "fp_referrer"],
+        ].map(([userId, cardFingerprint]) => ({
+            eventId: `evt_card_${userId}`,
+            userId,
+            cardFingerprint,
         })),
     );
 

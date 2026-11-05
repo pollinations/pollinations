@@ -14,7 +14,8 @@ import { MIN_POLLEN_BOUGHT, pollenBoughtSql } from "./github-contributions.ts";
  * Referrals: `user.referred_by` names who brought a user, set once near signup
  * by an invite link (auth.ts) or a BYOP app login (attributeAppSignup). The
  * referrer earns the reward once per referred user, as soon as that user has
- * bought more than MIN_POLLEN_BOUGHT Pollen.
+ * bought more than MIN_POLLEN_BOUGHT Pollen. A user who paid with a card the
+ * referrer has used is the referrer's own second account and doesn't count.
  */
 
 /** The GitHub account that owns the first-party Pollinations apps. */
@@ -44,7 +45,12 @@ export async function evaluateUser(
         SELECT u.id FROM "user" AS u
         WHERE u.referred_by = ${user.id}
           AND (COALESCE(u.banned, 0) = 0 OR u.ban_expires <= unixepoch())
-          AND ${pollenBoughtSql(sql`u.id`)} > ${MIN_POLLEN_BOUGHT}`);
+          AND ${pollenBoughtSql(sql`u.id`)} > ${MIN_POLLEN_BOUGHT}
+          AND NOT EXISTS (
+              SELECT 1 FROM stripe_card_fingerprint_attempt AS friend
+              JOIN stripe_card_fingerprint_attempt AS referrer
+                ON referrer.card_fingerprint = friend.card_fingerprint
+              WHERE friend.user_id = u.id AND referrer.user_id = ${user.id})`);
     return {
         proposals: referred.map(({ id }) => ({
             quest: inviteFriendsQuest,

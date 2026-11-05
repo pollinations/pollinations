@@ -156,7 +156,7 @@ test("signing up through an invite link records the inviter", async ({
     expect(newUser?.referredBy).toBe("inviter");
 });
 
-test("an app login refers a new user to the app owner, except old users, the owner and first-party apps", async ({
+test("an app login refers a new user to the app owner, except old or already referred users, the owner and first-party apps", async ({
     accountToken,
 }) => {
     const db = drizzle(env.DB, { schema });
@@ -211,11 +211,18 @@ test("an app login refers a new user to the app owner, except old users, the own
 
     await insertUser("new-user", 1001);
     await insertUser("old-user", 1002, new Date(Date.now() - 2 * 3600_000));
-    for (const userId of ["new-user", "old-user", owner.id]) {
+    await insertUser("inviter", 1004);
+    await insertUser("invited-user", 1005);
+    await db
+        .update(schema.user)
+        .set({ referredBy: "inviter" })
+        .where(eq(schema.user.id, "invited-user"));
+    for (const userId of ["new-user", "old-user", "invited-user", owner.id]) {
         await logInThroughApp(userId);
     }
     expect(await referredBy("new-user")).toBe(owner.id);
     expect(await referredBy("old-user")).toBeNull();
+    expect(await referredBy("invited-user")).toBe("inviter");
     expect(await referredBy(owner.id)).toBeNull();
 
     await db

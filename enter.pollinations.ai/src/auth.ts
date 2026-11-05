@@ -80,13 +80,12 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const discordConfig = discordConfigFromEnv(env);
     let githubProfile: { id: number; username: string } | undefined;
 
-    /** The unbanned owner of the invite link's GitHub id, unless it's the new user. */
+    /** The unbanned owner of the invite link's GitHub id. */
     const findReferrer = async (
         cookie: string | null | undefined,
-        signupGithubId: number | undefined,
     ): Promise<string | undefined> => {
         const ref = Number(cookie || Number.NaN);
-        if (!Number.isSafeInteger(ref) || ref === signupGithubId) return;
+        if (!Number.isSafeInteger(ref)) return;
         const [referrer] = await db
             .select({
                 id: userTable.id,
@@ -330,7 +329,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             await Promise.all([
                                 findReferrer(
                                     context?.getCookie(INVITE_REF_COOKIE),
-                                    githubProfile?.id,
                                 ),
                                 restrictQuestPollenAtSignup(
                                     env.SETUP_HOLDS,

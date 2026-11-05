@@ -2016,6 +2016,10 @@ export const accountRoutes = new Hono<Env>()
                     drizzle(c.env.DB, { schema }),
                     user.id,
                     created.byopClientKeyId,
+                ).catch((error) =>
+                    c.get("log").warn("App sign-up referral failed: {error}", {
+                        error,
+                    }),
                 );
             }
 

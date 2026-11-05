@@ -60,7 +60,18 @@ export function isNetworkFailure(error: unknown): boolean {
             /fetch failed|network|connection|socket/i.test(error.message)) ||
         (error instanceof Error &&
             error.constructor === Error &&
-            error.message === "Network connection lost.")
+            error.message === "Network connection lost." &&
+            // Text clients also use plain Error for classified provider failures.
+            ![
+                (error as UpstreamFailure).status,
+                (error as UpstreamFailure).upstreamStatus,
+            ].some(
+                (status) =>
+                    typeof status === "number" &&
+                    Number.isInteger(status) &&
+                    status >= 100 &&
+                    status <= 599,
+            ))
     );
 }
 

@@ -16,6 +16,7 @@ import {
     type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
+    isNetworkFailure,
     isRetryableFallbackError,
     linkFallbackEntries,
     withModelFallback,
@@ -772,10 +773,58 @@ describe("isRetryableFallbackError", () => {
         ).toBe(true);
     });
 
+    it("recognizes Workerd failures without a valid HTTP status", () => {
+        for (const field of ["status", "upstreamStatus"]) {
+            for (const value of [
+                undefined,
+                null,
+                "400",
+                0,
+                NaN,
+                Infinity,
+                400.5,
+                600,
+            ]) {
+                expect(
+                    isNetworkFailure(
+                        Object.assign(new Error("Network connection lost."), {
+                            [field]: value,
+                        }),
+                    ),
+                ).toBe(true);
+            }
+            expect(
+                isNetworkFailure(
+                    Object.assign(new Error("Network connection lost."), {
+                        [field]: 400,
+                    }),
+                ),
+            ).toBe(false);
+        }
+    });
+
     it("fails over on a network-level failure but not on our own bugs", () => {
         expect(isRetryableFallbackError(new TypeError("fetch failed"))).toBe(
             true,
         );
+        expect(
+            isRetryableFallbackError(new Error("Network connection lost.")),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(new Error("connection handler failed")),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                new Error("Network connection lost. Invalid payload"),
+            ),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, {
+                    message: "Network connection lost.",
+                }),
+            ),
+        ).toBe(false);
         expect(
             isRetryableFallbackError(
                 new TypeError("Cannot read properties of undefined"),

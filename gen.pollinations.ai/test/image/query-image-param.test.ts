@@ -49,4 +49,19 @@ describe.each([
         const url = "https://a.example/image?next=1,HTTPS://b.example/image";
         expect(parseImage(url)).toEqual([url]);
     });
+
+    it("rejects an empty model string", () => {
+        expect(() =>
+            schema.parse({ model: "", image: "https://example.com/image.png" }),
+        ).toThrow();
+    });
+
+    it("rejects a whitespace-only model string", () => {
+        expect(() =>
+            schema.parse({
+                model: "   ",
+                image: "https://example.com/image.png",
+            }),
+        ).toThrow();
+    });
 });

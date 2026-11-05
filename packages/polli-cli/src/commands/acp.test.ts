@@ -82,7 +82,10 @@ const stubFetch = (responses: Response[]) => {
                     tools: [{ name: "read_note", inputSchema: noteSchema }],
                 },
                 "tools/call": {
-                    content: [{ type: "text", text: "buy apples" }],
+                    content: [
+                        { type: "text", text: "buy apples" },
+                        { type: "image", data: "aGk=", mimeType: "image/png" },
+                    ],
                 },
             };
             return Response.json({
@@ -121,6 +124,10 @@ describe("polli acp", () => {
                     },
                 },
             ]),
+            Response.json(
+                { error: { message: "Invalid API key" } },
+                { status: 401 },
+            ),
             sse([{ type: "response.completed" }]),
         ]);
 
@@ -154,6 +161,9 @@ describe("polli acp", () => {
                     });
                 expect((await turn("Find bees")).stopReason).toBe("end_turn");
                 expect((await turn("Again")).stopReason).toBe("refusal");
+                await expect(turn("Unauthorized")).rejects.toMatchObject({
+                    code: -32000,
+                });
                 expect((await turn("Third")).stopReason).toBe("end_turn");
             });
 
@@ -192,8 +202,9 @@ describe("polli acp", () => {
             model: "community/ada/helper",
             input: [...firstTurn, user("Again")],
         });
-        // ACP leaves the refused turn out of later prompts.
-        expect(bodies[2].input).toEqual([...firstTurn, user("Third")]);
+        // ACP leaves the refused turn out of later prompts, and polli the
+        // failed one, which the editor may resend.
+        expect(bodies[3].input).toEqual([...firstTurn, user("Third")]);
     });
 
     it("runs editor MCP tools only when the user allows them", async () => {
@@ -289,7 +300,10 @@ describe("polli acp", () => {
                 type: "function_call_output",
                 call_id: "call_a",
                 output: JSON.stringify({
-                    content: [{ type: "text", text: "buy apples" }],
+                    content: [
+                        { type: "text", text: "buy apples" },
+                        { type: "text", text: "[image output omitted]" },
+                    ],
                 }),
             },
             {

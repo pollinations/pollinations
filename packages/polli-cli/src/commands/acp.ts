@@ -369,6 +369,17 @@ const runEditorTool = async (
             content: [{ type: "text", text: errorMessage(error) }],
         };
     }
+    // Gen gives the model tool results as text, so base64 would cost tokens.
+    result = {
+        ...result,
+        content: (result.content ?? []).map((part) =>
+            part.type === "text" ||
+            part.type === "resource_link" ||
+            (part.type === "resource" && "text" in part.resource)
+                ? part
+                : { type: "text", text: `[${part.type} output omitted]` },
+        ),
+    };
     await update({
         sessionUpdate: "tool_call_update",
         toolCallId: call.call_id,
@@ -457,6 +468,11 @@ const prompt = async (
         return { stopReason: "max_turn_requests" };
     } catch (error) {
         if (signal.aborted) return { stopReason: "cancelled" };
+        // The editor may resend this prompt (say, after sign-in), so keep a
+        // failed turn only when tools already ran in it.
+        if (!resultIds(input.slice(session.history.length)).size) {
+            input.length = session.history.length;
+        }
         throw error;
     } finally {
         // Also after a cancel or error, so tools that already ran stay known.

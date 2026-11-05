@@ -1289,6 +1289,7 @@ const MIME_TYPES: Record<string, string> = {
     png: "image/png",
     gif: "image/gif",
     webp: "image/webp",
+    avif: "image/avif",
     svg: "image/svg+xml",
     bmp: "image/bmp",
     ico: "image/x-icon",
@@ -1298,6 +1299,7 @@ const MIME_TYPES: Record<string, string> = {
     m4a: "audio/mp4",
     flac: "audio/flac",
     aac: "audio/aac",
+    opus: "audio/opus",
     mp4: "video/mp4",
     webm: "video/webm",
     mov: "video/quicktime",
@@ -1307,7 +1309,10 @@ const MIME_TYPES: Record<string, string> = {
 
 function detectContentType(filename: string): string {
     const ext = filename.split(".").pop()?.toLowerCase() || "";
-    return MIME_TYPES[ext] || "application/octet-stream";
+    // Own keys only: "x.constructor" must not find Object's constructor.
+    return Object.hasOwn(MIME_TYPES, ext)
+        ? MIME_TYPES[ext]
+        : "application/octet-stream";
 }
 
 export default app;

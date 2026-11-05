@@ -710,6 +710,7 @@ describe("media.pollinations.ai", () => {
             await form(new File([html], "notes.bin")),
             await json({ data: "data:text/html;base64,PGI+aGk8L2I+" }),
             await json({ data: "AQID", contentType: "application/pdf" }),
+            await json({ data: "AQID", name: "x.constructor" }),
         ]) {
             expect(res.status).toBe(415);
             expect(((await res.json()) as { error: string }).error).toContain(

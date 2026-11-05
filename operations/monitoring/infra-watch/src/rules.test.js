@@ -237,6 +237,28 @@ test("gen down needs 3 checks in a row, then closes as soon as gen is back", () 
     assert.equal(r.actions[0].type, "close");
 });
 
+test("Enter down opens after 3 checks and closes on its own check, whatever gen does", () => {
+    const enter = { kind: "ENTER_DOWN", error: "HTTP 500" };
+    const gen = { kind: "GEN_DOWN" };
+    let r = { state: {} };
+    for (const t of [1, 2, 3]) r = step(r.state, { gen, enter }, t);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open gen", "open enter"],
+    );
+    // Enter answers again while gen is still down: only Enter closes.
+    r = step(r.state, { gen }, 4);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["update gen", "close enter"],
+    );
+    // And while the status data is down.
+    const analytics = { kind: "ANALYTICS_DOWN" };
+    for (const t of [5, 6, 7]) r = step(r.state, { analytics, enter }, t);
+    r = step(r.state, { analytics }, 8);
+    assert.ok(r.actions.some((a) => a.type === "close" && a.key === "enter"));
+});
+
 test("analytics outage pauses model incidents but is not gen down", () => {
     let r = step({}, degraded(), 0);
     const blind = conditions({ analyticsDown: true });

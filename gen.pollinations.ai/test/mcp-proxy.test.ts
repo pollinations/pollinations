@@ -546,29 +546,38 @@ test("refuses agent run tokens on Connectors", async () => {
     expect(response.status).toBe(403);
 });
 
-test("keeps agent run tokens minted from a secret key on Computer", async () => {
+test("gives each agent run its own Computer on the account", async () => {
     const parent = await createTestApiKey({
         user: { tierBalance: 1 },
     });
-    const token = await signAgentRunToken({
-        secret: env.BETTER_AUTH_SECRET,
-        parentApiKeyId: parent.id,
-        parentRequestId: crypto.randomUUID(),
-    });
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/computer",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
+    const computerFor = async (agentModelId: string) => {
+        const token = await signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: parent.id,
+            parentRequestId: crypto.randomUUID(),
+            agentModelId,
+        });
+        const response = await SELF.fetch(
+            "https://gen.pollinations.ai/mcp/computer",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(MCP_REQUEST),
             },
-            body: JSON.stringify(MCP_REQUEST),
-        },
-    );
+        );
+        expect(response.status).toBe(200);
+        return response.text();
+    };
 
-    expect(response.status).toBe(200);
-    expect(await response.text()).toContain(`computer:${parent.userId}`);
+    expect(await computerFor("owner/agent-one")).toContain(
+        `computer:${parent.userId}:agent:owner/agent-one:`,
+    );
+    expect(await computerFor("owner/agent-two")).toContain(
+        `computer:${parent.userId}:agent:owner/agent-two:`,
+    );
 });
 
 test.for(["composio", "computer"])(
@@ -622,6 +631,33 @@ test("refuses receipt-billed tool calls from an empty wallet but keeps initializ
         params: {},
     });
     expect(initialized.status).toBe(200);
+});
+
+test("refuses receipt-billed tool calls from a key with no budget left", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+        pollenBudget: 0,
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/computer",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(402);
+    expect(await response.json()).toMatchObject({
+        error: { code: "KEY_BUDGET_EXHAUSTED" },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
 });
 
 test("refuses tool calls from a Quest Pollen only key without Quest Pollen", async () => {

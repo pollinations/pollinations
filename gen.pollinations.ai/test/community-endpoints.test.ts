@@ -7,7 +7,11 @@ import {
 import { Buffer } from "node:buffer";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
-import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import {
+    AGENT_RUN_TOKEN_TTL_SECONDS,
+    signAgentRunToken,
+    verifyAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
@@ -2783,6 +2787,50 @@ describe("community endpoint helpers", () => {
             );
         });
 
+        it("expires a run token minted inside a run when that run does", async () => {
+            const endpoint = endpointAgent();
+            // Time left; just past expiry, which verification still accepts
+            // within its clock-skew tolerance; and a run token minted on a
+            // clock running a second ahead.
+            for (const secondsLeft of [
+                60,
+                -2,
+                AGENT_RUN_TOKEN_TTL_SECONDS + 1,
+            ]) {
+                const parentRunExpiresAt =
+                    Math.floor(Date.now() / 1000) + secondsLeft;
+                const nested = await communityEndpointGatewayContext({
+                    endpoint,
+                    modelDefinition: communityModelDefinition(endpoint),
+                    requestData: {
+                        messages: [{ role: "user", content: "hi" }],
+                    },
+                    secret,
+                    portkeyGatewayUrl: "https://portkey.test",
+                    userApiKey: "sk_user_key",
+                    parentRequestId: "parent-request-id",
+                    parentApiKeyId: "parent-key-id",
+                    parentRunExpiresAt,
+                });
+                const nestedClaims = await verifyAgentRunToken(
+                    String(nested.modelConfig?.authKey),
+                    secret,
+                );
+                expect(nestedClaims.expiresAt).toBe(parentRunExpiresAt);
+            }
+
+            const topLevelClaims = await verifyAgentRunToken(
+                String(
+                    (await contextFor(endpoint, "parent-key-id")).modelConfig
+                        ?.authKey,
+                ),
+                secret,
+            );
+            expect(topLevelClaims.expiresAt - topLevelClaims.issuedAt).toBe(
+                AGENT_RUN_TOKEN_TTL_SECONDS,
+            );
+        });
+
         // The complement of the test above, and the reason an agent listing
         // has nowhere to store a credential: only a proxy sends one.
         it("sends a proxy listing's saved bearer, never a run token", async () => {
@@ -3083,6 +3131,147 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                 "test/brain-two",
                 "test/brain-both",
             ]);
+        },
+    );
+}
+
+for (const api of ["chat_completions", "responses"] as const) {
+    fixtureTest(
+        `an agent run calling an agent over ${api} hands on only its remaining time`,
+        async () => {
+            const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+            const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+            const route =
+                api === "responses" ? "responses" : "chat/completions";
+            const agentUrl = `https://agent.example.com/v1/${route}`;
+            const ownerUserId = await createTestUser({
+                githubId: nextAllowedGithubId(),
+                githubUsername: ownerGithubUsername,
+            });
+            await insertCommunityEndpoints({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                type: "endpoint_agent",
+                visibility: "public",
+                name: modelName,
+                api,
+                baseUrl: agentUrl,
+                upstreamModel: "polli",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const runToken = await signAgentRunToken({
+                secret: env.BETTER_AUTH_SECRET,
+                parentApiKeyId: caller.id,
+                parentRequestId: crypto.randomUUID(),
+                expiresIn: 60,
+            });
+            const run = await verifyAgentRunToken(
+                runToken,
+                env.BETTER_AUTH_SECRET,
+            );
+
+            const upstreamTokens: string[] = [];
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url === agentUrl) {
+                        upstreamTokens.push(
+                            request.headers
+                                .get("authorization")
+                                ?.replace(/^Bearer\s+/i, "") ?? "",
+                        );
+                        return Response.json(
+                            api === "responses"
+                                ? {
+                                      id: "resp_agent",
+                                      object: "response",
+                                      created_at: 1,
+                                      status: "completed",
+                                      model: "polli",
+                                      output: [
+                                          {
+                                              id: "msg_agent",
+                                              type: "message",
+                                              role: "assistant",
+                                              status: "completed",
+                                              content: [
+                                                  {
+                                                      type: "output_text",
+                                                      text: "ok",
+                                                      annotations: [],
+                                                  },
+                                              ],
+                                          },
+                                      ],
+                                      usage: {
+                                          input_tokens: 2,
+                                          output_tokens: 3,
+                                          total_tokens: 5,
+                                      },
+                                  }
+                                : {
+                                      id: "agent",
+                                      object: "chat.completion",
+                                      model: "polli",
+                                      choices: [
+                                          {
+                                              index: 0,
+                                              message: {
+                                                  role: "assistant",
+                                                  content: "ok",
+                                              },
+                                              finish_reason: "stop",
+                                          },
+                                      ],
+                                      usage: {
+                                          prompt_tokens: 2,
+                                          completion_tokens: 3,
+                                          total_tokens: 5,
+                                      },
+                                  },
+                        );
+                    }
+                    if (isBillingFetch(request))
+                        return Response.json({ data: [] });
+                    throw new Error(`Unexpected fetch: ${request.url}`);
+                }),
+            );
+
+            const response = await fetchGen(
+                `https://gen.pollinations.ai/v1/${route}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${runToken}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: communityModelId(ownerGithubUsername, modelName),
+                        ...(api === "responses"
+                            ? { input: "hello" }
+                            : {
+                                  messages: [
+                                      { role: "user", content: "hello" },
+                                  ],
+                              }),
+                    }),
+                },
+            );
+            expect(response.status, await response.text()).toBe(200);
+            expect(upstreamTokens).toHaveLength(1);
+            const nested = await verifyAgentRunToken(
+                upstreamTokens[0],
+                env.BETTER_AUTH_SECRET,
+            );
+            expect(nested.parentApiKeyId).toBe(caller.id);
+            expect(nested.expiresAt).toBe(run.expiresAt);
         },
     );
 }

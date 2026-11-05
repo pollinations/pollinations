@@ -188,6 +188,8 @@ async function signIn(from: TgUser) {
             if (token.access_token) {
                 const user = userOf(from.id);
                 user.key = token.access_token;
+                // A new sign-in gets its own warnings (checkSignIns).
+                user.warned = undefined;
                 save();
                 const bot = waitingBots.get(from.id);
                 waitingBots.delete(from.id);
@@ -1176,55 +1178,54 @@ type SignIn = { expiresAt: string | null; pollenBudget: number | null };
 
 const DAY_MS = 86_400_000;
 
-// The warnings due now, each with what Mama says.
-export function dueWarnings(
-    { expiresAt, pollenBudget }: SignIn,
-    rent: number,
-    now = Date.now(),
-) {
-    const due: [Warning, string][] = [];
-    if (expiresAt && Date.parse(expiresAt) - now < 2 * DAY_MS)
-        due.push([
-            "expiry",
-            `My access to your account ends ${when(expiresAt)}, and your Barbaras stop then. To keep them running, send /signin and clear the expiry.`,
-        ]);
-    if (pollenBudget !== null && pollenBudget < rent)
-        due.push([
-            "budget",
-            `My access to your account has ${pollenBudget.toFixed(2)} Pollen left, about ${Math.floor((24 * pollenBudget) / rent)} hours of your Barbaras' computers. They stop when it runs out. To keep them running, send /signin and clear the budget.`,
-        ]);
-    return due;
-}
+// What Mama says when a warning is due, or undefined.
+export const expiryWarning = ({ expiresAt }: SignIn, now = Date.now()) =>
+    expiresAt && Date.parse(expiresAt) - now < 2 * DAY_MS
+        ? `My access to your account ends ${when(expiresAt)}, and your Barbaras stop then. To keep them running, send /signin and clear the expiry.`
+        : undefined;
 
-// What their running Barbaras' computers cost a day.
+export const budgetWarning = ({ pollenBudget }: SignIn, rent: number) =>
+    pollenBudget !== null && pollenBudget < rent
+        ? `My access to your account has ${pollenBudget.toFixed(2)} Pollen left, about ${Math.floor((24 * pollenBudget) / rent)} hours of your Barbaras' computers. They stop when it runs out. To keep them running, send /signin and clear the budget.`
+        : undefined;
+
+// What their running Barbaras' computers cost a day. A box that doesn't
+// answer leaves it unknown.
 async function rentOf(key: string, barbaras: Barbara[]) {
     const [rates, boxes] = await Promise.all([
-        pricing(),
+        gen<Pricing>(key, "/alpha/e2b/pricing"),
         Promise.all(barbaras.map((b) => boxOf(key, b))),
     ]);
+    if (boxes.some((box) => box.state === "unknown"))
+        throw new Error("A box didn't answer");
     return boxes
         .filter((box) => box.state === "running")
         .reduce((sum, box) => sum + rentPerDay(rates, box as Size), 0);
 }
 
 // On Mama's hourly alarm (index.ts). Each warning goes once, and again only if
-// it was fixed and comes back. A failed read changes nothing.
+// it was fixed and comes back. A failed read leaves that warning as it was.
 export async function checkSignIns() {
     for (const [id, user] of Object.entries(state)) {
-        if (!user.key || !user.barbaras.length) continue;
+        const { key } = user;
+        if (!key || !user.barbaras.length) continue;
+        const warn = async (warning: Warning, text?: string) => {
+            // Signed in again meanwhile: this answer is about the old key.
+            if (user.key !== key) return;
+            if (text && !user.warned?.includes(warning))
+                await say(Number(id), text, MENU);
+            const others = user.warned?.filter((w) => w !== warning) ?? [];
+            user.warned = text ? [...others, warning] : others;
+            save();
+        };
         try {
-            const signIn = await gen<SignIn>(user.key, "/account/key");
+            const signIn = await gen<SignIn>(key, "/account/key");
+            await warn("expiry", expiryWarning(signIn));
             const rent =
                 signIn.pollenBudget === null
                     ? 0
-                    : await rentOf(user.key, user.barbaras);
-            const due = dueWarnings(signIn, rent);
-            for (const [warning, text] of due) {
-                if (!user.warned?.includes(warning))
-                    await say(Number(id), text, MENU);
-            }
-            user.warned = due.map(([warning]) => warning);
-            save();
+                    : await rentOf(key, user.barbaras);
+            await warn("budget", budgetWarning(signIn, rent));
         } catch (error) {
             console.error(`checkSignIns ${id}:`, error);
         }

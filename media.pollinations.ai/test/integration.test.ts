@@ -2258,7 +2258,9 @@ describe("media.pollinations.ai", () => {
                         Authorization: `Bearer ${key}`,
                         "CF-Connecting-IP": ip,
                         "Content-Type": "image/png",
-                        "Content-Length": String(TINY_PNG.length),
+                        ...(method === "POST" && {
+                            "Content-Length": String(TINY_PNG.length),
+                        }),
                     },
                 },
                 mediaEnv,

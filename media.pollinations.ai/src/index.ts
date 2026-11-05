@@ -2,7 +2,7 @@ import { AGENT_RUN_TOKEN_PREFIX } from "@shared/auth/agent-run-token.ts";
 import { extractApiKey } from "@shared/auth/api-key.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { rateLimit } from "@shared/rate-limit.ts";
+import { limit, rateLimit } from "@shared/rate-limit.ts";
 import {
     invalidSafeTokens,
     parseSafeFeatures,
@@ -324,7 +324,7 @@ const api = new Hono<{ Bindings: Env }>();
 const keyCheckRateLimit = rateLimit({ byIp: true });
 const RateLimitedResponse = {
     description:
-        "Too many requests from this API key or IP address; retry after `Retry-After` seconds",
+        "Too many requests from this API key, IP address or account; retry after `Retry-After` seconds",
 };
 const KeyCheckUnavailableResponse = {
     description: "The API key check is temporarily unavailable; retry",
@@ -440,10 +440,7 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
-            429: {
-                description:
-                    "Too many requests from this API key, IP address or account; retry after `Retry-After` seconds",
-            },
+            429: RateLimitedResponse,
             500: {
                 description:
                     "Upload failed. The file may already have been stored, so retrying a custom ID can return 409.",
@@ -479,19 +476,12 @@ api.post(
         }
         // One account can hold many keys, so uploads are also capped per
         // account; wrangler.toml sets the limit.
-        const account = authResult.userId ?? authResult.keyId ?? "unattributed";
-        if (
-            c.env.UPLOAD_RATE_LIMITER &&
-            !(await c.env.UPLOAD_RATE_LIMITER.limit({ key: account })).success
-        ) {
-            c.header("Retry-After", "60");
-            return c.json(
-                {
-                    error: "Too many uploads from this account. Please slow down.",
-                },
-                429,
-            );
-        }
+        await limit(
+            c,
+            c.env.UPLOAD_RATE_LIMITER,
+            authResult.userId ?? authResult.keyId ?? "unattributed",
+            60,
+        );
         // Stored on the file and logged, so finding who uploaded it needs
         // neither the key name nor Enter's D1.
         const uploader = {
@@ -1200,6 +1190,7 @@ app.use(
             "X-Content-Size",
             "X-Safety-Applied",
             "Link",
+            "Retry-After",
         ],
     }),
 );

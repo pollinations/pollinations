@@ -576,6 +576,9 @@ test("gives each agent its own Computer on the account, kept across runs", async
     const agentOne = await computerFor(
         await runOf("community/owner/agent-one"),
     );
+    expect(agentOne).toContain(
+        `computer:${parent.userId}:agent:community/owner/agent-one:`,
+    );
     expect(await computerFor(await runOf("community/owner/agent-one"))).toBe(
         agentOne,
     );

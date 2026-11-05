@@ -108,7 +108,12 @@ async def generate(request: ImageRequest, _=Depends(verify_backend_token)):
                 img = Image.open(BytesIO(img_bytes)).convert("RGB")
                 # The pipeline's size/aspect checks are input errors too.
                 pipe.image_processor.check_image_input(img)
-            except (OSError, base64.binascii.Error, ValueError) as e:
+            except (
+                OSError,
+                base64.binascii.Error,
+                ValueError,
+                Image.DecompressionBombError,
+            ) as e:
                 raise HTTPException(
                     status_code=400, detail=f"Invalid reference image: {e}"
                 ) from e

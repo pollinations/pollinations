@@ -124,6 +124,15 @@ class KleinInputTest(unittest.TestCase):
         pipeline.assert_not_called()
         self.generator.assert_not_called()
 
+    def test_decompression_bomb_reference_returns_400_before_inference(self):
+        # A ~24 KB PNG over Pillow's 2x MAX_IMAGE_PIXELS limit fits Gen's byte cap.
+        buffer = BytesIO()
+        Image.new("1", (20000, 10000)).save(buffer, format="PNG")
+        response = self.generate([base64.b64encode(buffer.getvalue()).decode()])
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("decompression bomb", response.json()["detail"])
+        pipeline.assert_not_called()
+
     def test_real_inference_failures_are_not_reclassified_as_bad_input(self):
         for error in [ValueError, OSError]:
             with self.subTest(error=error):

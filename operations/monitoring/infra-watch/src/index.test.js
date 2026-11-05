@@ -74,8 +74,9 @@ async function fake(input, init = {}) {
     if (url.hostname === "discord.test") return discord(url, init);
     if (url.pathname === "/") return new Response("ok");
     // Enter's key check, made with the probe key.
-    if (url.hostname === "enter.pollinations.ai") {
+    if (url.href === "https://enter.pollinations.ai/api/account/key") {
         world.enterKeys.push(init.headers.authorization);
+        if (world.enter === "reset") throw new Error("connection reset");
         return new Response(null, { status: world.enter });
     }
     if (url.pathname === "/models/status") {
@@ -998,19 +999,26 @@ const tells =
     };
 const HOURS = (n) => n * 60 * 60_000;
 
-it("opens an Enter card after three failed key checks, and closes it once Enter answers", async () => {
+it("opens an Enter card after three failed key checks, never for a refused key, and closes it once Enter answers", async () => {
     const stub = watch();
-    world.enter = 503;
+    const enter = async () => (await stored(stub, "state")).open?.enter;
+    world.enter = 401;
     await checks(stub, 3);
-    const card = (await stored(stub, "state")).open.enter;
+    expect(await enter()).toBeUndefined();
+    world.enter = 503;
+    await checks(stub, 2);
+    expect(await enter()).toBeUndefined();
+    world.enter = "reset";
+    await stub.check();
+    const card = await enter();
     const [post] = posts(INFRA);
     expect(post.text).toContain("DOWN: enter.pollinations.ai");
-    expect(post.text).toContain("HTTP 503");
+    expect(post.text).toContain("connection reset");
     expect(world.enterKeys.at(-1)).toBe("Bearer probe-test");
     world.enter = 200;
     await stub.check();
     await settle(stub);
-    expect((await stored(stub, "state")).open.enter).toBeUndefined();
+    expect(await enter()).toBeUndefined();
     expect(over(edits(card.messageId).at(-1))).toBe(true);
 });
 

@@ -113,7 +113,8 @@ const isUp = (gen) =>
     }).catch(() => false);
 
 // Enter reads the key from its database (D1) to answer, so this fails when
-// API keys, sign-in and billing do. Why it failed, or null.
+// API keys, sign-in and billing do. Why it failed, or null. Any answer under
+// 500 is Enter up: a refused probe key is the community monitor's card.
 const ENTER_KEY_CHECK = "https://enter.pollinations.ai/api/account/key";
 const enterError = (key) =>
     withTimeout(20_000, async (signal) => {
@@ -122,7 +123,7 @@ const enterError = (key) =>
             headers: { authorization: `Bearer ${key}` },
         });
         res.body?.cancel();
-        return res.ok ? null : `HTTP ${res.status}`;
+        return res.status < 500 ? null : `HTTP ${res.status}`;
     }).catch((error) => error.message);
 
 const show = (label, body) =>

@@ -3020,7 +3020,17 @@ export async function generateXaiSpeech(opts: {
             }),
         }),
         XAI_TTS_ENDPOINT,
-    );
+    ).catch((error: unknown) => {
+        // xAI uses 404 for an unknown caller-supplied voice, not just routing.
+        if (
+            error instanceof UpstreamError &&
+            error.upstreamStatus === 404 &&
+            error.message === `TTS synthesis failed: Voice '${voice}' not found`
+        ) {
+            throw new UpstreamError(400, error);
+        }
+        throw error;
+    });
 
     log.info("xAI TTS success: voice={voice}, chars={chars}", {
         voice,

@@ -21,7 +21,7 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import torch
 import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from pydantic import BaseModel, Field, model_validator
 
 logging.basicConfig(level=logging.INFO)
@@ -108,7 +108,7 @@ async def generate(request: ImageRequest, _=Depends(verify_backend_token)):
                 img = Image.open(BytesIO(img_bytes)).convert("RGB")
                 # The pipeline's size/aspect checks are input errors too.
                 pipe.image_processor.check_image_input(img)
-            except (UnidentifiedImageError, base64.binascii.Error, ValueError) as e:
+            except (OSError, base64.binascii.Error, ValueError) as e:
                 raise HTTPException(
                     status_code=400, detail=f"Invalid reference image: {e}"
                 ) from e

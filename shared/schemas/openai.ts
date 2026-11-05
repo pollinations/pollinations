@@ -428,6 +428,15 @@ export const CreateChatCompletionRequestSchema = z
             .max(128)
             .optional(), // deprecated, supported
     })
+    .superRefine((data, ctx) => {
+        if (data.stream_options && !data.stream) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["stream_options"],
+                message: "`stream_options` requires `stream` to be true",
+            });
+        }
+    })
     .passthrough();
 
 export type CreateChatCompletionRequest = z.infer<

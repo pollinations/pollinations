@@ -707,6 +707,16 @@ function responseForTracking(response: Response): Response {
     return readsBody ? response.clone() : new Response(null, response);
 }
 
+/** A model list is priced at the model that ran; one model at its own price. */
+function quotedModel(
+    request: RequestTrackingData,
+    candidate: FallbackCandidate,
+): ModelDefinition {
+    return request.modelRequested?.includes(",")
+        ? (candidate.definition ?? request.modelDefinition)
+        : request.modelDefinition;
+}
+
 function trackJsonErrorUsage(
     eventType: EventType,
     request: RequestTrackingData,
@@ -737,7 +747,7 @@ function trackJsonErrorUsage(
             model: request.resolvedModelRequested,
             usage,
             servedBy: candidate.definition ?? request.modelDefinition,
-            quotedBy: request.modelDefinition,
+            quotedBy: quotedModel(request, candidate),
             output,
             input: {
                 ...input,
@@ -757,9 +767,7 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const quotedBy = requestTracking.modelRequested?.includes(",")
-        ? (candidate.definition ?? requestTracking.modelDefinition)
-        : requestTracking.modelDefinition;
+    const quotedBy = quotedModel(requestTracking, candidate);
     const modelUsed = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;

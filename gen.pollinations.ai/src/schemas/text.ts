@@ -11,16 +11,16 @@ export const BooleanQueryParamSchema = z.preprocess(
 );
 
 const FloatQueryParamSchema = z.preprocess((value) => {
-    if (value == null) return undefined;
+    if (value == null || value === "") return undefined;
     const parsed = Number.parseFloat(String(value));
-    return Number.isNaN(parsed) ? undefined : parsed;
-}, z.number().optional());
+    return Number.isFinite(parsed) ? parsed : NaN;
+}, z.number().finite().optional());
 
 const IntQueryParamSchema = z.preprocess((value) => {
-    if (value == null) return undefined;
+    if (value == null || value === "") return undefined;
     const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? undefined : parsed;
-}, z.number().int().optional());
+    return Number.isFinite(parsed) ? parsed : NaN;
+}, z.number().int().finite().optional());
 
 export const GenerateTextRequestQueryParamsSchema = z.object({
     model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({

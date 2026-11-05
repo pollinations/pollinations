@@ -96,3 +96,56 @@ describe("GenerateImageRequestQueryParamsSchema duration", () => {
         ).toThrow();
     });
 });
+
+describe("GenerateTextRequestQueryParamsSchema numeric params", () => {
+    it("rejects invalid float params instead of silently ignoring them", () => {
+        for (const param of [
+            "top_p",
+            "presence_penalty",
+            "frequency_penalty",
+            "repetition_penalty",
+        ]) {
+            expect(() =>
+                GenerateTextRequestQueryParamsSchema.parse({
+                    [param]: "banana",
+                }),
+            ).toThrow();
+        }
+    });
+
+    it("rejects invalid int params instead of silently ignoring them", () => {
+        for (const param of ["max_tokens", "max_completion_tokens"]) {
+            expect(() =>
+                GenerateTextRequestQueryParamsSchema.parse({
+                    [param]: "banana",
+                }),
+            ).toThrow();
+        }
+    });
+
+    it("accepts valid numeric params", () => {
+        const parsed = GenerateTextRequestQueryParamsSchema.parse({
+            top_p: "0.5",
+            presence_penalty: "-0.5",
+            frequency_penalty: "1",
+            repetition_penalty: "0.25",
+            max_tokens: "100",
+            max_completion_tokens: "200",
+        });
+        expect(parsed.top_p).toBe(0.5);
+        expect(parsed.presence_penalty).toBe(-0.5);
+        expect(parsed.frequency_penalty).toBe(1);
+        expect(parsed.repetition_penalty).toBe(0.25);
+        expect(parsed.max_tokens).toBe(100);
+        expect(parsed.max_completion_tokens).toBe(200);
+    });
+
+    it("treats an empty string as not provided", () => {
+        const parsed = GenerateTextRequestQueryParamsSchema.parse({
+            top_p: "",
+            max_tokens: "",
+        });
+        expect(parsed.top_p).toBeUndefined();
+        expect(parsed.max_tokens).toBeUndefined();
+    });
+});

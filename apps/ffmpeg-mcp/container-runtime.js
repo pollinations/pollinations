@@ -140,7 +140,10 @@ export async function runFfprobe(runtime, input, deadlineMs) {
     try {
         info = JSON.parse(stdout);
     } catch {
-        return { ok: false, stderr: "ffprobe returned output that was not valid JSON" };
+        return {
+            ok: false,
+            stderr: "ffprobe returned output that was not valid JSON",
+        };
     }
     return { ok: true, info, stderr };
 }

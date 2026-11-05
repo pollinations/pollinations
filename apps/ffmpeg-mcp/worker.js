@@ -102,7 +102,10 @@ async function probeTool(params, env, dependencies, reportUsage) {
     try {
         let result;
         try {
-            result = await container.probe(input, startedAt + FFMPEG_MAX_RUN_MS);
+            result = await container.probe(
+                input,
+                startedAt + FFMPEG_MAX_RUN_MS,
+            );
         } catch (error) {
             throw new ToolFailure(
                 502,
@@ -115,7 +118,8 @@ async function probeTool(params, env, dependencies, reportUsage) {
         info = result.info;
     } catch (error) {
         responseStatus = error instanceof ToolFailure ? error.status : 502;
-        errorMessage = error instanceof Error ? error.message : "ffprobe failed";
+        errorMessage =
+            error instanceof Error ? error.message : "ffprobe failed";
     } finally {
         await container.destroy().catch(() => undefined);
     }

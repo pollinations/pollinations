@@ -46,9 +46,7 @@ function createHarness(options = {}) {
         },
         async probe(input, deadlineMs) {
             calls.probe.push({
-                input: new Uint8Array(
-                    await new Response(input).arrayBuffer(),
-                ),
+                input: new Uint8Array(await new Response(input).arrayBuffer()),
                 deadlineMs,
             });
             return (

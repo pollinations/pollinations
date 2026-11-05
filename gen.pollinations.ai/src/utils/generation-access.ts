@@ -62,7 +62,7 @@ export async function checkBalance(
 
 /**
  * Wallet and key budget preflight for charges known before execution
- * (sandbox leases) or only after it (MCP tool receipts, price 0).
+ * (sandbox leases) or only after it (MCP tool receipts).
  */
 export async function requireAccountFunds(
     c: Context<Env>,

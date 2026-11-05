@@ -546,23 +546,17 @@ test("refuses agent run tokens on Connectors", async () => {
     expect(response.status).toBe(403);
 });
 
-test("gives each agent run its own Computer on the account", async () => {
+test("gives each agent its own Computer on the account, kept across runs", async () => {
     const parent = await createTestApiKey({
         user: { tierBalance: 1 },
     });
-    const computerFor = async (agentModelId: string) => {
-        const token = await signAgentRunToken({
-            secret: env.BETTER_AUTH_SECRET,
-            parentApiKeyId: parent.id,
-            parentRequestId: crypto.randomUUID(),
-            agentModelId,
-        });
+    const computerFor = async (authorization: string) => {
         const response = await SELF.fetch(
             "https://gen.pollinations.ai/mcp/computer",
             {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${authorization}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(MCP_REQUEST),
@@ -571,13 +565,24 @@ test("gives each agent run its own Computer on the account", async () => {
         expect(response.status).toBe(200);
         return response.text();
     };
+    const runOf = (agentModelId: string) =>
+        signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: parent.id,
+            parentRequestId: crypto.randomUUID(),
+            agentModelId,
+        });
 
-    expect(await computerFor("community/owner/agent-one")).toContain(
-        `computer:${parent.userId}:agent:community/owner/agent-one:`,
+    const agentOne = await computerFor(
+        await runOf("community/owner/agent-one"),
     );
-    expect(await computerFor("community/owner/agent-two")).toContain(
-        `computer:${parent.userId}:agent:community/owner/agent-two:`,
+    expect(await computerFor(await runOf("community/owner/agent-one"))).toBe(
+        agentOne,
     );
+    expect(
+        await computerFor(await runOf("community/owner/agent-two")),
+    ).not.toBe(agentOne);
+    expect(await computerFor(parent.key)).not.toBe(agentOne);
 });
 
 test.for(["composio", "computer"])(

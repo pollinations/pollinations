@@ -205,17 +205,15 @@ export const mcpRoutes = new Hono<Env>()
                 message: `Agents can't use ${server.name}`,
             });
         }
-        // A tool's cost is known only from its receipt, so a tool call needs
-        // the balance and key budget for the server's cheapest charge up
-        // front. Initialization and discovery stay free.
+        // A tool's cost is known only from its receipt, so a tool call needs a
+        // spendable balance and some key budget left up front: the smallest
+        // positive cost refuses a budget of 0. Initialization and discovery
+        // stay free.
         if (
             server.billing === "usage_receipt" &&
             message?.method === "tools/call"
         ) {
-            await requireAccountFunds(
-                c,
-                Math.min(...server.pricing.rates.map((rate) => rate.unitCost)),
-            );
+            await requireAccountFunds(c, Number.MIN_VALUE);
         }
         const binding = c.env[server.binding] as Fetcher;
 

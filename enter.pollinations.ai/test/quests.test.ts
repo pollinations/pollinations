@@ -2561,11 +2561,29 @@ test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or be
     ]);
 });
 
+// The user's PR and quest bounty rewards after a quest check.
+async function checkPrRewards(userId: string) {
+    await checkQuestsForUser(env, userId);
+    const rewards = await drizzle(env.DB, { schema })
+        .select({
+            questId: schema.rewards.questId,
+            pollenAmount: schema.rewards.pollenAmount,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, userId));
+    return rewards
+        .filter(
+            (reward) =>
+                reward.questId.includes("merged_pr") ||
+                reward.questId.startsWith("github:issue:"),
+        )
+        .sort((a, b) => a.questId.localeCompare(b.questId));
+}
+
 test("a merged PR pays its own reward label, else the highest bounty it closes, else 5", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
-    const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
     const login = user.githubUsername ?? "";
@@ -2610,23 +2628,7 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
         pr(9504, { base: "production" }),
     );
 
-    const prRewards = async () => {
-        await checkQuestsForUser(env, user.id);
-        const rewards = await db
-            .select({
-                questId: schema.rewards.questId,
-                pollenAmount: schema.rewards.pollenAmount,
-            })
-            .from(schema.rewards)
-            .where(eq(schema.rewards.userId, user.id));
-        return rewards
-            .filter(
-                (reward) =>
-                    reward.questId.includes("merged_pr") ||
-                    reward.questId.startsWith("github:issue:"),
-            )
-            .sort((a, b) => a.questId.localeCompare(b.questId));
-    };
+    const prRewards = () => checkPrRewards(user.id);
     // Without an earlier PR, the first PR keeps the one-time reward's id, which
     // Enter before this change also paid for it.
     const paid = [
@@ -2680,6 +2682,69 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
         ...paid.slice(1, 4),
         { questId: "github:merged_pr:9501", pollenAmount: 5 },
         ...paid.slice(4),
+    ]);
+});
+
+test("a merged PR pays once, whatever changes after it paid", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    for (const [issueNumber, reward] of [
+        [9700, 10],
+        [9701, 25],
+    ] as const) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber,
+            title: `Quest ${issueNumber}`,
+            goal: "Build it.",
+            reward,
+        });
+    }
+    const pr = (number: number, mergedAt: string, rest: object = {}) => ({
+        number,
+        authorLogin: user.githubUsername ?? "",
+        mergedAt,
+        ...rest,
+    });
+    mocks.github.state.mergedPullRequests.push(
+        pr(9800, "2026-11-06T00:00:00Z", { labels: ["reward-50"] }),
+        pr(9801, "2026-11-06T01:00:00Z", { closingIssues: [9700, 9701] }),
+        pr(9802, "2026-11-06T02:00:00Z", { closingIssues: [9702] }),
+        // Another repository's issue that shares a quest's number.
+        pr(9803, "2026-11-06T03:00:00Z", {
+            closingIssues: [{ number: 9700, repository: "someone/else" }],
+        }),
+    );
+    // The first merged PR keeps the one-time reward's id.
+    const paid = [
+        { questId: "github:issue:9701", pollenAmount: 25 },
+        { questId: "github:merged_pr:9802", pollenAmount: 5 },
+        { questId: "github:merged_pr:9803", pollenAmount: 5 },
+        { questId: "merged_pr", pollenAmount: 50 },
+    ];
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+
+    // An older PR merges later, the other quest's label rises above the paid
+    // one, and the issue a paid PR closed becomes a quest: only the new PR pays.
+    mocks.github.state.mergedPullRequests.push(
+        pr(9799, "2026-11-07T00:00:00Z"),
+    );
+    mocks.github.state.questIssues
+        .find((issue) => issue.number === 9700)
+        ?.labels?.push({ name: "reward-50" });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 9702,
+        title: "Quest 9702",
+        goal: "Build it.",
+        reward: 10,
+    });
+    await env.KV.delete("quests:github-issues:v2");
+    expect(await checkPrRewards(user.id)).toEqual([
+        paid[0],
+        { questId: "github:merged_pr:9799", pollenAmount: 5 },
+        ...paid.slice(1),
     ]);
 });
 

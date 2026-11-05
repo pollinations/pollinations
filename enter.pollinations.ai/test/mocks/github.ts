@@ -52,7 +52,8 @@ export type MockGithubState = {
         authorId?: number;
         base?: string;
         labels?: string[];
-        closingIssues?: number[];
+        // An issue number in this repository, or an issue elsewhere.
+        closingIssues?: (number | { number: number; repository: string })[];
     }>;
     // Commit author GitHub ids per PR number, including co-authors.
     commitAuthors: Record<number, number[]>;
@@ -188,9 +189,19 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                             nodes: (pr.labels ?? []).map((name) => ({ name })),
                         },
                         closingIssuesReferences: {
-                            nodes: (pr.closingIssues ?? []).map((number) => ({
-                                number,
-                            })),
+                            nodes: (pr.closingIssues ?? []).map((issue) =>
+                                typeof issue === "number"
+                                    ? {
+                                          number: issue,
+                                          repository: { nameWithOwner: REPO },
+                                      }
+                                    : {
+                                          number: issue.number,
+                                          repository: {
+                                              nameWithOwner: issue.repository,
+                                          },
+                                      },
+                            ),
                         },
                     }));
                 return c.json({

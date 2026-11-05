@@ -218,8 +218,11 @@ type MergedPrNode = {
     title: string;
     url: string;
     author: GitHubUser | null;
+    mergedAt: string;
     labels: { nodes: { name: string }[] };
-    closingIssuesReferences: { nodes: { number: number }[] };
+    closingIssuesReferences: {
+        nodes: { number: number; repository: { nameWithOwner: string } }[];
+    };
 };
 
 type ReportedIssueNode = {
@@ -295,18 +298,20 @@ query($query:String!){
   }
 }`;
 
-// Closing issue numbers only: their labels would cost about ten times more,
-// and the cached quest issues already carry the bounties. Asking for 100
-// labels and closing issues costs the same 2 points as asking for 10.
+// Closing issue numbers and repositories only: their labels would cost about
+// ten times more, and the cached quest issues already carry the bounties.
+// Asking for 100 labels and closing issues costs the same 2 points as 10.
 const MERGED_PRS_QUERY = `
 query($query:String!,$after:String){
   search(query:$query,type:ISSUE,first:100,after:$after){
     pageInfo{ hasNextPage endCursor }
     nodes{
       ... on PullRequest{
-        number title url author{ ... on User{ databaseId } }
+        number title url mergedAt author{ ... on User{ databaseId } }
         labels(first:100){ nodes{ name } }
-        closingIssuesReferences(first:100){ nodes{ number } }
+        closingIssuesReferences(first:100){
+          nodes{ number repository{ nameWithOwner } }
+        }
       }
     }
   }
@@ -450,13 +455,12 @@ function toDerivedQuestIssue(
         rewardAmount,
         state,
         winnerGithubIds: mergedClosers(issue).flatMap((pr) => {
+            const early = Date.parse(pr.mergedAt) < Date.parse(REWARDS_START);
+            // Old unlabelled quests had no amount, so their early PRs earn nothing.
+            if (early && rewardAmount === 0) return [];
             if (isAppPublishPr(pr))
                 return appPublishPayees.get(pr.number) ?? [];
-            // Old unlabelled quests had no amount, so their early PRs earn nothing.
-            return rewardAmount > 0 &&
-                Date.parse(pr.mergedAt) < Date.parse(REWARDS_START)
-                ? githubIds([pr.author])
-                : [];
+            return early ? githubIds([pr.author]) : [];
         }),
     };
 }
@@ -688,6 +692,17 @@ export function pollenBoughtSql(userId: string | SQL): SQL {
              WHERE user_id = ${userId}))`;
 }
 
+// Quest ids the account already earned.
+async function earnedQuestIds(
+    db: QuestDb,
+    userId: string,
+): Promise<Set<string>> {
+    const rows = await db.all<{ quest_id: string }>(
+        sql`SELECT quest_id FROM rewards WHERE user_id = ${userId}`,
+    );
+    return new Set(rows.map((row) => row.quest_id));
+}
+
 async function pollenBought(db: QuestDb, userId: string): Promise<number> {
     const [row] = await db.all<{ total: number }>(
         sql`SELECT ${pollenBoughtSql(userId)} AS total`,
@@ -705,6 +720,7 @@ export async function evaluateUser(
     const token = await githubToken(ctx.env);
     const [
         issues,
+        earned,
         mergedPrs,
         mergedPr,
         reportedIssues,
@@ -712,6 +728,7 @@ export async function evaluateUser(
         honeyCensus,
     ] = await Promise.all([
         cachedQuestIssues(ctx.env),
+        earnedQuestIds(ctx.db, user.id),
         mergedPrsSinceStart(token, user),
         hasMergedPr(token, user),
         reportedIssueProposals(token, user),
@@ -734,23 +751,34 @@ export async function evaluateUser(
     // it closes, then 5; never a sum. A quest pays each author once, however
     // many of their PRs close it.
     const quests = new Map(issues.map((issue) => [issue.issueNumber, issue]));
-    const questOf = (pr: MergedPrNode) =>
-        pr.closingIssuesReferences.nodes
-            .flatMap((issue) => quests.get(issue.number) ?? [])
-            .sort((a, b) => b.rewardAmount - a.rewardAmount)[0];
-    // Without an earlier PR, the first non-quest PR keeps the one-time
-    // reward's id: Enter before REWARDS_START paid that id for any first PR,
-    // and a PR merged before this change deploys must not pay twice.
+    // Without an earlier PR, the first merged PR keeps the one-time reward's
+    // id: Enter before REWARDS_START paid that id for any first PR, and a PR
+    // merged before this change deploys must not pay twice.
     const firstPr = mergedPr
         ? undefined
-        : Math.min(
-              ...mergedPrs.filter((pr) => !questOf(pr)).map((pr) => pr.number),
+        : mergedPrs.reduce<MergedPrNode | undefined>(
+              (first, pr) =>
+                  first && first.mergedAt <= pr.mergedAt ? first : pr,
+              undefined,
           );
-    const prProposals = mergedPrs.map((pr) => {
-        const quest = questOf(pr);
+    const prProposals = mergedPrs.flatMap((pr) => {
+        const closes = pr.closingIssuesReferences.nodes
+            .filter((issue) => issue.repository.nameWithOwner === REPO)
+            .map((issue) => issue.number);
+        // Labels, quests and closing issues can change after a PR paid, so a
+        // PR that could map to an id the account earned has already paid.
+        const ids = [
+            `github:merged_pr:${pr.number}`,
+            ...closes.map((number) => `github:issue:${number}`),
+            ...(pr === firstPr ? [mergedPrQuest.id] : []),
+        ];
+        if (ids.some((id) => earned.has(id))) return [];
+        const quest = closes
+            .flatMap((number) => quests.get(number) ?? [])
+            .sort((a, b) => b.rewardAmount - a.rewardAmount)[0];
         const definition = quest
             ? toIssueQuestDefinition(quest)
-            : pr.number === firstPr
+            : pr === firstPr
               ? mergedPrQuest
               : {
                     ...mergedPrQuest,
@@ -758,14 +786,16 @@ export async function evaluateUser(
                     title: `Merged PR #${pr.number}: ${pr.title}`,
                     url: pr.url,
                 };
-        return {
-            quest: {
-                ...definition,
-                rewardAmount:
-                    labelReward(pr.labels.nodes) || definition.rewardAmount,
+        return [
+            {
+                quest: {
+                    ...definition,
+                    rewardAmount:
+                        labelReward(pr.labels.nodes) || definition.rewardAmount,
+                },
+                userId: user.id,
             },
-            userId: user.id,
-        };
+        ];
     });
 
     return {

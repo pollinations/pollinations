@@ -112,6 +112,19 @@ const isUp = (gen) =>
         return res.ok;
     }).catch(() => false);
 
+// Enter reads the key from its database (D1) to answer, so this fails when
+// API keys, sign-in and billing do. Why it failed, or null.
+const ENTER_KEY_CHECK = "https://enter.pollinations.ai/api/account/key";
+const enterError = (key) =>
+    withTimeout(20_000, async (signal) => {
+        const res = await fetch(ENTER_KEY_CHECK, {
+            signal,
+            headers: { authorization: `Bearer ${key}` },
+        });
+        res.body?.cancel();
+        return res.ok ? null : `HTTP ${res.status}`;
+    }).catch((error) => error.message);
+
 const show = (label, body) =>
     console.log(
         `[${label}] ${body.content} color=#${body.embeds[0].color?.toString(16)}\n${body.embeds[0].description}`,
@@ -230,11 +243,15 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
-        const hosts = { public: pub, upstream: up };
+        const [pub, up, enterDown] = await Promise.all([
+            isUp(PUBLIC),
+            isUp(UPSTREAM),
+            enterError(this.env.COMMUNITY_PROBE_KEY),
+        ]);
+        const live = { hosts: { public: pub, upstream: up }, enterDown };
         // Read data through whichever hostname answers, public first.
         const gen = pub ? PUBLIC : UPSTREAM;
-        if (!pub && !up) found = conditions({ hosts });
+        if (!pub && !up) found = conditions(live);
         else
             try {
                 const [r15, r10, r60, catalog] = await Promise.all([
@@ -255,12 +272,12 @@ export class Watch extends DurableObject {
                 ]);
                 found = conditions({
                     ...data,
-                    hosts,
+                    ...live,
                     signups: signups ?? [],
                 });
             } catch (error) {
                 console.error(`check failed: ${error.message}`);
-                found = conditions({ hosts, analyticsDown: true });
+                found = conditions({ ...live, analyticsDown: true });
             }
 
         const sweeps = await sweepDomains(

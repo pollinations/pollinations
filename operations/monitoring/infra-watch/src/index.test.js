@@ -73,6 +73,11 @@ async function fake(input, init = {}) {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.hostname === "discord.test") return discord(url, init);
     if (url.pathname === "/") return new Response("ok");
+    // Enter's key check, made with the probe key.
+    if (url.hostname === "enter.pollinations.ai") {
+        world.enterKeys.push(init.headers.authorization);
+        return new Response(null, { status: world.enter });
+    }
     if (url.pathname === "/models/status") {
         const regular = url.searchParams.get("traffic") === "regular";
         return Response.json({ data: regular ? world.regular : world.rows });
@@ -158,6 +163,8 @@ beforeEach(() => {
         agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
+        enter: 200,
+        enterKeys: [],
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
         aiGate: null,
@@ -990,6 +997,22 @@ const tells =
         };
     };
 const HOURS = (n) => n * 60 * 60_000;
+
+it("opens an Enter card after three failed key checks, and closes it once Enter answers", async () => {
+    const stub = watch();
+    world.enter = 503;
+    await checks(stub, 3);
+    const card = (await stored(stub, "state")).open.enter;
+    const [post] = posts(INFRA);
+    expect(post.text).toContain("DOWN: enter.pollinations.ai");
+    expect(post.text).toContain("HTTP 503");
+    expect(world.enterKeys.at(-1)).toBe("Bearer probe-test");
+    world.enter = 200;
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open.enter).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
 
 it("opens a community monitor card when no cycle gets done for 90 minutes, says why, and closes it once one does", async () => {
     const stub = watch();

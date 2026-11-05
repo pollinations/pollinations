@@ -237,6 +237,37 @@ test("gen down needs 3 checks in a row, then closes as soon as gen is back", () 
     assert.equal(r.actions[0].type, "close");
 });
 
+test("Enter down opens after 3 checks and closes on its own check, whatever gen does", () => {
+    const none = { public: false, upstream: false };
+    let r = { state: {} };
+    for (const t of [1, 2, 3])
+        r = step(
+            r.state,
+            conditions({ hosts: none, enterDown: "HTTP 500" }),
+            t,
+        );
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open enter", "open gen"],
+    );
+    assert.equal(r.state.open.enter.info.error, "HTTP 500");
+    // Enter answers again while gen is still down: only Enter closes.
+    r = step(r.state, conditions({ hosts: none }), 4);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["update gen", "close enter"],
+    );
+    // And while the status data is down.
+    for (const t of [5, 6, 7])
+        r = step(
+            r.state,
+            conditions({ analyticsDown: true, enterDown: "x" }),
+            t,
+        );
+    r = step(r.state, conditions({ analyticsDown: true }), 8);
+    assert.ok(r.actions.some((a) => a.type === "close" && a.key === "enter"));
+});
+
 test("analytics outage pauses model incidents but is not gen down", () => {
     let r = step({}, degraded(), 0);
     const blind = conditions({ analyticsDown: true });
@@ -508,6 +539,19 @@ test("infrastructure cards follow the same life and stay red when closed", () =>
     assert.match(plain(closed.text), /┌─ DOWN: gen Worker ─/);
     assert.equal(closed.color, 0xe24b4a);
     assert.equal(closed.text.split("\n").at(-1), "### ⏱️ 7 min");
+});
+
+test("an Enter card says why, and pings", () => {
+    const enter = {
+        kind: "ENTER_DOWN",
+        openedAt: 0,
+        info: { kind: "ENTER_DOWN", error: "HTTP 503" },
+    };
+    const card = renderCard("enter", enter, { now: 0 });
+    assert.match(plain(card.text), /┌─ DOWN: enter.pollinations.ai ─/);
+    assert.match(plain(card.text), /ERROR {3}HTTP 503/);
+    assert.equal(card.color, 0xe24b4a);
+    assert.equal(card.ping, true);
 });
 
 test("who an opening card pings", () => {

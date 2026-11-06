@@ -10,7 +10,9 @@ import {
     generateCacheKey,
     getCachedResponse,
 } from "@/utils/text-cache.ts";
+import type { AuthVariables } from "./auth.ts";
 import {
+    callerCacheScope,
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
@@ -38,14 +40,28 @@ const textCacheAdapter: GenerationCacheAdapter = {
             bodyText = c.var.generationCacheBody ?? (await c.req.text());
         }
 
-        const variables = c.var as typeof c.var & Partial<ModelVariables>;
+        const variables = c.var as typeof c.var &
+            Partial<AuthVariables & ModelVariables>;
+        // A caller's model list is cached per caller: its choices depend on
+        // that key's permissions and available budget.
+        const callerList = variables.model?.requested?.includes(",");
+        if (callerList) c.set("generationCachePrivate", true);
         return generateCacheKey(
             c.req.raw,
             bodyText,
+            callerList
+                ? `caller-list:${callerCacheScope(variables.auth)}`
+                : undefined,
             getRequiredSafetyFeatures(variables.model),
         );
     },
-    get: getCachedResponse,
+    async get(c, cacheKey) {
+        const response = await getCachedResponse(c, cacheKey);
+        if (response && c.var.generationCachePrivate) {
+            response.headers.set("Cache-Control", "private, no-store");
+        }
+        return response;
+    },
     shouldCache(response) {
         return response.status === 200 && response.body !== null;
     },
@@ -58,7 +74,12 @@ const textCacheAdapter: GenerationCacheAdapter = {
         });
         captured.headers.set("X-Cache", "MISS");
         captured.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
-        captured.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+        captured.headers.set(
+            "Cache-Control",
+            c.var.generationCachePrivate
+                ? "private, no-store"
+                : IMMUTABLE_CACHE_CONTROL,
+        );
         return { response: captured, write: capture.write };
     },
 };

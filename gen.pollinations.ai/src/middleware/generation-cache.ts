@@ -8,6 +8,15 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 
+/** Caller-specific attempts must not share another payer's refusal or result. */
+export function callerCacheScope(
+    auth: AuthVariables["auth"] | undefined,
+): string {
+    if (auth?.apiKey?.id) return `key:${auth.apiKey.id}`;
+    if (auth?.user?.id) return `user:${auth.user.id}`;
+    return "anonymous";
+}
+
 export type GenerationCacheStorage = "media" | "text";
 
 /** Opaque identity shared by coordination and low-volume cache telemetry. */
@@ -20,6 +29,8 @@ export async function hashGenerationCacheIdentity(
 }
 
 export type GenerationCacheVariables = {
+    /** Caller-scoped entries stay internal; shared HTTP caches must not replay them. */
+    generationCachePrivate?: boolean;
     generationCache?: {
         adapter: GenerationCacheAdapter;
         key: string;

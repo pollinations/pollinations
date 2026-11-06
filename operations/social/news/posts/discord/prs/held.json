@@ -13,8 +13,65 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "14795": {
+      "merge_sha": "8f369ab561838b4b8a7a3de4e34b1ef528436b6f",
+      "merged_at": "2026-11-06T09:12:23Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18153": {
+      "merge_sha": "8dd839075e24acae84af5941ffab06ed43cef829",
+      "merged_at": "2026-11-06T08:25:22Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "19254": {
+      "merge_sha": "952afee8c2e473d0fabcb7900a2d29b95b7b45ee",
+      "merged_at": "2026-11-06T09:09:02Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "19262": {
+      "merge_sha": "699e1ee8f7c32877add617766b85421fb0a9275b",
+      "merged_at": "2026-11-06T02:31:45Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "19266": {
+      "merge_sha": "7aca32b460827815db4f81e680eef54ab820634c",
+      "merged_at": "2026-11-06T04:14:43Z",
+      "required": []
+    },
+    "19275": {
+      "merge_sha": "6652d7277609f822ec22e686326c00622c61c8cc",
+      "merged_at": "2026-11-06T07:12:16Z",
+      "required": []
+    },
+    "19279": {
+      "merge_sha": "a0f29b27713c70e096d151c671bf2a20c7aed21d",
+      "merged_at": "2026-11-06T08:29:05Z",
+      "required": []
+    },
+    "19283": {
+      "merge_sha": "25f1b899903d0188a54b33faa3ec4a31382c62b0",
+      "merged_at": "2026-11-06T08:38:53Z",
+      "required": []
     }
   },
-  "production": "137244df417e00a77b2e6ca9a6b9e4b69cf42435",
+  "production": "5f86a2951f34a812f5e93916a4b046ce4353e594",
   "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

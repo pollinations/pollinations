@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "DynaSpark AI",
+    "url": "https://dynaspark.th3.qzz.io",
+    "description": "DynaSpark AI is a versatile multimodal assistant for text, code, image and video generation, data analysis, and web and document processing, powered by Pollinations AI and BYOP models.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "Th3-C0der",
+    "githubUserId": "152851285",
+    "repositoryUrl": "https://github.com/Th3-AI/DynaSpark",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-01",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18959",
+    "approvedDate": "2026-11-06",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/25aeb821-14f0-429a-9b13-8c88a261d0a8"
+  },
+  {
     "emoji": "🖼️",
     "name": "Pixelsprite ai",
     "url": "https://pixel-sprite-ai-1.vercel.app",

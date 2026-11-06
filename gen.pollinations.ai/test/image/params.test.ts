@@ -520,11 +520,25 @@ describe("GPT Image 2.6 Flare output format validation", () => {
     };
 
     it("accepts PNG default, WebP, and a bounded animated GIF", () => {
-        expect(ImageParamsSchema.parse({ model }).output_format).toBeUndefined();
-        expect(ImageParamsSchema.parse({ model, output_format: "webp" }).output_format).toBe("webp");
+        expect(
+            ImageParamsSchema.parse({ model }).output_format,
+        ).toBeUndefined();
+        expect(
+            ImageParamsSchema.parse({ model, output_format: "webp" })
+                .output_format,
+        ).toBe("webp");
         expect(ImageParamsSchema.parse(gif)).toMatchObject(gif);
-        expect(ImageParamsSchema.safeParse({ ...gif, model: `${model}:fal` }).success).toBe(true);
-        expect(ImageParamsSchema.safeParse({ ...gif, background: "auto", quality: "auto" }).success).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({ ...gif, model: `${model}:fal` })
+                .success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                ...gif,
+                background: "auto",
+                quality: "auto",
+            }).success,
+        ).toBe(true);
     });
 
     it("requires both animation settings for GIF and rejects them for stills", () => {
@@ -550,7 +564,13 @@ describe("GPT Image 2.6 Flare output format validation", () => {
         ]) {
             expect(ImageParamsSchema.safeParse(value).success).toBe(false);
         }
-        expect(ImageParamsSchema.safeParse({ ...gif, frame_count: 10, frame_duration_ms: 1000 }).success).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                ...gif,
+                frame_count: 10,
+                frame_duration_ms: 1000,
+            }).success,
+        ).toBe(true);
     });
 
     it("rejects transparent GIFs, GIF editing, and unsupported model formats", () => {

@@ -8,6 +8,11 @@ interface CloudflareBindings {
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
     MACHINES_MCP: Fetcher;
+    CALCULATORS_MCP: Fetcher;
+    NETWORK_MCP: Fetcher;
+    PACKAGES_MCP: Fetcher;
+    NEWS_MCP: Fetcher;
+    RESEARCH_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
@@ -17,6 +22,7 @@ interface CloudflareBindings {
     OVHCLOUD_API_KEY: string;
     PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
+    D3_KEY?: string;
     DASHSCOPE_API_KEY: string;
     DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
@@ -96,10 +102,9 @@ interface CloudflareBindings {
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
     XAI_API_KEY: string;
-    POLLEN_REFILL_PER_HOUR?: number;
-    POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
+    EDGE_IP_RATE_LIMITER?: RateLimit;
 }
 
 declare namespace Cloudflare {

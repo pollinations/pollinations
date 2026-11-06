@@ -129,7 +129,7 @@ export async function recordRewards(
 /**
  * Claims one pending reward and credits the chosen balance bucket. The balance
  * update is gated on the preceding `claimed_at IS NULL` update, so retries and
- * double-clicks cannot double-pay.
+ * double-clicks cannot double-pay. Account restrictions freeze spending, not claims.
  */
 export async function claimReward(
     db: AuthDb,

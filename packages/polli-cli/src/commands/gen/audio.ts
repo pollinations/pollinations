@@ -77,7 +77,7 @@ async function generateWithTimestamps(
 export function createAudioCommand() {
     return new Command("audio")
         .description(
-            "Generate speech or music from text (stdin ok). Discover voices: polli models --type audio --json | jq '.[].voices'",
+            "Generate speech or music from text (stdin ok). Discover voices: polli models --type audio --voices",
         )
         .addHelpText(
             "after",

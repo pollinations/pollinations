@@ -98,7 +98,7 @@ export function resolveKeyIds(
     });
 }
 
-export function tokensIn(r: UsageRecord): number {
+export function tokensIn(r: Partial<UsageRecord>): number {
     return (
         (r.input_text_tokens ?? 0) +
         (r.input_cached_tokens ?? 0) +
@@ -124,7 +124,7 @@ export function filterDailyRows(
     return out;
 }
 
-export function tokensOut(r: UsageRecord): number {
+export function tokensOut(r: Partial<UsageRecord>): number {
     return (
         (r.output_text_tokens ?? 0) +
         (r.output_reasoning_tokens ?? 0) +

@@ -7,6 +7,8 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { AUTHENTICATION_REQUIRED_MESSAGE } from "@shared/http/fix-link.ts";
+import { permissionRequired } from "@shared/http/permission-required-error.ts";
 import {
     isModelCategory,
     keyAllowsModel,
@@ -15,7 +17,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { appOrigin, permissionRequired } from "../utils/refusals.ts";
+import { appOrigin } from "../utils/refusals.ts";
 import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {
@@ -24,6 +26,7 @@ type ModelVariables = {
         resolved: string;
         definition: Pick<ModelDefinition, "category" | "aliases">;
         communityEndpoint?: CommunityEndpointRuntime;
+        endpoint?: string;
     };
 };
 
@@ -49,9 +52,6 @@ export type AuthEnv = {
     Bindings: CloudflareBindings;
     Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
-
-const AUTHENTICATION_REQUIRED_MESSAGE =
-    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys";
 
 function installAuth(
     c: Context<AuthEnv>,
@@ -79,7 +79,14 @@ function installAuth(
         if (!apiKey) return;
 
         const models = apiKey.permissions?.models;
-        if (!keyAllowsModel(models, model.resolved, model.definition)) {
+        if (
+            !keyAllowsModel(
+                models,
+                model.resolved,
+                model.definition,
+                model.endpoint,
+            )
+        ) {
             // A key limited to specific models asks for this one model; a key
             // limited to categories asks for the model's category.
             const grant = models?.some((value) => !isModelCategory(value))

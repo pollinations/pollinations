@@ -26,7 +26,6 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
@@ -37,7 +36,7 @@ function requestForMcp(
     user: AuthUser,
 ): Request {
     const headers = new Headers(request.headers);
-    if (server.billing === "usage_receipt") {
+    if (server.forwardAuthorization !== true) {
         headers.delete("authorization");
     }
     headers.delete("cookie");
@@ -168,12 +167,13 @@ export const mcpRoutes = new Hono<Env>()
                 id: server.id,
                 name: server.name,
                 description: server.description,
+                alpha: server.alpha,
                 url: `${getPublicOrigin(c)}/mcp/${server.id}`,
                 pricing: getMcpPricingInfo(server),
             })),
         }),
     )
-    .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
+    .use("/mcp/:serverId", auth())
     .all("/mcp/:serverId", async (c) => {
         const user = c.var.auth.requireUser();
         const message =
@@ -192,6 +192,11 @@ export const mcpRoutes = new Hono<Env>()
         const server = getMcpServerDefinition(serverId);
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
+        }
+        if (server.agents === false && c.var.auth.agentRun) {
+            throw new HTTPException(403, {
+                message: `Agents can't use ${server.name}`,
+            });
         }
         // A tool's cost is known only from its receipt, so a tool call needs a
         // spendable balance up front. Initialization and discovery stay free.
@@ -212,7 +217,6 @@ export const mcpRoutes = new Hono<Env>()
             if (usage) {
                 try {
                     await settleUsage(c, server, usage, startedAt);
-                    await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
                 } catch (error) {
                     c.var.log.error("MCP billing failed: {error}", {
                         error:

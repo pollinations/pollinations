@@ -5,6 +5,10 @@ import { buildSync } from "esbuild";
 import { loadEnv } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 import { codeAgentSdk } from "../enter.pollinations.ai/scripts/code-agent-sdk.mjs";
+import {
+    MCP_SERVERS,
+    type McpServerDefinition,
+} from "../shared/registry/mcp.ts";
 
 const genSrc = fileURLToPath(new URL("./src/", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
@@ -12,7 +16,6 @@ const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const genAliases = [
     "content-filter.ts",
     "cache",
-    "durable-objects/PollenRateLimiter.ts",
     "durable-objects/GenerationCoordinator.ts",
     "env.ts",
     "error.ts",
@@ -27,7 +30,6 @@ const genAliases = [
     "middleware/logger.ts",
     "middleware/media-cache.ts",
     "middleware/model.ts",
-    "middleware/rate-limit-durable.ts",
     "middleware/rate-limit-edge.ts",
     "middleware/safety.ts",
     "middleware/text-cache.ts",
@@ -139,6 +141,25 @@ export default defineConfig(async ({ mode }) => {
                     // The media Worker's bucket, so each test can reset it.
                     r2Buckets: { TEST_MEDIA_BUCKET: "MEDIA_BUCKET" },
                     serviceBindings: {
+                        ...Object.fromEntries(
+                            MCP_SERVERS.filter(
+                                (server: McpServerDefinition) =>
+                                    server.billing === "downstream" &&
+                                    server.forwardAuthorization !== true,
+                            ).map(({ binding }) => [
+                                binding,
+                                async (request: Request) =>
+                                    Response.json({
+                                        pathname: new URL(request.url).pathname,
+                                        authorization:
+                                            request.headers.get(
+                                                "authorization",
+                                            ),
+                                        cookie: request.headers.get("cookie"),
+                                        payload: await request.json(),
+                                    }),
+                            ]),
+                        ),
                         MEDIA: {
                             name: "media-test",
                             entrypoint: "MediaUpload",
@@ -217,6 +238,7 @@ export default defineConfig(async ({ mode }) => {
                                 cookie: request.headers.get("cookie"),
                                 payload: await request.json(),
                             }),
+
                         FFMPEG_MCP: async (request: Request) => {
                             if (
                                 request.headers.has("authorization") ||
@@ -403,6 +425,9 @@ export default defineConfig(async ({ mode }) => {
         ],
         resolve,
         test: {
+            // Vitest's console interception can deadlock the Workers pool when a
+            // handler logs during a file's last RPC (cloudflare/workers-sdk#15719).
+            disableConsoleIntercept: true,
             globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: [
                 "./test/setup/apply-migrations.ts",

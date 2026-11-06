@@ -289,9 +289,10 @@ describe("GPT Image direct OpenAI routing", () => {
     });
 
     it("forwards WebP while keeping PNG as the default Flare format", async () => {
+        // Each upstream call consumes the response body; do not reuse one Response.
         const fetchMock = vi
             .spyOn(globalThis, "fetch")
-            .mockResolvedValue(successResponse());
+            .mockImplementation(async () => successResponse());
         const model = "openai/gpt-image-2.6-flare";
         const webp = await callGPTImage(
             "test",

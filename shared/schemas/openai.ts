@@ -430,12 +430,25 @@ export const CreateChatCompletionRequestSchema = z
     })
     .passthrough()
     .superRefine((value, ctx) => {
-        if (value.tool_choice === "required" && !value.tools?.length) {
+        const hasTools = Array.isArray(value.tools) && value.tools.length > 0;
+        if (value.tool_choice === "required" && !hasTools) {
             ctx.addIssue({
                 code: "custom",
                 path: ["tools"],
                 message:
                     'tool_choice "required" requires at least one tool in tools.',
+            });
+        }
+        if (
+            typeof value.tool_choice === "object" &&
+            value.tool_choice?.type === "function" &&
+            !hasTools
+        ) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["tools"],
+                message:
+                    "tool_choice naming a function requires at least one tool in tools.",
             });
         }
     });
@@ -1072,6 +1085,7 @@ export const CreateImageEditRequestSchema = z
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,
+        user: z.string().min(1).optional(),
     })
     .passthrough()
     .meta({ $id: "CreateImageEditRequest" });

@@ -9,7 +9,7 @@ const allowedModels = Object.keys(IMAGE_SERVICES) as [
     ImageModelName,
     ...ImageModelName[],
 ];
-const validQualities = ["low", "medium", "high", "hd"] as const;
+const validQualities = ["low", "medium", "high", "hd", "auto"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
@@ -93,6 +93,11 @@ export const ImageParamsSchema = z
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
         quality: z.string().catch("medium"),
+        // GPT Image 2.6 Flare output controls. Keep PNG as the legacy default.
+        output_format: z.enum(["png", "webp", "gif"]).optional(),
+        frame_count: z.coerce.number().int().min(2).max(16).optional(),
+        frame_duration_ms: z.coerce.number().int().min(20).max(2000).optional(),
+        background: z.enum(["auto", "opaque", "transparent"]).optional(),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {
@@ -143,6 +148,51 @@ export const ImageParamsSchema = z
         audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
+        const isFlare =
+            data.model === "openai/gpt-image-2.6-flare" ||
+            data.model === "openai/gpt-image-2.6-flare:fal";
+        if (data.output_format && data.output_format !== "png" && !isFlare) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["output_format"],
+                message: "WebP and GIF output are currently supported only by openai/gpt-image-2.6-flare.",
+            });
+        }
+        if (data.output_format === "gif") {
+            if (data.frame_count === undefined || data.frame_duration_ms === undefined) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["frame_count"],
+                    message: "GIF output requires frame_count and frame_duration_ms.",
+                });
+            } else if (data.frame_count * data.frame_duration_ms > 10000) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["frame_duration_ms"],
+                    message: "GIF total duration must not exceed 10000 ms.",
+                });
+            }
+            if (data.image.length > 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["image"],
+                    message: "GIF output is currently supported for image generation only.",
+                });
+            }
+            if (data.transparent || data.background === "transparent") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["background"],
+                    message: "GIF output does not support transparent backgrounds.",
+                });
+            }
+        } else if (data.frame_count !== undefined || data.frame_duration_ms !== undefined) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["output_format"],
+                message: "frame_count and frame_duration_ms require output_format=gif.",
+            });
+        }
         if (data.resolution) {
             const supported = (IMAGE_SERVICES[data.model] as ModelDefinition)
                 .resolutions;

@@ -128,16 +128,25 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
 
     // GPT Image 2.6 Flare supports still PNG/WebP and animated GIF output.
     output_format: z.enum(["png", "webp", "gif"]).optional().meta({
-        description: "Output format for openai/gpt-image-2.6-flare; defaults to PNG.",
+        description:
+            "Output format for openai/gpt-image-2.6-flare; defaults to PNG.",
     }),
     frame_count: z.coerce.number().int().min(2).max(16).optional().meta({
         description: "Required for GIF output; 2 to 16 frames.",
     }),
-    frame_duration_ms: z.coerce.number().int().min(20).max(2000).optional().meta({
-        description: "Required for GIF output; 20 to 2000 ms per frame, with a 10-second total duration limit.",
-    }),
+    frame_duration_ms: z.coerce
+        .number()
+        .int()
+        .min(20)
+        .max(2000)
+        .optional()
+        .meta({
+            description:
+                "Required for GIF output; 20 to 2000 ms per frame, with a 10-second total duration limit.",
+        }),
     background: z.enum(["auto", "opaque", "transparent"]).optional().meta({
-        description: "GPT Image background mode; GIF cannot have a transparent background.",
+        description:
+            "GPT Image background mode; GIF cannot have a transparent background.",
     }),
 
     // Video-specific params

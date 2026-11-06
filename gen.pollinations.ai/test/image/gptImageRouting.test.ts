@@ -253,10 +253,39 @@ describe("GPT Image direct OpenAI routing", () => {
             output_format: "gif",
             frame_count: 9,
             frame_duration_ms: 150,
+            size: "512x512",
             background: "auto",
             quality: "auto",
         });
         expect(result.mimeType).toBe("image/gif");
+    });
+
+    it("fits 16:9 GIF frames inside the upstream GIF pixel budget", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(successResponse());
+        const model = "openai/gpt-image-2.6-flare";
+        await callGPTImage(
+            "test",
+            {
+                ...params,
+                model,
+                width: 1536,
+                height: 864,
+                output_format: "gif",
+                frame_count: 9,
+                frame_duration_ms: 150,
+            },
+            userInfo,
+            model,
+        );
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[0][1]?.body)),
+        ).toMatchObject({
+            size: "896x512",
+            output_format: "gif",
+            frame_count: 9,
+        });
     });
 
     it("forwards WebP while keeping PNG as the default Flare format", async () => {

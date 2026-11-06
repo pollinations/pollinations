@@ -428,6 +428,32 @@ export const CreateChatCompletionRequestSchema = z
             .max(128)
             .optional(), // deprecated, supported
     })
+    .superRefine((data, ctx) => {
+        const toolChoice = data.tool_choice;
+        const tools = data.tools;
+        const hasTools = Array.isArray(tools) && tools.length > 0;
+
+        if (toolChoice === "required" && !hasTools) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["tool_choice"],
+                message: "tool_choice 'required' requires at least one tool",
+            });
+        }
+        if (
+            toolChoice &&
+            typeof toolChoice === "object" &&
+            toolChoice.type === "function" &&
+            !hasTools
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["tool_choice"],
+                message:
+                    "tool_choice with a specific function requires at least one tool",
+            });
+        }
+    })
     .passthrough();
 
 export type CreateChatCompletionRequest = z.infer<
@@ -1036,6 +1062,7 @@ export const CreateImageEditRequestSchema = z
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,
+        user: z.string().min(1).optional(),
     })
     .passthrough()
     .meta({ $id: "CreateImageEditRequest" });

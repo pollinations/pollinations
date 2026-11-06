@@ -612,7 +612,22 @@ const callGPTImageWithEndpoint = async (
     // gpt-image-2 supports arbitrary resolutions with constraints.
     // Older gpt-image-1 models (via Azure) only support 3 fixed sizes; snap via closest ratio.
     let size: string;
-    if (config.modelName.startsWith("gpt-image-2")) {
+    if (
+        config.modelName === "gpt-image-2.6-flare" &&
+        safeParams.output_format === "gif"
+    ) {
+        // GIF frames are tiled into a shared provider pixel budget. Using the
+        // still-image minimum (655,360 pixels) would make many GIFs impossible.
+        // Keep each frame within 896x512 (or rotated) so up to 16 frames fit.
+        const scale = Math.min(
+            1,
+            896 / Math.max(safeParams.width, safeParams.height),
+            512 / Math.min(safeParams.width, safeParams.height),
+        );
+        const align = (edge: number) =>
+            Math.max(16, Math.round((edge * scale) / 16) * 16);
+        size = `${align(safeParams.width)}x${align(safeParams.height)}`;
+    } else if (config.modelName.startsWith("gpt-image-2")) {
         // gpt-image-2 constraints:
         //   Both edges multiples of 16px, long edge ≤ 3840px (4K)
         //   Aspect ratio ≤ 3:1, pixel count 655,360–8,294,400

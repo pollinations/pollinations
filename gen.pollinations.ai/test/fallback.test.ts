@@ -1,6 +1,7 @@
 import { env } from "cloudflare:test";
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getVisibleImageModels,
@@ -959,6 +960,43 @@ describe("withModelFallback", () => {
         // The real provider failure remains unsettled and therefore gets its
         // own row; the local gate called no provider and is not added.
         expect(seen(attempts)).toEqual(["primary"]);
+    });
+
+    it("skips a model the caller can't afford and ends on the last one that ran", async () => {
+        const attempts: FallbackAttempt[] = [];
+        const attempt = vi.fn(async () => {
+            throw rateLimited();
+        });
+        const beforeAttempt = vi.fn(async (current: FallbackCandidate) => {
+            if (current.id !== "primary") {
+                throw new PaymentRequiredError(
+                    "INSUFFICIENT_BALANCE",
+                    `${current.id} costs too much`,
+                    "https://enter.pollinations.ai/top-up",
+                );
+            }
+        });
+
+        await expect(
+            withModelFallback(
+                [candidate("primary"), candidate("second"), candidate("third")],
+                attempt,
+                attempts,
+                beforeAttempt,
+            ),
+        ).rejects.toThrow("429 upstream");
+        expect(seen(attempts)).toEqual(["primary!"]);
+
+        // With nothing run, the first refusal answers.
+        await expect(
+            withModelFallback(
+                [candidate("second"), candidate("third")],
+                attempt,
+                [],
+                beforeAttempt,
+            ),
+        ).rejects.toThrow("second costs too much");
+        expect(attempt).toHaveBeenCalledTimes(1);
     });
 });
 

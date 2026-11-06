@@ -3441,13 +3441,9 @@ test.for([
             .from(apiKeyTable)
             .where(eq(apiKeyTable.id, caller.id));
         if (packBalance === 0) {
-            expect(result.response.status).toBe(402);
-            expect(JSON.parse(body)).toMatchObject({
-                error: {
-                    code: "INSUFFICIENT_BALANCE",
-                    fixUrl: "https://enter.pollinations.ai/top-up?ref=agent_low_balance_topup",
-                },
-            });
+            // The unaffordable paid-only choice is skipped, so the failure of
+            // the model that ran answers.
+            expect(result.response.status).toBe(503);
             expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
             expect(billed).toHaveLength(0);
             expect(balance).toEqual({ tierBalance: 100, packBalance: 0 });
@@ -3492,7 +3488,7 @@ test("a caller-list payment refusal is not replayed to a funded caller", async (
 }) => {
     await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
     const unfunded = await createTestApiKey({
-        user: { tierBalance: 100, packBalance: 0 },
+        user: { tierBalance: 0, packBalance: 0 },
     });
     const funded = await createTestApiKey({
         user: { tierBalance: 100, packBalance: 100 },
@@ -3523,18 +3519,25 @@ test("a caller-list payment refusal is not replayed to a funded caller", async (
             ),
         ),
     );
-    expect(results.map((result) => result.response.status)).toEqual([402, 200]);
-    for (const result of results) {
-        await result.response.text();
-        await result.wait();
-    }
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
+    // Text routes answer the refusal as a chat reply that links the fix.
+    const [refused, served] = await Promise.all(
+        results.map(async (result) => {
+            const text = await result.response.text();
+            await result.wait();
+            return { status: result.response.status, text };
+        }),
+    );
+    expect(refused.status).toBe(200);
+    expect(refused.text).toContain("/top-up?ref=agent_low_balance_topup");
+    expect(served.status).toBe(200);
+    expect(served.text).toContain("snapshot response");
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
     expect(
         mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
     ).toHaveLength(1);
 });
 
-test("caller-list checks the next choice against a finite key budget", async ({
+test("caller-list skips a choice over a finite key budget", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
@@ -3570,13 +3573,8 @@ test("caller-list checks the next choice against a finite key budget", async ({
             ],
         }),
     });
-    expect(result.response.status).toBe(402);
-    expect(await result.response.json()).toMatchObject({
-        error: {
-            code: "KEY_BUDGET_EXHAUSTED",
-            fixUrl: `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
-        },
-    });
+    // The first choice runs and fails; the second is over budget and skipped.
+    expect(result.response.status).toBe(503);
     await result.wait();
     expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
     expect(
@@ -3594,27 +3592,15 @@ test("caller-list checks the next choice against a finite key budget", async ({
     });
 });
 
-test("caller-list streams a paid-only alternate refusal without billing", async ({
+test("caller-list answers the first refusal when no choice is affordable", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
     const caller = await createTestApiKey({
-        user: { tierBalance: 100, packBalance: 0 },
+        user: { tierBalance: 0, packBalance: 0 },
         pollenBudget: 1,
     });
-    await env.KV.put(
-        "model-stats-v3",
-        JSON.stringify({
-            ttl: 3600,
-            value: {
-                data: [
-                    { model: "openai/gpt-5-nano", avg_cost_usd: 0.01 },
-                    { model: "qwen/qwen3.7-plus", avg_cost_usd: 0.1 },
-                ],
-            },
-        }),
-    );
-    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+    const result = await fetchWorker("/v1/chat/completions", {
         method: "POST",
         headers: {
             "content-type": "application/json",
@@ -3622,26 +3608,25 @@ test("caller-list streams a paid-only alternate refusal without billing", async 
         },
         body: JSON.stringify({
             model: "openai-fast,qwen3.7-plus",
-            stream: true,
+            // JSON output gets the plain HTTP error instead of a chat notice.
+            response_format: { type: "json_object" },
             messages: [
                 {
                     role: "user",
-                    content: `caller-list fail gpt-5-nano ${crypto.randomUUID()}`,
+                    content: `caller-list none ${crypto.randomUUID()}`,
                 },
             ],
         }),
     });
-    const body = await response.text();
-    await wait();
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toContain("text/event-stream");
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
-    expect(body).toContain("This model needs paid Pollen");
-    expect(body).toContain("/top-up?ref=agent_low_balance_topup");
-    expect(body).not.toContain("complete a quest");
-    expect(body).toContain("data: [DONE]");
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(result.response.status).toBe(402);
+    expect(await result.response.json()).toMatchObject({
+        error: {
+            code: "INSUFFICIENT_BALANCE",
+            fixUrl: "https://enter.pollinations.ai/top-up?ref=agent_low_balance_topup",
+        },
+    });
+    await result.wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
     expect(
         mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
     ).toHaveLength(0);
@@ -3660,10 +3645,71 @@ test("caller-list streams a paid-only alternate refusal without billing", async 
         .where(eq(apiKeyTable.id, caller.id));
     expect(key.pollenBalance).toBe(1);
     expect(await getUserBalance(db, caller.userId)).toEqual({
-        tierBalance: 100,
+        tierBalance: 0,
         packBalance: 0,
     });
 });
+
+test.for([false, true])(
+    "caller-list skips an unaffordable first choice for one it can afford (stream=%s)",
+    async (stream, { mocks }) => {
+        await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 0 },
+            pollenBudget: 1,
+        });
+        await env.KV.put(
+            "model-stats-v3",
+            JSON.stringify({
+                ttl: 3600,
+                value: {
+                    data: [
+                        { model: "openai/gpt-5-nano", avg_cost_usd: 0.01 },
+                        { model: "qwen/qwen3.7-plus", avg_cost_usd: 0.1 },
+                    ],
+                },
+            }),
+        );
+        const { response, wait } = await fetchWorker("/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${caller.key}`,
+            },
+            body: JSON.stringify({
+                model: "qwen3.7-plus,openai-fast",
+                stream,
+                messages: [
+                    {
+                        role: "user",
+                        content: `caller-list skip ${crypto.randomUUID()}`,
+                    },
+                ],
+            }),
+        });
+        const body = await response.text();
+        await wait();
+
+        // The paid-only first choice is skipped without calling its provider.
+        expect(response.status).toBe(200);
+        expect(body).toContain(
+            stream ? "snapshot stream" : "snapshot response",
+        );
+        expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+        expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+            model: "gpt-5-nano",
+        });
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        expect(billed[0].modelUsed).toBe("openai/gpt-5-nano");
+        const db = drizzle(env.DB);
+        const balance = await getUserBalance(db, caller.userId);
+        expect(balance.packBalance).toBe(0);
+        expect(balance.tierBalance).toBeCloseTo(100 - billed[0].totalPrice, 8);
+    },
+);
 
 test("caller-list cannot reach a disallowed choice through its internal fallback", async ({
     mocks,

@@ -5,6 +5,7 @@ import {
 } from "@shared/billing/deduction.ts";
 import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { withByopMarkup } from "@shared/billing/markup.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -113,10 +114,10 @@ export async function requireModelAttemptAccess(
     c: Context<Env>,
     candidate: FallbackCandidate,
 ): Promise<void> {
-    if (candidate.entry && c.var.model.requested.includes(",")) {
+    if (candidate.definition && c.var.model.requested.includes(",")) {
         await checkBalance(c.var, c.env, {
-            resolved: candidate.entry.id,
-            definition: candidate.entry.definition,
+            resolved: candidate.id,
+            definition: candidate.definition,
         });
         await reserveApiKeyBudget(c.var, c.env);
     }
@@ -146,7 +147,11 @@ export async function releaseApiKeyBudgetReservation(
 
 export const apiKeyBudgetReservation = createMiddleware<GenerationAccessEnv>(
     async (c, next) => {
-        await reserveApiKeyBudget(c.var, c.env);
+        // A caller's list reserves as each model is tried, so a reservation
+        // that fails skips only that model.
+        if (!c.var.model.requested.includes(",")) {
+            await reserveApiKeyBudget(c.var, c.env);
+        }
         try {
             await next();
         } catch (error) {
@@ -165,9 +170,42 @@ export async function requireGenerationAccess(
     await checkBalance(vars, env);
 }
 
+/**
+ * Routes that try a caller's whole list need one model in it the caller can
+ * afford; the attempt gate skips the others. Realtime serves only the first
+ * model, so it keeps `requireGenerationAccess`.
+ */
+async function requireListAccess(
+    vars: GenerationAccessVariables,
+    env: CloudflareBindings,
+): Promise<void> {
+    if (!vars.model.requested.includes(",")) {
+        return requireGenerationAccess(vars, env);
+    }
+    vars.auth.requireUser();
+    vars.auth.requireModelAccess();
+    const listed = [
+        vars.model,
+        ...(vars.model.fallbackEntries ?? []).map((entry) => ({
+            resolved: entry.id,
+            definition: entry.definition,
+        })),
+    ];
+    let refusal: unknown;
+    for (const model of listed) {
+        try {
+            return await checkBalance(vars, env, model);
+        } catch (error) {
+            if (!(error instanceof PaymentRequiredError)) throw error;
+            refusal ??= error;
+        }
+    }
+    throw refusal;
+}
+
 export const generationAccess = createMiddleware<GenerationAccessEnv>(
     async (c, next) => {
-        await requireGenerationAccess(c.var, c.env);
+        await requireListAccess(c.var, c.env);
         await next();
     },
 );

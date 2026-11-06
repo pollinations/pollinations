@@ -6,6 +6,7 @@ import {
     staticFallbackRejection,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import {
@@ -358,8 +359,9 @@ export type FallbackAttempt = {
 /**
  * Runs `attempt` against each candidate until one succeeds.
  *
- * Authentication is reused across attempts. Caller-selected alternatives
- * recheck their own balance rules immediately before an attempt. Each list
+ * Authentication is reused across attempts. Each model in a caller's list
+ * checks its own balance rules immediately before its attempt, and one the
+ * caller can't afford is skipped like one their key may not use. Each list
  * position is tried once; callers may explicitly repeat a model.
  *
  * Every upstream call is appended to `attempts`, including the one that serves
@@ -383,10 +385,19 @@ export async function withModelFallback<
         candidate: Candidate,
     ) => boolean = isRetryableFallbackError,
 ): Promise<{ result: T; candidate: Candidate; index: number }> {
+    let refusal: PaymentRequiredError | undefined;
+    let failure: FallbackAttempt | undefined;
     for (const [index, candidate] of candidates.entries()) {
         // Local gates are not upstream failures and must not trigger or be
-        // attributed to another fallback candidate.
-        await beforeAttempt?.(candidate);
+        // attributed to another fallback candidate. A payment refusal only
+        // skips its own model.
+        try {
+            await beforeAttempt?.(candidate);
+        } catch (error) {
+            if (!(error instanceof PaymentRequiredError)) throw error;
+            refusal ??= error;
+            continue;
+        }
         // Timed from this attempt's own start. Measured from the request's, a
         // second attempt would report the first one's timeout as part of its
         // own latency.
@@ -401,21 +412,25 @@ export async function withModelFallback<
             });
             return { result, candidate, index };
         } catch (error) {
-            const terminal =
-                index === candidates.length - 1 ||
-                !shouldFallback(error, candidate);
-            attempts?.push({
+            failure = {
                 candidate,
                 error,
                 startedAt,
                 endedAt: new Date(),
-                settled: terminal,
-            });
-            if (terminal) throw error;
+                settled: !shouldFallback(error, candidate),
+            };
+            attempts?.push(failure);
+            if (failure.settled) throw error;
         }
     }
-    // Unreachable: the loop either returns or rethrows for a non-empty list, and
-    // the primary is always the first candidate.
+    // The last model that ran ends the request. Only when every model was
+    // skipped does the first refusal answer.
+    if (failure) {
+        failure.settled = true;
+        throw failure.error;
+    }
+    if (refusal) throw refusal;
+    // Unreachable: the primary is always the first candidate.
     throw new Error("Model fallback needs at least one candidate");
 }
 

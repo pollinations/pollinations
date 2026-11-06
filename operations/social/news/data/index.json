@@ -1,822 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-05T06:07:41.704155+00:00",
+  "generated_at": "2026-11-06T06:07:47.632387+00:00",
   "models": [
-    {
-      "id": "2026-10-06:elevenlabs/eleven-v4",
-      "model_id": "elevenlabs/eleven-v4",
-      "title": "ElevenLabs v4",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "audio",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "audio"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.000022"
-          }
-        },
-        "voices": {
-          "before": null,
-          "after": [
-            "alloy",
-            "echo",
-            "fable",
-            "onyx",
-            "nova",
-            "shimmer",
-            "ash",
-            "ballad",
-            "coral",
-            "sage",
-            "verse",
-            "rachel",
-            "domi",
-            "bella",
-            "elli",
-            "charlotte",
-            "dorothy",
-            "sarah",
-            "emily",
-            "lily",
-            "matilda",
-            "adam",
-            "antoni",
-            "arnold",
-            "josh",
-            "sam",
-            "daniel",
-            "charlie",
-            "james",
-            "fin",
-            "callum",
-            "liam",
-            "george",
-            "brian",
-            "bill"
-          ]
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:elevenlabs/eleven-v4-turbo",
-      "model_id": "elevenlabs/eleven-v4-turbo",
-      "title": "ElevenLabs v4 Turbo",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "audio",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "audio"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.000011"
-          }
-        },
-        "voices": {
-          "before": null,
-          "after": [
-            "alloy",
-            "echo",
-            "fable",
-            "onyx",
-            "nova",
-            "shimmer",
-            "ash",
-            "ballad",
-            "coral",
-            "sage",
-            "verse",
-            "rachel",
-            "domi",
-            "bella",
-            "elli",
-            "charlotte",
-            "dorothy",
-            "sarah",
-            "emily",
-            "lily",
-            "matilda",
-            "adam",
-            "antoni",
-            "arnold",
-            "josh",
-            "sam",
-            "daniel",
-            "charlie",
-            "james",
-            "fin",
-            "callum",
-            "liam",
-            "george",
-            "brian",
-            "bill"
-          ]
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:black-forest-labs/flux-3-image",
-      "model_id": "black-forest-labs/flux-3-image",
-      "title": "FLUX.3 Image",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "image",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 10
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "image"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionImageTokens": "0.02532"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:openai/gpt-6.1-sol",
-      "model_id": "openai/gpt-6.1-sol",
-      "title": "GPT-6.1 Sol",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 1050000
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": false
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000002",
-            "promptCachedTokens": "0.0000001",
-            "promptCacheWriteTokens": "0.0000025",
-            "promptImageTokens": "0.000002",
-            "completionTextTokens": "0.00001"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:google/gemini-2.5-flash-lite",
-      "model_id": "google/gemini-2.5-flash-lite",
-      "title": "Gemini 2.5 Flash Lite",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": [
-            "tool_calling",
-            "web_search"
-          ],
-          "after": [
-            "tool_calling"
-          ]
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001055",
-            "promptCachedTokens": "0.00000001055",
-            "promptCacheWriteTokens": "0.0000001055",
-            "promptAudioTokens": "0.0000003165",
-            "promptImageTokens": "0.0000001055",
-            "promptVideoTokens": "0.0000001055",
-            "completionTextTokens": "0.000000422"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001",
-            "promptCachedTokens": "0.00000001",
-            "promptCacheWriteTokens": "0.0000001",
-            "promptAudioTokens": "0.0000001",
-            "promptImageTokens": "0.0000001",
-            "promptVideoTokens": "0.0000001",
-            "completionTextTokens": "0.0000004"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:google/gemini-2.5-flash-lite:search",
-      "model_id": "google/gemini-2.5-flash-lite:search",
-      "title": "Google Gemini 2.5 Flash Lite Search",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001",
-            "promptCachedTokens": "0.00000001",
-            "promptCacheWriteTokens": "0.0000001",
-            "promptAudioTokens": "0.0000003",
-            "promptImageTokens": "0.0000001",
-            "promptVideoTokens": "0.0000001",
-            "completionTextTokens": "0.0000004"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001055",
-            "promptCachedTokens": "0.00000001055",
-            "promptCacheWriteTokens": "0.0000001055",
-            "promptAudioTokens": "0.0000003165",
-            "promptImageTokens": "0.0000001055",
-            "promptVideoTokens": "0.0000001055",
-            "completionTextTokens": "0.000000422"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:x-ai/grok-imagine-video-1.5-lite",
-      "model_id": "x-ai/grok-imagine-video-1.5-lite",
-      "title": "Grok Imagine Video 1.5 Lite",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "video",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 1
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "video"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptImageTokens": "0.01",
-            "completionVideoSeconds": "0.03"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:heygen/heygen-video-1",
-      "model_id": "heygen/heygen-video-1",
-      "title": "HeyGen Video 1",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "video",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 1
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "video",
-            "audio"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionVideoSeconds": "0.01055"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:jaredpalmer/kev-4b",
-      "model_id": "jaredpalmer/kev-4b",
-      "title": "Kev 4B",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "context_length": {
-          "before": null,
-          "after": 8192
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": false
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000004431"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:inclusionai/ling-3.1-flash",
-      "model_id": "inclusionai/ling-3.1-flash",
-      "title": "Ling 3.1 Flash",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 262144
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": false
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:liquid/d1",
-      "model_id": "liquid/d1",
-      "title": "Liquid D1",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "context_length": {
-          "before": null,
-          "after": 65536
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000000422"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:nvidia/nemotron-3-ultra",
-      "model_id": "nvidia/nemotron-3-ultra",
-      "title": "NVIDIA Nemotron 3 Ultra",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": true,
-          "after": false
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000005",
-            "promptCachedTokens": "0.0000001",
-            "completionTextTokens": "0.0000022"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000006",
-            "promptCachedTokens": "0.00000012",
-            "completionTextTokens": "0.0000024"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:google/gemini-nano-banana-2.1",
-      "model_id": "google/gemini-nano-banana-2.1",
-      "title": "Nano Banana 2.1",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "image",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 14
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "image"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000001669537",
-            "promptImageTokens": "0.000001669537",
-            "completionTextTokens": "0.000008347687",
-            "completionImageTokens": "0.00003339075"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:qwen/qwen3-coder-30b-a3b-instruct",
-      "model_id": "qwen/qwen3-coder-30b-a3b-instruct",
-      "title": "Qwen3 Coder 30B",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000007",
-            "completionTextTokens": "0.00000026"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000015",
-            "completionTextTokens": "0.0000006"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:qwen/qwen3-embedding-8b",
-      "model_id": "qwen/qwen3-embedding-8b",
-      "title": "Qwen3 Embedding 8B",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "embedding",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000001"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:bytedance/seedream-5.0-flash",
-      "model_id": "bytedance/seedream-5.0-flash",
-      "title": "Seedream 5.0 Flash",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "image",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 10
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "image"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionImageTokens": "0.01899"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-06:respan/span-01-lite",
-      "model_id": "respan/span-01-lite",
-      "title": "Span-01 Lite",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-06",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": false
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen"
-          }
-        }
-      }
-    },
     {
       "id": "2026-10-13:assemblyai/universal-2",
       "model_id": "assemblyai/universal-2",
@@ -5427,54 +4612,161 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-11-05:openai/gpt-image-2.6-flare",
+      "model_id": "openai/gpt-image-2.6-flare",
+      "title": "GPT Image 2.6 Flare",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-11-05",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 16
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-05:openai/gpt-image-2.6-sunburst",
+      "model_id": "openai/gpt-image-2.6-sunburst",
+      "title": "GPT Image 2.6 Sunburst",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-11-05",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 16
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-05:meta/muse-spark-open",
+      "model_id": "meta/muse-spark-open",
+      "title": "Muse Spark Open",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-05",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000125",
+            "promptCachedTokens": "0.00000015",
+            "completionTextTokens": "0.00000425"
+          }
+        }
+      }
     }
   ],
   "api": [
-    {
-      "id": "pr-16569:POST /account/keys",
-      "endpoint": "POST /account/keys",
-      "summary": "Create API Key",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "body:questPollenOnly",
-          "before": null,
-          "after": {
-            "type": "boolean",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-06",
-      "pr": 16569,
-      "url": "https://github.com/pollinations/pollinations/pull/16569"
-    },
-    {
-      "id": "pr-16638:POST /v1/audio/speech/with-timestamps",
-      "endpoint": "POST /v1/audio/speech/with-timestamps",
-      "summary": "Generate Speech with Timestamps",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "body:model",
-          "before": {
-            "type": "\"elevenlabs/eleven-v3\"|\"elevenlabs/eleven-flash-v2.5\"|\"elevenlabs/eleven-multilingual-v2\"",
-            "required": false
-          },
-          "after": {
-            "type": "\"elevenlabs/eleven-v4\"|\"elevenlabs/eleven-v4-turbo\"|\"elevenlabs/eleven-v3\"|\"elevenlabs/eleven-flash-v2.5\"|\"elevenlabs/eleven-multilingual-v2\"",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-06",
-      "pr": 16638,
-      "url": "https://github.com/pollinations/pollinations/pull/16638"
-    },
     {
       "id": "pr-16809:GET /account/quests/rewards",
       "endpoint": "GET /account/quests/rewards",
@@ -6592,6 +5884,76 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-05",
+      "emoji": "🎨",
+      "title": "GPT Image 2.6 Flare",
+      "text": "Generate and edit images with `openai/gpt-image-2.6-flare`, using up to 16 reference images, transparency, and 4K output. It requires purchased Pollen. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-image-2.6-flare).",
+      "prs": [
+        19224
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-05",
+      "emoji": "🎨",
+      "title": "GPT Image 2.6 Sunburst",
+      "text": "Generate and edit images with `openai/gpt-image-2.6-sunburst`, using up to 16 reference images, transparency, and 4K output. It requires purchased Pollen. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-image-2.6-sunburst).",
+      "prs": [
+        19224
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-05",
+      "emoji": "🔗",
+      "title": "Invite friends for Pollen",
+      "text": "The new Invite friends quest awards 2 Quest Pollen for each qualifying referral whose purchases total more than 2 Pollen. Connect GitHub to copy your invite link from the Quests page.",
+      "prs": [
+        18370
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-05",
+      "emoji": "💡",
+      "title": "Contribution quests get reward labels",
+      "text": "From November 5, eligible PRs merged into main earn the PR's reward label, the highest label on a quest issue they close, or 5 Pollen by default. Eligible issue authors earn 2 Pollen.",
+      "prs": [
+        18750
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-05",
+      "emoji": "🤖",
+      "title": "Pollinations agents in ACP editors",
+      "text": "Use `polli acp [agent]` in CLI 0.1.80 to run Pollinations agents in ACP editors such as Zed and JetBrains IDEs. Prompts can include images and files, and local tool calls require permission. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        19154
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-05",
+      "emoji": "🤖",
+      "title": "Code agents call your tools",
+      "text": "Pass function tools to a code agent through `/v1/responses`. The agent can return a call for your client to execute, then continue when you send the matching `function_call_output`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19157
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-11-05",
+      "emoji": "📱",
+      "title": "Barbara sends early warnings",
+      "text": "Mama Barbara sends a Telegram warning when an owner's sign-in is within two days of expiry or the remaining Pollen budget falls below one day of rent for running boxes. The warning includes `/signin`.",
+      "prs": [
+        19196
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-11-04",
       "emoji": "🤖",
@@ -8036,76 +7398,6 @@
       "text": "Apps and agents can use permissioned `/api/account/*` routes to work with keys, balances, earnings, and Quest rewards. A new PATCH route supports key editing. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16678
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-06",
-      "emoji": "🎵",
-      "title": "Eleven v4 speech",
-      "text": "Generate expressive speech in 90+ languages with `elevenlabs/eleven-v4`, including audio tags and character timestamps. [Browse the model](https://enter.pollinations.ai/models?q=elevenlabs/eleven-v4).",
-      "prs": [
-        16581
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-06",
-      "emoji": "🎵",
-      "title": "Eleven v4 Turbo",
-      "text": "Use `elevenlabs/eleven-v4-turbo` for expressive text-to-speech with audio tags and character timestamps. [Browse the model](https://enter.pollinations.ai/models?q=elevenlabs/eleven-v4-turbo).",
-      "prs": [
-        16582
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-06",
-      "emoji": "🎨",
-      "title": "Nano Banana 2.1",
-      "text": "Generate or edit images with `google/gemini-nano-banana-2.1` using up to 14 reference images and 1K or 2K output. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-nano-banana-2.1).",
-      "prs": [
-        16609
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-06",
-      "emoji": "🎨",
-      "title": "Grok Imagine Video Lite",
-      "text": "Make 1–15 second videos from text or a start image with `x-ai/grok-imagine-video-1.5-lite`, at resolutions up to 1080p. [Browse the model](https://enter.pollinations.ai/models?q=x-ai/grok-imagine-video-1.5-lite).",
-      "prs": [
-        16640
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-06",
-      "emoji": "🔗",
-      "title": "Keys grant model categories",
-      "text": "Grant a key access to text, image, audio, video, 3D, embedding, or realtime models instead of picking individual models. New models in an allowed category are covered automatically. [Manage API keys](https://enter.pollinations.ai/keys).",
-      "prs": [
-        16462
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-06",
-      "emoji": "🎯",
-      "title": "Quest Pollen only keys",
-      "text": "Create a key that can spend Quest Pollen but not paid Pollen on eligible requests. The setting is available through the key dialog, API, SDK, CLI, and MCP. [Manage API keys](https://enter.pollinations.ai/keys).",
-      "prs": [
-        16462
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-06",
-      "emoji": "🤖",
-      "title": "Agent permissions follow keys",
-      "text": "Agent run tokens now carry the account permissions granted to their parent key, including `machines` when allowed. Use a narrowly scoped key when an agent connects to a third-party endpoint. [Manage API keys](https://enter.pollinations.ai/keys).",
-      "prs": [
-        16413
       ],
       "kind": "api"
     }

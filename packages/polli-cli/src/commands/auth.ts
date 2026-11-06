@@ -185,6 +185,9 @@ export async function loginWithDeviceFlow(
         printError(
             `Failed to start device flow: ${res.status} ${await res.text()}`,
         );
+        printInfo(
+            "Fallback: printf '%s' '<your-key>' | polli auth login --with-token",
+        );
         throw new ExitSignal(1);
     }
 
@@ -217,6 +220,10 @@ export async function loginWithDeviceFlow(
                 break;
             case "expired_token":
                 errMsg = "Code expired. Run `polli auth login` to try again.";
+                break;
+            case "invalid_client":
+                errMsg =
+                    "The CLI could not be verified for this login. Use: printf '%s' '<your-key>' | polli auth login --with-token";
                 break;
             default:
                 errMsg = `Login failed: ${tokenResp.error_description ?? tokenResp.error}`;

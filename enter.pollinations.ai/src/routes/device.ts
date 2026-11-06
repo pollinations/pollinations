@@ -19,7 +19,7 @@ type AuthedContext = Context<{
     Variables: Env["Variables"] & AuthVariables;
 }>;
 
-const KV_TTL = 600; // 10 minutes
+const KV_MIN_TTL = 60;
 const DEVICE_CODE_LENGTH = 40;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
@@ -195,7 +195,17 @@ export const deviceRoutes = new Hono<Env>()
                         // stored at issuance ("" = narrowed to zero)
                         scope: body.scope ?? null,
                     }),
-                    { expirationTtl: KV_TTL },
+                    // Kept until the device code expires, so a CLI that
+                    // polls late still gets the key. KV's minimum is 60s.
+                    {
+                        expirationTtl: Math.max(
+                            KV_MIN_TTL,
+                            Math.ceil(
+                                (device.expiresAt.getTime() - Date.now()) /
+                                    1000,
+                            ),
+                        ),
+                    },
                 ),
                 db
                     .update(schema.deviceCode)
@@ -327,6 +337,8 @@ export async function exchangeDeviceCode(
                 scope?: string | null;
             } | null;
 
+            // KV may not show a fresh write from another location yet, so
+            // keep polling; the key now lives until the code expires.
             if (!stored) {
                 return c.json({ error: "authorization_pending" }, 400);
             }

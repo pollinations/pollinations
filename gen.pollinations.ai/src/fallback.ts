@@ -50,15 +50,28 @@ export const FALLBACK_ON_STATUS_CODES = [401, 402, 403, 404, 408, 429];
 
 /**
  * Network-level failures — unreachable host, expired cert, refused connection —
- * arrive as a TypeError with no status, and are the most likely hard failure for
- * a self-hosted endpoint. They must fail over, but the match is on the message
- * so that our own TypeErrors (a null dereference in a handler) are not mistaken
- * for one and silently blamed on the upstream.
+ * normally arrive as a TypeError with no status. Workerd instead throws a plain
+ * Error for a disconnected fetch (cloudflare/workerd#7195). Match that exact
+ * runtime error so application errors and provider HTTP errors stay distinct.
  */
 export function isNetworkFailure(error: unknown): boolean {
     return (
-        error instanceof TypeError &&
-        /fetch failed|network|connection|socket/i.test(error.message)
+        (error instanceof TypeError &&
+            /fetch failed|network|connection|socket/i.test(error.message)) ||
+        (error instanceof Error &&
+            error.constructor === Error &&
+            error.message === "Network connection lost." &&
+            // Text clients also use plain Error for classified provider failures.
+            ![
+                (error as UpstreamFailure).status,
+                (error as UpstreamFailure).upstreamStatus,
+            ].some(
+                (status) =>
+                    typeof status === "number" &&
+                    Number.isInteger(status) &&
+                    status >= 100 &&
+                    status <= 599,
+            ))
     );
 }
 

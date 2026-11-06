@@ -16,6 +16,7 @@ import {
     type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
+    isNetworkFailure,
     isRetryableFallbackError,
     linkFallbackEntries,
     withModelFallback,
@@ -130,6 +131,26 @@ describe("registry fallback linking", () => {
             });
             expect(getVisibleImageModels()).not.toContain(fallback);
         }
+    });
+
+    it("isolates the wan-2.2-fast Replicate route as fallback-only behind Fal", () => {
+        // Replicate 일반 400/422는 terminal (~48% errors_4xx, 2026-10-21
+        // /models/status)이므로 failing route를 첫 시도에서 내리고 Fal이 base를 수행.
+        expect(IMAGE_SERVICES["alibaba/wan-2.2-fast"]).toMatchObject({
+            provider: "fal",
+            fallbacks: ["alibaba/wan-2.2-fast:replicate"],
+        });
+        expect(IMAGE_SERVICES["alibaba/wan-2.2-fast:replicate"]).toMatchObject({
+            aliases: [],
+            hidden: true,
+            fallbackOnly: true,
+            provider: "replicate",
+        });
+        // No same-endpoint auto-retry: primary is already Fal.
+        expect("alibaba/wan-2.2-fast:fal" in IMAGE_SERVICES).toBe(false);
+        expect(getVisibleImageModels()).not.toContain(
+            "alibaba/wan-2.2-fast:replicate",
+        );
     });
 
     it("uses registry declarations without applying community price rules", () => {
@@ -752,10 +773,58 @@ describe("isRetryableFallbackError", () => {
         ).toBe(true);
     });
 
+    it("recognizes Workerd failures without a valid HTTP status", () => {
+        for (const field of ["status", "upstreamStatus"]) {
+            for (const value of [
+                undefined,
+                null,
+                "400",
+                0,
+                NaN,
+                Infinity,
+                400.5,
+                600,
+            ]) {
+                expect(
+                    isNetworkFailure(
+                        Object.assign(new Error("Network connection lost."), {
+                            [field]: value,
+                        }),
+                    ),
+                ).toBe(true);
+            }
+            expect(
+                isNetworkFailure(
+                    Object.assign(new Error("Network connection lost."), {
+                        [field]: 400,
+                    }),
+                ),
+            ).toBe(false);
+        }
+    });
+
     it("fails over on a network-level failure but not on our own bugs", () => {
         expect(isRetryableFallbackError(new TypeError("fetch failed"))).toBe(
             true,
         );
+        expect(
+            isRetryableFallbackError(new Error("Network connection lost.")),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(new Error("connection handler failed")),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                new Error("Network connection lost. Invalid payload"),
+            ),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, {
+                    message: "Network connection lost.",
+                }),
+            ),
+        ).toBe(false);
         expect(
             isRetryableFallbackError(
                 new TypeError("Cannot read properties of undefined"),

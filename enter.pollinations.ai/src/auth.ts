@@ -1,11 +1,14 @@
 import { oauthProvider } from "@better-auth/oauth-provider";
-import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
+import {
+    authAdditionalFields,
+    INVITE_REF_COOKIE,
+} from "@shared/auth/additional-fields.ts";
 import {
     assertStagingAccess,
     createApiKeyPlugin,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
-import { ACCOUNT_RESTRICTED_MESSAGE } from "@shared/auth/ban.ts";
+import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import {
     account as accountTable,
@@ -30,15 +33,28 @@ import {
     getSessionFromCtx,
 } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { and, eq } from "drizzle-orm";
+import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { restrictQuestPollenAtSignup } from "./services/quest-restrictions.ts";
+import { signupEmailDomain } from "./services/signup-domains.ts";
 import { removeUserSites } from "./services/sites.ts";
 import {
     captureProductEvent,
     referringSource,
     visitorCountry,
 } from "./utils/product-analytics.ts";
+
+// Drizzle query errors carry their bound params, e.g. the session token of a
+// failed session lookup. Log the SQL and the D1 cause instead.
+function withoutQueryParams(value: unknown): unknown {
+    if (value instanceof DrizzleQueryError)
+        return `Failed query: ${value.query} (cause: ${value.cause})`;
+    if (value instanceof Error && value.cause)
+        return `${value} (cause: ${withoutQueryParams(value.cause)})`;
+    if (typeof value === "string") return value.split("\nparams: ")[0];
+    return value;
+}
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 export const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
@@ -63,6 +79,25 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const apiKeyPlugin = createApiKeyPlugin();
     const discordConfig = discordConfigFromEnv(env);
     let githubProfile: { id: number; username: string } | undefined;
+
+    /** The unbanned owner of the invite link's GitHub id. */
+    const findReferrer = async (
+        cookie: string | null | undefined,
+    ): Promise<string | undefined> => {
+        const ref = Number(cookie || Number.NaN);
+        if (!Number.isSafeInteger(ref)) return;
+        const [referrer] = await db
+            .select({
+                id: userTable.id,
+                banned: userTable.banned,
+                banExpires: userTable.banExpires,
+            })
+            .from(userTable)
+            .where(eq(userTable.githubId, ref))
+            .limit(1);
+        if (!referrer || isUserBanned(referrer)) return;
+        return referrer.id;
+    };
 
     // Connected accounts are one per provider: quests key their rewards on
     // the Discord, GitHub and Google ids, so a second link would earn them
@@ -143,6 +178,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         basePath: "/api/auth",
         onAPIError: {
             errorURL: "/error",
+        },
+        logger: {
+            log: (level, message, ...args) =>
+                console[level](
+                    `[Better Auth]: ${withoutQueryParams(message)}`,
+                    ...args.map(withoutQueryParams),
+                ),
         },
         hooks: {
             // better-auth has its own freshness check on /delete-user, but it
@@ -280,6 +322,27 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     },
                 },
                 create: {
+                    // An invite link (?ref=<GitHub id>) leaves a cookie that
+                    // the OAuth callback carries here; see main.tsx.
+                    before: async (user, context) => {
+                        const [referredBy, questPollenRestricted] =
+                            await Promise.all([
+                                findReferrer(
+                                    context?.getCookie(INVITE_REF_COOKIE),
+                                ),
+                                restrictQuestPollenAtSignup(
+                                    env.SETUP_HOLDS,
+                                    user.email,
+                                ),
+                            ]);
+                        return {
+                            data: {
+                                ...user,
+                                referredBy,
+                                questPollenRestricted,
+                            },
+                        };
+                    },
                     after: async (user, context) => {
                         ctx?.waitUntil(
                             captureProductEvent(
@@ -289,6 +352,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                                 {
                                     ...visitorCountry(context?.headers),
                                     provider: callbackProvider(context),
+                                    email_domain: signupEmailDomain(user.email),
                                 },
                             ),
                         );

@@ -29,9 +29,6 @@ export function buildTrackingHeaders(
     }
     const modelUsed = trackingData?.actualModel || model;
     const headers = buildUsageHeaders(modelUsed, trackingData.usage);
-    if (!Object.keys(headers).some((header) => header.startsWith("x-usage-"))) {
-        throw new Error(`Missing billable usage for ${model}`);
-    }
     if (trackingData.providerBilling) {
         headers[PROVIDER_BILLING_HEADERS.units] = String(
             trackingData.providerBilling.units,
@@ -39,6 +36,9 @@ export function buildTrackingHeaders(
         headers[PROVIDER_BILLING_HEADERS.unitCost] = String(
             trackingData.providerBilling.unitCost,
         );
+    }
+    if (!Object.keys(headers).some((header) => header.startsWith("x-usage-"))) {
+        throw new Error(`Missing billable usage for ${model}`);
     }
     return headers;
 }

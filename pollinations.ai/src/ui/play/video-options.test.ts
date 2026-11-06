@@ -14,6 +14,10 @@ describe("video controls", () => {
         expect(
             videoOptions("bytedance/seedance-2.0", ["audio_output"]),
         ).toMatchObject({ sound: "optional", defaultSound: true });
+        // Kling sends generate_audio only for audio=true, so Play must send it.
+        expect(
+            videoOptions("kwaivgi/kling-v3.0-std", ["audio_output"]),
+        ).toMatchObject({ sound: "optional", defaultSound: true });
         expect(
             videoOptions("minimax/minimax-h3", ["audio_output"]),
         ).toMatchObject({ sound: "on", ratios: ["16:9"] });

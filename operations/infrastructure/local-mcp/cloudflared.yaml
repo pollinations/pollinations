@@ -1,0 +1,5 @@
+metrics: 127.0.0.1:20000
+ingress:
+  - hostname: local-mcp.pollinations.ai
+    service: http://controller:8765
+  - service: http_status:404

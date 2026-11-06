@@ -1,5 +1,4 @@
 import type { Env } from "@/env.ts";
-import LOCKUP_SVG from "../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LANDING_HTML from "./sites-landing.html?raw";
 
 // User sites at <name>.pollinations.app (<name>--staging.pollinations.app on
@@ -47,7 +46,17 @@ async function dispatch(
     }
 }
 
-const LANDING_PAGE = LANDING_HTML.replace("<!-- lockup -->", LOCKUP_SVG);
+// The headers pollinations.ai sends with its pages (pollinations.ai/public/_headers).
+const LANDING_HEADERS = {
+    "Content-Type": "text/html; charset=utf-8",
+    "Strict-Transport-Security": "max-age=31536000",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+};
+
+const landing = (status = 200) =>
+    new Response(LANDING_HTML, { status, headers: LANDING_HEADERS });
 
 /** Serves a sites-domain request, or returns undefined for gen's own hosts. */
 export function serveSite(
@@ -55,15 +64,13 @@ export function serveSite(
     env: Env["Bindings"],
 ): Promise<Response> | undefined {
     const { hostname, pathname } = new URL(request.url);
-    // The bare domain (production only) explains pollinations.app; its font
-    // and icons come from gen's public files. Site names are labels in front
-    // of the suffix, so no site can take it.
+    // The bare domain (production only) explains pollinations.app; its icons
+    // come from gen's public files, and any other path gets the page as a
+    // 404. Site names are labels in front of the suffix, so no site can take it.
     if (`.${hostname}` === env.SITES_HOST_SUFFIX) {
-        if (pathname !== "/") return env.ASSETS.fetch(request);
-        return Promise.resolve(
-            new Response(LANDING_PAGE, {
-                headers: { "Content-Type": "text/html; charset=utf-8" },
-            }),
+        if (pathname === "/") return Promise.resolve(landing());
+        return env.ASSETS.fetch(request).then((asset) =>
+            asset.status === 404 ? landing(404) : asset,
         );
     }
     const name = siteName(hostname, env.SITES_HOST_SUFFIX);

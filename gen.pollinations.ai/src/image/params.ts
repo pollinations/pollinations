@@ -155,15 +155,20 @@ export const ImageParamsSchema = z
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["output_format"],
-                message: "WebP and GIF output are currently supported only by openai/gpt-image-2.6-flare.",
+                message:
+                    "WebP and GIF output are currently supported only by openai/gpt-image-2.6-flare.",
             });
         }
         if (data.output_format === "gif") {
-            if (data.frame_count === undefined || data.frame_duration_ms === undefined) {
+            if (
+                data.frame_count === undefined ||
+                data.frame_duration_ms === undefined
+            ) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["frame_count"],
-                    message: "GIF output requires frame_count and frame_duration_ms.",
+                    message:
+                        "GIF output requires frame_count and frame_duration_ms.",
                 });
             } else if (data.frame_count * data.frame_duration_ms > 10000) {
                 ctx.addIssue({
@@ -176,21 +181,27 @@ export const ImageParamsSchema = z
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["image"],
-                    message: "GIF output is currently supported for image generation only.",
+                    message:
+                        "GIF output is currently supported for image generation only.",
                 });
             }
             if (data.transparent || data.background === "transparent") {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["background"],
-                    message: "GIF output does not support transparent backgrounds.",
+                    message:
+                        "GIF output does not support transparent backgrounds.",
                 });
             }
-        } else if (data.frame_count !== undefined || data.frame_duration_ms !== undefined) {
+        } else if (
+            data.frame_count !== undefined ||
+            data.frame_duration_ms !== undefined
+        ) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["output_format"],
-                message: "frame_count and frame_duration_ms require output_format=gif.",
+                message:
+                    "frame_count and frame_duration_ms require output_format=gif.",
             });
         }
         if (data.resolution) {

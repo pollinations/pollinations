@@ -1,3 +1,10 @@
+import { communityDecisionsUrl } from "@shared/community-endpoint-urls.ts";
+import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
+    type CommunityEndpointRuntime,
+    normalizeCommunityEndpointBearerToken,
+} from "@shared/community-endpoints.ts";
+import { ensureUpstreamOk } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     openaiUsageToUsage,
@@ -6,6 +13,7 @@ import type {
     CreateDecisionRequest,
     CreateDecisionResponse,
 } from "@shared/schemas/decisions.ts";
+import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../../fallback.ts";
@@ -17,6 +25,76 @@ import {
     requestDecision,
 } from "../systemOneClient.js";
 import { resolveModelConfig } from "../utils/modelResolver.js";
+
+/**
+ * Forward a decisions request to a community decision endpoint.
+ *
+ * Community decision endpoints must implement the OpenRouter decisions wire
+ * format: POST { state, questions, model } → { model, answers, usage }.
+ * The gateway validates the response, normalises the model field to the
+ * Pollinations-canonical ID, and bills through the same usage headers as the
+ * first-party decision models.
+ */
+async function requestCommunityDecision(
+    request: { state: unknown; questions: Record<string, unknown> },
+    endpoint: CommunityEndpointRuntime,
+    secret: string,
+): Promise<{
+    result: {
+        model: string;
+        answers: Record<string, unknown>;
+        usage: { input_tokens: number; output_tokens: number };
+    };
+    requestUrl: URL;
+}> {
+    if (endpoint.type !== "proxy") {
+        throw Object.assign(
+            new Error(
+                `Community decision endpoint '${endpoint.modelId}' is a managed agent`,
+            ),
+            { status: 500 },
+        );
+    }
+    const bearerToken = normalizeCommunityEndpointBearerToken(
+        await decryptSecret(endpoint.bearerTokenCiphertext, secret),
+    );
+    const requestUrl = new URL(communityDecisionsUrl(endpoint.baseUrl));
+    const response = await fetch(requestUrl, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${bearerToken}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model: endpoint.upstreamModel,
+            ...request,
+        }),
+        signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+    });
+    await ensureUpstreamOk(response, requestUrl);
+    const body = await response.json();
+    // Minimal validation: answers and billable usage must be present.
+    if (
+        !body ||
+        typeof body !== "object" ||
+        typeof (body as Record<string, unknown>).answers !== "object" ||
+        !(body as Record<string, unknown>).answers ||
+        typeof (body as Record<string, unknown>).usage !== "object"
+    ) {
+        throw Object.assign(
+            new Error(
+                `Community decision endpoint '${endpoint.modelId}' returned an invalid response`,
+            ),
+            { status: 502, requestUrl },
+        );
+    }
+    const result = body as {
+        model: string;
+        answers: Record<string, unknown>;
+        usage: { input_tokens: number; output_tokens: number };
+    };
+    return { result, requestUrl };
+}
 
 /**
  * Native decisions route. The body is already the provider's own shape, so
@@ -33,13 +111,35 @@ export async function generateDecision(c: Context<Env>): Promise<Response> {
     return withModelFallbackResponse(
         c.var.model,
         async (candidate) => {
-            const { options } = resolveModelConfig([], {
-                model: candidate.id,
-            });
-            const { result, requestUrl } = await requestDecision(
-                { state, questions },
-                options,
-            );
+            const communityEndpoint = candidate.communityEndpoint as
+                | CommunityEndpointRuntime
+                | undefined;
+
+            let result: {
+                answers: Record<string, unknown>;
+                usage: { input_tokens: number; output_tokens: number };
+            };
+            let requestUrl: URL;
+
+            if (communityEndpoint) {
+                // Community decision endpoint: forward with its stored bearer.
+                const secret = c.env.BETTER_AUTH_SECRET;
+                ({ result, requestUrl } = await requestCommunityDecision(
+                    { state, questions },
+                    communityEndpoint,
+                    secret,
+                ));
+            } else {
+                // First-party decision model (Jev, Span, etc.).
+                const { options } = resolveModelConfig([], {
+                    model: candidate.id,
+                });
+                ({ result, requestUrl } = await requestDecision(
+                    { state, questions },
+                    options,
+                ));
+            }
+
             c.set("upstreamRequestUrl", requestUrl);
 
             const body: CreateDecisionResponse = {

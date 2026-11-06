@@ -1,6 +1,7 @@
 import {
     communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
+    communityDecisionsUrl,
     communityEmbeddingsUrl,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
@@ -548,6 +549,63 @@ async function fetchCommunityAudio(
     } catch {
         throw new Error("Endpoint request timed out or could not connect");
     }
+}
+
+/**
+ * Probe a community decision endpoint. Sends the smallest valid decisions
+ * request (a single noul question) and validates the response shape plus token
+ * usage, so the gateway knows the endpoint is reachable and bills correctly.
+ */
+export async function testCommunityDecisionEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityDecisionsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            state: "A simple probe to verify this endpoint is working.",
+            questions: {
+                ok: {
+                    type: "noul",
+                    instructions: "Is this a valid decision endpoint?",
+                },
+            },
+        }),
+    });
+
+    // Validate that it returns the OpenRouter decisions wire format:
+    // { model, answers: { <key>: { type, value, ... } }, usage: { input_tokens, output_tokens } }
+    const parsed = z
+        .object({
+            answers: z
+                .record(z.string(), z.unknown())
+                .refine((a) => Object.keys(a).length > 0, {
+                    message: "answers must be non-empty",
+                }),
+            usage: z.object({
+                input_tokens: z.number().int().nonnegative(),
+                output_tokens: z.number().int().nonnegative(),
+            }),
+        })
+        .safeParse(body);
+
+    if (!parsed.success || parsed.data.usage.input_tokens <= 0) {
+        throw new Error(
+            "Endpoint did not return valid decision answers with billable token usage",
+        );
+    }
+
+    const { input_tokens, output_tokens } = parsed.data.usage;
+    return {
+        usage: { input_tokens, output_tokens },
+        billableUsage: { promptTextTokens: input_tokens },
+    };
 }
 
 export async function testCommunityEmbeddingEndpoint({

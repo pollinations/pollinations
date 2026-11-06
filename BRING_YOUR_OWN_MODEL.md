@@ -16,6 +16,7 @@ Model publishing and [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md) solve differ
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
 | Text to speech | `POST /v1/audio/speech` | `POST /v1/audio/speech` |
 | Embeddings | `POST /v1/embeddings` | `POST /v1/embeddings` |
+| Decision | `POST /alpha/decisions` | `POST /alpha/decisions` |
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
 
@@ -91,7 +92,7 @@ The upstream credential is used by Pollinations to proxy requests to your endpoi
 
 ## Register with the CLI
 
-The CLI manages text, image, video, transcription, and embedding model registrations. Sign in, test the endpoint, then create the model:
+The CLI manages text, image, video, transcription, speech, embedding, and decision model registrations. Sign in, test the endpoint, then create the model:
 
 ```bash
 npx @pollinations/cli auth login

@@ -933,15 +933,15 @@ const imageResolutionField = z
         description:
             "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
-const imageOutputFormatField = z
-    .enum(["png", "webp", "gif"])
-    .optional()
-    .meta({
-        description: "GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms.",
-    });
+const imageOutputFormatField = z.enum(["png", "webp", "gif"]).optional().meta({
+    description:
+        "GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms.",
+});
 const imageFrameCountField = z.number().int().min(2).max(16).optional();
 const imageFrameDurationField = z.number().int().min(20).max(2000).optional();
-const imageBackgroundField = z.enum(["auto", "opaque", "transparent"]).optional();
+const imageBackgroundField = z
+    .enum(["auto", "opaque", "transparent"])
+    .optional();
 
 const imageResponseFormatField = z
     .enum(["url", "b64_json"])
@@ -960,9 +960,13 @@ export const CreateImageRequestSchema = z
         model: imageModelField,
         n: imageNField,
         size: imageSizeField,
-        aspect_ratio: z.enum(["16:9", "9:16", "1:1", "4:3", "3:4", "3:2", "2:3"]).optional().meta({
-            description: "Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default.",
-        }),
+        aspect_ratio: z
+            .enum(["16:9", "9:16", "1:1", "4:3", "3:4", "3:2", "2:3"])
+            .optional()
+            .meta({
+                description:
+                    "Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default.",
+            }),
         quality: imageQualityField,
         output_format: imageOutputFormatField,
         frame_count: imageFrameCountField,

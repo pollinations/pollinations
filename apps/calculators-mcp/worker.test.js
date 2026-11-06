@@ -65,6 +65,7 @@ for (const modern of [false, true])
                 "currency_list",
                 "currency_rates",
                 "check_contrast",
+                "convert_bytes",
                 "create_qr",
                 "inspect_unicode",
                 "next_cron_runs",
@@ -390,4 +391,46 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("convert_bytes reads SI and IEC suffixes as different quantities", async (t) => {
+    const client = await clientFor(t);
+    // The suffix decides the meaning: 1.5 MB is 1000-based, 1.5 MiB is 1024-based.
+    const si = await call(client, "convert_bytes", { text: "1.5 MB" });
+    assert.equal(si.bytes, 1500000);
+    assert.equal(si.iec, "1.43 MiB");
+
+    const iec = await call(client, "convert_bytes", { text: "1.5 MiB" });
+    assert.equal(iec.bytes, 1572864);
+    assert.equal(iec.si, "1.57 MB");
+
+    // The same count renders in both scales from a number too.
+    const rendered = await call(client, "convert_bytes", { bytes: 1572864 });
+    assert.equal(rendered.iec, "1.5 MiB");
+    assert.equal(rendered.si, "1.57 MB");
+    assert.equal(rendered.bytes, 1572864);
+});
+
+test("convert_bytes handles zero and rejects ambiguous or malformed input", async (t) => {
+    const client = await clientFor(t);
+    const zero = await call(client, "convert_bytes", { bytes: 0 });
+    assert.equal(zero.si, "0 B");
+    assert.equal(zero.iec, "0 B");
+
+    for (const args of [
+        { bytes: 1, text: "1 kB" }, // exactly one of the two, not both
+        {}, // nor neither
+        { text: "2 K" }, // a bare K has no standard byte meaning
+        { text: "1.5 bananas" },
+        { text: "1 kB trailing" },
+        { text: "0.5 B" }, // a byte count is whole
+        { bytes: -1 },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "convert_bytes", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

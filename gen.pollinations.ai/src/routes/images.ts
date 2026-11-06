@@ -347,15 +347,16 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             "2:3": "1024x1536",
         };
         const ratio = body.aspect_ratio;
-        const resolved = resolveParams({
-            ...body,
-            ...(c.var.model.resolved === "openai/gpt-image-2.6-flare" &&
+        const ratioSize =
+            c.var.model.resolved === "openai/gpt-image-2.6-flare" &&
             typeof ratio === "string" &&
-            body.size === "1024x1024" &&
-            flareAspectSizes[ratio]
-                ? { size: flareAspectSizes[ratio] }
-                : {}),
-        });
+            body.size === "1024x1024"
+                ? flareAspectSizes[ratio]
+                : undefined;
+        // The generation handler resolves size again after the cache middleware,
+        // so persist the effective size instead of only changing this local copy.
+        if (ratioSize) body.size = ratioSize;
+        const resolved = resolveParams(body);
         const safePrompt = await applySafetyToInput(
             c,
             body.prompt,

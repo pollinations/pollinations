@@ -1,0 +1,137 @@
+{
+  "date": "2026-11-05",
+  "period_start": "2026-11-05",
+  "period_end": "2026-11-05",
+  "title": "Two GPT Image 2.6 models join the image API",
+  "summary": "Two image models, new ways to earn Pollen, and agents in ACP editors led a day of API fixes.\n\nFlare and Sunburst were added for image generation and edits. Both support up to 16 reference images, transparency, and 4K output, and both require purchased Pollen. Klein now returns a 400 for truncated or oversized reference images. Image requests can also retry another worker or a declared fallback after a Workerd connection loss.\n\nThe new Invite friends quest lets referrers claim 2 Quest Pollen for each qualifying referral whose purchases total more than 2 Pollen. Contribution rewards now use maintainer-set labels. From November 5, eligible PRs merged into main earn their own label's reward, the highest label on a quest issue they close, or 5 Pollen by default. Eligible issue authors earn 2 Pollen.\n\nCLI 0.1.80 added `polli acp [agent]` so ACP editors can use Pollinations agents with streamed responses and permission-gated local tools. Code agents can now return caller-supplied function calls through `/v1/responses` and continue after the client supplies results. Mama Barbara added Telegram warnings for sign-ins near expiry or budgets below a day of box rent. Agent runs also handle temporary E2B refusals, null function-tool fields, and delegated token expiry more reliably.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 18370,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 18420,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 18750,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19154,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19155,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19157,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19196,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19200,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19203,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19207,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19224,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19228,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19248,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19249,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19250,
+      "date": "2026-11-05"
+    }
+  ],
+  "generated_at": "2026-11-06T06:06:36.927211+00:00",
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "GPT Image 2.6 Flare",
+      "text": "Generate and edit images with `openai/gpt-image-2.6-flare`, using up to 16 reference images, transparency, and 4K output. It requires purchased Pollen. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-image-2.6-flare).",
+      "prs": [
+        19224
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "GPT Image 2.6 Sunburst",
+      "text": "Generate and edit images with `openai/gpt-image-2.6-sunburst`, using up to 16 reference images, transparency, and 4K output. It requires purchased Pollen. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-image-2.6-sunburst).",
+      "prs": [
+        19224
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Invite friends for Pollen",
+      "text": "The new Invite friends quest awards 2 Quest Pollen for each qualifying referral whose purchases total more than 2 Pollen. Connect GitHub to copy your invite link from the Quests page.",
+      "prs": [
+        18370
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Contribution quests get reward labels",
+      "text": "From November 5, eligible PRs merged into main earn the PR's reward label, the highest label on a quest issue they close, or 5 Pollen by default. Eligible issue authors earn 2 Pollen.",
+      "prs": [
+        18750
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Pollinations agents in ACP editors",
+      "text": "Use `polli acp [agent]` in CLI 0.1.80 to run Pollinations agents in ACP editors such as Zed and JetBrains IDEs. Prompts can include images and files, and local tool calls require permission. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        19154
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Code agents call your tools",
+      "text": "Pass function tools to a code agent through `/v1/responses`. The agent can return a call for your client to execute, then continue when you send the matching `function_call_output`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19157
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "📱",
+      "title": "Barbara sends early warnings",
+      "text": "Mama Barbara sends a Telegram warning when an owner's sign-in is within two days of expiry or the remaining Pollen budget falls below one day of rent for running boxes. The warning includes `/signin`.",
+      "prs": [
+        19196
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

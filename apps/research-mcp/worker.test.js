@@ -506,7 +506,9 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
                     items: [
                         {
                             DOI: "10.1038/nature12373",
-                            title: ["CRISPR-Cas9 System for Genome Engineering"],
+                            title: [
+                                "CRISPR-Cas9 System for Genome Engineering",
+                            ],
                             author: [{ given: "Jennifer", family: "Doudna" }],
                             "container-title": ["Nature"],
                             published: { "date-parts": [[2020, 10, 21]] },

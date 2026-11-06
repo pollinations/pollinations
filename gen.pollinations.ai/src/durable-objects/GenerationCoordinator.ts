@@ -110,6 +110,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                     await this.settleCacheHitRecord();
                 }
                 immediate = { status: "cached" };
+                this.resolveWaiters(immediate);
                 return;
             }
 
@@ -165,6 +166,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             });
             if (cachePresent) {
                 await this.ctx.storage.setAlarm(Date.now() + ASYNC_TTL_MS);
+                this.resolveWaiters({ status: "cached" });
             }
         });
         return status;
@@ -372,9 +374,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 });
                 await this.ctx.storage.setAlarm(Date.now() + ASYNC_TTL_MS);
             }
-            for (const resolve of this.waiters) resolve(outcome);
-            this.waiters.clear();
+            this.resolveWaiters(outcome);
         });
+    }
+
+    /** Cache-hit recovery may cancel the only alarm that could wake callers. */
+    private resolveWaiters(outcome: GenerationOutcome): void {
+        for (const resolve of this.waiters) resolve(outcome);
+        this.waiters.clear();
     }
 
     /** A cache-hit join settles the pending record when the alarm cannot. */

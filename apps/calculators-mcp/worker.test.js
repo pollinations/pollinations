@@ -65,6 +65,7 @@ for (const modern of [false, true])
                 "currency_list",
                 "currency_rates",
                 "check_contrast",
+                "convert_number_base",
                 "create_qr",
                 "inspect_unicode",
                 "next_cron_runs",
@@ -390,4 +391,86 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("convert_number_base is exact past the safe integer range", async (t) => {
+    const client = await clientFor(t);
+    // 2^128: a 128-bit value a hash or key conversion would carry. Number loses this.
+    const big = await call(client, "convert_number_base", {
+        value: "340282366920938463463374607431768211456",
+        from_base: 10,
+        to_base: 16,
+        prefix: true,
+    });
+    assert.equal(big.value, "100000000000000000000000000000000");
+    assert.equal(big.prefixed, "0x100000000000000000000000000000000");
+    assert.equal(big.decimal, "340282366920938463463374607431768211456");
+});
+
+test("convert_number_base handles signs, case and base-specific prefixes", async (t) => {
+    const client = await clientFor(t);
+    assert.equal(
+        (
+            await call(client, "convert_number_base", {
+                value: "ff",
+                from_base: 16,
+                uppercase: true,
+            })
+        ).value,
+        "FF",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_number_base", {
+                value: "-255",
+                from_base: 10,
+                to_base: 8,
+            })
+        ).value,
+        "-377",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_number_base", {
+                value: "11111111",
+                from_base: 2,
+                to_base: 8,
+            })
+        ).value,
+        "377",
+    );
+    // Base 3 has no language-level literal, so the field is null rather than a guess.
+    assert.equal(
+        (
+            await call(client, "convert_number_base", {
+                value: "10",
+                from_base: 10,
+                to_base: 3,
+                prefix: true,
+            })
+        ).prefixed,
+        null,
+    );
+});
+
+test("convert_number_base rejects digits that do not exist in the source base", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "12", from_base: 2 },
+        { value: "ff", from_base: 10 },
+        { value: "", from_base: 10 },
+        { value: "10", from_base: 1 },
+        { value: "10", to_base: 37 },
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "convert_number_base",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

@@ -6,7 +6,10 @@ const ABSTRACT_LIMIT = 8_000;
 
 function cleanString(val) {
     if (!val) return "";
-    return String(val).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    return String(val)
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 function formatAuthors(authors) {
@@ -54,8 +57,21 @@ export const crossRefTools = [
         "crossref_search",
         "Search CrossRef for scholarly works, journal articles, books, and conference proceedings by keyword, author, or title.",
         {
-            query: z.string().min(1).describe("Search query (keywords, paper title, or author name)"),
-            limit: z.number().int().min(1).max(50).default(10).describe("Maximum number of results to return (1-50, default 10)"),
+            query: z
+                .string()
+                .min(1)
+                .describe(
+                    "Search query (keywords, paper title, or author name)",
+                ),
+            limit: z
+                .number()
+                .int()
+                .min(1)
+                .max(50)
+                .default(10)
+                .describe(
+                    "Maximum number of results to return (1-50, default 10)",
+                ),
         },
         async ({ query, limit = 10 }, fetchFn = fetchJson) => {
             const url = `${API_ROOT}?query=${encodeURIComponent(query.trim())}&rows=${limit}&select=DOI,title,author,container-title,published,published-print,published-online,created,type,is-referenced-by-count,URL,abstract`;
@@ -72,10 +88,17 @@ export const crossRefTools = [
         "crossref_work",
         "Retrieve bibliographic metadata and citation metrics for a specific scholarly publication by DOI.",
         {
-            doi: z.string().min(1).describe("Digital Object Identifier (e.g. '10.1038/s41586-020-2649-2')"),
+            doi: z
+                .string()
+                .min(1)
+                .describe(
+                    "Digital Object Identifier (e.g. '10.1038/s41586-020-2649-2')",
+                ),
         },
         async ({ doi }, fetchFn = fetchJson) => {
-            const normalizedDoi = doi.trim().replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "");
+            const normalizedDoi = doi
+                .trim()
+                .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "");
             const url = `${API_ROOT}/${encodeURIComponent(normalizedDoi)}`;
             const data = await fetchFn(url);
             if (!data?.message) {

@@ -512,7 +512,8 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
                             published: { "date-parts": [[2020, 10, 21]] },
                             type: "journal-article",
                             "is-referenced-by-count": 4820,
-                            abstract: "<jats:p>A programmable RNA-guided genome editing platform.</jats:p>",
+                            abstract:
+                                "<jats:p>A programmable RNA-guided genome editing platform.</jats:p>",
                         },
                     ],
                 },
@@ -529,7 +530,8 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
                     published: { "date-parts": [[2020, 10, 21]] },
                     type: "journal-article",
                     "is-referenced-by-count": 4820,
-                    abstract: "A programmable RNA-guided genome editing platform.",
+                    abstract:
+                        "A programmable RNA-guided genome editing platform.",
                 },
             });
         }
@@ -537,7 +539,10 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     });
 
     const c = await client(t);
-    const searchRes = await call(c, "crossref_search", { query: "CRISPR", limit: 1 });
+    const searchRes = await call(c, "crossref_search", {
+        query: "CRISPR",
+        limit: 1,
+    });
     assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
     const searchVal = value(searchRes);
     assert.equal(searchVal.totalResults, 1);
@@ -546,7 +551,9 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     assert.equal(searchVal.works[0].citations, 4820);
     assert.match(searchVal.works[0].abstract, /programmable RNA-guided/);
 
-    const workRes = await call(c, "crossref_work", { doi: "10.1038/nature12373" });
+    const workRes = await call(c, "crossref_work", {
+        doi: "10.1038/nature12373",
+    });
     assert.notEqual(workRes.isError, true, JSON.stringify(workRes));
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");

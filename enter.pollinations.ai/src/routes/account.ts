@@ -964,6 +964,7 @@ const profileResponseSchema = z.object({
 const UpdateProfileSchema = z.object({
     cacheDisabled: z
         .boolean()
+        .meta({ example: true })
         .describe(
             "Turn the cache off for every key of the account: requests never get a cached result and never add theirs to the shared cache, so each one generates and is billed. A key can turn it off for itself with `cacheDisabled` on `PATCH /account/keys/{id}`",
         ),

@@ -57,7 +57,7 @@ export const user = sqliteTable("user", {
   lastPackPollen: real("last_pack_pollen"),
   // Every request by this account skips the shared generation cache.
   cacheDisabled: integer("cache_disabled", { mode: "boolean" })
-    .default(false)
+    .default(sql`0`)
     .notNull(),
   // The invite link owner or BYOP app owner this user signed up through.
   referredBy: text("referred_by").references((): AnySQLiteColumn => user.id, {

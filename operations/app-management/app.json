@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Pixelsprite ai",
+    "url": "https://pixel-sprite-ai-1.vercel.app",
+    "description": "Create good images for game assets in pixels every images use game and created transformation for treding images and auto background transparent",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "ratherlive3-png",
+    "githubUserId": "328166398",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-02",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19014",
+    "approvedDate": "2026-11-06",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/4bf3f7f6-ca55-485c-98aa-39d4c0799fbb"
+  },
+  {
+    "emoji": "🖼️",
     "name": "ZEEK AI Girl Lab - BYOK Public Edition",
     "url": "https://hwoarangkang.github.io/zeek-ai-girl-lab",
     "description": "ZEEK AI Girl Lab is a 100% client-side BYOK prompt forge for generating AI girl photos. Users bring their own Pollinations sk_... key (stored only in localStorage, zero server), expand prompts with QW",

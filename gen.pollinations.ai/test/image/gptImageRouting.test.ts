@@ -226,7 +226,9 @@ describe("GPT Image direct OpenAI routing", () => {
     }
 
     it("forwards GIF frame timing to OpenAI Flare and reports GIF output", async () => {
-        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(successResponse());
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(successResponse());
         const model = "openai/gpt-image-2.6-flare";
         const result = await callGPTImage(
             "a pollinating bee in flight",
@@ -243,7 +245,9 @@ describe("GPT Image direct OpenAI routing", () => {
             model,
         );
         const [url, init] = fetchMock.mock.calls[0];
-        expect(String(url)).toBe("https://api.openai.com/v1/images/generations");
+        expect(String(url)).toBe(
+            "https://api.openai.com/v1/images/generations",
+        );
         expect(JSON.parse(String(init?.body))).toMatchObject({
             model: "gpt-image-2.6-flare",
             output_format: "gif",
@@ -256,7 +260,9 @@ describe("GPT Image direct OpenAI routing", () => {
     });
 
     it("forwards WebP while keeping PNG as the default Flare format", async () => {
-        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(successResponse());
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(successResponse());
         const model = "openai/gpt-image-2.6-flare";
         const webp = await callGPTImage(
             "test",
@@ -270,10 +276,14 @@ describe("GPT Image direct OpenAI routing", () => {
             userInfo,
             model,
         );
-        expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[0][1]?.body)),
+        ).toMatchObject({
             output_format: "webp",
         });
-        expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body))).toMatchObject({
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[1][1]?.body)),
+        ).toMatchObject({
             output_format: "png",
         });
         expect(webp.mimeType).toBe("image/webp");
@@ -310,10 +320,12 @@ describe("GPT Image 2.6 fal fallback", () => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 {
-                    images: [{
-                        url: `data:image/gif;base64,${gif.toString("base64")}`,
-                        content_type: "image/gif",
-                    }],
+                    images: [
+                        {
+                            url: `data:image/gif;base64,${gif.toString("base64")}`,
+                            content_type: "image/gif",
+                        },
+                    ],
                 },
                 { headers: { "x-fal-billable-units": "0.01" } },
             ),
@@ -332,7 +344,9 @@ describe("GPT Image 2.6 fal fallback", () => {
             userInfo,
             model,
         );
-        expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[0][1]?.body)),
+        ).toMatchObject({
             output_format: "gif",
             frame_count: 9,
             frame_duration_ms: 150,

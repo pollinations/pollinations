@@ -412,7 +412,7 @@ export const CreateChatCompletionRequestSchema = z
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
         parallel_tool_calls: z.boolean().optional(),
-        user: z.string().optional(),
+        user: z.string().min(1).optional(),
         prompt_cache_key: z.string().min(1).optional(),
         prompt_cache_options: PromptCacheOptionsSchema,
         prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
@@ -517,7 +517,7 @@ export const CreateResponseRequestSchema = z
         metadata: z.record(z.string(), z.string()).nullish(),
         // Codex session telemetry; accepted, never sent upstream.
         client_metadata: z.record(z.string(), z.string()).nullish(),
-        user: z.string().optional(),
+        user: z.string().min(1).optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().min(1).optional(),
         prompt_cache_options: PromptCacheOptionsSchema,

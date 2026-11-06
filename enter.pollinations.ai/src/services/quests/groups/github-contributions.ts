@@ -21,8 +21,8 @@ import {
  *
  * Amounts come only from reward-N labels, which only maintainers can add. A PR
  * merged into main earns its own label, else the bounty of the POLLEN-QUEST
- * issue it closes, else 5; maintainers' own PRs earn nothing. Every issue a
- * merged PR closes earns its author 2, also when they fixed it themselves.
+ * issue it closes, else 5. Every issue a merged PR closes earns its author 2,
+ * also when they fixed it themselves.
  * Both are read from the quest issue: app submissions earn the quest's label,
  * else 5, and quest PRs merged before REWARDS_START earn the quest's label.
  */
@@ -32,9 +32,6 @@ const PR_REWARD = 5;
 // PRs merged before this earn the old one-time first-PR reward instead. Same
 // date as REWARDS_START in operations/infrastructure/project-manager/project_manager.py.
 const REWARDS_START = "2026-11-05T00:00:00Z";
-// Thomas and Elliot merge most PRs themselves. Same ids as REWARD_MAINTAINERS
-// in operations/infrastructure/project-manager/project_manager.py.
-const MAINTAINER_GITHUB_IDS = new Set([5099901, 36901823]);
 const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
     "DRAFT-QUEST",
     "APP-SUBMISSION",
@@ -620,8 +617,7 @@ async function mergedPrsSinceStart(
     token: string,
     user: QuestUser,
 ): Promise<MergedPrNode[]> {
-    if (!user.githubUsername || MAINTAINER_GITHUB_IDS.has(user.githubId ?? 0))
-        return [];
+    if (!user.githubUsername) return [];
     const prs = await searchAll<MergedPrNode>(
         token,
         MERGED_PRS_QUERY,

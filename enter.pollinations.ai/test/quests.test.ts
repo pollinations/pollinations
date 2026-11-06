@@ -2757,36 +2757,6 @@ test("a merged PR pays once, whatever changes after it paid", async ({
     ]);
 });
 
-test("maintainers' own merged PRs earn no PR reward", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    await mocks.enable("github", "tinybird");
-    const elliot = 36901823;
-    await db
-        .update(schema.user)
-        .set({ githubId: elliot })
-        .where(eq(schema.user.id, user.id));
-    mocks.github.state.mergedPullRequests.push({
-        number: 9601,
-        authorLogin: user.githubUsername ?? "",
-        authorId: elliot,
-        mergedAt: "2026-11-06T00:00:00Z",
-    });
-
-    await checkQuestsForUser(env, user.id);
-
-    const rewards = await db
-        .select({ questId: schema.rewards.questId })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.userId, user.id));
-    expect(
-        rewards.filter((reward) => reward.questId.includes("merged_pr")),
-    ).toEqual([]);
-});
-
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({
     mocks,
     sessionToken: _sessionToken,

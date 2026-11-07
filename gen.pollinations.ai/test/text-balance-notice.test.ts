@@ -66,6 +66,11 @@ describe("text balance notice", () => {
             );
             const text = await response.text();
             expect(response.status).toBe(enabled ? 200 : 402);
+            // The reply stays a chat message; the header is what makes the failure
+            // machine-readable. Disabled means the plain 402, so no notice is claimed.
+            expect(response.headers.get("X-Pollinations-Notice")).toBe(
+                enabled ? "QUEST_POLLEN_RESTRICTED" : null,
+            );
             expect(text).toContain(
                 enabled ? "Quest pollen is locked" : "QUEST_POLLEN_RESTRICTED",
             );

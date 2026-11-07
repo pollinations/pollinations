@@ -22,6 +22,11 @@ import {
 // Text routes answer these errors as a chat reply with a link to fix them.
 // Set one false to return the plain HTTP error instead. JSON and audio
 // requests always get the plain error.
+//
+// The reply is indistinguishable from a model answer: the content is the notice,
+// finish_reason is "stop" and usage is zero. A caller that wants to keep showing the
+// notice still needs a way to branch, so every replaced response also carries
+// X-Pollinations-Notice with the error code. See #19294.
 export const TEXT_BALANCE_NOTICE_ENABLED = true; // 402
 export const TEXT_PERMISSION_NOTICE_ENABLED = true; // 403 model not allowed
 
@@ -74,31 +79,39 @@ function balanceNoticeMessage(
     );
 }
 
-function noticeMessage(c: Context<Env>): string | undefined {
+function notice(
+    c: Context<Env>,
+): { message: string; code: string } | undefined {
     const error = c.get("error");
     if (
         TEXT_BALANCE_NOTICE_ENABLED &&
         c.res.status === 402 &&
         error instanceof PaymentRequiredError
     )
-        return balanceNoticeMessage(c, error);
+        return {
+            message: balanceNoticeMessage(c, error),
+            code: error.errorCode,
+        };
     if (
         TEXT_PERMISSION_NOTICE_ENABLED &&
         c.res.status === 403 &&
         error instanceof PermissionRequiredError
     )
-        return (
-            `The API key used for this request isn't allowed to use ${c.var.model.requested}. ` +
-            `Please ${mdLink("allow it for this key", error.fixUrl)}, then try again.\n\n${NOT_YOUR_ACCOUNT}`
-        );
+        return {
+            message:
+                `The API key used for this request isn't allowed to use ${c.var.model.requested}. ` +
+                `Please ${mdLink("allow it for this key", error.fixUrl)}, then try again.\n\n${NOT_YOUR_ACCOUNT}`,
+            code: "PERMISSION_REQUIRED",
+        };
 }
 
 /** Wrap tracking and caching so they capture the original 402/403 before formatting. */
 export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     await next();
 
-    const message = noticeMessage(c);
-    if (!message) return;
+    const noticeResult = notice(c);
+    if (!noticeResult) return;
+    const { message, code } = noticeResult;
 
     const isResponses = c.req.path === "/v1/responses";
     const request = c.req.valid(
@@ -124,6 +137,9 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     const headers = c.res.headers;
     headers.set("Cache-Control", "private, no-store");
     headers.delete("content-length");
+    // Names the notice so a caller can tell a billing failure from an answer, while the
+    // reply itself stays the friendly chat message it is today.
+    headers.set("X-Pollinations-Notice", code);
     if (
         !request.stream &&
         !isResponses &&

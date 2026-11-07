@@ -73,6 +73,8 @@ const omitClaudeSampling = omitParameters("temperature", "top_p", "top_k");
 
 interface ModelDefinition {
     name: string;
+    /** Give the declared fallback time to respond within the shared text budget. */
+    fallbackAfterMs?: number;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
     /** Route Chat requests through the model's declared Responses endpoint. */
@@ -559,6 +561,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
+        fallbackAfterMs: 120_000,
         config: portkeyConfig["DeepSeek-V4.1-Flash"],
         transform: fireworksThinking,
     },

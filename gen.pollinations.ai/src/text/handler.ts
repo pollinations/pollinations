@@ -23,6 +23,10 @@ import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
 import {
+    createTextAttemptBudget,
+    type TextAttemptBudget,
+} from "./attemptBudget.ts";
+import {
     publicChatChoices,
     publicChatStream,
     publicUsage,
@@ -133,6 +137,7 @@ export async function generateChatAttempt(
     c: TextContext,
     requestData: RequestData,
     candidate: FallbackCandidate,
+    budget?: TextAttemptBudget,
 ): Promise<ChatCompletion> {
     const portkey = c.env.PORTKEY;
     // An upstream without SSE is asked for JSON, then its answer is replayed
@@ -147,6 +152,7 @@ export async function generateChatAttempt(
         attemptData.messages,
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+        budget,
     );
     if (!attemptData.stream) {
         requireChatCompletionUsage(result);
@@ -419,11 +425,16 @@ async function generateTextResponse(
                         requestData,
                     ),
             );
+        const budget = createTextAttemptBudget(c.var.model?.resolved);
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            (attempt) => generateChatAttempt(c, requestData, attempt),
+            (attempt) =>
+                budget.run(attempt.id, (timing) =>
+                    generateChatAttempt(c, requestData, attempt, timing),
+                ),
             c.var.track?.attempts,
             (attempt) => requireModelAttemptAccess(c, attempt),
+            budget.shouldFallback,
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();

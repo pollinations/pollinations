@@ -69,6 +69,7 @@ for (const modern of [false, true])
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
+                "summarize_numbers",
                 "time_convert",
                 "time_math",
             ].sort(),
@@ -390,4 +391,59 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("summarize_numbers reports quartiles, Tukey outliers and the interpolated median", async (t) => {
+    const client = await clientFor(t);
+    const result = await call(client, "summarize_numbers", {
+        numbers: [1, 2, 3, 4, 5, 100],
+        percentiles: [10, 90],
+    });
+
+    assert.equal(result.count, 6);
+    assert.equal(result.sum, 115);
+    assert.equal(result.min, 1);
+    assert.equal(result.max, 100);
+    assert.equal(result.range, 99);
+    // Median of an even count is interpolated, not an observed value.
+    assert.equal(result.median, 3.5);
+    assert.equal(result.quartiles.q1, 2.25);
+    assert.equal(result.quartiles.q3, 4.75);
+    assert.equal(result.interquartile_range, 2.5);
+    // 100 sits above the upper fence of 8.5; nothing else is an outlier.
+    assert.equal(result.outliers.upper_fence, 8.5);
+    assert.deepEqual(result.outliers.values, [100]);
+    assert.equal(result.percentiles[90], 52.5);
+});
+
+test("summarize_numbers distinguishes an undefined sample spread from zero", async (t) => {
+    const client = await clientFor(t);
+    const result = await call(client, "summarize_numbers", { numbers: [7] });
+
+    // One value has no sample spread, but its population spread is genuinely zero.
+    assert.equal(result.standard_deviation, null);
+    assert.equal(result.standard_deviation_population, 0);
+    assert.equal(result.median, 7);
+    assert.deepEqual(result.outliers.values, []);
+});
+
+test("summarize_numbers rejects empty, non-finite and out-of-range input", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { numbers: [] },
+        { numbers: [1, Number.NaN] },
+        { numbers: [1, Number.POSITIVE_INFINITY] },
+        { numbers: [1], percentiles: [101] },
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "summarize_numbers",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

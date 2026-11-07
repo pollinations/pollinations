@@ -499,79 +499,83 @@ describe("tracking observability", () => {
         trackingUser = user;
     });
 
-    it("emits Tinybird generation events for successful gen requests", async () => {
-        const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-
-        const ctx = createExecutionContext();
-        const response = await createTestApp().fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "cf-connecting-ip": "203.0.113.42",
-                    referer: "https://example.com/app",
+    it.each([false, undefined])(
+        "emits Tinybird generation events for non-streaming requests (stream: %s)",
+        async (stream) => {
+            const tinybirdRequests: Request[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    tinybirdRequests.push(new Request(input, init));
+                    return new Response("ok");
                 },
-                body: JSON.stringify({
-                    model: "openai/gpt-5.4-nano",
-                    stream: false,
-                    messages: [{ role: "user", content: "test" }],
+            );
+
+            const ctx = createExecutionContext();
+            const response = await createTestApp().fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "cf-connecting-ip": "203.0.113.42",
+                        referer: "https://example.com/app",
+                    },
+                    body: JSON.stringify({
+                        model: "openai/gpt-5.4-nano",
+                        stream,
+                        messages: [{ role: "user", content: "test" }],
+                    }),
                 }),
-            }),
-            {
-                DB: env.DB,
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                BETTER_AUTH_SECRET: "test_secret",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
+                {
+                    DB: env.DB,
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    BETTER_AUTH_SECRET: "test_secret",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as CloudflareBindings,
+                ctx,
+            );
 
-        await waitOnExecutionContext(ctx);
+            await waitOnExecutionContext(ctx);
 
-        expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
-        expect(tinybirdRequests[0].url).toBe(
-            "https://tinybird.test/v0/events?name=generation_event_v2",
-        );
-        expect(tinybirdRequests[0].headers.get("authorization")).toBe(
-            "Bearer test_tinybird_token",
-        );
-        // Internal accounting canonicalization does not rewrite the provider response.
-        expect(response.headers.get("x-model-used")).toBe(
-            "gpt-5-nano-2025-08-07",
-        );
-        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
-        expect(event).toMatchObject({
-            requestPath: "/v1/chat/completions",
-            environment: "test",
-            eventType: "generate.text",
-            responseStatus: 200,
-            modelRequested: "openai/gpt-5.4-nano",
-            resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "openai/gpt-5.4-nano",
-            modelProviderUsed: expect.any(String),
-            userId: trackingUser.id,
-            isBilledUsage: true,
-            tokenCountPromptText: 1000,
-            tokenCountCompletionText: 500,
-            referrerUrl: "https://example.com/app",
-            referrerDomain: "example.com",
-            ipSubnet: "203.0.113.0",
-        });
-        expect(event).not.toHaveProperty("cacheHit");
-        expect(event).not.toHaveProperty("cacheKey");
-        expect(event.totalPrice).toBeGreaterThan(0);
-    });
+            expect(response.status).toBe(200);
+            expect(tinybirdRequests).toHaveLength(1);
+            expect(tinybirdRequests[0].url).toBe(
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            );
+            expect(tinybirdRequests[0].headers.get("authorization")).toBe(
+                "Bearer test_tinybird_token",
+            );
+            // Internal accounting canonicalization does not rewrite the provider response.
+            expect(response.headers.get("x-model-used")).toBe(
+                "gpt-5-nano-2025-08-07",
+            );
+            const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+            expect(event).toMatchObject({
+                requestPath: "/v1/chat/completions",
+                environment: "test",
+                eventType: "generate.text",
+                responseStatus: 200,
+                streamRequested: false,
+                modelRequested: "openai/gpt-5.4-nano",
+                resolvedModelRequested: "openai/gpt-5.4-nano",
+                modelUsed: "openai/gpt-5.4-nano",
+                modelProviderUsed: expect.any(String),
+                userId: trackingUser.id,
+                isBilledUsage: true,
+                tokenCountPromptText: 1000,
+                tokenCountCompletionText: 500,
+                referrerUrl: "https://example.com/app",
+                referrerDomain: "example.com",
+                ipSubnet: "203.0.113.0",
+            });
+            expect(event).not.toHaveProperty("cacheHit");
+            expect(event).not.toHaveProperty("cacheKey");
+            expect(event.totalPrice).toBeGreaterThan(0);
+        },
+    );
 
     it("tracks provider work but not coalesced cache hits", async () => {
         const tinybirdRequests: Request[] = [];
@@ -1648,6 +1652,7 @@ describe("tracking observability", () => {
             resolvedModelRequested: "openai/gpt-5.4-nano",
             modelUsed: "openai/gpt-5.4-nano",
             isBilledUsage: false,
+            streamRequested: false,
         });
     });
 
@@ -2609,11 +2614,13 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const event = await tinybirdRequests[0].json();
+        expect(event).toMatchObject({
             eventType: "generate.image",
             responseStatus: 200,
             isBilledUsage: true,
         });
+        expect(event).not.toHaveProperty("streamRequested");
     });
 
     it("does not bill a streamed text request that returns a non-SSE content-type", async () => {
@@ -2670,6 +2677,7 @@ describe("tracking observability", () => {
             eventType: "generate.text",
             responseStatus: 200,
             isBilledUsage: false,
+            streamRequested: true,
         });
     });
 
@@ -2727,6 +2735,7 @@ describe("tracking observability", () => {
         expect(event.tokenCountCompletionText).toBe(500);
         expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
         expect(event.isBilledUsage).toBe(true);
+        expect(event).toHaveProperty("streamRequested", true);
     });
 
     it("separates a rescued stream's attempt duration from the full request", async () => {
@@ -2791,6 +2800,7 @@ describe("tracking observability", () => {
             totalPrice: 0,
             tokenCountPromptText: 7,
             tokenCountCompletionText: 2,
+            streamRequested: true,
         });
         expect(primary.totalCost).toBeGreaterThan(0);
         expect(primary.attemptResponseTime).toBe(primary.responseTime);
@@ -2805,6 +2815,7 @@ describe("tracking observability", () => {
         ).toBeGreaterThanOrEqual(100);
         expect(fallback.tokenCountCompletionText).toBe(500);
         expect(fallback.isBilledUsage).toBe(true);
+        expect(fallback.streamRequested).toBe(true);
     });
 
     it.each([false, true])(

@@ -1366,6 +1366,10 @@ function createTrackingEvent({
             ? endTime.getTime() - attemptStartTime.getTime()
             : undefined,
         responseStatus: responseTracking.responseStatus,
+        streamRequested:
+            eventType === "generate.text"
+                ? requestTracking.streamRequested
+                : undefined,
         environment,
         eventType,
         ipSubnet,

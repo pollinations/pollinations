@@ -36,6 +36,10 @@ export const wellKnownRoutes = new Hono<Env>()
             code_challenge_methods_supported: ["S256"],
             token_endpoint_auth_methods_supported: ["none"],
             client_id_metadata_document_supported: true,
+            // Personal Agent Protocol (Poppy) spec 3.2: every domain whose
+            // poppy.json names this issuer must appear here, so an agent can
+            // check both directions before trusting the document.
+            poppy_domains: [new URL(genOrigin).hostname],
             // RFC 8414 has no same-origin rule: point agents at the docs on gen.
             service_documentation: `${genOrigin}/docs`,
         });

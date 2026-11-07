@@ -10,6 +10,7 @@ import SDK_SKILL from "../../../.claude/skills/pollinations-sdk/SKILL.md?raw";
 import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
+import { POPPY_DOCUMENT } from "./poppy.ts";
 
 // Agent Skills discovery (RFC 8615 well-known URI), schema v0.2.0:
 // https://github.com/cloudflare/agent-skills-discovery-rfc
@@ -138,6 +139,12 @@ export const wellKnownRoutes = new Hono<Env>()
                 ],
             }),
         );
+    })
+    .get("/poppy.json", (c) => {
+        // Personal Agent Protocol discovery (Poppy draft 0.2): static per origin,
+        // public, no authentication.
+        c.header("Cache-Control", "public, max-age=3600");
+        return c.json(POPPY_DOCUMENT(getPublicOrigin(c)));
     })
     .get("/oauth-protected-resource", (c) => {
         // RFC 9728: tells an agent that hits a 401 here which authorization

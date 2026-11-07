@@ -223,6 +223,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "commons",
+                alpha: true,
+                name: "Wikimedia Commons",
+                description:
+                    "Find freely reusable images on Wikimedia Commons, with licence filtering and ready credit lines.",
+                url: "https://gen.pollinations.ai/mcp/commons",
+                pricing: {
+                    description:
+                        "Commons lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

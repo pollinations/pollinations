@@ -53,6 +53,7 @@ const params: ImageParams = {
 const userInfo: AuthResult = {
     tokenAuth: true,
     userId: "test-user",
+    apiKeyId: "test-key",
 };
 
 function successResponse(): Response {

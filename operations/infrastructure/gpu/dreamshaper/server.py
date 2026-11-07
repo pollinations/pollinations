@@ -40,6 +40,10 @@ if QUEUE_LIMIT < 1:
 
 generate_lock = threading.Lock()
 generation_slots = threading.BoundedSemaphore(QUEUE_LIMIT)
+# One more slot per process that only gen's protected requests (every caller
+# but the legacy image bridge) may take, so legacy bursts cannot fill them all.
+# It reserves admission, not execution order: generate_lock is not FIFO.
+protected_slot = threading.BoundedSemaphore(1)
 
 
 class ImageRequest(BaseModel):
@@ -182,20 +186,25 @@ def verify_backend_token(x_backend_token: str = Header(None, alias="x-backend-to
 
 
 @contextmanager
-def generation_slot():
-    if not generation_slots.acquire(blocking=False):
+def generation_slot(protected=False):
+    if protected and protected_slot.acquire(blocking=False):
+        slot = protected_slot
+    elif generation_slots.acquire(blocking=False):
+        slot = generation_slots
+    else:
         raise HTTPException(status_code=503, detail="Queue full")
     try:
         yield
     finally:
-        generation_slots.release()
+        slot.release()
 
 
 @app.post("/generate")
-def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
+def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token),
+             x_protected_slot: str | None = Header(None, alias="x-protected-slot")):
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-    with generation_slot():
+    with generation_slot(protected=x_protected_slot == "1"):
         seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
         generator = torch.Generator("cuda").manual_seed(seed)
         gen_w, gen_h = clamp_dims(request.width, request.height)

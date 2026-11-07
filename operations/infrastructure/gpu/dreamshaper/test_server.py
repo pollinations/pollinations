@@ -36,28 +36,52 @@ class ClampDimsTest(unittest.TestCase):
 class GenerationSlotTest(unittest.TestCase):
     def setUp(self):
         self.original_slots = server.generation_slots
+        self.original_protected = server.protected_slot
         server.generation_slots = threading.BoundedSemaphore(2)
+        server.protected_slot = threading.BoundedSemaphore(1)
 
     def tearDown(self):
         server.generation_slots = self.original_slots
+        server.protected_slot = self.original_protected
+
+    def assert_queue_full(self, protected=False):
+        with self.assertRaises(HTTPException) as raised:
+            with server.generation_slot(protected):
+                self.fail("queue admitted a request beyond its slots")
+        self.assertEqual(raised.exception.status_code, 503)
+        self.assertEqual(raised.exception.detail, "Queue full")
 
     def test_rejects_requests_beyond_the_queue_limit(self):
         with server.generation_slot():
             with server.generation_slot():
-                with self.assertRaises(HTTPException) as raised:
-                    with server.generation_slot():
-                        self.fail("queue admitted a third request")
+                self.assert_queue_full()
 
-                self.assertEqual(raised.exception.status_code, 503)
-                self.assertEqual(raised.exception.detail, "Queue full")
+    def test_shared_requests_never_take_the_protected_slot(self):
+        with server.generation_slot():
+            with server.generation_slot():
+                self.assert_queue_full()
+                self.assert_queue_full()
+                with server.generation_slot(protected=True):
+                    self.assert_queue_full(protected=True)
+
+    def test_protected_requests_use_shared_slots_once_their_own_is_taken(self):
+        with server.generation_slot(protected=True):
+            with server.generation_slot(protected=True):
+                with server.generation_slot():
+                    self.assert_queue_full()
+                    self.assert_queue_full(protected=True)
 
     def test_releases_slot_after_generation_failure(self):
-        with self.assertRaises(RuntimeError):
-            with server.generation_slot():
-                raise RuntimeError("generation failed")
+        for protected in (False, True):
+            for _ in range(3):
+                with self.assertRaises(RuntimeError):
+                    with server.generation_slot(protected):
+                        raise RuntimeError("generation failed")
 
         with server.generation_slot():
-            pass
+            with server.generation_slot():
+                with server.generation_slot(protected=True):
+                    pass
 
 
 if __name__ == "__main__":

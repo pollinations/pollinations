@@ -2948,41 +2948,30 @@ describe("tracking observability", () => {
     );
 
     it.each([
-        { retryAfter: "43", expected: "43", stream: false },
-        { retryAfter: "0", expected: "0", stream: false },
+        { retryAfter: "43", expected: "43" },
+        { retryAfter: "0", expected: "0" },
+        { retryAfter: "-1", expected: null },
+        { retryAfter: "1.5", expected: null },
+        { retryAfter: "", expected: null },
+        { retryAfter: "recovered", expected: null },
+        { retryAfter: "43", expected: "43", stream: true },
+        { retryAfter: "recovered", expected: null, stream: true },
+        { retryAfter: "43", expected: "43", model: "vllm-sr/d3" },
         {
-            retryAfter: "Sun, 06 Nov 1994 08:49:37 GMT",
-            expected: "Sun, 06 Nov 1994 08:49:37 GMT",
-            stream: false,
+            retryAfter: "43",
+            expected: "43",
+            model: "vllm-sr/d3",
+            path: "/alpha/decisions",
         },
-        {
-            retryAfter: "Sunday, 06-Nov-94 08:49:37 GMT",
-            expected: "Sunday, 06-Nov-94 08:49:37 GMT",
-            stream: false,
-        },
-        {
-            retryAfter: "Sun Nov  6 08:49:37 1994",
-            expected: "Sun Nov  6 08:49:37 1994",
-            stream: false,
-        },
-        {
-            retryAfter: "Mon, 31 Feb 2026 08:49:37 GMT",
-            expected: null,
-            stream: false,
-        },
-        {
-            retryAfter: "Sun, 06 Nov 1994 24:00:00 GMT",
-            expected: null,
-            stream: false,
-        },
-        { retryAfter: "-1", expected: null, stream: false },
-        { retryAfter: "1.5", expected: null, stream: false },
-        { retryAfter: "tomorrow", expected: null, stream: false },
-        { retryAfter: "", expected: null, stream: false },
-        { retryAfter: "recovered", expected: null, stream: false },
     ])(
-        "preserves only the final text provider's valid Retry-After: $retryAfter",
-        async ({ retryAfter, expected, stream }) => {
+        "forwards final-provider Retry-After: $retryAfter, stream=$stream, model=$model, path=$path",
+        async ({
+            retryAfter,
+            expected,
+            stream = false,
+            model = "mistralai/mistral-small-4",
+            path = "/v1/chat/completions",
+        }) => {
             const caller = await createTestApiKey({
                 user: { tierBalance: 0, packBalance: 10 },
             });
@@ -2995,14 +2984,29 @@ describe("tracking observability", () => {
                     const request = new Request(input, init);
                     const url = new URL(request.url);
                     if (
-                        ["portkey.test", "openrouter.ai"].includes(url.hostname)
+                        [
+                            "portkey.test",
+                            "openrouter.ai",
+                            "decision.vllm-sr.ai",
+                        ].includes(url.hostname)
                     ) {
                         const body = (await request.json()) as {
                             model: string;
                         };
                         attemptedModels.push(body.model);
-                        const primary = attemptedModels.length === 1;
+                        const primary =
+                            model !== "vllm-sr/d3" &&
+                            attemptedModels.length === 1;
                         if (!primary && retryAfter === "recovered") {
+                            if (stream)
+                                return new Response(
+                                    'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":2,"total_tokens":12}}\n\ndata: [DONE]\n\n',
+                                    {
+                                        headers: {
+                                            "Content-Type": "text/event-stream",
+                                        },
+                                    },
+                                );
                             return Response.json({
                                 id: "retry-after-recovery",
                                 object: "chat.completion",
@@ -3056,36 +3060,54 @@ describe("tracking observability", () => {
                 ...env,
                 PORTKEY_GATEWAY_URL: "https://portkey.test",
                 MISTRAL_API_KEY: "test-mistral-key",
+                D3_KEY: "test-d3-key",
                 OPENROUTER_API_KEY: "test-openrouter-key",
             });
+            const coordinator = vi.spyOn(
+                bindings.GENERATION_COORDINATOR,
+                "getByName",
+            );
             const ctx = createExecutionContext();
+            const decision = {
+                state: `retry-after-${crypto.randomUUID()}`,
+                questions: { ok: { type: "noul", instructions: "Is it OK?" } },
+            };
             const response = await worker.fetch(
-                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                new Request(`https://gen.pollinations.ai${path}`, {
                     method: "POST",
                     headers: {
                         Authorization: `Bearer ${caller.key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({
-                        model: "mistralai/mistral-small-4",
-                        stream,
-                        messages: [
-                            {
-                                role: "user",
-                                content: `retry-after-${crypto.randomUUID()}`,
-                            },
-                        ],
-                    }),
+                    body: JSON.stringify(
+                        path === "/alpha/decisions"
+                            ? { model, ...decision }
+                            : {
+                                  model,
+                                  stream,
+                                  messages: [
+                                      {
+                                          role: "user",
+                                          content:
+                                              model === "vllm-sr/d3"
+                                                  ? JSON.stringify(decision)
+                                                  : decision.state,
+                                      },
+                                  ],
+                              },
+                    ),
                 }),
                 bindings,
                 ctx,
             );
-            const body = await response.json();
+            const body = await response.text();
             await waitOnExecutionContext(ctx);
-            expect(attemptedModels).toEqual([
-                "mistral-small-2603",
-                "mistralai/mistral-small-2603",
-            ]);
+            expect(coordinator).toHaveBeenCalledTimes(stream ? 0 : 1);
+            expect(attemptedModels).toEqual(
+                model === "vllm-sr/d3"
+                    ? [model]
+                    : ["mistral-small-2603", "mistralai/mistral-small-2603"],
+            );
             expect(response.status, JSON.stringify(body)).toBe(
                 retryAfter === "recovered" ? 200 : 502,
             );
@@ -3095,13 +3117,28 @@ describe("tracking observability", () => {
             const billed = events.filter((event) => event.isBilledUsage);
             const after = await getUserBalance(db, caller.userId);
             if (retryAfter === "recovered") {
+                if (stream) {
+                    expect(response.headers.get("content-type")).toContain(
+                        "text/event-stream",
+                    );
+                    expect(body).toContain('"content":"ok"');
+                    expect(body).toContain("data: [DONE]");
+                    expect(body).not.toContain('"error"');
+                } else {
+                    expect(JSON.parse(body).choices[0].message.content).toBe(
+                        "ok",
+                    );
+                }
                 expect(billed).toHaveLength(1);
                 expect(before.packBalance - after.packBalance).toBeCloseTo(
                     Number(billed[0].totalPrice),
                     9,
                 );
             } else {
-                expect(body).toMatchObject({
+                expect(response.headers.get("content-type")).toContain(
+                    "application/json",
+                );
+                expect(JSON.parse(body)).toMatchObject({
                     error: {
                         code: "BAD_GATEWAY",
                         details: { upstreamStatus: 429 },

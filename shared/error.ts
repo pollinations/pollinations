@@ -18,7 +18,7 @@ import {
     type RequestInputs,
     stringifyRequestInputs,
 } from "./observability/request-inputs.ts";
-import type { ModelDefinition, Usage } from "./registry/registry.ts";
+import type { Usage } from "./registry/registry.ts";
 import { getRoutePath } from "./util.ts";
 
 export type ErrorVariables = {
@@ -31,10 +31,7 @@ type ErrorHandlerEnv = {
         TINYBIRD_INGEST_URL: string;
         TINYBIRD_INGEST_TOKEN: string;
     };
-    Variables: RequestIdVariables &
-        ErrorVariables & {
-            model?: { definition: Pick<ModelDefinition, "category"> };
-        };
+    Variables: RequestIdVariables & ErrorVariables;
 };
 
 export type UpstreamHeaders = Record<string, string>;
@@ -325,11 +322,9 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
 
     if (err instanceof UpstreamError) {
         const status = err.status;
-        if (c.var.model?.definition.category === "text") {
-            const retryAfter = err.upstreamHeaders?.["retry-after"];
-            if (retryAfter && isRetryAfter(retryAfter))
-                c.header("Retry-After", retryAfter);
-        }
+        const retryAfter = err.upstreamHeaders?.["retry-after"];
+        if (retryAfter && /^\d+$/.test(retryAfter))
+            c.header("Retry-After", retryAfter);
         if (status >= 500)
             await emitServerError(c, err, status, timestamp, log);
         else {
@@ -387,28 +382,6 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
     await emitServerError(c, err, status, timestamp, log);
     const response = createInternalErrorResponse(err, status, timestamp);
     return c.json(response, status);
-}
-
-function isRetryAfter(value: string): boolean {
-    if (/^\d+$/.test(value)) return true;
-    const date = new Date(value);
-    if (!Number.isFinite(date.getTime())) return false;
-    const canonical = date.toUTCString();
-    const [weekday, day, month, year, time] = canonical.split(" ");
-    if (year.length !== 4) return false;
-    // Compare the three HTTP-date formats so Date.parse's normalization cannot
-    // turn invalid dates such as February 31 or 24:00:00 into accepted headers.
-    const fullWeekday = date.toLocaleDateString("en-US", {
-        weekday: "long",
-        timeZone: "UTC",
-    });
-    return (
-        value === canonical ||
-        value ===
-            `${fullWeekday}, ${day}-${month}-${year.slice(-2)} ${time} GMT` ||
-        value ===
-            `${weekday.slice(0, 3)} ${month} ${day.replace(/^0/, " ")} ${time} ${year}`
-    );
 }
 
 /**

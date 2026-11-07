@@ -33,7 +33,7 @@ This error is billed from provider-reported usage, including input and reasoning
 
 ### Timeouts and retries
 
-Text HTTP error responses include the final provider's `Retry-After` header when it contains a valid delay in seconds or HTTP date. This also applies to provider rate limits returned as `502`. Wait for that interval before retrying.
+Upstream HTTP error responses include the final provider's `Retry-After` header when it contains a nonnegative integer delay in seconds. This also applies to provider rate limits returned as `502`. Wait for that interval before retrying.
 
 If your client or proxy times out, send the exact same request again. Keep the endpoint, body, query parameters, and seed unchanged.
 

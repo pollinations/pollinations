@@ -1,6 +1,27 @@
 [
   {
     "emoji": "💬",
+    "name": "Parallel Voices",
+    "url": "https://ezzelddin-abdallah.github.io/pollinations-parallel-voices",
+    "description": "Ask one question to several Pollinations text models at once and compare every answer side by side, with latency and token counts per model. Bring your own Pollen.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "EzzElddin-AbdAllah",
+    "githubUserId": "77866748",
+    "repositoryUrl": "https://github.com/EzzElddin-AbdAllah/pollinations-parallel-voices",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-06",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19299",
+    "approvedDate": "2026-11-07",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/886e6612-11c5-440e-a79b-08503d7fc9d7"
+  },
+  {
+    "emoji": "💬",
     "name": "DynaSpark AI",
     "url": "https://dynaspark.th3.qzz.io",
     "description": "DynaSpark AI is a versatile multimodal assistant for text, code, image and video generation, data analysis, and web and document processing, powered by Pollinations AI and BYOP models.",

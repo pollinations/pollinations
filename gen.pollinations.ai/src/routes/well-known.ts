@@ -154,4 +154,17 @@ export const wellKnownRoutes = new Hono<Env>()
             resource_name: "Pollinations API",
             resource_documentation: `${origin}/docs/llm.txt`,
         });
+    })
+    .get("/oauth-authorization-server", (c) => {
+        // RFC 8414 metadata lives on enter, the authorization server.
+        // Permanent cross-service delegation, mirroring enter's api-catalog
+        // delegation to gen: a client that probes the well-known path on the
+        // API host lands on the one canonical document instead of a 404.
+        // 308 preserves the request method; public discovery metadata, so
+        // no authentication.
+        const origin = getPublicOrigin(c);
+        return c.redirect(
+            `${origin.replace("gen.pollinations.ai", "enter.pollinations.ai")}/.well-known/oauth-authorization-server`,
+            308,
+        );
     });

@@ -68,6 +68,43 @@ describe("device login output", () => {
         },
     );
 
+    it("suggests --with-token when the device client is rejected", async () => {
+        vi.useFakeTimers();
+        const stderr = vi
+            .spyOn(process.stderr, "write")
+            .mockImplementation(() => true);
+        vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+        vi.stubGlobal("fetch", async (target: string) => {
+            if (target.endsWith("/api/device/code")) {
+                return Response.json({
+                    device_code: "private-device-code",
+                    user_code: "DEMO1234",
+                    verification_uri_complete:
+                        "https://enter.pollinations.ai/device?user_code=DEMO1234",
+                    expires_in: 15,
+                    interval: 5,
+                });
+            }
+            return Response.json(
+                {
+                    error: "invalid_client",
+                    error_description: "client_id mismatch",
+                },
+                { status: 400 },
+            );
+        });
+
+        const login = expect(
+            loginWithDeviceFlow({ browser: false }),
+        ).rejects.toThrow(ExitSignal);
+        await vi.runAllTimersAsync();
+        await login;
+
+        expect(
+            stderr.mock.calls.map(([text]) => String(text)).join(""),
+        ).toContain("polli auth login --with-token");
+    });
+
     it.each(["command", "helper"] as const)(
         "keeps %s JSON output separate from credentials",
         async (caller) => {

@@ -493,3 +493,71 @@ test("declared oversized body is rejected before reading", async (t) => {
     });
     assert.equal(result.isError, true);
 });
+
+test("CrossRef search and work lookup formats DOIs, authors and citation metrics", async (t) => {
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.crossref.org");
+        if (url.pathname === "/works") {
+            return Response.json({
+                status: "ok",
+                message: {
+                    "total-results": 1,
+                    items: [
+                        {
+                            DOI: "10.1038/nature12373",
+                            title: [
+                                "CRISPR-Cas9 System for Genome Engineering",
+                            ],
+                            author: [{ given: "Jennifer", family: "Doudna" }],
+                            "container-title": ["Nature"],
+                            published: { "date-parts": [[2020, 10, 21]] },
+                            type: "journal-article",
+                            "is-referenced-by-count": 4820,
+                            abstract:
+                                "<jats:p>A programmable RNA-guided genome editing platform.</jats:p>",
+                        },
+                    ],
+                },
+            });
+        }
+        if (url.pathname.includes("10.1038")) {
+            return Response.json({
+                status: "ok",
+                message: {
+                    DOI: "10.1038/nature12373",
+                    title: ["CRISPR-Cas9 System for Genome Engineering"],
+                    author: [{ given: "Jennifer", family: "Doudna" }],
+                    "container-title": ["Nature"],
+                    published: { "date-parts": [[2020, 10, 21]] },
+                    type: "journal-article",
+                    "is-referenced-by-count": 4820,
+                    abstract:
+                        "A programmable RNA-guided genome editing platform.",
+                },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "crossref_search", {
+        query: "CRISPR",
+        limit: 1,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    const searchVal = value(searchRes);
+    assert.equal(searchVal.totalResults, 1);
+    assert.equal(searchVal.works[0].doi, "10.1038/nature12373");
+    assert.deepEqual(searchVal.works[0].authors, ["Jennifer Doudna"]);
+    assert.equal(searchVal.works[0].citations, 4820);
+    assert.match(searchVal.works[0].abstract, /programmable RNA-guided/);
+
+    const workRes = await call(c, "crossref_work", {
+        doi: "10.1038/nature12373",
+    });
+    assert.notEqual(workRes.isError, true, JSON.stringify(workRes));
+    const workVal = value(workRes);
+    assert.equal(workVal.work.doi, "10.1038/nature12373");
+    assert.equal(workVal.work.container, "Nature");
+});

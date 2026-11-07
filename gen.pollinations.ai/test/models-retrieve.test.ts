@@ -741,3 +741,30 @@ test("advertises reasoning capability for Azure GPT models that accept reasoning
         );
     }
 });
+
+test("speech models advertise the voices they accept", async () => {
+    type ListedModel = {
+        id: string;
+        category: string;
+        voices?: string[];
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    // A speech model bills per second and only accepts its own voice names, so the
+    // listing has to carry them or a caller must fetch /audio/models to find out.
+    const speech = list.data.filter(
+        (model) => model.category === "audio" && model.voices?.length,
+    );
+    expect(speech.length).toBeGreaterThan(0);
+    for (const model of speech) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.voices, model.id).toEqual(info?.voices);
+    }
+    // Models that name no voices must not gain an empty array from the listing.
+    for (const model of list.data.filter((m) => m.category === "audio")) {
+        if (!registry.resolve(model.id)?.info?.voices)
+            expect(model.voices, model.id).toBeUndefined();
+    }
+});

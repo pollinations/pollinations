@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-06",
+  "period_start": "2026-11-06",
+  "period_end": "2026-11-06",
+  "title": "Callers can choose their own model fallback chain",
+  "summary": "Callers gained model fallback chains, sandboxes became easier to compare, and completed generation jobs got better at finding their way back to waiting callers.\n\nThe `model` field now accepts up to four comma-separated model IDs or aliases. On retryable upstream failures, generation tries them in order, including on audio routes and `/v1/messages`. Every entry must share a category and support the requested endpoint. Each attempt uses that model's pricing, permissions, balance check, and rate limit.\n\nA searchable Sandboxes tab now shows five E2B and Azure templates with their sizes, hourly prices, 720-hour monthly estimates, launch discount, and create commands. The sandbox pricing API also returns each template's name, provider, size, and disk size.\n\nPixelsprite ai was added for pixel-art game assets and image editing. DynaSpark AI was added as a multimodal assistant for text, code, images, video, data, and documents.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 14795,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 18153,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 18207,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 18215,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 19254,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 19279,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 19283,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 19301,
+      "date": "2026-11-06"
+    }
+  ],
+  "generated_at": "2026-11-07T06:05:33.555316+00:00",
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Choose your model fallbacks",
+      "text": "Set `model` to up to four comma-separated model IDs or aliases. If an upstream attempt fails in a retryable way, the API tries the next eligible model in order. Entries must share a category and support the requested endpoint. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14795
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "Compare sandbox templates",
+      "text": "The searchable Sandboxes tab shows five E2B and Azure templates, with sizes, hourly prices, 720-hour monthly estimates, the 75% launch discount, and a `polli sandbox create` command for each. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        18153
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "More sandbox pricing details",
+      "text": "`GET /alpha/e2b/pricing` now includes each template's name, provider, size, and `diskSizeMB` alongside its existing fields. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        18153
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
+}

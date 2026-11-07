@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-06",
+  "period_start": "2026-11-06",
+  "period_end": "2026-11-06",
+  "generated_at": "2026-11-07T06:05:33.555316+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/42e199c687ae2b1e8095f5bc3a2b2aa747e988c78ed9cfcf4bcb7f172f43d617"
+    }
+  ],
+  "text": "Added model fallback chains: up to 4 IDs or aliases in `model`, tried in order on retryable upstream failures, including audio and `/v1/messages`. Coordinator recovery now returns completed cached results and wakes waiting callers without rerunning the provider."
+}

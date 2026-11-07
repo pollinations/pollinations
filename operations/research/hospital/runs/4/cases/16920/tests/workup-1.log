@@ -1,0 +1,21 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && env TEST_VCR_MODE=replay-only npx vitest run test/image/gptImageRouting.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+ ✓ test/image/gptImageRouting.test.ts (19 tests) 373ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  22:33:49
+   Duration  6.13s (transform 1.80s, setup 4.76s, collect 23ms, tests 373ms, environment 1ms, prepare 105ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 0

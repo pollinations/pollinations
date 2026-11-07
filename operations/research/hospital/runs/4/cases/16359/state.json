@@ -1,0 +1,13 @@
+{
+  "number": 16359,
+  "kind": "pr",
+  "start": "2026-10-12 22:53:47",
+  "base": "43c9d81f59ebe92f45f2e066fab24609fd06f42f",
+  "outcome": "changes-requested",
+  "next": "workup",
+  "reworks": 0,
+  "end": "2026-10-12 22:56:08",
+  "cost_by_role": {
+    "claude": 1.022865
+  }
+}

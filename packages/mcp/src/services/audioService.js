@@ -4,8 +4,8 @@ import {
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchJsonWithAuth,
     fetchMediaLink,
+    fetchResponseWithAuth,
 } from "../utils/coreUtils.js";
 
 function publicAudioUrl(source) {
@@ -36,6 +36,8 @@ function publicAudioUrl(source) {
     }
     return url;
 }
+
+const PLAIN_TEXT_TRANSCRIPTS = new Set(["srt", "text", "vtt"]);
 
 export async function transcribeAudio(params, context) {
     requireApiKey(context);
@@ -73,14 +75,31 @@ export async function transcribeAudio(params, context) {
     if (params.model) form.append("model", params.model);
     if (params.language) form.append("language", params.language);
     if (params.prompt) form.append("prompt", params.prompt);
+    if (params.response_format) {
+        form.append("response_format", params.response_format);
+    }
+    if (params.temperature !== undefined) {
+        form.append("temperature", String(params.temperature));
+    }
+    if (params.speakers_expected !== undefined) {
+        form.append("speakers_expected", String(params.speakers_expected));
+    }
 
-    const result = await fetchJsonWithAuth(
+    response = await fetchResponseWithAuth(
         buildUrl("/v1/audio/transcriptions"),
         { method: "POST", body: form },
         context,
     );
+
+    // srt, vtt and text are plain text; json, verbose_json and diarized_json are
+    // JSON, and only some of those carry a top-level text field.
+    if (PLAIN_TEXT_TRANSCRIPTS.has(params.response_format)) {
+        return createMCPResponse([createTextContent(await response.text())]);
+    }
+
+    const result = await response.json();
     if (typeof result?.text !== "string") {
-        throw new Error("Transcription returned no text");
+        return createMCPResponse([createTextContent(result, true)]);
     }
     return createMCPResponse([
         createTextContent(result.text),
@@ -202,6 +221,33 @@ export const audioTools = [
                 .optional()
                 .describe(
                     "Optional text to guide transcription style or spelling",
+                ),
+            response_format: z
+                .enum([
+                    "json",
+                    "text",
+                    "srt",
+                    "verbose_json",
+                    "vtt",
+                    "diarized_json",
+                ])
+                .optional()
+                .describe(
+                    "Transcript format (default: json). srt, vtt and text return plain text; diarized_json needs a diarization-capable model",
+                ),
+            temperature: z
+                .number()
+                .min(0)
+                .max(1)
+                .optional()
+                .describe("Sampling temperature, 0 to 1"),
+            speakers_expected: z
+                .number()
+                .int()
+                .min(1)
+                .optional()
+                .describe(
+                    "Number of speakers, only used with response_format=diarized_json",
                 ),
         },
         transcribeAudio,

@@ -25,6 +25,10 @@ import { requireModelAttemptAccess } from "../../utils/generation-access.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
 import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
+import {
+    createTextAttemptBudget,
+    type TextAttemptBudget,
+} from "../attemptBudget.ts";
 import { requireChatStreamUsage } from "../chat/usage.js";
 import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
@@ -146,8 +150,14 @@ async function callAdaptedChat(
     request: CreateResponseRequest,
     chatRequest: RequestData,
     attempt: DirectResponsesCandidate,
+    budget?: TextAttemptBudget,
 ): Promise<DirectResponsesResult> {
-    const completion = await generateChatAttempt(c, chatRequest, attempt);
+    const completion = await generateChatAttempt(
+        c,
+        chatRequest,
+        attempt,
+        budget,
+    );
     const requestUrl = completion.upstreamRequestUrl ?? new URL(c.req.url);
     if (request.stream) {
         if (!completion.responseStream) {
@@ -211,77 +221,97 @@ async function handleDirectResponse(
                 );
             }
         }
+        const budget = createTextAttemptBudget(c.var.model.resolved);
         const { result, candidate } = await withModelFallback(
             candidates,
-            async (attempt): Promise<DirectResponsesResult> => {
-                if (attempt.adapted && chatRequest) {
-                    return callAdaptedChat(c, request, chatRequest, attempt);
-                }
-                // An upstream without SSE is asked for JSON, then its answer
-                // is replayed as a stream.
-                const buffered =
-                    request.stream &&
-                    (attempt.route?.definition ?? attempt.definition)
-                        ?.supportsStreaming === false;
-                const responsesClient = await responsesClientForAttempt(
-                    c,
-                    attempt,
-                );
-                const result = await callDirectResponses(
-                    buffered ? { ...request, stream: false } : request,
-                    responsesClient.target,
-                    responsesClient.fetcher,
-                );
-                if (request.stream && !buffered) {
-                    assertStreamContentType(
-                        c,
-                        result.response,
-                        result.requestUrl,
-                    );
-                    return { ...result, usage: null };
-                }
+            (attempt) =>
+                budget.run(
+                    attempt.route?.id ?? attempt.id,
+                    async (timing): Promise<DirectResponsesResult> => {
+                        if (attempt.adapted && chatRequest) {
+                            return callAdaptedChat(
+                                c,
+                                request,
+                                chatRequest,
+                                attempt,
+                                timing,
+                            );
+                        }
+                        // An upstream without SSE is asked for JSON, then its answer
+                        // is replayed as a stream.
+                        const buffered =
+                            request.stream &&
+                            (attempt.route?.definition ?? attempt.definition)
+                                ?.supportsStreaming === false;
+                        const responsesClient = await responsesClientForAttempt(
+                            c,
+                            attempt,
+                        );
+                        const result = await callDirectResponses(
+                            buffered ? { ...request, stream: false } : request,
+                            responsesClient.target,
+                            timing
+                                ? timing.fetcher(responsesClient.fetcher)
+                                : responsesClient.fetcher,
+                        );
+                        if (request.stream && !buffered) {
+                            assertStreamContentType(
+                                c,
+                                result.response,
+                                result.requestUrl,
+                            );
+                            return { ...result, usage: null };
+                        }
 
-                let data: unknown;
-                try {
-                    data = await result.response.clone().json();
-                } catch (cause) {
-                    throw new UpstreamError(502, {
-                        message: "Responses provider returned invalid JSON",
-                        requestUrl: result.requestUrl,
-                        cause,
-                    });
-                }
-                const parsed = CreateResponseResponseSchema.safeParse(data);
-                if (!parsed.success) {
-                    throw new UpstreamError(502, {
-                        message:
-                            "Responses provider returned an invalid response or omitted usage",
-                        requestUrl: result.requestUrl,
-                    });
-                }
-                if (
-                    parsed.data.status !== "completed" &&
-                    parsed.data.status !== "incomplete" &&
-                    parsed.data.status !== "failed"
-                ) {
-                    throw new UpstreamError(502, {
-                        message:
-                            "Responses provider returned a non-terminal response",
-                        requestUrl: result.requestUrl,
-                    });
-                }
-                if (buffered) {
-                    // Billing reads usage from the replayed terminal event.
-                    const response = new Response(
-                        textResponseStream(parsed.data),
-                        { headers: { "Content-Type": "text/event-stream" } },
-                    );
-                    return { ...result, response, usage: null };
-                }
-                return { ...result, usage: parsed.data.usage };
-            },
+                        let data: unknown;
+                        try {
+                            data = await result.response.clone().json();
+                        } catch (cause) {
+                            throw new UpstreamError(502, {
+                                message:
+                                    "Responses provider returned invalid JSON",
+                                requestUrl: result.requestUrl,
+                                cause,
+                            });
+                        }
+                        const parsed =
+                            CreateResponseResponseSchema.safeParse(data);
+                        if (!parsed.success) {
+                            throw new UpstreamError(502, {
+                                message:
+                                    "Responses provider returned an invalid response or omitted usage",
+                                requestUrl: result.requestUrl,
+                            });
+                        }
+                        if (
+                            parsed.data.status !== "completed" &&
+                            parsed.data.status !== "incomplete" &&
+                            parsed.data.status !== "failed"
+                        ) {
+                            throw new UpstreamError(502, {
+                                message:
+                                    "Responses provider returned a non-terminal response",
+                                requestUrl: result.requestUrl,
+                            });
+                        }
+                        if (buffered) {
+                            // Billing reads usage from the replayed terminal event.
+                            const response = new Response(
+                                textResponseStream(parsed.data),
+                                {
+                                    headers: {
+                                        "Content-Type": "text/event-stream",
+                                    },
+                                },
+                            );
+                            return { ...result, response, usage: null };
+                        }
+                        return { ...result, usage: parsed.data.usage };
+                    },
+                ),
             c.var.track?.attempts,
             (attempt) => requireModelAttemptAccess(c, attempt),
+            budget.shouldFallback,
         );
         c.set("upstreamRequestUrl", result.requestUrl);
 

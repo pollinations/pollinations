@@ -159,8 +159,8 @@ function upstreamStatus(failure: UpstreamFailure): number | undefined {
           : undefined;
 }
 
-/** The deadline we send to Portkey is the request's terminal time budget. */
-function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
+/** Identifies Portkey's supplied-deadline envelope, rather than any HTTP 408. */
+export function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
     if (upstreamStatus(failure) !== 408) return false;
     const details = failure.details;
     if (!details || typeof details !== "object") return false;

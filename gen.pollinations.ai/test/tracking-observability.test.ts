@@ -3103,6 +3103,216 @@ describe("tracking observability", () => {
         },
     );
 
+    it.each([
+        { api: "chat/completions", stream: false },
+        { api: "chat/completions", stream: true },
+        { api: "responses", stream: false },
+        { api: "responses", stream: true },
+    ])(
+        "settles DeepSeek's early timeout once through $api (stream: $stream)",
+        async ({ api, stream }) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 0, packBalance: 10 },
+            });
+            const db = drizzle(env.DB);
+            const before = await getUserBalance(db, caller.userId);
+            const calls: string[] = [];
+            const events: Record<string, unknown>[] = [];
+            const now = Date.now.bind(Date);
+            let elapsed = 0;
+            vi.spyOn(Date, "now").mockImplementation(() => now() + elapsed);
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const request = new Request(input, init);
+                    const url = new URL(request.url);
+                    if (
+                        url.hostname === "portkey.test" ||
+                        url.hostname === "api.fireworks.ai"
+                    ) {
+                        const body = (await request.json()) as Record<
+                            string,
+                            unknown
+                        >;
+                        calls.push(String(body.model));
+                        expect(init?.signal).toBeInstanceOf(AbortSignal);
+                        if (calls.length === 1) {
+                            expect(
+                                Number(
+                                    request.headers.get(
+                                        "x-portkey-request-timeout",
+                                    ),
+                                ),
+                            ).toBeGreaterThan(119_000);
+                            elapsed = 120_000;
+                            return Response.json(
+                                {
+                                    error: {
+                                        type: "timeout_error",
+                                        message:
+                                            "Request exceeded the timeout sent in the request: 120000ms",
+                                    },
+                                },
+                                { status: 408 },
+                            );
+                        }
+                        if (api === "chat/completions") {
+                            expect(
+                                Number(
+                                    request.headers.get(
+                                        "x-portkey-request-timeout",
+                                    ),
+                                ),
+                            ).toBeLessThanOrEqual(170_000);
+                            expect(
+                                Number(
+                                    request.headers.get(
+                                        "x-portkey-request-timeout",
+                                    ),
+                                ),
+                            ).toBeGreaterThan(169_000);
+                            const completion = {
+                                choices: [
+                                    {
+                                        index: 0,
+                                        message: {
+                                            role: "assistant",
+                                            content: "rescued",
+                                        },
+                                        finish_reason: "stop",
+                                    },
+                                ],
+                                usage: {
+                                    prompt_tokens: 1000,
+                                    completion_tokens: 500,
+                                    total_tokens: 1500,
+                                },
+                            };
+                            return stream
+                                ? new Response(
+                                      'data: {"choices":[{"index":0,"delta":{"content":"rescued"},"finish_reason":null}]}\n\n' +
+                                          `data: ${JSON.stringify({ choices: [], usage: completion.usage })}\n\ndata: [DONE]\n\n`,
+                                      {
+                                          headers: {
+                                              "content-type":
+                                                  "text/event-stream",
+                                          },
+                                      },
+                                  )
+                                : Response.json(completion);
+                        }
+                        const response = {
+                            id: "resp_budget",
+                            object: "response",
+                            status: "completed",
+                            model: body.model,
+                            output: [
+                                {
+                                    id: "msg_budget",
+                                    type: "message",
+                                    role: "assistant",
+                                    status: "completed",
+                                    content: [
+                                        {
+                                            type: "output_text",
+                                            text: "rescued",
+                                            annotations: [],
+                                        },
+                                    ],
+                                },
+                            ],
+                            usage: {
+                                input_tokens: 1000,
+                                output_tokens: 500,
+                                total_tokens: 1500,
+                            },
+                        };
+                        return stream
+                            ? new Response(
+                                  `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", response })}\n\n`,
+                                  {
+                                      headers: {
+                                          "content-type": "text/event-stream",
+                                      },
+                                  },
+                              )
+                            : Response.json(response);
+                    }
+                    if (
+                        url.pathname === "/v0/events" &&
+                        url.searchParams.get("name") === "generation_event_v2"
+                    ) {
+                        events.push(
+                            ...(await request.text())
+                                .split("\n")
+                                .filter(Boolean)
+                                .map((line) => JSON.parse(line)),
+                        );
+                    }
+                    return Response.json({ data: [] });
+                },
+            );
+            const bindings = withInlineGenerationCoordinator({
+                ...env,
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                FIREWORKS_NEO_API_KEY: "test-fireworks-key",
+            });
+            const prompt = `DeepSeek timeout ${crypto.randomUUID()}`;
+            const request = () =>
+                new Request(`https://gen.pollinations.ai/v1/${api}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek/deepseek-v4.1-flash",
+                        stream,
+                        ...(api === "responses"
+                            ? { input: prompt }
+                            : {
+                                  messages: [{ role: "user", content: prompt }],
+                              }),
+                    }),
+                });
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(request(), bindings, ctx);
+            const body = await response.text();
+            await waitOnExecutionContext(ctx);
+            expect(response.status, body).toBe(200);
+            expect(body).toContain("rescued");
+            expect(calls).toEqual([
+                "DeepSeek-V4.1-Flash",
+                "accounts/fireworks/models/deepseek-v4p1-flash",
+            ]);
+            expect(events).toHaveLength(2);
+            expect(events[0]).toMatchObject({
+                modelUsed: "deepseek/deepseek-v4.1-flash",
+                responseStatus: 504,
+                isFinal: false,
+                isBilledUsage: false,
+            });
+            expect(events[1]).toMatchObject({
+                modelUsed: "deepseek/deepseek-v4.1-flash:fireworks",
+                responseStatus: 200,
+                isFinal: true,
+                isBilledUsage: true,
+            });
+            const after = await getUserBalance(db, caller.userId);
+            expect(before.packBalance - after.packBalance).toBeCloseTo(
+                Number(events[1].totalPrice),
+                10,
+            );
+            const cachedCtx = createExecutionContext();
+            const cached = await worker.fetch(request(), bindings, cachedCtx);
+            expect(cached.headers.get("x-cache")).toBe("HIT");
+            await expect(cached.text()).resolves.toBe(body);
+            await waitOnExecutionContext(cachedCtx);
+            expect(calls).toHaveLength(2);
+            expect(events).toHaveLength(2);
+            expect(await getUserBalance(db, caller.userId)).toEqual(after);
+        },
+    );
+
     it.each(["valid", "missing", "malformed", "recovered"])(
         "settles community Chat with %s usage/delivery and no model metadata",
         async (usageKind) => {

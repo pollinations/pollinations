@@ -274,6 +274,7 @@ function parseNativeRequest(
 export async function requestDecision(
     request: SystemOneRequest,
     options: TransformOptions,
+    fetcher: typeof fetch = fetch,
 ): Promise<{ result: SystemOneResponse; requestUrl: URL }> {
     const { state, questions } = request;
     const apiKey = options.modelConfig?.authKey;
@@ -289,7 +290,7 @@ export async function requestDecision(
     const d3 = options.modelConfig?.decisionsProtocol === "vllm-sr";
     const requestUrl = new URL(endpoint);
     try {
-        const response = await fetch(requestUrl, {
+        const response = await fetcher(requestUrl, {
             method: "POST",
             headers: {
                 ...(options.modelConfig?.directAuthHeader === "api-key"
@@ -378,10 +379,12 @@ export async function requestDecision(
 export async function callSystemOne(
     messages: ChatMessage[],
     options: TransformOptions,
+    fetcher: typeof fetch = fetch,
 ): Promise<ChatCompletion> {
     const { result, requestUrl } = await requestDecision(
         parseNativeRequest(messages, options.modelConfig?.model),
         options,
+        fetcher,
     );
     const completion: ChatCompletion = {
         id: `systemone-${crypto.randomUUID()}`,

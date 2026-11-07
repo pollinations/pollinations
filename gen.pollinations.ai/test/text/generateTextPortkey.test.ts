@@ -4,6 +4,7 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withModelFallback } from "../../src/fallback.ts";
+import { createTextAttemptBudget } from "../../src/text/attemptBudget.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
@@ -26,6 +27,76 @@ afterEach(() => {
 });
 
 describe("generateTextPortkey", () => {
+    it.each([
+        "deepseek/deepseek-v4.1-flash",
+        "openai/gpt-5.6-luna",
+        "typesafe/jev-1.14",
+    ])(
+        "cancels %s transport when its shared response budget expires",
+        async (model) => {
+            vi.useFakeTimers();
+            try {
+                let signal: AbortSignal | null | undefined;
+                const fetchSpy = vi
+                    .spyOn(globalThis, "fetch")
+                    .mockImplementation(async (_input, init) => {
+                        signal = init?.signal;
+                        return new Promise<Response>((_resolve, reject) => {
+                            signal?.addEventListener("abort", () =>
+                                reject(signal?.reason),
+                            );
+                        });
+                    });
+                const budget = createTextAttemptBudget(
+                    "deepseek/deepseek-v4.1-flash",
+                );
+                const result = budget.run(model, (timing) =>
+                    generateTextPortkey(
+                        [
+                            {
+                                role: "user",
+                                content: model.startsWith("typesafe/")
+                                    ? JSON.stringify({
+                                          state: "ticket",
+                                          questions: {
+                                              urgent: {
+                                                  type: "noul",
+                                                  instructions:
+                                                      "Is this urgent?",
+                                              },
+                                          },
+                                      })
+                                    : "hello",
+                            },
+                        ],
+                        {
+                            model,
+                            modelConfig: model.startsWith("typesafe/")
+                                ? {
+                                      authKey: "test-key",
+                                      directEndpoint:
+                                          "https://provider.test/decisions",
+                                      model,
+                                  }
+                                : azureModelConfig,
+                        },
+                        undefined,
+                        timing,
+                    ),
+                );
+                const failed = expect(result).rejects.toMatchObject({
+                    status: 504,
+                });
+                await vi.advanceTimersByTimeAsync(290_000);
+                await failed;
+                expect(fetchSpy).toHaveBeenCalledOnce();
+                expect(signal?.aborted).toBe(true);
+            } finally {
+                vi.useRealTimers();
+            }
+        },
+    );
+
     it.each([
         { status: 429, failures: 1 },
         { status: 503, failures: 2 },

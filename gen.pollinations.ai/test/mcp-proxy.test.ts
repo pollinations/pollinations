@@ -223,6 +223,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "weather",
+                alpha: true,
+                name: "Weather",
+                description:
+                    "Place search, current conditions, and hourly and daily forecasts worldwide.",
+                url: "https://gen.pollinations.ai/mcp/weather",
+                pricing: {
+                    description:
+                        "Open-Meteo data is free with attribution. No Pollen charge.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

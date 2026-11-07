@@ -48,6 +48,8 @@ describe("createAndReturnModel3d dispatch", () => {
     it.each([
         ["microsoft/trellis-2", "api.inferenceport.ai"],
         ["nvidia/asset-harvester", "api.inferenceport.ai"],
+        ["stability-ai/sf3d", "api.inferenceport.ai"],
+        ["stability-ai/triposr", "api.inferenceport.ai"],
         ["hyper3d/rodin-2.5", "queue.fal.run"],
     ])(
         "routes %s to the expected primary provider host",

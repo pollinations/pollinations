@@ -1023,6 +1023,22 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inferenceport-lightning-text-v2"],
     },
     {
+        name: "inferenceport-ai/ipai-3-flash",
+        config: portkeyConfig["inferenceport-ai/ipai-3-flash"],
+    },
+    {
+        name: "inferenceport-ai/ipai-3-pro",
+        config: portkeyConfig["inferenceport-ai/ipai-3-pro"],
+    },
+    {
+        name: "inferenceport-ai/ipai-3-max",
+        config: portkeyConfig["inferenceport-ai/ipai-3-max"],
+    },
+    {
+        name: "inferenceport-ai/ipai-3-ultra",
+        config: portkeyConfig["inferenceport-ai/ipai-3-ultra"],
+    },
+    {
         name: "openai/gpt-6-luna-decisions",
         config: portkeyConfig["gpt-6-luna-decisions"],
         useSystemOneApi: true,

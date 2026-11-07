@@ -167,6 +167,22 @@ describe("resolveModelConfig", () => {
         expect(findModelByName("moonshotai/kimi-k2.6:azure:sweden")).toBeNull();
     });
 
+    it("routes IPAI-3 models to their InferencePort upstream IDs", () => {
+        for (const [model, upstream] of [
+            ["inferenceport-ai/ipai-3-flash", "ipai-3-flash"],
+            ["inferenceport-ai/ipai-3-pro", "ipai-3-pro"],
+            ["inferenceport-ai/ipai-3-max", "ipai-3-max"],
+            ["inferenceport-ai/ipai-3-ultra", "ipai-3-ultra"],
+        ]) {
+            const result = resolveModelConfig(messages, { model });
+            expect(result.options.model).toBe(upstream);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "openai",
+                "custom-host": "https://api.inferenceport.ai/v1",
+            });
+        }
+    });
+
     it("routes claude-large to the global Opus 5 profile", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5",

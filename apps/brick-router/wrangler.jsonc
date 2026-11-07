@@ -1,0 +1,30 @@
+{
+  "name": "brick-router",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-30",
+  "containers": [
+    {
+      "class_name": "BrickContainer",
+      "image": "./Dockerfile",
+      "max_instances": 2,
+      "instance_type": "standard-1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "BRICK", "class_name": "BrickContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["BrickContainer"] }],
+  "routes": [
+    {
+      "pattern": "brick.myceli.ai",
+      "zone_name": "myceli.ai",
+      "custom_domain": true
+    },
+    {
+      "pattern": "brick.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true
+    }
+  ],
+  "observability": { "enabled": true }
+}

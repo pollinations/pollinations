@@ -2576,7 +2576,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // Global Standard rates, including explicit 30-minute cache writes (2026-10-30).
         // https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-moonshot-ai-kimi-k3.html

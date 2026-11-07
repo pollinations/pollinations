@@ -23,7 +23,7 @@ import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
-import { isAppKey, readRedirectUris } from "./key-type.ts";
+import { isAppKey, isUnsetAppKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
@@ -77,7 +77,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     const now = Date.now();
     const visibleKeys = apiKeys.filter(
-        (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
+        (k) =>
+            (!k.expiresAt || new Date(k.expiresAt).getTime() > now) &&
+            !isUnsetAppKey(k),
     );
     const sortedKeys = [...visibleKeys].sort(
         (a, b) =>

@@ -21,6 +21,19 @@ export function isAppKey(apiKey: ApiKey): boolean {
     return apiKey.metadata?.keyType === "publishable";
 }
 
+/**
+ * An App Key with no redirect URIs and no earnings isn't set up as an app, so
+ * the list hides it. Device login could still name it as a client ID;
+ * `polli keys list` and `polli keys revoke` still reach it.
+ */
+export function isUnsetAppKey(apiKey: ApiKey): boolean {
+    return (
+        isAppKey(apiKey) &&
+        readRedirectUris(apiKey.metadata).length === 0 &&
+        apiKey.metadata?.earningsEnabled !== true
+    );
+}
+
 /** Display context only; authorization remains enforced by the server. */
 export function getKeyAccessContext(
     apiKey: ApiKey,

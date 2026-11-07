@@ -57,3 +57,43 @@ it("opens the editor with the key's current budget, not the one loaded with the 
         vi.unstubAllGlobals();
     }
 });
+
+it("hides App Keys with no redirect URIs and no earnings", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    const appKey = (name: string, metadata: ApiKey["metadata"]): ApiKey => ({
+        id: name,
+        name,
+        start: "pk_abc",
+        createdAt: "2026-10-01T00:00:00.000Z",
+        permissions: null,
+        metadata: { keyType: "publishable", ...metadata },
+    });
+    let renderer: ReactTestRenderer | undefined;
+    try {
+        await act(async () => {
+            renderer = create(
+                <ApiKeyList
+                    apiKeys={[
+                        appKey("Redirects", {
+                            redirectUris: ["https://app.example/cb"],
+                        }),
+                        appKey("Earnings", { earningsEnabled: true }),
+                        appKey("Unset", { earningsEnabled: false }),
+                    ]}
+                    onCreate={vi.fn()}
+                    onUpdate={vi.fn()}
+                    onDelete={vi.fn()}
+                />,
+            );
+        });
+        const shown = (name: string) =>
+            (renderer?.root.findAll((node) => node.props.title === name)
+                .length ?? 0) > 0;
+        expect(shown("Redirects")).toBe(true);
+        expect(shown("Earnings")).toBe(true);
+        expect(shown("Unset")).toBe(false);
+    } finally {
+        await act(async () => renderer?.unmount());
+        vi.unstubAllGlobals();
+    }
+});

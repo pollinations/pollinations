@@ -107,9 +107,11 @@ const round = (n: number) => Number(n.toPrecision(4));
 /** `--estimate` for `gen image` / `gen video`: reads the public model list
  * (no generation, no Pollen spent) and prints the estimate. */
 export async function printEstimate(modelName: string, req: MediaRequest) {
-    const models = await gen<MediaModel[]>("/image/models").catch((err) =>
-        fail("Failed to fetch model pricing", err),
-    );
+    // Pricing is public. An authenticated catalog hides paid-only models from
+    // keys that cannot use them, which made their estimates fail as unknown.
+    const models = await gen<MediaModel[]>("/image/models", {
+        apiKey: "",
+    }).catch((err) => fail("Failed to fetch model pricing", err));
     const model = models.find(
         (m) => m.name === modelName || m.aliases?.includes(modelName),
     );

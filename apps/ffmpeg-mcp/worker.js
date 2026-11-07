@@ -81,6 +81,72 @@ async function fetchSource(source, fetchImpl, createFixedLengthStream) {
     return input.readable;
 }
 
+async function probeTool(params, env, dependencies, reportUsage) {
+    const [input] = await Promise.all([
+        fetchSource(
+            params.source,
+            dependencies.fetchImpl,
+            dependencies.createFixedLengthStreamImpl,
+        ),
+    ]);
+    const requestId = crypto.randomUUID();
+    const startedAt = Date.now();
+    const container = dependencies.getContainerImpl(
+        env.FFMPEG,
+        `ffprobe-${requestId}`,
+    );
+    let responseStatus = 200;
+    let errorMessage;
+    let info;
+
+    try {
+        let result;
+        try {
+            result = await container.probe(
+                input,
+                startedAt + FFMPEG_MAX_RUN_MS,
+            );
+        } catch (error) {
+            throw new ToolFailure(
+                502,
+                `ffprobe container failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
+        }
+        if (!result.ok) {
+            throw new ToolFailure(422, result.stderr || "ffprobe failed");
+        }
+        info = result.info;
+    } catch (error) {
+        responseStatus = error instanceof ToolFailure ? error.status : 502;
+        errorMessage =
+            error instanceof Error ? error.message : "ffprobe failed";
+    } finally {
+        await container.destroy().catch(() => undefined);
+    }
+
+    const durationMs = Date.now() - startedAt;
+    reportUsage({
+        cost: calculateFfmpegCharge(durationMs),
+        tool: "probeMedia",
+        status: responseStatus,
+        adjustmentId: ADJUSTMENT_ID,
+        adjustmentUnits: durationMs / 1000,
+        error: errorMessage,
+    });
+    if (errorMessage) {
+        throw new ToolFailure(responseStatus, errorMessage);
+    }
+
+    return {
+        content: [
+            {
+                type: "text",
+                text: JSON.stringify({ source: params.source, ...info }),
+            },
+        ],
+    };
+}
+
 async function runTool(params, env, dependencies, reportUsage) {
     const inputs = await Promise.all(
         params.sources.map((source) =>
@@ -227,6 +293,26 @@ function buildServer(env, dependencies, reportUsage) {
             }),
         },
         (params) => runTool(params, env, dependencies, reportUsage),
+    );
+    server.registerTool(
+        "probeMedia",
+        {
+            description:
+                "Inspect public HTTPS media with ffprobe and return its format and stream metadata (duration, codec, resolution, bitrate, frame rate) as JSON, without downloading, encoding, or hosting any output. Use before runFfmpeg to confirm duration or dimensions instead of guessing them.",
+            inputSchema: z.object({
+                source: z
+                    .url()
+                    .refine((value) => {
+                        const validation = validateUserMediaUrl(value);
+                        return (
+                            validation.ok &&
+                            validation.url.protocol === "https:"
+                        );
+                    }, "source must be a public HTTPS URL without credentials")
+                    .describe("Public HTTPS URL of the media to inspect."),
+            }),
+        },
+        (params) => probeTool(params, env, dependencies, reportUsage),
     );
     return server;
 }

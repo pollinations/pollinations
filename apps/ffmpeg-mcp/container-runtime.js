@@ -2,8 +2,9 @@ import { FFMPEG_MAX_MEDIA_BYTES } from "./ffmpeg.js";
 
 const WORK_DIR = "/work";
 const MAX_ERROR_LENGTH = 8_000;
+const MAX_PROBE_OUTPUT_LENGTH = 64_000;
 
-async function decodeStream(stream) {
+async function decodeStream(stream, maxLength = MAX_ERROR_LENGTH) {
     if (!stream) return "";
     const reader = stream.getReader();
     const decoder = new TextDecoder();
@@ -12,10 +13,10 @@ async function decodeStream(stream) {
         const { done, value } = await reader.read();
         if (done) break;
         text = (text + decoder.decode(value, { stream: true })).slice(
-            -MAX_ERROR_LENGTH,
+            -maxLength,
         );
     }
-    return (text + decoder.decode()).slice(-MAX_ERROR_LENGTH);
+    return (text + decoder.decode()).slice(-maxLength);
 }
 
 export async function runFfmpeg(
@@ -89,4 +90,60 @@ export async function runFfmpeg(
     const output = new FixedLengthStream(bytes);
     waitUntil(read.stdout.pipeTo(output.writable));
     return { ok: true, output: output.readable, bytes, stderr };
+}
+
+export async function runFfprobe(runtime, input, deadlineMs) {
+    const write = await runtime.exec(["tee", `${WORK_DIR}/input0`], {
+        stdin: input,
+        stdout: "ignore",
+    });
+    const [writeExitCode, writeError] = await Promise.all([
+        write.exitCode,
+        decodeStream(write.stderr),
+    ]);
+    if (writeExitCode !== 0) {
+        return {
+            ok: false,
+            stderr: writeError || "ffprobe input could not be saved",
+        };
+    }
+
+    const remainingMs = deadlineMs - Date.now();
+    if (remainingMs <= 0) {
+        return { ok: false, stderr: "ffprobe startup exceeded its deadline" };
+    }
+
+    const process = await runtime.exec(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_streams",
+            `${WORK_DIR}/input0`,
+        ],
+        { cwd: WORK_DIR },
+    );
+    const timer = setTimeout(() => process.kill(9), remainingMs);
+    const [exitCode, stdout, stderr] = await Promise.all([
+        process.exitCode,
+        decodeStream(process.stdout, MAX_PROBE_OUTPUT_LENGTH),
+        decodeStream(process.stderr),
+    ]).finally(() => clearTimeout(timer));
+    if (exitCode !== 0) {
+        return { ok: false, stderr: stderr || "ffprobe failed" };
+    }
+
+    let info;
+    try {
+        info = JSON.parse(stdout);
+    } catch {
+        return {
+            ok: false,
+            stderr: "ffprobe returned output that was not valid JSON",
+        };
+    }
+    return { ok: true, info, stderr };
 }

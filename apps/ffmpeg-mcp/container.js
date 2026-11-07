@@ -1,5 +1,5 @@
 import { Container } from "@cloudflare/containers";
-import { runFfmpeg } from "./container-runtime.js";
+import { runFfmpeg, runFfprobe } from "./container-runtime.js";
 
 export class FfmpegContainer extends Container {
     enableInternet = false;
@@ -18,5 +18,14 @@ export class FfmpegContainer extends Container {
             outputExtension,
             deadlineMs,
         );
+    }
+
+    async probe(input, deadlineMs) {
+        const runtime = this.ctx.container;
+        if (!runtime.running) {
+            await this.start({ enableInternet: false });
+        }
+
+        return runFfprobe(runtime, input, deadlineMs);
     }
 }

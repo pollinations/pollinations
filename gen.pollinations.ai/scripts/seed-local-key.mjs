@@ -29,6 +29,7 @@ import { createHash, getRandomValues } from "node:crypto";
 import {
     appendFileSync,
     existsSync,
+    mkdirSync,
     readdirSync,
     readFileSync,
     statSync,
@@ -148,7 +149,8 @@ const users = sql(
     "UPDATE user SET tier_balance = MAX(COALESCE(tier_balance, 0), 1000000); SELECT changes();",
 );
 
-if (generated && existsSync(ENV_FILE)) {
+if (generated) {
+    mkdirSync(dirname(ENV_FILE), { recursive: true });
     appendFileSync(ENV_FILE, `\nPOLLINATIONS_TOKEN_LOCAL=${token}\n`);
 }
 

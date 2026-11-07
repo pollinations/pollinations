@@ -58,7 +58,8 @@ export type McpBindingName =
     | "NETWORK_MCP"
     | "PACKAGES_MCP"
     | "NEWS_MCP"
-    | "RESEARCH_MCP";
+    | "RESEARCH_MCP"
+    | "COMMONS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -311,6 +312,19 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Research lookups are free. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "commons",
+        alpha: true,
+        name: "Wikimedia Commons",
+        description:
+            "Find freely reusable images on Wikimedia Commons, with licence filtering and ready credit lines.",
+        binding: "COMMONS_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Commons lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

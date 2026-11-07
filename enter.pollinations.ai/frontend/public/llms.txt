@@ -8,4 +8,5 @@
 - [Create a secret key](https://enter.pollinations.ai/keys): Sign in and manage keys.
 - [Buy a prepaid key with USDC (x402)](https://gen.pollinations.ai/docs/llm.txt?section=x402): No account or sign-in; pay from $0.01 on Base.
 - [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
+- [OAuth protected resource metadata](https://enter.pollinations.ai/.well-known/oauth-protected-resource): RFC 9728 pointer to the authorization server that issues account API keys.
 - [API catalog](https://gen.pollinations.ai/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.

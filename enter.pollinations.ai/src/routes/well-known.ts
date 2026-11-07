@@ -40,6 +40,24 @@ export const wellKnownRoutes = new Hono<Env>()
             service_documentation: `${genOrigin}/docs`,
         });
     })
+    // RFC 9728 Protected Resource Metadata for enter's own API surface
+    // (/api/oauth/userinfo, /api/device/*). gen publishes a resource document
+    // that names enter as the authorization server; an agent that lands on
+    // enter first gets a 404 here, so enter now answers for itself.
+    .get("/oauth-protected-resource", (c) => {
+        const origin = getPublicOrigin(c);
+        // Static per origin — let the CDN/browser absorb repeat fetches.
+        c.header("Cache-Control", "public, max-age=3600");
+        return c.json({
+            resource: origin,
+            // enter is its own authorization server (RFC 8414 metadata as well).
+            authorization_servers: [origin],
+            scopes_supported: [...OAUTH_SCOPES],
+            bearer_methods_supported: ["header"],
+            resource_name: "Pollinations Account API",
+            resource_documentation: `${getCurrentGenOrigin(c)}/docs/llm.txt`,
+        });
+    })
     .get("/api-catalog", (c) => {
         // Permanent cross-service delegation to gen's RFC 9727 catalog.
         // 308 preserves the request method; public discovery metadata, so

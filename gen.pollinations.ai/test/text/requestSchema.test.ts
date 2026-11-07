@@ -210,6 +210,26 @@ describe("CreateChatCompletionRequestSchema", () => {
         expect(explicitNull.system).toBeNull();
     });
 
+    it("rejects an out-of-range n instead of forwarding it to the provider", () => {
+        // n: 0 and a fractional n used to reach the provider and come back as
+        // a provider error naming the provider, not a local 400.
+        for (const n of [0, -1, 1.5]) {
+            const result = CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                n,
+            });
+            expect(result.success).toBe(false);
+        }
+    });
+
+    it("accepts a positive integer n and keeps it", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+            n: 3,
+        });
+        expect(result.n).toBe(3);
+    });
+
     it("rejects a non-string system prompt instead of dropping it", () => {
         const cases = [["be concise"], 12345, { text: "be concise" }, true];
         for (const system of cases) {

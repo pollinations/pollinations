@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-06T06:07:47.632387+00:00",
+  "generated_at": "2026-11-07T06:06:40.595390+00:00",
   "models": [
     {
       "id": "2026-10-13:assemblyai/universal-2",
@@ -5885,6 +5885,36 @@
   ],
   "daily": [
     {
+      "date": "2026-11-06",
+      "emoji": "🤖",
+      "title": "Choose your model fallbacks",
+      "text": "Set `model` to up to four comma-separated model IDs or aliases. If an upstream attempt fails in a retryable way, the API tries the next eligible model in order. Entries must share a category and support the requested endpoint. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14795
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-11-06",
+      "emoji": "💡",
+      "title": "Compare sandbox templates",
+      "text": "The searchable Sandboxes tab shows five E2B and Azure templates, with sizes, hourly prices, 720-hour monthly estimates, the 75% launch discount, and a `polli sandbox create` command for each. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        18153
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-06",
+      "emoji": "🔗",
+      "title": "More sandbox pricing details",
+      "text": "`GET /alpha/e2b/pricing` now includes each template's name, provider, size, and `diskSizeMB` alongside its existing fields. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        18153
+      ],
+      "kind": "api"
+    },
+    {
       "date": "2026-11-05",
       "emoji": "🎨",
       "title": "GPT Image 2.6 Flare",
@@ -7350,56 +7380,6 @@
         16033
       ],
       "kind": "product"
-    },
-    {
-      "date": "2026-10-07",
-      "emoji": "🤖",
-      "title": "Nex N2.5 Pro",
-      "text": "Use `nex-agi/nex-n2.5-pro` for text and image input, tools, reasoning, and structured output with a 262,144-token context. [View the model](https://enter.pollinations.ai/models?q=nex-agi/nex-n2.5-pro).",
-      "prs": [
-        16340
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-07",
-      "emoji": "🤖",
-      "title": "Nex N2.5 Mini",
-      "text": "Use `nex-agi/nex-n2.5-mini` for text and image input, reasoning, structured output, and streaming with a 262,144-token context. [View the model](https://enter.pollinations.ai/models?q=nex-agi/nex-n2.5-mini).",
-      "prs": [
-        16341
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-07",
-      "emoji": "🤖",
-      "title": "Mistral Large 4",
-      "text": "Use `mistralai/mistral-large-4` with text, images, tools, and reasoning. It has a 524,288-token context, and its reasoning appears in OpenAI-compatible `reasoning_content`. [View the model](https://enter.pollinations.ai/models?q=mistralai/mistral-large-4).",
-      "prs": [
-        16606
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-07",
-      "emoji": "🎨",
-      "title": "Guide video with reference media",
-      "text": "The SDK now accepts `referenceImages`, `referenceVideos`, and `referenceAudios` in video options for visual, motion or style, and audio guidance. Check `/models` for each model's supported combinations. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        16705
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-07",
-      "emoji": "🔗",
-      "title": "Account tools for apps",
-      "text": "Apps and agents can use permissioned `/api/account/*` routes to work with keys, balances, earnings, and Quest rewards. A new PATCH route supports key editing. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16678
-      ],
-      "kind": "api"
     }
   ]
 }

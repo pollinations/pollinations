@@ -39,7 +39,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "When true, the model returns valid JSON. Useful for structured data extraction.",
     }),
-    temperature: z.coerce.number().optional().meta({
+    temperature: z.coerce.number().min(0).max(2).optional().meta({
         description:
             "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
     }),

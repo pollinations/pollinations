@@ -2947,6 +2947,209 @@ describe("tracking observability", () => {
         },
     );
 
+    it.each([
+        { retryAfter: "43", expected: "43" },
+        { retryAfter: "0", expected: "0" },
+        { retryAfter: "-1", expected: null },
+        { retryAfter: "1.5", expected: null },
+        { retryAfter: "", expected: null },
+        { retryAfter: "recovered", expected: null },
+        { retryAfter: "43", expected: "43", stream: true },
+        { retryAfter: "recovered", expected: null, stream: true },
+        { retryAfter: "43", expected: "43", model: "vllm-sr/d3" },
+        {
+            retryAfter: "43",
+            expected: "43",
+            model: "vllm-sr/d3",
+            path: "/alpha/decisions",
+        },
+    ])(
+        "forwards final-provider Retry-After: $retryAfter, stream=$stream, model=$model, path=$path",
+        async ({
+            retryAfter,
+            expected,
+            stream = false,
+            model = "mistralai/mistral-small-4",
+            path = "/v1/chat/completions",
+        }) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 0, packBalance: 10 },
+            });
+            const db = drizzle(env.DB);
+            const before = await getUserBalance(db, caller.userId);
+            const events: Record<string, unknown>[] = [];
+            const attemptedModels: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const request = new Request(input, init);
+                    const url = new URL(request.url);
+                    if (
+                        [
+                            "portkey.test",
+                            "openrouter.ai",
+                            "decision.vllm-sr.ai",
+                        ].includes(url.hostname)
+                    ) {
+                        const body = (await request.json()) as {
+                            model: string;
+                        };
+                        attemptedModels.push(body.model);
+                        const primary =
+                            model !== "vllm-sr/d3" &&
+                            attemptedModels.length === 1;
+                        if (!primary && retryAfter === "recovered") {
+                            if (stream)
+                                return new Response(
+                                    'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":2,"total_tokens":12}}\n\ndata: [DONE]\n\n',
+                                    {
+                                        headers: {
+                                            "Content-Type": "text/event-stream",
+                                        },
+                                    },
+                                );
+                            return Response.json({
+                                id: "retry-after-recovery",
+                                object: "chat.completion",
+                                choices: [
+                                    {
+                                        index: 0,
+                                        message: {
+                                            role: "assistant",
+                                            content: "ok",
+                                        },
+                                        finish_reason: "stop",
+                                    },
+                                ],
+                                usage: {
+                                    prompt_tokens: 10,
+                                    completion_tokens: 2,
+                                    total_tokens: 12,
+                                },
+                            });
+                        }
+                        return Response.json(
+                            { error: { message: "provider rate limited" } },
+                            {
+                                status: 429,
+                                headers: {
+                                    ...(primary || retryAfter
+                                        ? {
+                                              "Retry-After": primary
+                                                  ? "99"
+                                                  : retryAfter,
+                                          }
+                                        : {}),
+                                    "Set-Cookie": "provider-private=fixture",
+                                    "X-Provider-Debug": "private-fixture",
+                                },
+                            },
+                        );
+                    }
+                    if (url.pathname === "/v0/events") {
+                        events.push(
+                            ...(await request.text())
+                                .split("\n")
+                                .filter(Boolean)
+                                .map((line) => JSON.parse(line)),
+                        );
+                    }
+                    return Response.json({ data: [] });
+                },
+            );
+            const bindings = withInlineGenerationCoordinator({
+                ...env,
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                MISTRAL_API_KEY: "test-mistral-key",
+                D3_KEY: "test-d3-key",
+                OPENROUTER_API_KEY: "test-openrouter-key",
+            });
+            const coordinator = vi.spyOn(
+                bindings.GENERATION_COORDINATOR,
+                "getByName",
+            );
+            const ctx = createExecutionContext();
+            const decision = {
+                state: `retry-after-${crypto.randomUUID()}`,
+                questions: { ok: { type: "noul", instructions: "Is it OK?" } },
+            };
+            const response = await worker.fetch(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        path === "/alpha/decisions"
+                            ? { model, ...decision }
+                            : {
+                                  model,
+                                  stream,
+                                  messages: [
+                                      {
+                                          role: "user",
+                                          content:
+                                              model === "vllm-sr/d3"
+                                                  ? JSON.stringify(decision)
+                                                  : decision.state,
+                                      },
+                                  ],
+                              },
+                    ),
+                }),
+                bindings,
+                ctx,
+            );
+            const body = await response.text();
+            await waitOnExecutionContext(ctx);
+            expect(coordinator).toHaveBeenCalledTimes(stream ? 0 : 1);
+            expect(attemptedModels).toEqual(
+                model === "vllm-sr/d3"
+                    ? [model]
+                    : ["mistral-small-2603", "mistralai/mistral-small-2603"],
+            );
+            expect(response.status, JSON.stringify(body)).toBe(
+                retryAfter === "recovered" ? 200 : 502,
+            );
+            expect(response.headers.get("retry-after")).toBe(expected);
+            expect(response.headers.has("set-cookie")).toBe(false);
+            expect(response.headers.has("x-provider-debug")).toBe(false);
+            const billed = events.filter((event) => event.isBilledUsage);
+            const after = await getUserBalance(db, caller.userId);
+            if (retryAfter === "recovered") {
+                if (stream) {
+                    expect(response.headers.get("content-type")).toContain(
+                        "text/event-stream",
+                    );
+                    expect(body).toContain('"content":"ok"');
+                    expect(body).toContain("data: [DONE]");
+                    expect(body).not.toContain('"error"');
+                } else {
+                    expect(JSON.parse(body).choices[0].message.content).toBe(
+                        "ok",
+                    );
+                }
+                expect(billed).toHaveLength(1);
+                expect(before.packBalance - after.packBalance).toBeCloseTo(
+                    Number(billed[0].totalPrice),
+                    9,
+                );
+            } else {
+                expect(response.headers.get("content-type")).toContain(
+                    "application/json",
+                );
+                expect(JSON.parse(body)).toMatchObject({
+                    error: {
+                        code: "BAD_GATEWAY",
+                        details: { upstreamStatus: 429 },
+                    },
+                });
+                expect(billed).toHaveLength(0);
+                expect(after).toEqual(before);
+            }
+        },
+    );
+
     it.each(["valid", "missing", "malformed", "recovered"])(
         "settles community Chat with %s usage/delivery and no model metadata",
         async (usageKind) => {

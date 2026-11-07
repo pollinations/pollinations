@@ -322,6 +322,9 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
 
     if (err instanceof UpstreamError) {
         const status = err.status;
+        const retryAfter = err.upstreamHeaders?.["retry-after"];
+        if (retryAfter && /^\d+$/.test(retryAfter))
+            c.header("Retry-After", retryAfter);
         if (status >= 500)
             await emitServerError(c, err, status, timestamp, log);
         else {

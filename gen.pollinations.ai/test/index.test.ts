@@ -534,6 +534,17 @@ describe("gen worker routing", () => {
         expect(await llms.text()).toContain("/.well-known/api-catalog");
     });
 
+    it("delegates RFC 8414 authorization server discovery to enter", async () => {
+        const res = await fetchWorker(
+            "/.well-known/oauth-authorization-server",
+        );
+        expect(res.status).toBe(308);
+        // The origin follows the serving host (the test worker serves staging).
+        expect(res.headers.get("Location")).toBe(
+            "https://staging.enter.pollinations.ai/.well-known/oauth-authorization-server",
+        );
+    });
+
     it("serves Markdown at the docs landing for agents that ask for it", async () => {
         const agentHome = await fetchWorker("/", envWithEnter(), {
             headers: { Accept: "text/markdown" },

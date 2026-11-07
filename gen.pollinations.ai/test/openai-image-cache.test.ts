@@ -174,6 +174,33 @@ describe("OpenAI image cache", () => {
         }
     });
 
+    it("rejects an empty user identifier on generation and edit requests", () => {
+        for (const user of ["", "   "]) {
+            expect(
+                CreateImageRequestSchema.safeParse({ prompt: "x", user })
+                    .success,
+            ).toBe(false);
+            expect(
+                CreateImageEditRequestSchema.safeParse({
+                    prompt: "x",
+                    image: "https://example.com/image.png",
+                    user,
+                }).success,
+            ).toBe(false);
+        }
+        expect(
+            CreateImageRequestSchema.safeParse({ prompt: "x", user: "user-1" })
+                .success,
+        ).toBe(true);
+        expect(
+            CreateImageEditRequestSchema.safeParse({
+                prompt: "x",
+                image: "https://example.com/image.png",
+                user: "user-1",
+            }).success,
+        ).toBe(true);
+    });
+
     it("generates an uppercase X size at both requested dimensions", async () => {
         const app = new Hono<Env>()
             .use("*", async (c, next) => {

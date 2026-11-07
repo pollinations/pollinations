@@ -953,7 +953,7 @@ export const CreateImageRequestSchema = z
         quality: imageQualityField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
-        user: z.string().optional().meta({
+        user: z.string().trim().min(1).optional().meta({
             description: "End-user identifier for abuse tracking",
         }),
         image: z
@@ -1034,6 +1034,9 @@ export const CreateImageEditRequestSchema = z
         quality: imageQualityField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
+        user: z.string().trim().min(1).optional().meta({
+            description: "End-user identifier for abuse tracking",
+        }),
         resolution: imageResolutionField,
         safe: SafeSchema,
     })

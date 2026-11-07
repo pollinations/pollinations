@@ -13,8 +13,49 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "18246": {
+      "merge_sha": "6381d229b8a3c5d1d3e4c4b5467b2417fdde35ec",
+      "merged_at": "2026-11-07T10:58:21Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "18485": {
+      "merge_sha": "d6b1e5ecad0045674bfcef3c85e631de0444ec99",
+      "merged_at": "2026-11-07T10:59:09Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "19251": {
+      "merge_sha": "82885323540c4d704e97072934058fb7d865bbb4",
+      "merged_at": "2026-11-07T10:58:05Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "19301": {
+      "merge_sha": "252b63e7b1e2d93ee75e7251425d269ab277703c",
+      "merged_at": "2026-11-06T17:18:26Z",
+      "required": []
+    },
+    "19334": {
+      "merge_sha": "aaa34cb999e29be1623ef7c6599a077bd462dd47",
+      "merged_at": "2026-11-07T04:14:27Z",
+      "required": []
+    },
+    "19336": {
+      "merge_sha": "96e8b007d235fa60bb749736c68a8eb0407c42d2",
+      "merged_at": "2026-11-07T04:52:36Z",
+      "required": []
+    },
+    "19339": {
+      "merge_sha": "c3588d4e4ea4efcbc7c6f51d072706e42c15b15d",
+      "merged_at": "2026-11-07T07:13:26Z",
+      "required": []
     }
   },
-  "production": "5f86a2951f34a812f5e93916a4b046ce4353e594",
+  "production": "2d992ba9b1a9a1d3bab91030d33b7b016d0502c9",
   "master": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb"
 }

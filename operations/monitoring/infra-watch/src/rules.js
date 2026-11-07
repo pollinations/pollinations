@@ -717,6 +717,12 @@ export function renderCard(
             color,
         ),
     ];
+    // Caller enrichment is cached separately from the current health rows.
+    // Keep its window explicit even when the card's final success has changed.
+    if (!closed && incident.info.callers && incident.enriched?.at != null)
+        parts.push(
+            `*Caller counts: separate 15m sample, checked <t:${unix(incident.enriched.at)}:f>.*`,
+        );
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
     for (const line of lines)
         parts.push(

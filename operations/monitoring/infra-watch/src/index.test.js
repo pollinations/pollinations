@@ -204,6 +204,42 @@ const edits = (id) =>
         (w) => w.ok && w.method === "PATCH" && w.path.endsWith(`/${id}`),
     );
 
+it("labels cached caller counts when a newer status read reports final success", async () => {
+    const stub = watch();
+    world.rows = BAD;
+    await stub.check();
+    await settle(stub);
+    const sampledAt = (await stored(stub, "state")).open[KEY].enriched.at;
+
+    world.rows = [
+        row(10, 10),
+        {
+            ...row(5, 10),
+            is_rollup: 0,
+            provider: "openrouter",
+            fallback_used: false,
+        },
+        {
+            ...row(5, 5),
+            is_rollup: 0,
+            provider: "deepinfra",
+            fallback_used: true,
+        },
+    ];
+    world.failingCallers = 0;
+    await stub.check();
+    await settle(stub);
+
+    const incident = (await stored(stub, "state")).open[KEY];
+    expect(incident.enriched.at).toBe(sampledAt);
+    const text = edits("m1").at(-1).text;
+    expect(text).toMatch(/FINAL\s+100\.0% of 10 reqs 15m/);
+    expect(text).toMatch(/CALLERS\s+3 of 3 failing/);
+    expect(text).toContain(
+        `Caller counts: separate 15m sample, checked <t:${Math.round(sampledAt / 1000)}:f>`,
+    );
+});
+
 it("never edits a closed card back to open", async () => {
     const stub = watch();
     world.rows = BAD;

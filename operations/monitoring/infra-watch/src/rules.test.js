@@ -394,6 +394,33 @@ test("once updated, the card keeps its start and the AI timeline", () => {
     assert.match(text, /<t:3600:t> Provider fault\.\n<t:6000:t> Fallback/);
 });
 
+test("caller counts identify their separate sample when final health has moved on", () => {
+    const incident = opened({
+        kind: "PRIMARY_WEAK",
+        enriched: { at: 60 * MIN },
+        info: {
+            ...opened().info,
+            success: 1,
+            nonClient: 10,
+            callers: { callers: 4, failing_callers: 1 },
+        },
+    });
+    const card = renderCard("model:a/model", incident, { now: 64 * MIN });
+    assert.match(card.text, /FINAL\s+100\.0% of 10 reqs 15m/);
+    assert.match(card.text, /CALLERS\s+1 of 4 failing/);
+    assert.match(
+        card.text,
+        /Caller counts: separate 15m sample, checked <t:3600:f>/,
+    );
+    assert.equal(card.ping, false);
+
+    incident.info.callers = null;
+    assert.doesNotMatch(
+        renderCard("model:a/model", incident).text,
+        /Caller counts: separate/,
+    );
+});
+
 test("a closed card keeps its status and takes the colour of what it cost", () => {
     const done = opened({
         closedAt: 181 * MIN,

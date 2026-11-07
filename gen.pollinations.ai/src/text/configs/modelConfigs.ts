@@ -736,6 +736,26 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // OpenRouter serves full Inkling only through Together. DeepInfra's
+    // Inkling id answers with Inkling Small since 2026-10-22.
+    "thinkingmachines/inkling": () =>
+        createOpenRouterModelConfig({
+            model: "thinkingmachines/inkling",
+            defaultOptions: {
+                provider: {
+                    only: ["together"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "thinkingmachines/inkling:vercel:togetherai": () =>
+        createVercelAIGatewayModelConfig({
+            model: "thinkingmachines/inkling",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["togetherai"] } },
+            },
+        }),
     "openai/gpt-4o-mini": () => ({
         provider: "openai",
         model: "gpt-4o-mini",
@@ -1311,10 +1331,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
-        }),
-    "accounts/fireworks/models/inkling": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/inkling",
         }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------

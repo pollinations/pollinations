@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { findModelByName } from "../../../src/text/availableModels.js";
-
-const transform = findModelByName("thinkingmachines/inkling")?.transform;
-if (!transform) throw new Error("full Inkling transform missing");
+import { inputAudioToFireworks } from "../../../src/text/transforms/inputAudioToFireworks.js";
 
 describe("Fireworks audio input", () => {
-    it("converts OpenAI input_audio parts for full Inkling", async () => {
-        const { messages } = await transform(
+    it("converts OpenAI input_audio parts to audio_url", async () => {
+        const { messages } = inputAudioToFireworks(
             [
                 {
                     role: "user",

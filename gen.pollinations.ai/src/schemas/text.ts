@@ -11,11 +11,12 @@ export const BooleanQueryParamSchema = z.preprocess(
     z.boolean(),
 );
 
-const FloatQueryParamSchema = z.preprocess((value) => {
-    if (value == null) return undefined;
-    const parsed = Number.parseFloat(String(value));
-    return Number.isNaN(parsed) ? NaN : parsed;
-}, z.number().optional());
+const floatQueryParam = (min: number, max: number) =>
+    z.preprocess((value) => {
+        if (value == null) return undefined;
+        const parsed = Number.parseFloat(String(value));
+        return Number.isNaN(parsed) ? NaN : parsed;
+    }, z.number().min(min).max(max).optional());
 
 const IntQueryParamSchema = z.preprocess((value) => {
     if (value == null) return undefined;
@@ -28,7 +29,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Text model to use. See /v1/models or /text/models for the full list of available models.",
     }),
-    seed: z.coerce.number().int().min(-1).optional().meta({
+    seed: z.coerce.number().int().min(-1).max(2147483647).optional().meta({
         description:
             "Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed.",
     }),
@@ -44,10 +45,10 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
     }),
-    top_p: FloatQueryParamSchema,
-    presence_penalty: FloatQueryParamSchema,
-    frequency_penalty: FloatQueryParamSchema,
-    repetition_penalty: FloatQueryParamSchema,
+    top_p: floatQueryParam(0, 1),
+    presence_penalty: floatQueryParam(-2, 2),
+    frequency_penalty: floatQueryParam(-2, 2),
+    repetition_penalty: floatQueryParam(0, 2),
     max_tokens: IntQueryParamSchema,
     max_completion_tokens: IntQueryParamSchema,
     reasoning_effort: z.string().optional(),

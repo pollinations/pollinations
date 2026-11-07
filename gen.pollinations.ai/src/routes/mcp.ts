@@ -1,3 +1,4 @@
+import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
@@ -34,6 +35,7 @@ function requestForMcp(
     request: Request,
     server: McpServerDefinition,
     user: AuthUser,
+    agentRun: AgentRunClaims | undefined,
 ): Request {
     const headers = new Headers(request.headers);
     if (server.forwardAuthorization !== true) {
@@ -43,7 +45,12 @@ function requestForMcp(
     headers.delete(MCP_USER_ID_HEADER);
     headers.delete(MCP_USER_GITHUB_HEADER);
     if (server.userScoped) {
-        headers.set(MCP_USER_ID_HEADER, user.id);
+        // Each agent gets its own state on the account, apart from the
+        // account owner's.
+        headers.set(
+            MCP_USER_ID_HEADER,
+            agentRun ? `${user.id}:agent:${agentRun.agentModelId}` : user.id,
+        );
         if (user.githubId && user.githubUsername) {
             headers.set(
                 MCP_USER_GITHUB_HEADER,
@@ -199,18 +206,20 @@ export const mcpRoutes = new Hono<Env>()
             });
         }
         // A tool's cost is known only from its receipt, so a tool call needs a
-        // spendable balance up front. Initialization and discovery stay free.
+        // spendable balance and some key budget left up front: the smallest
+        // positive cost refuses a budget of 0. Initialization and discovery
+        // stay free.
         if (
             server.billing === "usage_receipt" &&
             message?.method === "tools/call"
         ) {
-            await requireAccountFunds(c, 0);
+            await requireAccountFunds(c, Number.MIN_VALUE);
         }
         const binding = c.env[server.binding] as Fetcher;
 
         const startedAt = new Date();
         const response = await binding.fetch(
-            requestForMcp(c.req.raw, server, user),
+            requestForMcp(c.req.raw, server, user, c.var.auth.agentRun),
         );
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);

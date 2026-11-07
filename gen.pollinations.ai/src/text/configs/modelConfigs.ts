@@ -1328,6 +1328,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
     "moonshotai/kimi-k3.1-pro": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K3.1-Pro/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "moonshotai/kimi-k3.1-pro:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "moonshotai/kimi-k3.1-pro",
         }),

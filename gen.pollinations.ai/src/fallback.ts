@@ -258,6 +258,8 @@ export type FallbackCandidate = {
     communityEndpoint?: CommunityEndpointRuntime;
     /** Serving registry entry. Absent on the model the caller asked for. */
     entry?: GenerationModelEntry;
+    /** Provider selected for this public choice; its quote and list position stay intact. */
+    route?: GenerationModelEntry;
 };
 
 type PrimaryModel = {

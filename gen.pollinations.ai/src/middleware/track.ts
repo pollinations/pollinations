@@ -360,7 +360,8 @@ export const track = (eventType: EventType) =>
                 // loop can supply. So a request emits one row per upstream call.
                 for (const attempt of attempts) {
                     if (attempt.settled) continue;
-                    const model = attempt.candidate.id;
+                    const model =
+                        attempt.candidate.route?.id ?? attempt.candidate.id;
                     const status = failedAttemptStatus(attempt.error);
                     await emitRow({
                         startTime: attempt.startedAt,
@@ -384,6 +385,7 @@ export const track = (eventType: EventType) =>
                                 requestTracking.resolvedModelRequested,
                             modelUsed: model,
                             modelProviderUsed:
+                                attempt.candidate.route?.definition.provider ??
                                 attempt.candidate.definition?.provider ??
                                 requestTracking.modelProvider,
                         },
@@ -746,7 +748,10 @@ function trackJsonErrorUsage(
         ...calculateUsageBilling({
             model: request.resolvedModelRequested,
             usage,
-            servedBy: candidate.definition ?? request.modelDefinition,
+            servedBy:
+                candidate.route?.definition ??
+                candidate.definition ??
+                request.modelDefinition,
             quotedBy: quotedModel(request, candidate),
             output,
             input: {
@@ -768,9 +773,14 @@ export async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const quotedBy = quotedModel(requestTracking, candidate);
-    const modelUsed = candidate.id || resolvedModelRequested;
+    const modelUsed =
+        candidate.route?.id || candidate.id || resolvedModelRequested;
+    const servedBy =
+        candidate.route?.definition ??
+        candidate.definition ??
+        requestTracking.modelDefinition;
     const modelProviderUsed =
-        candidate.definition?.provider ?? requestTracking.modelProvider;
+        servedBy.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed =
         modelUsed !== resolvedModelRequested || parseFallbackUsed(response);
@@ -815,8 +825,7 @@ export async function trackResponse(
             ...calculateUsageBilling({
                 model: resolvedModelRequested,
                 usage,
-                servedBy:
-                    candidate.definition ?? requestTracking.modelDefinition,
+                servedBy,
                 quotedBy,
                 input: pricingInput,
             }),
@@ -873,8 +882,7 @@ export async function trackResponse(
             ...calculateUsageBilling({
                 model: resolvedModelRequested,
                 usage,
-                servedBy:
-                    candidate.definition ?? requestTracking.modelDefinition,
+                servedBy,
                 quotedBy,
                 output,
                 input: billingInput,
@@ -908,7 +916,7 @@ export async function trackResponse(
         const adjustmentOnlyBilling = calculateUsageBilling({
             model: resolvedModelRequested,
             usage: {},
-            servedBy: candidate.definition ?? requestTracking.modelDefinition,
+            servedBy,
             quotedBy,
             output,
             input: pricingInput,
@@ -962,7 +970,7 @@ export async function trackResponse(
     } = calculateUsageBilling({
         model: resolvedModelRequested,
         usage: modelUsage.usage,
-        servedBy: candidate.definition ?? requestTracking.modelDefinition,
+        servedBy,
         quotedBy,
         output: modelUsage.output,
         input: billingInput,

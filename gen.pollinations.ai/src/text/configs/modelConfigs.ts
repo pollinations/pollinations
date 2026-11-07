@@ -798,13 +798,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "zai-org/GLM-5.2": () =>
         createDeepInfraModelConfig({ model: "zai-org/GLM-5.2" }),
-    "zai-org/GLM-5.3": () =>
-        createDeepInfraModelConfig({
-            model: "zai-org/GLM-5.3",
-            directEndpoint:
-                "https://api.deepinfra.com/v1/openai/chat/completions",
-            defaultOptions: { max_tokens: 64000 },
-        }),
     "meta-models/Muse-Glimmer-30B": () =>
         createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
@@ -970,10 +963,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
-        "z-ai/glm-5.3",
-        "friendli",
-    ),
     "kimi-code-openrouter-moonshot": createPinnedOpenRouterConfig(
         "moonshotai/kimi-k2.7-code",
         "inceptron/int4",
@@ -1285,6 +1274,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             options?.perplexityWebSearch,
         ),
 
+    "zai-glm-5-3": () =>
+        createMistralModelConfig({
+            model: "zai-glm-5-3",
+            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
+            useMistralChatFormat: true,
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "accounts/fireworks/models/glm-5p3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p3",

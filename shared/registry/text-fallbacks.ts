@@ -1130,31 +1130,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "z-ai/glm-5.3": {
-        "z-ai/glm-5.3:deepinfra": {
-            supportedParameters: [
-                ...CHAT_PARAMETERS.deepinfraReasoning.filter(
-                    (parameter) =>
-                        parameter !== "logprobs" &&
-                        parameter !== "top_logprobs",
-                ),
-                "parallel_tool_calls",
-            ],
-            provider: "deepinfra",
+        "z-ai/glm-5.3:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
             cost: {
-                // Current 37.5% promotion; no announced end date or gateway fee.
-                promptTextTokens: perMillion(0.9) * 0.625,
-                promptCachedTokens: perMillion(0.2) * 0.625,
-                completionTextTokens: perMillion(4) * 0.625,
-            },
-        },
-        "z-ai/glm-5.3:openrouter:friendli": {
-            supportedParameters: CHAT_PARAMETERS.openRouterGlm53,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
-            cost: {
-                promptTextTokens: perMillion(1.26) * 1.055,
-                promptCachedTokens: perMillion(0.234) * 1.055,
-                completionTextTokens: perMillion(3.96) * 1.055,
+                promptTextTokens: perMillion(1.4),
+                promptCachedTokens: perMillion(0.26),
+                completionTextTokens: perMillion(4.4),
             },
         },
     },

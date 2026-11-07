@@ -143,15 +143,14 @@ describe("generateTextPortkey", () => {
         });
     });
 
-    it.each([0, 1, 2, 3])(
+    it.each([0, 1, 2])(
         "uses the GLM 5.3 chain with %i failed providers",
         async (failures) => {
             const primary = "z-ai/glm-5.3" as const;
             const ids = [primary, ...TEXT_SERVICES[primary].fallbacks];
             const upstreams = [
+                "zai-glm-5-3",
                 "accounts/fireworks/models/glm-5p3",
-                "zai-org/GLM-5.3",
-                "z-ai/glm-5.3",
             ];
             const attempts: string[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(

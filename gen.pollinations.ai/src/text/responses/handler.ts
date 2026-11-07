@@ -17,7 +17,6 @@ import type { Env } from "@/env.ts";
 import { withSafetyHeaders } from "@/middleware/safety.ts";
 import {
     type FallbackCandidate,
-    fallbackCandidates,
     formatFallbackTarget,
     withModelFallback,
 } from "../../fallback.ts";
@@ -31,8 +30,8 @@ import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
 import {
-    supportsTextFallbackRequest,
     textCapabilityError,
+    textFallbackCandidates,
 } from "../fallbackCompatibility.js";
 import { generateChatAttempt } from "../handler.ts";
 import type { RequestData, ServiceError } from "../types.js";
@@ -69,36 +68,34 @@ type DirectResponsesResult = Awaited<ReturnType<typeof callDirectResponses>> & {
     trackingBody?: ReadableStream | string;
 };
 
-function directResponsesCandidates(
+async function directResponsesCandidates(
     c: ResponsesContext,
     request: CreateResponseRequest,
-): DirectResponsesCandidate[] {
+): Promise<DirectResponsesCandidate[]> {
     const targetFor = (
         candidate: FallbackCandidate,
     ): DirectResponsesTarget | null | undefined => {
         if (!candidate.communityEndpoint) {
-            return resolveDirectResponsesTarget(candidate.id, request);
+            return resolveDirectResponsesTarget(
+                candidate.route?.id ?? candidate.id,
+                request,
+            );
         }
         return candidate.communityEndpoint.api === "responses"
             ? undefined
             : null;
     };
     const supported: DirectResponsesCandidate[] = [];
-    for (const [index, candidate] of fallbackCandidates(
+    for (const candidate of await textFallbackCandidates(
         c.var.model,
-    ).entries()) {
-        if (
-            index > 0 &&
-            !supportsTextFallbackRequest(candidate.definition, request)
-        ) {
-            continue;
-        }
+        request,
+        c.env,
+    )) {
         const target = targetFor(candidate);
         supported.push({
             ...candidate,
             ...(target ? { responsesTarget: target } : {}),
             ...(target === null ? { adapted: true as const } : {}),
-            originalIndex: index,
         });
     }
     return supported;
@@ -195,7 +192,7 @@ async function handleDirectResponse(
         if (capabilityError)
             throw new ResponsesInvalidRequestError(capabilityError);
         validateDirectResponsesRequest(request);
-        let candidates = directResponsesCandidates(c, request);
+        let candidates = await directResponsesCandidates(c, request);
         let chatRequest: RequestData | undefined;
         if (candidates.some((candidate) => candidate.adapted)) {
             try {
@@ -224,7 +221,8 @@ async function handleDirectResponse(
                 // is replayed as a stream.
                 const buffered =
                     request.stream &&
-                    attempt.definition?.supportsStreaming === false;
+                    (attempt.route?.definition ?? attempt.definition)
+                        ?.supportsStreaming === false;
                 const responsesClient = await responsesClientForAttempt(
                     c,
                     attempt,
@@ -292,7 +290,7 @@ async function handleDirectResponse(
                 ? "text/event-stream; charset=utf-8"
                 : "application/json; charset=utf-8",
             "Cache-Control": request.stream ? "no-cache" : "no-store",
-            [MODEL_USED_HEADER]: candidate.id,
+            [MODEL_USED_HEADER]: candidate.route?.id ?? candidate.id,
         });
         if (candidate.originalIndex > 0) {
             headers.set(
@@ -304,7 +302,7 @@ async function handleDirectResponse(
         if (!request.stream && result.usage) {
             for (const [name, value] of Object.entries(
                 buildUsageHeaders(
-                    candidate.id,
+                    candidate.route?.id ?? candidate.id,
                     responsesUsageToUsage(result.usage),
                 ),
             )) {

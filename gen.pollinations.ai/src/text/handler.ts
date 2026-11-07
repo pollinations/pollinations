@@ -14,7 +14,6 @@ import type { Env } from "@/env.ts";
 import {
     attachFallbackTarget,
     type FallbackCandidate,
-    fallbackCandidates,
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
@@ -37,8 +36,8 @@ import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
 import {
-    supportsTextFallbackRequest,
     textCapabilityError,
+    textFallbackCandidates,
 } from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
@@ -69,11 +68,13 @@ async function gatewayContext(
     requestData: RequestData,
     candidate: FallbackCandidate,
 ): Promise<TransformOptions> {
-    const { communityEndpoint, definition } = candidate;
+    const serving = candidate.route ?? candidate;
+    const { communityEndpoint, definition } = serving;
     // A fallback must resolve transforms from the model that will actually run.
-    const candidateRequest = candidate.entry
-        ? { ...requestData, model: candidate.id }
-        : requestData;
+    const candidateRequest =
+        candidate.route || candidate.entry
+            ? { ...requestData, model: serving.id }
+            : requestData;
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
     // config the gateway resolves from the model id.
@@ -139,7 +140,8 @@ export async function generateChatAttempt(
     // as a stream.
     const buffered =
         requestData.stream === true &&
-        candidate.definition?.supportsStreaming === false;
+        (candidate.route?.definition ?? candidate.definition)
+            ?.supportsStreaming === false;
     const attemptData = buffered
         ? { ...requestData, stream: false }
         : requestData;
@@ -406,19 +408,11 @@ async function generateTextResponse(
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });
-        const candidates = fallbackCandidates(c.var.model)
-            .map((candidate, originalIndex) => ({
-                ...candidate,
-                originalIndex,
-            }))
-            .filter(
-                (candidate) =>
-                    candidate.originalIndex === 0 ||
-                    supportsTextFallbackRequest(
-                        candidate.definition,
-                        requestData,
-                    ),
-            );
+        const candidates = await textFallbackCandidates(
+            c.var.model,
+            requestData,
+            c.env,
+        );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
             (attempt) => generateChatAttempt(c, requestData, attempt),
@@ -434,7 +428,7 @@ async function generateTextResponse(
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
-        const servedModelId = candidate.id || undefined;
+        const servedModelId = candidate.route?.id || candidate.id || undefined;
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);

@@ -16,12 +16,14 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it } from "vitest";
+import { resolveModelDefinition } from "../src/middleware/model.ts";
 import { findModelByName } from "../src/text/availableModels.ts";
 import { createBedrockNativeConfig } from "../src/text/configs/providerConfigs.ts";
 import { syncTextEnvironment } from "../src/text/environment.ts";
 import {
     supportsTextFallbackRequest,
     textCapabilityError,
+    textFallbackCandidates,
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
@@ -108,7 +110,6 @@ const OPENROUTER_ROUTES = [
         "qwen/qwen3-vl-235b-a22b-thinking",
         "novita/bf16",
     ],
-    ["z-ai/glm-5.3:openrouter:friendli", "z-ai/glm-5.3", "friendli"],
     [
         "qwen/qwen3-coder-next:openrouter:streamlake",
         "qwen/qwen3-coder-next",
@@ -207,17 +208,15 @@ describe("static provider fallbacks", () => {
                 AWS_ACCESS_KEY_ID: "local-binding-id",
                 AWS_SECRET_ACCESS_KEY: "not-a-secret-test-only",
                 AWS_REGION: "eu-west-1",
-                DEEPINFRA_API_KEY: "not-a-secret-local-deepinfra-binding",
+                MISTRAL_API_KEY: "not-a-secret-local-mistral-binding",
             });
             expect(createBedrockNativeConfig()).toMatchObject({
                 "aws-access-key-id": "local-binding-id",
                 "aws-secret-access-key": "not-a-secret-test-only",
                 "aws-region": "eu-west-1",
             });
-            expect(
-                findModelByName("z-ai/glm-5.3:deepinfra")?.config(),
-            ).toMatchObject({
-                authKey: "not-a-secret-local-deepinfra-binding",
+            expect(findModelByName("z-ai/glm-5.3")?.config()).toMatchObject({
+                authKey: "not-a-secret-local-mistral-binding",
             });
         } finally {
             syncTextEnvironment(env);
@@ -300,52 +299,135 @@ describe("static provider fallbacks", () => {
         expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
     });
 
-    it("tries direct DeepInfra before OpenRouter for GLM 5.3 at the primary's user price", () => {
+    it("keeps the Mistral GLM quote when Fireworks serves cached input", () => {
         const model = "z-ai/glm-5.3";
-        const route = `${model}:deepinfra`;
-        expect(TEXT_SERVICES[model].provider).toBe("fireworks");
-        expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            route,
-            `${model}:openrouter:friendli`,
-        ]);
+        const route = "z-ai/glm-5.3:fireworks";
+        expect(TEXT_SERVICES[model].provider).toBe("mistral");
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([route]);
         expect(TEXT_SERVICES[route]).toMatchObject({
-            provider: "deepinfra",
+            provider: "fireworks",
             hidden: true,
             fallbackOnly: true,
             paidOnly: false,
             aliases: [],
         });
-        expect(findModelByName(route)?.config()).toMatchObject({
-            model: "zai-org/GLM-5.3",
-            directEndpoint:
-                "https://api.deepinfra.com/v1/openai/chat/completions",
+        expect(findModelByName(model)?.config()).toMatchObject({
+            model: "zai-glm-5-3",
+            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
+            useMistralChatFormat: true,
             defaultOptions: { max_tokens: 64000 },
         });
+        expect(findModelByName(route)?.config()).toMatchObject({
+            model: "accounts/fireworks/models/glm-5p3",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
         expect(getVisibleTextModels()).not.toContain(route);
-        const usage = {
-            promptTextTokens: 1000,
-            promptCachedTokens: 2000,
-            completionTextTokens: 100,
-        };
         const billing = calculateUsageBilling({
             model,
-            usage,
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 2000,
+                completionTextTokens: 100,
+            },
             servedBy: TEXT_SERVICES[route],
             quotedBy: TEXT_SERVICES[model],
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.0010625, 10);
-        expect(billing.price.totalPrice).toBeCloseTo(0.00236, 10);
-        const openRouterBilling = calculateUsageBilling({
-            model,
-            usage,
-            servedBy: TEXT_SERVICES[`${model}:openrouter:friendli`],
-            quotedBy: TEXT_SERVICES[model],
-        });
-        expect(openRouterBilling.cost.totalCost).toBeCloseTo(0.00224082, 10);
-        expect(openRouterBilling.price.totalPrice).toBeCloseTo(
-            billing.price.totalPrice,
-            10,
+        expect(billing.cost.totalCost).toBeCloseTo(0.00236, 10);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00212, 10);
+    });
+
+    it.each([
+        "max_tokens",
+        "max_completion_tokens",
+        "max_output_tokens",
+        "logit_bias",
+    ])(
+        "preserves GLM %s on Fireworks without changing caller positions",
+        async (field) => {
+            const request =
+                field === "logit_bias"
+                    ? { logit_bias: { "0": 0 } }
+                    : { [field]: 128001 };
+            const single = await resolveModelDefinition(
+                "glm-5.3",
+                "generate.text",
+                env,
+            );
+            const candidates = await textFallbackCandidates(
+                single,
+                request,
+                env,
+            );
+            expect(
+                candidates.map(({ id, originalIndex }) => [id, originalIndex]),
+            ).toEqual([["z-ai/glm-5.3:fireworks", 1]]);
+            const explicit = await resolveModelDefinition(
+                "glm-5.3,glm-5.3",
+                "generate.text",
+                env,
+            );
+            const explicitCandidates = await textFallbackCandidates(
+                explicit,
+                request,
+                env,
+            );
+            expect(
+                explicitCandidates.map(({ id, route, originalIndex }) => [
+                    id,
+                    route?.id,
+                    originalIndex,
+                ]),
+            ).toEqual([
+                ["z-ai/glm-5.3", "z-ai/glm-5.3:fireworks", 0],
+                ["z-ai/glm-5.3", "z-ai/glm-5.3:fireworks", 1],
+            ]);
+            const mixed = await resolveModelDefinition(
+                "openai,glm-5.3",
+                "generate.text",
+                env,
+            );
+            expect(
+                (await textFallbackCandidates(mixed, request, env)).at(-1),
+            ).toMatchObject({
+                id: "z-ai/glm-5.3",
+                route: { id: "z-ai/glm-5.3:fireworks" },
+                originalIndex: 1,
+            });
+            expect(explicitCandidates[0].definition?.provider).toBe("mistral");
+            expect(explicitCandidates[0].route?.definition.provider).toBe(
+                "fireworks",
+            );
+        },
+    );
+
+    it("keeps Mistral at its output boundary and for multiple choices, excluding incompatible Fireworks", async () => {
+        const model = await resolveModelDefinition(
+            "glm-5.3",
+            "generate.text",
+            env,
         );
+        expect(
+            (
+                await textFallbackCandidates(model, { max_tokens: 128000 }, env)
+            ).map(({ id }) => id),
+        ).toEqual(["z-ai/glm-5.3", "z-ai/glm-5.3:fireworks"]);
+        expect(
+            (await textFallbackCandidates(model, { n: 2 }, env)).map(
+                ({ id }) => id,
+            ),
+        ).toEqual(["z-ai/glm-5.3"]);
+        const explicit = await resolveModelDefinition(
+            "glm-5.3,glm-5.3",
+            "generate.text",
+            env,
+        );
+        await expect(
+            textFallbackCandidates(
+                explicit,
+                { n: 2, logit_bias: { "0": 0 } },
+                env,
+            ),
+        ).rejects.toThrow("No provider");
     });
 
     it("records MiMo V2.6 Flash's discounted backup cost and keeps the Novita quote", () => {

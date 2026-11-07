@@ -1303,13 +1303,14 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes GLM-5.3 directly to Fireworks without fallback", () => {
+    it("routes GLM-5.3 directly to Mistral with its thinking adapter", () => {
         const result = resolveModelConfig(messages, { model: "glm-5.3" });
 
-        expect(result.options.model).toBe("accounts/fireworks/models/glm-5p3");
+        expect(result.options.model).toBe("zai-glm-5-3");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
+            useMistralChatFormat: true,
         });
         expect(result.options.provider).toBeUndefined();
         expect(result.options.max_tokens).toBe(64000);

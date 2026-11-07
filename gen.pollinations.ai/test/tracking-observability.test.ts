@@ -65,6 +65,7 @@ import { buildTrackingHeaders } from "../src/image/utils/trackingHeaders.ts";
 import worker from "../src/index.ts";
 import {
     type GenerationModelEntry,
+    getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
 import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
@@ -2807,6 +2808,161 @@ describe("tracking observability", () => {
         expect(fallback.isBilledUsage).toBe(true);
     });
 
+    it("keeps explicit GLM retries, Quest access, and quoted prices when Fireworks is selected", async () => {
+        const caller = await createTestApiKey({
+            allowedModels: ["z-ai/glm-5.3"],
+            user: { tierBalance: 10, packBalance: 0 },
+        });
+        const providerCalls: string[] = [];
+        const events: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (
+                    url.hostname === "api.mistral.ai" ||
+                    url.hostname === "portkey.test"
+                ) {
+                    const body = (await request.json()) as { model: string };
+                    providerCalls.push(body.model);
+                    if (providerCalls.length === 1)
+                        return Response.json(
+                            { error: { message: "Capacity exhausted" } },
+                            { status: 503 },
+                        );
+                    return Response.json({
+                        choices: [
+                            {
+                                message: { role: "assistant", content: "OK" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 3000,
+                            completion_tokens: 100,
+                            total_tokens: 3100,
+                            prompt_tokens_details: { cached_tokens: 2000 },
+                        },
+                    });
+                }
+                if (
+                    url.pathname === "/v0/events" &&
+                    url.searchParams.get("name") === "generation_event_v2"
+                ) {
+                    events.push(
+                        ...(await request.text())
+                            .split("\n")
+                            .filter(Boolean)
+                            .map((line) => JSON.parse(line)),
+                    );
+                }
+                return Response.json({ data: [] });
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "glm-5.3,glm-5.3",
+                    logit_bias: { "0": 0 },
+                    messages: [
+                        {
+                            role: "user",
+                            content: `Return OK. ${crypto.randomUUID()}`,
+                        },
+                    ],
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                FIREWORKS_NEO_API_KEY: "test-fireworks-key",
+            }),
+            ctx,
+        );
+        const body = await response.text();
+        await waitOnExecutionContext(ctx);
+        expect(response.status, body).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(
+            "z-ai/glm-5.3:fireworks",
+        );
+        expect(response.headers.get("x-fallback-target")).toBe(
+            "config.targets[1]",
+        );
+        expect(providerCalls).toEqual([
+            "accounts/fireworks/models/glm-5p3",
+            "accounts/fireworks/models/glm-5p3",
+        ]);
+        expect(events).toHaveLength(2);
+        expect(events[0]).toMatchObject({
+            isFinal: false,
+            isBilledUsage: false,
+            responseStatus: 503,
+            modelUsed: "z-ai/glm-5.3:fireworks",
+            modelProviderUsed: "fireworks",
+        });
+        expect(events[1]).toMatchObject({
+            isFinal: true,
+            isBilledUsage: true,
+            modelUsed: "z-ai/glm-5.3:fireworks",
+            modelProviderUsed: "fireworks",
+        });
+        expect(events[1].totalCost).toBeCloseTo(0.00236, 10);
+        expect(events[1].totalPrice).toBeCloseTo(0.00212, 10);
+        const balance = await getUserBalance(drizzle(env.DB), caller.userId);
+        expect(balance.packBalance).toBe(0);
+        expect(balance.tierBalance).toBeCloseTo(10 - 0.00212, 10);
+    });
+
+    it.each(["glm-5.3", "glm-5.3,glm-5.3"])(
+        "rejects incompatible GLM parameter combinations before inference: %s",
+        async (model) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 10, packBalance: 0 },
+            });
+            const providerCalls: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+                const url = new URL(
+                    input instanceof Request ? input.url : String(input),
+                );
+                if (
+                    url.hostname === "api.mistral.ai" ||
+                    url.hostname === "api.fireworks.ai"
+                )
+                    providerCalls.push(url.hostname);
+                return Response.json({ data: [] });
+            });
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model,
+                        n: 2,
+                        logit_bias: { "0": 0 },
+                        messages: [{ role: "user", content: "Return OK." }],
+                    }),
+                }),
+                withInlineGenerationCoordinator(env),
+                ctx,
+            );
+            const body = await response.text();
+            await waitOnExecutionContext(ctx);
+            expect(response.status, body).toBe(400);
+            expect(body).toContain("No provider");
+            expect(providerCalls).toEqual([]);
+        },
+    );
+
     it.each([false, true])(
         "handles an opening Mistral stream error through fallback (fallback also fails: %s)",
         async (fallbackFails) => {
@@ -3500,6 +3656,55 @@ describe("trackResponse modelUsed", () => {
         );
         expect(tracking.modelUsed).toBe("qwen/qwen3.7-flash");
     });
+
+    it.each([200, 422])(
+        "attributes a substituted GLM route at its cost while retaining the caller-list quote (%i)",
+        async (status) => {
+            const model = "z-ai/glm-5.3";
+            const registry = await getGenerationModelRegistry(env);
+            const route = registry.resolve("z-ai/glm-5.3:fireworks");
+            expect(route).toBeDefined();
+            if (!route) throw new Error("Missing GLM Fireworks route");
+            const usage = {
+                prompt_tokens: 3000,
+                completion_tokens: 100,
+                total_tokens: 3100,
+                prompt_tokens_details: { cached_tokens: 2000 },
+            };
+            const tracking = await trackResponse(
+                "generate.text",
+                {
+                    ...requestTrackingFixture(false, model),
+                    modelRequested: "glm-5.3,glm-5.3",
+                },
+                Response.json(
+                    { choices: [], usage },
+                    {
+                        status,
+                        headers: {
+                            "x-model-used": "z-ai/glm-5.3:fireworks",
+                            "x-usage-prompt-text-tokens": "1000",
+                            "x-usage-prompt-cached-tokens": "2000",
+                            "x-usage-completion-text-tokens": "100",
+                        },
+                    },
+                ),
+                { ...candidateFixture(model), route },
+                undefined,
+                status === 422
+                    ? UpstreamError.fromProvider(422, {
+                          responseBody: JSON.stringify({ usage }),
+                      })
+                    : undefined,
+            );
+            expect(tracking.modelUsed).toBe("z-ai/glm-5.3:fireworks");
+            expect(tracking.modelProviderUsed).toBe("fireworks");
+            expect(tracking.cost?.totalCost).toBeCloseTo(0.00236, 10);
+            if (status === 200)
+                expect(tracking.price?.totalPrice).toBeCloseTo(0.00212, 10);
+            else expect(tracking.isBilledUsage).toBe(false);
+        },
+    );
 
     it.each([
         "not JSON",

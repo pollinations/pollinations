@@ -3238,16 +3238,16 @@ const TEXT_BASE_SERVICES = {
     "z-ai/glm-5.3": {
         supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: ["glm-5.3"],
-        provider: "fireworks",
+        provider: "mistral",
         publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        // Fireworks standard serverless rates (2026-08-29).
+        // Mistral standard rates (2026-11-07).
         cost: {
             promptTextTokens: perMillion(1.4),
-            promptCachedTokens: perMillion(0.26),
+            promptCachedTokens: perMillion(0.14),
             completionTextTokens: perMillion(4.4),
         },
         title: "GLM-5.3",

@@ -12,8 +12,9 @@ import type { Env } from "../env.ts";
 import {
     creditPurchase,
     getPurchase,
+    legacyPaymentId,
+    PAYMENT_USED,
     paymentId,
-    paymentIdForPayload,
     preparePurchase,
     purchaseAmountUsd,
 } from "../services/x402-key-purchases.ts";
@@ -56,7 +57,7 @@ export const x402KeysRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Buy a prepaid API key with x402",
             description:
-                "GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Replaying a settled payment returns the same key, not more credits.",
+                "GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Each payment returns its key once; any later request with it gets 409.",
             responses: {
                 200: { description: "Prepaid API key" },
                 402: { description: "x402 payment required" },
@@ -106,21 +107,16 @@ export const x402KeysRoutes = new Hono<Env>()
                         message: "Invalid x402 payment signature",
                     });
                 }
-                const previous = await getPurchase(c.env.DB, id);
-                if (previous && previous.credited_at !== null) {
-                    const issued = await preparePurchase(
-                        c.env,
-                        c.executionCtx,
-                        id,
-                        holdingUserId,
-                        purchaseKey,
-                    );
-                    return c.json({
-                        id: issued.id,
-                        key: issued.key,
-                        pollen: amountUsd,
-                    });
-                }
+                // Settlement publishes the signed payment, so anyone can
+                // rebuild this header: never return a stored key or resume.
+                if (
+                    (await getPurchase(c.env.DB, id)) ||
+                    (await getPurchase(
+                        c.env.DB,
+                        await legacyPaymentId(signature),
+                    ))
+                )
+                    throw new HTTPException(409, { message: PAYMENT_USED });
             }
 
             let issued: { id: string; key: string } | undefined;
@@ -157,23 +153,6 @@ export const x402KeysRoutes = new Hono<Env>()
                             server: new ExactEvmScheme(),
                         },
                     ],
-                    resumeVerifiedPayment: async (_context, candidate) => {
-                        const candidateId = await paymentIdForPayload(
-                            candidate.paymentPayload,
-                        );
-                        const pending = await getPurchase(
-                            c.env.DB,
-                            candidateId,
-                        );
-                        if (
-                            !pending ||
-                            pending.credited_at !== null ||
-                            pending.user_id !== holdingUserId ||
-                            pending.pack_key !== purchaseKey
-                        )
-                            return undefined;
-                        return candidate;
-                    },
                 },
             );
             const response = await payment(c, async () => {
@@ -208,12 +187,15 @@ export const x402KeysRoutes = new Hono<Env>()
                 c.get("log").error("x402 key credit failed: {error}", {
                     error,
                 });
-                return c.json(
+                // The paid handler already set c.res, so a returned response
+                // would be ignored and the unfunded key sent with a 200.
+                c.res = c.json(
                     {
-                        error: "Payment settled but key activation is pending. Retry with the same payment signature.",
+                        error: "Payment settled but key activation failed. Contact hello@pollinations.ai with the transaction.",
                     },
                     503,
                 );
+                return c.res;
             }
             return c.res;
         },

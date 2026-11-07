@@ -32,25 +32,35 @@ export type CommunityModelRegistryEntry = {
 
 export type CommunityModelEnv = Pick<CloudflareBindings, "DB" | "KV">;
 
-// One shared copy of the catalog for every gen isolate: each isolate running
-// the full-table query on its own 60s expiry was most of the D1 load. Bump
-// the version when the entry shape changes, or Workers mid-deploy serve each
-// other's entries.
+// The minute cron refreshes this shared catalog before expiry. Request-driven
+// expiry alone fans out the full-table query across KV's cached misses.
+// Bump the version when the entry shape changes.
 const COMMUNITY_CATALOG_CACHE_KEY = "community-catalog:v2";
-const COMMUNITY_CATALOG_CACHE_TTL_SECONDS = 60;
+// Expiration overrides KV's read cache. With the registry's 30s local cache,
+// a failed refresh cannot keep bans, prices, or visibility stale beyond 2min.
+const COMMUNITY_CATALOG_CACHE_TTL_SECONDS = 90;
 
 export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
 ): Promise<CommunityModelRegistryEntry[]> {
     const cached = await env.KV.get<CommunityModelRegistryEntry[]>(
         COMMUNITY_CATALOG_CACHE_KEY,
-        "json",
+        { type: "json", cacheTtl: 30 },
     ).catch(() => null);
     if (cached) return cached;
+    // Keep cold starts and cron failures recoverable from live D1.
+    return refreshCommunityModelRegistryCache(env);
+}
+
+export async function refreshCommunityModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<CommunityModelRegistryEntry[]> {
     const entries = await queryCommunityModelRegistryEntries(env.DB);
     await env.KV.put(COMMUNITY_CATALOG_CACHE_KEY, JSON.stringify(entries), {
         expirationTtl: COMMUNITY_CATALOG_CACHE_TTL_SECONDS,
-    }).catch(() => {});
+    }).catch((error) => {
+        console.error("Community model catalog cache write failed", error);
+    });
     return entries;
 }
 

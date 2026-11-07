@@ -1,5 +1,6 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { calendarTools } from "./tools/calendar.js";
 import { contrastTools } from "./tools/contrast.js";
 import { currencyTools } from "./tools/currency.js";
 import { qrTools } from "./tools/qr.js";
@@ -14,6 +15,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, shape, run] of [
             ...timeTools,
+            ...calendarTools,
             ...contrastTools,
             ...unicodeTools,
             ...qrTools,

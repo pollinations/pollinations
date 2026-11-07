@@ -341,6 +341,12 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 
 **Available models:** stealth/glyph-cluster, openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-6.1-terra, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, inception/mercury-3, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-4-argon, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4.1-flash-1017, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, vllm-sr/d3, respan/span-01-lite, typesafe/jev-1.14, jaredpalmer/kev-4b, perplexity/pplx-decider-v1.2, liquid/d1, inferenceport-ai/lightning-text-v2.1, inferenceport-ai/lightning-text-v2, microsoft/microsoft-decision-1, openai/gpt-6-luna-decisions, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-opus-5.5:fast, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3.1-pro, moonshotai/kimi-k3, moonshotai/kimi-k3.1-pro-highspeed, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, nvidia/nemotron-3.5-super-vl, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, minimax/minimax-m3.1-flash, meta/muse-glimmer-30b, meta/muse-spark-1.2, meta/muse-spark-1.3, meta/muse-spark-open, meta/muse-wonder-1.0, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
 
+### Caller-selected fallbacks
+
+Set `model` to a comma-separated list of up to four model IDs or aliases, such as `"model-a,model-b,model-a"`. Models are tried in the supplied order on retryable upstream failures; repeated entries request separate attempts. All entries must have the same model category and support the requested endpoint. Listed alternatives excluded by the API key's permissions are skipped. List requests are cached per API key or signed-in session user because their alternatives depend on that caller’s permissions and budget.
+
+An explicit list replaces each model's configured fallback routes. The model that serves determines the price and whether Paid Pollen is required; balance checks, key budgets and rate limits apply before its attempt. A single-model request keeps its configured fallback routes and original pricing rules. Find model IDs, categories and supported endpoints in [`GET /v1/models`](https://gen.pollinations.ai/v1/models).
+
 ### Responses API
 
 Every text model that lists `/v1/chat/completions` in `supported_endpoints` from [`GET /v1/models`](https://gen.pollinations.ai/v1/models) or [`GET /text/models`](https://gen.pollinations.ai/text/models) also lists `/v1/responses`. Models with a Responses upstream (configured built-in providers, community models and endpoint agents registered with a Responses URL, managed prompt agents) call it directly. All other text models, including community models registered with Chat Completions, run each Responses request through the Chat Completions pipeline and translate the answer back, with the same billing, key permissions, safety, rate limits, caching and fallback as Chat Completions.
@@ -642,7 +648,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | Field | Type | Description |
 |---|---|---|
 | `messages` * | `object`[] | — |
-| `model` | `string` | AI model for text generation. See /v1/models for full list. · default: `"openai/gpt-5.4-nano"` |
+| `model` | `string` | AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules. · default: `"openai/gpt-5.4-nano"` |
 | `system` | `any` | Optional system prompt prepended before `messages` (same extension as GET /text). |
 | `metadata` | `object` \| `null` | Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts. |
 | `modalities` | `"text"` \| `"audio"`[] | — |
@@ -925,7 +931,7 @@ Identical requests may be answered from a shared cache, also for callers without
 | Field | Type | Description |
 |---|---|---|
 | `messages` * | `object`[] | — |
-| `model` | `string` | AI model for text generation. See /v1/models for full list. · default: `"openai/gpt-5.4-nano"` |
+| `model` | `string` | AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules. · default: `"openai/gpt-5.4-nano"` |
 | `system` | `any` | Optional system prompt prepended before `messages` (same extension as GET /text). |
 | `metadata` | `object` \| `null` | Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts. |
 | `modalities` | `"text"` \| `"audio"`[] | — |
@@ -3629,7 +3635,7 @@ Setup with polli, credits and runtime: [Sandboxes](https://gen.pollinations.ai/d
 
 #### `GET` `/alpha/e2b/pricing` — Get sandbox pricing
 
-Pollinations' rates in credits per vCPU-second and per GiB-second of memory, each template's size and rates, and how many sandboxes an account can run at once. The top-level rates apply to other E2B templates. No key needed.
+Pollinations' rates in credits per vCPU-second and per GiB-second of memory, each Pollinations template's name, provider (`e2b` or `azure`), size, disk and rates, and how many sandboxes an account can run at once. The top-level rates apply to other E2B templates. No key needed.
 
 📤 **Response** · `200` — Rates, template sizes and the running limit.
 

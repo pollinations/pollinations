@@ -312,6 +312,41 @@ it.each([false, true])(
     },
 );
 
+it.each([
+    { status: 400, details: undefined },
+    {
+        status: 422,
+        details: { message: "Gemini blocked the request: PROHIBITED_CONTENT" },
+    },
+])(
+    "does not retry or bill embedded $status errors matching Workerd",
+    async ({ status, details }) => {
+        const { response, text, calls, balance, events } =
+            await chatThroughHandler(
+                "openai/gpt-5-nano",
+                ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+                JSON.stringify({
+                    error: {
+                        message: "Network connection lost.",
+                        code: 400,
+                        details,
+                    },
+                }),
+                false,
+            );
+        expect(response.status, text).toBe(status);
+        expect(calls).toBe(1);
+        expect(balance.packBalance).toBe(100);
+        expect(events.filter((event) => event.isBilledUsage)).toHaveLength(0);
+        expect(events).toContainEqual(
+            expect.objectContaining({
+                responseStatus: status,
+                isBilledUsage: false,
+            }),
+        );
+    },
+);
+
 it("drops OpenRouter's provider cost from client streams", async () => {
     const model = "inception/mercury-3";
     const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]\n\n`;

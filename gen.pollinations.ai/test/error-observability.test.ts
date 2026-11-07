@@ -368,6 +368,46 @@ describe("error observability", () => {
         });
     });
 
+    it.each([
+        ["image", throwImageError],
+        ["3D", throw3dError],
+        ["text", throwTextError],
+    ] as const)(
+        "preserves a caller's payment refusal through the %s boundary",
+        async (_name, throwError) => {
+            const app = new Hono<Env>();
+            app.use("*", logger);
+            app.get("/", () =>
+                throwError(
+                    new PaymentRequiredError(
+                        "QUEST_POLLEN_ONLY",
+                        "Allow paid Pollen for the selected alternative.",
+                        "https://enter.test/edit-key?id=caller",
+                        true,
+                    ),
+                ),
+            );
+            app.onError(handleError);
+            const response = await app.fetch(
+                new Request("https://gen.test/"),
+                {
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "error",
+                    LOG_FORMAT: "text",
+                } as unknown as CloudflareBindings,
+                createExecutionContext(),
+            );
+            expect(response.status).toBe(402);
+            expect(await response.json()).toMatchObject({
+                error: {
+                    code: "QUEST_POLLEN_ONLY",
+                    message: "Allow paid Pollen for the selected alternative.",
+                    fixUrl: "https://enter.test/edit-key?id=caller",
+                },
+            });
+        },
+    );
+
     it.each(["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"] as const)(
         "preserves the payment reason %s and its fix link in the 402 envelope",
         async (code) => {

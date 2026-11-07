@@ -1,6 +1,9 @@
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isRetryableFallbackError } from "../../src/fallback.ts";
+import {
+    isRetryableFallbackError,
+    withModelFallback,
+} from "../../src/fallback.ts";
 import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
 import { resolveModelConfig } from "../../src/text/utils/modelResolver.js";
@@ -906,6 +909,56 @@ describe("genericOpenAIClient", () => {
                 details: status === 200 ? details : body,
             });
             expect(isRetryableFallbackError(error)).toBe(false);
+        },
+    );
+
+    it.each([
+        { status: 400, details: undefined },
+        {
+            status: 422,
+            details: {
+                message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            },
+        },
+    ])(
+        "preserves embedded $status errors whose message matches Workerd",
+        async ({ status, details }) => {
+            const providerError = {
+                message: "Network connection lost.",
+                code: 400,
+                ...(details === undefined ? {} : { details }),
+            };
+            const responseBody = JSON.stringify({ error: providerError });
+            const fetcher = vi.fn(
+                async () =>
+                    new Response(responseBody, {
+                        headers: { "content-type": "application/json" },
+                    }),
+            );
+            const attempts: string[] = [];
+            const error = await withModelFallback(
+                [{ id: "primary" }, { id: "fallback" }],
+                (candidate) => {
+                    attempts.push(candidate.id);
+                    return genericOpenAIClient(
+                        [{ role: "user", content: "hello" }],
+                        { model: candidate.id },
+                        { endpoint: "https://portkey.test/chat", fetcher },
+                    );
+                },
+            ).catch((error) => error);
+
+            expect(attempts).toEqual(["primary"]);
+            expect(fetcher).toHaveBeenCalledOnce();
+            expect(error).toMatchObject({
+                message: providerError.message,
+                status,
+                upstreamStatus: 400,
+                details: details ?? providerError,
+                responseBody,
+                model: "primary",
+                requestUrl: new URL("https://portkey.test/chat"),
+            });
         },
     );
 

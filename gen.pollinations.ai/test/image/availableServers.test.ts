@@ -216,7 +216,10 @@ describe("fetchFromWeightedServer", () => {
         expect(warnLog).toHaveBeenCalledOnce();
     });
 
-    it("retries a distinct worker after a known network failure", async () => {
+    it.each([
+        new TypeError("fetch failed: connection refused"),
+        new Error("Network connection lost."),
+    ])("retries a distinct worker after %s", async (failure) => {
         await registerServer("https://w1", "flux");
         await registerServer("https://w2", "flux");
         vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -225,7 +228,7 @@ describe("fetchFromWeightedServer", () => {
             const url = input.toString();
             calls.push(url);
             if (url.startsWith("https://w1/")) {
-                throw new TypeError("fetch failed: connection refused");
+                throw failure;
             }
             return new Response("image", { status: 200 });
         });

@@ -255,7 +255,7 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
 AZURE_SANDBOX_CLIENT_ID = "6917c58e-9b41-45bb-9685-0972f7fbd35f"
 AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscriptions/7725a3f5-6483-4079-ba51-a317aa4fc09e/resourceGroups/rg-pollinations-sandboxes/sandboxGroups/pollisbx-production"
-AZURE_SANDBOX_IMAGE = "bfc9e318-3cb1-4a00-8c3c-eafb1b671ee8"
+AZURE_SANDBOX_IMAGE = "30b9dca8-2fc3-4627-84b6-bb4e4d4c2afc"
 # Staging routes
 [env.staging]
 
@@ -400,7 +400,7 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
 AZURE_SANDBOX_CLIENT_ID = "e1653f2d-5948-466a-bf34-1addc9f45b15"
 AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscriptions/7725a3f5-6483-4079-ba51-a317aa4fc09e/resourceGroups/rg-pollinations-sandboxes/sandboxGroups/pollisbx-staging"
-AZURE_SANDBOX_IMAGE = "fcab7587-ab59-46ce-932d-5c237c8ac747"
+AZURE_SANDBOX_IMAGE = "4775be88-3e1a-4c66-afd7-dc9dfef39450"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015,314960022"

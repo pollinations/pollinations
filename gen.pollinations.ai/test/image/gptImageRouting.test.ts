@@ -225,6 +225,101 @@ describe("GPT Image direct OpenAI routing", () => {
         });
     }
 
+    it("forwards GIF frame timing to OpenAI Flare and reports GIF output", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(successResponse());
+        const model = "openai/gpt-image-2.6-flare";
+        const result = await callGPTImage(
+            "a pollinating bee in flight",
+            {
+                ...params,
+                model,
+                output_format: "gif",
+                frame_count: 9,
+                frame_duration_ms: 150,
+                background: "auto",
+                quality: "auto",
+            },
+            userInfo,
+            model,
+        );
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(String(url)).toBe(
+            "https://api.openai.com/v1/images/generations",
+        );
+        expect(JSON.parse(String(init?.body))).toMatchObject({
+            model: "gpt-image-2.6-flare",
+            output_format: "gif",
+            frame_count: 9,
+            frame_duration_ms: 150,
+            size: "512x512",
+            background: "auto",
+            quality: "auto",
+        });
+        expect(result.mimeType).toBe("image/gif");
+    });
+
+    it("fits 16:9 GIF frames inside the upstream GIF pixel budget", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(successResponse());
+        const model = "openai/gpt-image-2.6-flare";
+        await callGPTImage(
+            "test",
+            {
+                ...params,
+                model,
+                width: 1536,
+                height: 864,
+                output_format: "gif",
+                frame_count: 9,
+                frame_duration_ms: 150,
+            },
+            userInfo,
+            model,
+        );
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[0][1]?.body)),
+        ).toMatchObject({
+            size: "896x512",
+            output_format: "gif",
+            frame_count: 9,
+        });
+    });
+
+    it("forwards WebP while keeping PNG as the default Flare format", async () => {
+        // Each upstream call consumes the response body; do not reuse one Response.
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async () => successResponse());
+        const model = "openai/gpt-image-2.6-flare";
+        const webp = await callGPTImage(
+            "test",
+            { ...params, model, output_format: "webp" },
+            userInfo,
+            model,
+        );
+        const png = await callGPTImage(
+            "test",
+            { ...params, model },
+            userInfo,
+            model,
+        );
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[0][1]?.body)),
+        ).toMatchObject({
+            output_format: "webp",
+        });
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[1][1]?.body)),
+        ).toMatchObject({
+            output_format: "png",
+        });
+        expect(webp.mimeType).toBe("image/webp");
+        expect(png.mimeType).toBe("image/png");
+    });
+
     it("keeps Azure rotation independent from direct OpenAI calls", async () => {
         const urls: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
@@ -250,6 +345,47 @@ describe("GPT Image direct OpenAI routing", () => {
 });
 
 describe("GPT Image 2.6 fal fallback", () => {
+    it("forwards GIF parameters to the Flare fallback and returns GIF bytes", async () => {
+        const gif = Buffer.from("GIF89a" + "animation-payload");
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                {
+                    images: [
+                        {
+                            url: `data:image/gif;base64,${gif.toString("base64")}`,
+                            content_type: "image/gif",
+                        },
+                    ],
+                },
+                { headers: { "x-fal-billable-units": "0.01" } },
+            ),
+        );
+        const model = "openai/gpt-image-2.6-flare:fal";
+        const result = await callGPTImage(
+            "pollinating bee in flight",
+            {
+                ...params,
+                model,
+                output_format: "gif",
+                frame_count: 9,
+                frame_duration_ms: 150,
+                background: "auto",
+            },
+            userInfo,
+            model,
+        );
+        expect(
+            JSON.parse(String(fetchMock.mock.calls[0][1]?.body)),
+        ).toMatchObject({
+            output_format: "gif",
+            frame_count: 9,
+            frame_duration_ms: 150,
+            background: "auto",
+        });
+        expect(result.buffer).toEqual(gif);
+        expect(result.mimeType).toBe("image/gif");
+    });
+
     for (const variant of ["flare", "sunburst"] as const) {
         const model = `openai/gpt-image-2.6-${variant}` as const;
         const fallback = `${model}:fal` as const;

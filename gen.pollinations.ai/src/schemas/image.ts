@@ -3,7 +3,7 @@ import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 import { BooleanQueryParamSchema } from "./text.ts";
 
-const QUALITIES = ["low", "medium", "high", "hd"] as const;
+const QUALITIES = ["low", "medium", "high", "hd", "auto"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
@@ -124,6 +124,29 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
     transparent: BooleanQueryParamSchema.optional().default(false).meta({
         description:
             "Generate an image with a transparent background. Unsupported models return 400.",
+    }),
+
+    // GPT Image 2.6 Flare supports still PNG/WebP and animated GIF output.
+    output_format: z.enum(["png", "webp", "gif"]).optional().meta({
+        description:
+            "Output format for openai/gpt-image-2.6-flare; defaults to PNG.",
+    }),
+    frame_count: z.coerce.number().int().min(2).max(16).optional().meta({
+        description: "Required for GIF output; 2 to 16 frames.",
+    }),
+    frame_duration_ms: z.coerce
+        .number()
+        .int()
+        .min(20)
+        .max(2000)
+        .optional()
+        .meta({
+            description:
+                "Required for GIF output; 20 to 2000 ms per frame, with a 10-second total duration limit.",
+        }),
+    background: z.enum(["auto", "opaque", "transparent"]).optional().meta({
+        description:
+            "GPT Image background mode; GIF cannot have a transparent background.",
     }),
 
     // Video-specific params

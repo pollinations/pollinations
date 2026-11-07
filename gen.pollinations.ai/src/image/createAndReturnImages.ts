@@ -519,6 +519,9 @@ async function callFalGPTImage(
         size: string;
         quality: string;
         background?: string;
+        output_format: "png" | "webp" | "gif";
+        frame_count?: number;
+        frame_duration_ms?: number;
     },
     images: File[] = [],
 ): Promise<ImageGenerationResult> {
@@ -542,7 +545,13 @@ async function callFalGPTImage(
                 image_size: { width, height },
                 quality: request.quality,
                 background: request.background,
-                output_format: "png",
+                output_format: request.output_format,
+                ...(request.output_format === "gif"
+                    ? {
+                          frame_count: request.frame_count,
+                          frame_duration_ms: request.frame_duration_ms,
+                      }
+                    : {}),
                 num_images: 1,
                 sync_mode: true,
                 enable_safety_checker: true,
@@ -565,7 +574,7 @@ async function callFalGPTImage(
         : Buffer.from(await (await fetchUpstream(image.url)).arrayBuffer());
     return {
         buffer,
-        mimeType: image.content_type ?? "image/png",
+        mimeType: image.content_type ?? `image/${request.output_format}`,
         trackingData: {
             actualModel: params.model,
             usage: {},
@@ -603,7 +612,22 @@ const callGPTImageWithEndpoint = async (
     // gpt-image-2 supports arbitrary resolutions with constraints.
     // Older gpt-image-1 models (via Azure) only support 3 fixed sizes; snap via closest ratio.
     let size: string;
-    if (config.modelName.startsWith("gpt-image-2")) {
+    if (
+        config.modelName === "gpt-image-2.6-flare" &&
+        safeParams.output_format === "gif"
+    ) {
+        // GIF frames are tiled into a shared provider pixel budget. Using the
+        // still-image minimum (655,360 pixels) would make many GIFs impossible.
+        // Keep each frame within 896x512 (or rotated) so up to 16 frames fit.
+        const scale = Math.min(
+            1,
+            896 / Math.max(safeParams.width, safeParams.height),
+            512 / Math.min(safeParams.width, safeParams.height),
+        );
+        const align = (edge: number) =>
+            Math.max(16, Math.round((edge * scale) / 16) * 16);
+        size = `${align(safeParams.width)}x${align(safeParams.height)}`;
+    } else if (config.modelName.startsWith("gpt-image-2")) {
         // gpt-image-2 constraints:
         //   Both edges multiples of 16px, long edge ≤ 3840px (4K)
         //   Aspect ratio ≤ 3:1, pixel count 655,360–8,294,400
@@ -644,16 +668,24 @@ const callGPTImageWithEndpoint = async (
     // Use requested quality - access control runs in this worker's auth/balance middleware
     const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
-    // Set output format to png if model is gptimage, otherwise jpeg
-    const outputFormat = "png";
+    // PNG remains the default; Flare may request lossless WebP or an animated GIF.
+    const outputFormat = safeParams.output_format ?? "png";
     const requestBody = {
         ...(config.provider === "openai" ? { model: config.modelName } : {}),
         prompt: sanitizeString(prompt),
         size,
         quality,
         output_format: outputFormat,
+        ...(outputFormat === "gif"
+            ? {
+                  frame_count: safeParams.frame_count,
+                  frame_duration_ms: safeParams.frame_duration_ms,
+              }
+            : {}),
         n: 1,
-        background: safeParams.transparent ? "transparent" : undefined,
+        background:
+            safeParams.background ??
+            (safeParams.transparent ? "transparent" : undefined),
     };
 
     // Add background parameter for transparent images when using gptimage model
@@ -782,11 +814,8 @@ const callGPTImageWithEndpoint = async (
         formData.append("n", "1");
 
         // Add background parameter for transparent images when using gptimage model
-        if (safeParams.transparent) {
-            formData.append("background", "transparent");
-            logCloudflare(
-                "Adding background=transparent parameter for gptimage edit mode",
-            );
+        if (requestBody.background) {
+            formData.append("background", requestBody.background);
         }
 
         // Log the endpoint and headers for debugging
@@ -844,6 +873,11 @@ const callGPTImageWithEndpoint = async (
 
     return {
         buffer: imageBuffer,
+        // Return the requested format without forcing it through the JPEG converter.
+        mimeType:
+            config.modelName === "gpt-image-2.6-flare"
+                ? `image/${outputFormat}`
+                : undefined,
         trackingData: {
             actualModel: safeParams.model,
             usage,
@@ -1271,9 +1305,15 @@ export async function createAndReturnImageCached(
         const { buffer: _buffer, ...resultMetadata } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
-        // Preserve vector output and PNG alpha; JPEG conversion flattens transparency.
+        // GIF frames and WebP/PNG output must not pass through JPEG/EXIF conversion.
+        // Other models retain their existing JPEG metadata behavior.
+        const resultFormat = result.mimeType ?? detectMimeType(result.buffer);
+        const preserveFlareFormat =
+            safeParams.model.startsWith("openai/gpt-image-2.6-flare") &&
+            ["image/gif", "image/webp", "image/png"].includes(resultFormat);
         const processedBuffer =
             result.mimeType === "image/svg+xml" ||
+            preserveFlareFormat ||
             (safeParams.transparent &&
                 detectMimeType(result.buffer) === "image/png")
                 ? result.buffer

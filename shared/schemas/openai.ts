@@ -919,7 +919,7 @@ const imageSeedField = z
             "Seed for reproducible results. -1 maps to the stable compatibility seed.",
     });
 const imageQualityField = z
-    .enum(["standard", "hd", "low", "medium", "high"])
+    .enum(["standard", "hd", "low", "medium", "high", "auto"])
     .optional()
     .default("medium")
     .meta({
@@ -933,6 +933,16 @@ const imageResolutionField = z
         description:
             "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
+const imageOutputFormatField = z.enum(["png", "webp", "gif"]).optional().meta({
+    description:
+        "GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms.",
+});
+const imageFrameCountField = z.number().int().min(2).max(16).optional();
+const imageFrameDurationField = z.number().int().min(20).max(2000).optional();
+const imageBackgroundField = z
+    .enum(["auto", "opaque", "transparent"])
+    .optional();
+
 const imageResponseFormatField = z
     .enum(["url", "b64_json"])
     .optional()
@@ -950,7 +960,18 @@ export const CreateImageRequestSchema = z
         model: imageModelField,
         n: imageNField,
         size: imageSizeField,
+        aspect_ratio: z
+            .enum(["16:9", "9:16", "1:1", "4:3", "3:4", "3:2", "2:3"])
+            .optional()
+            .meta({
+                description:
+                    "Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default.",
+            }),
         quality: imageQualityField,
+        output_format: imageOutputFormatField,
+        frame_count: imageFrameCountField,
+        frame_duration_ms: imageFrameDurationField,
+        background: imageBackgroundField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
         user: z.string().optional().meta({
@@ -1032,6 +1053,10 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        output_format: imageOutputFormatField,
+        frame_count: imageFrameCountField,
+        frame_duration_ms: imageFrameDurationField,
+        background: imageBackgroundField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,

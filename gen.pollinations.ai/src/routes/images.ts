@@ -36,6 +36,10 @@ const PASSTHROUGH_PARAMS = [
     "guidance_scale",
     "duration",
     "audio",
+    "output_format",
+    "frame_count",
+    "frame_duration_ms",
+    "background",
 ] as const;
 const CACHE_PARAMS = [
     "image",
@@ -47,6 +51,10 @@ const CACHE_PARAMS = [
     "resolution",
     "aspectRatio",
     "audio",
+    "output_format",
+    "frame_count",
+    "frame_duration_ms",
+    "background",
 ] as const;
 
 function imageResponse(
@@ -327,6 +335,27 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
 
+        // OpenAI-style aspect_ratio is an optional convenience when no custom
+        // size was specified. Explicit non-default size remains authoritative.
+        const flareAspectSizes: Record<string, string> = {
+            "16:9": "1536x864",
+            "9:16": "864x1536",
+            "1:1": "1024x1024",
+            "4:3": "1152x864",
+            "3:4": "864x1152",
+            "3:2": "1536x1024",
+            "2:3": "1024x1536",
+        };
+        const ratio = body.aspect_ratio;
+        const ratioSize =
+            c.var.model.resolved === "openai/gpt-image-2.6-flare" &&
+            typeof ratio === "string" &&
+            body.size === "1024x1024"
+                ? flareAspectSizes[ratio]
+                : undefined;
+        // The generation handler resolves size again after the cache middleware,
+        // so persist the effective size instead of only changing this local copy.
+        if (ratioSize) body.size = ratioSize;
         const resolved = resolveParams(body);
         const safePrompt = await applySafetyToInput(
             c,
@@ -379,7 +408,8 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         if (mediaLink) c.header("Link", mediaLink);
         const usage = responseImageUsage(c, response);
         const mediaData =
-            mediaType === "image/svg+xml" || mediaType.startsWith("video/")
+            ["image/svg+xml", "image/gif", "image/webp"].includes(mediaType) ||
+            mediaType.startsWith("video/")
                 ? { media_type: mediaType }
                 : {};
 

@@ -149,6 +149,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
 - [Direct REST API skill](${origin}/.well-known/agent-skills/pollinations-api/SKILL.md): Call the API with curl or fetch when the CLI cannot be installed.
 - [Pollinations SDK skill](${origin}/.well-known/agent-skills/pollinations-sdk/SKILL.md): Use the official npm SDK from code with an API key.
+- [Pollinations MCP skill](${origin}/.well-known/agent-skills/pollinations-mcp/SKILL.md): Connect the hosted MCP servers (search, sandboxes, calculators, research) from any MCP client.
 - [Bring Your Own Pollen skill](${origin}/.well-known/agent-skills/bring-your-own-pollen/SKILL.md): Add user-paid Pollinations Connect (OAuth PKCE, fragment, or device flow) so each user spends their own Pollen.
 - [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.
 - [API quick start and reference](${origin}/docs/llm.txt): Plain-text API reference and guides.

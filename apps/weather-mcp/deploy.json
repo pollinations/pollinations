@@ -1,0 +1,1 @@
+{"build":"npm test","credentials":"myceli","deploy":"npm run deploy","install":"npm ci","target":"worker","watch":["shared/registry/mcp.ts"]}

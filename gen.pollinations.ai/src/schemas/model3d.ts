@@ -79,7 +79,10 @@ export const Generate3dRequestBodySchema = z
                     return urls.every(
                         (url) =>
                             url.startsWith("http://") ||
-                            url.startsWith("https://"),
+                            url.startsWith("https://") ||
+                            /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+                                url,
+                            ),
                     );
                 },
                 { message: "Invalid image URL." },
@@ -92,6 +95,24 @@ export const Generate3dRequestBodySchema = z
                 description:
                     "Reference image URL or array of URLs for image-to-3D generation, optionally guided by the path prompt on supported models. A string is treated as one complete URL.",
             }),
+        // InferencePort-style POST payloads use image_urls. Normalize it to
+        // image so the existing cache, dispatcher, and providers share one path.
+        image_urls: z
+            .array(
+                z
+                    .string()
+                    .refine(
+                        (url) =>
+                            url.startsWith("http://") ||
+                            url.startsWith("https://") ||
+                            /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+                                url,
+                            ),
+                        { message: "Invalid image URL or base64 data URI." },
+                    ),
+            )
+            .min(1)
+            .optional(),
         resolution: z
             .enum(["low", "medium", "high"])
             .optional()
@@ -105,4 +126,20 @@ export const Generate3dRequestBodySchema = z
                 "Seed for varied generations. Passed to models that support it.",
         }),
     })
-    .strict();
+    .strict()
+    .refine(
+        (body) => body.image === undefined || body.image_urls === undefined,
+        {
+            message: "Pass either image or image_urls, not both.",
+        },
+    )
+    .transform(({ image_urls, ...body }) => ({
+        ...body,
+        ...(image_urls === undefined ? {} : { image: image_urls }),
+    }))
+    .meta({
+        example: {
+            model: "tripoSR",
+            image_urls: ["https://example.com/reference.png"],
+        },
+    });

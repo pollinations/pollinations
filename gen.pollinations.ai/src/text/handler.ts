@@ -14,6 +14,7 @@ import type { Env } from "@/env.ts";
 import {
     attachFallbackTarget,
     type FallbackCandidate,
+    fallbackCandidates,
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
@@ -21,10 +22,6 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
-import {
-    createTextAttemptBudget,
-    type TextAttemptBudget,
-} from "./attemptBudget.ts";
 import {
     publicChatChoices,
     publicChatStream,
@@ -40,8 +37,8 @@ import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
 import {
+    supportsTextFallbackRequest,
     textCapabilityError,
-    textFallbackCandidates,
 } from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
@@ -72,13 +69,11 @@ async function gatewayContext(
     requestData: RequestData,
     candidate: FallbackCandidate,
 ): Promise<TransformOptions> {
-    const serving = candidate.route ?? candidate;
-    const { communityEndpoint, definition } = serving;
+    const { communityEndpoint, definition } = candidate;
     // A fallback must resolve transforms from the model that will actually run.
-    const candidateRequest =
-        candidate.route || candidate.entry
-            ? { ...requestData, model: serving.id }
-            : requestData;
+    const candidateRequest = candidate.entry
+        ? { ...requestData, model: candidate.id }
+        : requestData;
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
     // config the gateway resolves from the model id.
@@ -138,15 +133,13 @@ export async function generateChatAttempt(
     c: TextContext,
     requestData: RequestData,
     candidate: FallbackCandidate,
-    budget?: TextAttemptBudget,
 ): Promise<ChatCompletion> {
     const portkey = c.env.PORTKEY;
     // An upstream without SSE is asked for JSON, then its answer is replayed
     // as a stream.
     const buffered =
         requestData.stream === true &&
-        (candidate.route?.definition ?? candidate.definition)
-            ?.supportsStreaming === false;
+        candidate.definition?.supportsStreaming === false;
     const attemptData = buffered
         ? { ...requestData, stream: false }
         : requestData;
@@ -154,7 +147,6 @@ export async function generateChatAttempt(
         attemptData.messages,
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
-        budget,
     );
     if (!attemptData.stream) {
         requireChatCompletionUsage(result);
@@ -414,21 +406,24 @@ async function generateTextResponse(
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });
-        const candidates = await textFallbackCandidates(
-            c.var.model,
-            requestData,
-            c.env,
-        );
-        const budget = createTextAttemptBudget(c.var.model?.resolved);
+        const candidates = fallbackCandidates(c.var.model)
+            .map((candidate, originalIndex) => ({
+                ...candidate,
+                originalIndex,
+            }))
+            .filter(
+                (candidate) =>
+                    candidate.originalIndex === 0 ||
+                    supportsTextFallbackRequest(
+                        candidate.definition,
+                        requestData,
+                    ),
+            );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            (attempt) =>
-                budget.run(attempt.route?.id ?? attempt.id, (timing) =>
-                    generateChatAttempt(c, requestData, attempt, timing),
-                ),
+            (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
             (attempt) => requireModelAttemptAccess(c, attempt),
-            budget.shouldFallback,
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
@@ -439,7 +434,7 @@ async function generateTextResponse(
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
-        const servedModelId = candidate.route?.id || candidate.id || undefined;
+        const servedModelId = candidate.id || undefined;
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);

@@ -73,17 +73,8 @@ const omitClaudeSampling = omitParameters("temperature", "top_p", "top_k");
 
 interface ModelDefinition {
     name: string;
-    /** Give the declared fallback time to respond within the shared text budget. */
-    fallbackAfterMs?: number;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
-    maxChoices?: number;
-    /** Another declared route preserves requests this primary cannot honor. */
-    requestFallback?: {
-        model: string;
-        maxCompletionTokens: number;
-        unsupportedParameters: string[];
-    };
     /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
     /** Route typed decisions directly through TypeSafe System One. */
@@ -568,7 +559,6 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
-        fallbackAfterMs: 120_000,
         config: portkeyConfig["DeepSeek-V4.1-Flash"],
         transform: fireworksThinking,
     },
@@ -1246,21 +1236,19 @@ const models: ModelDefinition[] = [
     },
     {
         name: "z-ai/glm-5.3",
-        fallbackAfterMs: 120_000,
-        config: portkeyConfig["zai-glm-5-3"],
-        requestFallback: {
-            model: "z-ai/glm-5.3:fireworks",
-            maxCompletionTokens: 128000,
-            unsupportedParameters: ["logit_bias"],
-        },
+        config: portkeyConfig["accounts/fireworks/models/glm-5p3"],
         // Reasoning is mandatory; off requests keep the upstream default.
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {
-        name: "z-ai/glm-5.3:fireworks",
-        maxChoices: 1,
-        config: portkeyConfig["accounts/fireworks/models/glm-5p3"],
+        name: "z-ai/glm-5.3:deepinfra",
+        config: portkeyConfig["zai-org/GLM-5.3"],
         transform: mandatoryReasoningWithoutCacheControl,
+    },
+    {
+        name: "z-ai/glm-5.3:openrouter:friendli",
+        config: portkeyConfig["glm-5.3-openrouter-friendli"],
+        transform: mandatoryReasoning,
     },
     {
         name: "z-ai/glm-5.3-flash",

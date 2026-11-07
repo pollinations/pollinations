@@ -5058,12 +5058,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "z-ai/glm-5.3": {
     "cost": {
       "completionTextTokens": 0.0000044,
-      "promptCachedTokens": 0.00000014,
+      "promptCachedTokens": 0.00000026,
       "promptTextTokens": 0.0000014,
     },
     "price": {
       "completionTextTokens": 0.0000044,
-      "promptCachedTokens": 0.00000014,
+      "promptCachedTokens": 0.00000026,
       "promptTextTokens": 0.0000014,
     },
   },
@@ -5107,16 +5107,28 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000039035,
     },
   },
-  "z-ai/glm-5.3:fireworks": {
+  "z-ai/glm-5.3:deepinfra": {
     "cost": {
-      "completionTextTokens": 0.0000044,
-      "promptCachedTokens": 0.00000026,
-      "promptTextTokens": 0.0000014,
+      "completionTextTokens": 0.0000025,
+      "promptCachedTokens": 0.000000125,
+      "promptTextTokens": 0.0000005625,
     },
     "price": {
-      "completionTextTokens": 0.0000044,
-      "promptCachedTokens": 0.00000026,
-      "promptTextTokens": 0.0000014,
+      "completionTextTokens": 0.0000025,
+      "promptCachedTokens": 0.000000125,
+      "promptTextTokens": 0.0000005625,
+    },
+  },
+  "z-ai/glm-5.3:openrouter:friendli": {
+    "cost": {
+      "completionTextTokens": 0.0000041778,
+      "promptCachedTokens": 0.00000024687,
+      "promptTextTokens": 0.0000013293,
+    },
+    "price": {
+      "completionTextTokens": 0.0000041778,
+      "promptCachedTokens": 0.00000024687,
+      "promptTextTokens": 0.0000013293,
     },
   },
 }

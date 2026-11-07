@@ -17,6 +17,7 @@ import type { Env } from "@/env.ts";
 import { withSafetyHeaders } from "@/middleware/safety.ts";
 import {
     type FallbackCandidate,
+    fallbackCandidates,
     formatFallbackTarget,
     withModelFallback,
 } from "../../fallback.ts";
@@ -25,17 +26,13 @@ import { requireModelAttemptAccess } from "../../utils/generation-access.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
 import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
-import {
-    createTextAttemptBudget,
-    type TextAttemptBudget,
-} from "../attemptBudget.ts";
 import { requireChatStreamUsage } from "../chat/usage.js";
 import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
 import {
+    supportsTextFallbackRequest,
     textCapabilityError,
-    textFallbackCandidates,
 } from "../fallbackCompatibility.js";
 import { generateChatAttempt } from "../handler.ts";
 import type { RequestData, ServiceError } from "../types.js";
@@ -72,34 +69,36 @@ type DirectResponsesResult = Awaited<ReturnType<typeof callDirectResponses>> & {
     trackingBody?: ReadableStream | string;
 };
 
-async function directResponsesCandidates(
+function directResponsesCandidates(
     c: ResponsesContext,
     request: CreateResponseRequest,
-): Promise<DirectResponsesCandidate[]> {
+): DirectResponsesCandidate[] {
     const targetFor = (
         candidate: FallbackCandidate,
     ): DirectResponsesTarget | null | undefined => {
         if (!candidate.communityEndpoint) {
-            return resolveDirectResponsesTarget(
-                candidate.route?.id ?? candidate.id,
-                request,
-            );
+            return resolveDirectResponsesTarget(candidate.id, request);
         }
         return candidate.communityEndpoint.api === "responses"
             ? undefined
             : null;
     };
     const supported: DirectResponsesCandidate[] = [];
-    for (const candidate of await textFallbackCandidates(
+    for (const [index, candidate] of fallbackCandidates(
         c.var.model,
-        request,
-        c.env,
-    )) {
+    ).entries()) {
+        if (
+            index > 0 &&
+            !supportsTextFallbackRequest(candidate.definition, request)
+        ) {
+            continue;
+        }
         const target = targetFor(candidate);
         supported.push({
             ...candidate,
             ...(target ? { responsesTarget: target } : {}),
             ...(target === null ? { adapted: true as const } : {}),
+            originalIndex: index,
         });
     }
     return supported;
@@ -150,14 +149,8 @@ async function callAdaptedChat(
     request: CreateResponseRequest,
     chatRequest: RequestData,
     attempt: DirectResponsesCandidate,
-    budget?: TextAttemptBudget,
 ): Promise<DirectResponsesResult> {
-    const completion = await generateChatAttempt(
-        c,
-        chatRequest,
-        attempt,
-        budget,
-    );
+    const completion = await generateChatAttempt(c, chatRequest, attempt);
     const requestUrl = completion.upstreamRequestUrl ?? new URL(c.req.url);
     if (request.stream) {
         if (!completion.responseStream) {
@@ -202,7 +195,7 @@ async function handleDirectResponse(
         if (capabilityError)
             throw new ResponsesInvalidRequestError(capabilityError);
         validateDirectResponsesRequest(request);
-        let candidates = await directResponsesCandidates(c, request);
+        let candidates = directResponsesCandidates(c, request);
         let chatRequest: RequestData | undefined;
         if (candidates.some((candidate) => candidate.adapted)) {
             try {
@@ -221,97 +214,76 @@ async function handleDirectResponse(
                 );
             }
         }
-        const budget = createTextAttemptBudget(c.var.model.resolved);
         const { result, candidate } = await withModelFallback(
             candidates,
-            (attempt) =>
-                budget.run(
-                    attempt.route?.id ?? attempt.id,
-                    async (timing): Promise<DirectResponsesResult> => {
-                        if (attempt.adapted && chatRequest) {
-                            return callAdaptedChat(
-                                c,
-                                request,
-                                chatRequest,
-                                attempt,
-                                timing,
-                            );
-                        }
-                        // An upstream without SSE is asked for JSON, then its answer
-                        // is replayed as a stream.
-                        const buffered =
-                            request.stream &&
-                            (attempt.route?.definition ?? attempt.definition)
-                                ?.supportsStreaming === false;
-                        const responsesClient = await responsesClientForAttempt(
-                            c,
-                            attempt,
-                        );
-                        const result = await callDirectResponses(
-                            buffered ? { ...request, stream: false } : request,
-                            responsesClient.target,
-                            timing
-                                ? timing.fetcher(responsesClient.fetcher)
-                                : responsesClient.fetcher,
-                        );
-                        if (request.stream && !buffered) {
-                            assertStreamContentType(
-                                c,
-                                result.response,
-                                result.requestUrl,
-                            );
-                            return { ...result, usage: null };
-                        }
+            async (attempt): Promise<DirectResponsesResult> => {
+                if (attempt.adapted && chatRequest) {
+                    return callAdaptedChat(c, request, chatRequest, attempt);
+                }
+                // An upstream without SSE is asked for JSON, then its answer
+                // is replayed as a stream.
+                const buffered =
+                    request.stream &&
+                    attempt.definition?.supportsStreaming === false;
+                const responsesClient = await responsesClientForAttempt(
+                    c,
+                    attempt,
+                );
+                const result = await callDirectResponses(
+                    buffered ? { ...request, stream: false } : request,
+                    responsesClient.target,
+                    responsesClient.fetcher,
+                );
+                if (request.stream && !buffered) {
+                    assertStreamContentType(
+                        c,
+                        result.response,
+                        result.requestUrl,
+                    );
+                    return { ...result, usage: null };
+                }
 
-                        let data: unknown;
-                        try {
-                            data = await result.response.clone().json();
-                        } catch (cause) {
-                            throw new UpstreamError(502, {
-                                message:
-                                    "Responses provider returned invalid JSON",
-                                requestUrl: result.requestUrl,
-                                cause,
-                            });
-                        }
-                        const parsed =
-                            CreateResponseResponseSchema.safeParse(data);
-                        if (!parsed.success) {
-                            throw new UpstreamError(502, {
-                                message:
-                                    "Responses provider returned an invalid response or omitted usage",
-                                requestUrl: result.requestUrl,
-                            });
-                        }
-                        if (
-                            parsed.data.status !== "completed" &&
-                            parsed.data.status !== "incomplete" &&
-                            parsed.data.status !== "failed"
-                        ) {
-                            throw new UpstreamError(502, {
-                                message:
-                                    "Responses provider returned a non-terminal response",
-                                requestUrl: result.requestUrl,
-                            });
-                        }
-                        if (buffered) {
-                            // Billing reads usage from the replayed terminal event.
-                            const response = new Response(
-                                textResponseStream(parsed.data),
-                                {
-                                    headers: {
-                                        "Content-Type": "text/event-stream",
-                                    },
-                                },
-                            );
-                            return { ...result, response, usage: null };
-                        }
-                        return { ...result, usage: parsed.data.usage };
-                    },
-                ),
+                let data: unknown;
+                try {
+                    data = await result.response.clone().json();
+                } catch (cause) {
+                    throw new UpstreamError(502, {
+                        message: "Responses provider returned invalid JSON",
+                        requestUrl: result.requestUrl,
+                        cause,
+                    });
+                }
+                const parsed = CreateResponseResponseSchema.safeParse(data);
+                if (!parsed.success) {
+                    throw new UpstreamError(502, {
+                        message:
+                            "Responses provider returned an invalid response or omitted usage",
+                        requestUrl: result.requestUrl,
+                    });
+                }
+                if (
+                    parsed.data.status !== "completed" &&
+                    parsed.data.status !== "incomplete" &&
+                    parsed.data.status !== "failed"
+                ) {
+                    throw new UpstreamError(502, {
+                        message:
+                            "Responses provider returned a non-terminal response",
+                        requestUrl: result.requestUrl,
+                    });
+                }
+                if (buffered) {
+                    // Billing reads usage from the replayed terminal event.
+                    const response = new Response(
+                        textResponseStream(parsed.data),
+                        { headers: { "Content-Type": "text/event-stream" } },
+                    );
+                    return { ...result, response, usage: null };
+                }
+                return { ...result, usage: parsed.data.usage };
+            },
             c.var.track?.attempts,
             (attempt) => requireModelAttemptAccess(c, attempt),
-            budget.shouldFallback,
         );
         c.set("upstreamRequestUrl", result.requestUrl);
 
@@ -320,7 +292,7 @@ async function handleDirectResponse(
                 ? "text/event-stream; charset=utf-8"
                 : "application/json; charset=utf-8",
             "Cache-Control": request.stream ? "no-cache" : "no-store",
-            [MODEL_USED_HEADER]: candidate.route?.id ?? candidate.id,
+            [MODEL_USED_HEADER]: candidate.id,
         });
         if (candidate.originalIndex > 0) {
             headers.set(
@@ -332,7 +304,7 @@ async function handleDirectResponse(
         if (!request.stream && result.usage) {
             for (const [name, value] of Object.entries(
                 buildUsageHeaders(
-                    candidate.route?.id ?? candidate.id,
+                    candidate.id,
                     responsesUsageToUsage(result.usage),
                 ),
             )) {

@@ -335,7 +335,6 @@ test("filters non-Azure and non-Fireworks text models by paid balance", async ({
         "respan/span-01-lite",
         "vllm-sr/d3",
         "moonshotai/kimi-k3", // Retains Quest access after the AWS move.
-        "z-ai/glm-5.3", // Retains Quest access after the Mistral move.
         // Costs $0 while Vercel offers it as a stealth model.
         "stealth/glyph-cluster",
     ];

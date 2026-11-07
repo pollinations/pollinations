@@ -65,7 +65,6 @@ import { buildTrackingHeaders } from "../src/image/utils/trackingHeaders.ts";
 import worker from "../src/index.ts";
 import {
     type GenerationModelEntry,
-    getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
 import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
@@ -500,79 +499,83 @@ describe("tracking observability", () => {
         trackingUser = user;
     });
 
-    it("emits Tinybird generation events for successful gen requests", async () => {
-        const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-
-        const ctx = createExecutionContext();
-        const response = await createTestApp().fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "cf-connecting-ip": "203.0.113.42",
-                    referer: "https://example.com/app",
+    it.each([false, undefined])(
+        "emits Tinybird generation events for non-streaming requests (stream: %s)",
+        async (stream) => {
+            const tinybirdRequests: Request[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    tinybirdRequests.push(new Request(input, init));
+                    return new Response("ok");
                 },
-                body: JSON.stringify({
-                    model: "openai/gpt-5.4-nano",
-                    stream: false,
-                    messages: [{ role: "user", content: "test" }],
+            );
+
+            const ctx = createExecutionContext();
+            const response = await createTestApp().fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "cf-connecting-ip": "203.0.113.42",
+                        referer: "https://example.com/app",
+                    },
+                    body: JSON.stringify({
+                        model: "openai/gpt-5.4-nano",
+                        stream,
+                        messages: [{ role: "user", content: "test" }],
+                    }),
                 }),
-            }),
-            {
-                DB: env.DB,
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                BETTER_AUTH_SECRET: "test_secret",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
+                {
+                    DB: env.DB,
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    BETTER_AUTH_SECRET: "test_secret",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as CloudflareBindings,
+                ctx,
+            );
 
-        await waitOnExecutionContext(ctx);
+            await waitOnExecutionContext(ctx);
 
-        expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
-        expect(tinybirdRequests[0].url).toBe(
-            "https://tinybird.test/v0/events?name=generation_event_v2",
-        );
-        expect(tinybirdRequests[0].headers.get("authorization")).toBe(
-            "Bearer test_tinybird_token",
-        );
-        // Internal accounting canonicalization does not rewrite the provider response.
-        expect(response.headers.get("x-model-used")).toBe(
-            "gpt-5-nano-2025-08-07",
-        );
-        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
-        expect(event).toMatchObject({
-            requestPath: "/v1/chat/completions",
-            environment: "test",
-            eventType: "generate.text",
-            responseStatus: 200,
-            modelRequested: "openai/gpt-5.4-nano",
-            resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "openai/gpt-5.4-nano",
-            modelProviderUsed: expect.any(String),
-            userId: trackingUser.id,
-            isBilledUsage: true,
-            tokenCountPromptText: 1000,
-            tokenCountCompletionText: 500,
-            referrerUrl: "https://example.com/app",
-            referrerDomain: "example.com",
-            ipSubnet: "203.0.113.0",
-        });
-        expect(event).not.toHaveProperty("cacheHit");
-        expect(event).not.toHaveProperty("cacheKey");
-        expect(event.totalPrice).toBeGreaterThan(0);
-    });
+            expect(response.status).toBe(200);
+            expect(tinybirdRequests).toHaveLength(1);
+            expect(tinybirdRequests[0].url).toBe(
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            );
+            expect(tinybirdRequests[0].headers.get("authorization")).toBe(
+                "Bearer test_tinybird_token",
+            );
+            // Internal accounting canonicalization does not rewrite the provider response.
+            expect(response.headers.get("x-model-used")).toBe(
+                "gpt-5-nano-2025-08-07",
+            );
+            const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+            expect(event).toMatchObject({
+                requestPath: "/v1/chat/completions",
+                environment: "test",
+                eventType: "generate.text",
+                responseStatus: 200,
+                streamRequested: false,
+                modelRequested: "openai/gpt-5.4-nano",
+                resolvedModelRequested: "openai/gpt-5.4-nano",
+                modelUsed: "openai/gpt-5.4-nano",
+                modelProviderUsed: expect.any(String),
+                userId: trackingUser.id,
+                isBilledUsage: true,
+                tokenCountPromptText: 1000,
+                tokenCountCompletionText: 500,
+                referrerUrl: "https://example.com/app",
+                referrerDomain: "example.com",
+                ipSubnet: "203.0.113.0",
+            });
+            expect(event).not.toHaveProperty("cacheHit");
+            expect(event).not.toHaveProperty("cacheKey");
+            expect(event.totalPrice).toBeGreaterThan(0);
+        },
+    );
 
     it("tracks provider work but not coalesced cache hits", async () => {
         const tinybirdRequests: Request[] = [];
@@ -1649,6 +1652,7 @@ describe("tracking observability", () => {
             resolvedModelRequested: "openai/gpt-5.4-nano",
             modelUsed: "openai/gpt-5.4-nano",
             isBilledUsage: false,
+            streamRequested: false,
         });
     });
 
@@ -2610,11 +2614,13 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const event = await tinybirdRequests[0].json();
+        expect(event).toMatchObject({
             eventType: "generate.image",
             responseStatus: 200,
             isBilledUsage: true,
         });
+        expect(event).not.toHaveProperty("streamRequested");
     });
 
     it("does not bill a streamed text request that returns a non-SSE content-type", async () => {
@@ -2671,6 +2677,7 @@ describe("tracking observability", () => {
             eventType: "generate.text",
             responseStatus: 200,
             isBilledUsage: false,
+            streamRequested: true,
         });
     });
 
@@ -2728,6 +2735,7 @@ describe("tracking observability", () => {
         expect(event.tokenCountCompletionText).toBe(500);
         expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
         expect(event.isBilledUsage).toBe(true);
+        expect(event).toHaveProperty("streamRequested", true);
     });
 
     it("separates a rescued stream's attempt duration from the full request", async () => {
@@ -2792,6 +2800,7 @@ describe("tracking observability", () => {
             totalPrice: 0,
             tokenCountPromptText: 7,
             tokenCountCompletionText: 2,
+            streamRequested: true,
         });
         expect(primary.totalCost).toBeGreaterThan(0);
         expect(primary.attemptResponseTime).toBe(primary.responseTime);
@@ -2806,169 +2815,8 @@ describe("tracking observability", () => {
         ).toBeGreaterThanOrEqual(100);
         expect(fallback.tokenCountCompletionText).toBe(500);
         expect(fallback.isBilledUsage).toBe(true);
+        expect(fallback.streamRequested).toBe(true);
     });
-
-    it("keeps explicit GLM retries, Quest access, and quoted prices when Fireworks is selected", async () => {
-        const caller = await createTestApiKey({
-            allowedModels: ["z-ai/glm-5.3"],
-            user: { tierBalance: 10, packBalance: 0 },
-        });
-        const providerCalls: string[] = [];
-        const events: Record<string, unknown>[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                const url = new URL(request.url);
-                if (
-                    url.hostname === "api.mistral.ai" ||
-                    url.hostname === "portkey.test"
-                ) {
-                    const body = (await request.json()) as { model: string };
-                    // This public GLM choice already selected Fireworks, so it
-                    // keeps the remaining request budget rather than Mistral's cap.
-                    expect(
-                        Number(
-                            request.headers.get("x-portkey-request-timeout"),
-                        ),
-                    ).toBeGreaterThan(120_000);
-                    providerCalls.push(body.model);
-                    if (providerCalls.length === 1)
-                        return Response.json(
-                            { error: { message: "Capacity exhausted" } },
-                            { status: 503 },
-                        );
-                    return Response.json({
-                        choices: [
-                            {
-                                message: { role: "assistant", content: "OK" },
-                                finish_reason: "stop",
-                            },
-                        ],
-                        usage: {
-                            prompt_tokens: 3000,
-                            completion_tokens: 100,
-                            total_tokens: 3100,
-                            prompt_tokens_details: { cached_tokens: 2000 },
-                        },
-                    });
-                }
-                if (
-                    url.pathname === "/v0/events" &&
-                    url.searchParams.get("name") === "generation_event_v2"
-                ) {
-                    events.push(
-                        ...(await request.text())
-                            .split("\n")
-                            .filter(Boolean)
-                            .map((line) => JSON.parse(line)),
-                    );
-                }
-                return Response.json({ data: [] });
-            },
-        );
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${caller.key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: "glm-5.3,glm-5.3",
-                    logit_bias: { "0": 0 },
-                    messages: [
-                        {
-                            role: "user",
-                            content: `Return OK. ${crypto.randomUUID()}`,
-                        },
-                    ],
-                }),
-            }),
-            withInlineGenerationCoordinator({
-                ...env,
-                PORTKEY_GATEWAY_URL: "https://portkey.test",
-                FIREWORKS_NEO_API_KEY: "test-fireworks-key",
-            }),
-            ctx,
-        );
-        const body = await response.text();
-        await waitOnExecutionContext(ctx);
-        expect(response.status, body).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe(
-            "z-ai/glm-5.3:fireworks",
-        );
-        expect(response.headers.get("x-fallback-target")).toBe(
-            "config.targets[1]",
-        );
-        expect(providerCalls).toEqual([
-            "accounts/fireworks/models/glm-5p3",
-            "accounts/fireworks/models/glm-5p3",
-        ]);
-        expect(events).toHaveLength(2);
-        expect(events[0]).toMatchObject({
-            isFinal: false,
-            isBilledUsage: false,
-            responseStatus: 503,
-            modelUsed: "z-ai/glm-5.3:fireworks",
-            modelProviderUsed: "fireworks",
-        });
-        expect(events[1]).toMatchObject({
-            isFinal: true,
-            isBilledUsage: true,
-            modelUsed: "z-ai/glm-5.3:fireworks",
-            modelProviderUsed: "fireworks",
-        });
-        expect(events[1].totalCost).toBeCloseTo(0.00236, 10);
-        expect(events[1].totalPrice).toBeCloseTo(0.00212, 10);
-        const balance = await getUserBalance(drizzle(env.DB), caller.userId);
-        expect(balance.packBalance).toBe(0);
-        expect(balance.tierBalance).toBeCloseTo(10 - 0.00212, 10);
-    });
-
-    it.each(["glm-5.3", "glm-5.3,glm-5.3"])(
-        "rejects incompatible GLM parameter combinations before inference: %s",
-        async (model) => {
-            const caller = await createTestApiKey({
-                user: { tierBalance: 10, packBalance: 0 },
-            });
-            const providerCalls: string[] = [];
-            vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-                const url = new URL(
-                    input instanceof Request ? input.url : String(input),
-                );
-                if (
-                    url.hostname === "api.mistral.ai" ||
-                    url.hostname === "api.fireworks.ai"
-                )
-                    providerCalls.push(url.hostname);
-                return Response.json({ data: [] });
-            });
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(
-                new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${caller.key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        model,
-                        n: 2,
-                        logit_bias: { "0": 0 },
-                        messages: [{ role: "user", content: "Return OK." }],
-                    }),
-                }),
-                withInlineGenerationCoordinator(env),
-                ctx,
-            );
-            const body = await response.text();
-            await waitOnExecutionContext(ctx);
-            expect(response.status, body).toBe(400);
-            expect(body).toContain("No provider");
-            expect(providerCalls).toEqual([]);
-        },
-    );
 
     it.each([false, true])(
         "handles an opening Mistral stream error through fallback (fallback also fails: %s)",
@@ -3107,216 +2955,6 @@ describe("tracking observability", () => {
                 expect(events).toHaveLength(2);
                 expect(await getUserBalance(db, caller.userId)).toEqual(after);
             }
-        },
-    );
-
-    it.each([
-        { api: "chat/completions", stream: false },
-        { api: "chat/completions", stream: true },
-        { api: "responses", stream: false },
-        { api: "responses", stream: true },
-    ])(
-        "settles DeepSeek's early timeout once through $api (stream: $stream)",
-        async ({ api, stream }) => {
-            const caller = await createTestApiKey({
-                user: { tierBalance: 0, packBalance: 10 },
-            });
-            const db = drizzle(env.DB);
-            const before = await getUserBalance(db, caller.userId);
-            const calls: string[] = [];
-            const events: Record<string, unknown>[] = [];
-            const now = Date.now.bind(Date);
-            let elapsed = 0;
-            vi.spyOn(Date, "now").mockImplementation(() => now() + elapsed);
-            vi.spyOn(globalThis, "fetch").mockImplementation(
-                async (input, init) => {
-                    const request = new Request(input, init);
-                    const url = new URL(request.url);
-                    if (
-                        url.hostname === "portkey.test" ||
-                        url.hostname === "api.fireworks.ai"
-                    ) {
-                        const body = (await request.json()) as Record<
-                            string,
-                            unknown
-                        >;
-                        calls.push(String(body.model));
-                        expect(init?.signal).toBeInstanceOf(AbortSignal);
-                        if (calls.length === 1) {
-                            expect(
-                                Number(
-                                    request.headers.get(
-                                        "x-portkey-request-timeout",
-                                    ),
-                                ),
-                            ).toBeGreaterThan(119_000);
-                            elapsed = 120_000;
-                            return Response.json(
-                                {
-                                    error: {
-                                        type: "timeout_error",
-                                        message:
-                                            "Request exceeded the timeout sent in the request: 120000ms",
-                                    },
-                                },
-                                { status: 408 },
-                            );
-                        }
-                        if (api === "chat/completions") {
-                            expect(
-                                Number(
-                                    request.headers.get(
-                                        "x-portkey-request-timeout",
-                                    ),
-                                ),
-                            ).toBeLessThanOrEqual(170_000);
-                            expect(
-                                Number(
-                                    request.headers.get(
-                                        "x-portkey-request-timeout",
-                                    ),
-                                ),
-                            ).toBeGreaterThan(169_000);
-                            const completion = {
-                                choices: [
-                                    {
-                                        index: 0,
-                                        message: {
-                                            role: "assistant",
-                                            content: "rescued",
-                                        },
-                                        finish_reason: "stop",
-                                    },
-                                ],
-                                usage: {
-                                    prompt_tokens: 1000,
-                                    completion_tokens: 500,
-                                    total_tokens: 1500,
-                                },
-                            };
-                            return stream
-                                ? new Response(
-                                      'data: {"choices":[{"index":0,"delta":{"content":"rescued"},"finish_reason":null}]}\n\n' +
-                                          `data: ${JSON.stringify({ choices: [], usage: completion.usage })}\n\ndata: [DONE]\n\n`,
-                                      {
-                                          headers: {
-                                              "content-type":
-                                                  "text/event-stream",
-                                          },
-                                      },
-                                  )
-                                : Response.json(completion);
-                        }
-                        const response = {
-                            id: "resp_budget",
-                            object: "response",
-                            status: "completed",
-                            model: body.model,
-                            output: [
-                                {
-                                    id: "msg_budget",
-                                    type: "message",
-                                    role: "assistant",
-                                    status: "completed",
-                                    content: [
-                                        {
-                                            type: "output_text",
-                                            text: "rescued",
-                                            annotations: [],
-                                        },
-                                    ],
-                                },
-                            ],
-                            usage: {
-                                input_tokens: 1000,
-                                output_tokens: 500,
-                                total_tokens: 1500,
-                            },
-                        };
-                        return stream
-                            ? new Response(
-                                  `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", response })}\n\n`,
-                                  {
-                                      headers: {
-                                          "content-type": "text/event-stream",
-                                      },
-                                  },
-                              )
-                            : Response.json(response);
-                    }
-                    if (
-                        url.pathname === "/v0/events" &&
-                        url.searchParams.get("name") === "generation_event_v2"
-                    ) {
-                        events.push(
-                            ...(await request.text())
-                                .split("\n")
-                                .filter(Boolean)
-                                .map((line) => JSON.parse(line)),
-                        );
-                    }
-                    return Response.json({ data: [] });
-                },
-            );
-            const bindings = withInlineGenerationCoordinator({
-                ...env,
-                PORTKEY_GATEWAY_URL: "https://portkey.test",
-                FIREWORKS_NEO_API_KEY: "test-fireworks-key",
-            });
-            const prompt = `DeepSeek timeout ${crypto.randomUUID()}`;
-            const request = () =>
-                new Request(`https://gen.pollinations.ai/v1/${api}`, {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${caller.key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        model: "deepseek/deepseek-v4.1-flash",
-                        stream,
-                        ...(api === "responses"
-                            ? { input: prompt }
-                            : {
-                                  messages: [{ role: "user", content: prompt }],
-                              }),
-                    }),
-                });
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(request(), bindings, ctx);
-            const body = await response.text();
-            await waitOnExecutionContext(ctx);
-            expect(response.status, body).toBe(200);
-            expect(body).toContain("rescued");
-            expect(calls).toEqual([
-                "DeepSeek-V4.1-Flash",
-                "accounts/fireworks/models/deepseek-v4p1-flash",
-            ]);
-            expect(events).toHaveLength(2);
-            expect(events[0]).toMatchObject({
-                modelUsed: "deepseek/deepseek-v4.1-flash",
-                responseStatus: 504,
-                isFinal: false,
-                isBilledUsage: false,
-            });
-            expect(events[1]).toMatchObject({
-                modelUsed: "deepseek/deepseek-v4.1-flash:fireworks",
-                responseStatus: 200,
-                isFinal: true,
-                isBilledUsage: true,
-            });
-            const after = await getUserBalance(db, caller.userId);
-            expect(before.packBalance - after.packBalance).toBeCloseTo(
-                Number(events[1].totalPrice),
-                10,
-            );
-            const cachedCtx = createExecutionContext();
-            const cached = await worker.fetch(request(), bindings, cachedCtx);
-            expect(cached.headers.get("x-cache")).toBe("HIT");
-            await expect(cached.text()).resolves.toBe(body);
-            await waitOnExecutionContext(cachedCtx);
-            expect(calls).toHaveLength(2);
-            expect(events).toHaveLength(2);
-            expect(await getUserBalance(db, caller.userId)).toEqual(after);
         },
     );
 
@@ -3873,55 +3511,6 @@ describe("trackResponse modelUsed", () => {
         );
         expect(tracking.modelUsed).toBe("qwen/qwen3.7-flash");
     });
-
-    it.each([200, 422])(
-        "attributes a substituted GLM route at its cost while retaining the caller-list quote (%i)",
-        async (status) => {
-            const model = "z-ai/glm-5.3";
-            const registry = await getGenerationModelRegistry(env);
-            const route = registry.resolve("z-ai/glm-5.3:fireworks");
-            expect(route).toBeDefined();
-            if (!route) throw new Error("Missing GLM Fireworks route");
-            const usage = {
-                prompt_tokens: 3000,
-                completion_tokens: 100,
-                total_tokens: 3100,
-                prompt_tokens_details: { cached_tokens: 2000 },
-            };
-            const tracking = await trackResponse(
-                "generate.text",
-                {
-                    ...requestTrackingFixture(false, model),
-                    modelRequested: "glm-5.3,glm-5.3",
-                },
-                Response.json(
-                    { choices: [], usage },
-                    {
-                        status,
-                        headers: {
-                            "x-model-used": "z-ai/glm-5.3:fireworks",
-                            "x-usage-prompt-text-tokens": "1000",
-                            "x-usage-prompt-cached-tokens": "2000",
-                            "x-usage-completion-text-tokens": "100",
-                        },
-                    },
-                ),
-                { ...candidateFixture(model), route },
-                undefined,
-                status === 422
-                    ? UpstreamError.fromProvider(422, {
-                          responseBody: JSON.stringify({ usage }),
-                      })
-                    : undefined,
-            );
-            expect(tracking.modelUsed).toBe("z-ai/glm-5.3:fireworks");
-            expect(tracking.modelProviderUsed).toBe("fireworks");
-            expect(tracking.cost?.totalCost).toBeCloseTo(0.00236, 10);
-            if (status === 200)
-                expect(tracking.price?.totalPrice).toBeCloseTo(0.00212, 10);
-            else expect(tracking.isBilledUsage).toBe(false);
-        },
-    );
 
     it.each([
         "not JSON",

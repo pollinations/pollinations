@@ -2,11 +2,8 @@ import {
     type CommunityEndpointRuntime,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
-import { UpstreamError } from "@shared/error.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { type FallbackCandidate, fallbackCandidates } from "../fallback.ts";
-import { getGenerationModelRegistry } from "../model-registry.ts";
-import { findModelByName } from "./availableModels.ts";
+
 import { isGoogleSearchTool } from "./transforms/createGeminiToolsTransform.ts";
 
 function forcesToolChoice(toolChoice: unknown): boolean {
@@ -44,65 +41,6 @@ function requestedCompletionTokens(request: Record<string, unknown>): number {
             (key) => (typeof request[key] === "number" ? request[key] : 0),
         ),
     );
-}
-
-/** Keep caller model positions while selecting a provider that honors the request. */
-export async function textFallbackCandidates(
-    model: Parameters<typeof fallbackCandidates>[0] & { requested?: string },
-    request: Record<string, unknown>,
-    env: CloudflareBindings,
-): Promise<(FallbackCandidate & { originalIndex: number })[]> {
-    const candidates: (FallbackCandidate & { originalIndex: number })[] = [];
-    for (const [originalIndex, candidate] of fallbackCandidates(
-        model,
-    ).entries()) {
-        if (
-            originalIndex > 0 &&
-            !supportsTextFallbackRequest(candidate.definition, request)
-        )
-            continue;
-        const config = findModelByName(candidate.id);
-        if (
-            config?.maxChoices !== undefined &&
-            Number(request.n ?? 1) > config.maxChoices
-        )
-            continue;
-        const fallback = config?.requestFallback;
-        const needsOtherRoute =
-            fallback &&
-            (requestedCompletionTokens(request) >
-                fallback.maxCompletionTokens ||
-                fallback.unsupportedParameters.some(
-                    (key) => request[key] != null,
-                ));
-        if (needsOtherRoute) {
-            // A catalog request already contains that provider as its next
-            // candidate. Explicit lists replace that chain, so select the
-            // compatible provider within this choice without adding attempts.
-            if (!model?.requested?.includes(",")) continue;
-            const alternate = findModelByName(fallback.model);
-            if (
-                alternate?.maxChoices !== undefined &&
-                Number(request.n ?? 1) > alternate.maxChoices
-            )
-                continue;
-            const registry = await getGenerationModelRegistry(env);
-            const route = registry.resolve(fallback.model);
-            if (!route)
-                throw new Error(
-                    `Missing text provider route: ${fallback.model}`,
-                );
-            candidates.push({ ...candidate, route, originalIndex });
-        } else {
-            candidates.push({ ...candidate, originalIndex });
-        }
-    }
-    if (!candidates.length)
-        throw new UpstreamError(400, {
-            message:
-                "No provider for the requested model can honor this combination of output limit, choice count, and parameters",
-        });
-    return candidates;
 }
 
 function hasToolHistory(value: unknown): boolean {

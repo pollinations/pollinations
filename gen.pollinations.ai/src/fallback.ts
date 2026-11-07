@@ -159,8 +159,8 @@ function upstreamStatus(failure: UpstreamFailure): number | undefined {
           : undefined;
 }
 
-/** Identifies Portkey's supplied-deadline envelope, rather than any HTTP 408. */
-export function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
+/** The deadline we send to Portkey is the request's terminal time budget. */
+function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
     if (upstreamStatus(failure) !== 408) return false;
     const details = failure.details;
     if (!details || typeof details !== "object") return false;
@@ -258,8 +258,6 @@ export type FallbackCandidate = {
     communityEndpoint?: CommunityEndpointRuntime;
     /** Serving registry entry. Absent on the model the caller asked for. */
     entry?: GenerationModelEntry;
-    /** Provider selected for this public choice; its quote and list position stay intact. */
-    route?: GenerationModelEntry;
 };
 
 type PrimaryModel = {

@@ -109,6 +109,10 @@ async function createJob(
     }
 
     const method = c.var.generationRequestMethod ?? c.req.method;
+    // Hono dispatches HEAD as GET and the cache key normalizes HEAD to GET, so
+    // replay it as GET: the executor must read the response body so the capture
+    // stream stores it. The outer HEAD response still drops the body.
+    const replayMethod = method === "HEAD" ? "GET" : method;
     let body: Uint8Array | undefined;
     if (method !== "GET" && method !== "HEAD") {
         const captured = c.var.generationRequestBody;
@@ -131,7 +135,7 @@ async function createJob(
         cache: { storage: adapter.storage, key },
         request: {
             url: c.var.generationRequestUrl?.href ?? c.req.url,
-            method,
+            method: replayMethod,
             ...(c.var.generationRequestUrl && {
                 originalPath: getRoutePath(c),
                 originalModel: c.var.model?.requested,

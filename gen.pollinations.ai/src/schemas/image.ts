@@ -8,15 +8,10 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
 const modelSchema = (defaultModel: string) =>
-    z
-        .preprocess(
-            (val) => (val === "" ? undefined : val),
-            z.string().trim().min(1).optional().default(defaultModel),
-        )
-        .meta({
-            description:
-                "Model to use. See /image/models for the current canonical IDs and aliases.",
-        });
+    z.string().trim().min(1).optional().default(defaultModel).meta({
+        description:
+            "Model to use. See /image/models for the current canonical IDs and aliases.",
+    });
 
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params

@@ -52,8 +52,8 @@ export const AUDIO_FALLBACKS = {
         "google/gemini-3.8-flash-lite-tts:openrouter:ai-studio": {
             provider: "openrouter",
             cost: {
-                promptTextTokens: (0.5 / 1_000_000) * 1.055,
-                completionAudioTokens: (6 / 1_000_000) * 1.055,
+                promptTextTokens: (1 / 1_000_000) * 1.055,
+                completionAudioTokens: (12 / 1_000_000) * 1.055,
             },
         },
     },

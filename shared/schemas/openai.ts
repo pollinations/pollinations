@@ -840,6 +840,21 @@ export const OpenAIModelSchema = z
                 "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
             ),
         context_length: z.number().optional(),
+        video_capabilities: ModelInfoSchema.shape.video_capabilities.describe(
+            "Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video.",
+        ),
+        min_duration: ModelInfoSchema.shape.min_duration.describe(
+            "Shortest accepted video duration in seconds.",
+        ),
+        max_duration: ModelInfoSchema.shape.max_duration.describe(
+            "Longest accepted video duration in seconds.",
+        ),
+        default_duration: ModelInfoSchema.shape.default_duration.describe(
+            "Video length in seconds when the request omits `duration`; always inside `min_duration` and `max_duration`.",
+        ),
+        allowed_durations: ModelInfoSchema.shape.allowed_durations.describe(
+            "Exact video durations in seconds when the model accepts only a fixed set instead of a range.",
+        ),
         per_user_rpm: z.number().positive().nullable().optional(),
         health: ModelHealthSchema.optional(),
     })

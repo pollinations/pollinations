@@ -1,4 +1,8 @@
 import debug from "debug";
+import {
+    TEXT_RESPONSE_BUDGET_MS,
+    type TextAttemptBudget,
+} from "./attemptBudget.ts";
 import { findModelByName } from "./availableModels.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import {
@@ -24,10 +28,6 @@ import { resolveModelConfig } from "./utils/modelResolver.js";
 import { callVercelSearch } from "./vercelSearch.ts";
 
 export const log = debug("pollinations:portkey");
-
-// Portkey applies this millisecond deadline per attempt until provider response
-// headers arrive. Keep retries disabled unless the total deadline is reconsidered.
-const PORTKEY_REQUEST_TIMEOUT_MS = 290_000;
 
 function buildEndpoint(gatewayUrl: unknown): string {
     const base =
@@ -72,6 +72,7 @@ export async function generateTextPortkey(
     messages: ChatMessage[],
     options: TransformOptions = {},
     portkeyFetcher?: OpenAIClientConfig["fetcher"],
+    budget?: TextAttemptBudget,
 ): Promise<ChatCompletion> {
     let state: TransformResult = {
         messages,
@@ -107,7 +108,11 @@ export async function generateTextPortkey(
         state = { ...state, messages: history };
         // TypeSafe has its own wire format and does not use Portkey transforms.
         if (modelDef?.useSystemOneApi) {
-            return callSystemOne(state.messages, state.options);
+            return callSystemOne(
+                state.messages,
+                state.options,
+                budget?.fetcher(),
+            );
         }
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
@@ -128,16 +133,29 @@ export async function generateTextPortkey(
             ? {
                   endpoint: directEndpoint,
                   additionalHeaders,
+                  fetcher: budget?.fetcher(),
               }
             : {
                   endpoint: () => buildEndpoint(portkeyGatewayUrl),
                   additionalHeaders: {
                       "x-portkey-request-timeout": String(
-                          PORTKEY_REQUEST_TIMEOUT_MS,
+                          budget?.timeoutMs ?? TEXT_RESPONSE_BUDGET_MS,
                       ),
                       ...additionalHeaders,
                   },
-                  fetcher: portkeyFetcher,
+                  fetcher: budget
+                      ? budget.fetcher(
+                            portkeyFetcher
+                                ? (input, init) =>
+                                      portkeyFetcher(
+                                          input instanceof Request
+                                              ? input.url
+                                              : String(input),
+                                          init,
+                                      )
+                                : undefined,
+                        )
+                      : portkeyFetcher,
               };
 
     delete state.options.additionalHeaders;
@@ -152,7 +170,7 @@ export async function generateTextPortkey(
         return await callChatViaResponses(
             state.messages,
             state.options,
-            responsesFetcher,
+            budget ? budget.fetcher(responsesFetcher) : responsesFetcher,
         );
     }
 

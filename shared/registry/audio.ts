@@ -843,10 +843,11 @@ const AUDIO_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Gemini Developer API standard pricing through 2026-12-31.
+            // Gemini Developer API standard pricing from 2027-01-01, after
+            // the introductory pricing ended on 2026-12-31.
             // https://ai.google.dev/gemini-api/docs/pricing
-            promptTextTokens: 0.5 / 1_000_000,
-            completionAudioTokens: 9 / 1_000_000,
+            promptTextTokens: 1 / 1_000_000,
+            completionAudioTokens: 18 / 1_000_000,
         },
         priceUnits: { completionAudioTokens: { unit: "token" } },
         title: "Gemini 3.8 Flash TTS",

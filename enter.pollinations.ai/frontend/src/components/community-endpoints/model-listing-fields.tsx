@@ -1,9 +1,11 @@
 import {
     ButtonGroup,
     CheckIcon,
+    DiscordIcon,
     Field,
     InlineLink,
     Input,
+    LockIcon,
     TabButton,
     Textarea,
 } from "@pollinations/ui";
@@ -11,7 +13,8 @@ import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
 } from "@shared/community-endpoints.ts";
-import type { ReactElement, ReactNode } from "react";
+import { type ReactElement, type ReactNode, useEffect, useState } from "react";
+import { authClient } from "../../auth.ts";
 import { ModelFormRow } from "./model-form-row.tsx";
 import type { ModelListingFormState } from "./types.ts";
 
@@ -65,6 +68,16 @@ export function ModelListingFields({
         value: string,
     ) => void;
 }) {
+    // Publishing needs a connected Discord (the API refuses it without one):
+    // Community Watch reaches publishers there about their models.
+    const [discord, setDiscord] = useState<boolean>();
+    useEffect(() => {
+        if (!canPublish) return;
+        void authClient.listAccounts().then(({ data }) => {
+            if (data) setDiscord(data.some((a) => a.providerId === "discord"));
+        });
+    }, [canPublish]);
+    const needsDiscord = canPublish && discord === false;
     const isPublic = form.visibility === "public";
     const visibilityHelp = isPublic
         ? isAgent
@@ -86,12 +99,13 @@ export function ModelListingFields({
             </TabButton>
             <TabButton
                 active={isPublic}
-                disabled={!canPublish}
+                disabled={!canPublish || needsDiscord}
                 onClick={() => onChange("visibility", "public")}
                 size="sm"
                 className="min-w-24 gap-1.5"
             >
                 {isPublic && <CheckIcon className="h-3.5 w-3.5" />}
+                {needsDiscord && <LockIcon className="h-3.5 w-3.5" />}
                 Public
             </TabButton>
         </ButtonGroup>
@@ -183,7 +197,25 @@ export function ModelListingFields({
                 </>
             )}
 
-            <ModelFormRow label="Visibility" help={visibilityHelp}>
+            <ModelFormRow
+                label="Visibility"
+                help={visibilityHelp}
+                note={
+                    needsDiscord && (
+                        <p className="flex items-start gap-1.5 font-body text-xs text-theme-text-muted">
+                            <DiscordIcon className="mt-px h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                Public needs a connected Discord, so we can
+                                reach you if your {isAgent ? "agent" : "model"}{" "}
+                                stops working.{" "}
+                                <InlineLink href="/account">
+                                    Connect Discord
+                                </InlineLink>
+                            </span>
+                        </p>
+                    )
+                }
+            >
                 {visibilityOptions}
             </ModelFormRow>
         </div>

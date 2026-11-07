@@ -33,6 +33,7 @@ import {
     callVeoReplicateAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
+import { callGeminiOmniVercelAPI } from "./models/vercelGeminiOmniVideoModel.ts";
 import { callWan3FalAPI } from "./models/wan3FalVideoModel.ts";
 import {
     callWanAPI,
@@ -56,7 +57,11 @@ export async function createAndReturnVideo(
     let result: VideoGenerationResult;
     switch (safeParams.model) {
         case "google/gemini-omni-1.1-flash":
+        case "google/gemini-omni-1.2-flash":
             result = await callGeminiOmniAPI(prompt, safeParams);
+            break;
+        case "google/gemini-omni-1.2-flash:vercel":
+            result = await callGeminiOmniVercelAPI(prompt, safeParams);
             break;
         case "google/veo-3.1-fast":
             result = await callVeoAPI(prompt, safeParams);

@@ -7,6 +7,7 @@ type Permissions = {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     questPollenOnly?: boolean;
+    cacheDisabled?: boolean;
 };
 
 type CreateKeyInput = {
@@ -25,6 +26,8 @@ type CreateKeyInput = {
     };
     permissions?: Permissions;
 };
+
+type CreateKeyJson = Parameters<typeof accountClient.keys.$post>[0]["json"];
 
 type CreatedKey = {
     id: string;
@@ -46,7 +49,16 @@ export async function createKeyWithPermissions({
     const type = prefix === "pk" ? "publishable" : "secret";
 
     const response = await accountClient.keys.$post({
-        json: { ...fields, ...permissions, type, expiresIn },
+        json: {
+            ...fields,
+            ...permissions,
+            // Forms hold permission names as plain strings; the API rejects
+            // unknown ones.
+            accountPermissions:
+                permissions?.accountPermissions as CreateKeyJson["accountPermissions"],
+            type,
+            expiresIn,
+        },
     });
 
     if (!response.ok) {

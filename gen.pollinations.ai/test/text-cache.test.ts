@@ -47,7 +47,7 @@ type TestEnv = {
     Bindings: CloudflareBindings;
     Variables: LoggerVariables &
         RequestIdVariables &
-        Partial<ModelVariables & AuthVariables>;
+        Partial<AuthVariables & ModelVariables>;
 };
 
 function createTextCacheApp() {
@@ -87,10 +87,10 @@ function createTextCacheApp() {
         .post(
             "/v1/chat/completions/agent",
             (c, next) => {
-                // resolveModel scopes agents; each request has its own id.
+                // resolveModel marks agents private; each request has its own id.
                 c.set("model", {
                     definition: {},
-                    cacheScope: "agent:agent-id",
+                    cachePrivate: true,
                 } as ModelVariables["model"]);
                 c.set("requestId", crypto.randomUUID());
                 return next();
@@ -219,35 +219,6 @@ describe("text cache", () => {
             expect(originHits).toBe(2);
         },
     );
-
-    it("partitions managed-agent cache keys by caller API key", async () => {
-        const request = new Request(
-            "https://gen.pollinations.ai/v1/chat/completions",
-            chatInit({
-                model: "owner/agent",
-                messages: [{ role: "user", content: "hello" }],
-            }),
-        );
-        const body = await request.clone().text();
-        const first = await generateCacheKey(
-            request,
-            body,
-            "agent:agent-id:key:key-one",
-        );
-        const sameCaller = await generateCacheKey(
-            request,
-            body,
-            "agent:agent-id:key:key-one",
-        );
-        const otherCaller = await generateCacheKey(
-            request,
-            body,
-            "agent:agent-id:key:key-two",
-        );
-
-        expect(sameCaller).toBe(first);
-        expect(otherCaller).not.toBe(first);
-    });
 
     it("serves cached responses before auth while misses still require auth", async () => {
         let originHits = 0;
@@ -463,6 +434,54 @@ describe("text cache", () => {
         expect(second.response.headers.get("X-Cache")).not.toBe("HIT");
         expect(cache.originHits).toBe(2);
     });
+
+    it.each(["key", "account"] as const)(
+        "never reads or fills the shared cache when the %s turned it off",
+        async (level) => {
+            let originHits = 0;
+            const app = new Hono<TestEnv>()
+                .use("*", async (c, next) => {
+                    c.set("log", testLog);
+                    c.set("requestId", crypto.randomUUID());
+                    const off = c.req.header("X-Test-Cache-Off") === "true";
+                    c.set("auth", {
+                        user: { cacheDisabled: off && level === "account" },
+                        apiKey: { cacheDisabled: off && level === "key" },
+                    } as AuthVariables["auth"]);
+                    await next();
+                })
+                .get("/text/:prompt", textCache, () => {
+                    originHits += 1;
+                    return new Response(`hit:${originHits}`, {
+                        headers: { "Content-Type": "text/plain" },
+                    });
+                });
+            const bucket = createTestR2Bucket();
+            const env = createTextCacheEnv(bucket);
+            const get = async (cacheOff: boolean) => {
+                const result = await dispatch(
+                    app,
+                    "/text/hello",
+                    { headers: { "X-Test-Cache-Off": String(cacheOff) } },
+                    env,
+                );
+                return {
+                    text: await consumeAndWait(result),
+                    cacheControl: result.response.headers.get("Cache-Control"),
+                };
+            };
+
+            expect((await get(false)).text).toBe("hit:1");
+            expect(await get(true)).toEqual({
+                text: "hit:2",
+                cacheControl: "private, no-store",
+            });
+            expect((await get(true)).text).toBe("hit:3");
+            // Only the shared entry was written.
+            expect(bucket.putCount).toBe(1);
+            expect((await get(false)).text).toBe("hit:1");
+        },
+    );
 
     it("treats different POST bodies as different cache entries", async () => {
         const cache = createTextCacheApp();

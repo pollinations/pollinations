@@ -18,6 +18,7 @@ export interface KeyPermissions {
     expiryDays: number | null;
     accountPermissions: string[] | null;
     questPollenOnly: boolean;
+    cacheDisabled: boolean;
 }
 
 export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
@@ -34,6 +35,9 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     const [questPollenOnly, setQuestPollenOnly] = useState(
         initial.questPollenOnly ?? false,
     );
+    const [cacheDisabled, setCacheDisabled] = useState(
+        initial.cacheDisabled ?? false,
+    );
 
     return {
         permissions: {
@@ -42,12 +46,14 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
             expiryDays,
             accountPermissions,
             questPollenOnly,
+            cacheDisabled,
         },
         setAllowedModels,
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
         setQuestPollenOnly,
+        setCacheDisabled,
     };
 }
 
@@ -83,6 +89,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setExpiryDays,
         setAccountPermissions,
         setQuestPollenOnly,
+        setCacheDisabled,
     } = value;
     const generateInput = useRef<HTMLInputElement>(null);
     const [previousModels, setPreviousModels] = useState<string[] | null>(
@@ -129,6 +136,22 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                     Quest pollen only
                 </span>
             </AuthAccessItem>
+            {/* Not on app consent screens; the account setting covers apps. */}
+            {!accessContext && (
+                <AuthAccessItem
+                    checked={permissions.cacheDisabled}
+                    onChange={setCacheDisabled}
+                    disabled={disabled}
+                    info={
+                        <InfoTip
+                            text="This key never gets a cached result and never shares its own, so every request generates and is billed. Turn it off for every key on the Account page."
+                            label="Cache off information"
+                        />
+                    }
+                >
+                    Cache off
+                </AuthAccessItem>
+            )}
             <KeyLimitInput
                 kind="expiry"
                 accessContext={accessContext}

@@ -9,6 +9,7 @@ import {
     FieldStack,
     GitHubIcon,
     Heading,
+    InfoTip,
     InlineLink,
     Input,
     MailIcon,
@@ -18,8 +19,10 @@ import {
     Text,
     TrashIcon,
 } from "@pollinations/ui";
+import { AuthAccessItem } from "@pollinations/ui/auth";
 import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue, useEffect, useState } from "react";
+import { accountClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
 import {
@@ -157,6 +160,23 @@ function AccountPage() {
                 <ConnectedApps />
             </div>
 
+            <Await
+                promise={profile}
+                fallback={
+                    <Section title="Settings">
+                        <CardLoading className="h-14" />
+                    </Section>
+                }
+            >
+                {(details) =>
+                    details && (
+                        <AccountSettings
+                            cacheDisabled={details.cacheDisabled}
+                        />
+                    )
+                }
+            </Await>
+
             <Section title="Need help?">
                 <ul className="grid gap-3 text-sm sm:grid-cols-2">
                     <Surface as="li" className="flex min-w-0 items-start gap-2">
@@ -255,6 +275,57 @@ function AccountPage() {
                 onOpenChange={setDeleteDialogOpen}
             />
         </>
+    );
+}
+
+function AccountSettings({
+    cacheDisabled: savedCacheDisabled,
+}: {
+    cacheDisabled: boolean;
+}) {
+    const [cacheDisabled, setCacheDisabled] = useState(savedCacheDisabled);
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    async function changeCacheDisabled(next: boolean): Promise<void> {
+        setIsSaving(true);
+        setError(null);
+        setCacheDisabled(next);
+        try {
+            const response = await accountClient.profile.$patch({
+                json: { cacheDisabled: next },
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        } catch (error) {
+            console.error("Saving the cache setting failed:", error);
+            setCacheDisabled(!next);
+            setError("Couldn’t save the setting. Please try again.");
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    return (
+        <Section title="Settings">
+            <Surface>
+                <ul className="text-sm">
+                    <AuthAccessItem
+                        checked={cacheDisabled}
+                        onChange={(next) => void changeCacheDisabled(next)}
+                        disabled={isSaving}
+                        info={
+                            <InfoTip
+                                text="No key on this account gets a cached result or shares its own, so every request generates and is billed. To turn it off for one key only, edit that key."
+                                label="Cache off information"
+                            />
+                        }
+                    >
+                        Cache off
+                    </AuthAccessItem>
+                </ul>
+            </Surface>
+            {error && <Alert intent="danger">{error}</Alert>}
+        </Section>
     );
 }
 

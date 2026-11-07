@@ -9,49 +9,62 @@ const candidates = [{ id: primary }, { id: fallback }];
 afterEach(() => vi.useRealTimers());
 
 describe("text fallback response budget", () => {
-    it("aborts the primary at 120s and gives the fallback only the remaining 170s", async () => {
-        vi.useFakeTimers();
-        const budget = createTextAttemptBudget(primary);
-        const attempts: FallbackAttempt[] = [];
-        const timeouts: number[] = [];
-        const signals: AbortSignal[] = [];
-        const run = withModelFallback(
-            candidates,
-            ({ id }) =>
-                budget.run(id, async (timing) => {
-                    assert(timing);
-                    timeouts.push(timing.timeoutMs);
-                    return timing.fetcher(async (_input, init) => {
-                        assert(init?.signal);
-                        signals.push(init.signal);
-                        return new Promise<Response>((_resolve, reject) => {
-                            init?.signal?.addEventListener("abort", () =>
-                                reject(init.signal?.reason),
-                            );
-                        });
-                    })(`https://provider.test/${id}`);
-                }),
-            attempts,
-            undefined,
-            budget.shouldFallback,
-        );
-        const failed = expect(run).rejects.toMatchObject({ status: 504 });
-        await vi.advanceTimersByTimeAsync(120_000);
-        expect(timeouts).toEqual([120_000, 170_000]);
-        expect(signals.map((signal) => signal.aborted)).toEqual([true, false]);
-        expect(attempts[0]).toMatchObject({
-            error: { status: 504 },
-            settled: false,
-        });
-        await vi.advanceTimersByTimeAsync(170_000);
-        await failed;
-        expect(signals.map((signal) => signal.aborted)).toEqual([true, true]);
-        expect(attempts).toHaveLength(2);
-        expect(attempts[1]).toMatchObject({
-            error: { status: 504 },
-            settled: true,
-        });
-    });
+    it.each([primary, "z-ai/glm-5.3"])(
+        "aborts %s at 120s and gives the fallback only the remaining 170s",
+        async (primary) => {
+            const candidates = [
+                { id: primary },
+                { id: `${primary}:fireworks` },
+            ];
+            vi.useFakeTimers();
+            const budget = createTextAttemptBudget(primary);
+            const attempts: FallbackAttempt[] = [];
+            const timeouts: number[] = [];
+            const signals: AbortSignal[] = [];
+            const run = withModelFallback(
+                candidates,
+                ({ id }) =>
+                    budget.run(id, async (timing) => {
+                        assert(timing);
+                        timeouts.push(timing.timeoutMs);
+                        return timing.fetcher(async (_input, init) => {
+                            assert(init?.signal);
+                            signals.push(init.signal);
+                            return new Promise<Response>((_resolve, reject) => {
+                                init?.signal?.addEventListener("abort", () =>
+                                    reject(init.signal?.reason),
+                                );
+                            });
+                        })(`https://provider.test/${id}`);
+                    }),
+                attempts,
+                undefined,
+                budget.shouldFallback,
+            );
+            const failed = expect(run).rejects.toMatchObject({ status: 504 });
+            await vi.advanceTimersByTimeAsync(120_000);
+            expect(timeouts).toEqual([120_000, 170_000]);
+            expect(signals.map((signal) => signal.aborted)).toEqual([
+                true,
+                false,
+            ]);
+            expect(attempts[0]).toMatchObject({
+                error: { status: 504 },
+                settled: false,
+            });
+            await vi.advanceTimersByTimeAsync(170_000);
+            await failed;
+            expect(signals.map((signal) => signal.aborted)).toEqual([
+                true,
+                true,
+            ]);
+            expect(attempts).toHaveLength(2);
+            expect(attempts[1]).toMatchObject({
+                error: { status: 504 },
+                settled: true,
+            });
+        },
+    );
 
     it("subtracts primary errors and preparation time from the shared deadline", async () => {
         vi.useFakeTimers();

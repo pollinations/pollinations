@@ -1246,6 +1246,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "z-ai/glm-5.3",
+        fallbackAfterMs: 120_000,
         config: portkeyConfig["zai-glm-5-3"],
         requestFallback: {
             model: "z-ai/glm-5.3:fireworks",

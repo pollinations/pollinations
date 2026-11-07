@@ -2824,6 +2824,13 @@ describe("tracking observability", () => {
                     url.hostname === "portkey.test"
                 ) {
                     const body = (await request.json()) as { model: string };
+                    // This public GLM choice already selected Fireworks, so it
+                    // keeps the remaining request budget rather than Mistral's cap.
+                    expect(
+                        Number(
+                            request.headers.get("x-portkey-request-timeout"),
+                        ),
+                    ).toBeGreaterThan(120_000);
                     providerCalls.push(body.model);
                     if (providerCalls.length === 1)
                         return Response.json(

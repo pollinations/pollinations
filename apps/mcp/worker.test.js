@@ -22,6 +22,7 @@ const EXPECTED_TOOLS = [
     "getModelStatus",
     "getUsage",
     "listKeys",
+    "listMcpServers",
     "listModels",
     "listQuests",
     "listSites",

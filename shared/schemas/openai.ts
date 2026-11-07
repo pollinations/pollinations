@@ -428,7 +428,21 @@ export const CreateChatCompletionRequestSchema = z
             .max(128)
             .optional(), // deprecated, supported
     })
-    .passthrough();
+    .passthrough()
+    .superRefine((value, ctx) => {
+        if (
+            value.tool_choice === "required" &&
+            !value.tools?.length &&
+            !value.functions?.length
+        ) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["tools"],
+                message:
+                    'tool_choice "required" requires at least one tool in tools.',
+            });
+        }
+    });
 
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema

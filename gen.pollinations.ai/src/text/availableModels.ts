@@ -1023,6 +1023,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inferenceport-lightning-text-v2"],
     },
     {
+        name: "inferenceport-ai/ltra2-research",
+        config: portkeyConfig["inferenceport-ltra2-research"],
+    },
+    {
         name: "openai/gpt-6-luna-decisions",
         config: portkeyConfig["gpt-6-luna-decisions"],
         useSystemOneApi: true,

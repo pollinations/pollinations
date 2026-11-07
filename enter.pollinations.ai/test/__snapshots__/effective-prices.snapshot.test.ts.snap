@@ -1959,6 +1959,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000075,
     },
   },
+  "inferenceport-ai/ltra2-research": {
+    "cost": {
+      "completionTextTokens": 0.00002,
+      "promptCachedTokens": 0.0000005,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionTextTokens": 0.00002,
+      "promptCachedTokens": 0.0000005,
+      "promptTextTokens": 0.000005,
+    },
+  },
   "jaredpalmer/kev-4b": {
     "cost": {
       "completionTextTokens": 0,

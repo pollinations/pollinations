@@ -189,13 +189,34 @@ export const CreateMessageRequestSchema = z
             .optional(),
         thinking: z
             .object({
-                type: z.string(),
-                budget_tokens: z.number().int().optional(),
+                type: z.enum(["enabled", "disabled", "adaptive"]),
+                budget_tokens: z.number().int().min(1024).optional(),
             })
             .passthrough()
+            .superRefine((thinking, ctx) => {
+                // Anthropic requires a budget whenever thinking is enabled;
+                // without one the translator silently falls back to "low".
+                if (
+                    thinking.type === "enabled" &&
+                    thinking.budget_tokens === undefined
+                ) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: ["budget_tokens"],
+                        message:
+                            "budget_tokens is required when thinking.type is enabled",
+                    });
+                }
+            })
             .optional(),
         output_config: z
-            .object({ effort: z.string().optional() })
+            .object({
+                // Unknown efforts are dropped by the translator, so a typo
+                // would silently disable reasoning instead of failing.
+                effort: z
+                    .enum(["low", "medium", "high", "xhigh", "max"])
+                    .optional(),
+            })
             .passthrough()
             .optional(),
     })

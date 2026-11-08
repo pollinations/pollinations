@@ -112,9 +112,9 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
-    if (url.pathname.endsWith("/infra_watch_database.json"))
-        return world.database
-            ? Response.json({ data: world.database })
+    if (url.pathname.endsWith("/infra_watch_early_errors.json"))
+        return world.early
+            ? Response.json({ data: world.early })
             : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
@@ -168,7 +168,7 @@ beforeEach(() => {
         agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
-        database: [],
+        early: [],
         enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
@@ -1027,33 +1027,43 @@ it("opens an Enter card after three failed key checks, never for a refused key, 
     expect(over(edits(card.messageId).at(-1))).toBe(true);
 });
 
-it("opens a database card on the first bad minute with a ping, keeps it while Tinybird can't say, and closes it once the window is clean", async () => {
+it("opens an early-errors card on the first bad minute with a ping, keeps it while Tinybird can't say, and closes it once the window is clean", async () => {
     const stub = watch();
-    const database = async () => (await stored(stub, "state")).open?.database;
+    const early = async () => (await stored(stub, "state")).open?.early;
     // Quiet minutes and a lone failure open nothing.
-    world.database = [{ minute: "2026-11-08 15:20:00", failures: 3 }];
+    const quiet = {
+        minute: "2026-11-08 15:20:00",
+        failures: 3,
+        d1_failures: 0,
+    };
+    world.early = [quiet];
     await stub.check();
-    expect(await database()).toBeUndefined();
+    expect(await early()).toBeUndefined();
     // 8 Nov 2026 15:21 UTC, as it happened: one burst minute is enough.
-    world.database = [
-        { minute: "2026-11-08 15:20:00", failures: 3 },
-        { minute: "2026-11-08 15:21:00", failures: 232, top_route: "/*" },
+    world.early = [
+        quiet,
+        {
+            minute: "2026-11-08 15:21:00",
+            failures: 236,
+            d1_failures: 235,
+            top_route: "/*",
+        },
     ];
     await stub.check();
-    const card = await database();
+    const card = await early();
     const [post] = posts(INFRA);
     expect(post.content).toBe(MAINTAINERS);
     expect(post.text).toContain("FAILING: Enter database (D1)");
-    expect(post.text).toContain("232 reqs failed in 1 min");
+    expect(post.text).toContain("236 reqs failed in 1 min");
     // The read fails: the card stays open.
-    world.database = null;
+    world.early = null;
     await stub.check();
-    expect(await database()).toBeDefined();
+    expect(await early()).toBeDefined();
     // The burst leaves the 30-minute window: the card closes.
-    world.database = [];
+    world.early = [];
     await stub.check();
     await settle(stub);
-    expect(await database()).toBeUndefined();
+    expect(await early()).toBeUndefined();
     expect(over(edits(card.messageId).at(-1))).toBe(true);
 });
 

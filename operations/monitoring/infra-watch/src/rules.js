@@ -173,25 +173,27 @@ export function legacyDown(rows, open = {}) {
     return found;
 }
 
-// Enter's database (D1) is failing while any minute of the last 30 had at
-// least this many requests fail on it; quiet minutes have 0 to 2. Its bursts
-// last about a minute and fail requests before any model is known, so per-
-// model health never sees them: the first bad minute opens the card, and the
-// 30-minute window keeps that one card open across bursts. `minutes` are the
-// infra_watch_database rows.
-const DATABASE_MIN_FAILURES = 25;
+// Requests failing before any model is known (an API-key, sign-in or
+// balance check, mostly Enter's database) are failing while any minute of the
+// last 30 had at least this many; quiet minutes have 0 to 6. They come in
+// bursts of seconds, and per-model health never sees them: the first bad
+// minute opens the card, and the 30-minute window keeps that one card open
+// across bursts. `minutes` are the infra_watch_early_errors rows.
+const EARLY_MIN_FAILURES = 25;
 const minuteMs = (minute) => Date.parse(`${minute.replace(" ", "T")}Z`);
-export function databaseFailing(minutes) {
-    const bursts = minutes.filter((m) => m.failures >= DATABASE_MIN_FAILURES);
+const total = (rows, field) => rows.reduce((sum, m) => sum + m[field], 0);
+export function earlyErrors(minutes) {
+    const bursts = minutes.filter((m) => m.failures >= EARLY_MIN_FAILURES);
     if (!bursts.length) return {};
     const worst = bursts.reduce((a, b) => (b.failures > a.failures ? b : a));
     return {
-        database: {
-            kind: "DATABASE_FAILING",
+        early: {
+            kind: "EARLY_ERRORS",
             worst: worst.failures,
             route: worst.top_route,
             bursts: bursts.length,
-            failures: minutes.reduce((sum, m) => sum + m.failures, 0),
+            failures: total(minutes, "failures"),
+            d1: total(minutes, "d1_failures"),
             lastAt: minuteMs(bursts.at(-1).minute),
         },
     };
@@ -350,10 +352,10 @@ export function noteworthy(before, now) {
 }
 
 // Worse in a way that needs a person again: callers now affected, the
-// affected callers went from one to several, or a database burst at least
-// twice the worst one already pinged.
+// affected callers went from one to several, or an early-errors burst at
+// least twice the worst one already pinged.
 export const escalates = (before, now) =>
-    (now.kind === "DATABASE_FAILING" &&
+    (now.kind === "EARLY_ERRORS" &&
         now.worst >= 2 * (before.worst ?? Number.POSITIVE_INFINITY)) ||
     (now.kind === "DEGRADED" &&
         (now.failingCallers ?? 2) > 1 &&
@@ -463,14 +465,13 @@ const LABEL = {
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
-    DATABASE_FAILING: "FAILING",
+    EARLY_ERRORS: "FAILING",
 };
 const SUBJECT = {
     gen: "gen Worker",
     public: "gen.pollinations.ai",
     upstream: "gen.myceli.ai",
     enter: "enter.pollinations.ai",
-    database: "Enter database (D1)",
     analytics: "model status data",
     platform: "platform-wide",
     watch: "infra-watch",
@@ -486,6 +487,15 @@ const subjectOf = (key) =>
           : key.startsWith("legacy:")
             ? `legacy ${key.slice(7)} bridge`
             : SUBJECT[key];
+// Early errors are named after Enter's database while it causes at least half
+// of them.
+const d1Main = (info) => info.d1 * 2 >= info.failures;
+const titleOf = (key, info) =>
+    key !== "early"
+        ? subjectOf(key)
+        : d1Main(info)
+          ? "Enter database (D1)"
+          : "requests before any model";
 
 // An open card's colour by severity: red down, orange degraded, amber weak
 // primary. A closed card's colour is set by cardColor.
@@ -504,7 +514,7 @@ export const COLOR = {
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
-    DATABASE_FAILING: RED,
+    EARLY_ERRORS: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -614,9 +624,10 @@ function openRows(incident, now) {
             ["ERROR", info.error],
             ["", "API keys, sign-in, billing fail"],
         ];
-    if (kind === "DATABASE_FAILING")
+    if (kind === "EARLY_ERRORS")
         return [
             ["WORST", `${info.worst} reqs failed in 1 min`],
+            ["CAUSE", `${info.d1} database, ${info.failures - info.d1} other`],
             ["BURSTS", `${info.bursts} min of 30, ${info.failures} failed`],
             ["LAST", utc(info.lastAt)],
             ["ROUTE", info.route],
@@ -747,7 +758,7 @@ export function renderCard(
     const status = closed
         ? (ended ?? LABEL[incident.worst ?? incident.kind])
         : label;
-    const title = `${status}: ${subjectOf(key)}`;
+    const title = `${status}: ${titleOf(key, incident.info)}`;
     const color = cardColor(key, incident);
     const parts = [
         panel(

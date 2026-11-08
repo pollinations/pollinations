@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Tomadix",
+    "url": "https://tomadix.ibitweb.com.br",
+    "description": "Tomadix is an AI-powered creative platform designed to help users create professional prompts and generate high-quality images using artificial intelligence. Made with Pollinations.ai.",
+    "language": "pt-BR",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "gereiz",
+    "githubUserId": "49003468",
+    "repositoryUrl": "https://github.com/gereiz/tomadix",
+    "repositoryStars": null,
+    "discordUsername": "Georgie",
+    "other": null,
+    "submittedDate": "2026-11-02",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19039",
+    "approvedDate": "2026-11-08",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/5f8fc4d7-888f-4082-98b8-a76bf5a6c1a8"
+  },
+  {
     "emoji": "💬",
     "name": "Parallel Voices",
     "url": "https://ezzelddin-abdallah.github.io/pollinations-parallel-voices",

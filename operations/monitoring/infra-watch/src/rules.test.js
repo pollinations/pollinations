@@ -16,6 +16,7 @@ import {
     releaseCommands,
     renderCard,
     STALE_MS,
+    signInFailing,
     snapshot,
     step,
     waiting,
@@ -257,6 +258,38 @@ test("Enter down opens after 3 checks and closes on its own check, whatever gen 
     for (const t of [5, 6, 7]) r = step(r.state, { analytics, enter }, t);
     r = step(r.state, { analytics }, 8);
     assert.ok(r.actions.some((a) => a.type === "close" && a.key === "enter"));
+});
+
+test("sign-in fails under 60% sessions with 10+ returns, never at a week's worst", () => {
+    assert.deepEqual(signInFailing({ returned: 9, completed: 0 }), {});
+    // 80%, the worst half hour of 1-7 Nov 2026.
+    assert.deepEqual(signInFailing({ returned: 100, completed: 80 }), {});
+    assert.deepEqual(signInFailing({ returned: 10, completed: 6 }), {});
+    assert.deepEqual(signInFailing({ returned: 10, completed: 5 }).signin, {
+        kind: "SIGN_IN_FAILING",
+        returned: 10,
+        completed: 5,
+    });
+});
+
+test("sign-in opens after 3 failing checks, pings, and closes on a good one", () => {
+    const failing = signInFailing({ returned: 40, completed: 12 });
+    let r = step({}, failing, 1);
+    r = step(r.state, failing, 2);
+    assert.deepEqual(r.actions, []);
+    r = step(r.state, failing, 3);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open signin"],
+    );
+    const card = renderCard("signin", r.state.open.signin, { now: 3 });
+    assert.ok(card.ping);
+    assert.equal(card.color, 0xe24b4a);
+    const text = plain(card.text);
+    assert.ok(text.includes("FAILING: sign-in (GitHub, Google)"));
+    assert.ok(text.includes("12 of 40 returns 30m (30%)"));
+    r = step(r.state, {}, 4);
+    assert.equal(r.actions[0].type, "close");
 });
 
 test("analytics outage pauses model incidents but is not gen down", () => {

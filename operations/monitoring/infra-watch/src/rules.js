@@ -173,6 +173,22 @@ export function legacyDown(rows, open = {}) {
     return found;
 }
 
+// Sign-in is failing when, of at least SIGN_IN_MIN_RETURNS people sent back
+// by GitHub or Google in the last 30 minutes, under SIGN_IN_MIN_SHARE got a
+// session; normally about 96% do, and 80% at the worst half hour of a week.
+// `row` is the infra_watch_sign_in row. It holds for CONFIRM_CHECKS checks
+// before opening.
+const SIGN_IN_MIN_RETURNS = 10;
+const SIGN_IN_MIN_SHARE = 0.6;
+export function signInFailing({ returned, completed }) {
+    if (
+        returned < SIGN_IN_MIN_RETURNS ||
+        completed >= SIGN_IN_MIN_SHARE * returned
+    )
+        return {};
+    return { signin: { kind: "SIGN_IN_FAILING", returned, completed } };
+}
+
 const CONFIRMED = new Set([
     "gen",
     "public",
@@ -180,6 +196,7 @@ const CONFIRMED = new Set([
     "enter",
     "analytics",
     "platform",
+    "signin",
 ]);
 const HOSTS = { gen: true, public: true, upstream: true, enter: true };
 // A model incident's model, from its key; null for any other incident.
@@ -435,6 +452,7 @@ const LABEL = {
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
+    SIGN_IN_FAILING: "FAILING",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -445,6 +463,7 @@ const SUBJECT = {
     platform: "platform-wide",
     watch: "infra-watch",
     community: "community monitor",
+    signin: "sign-in (GitHub, Google)",
 };
 // Sign-up cards are about an email domain.
 const DOMAIN_KEY = /^signup:/;
@@ -474,6 +493,7 @@ export const COLOR = {
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
+    SIGN_IN_FAILING: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -582,6 +602,15 @@ function openRows(incident, now) {
             ["WHY", `key check failing ${CONFIRM_CHECKS}x`],
             ["ERROR", info.error],
             ["", "API keys, sign-in, billing fail"],
+        ];
+    if (kind === "SIGN_IN_FAILING")
+        return [
+            [
+                "SESSION",
+                `${info.completed} of ${info.returned} returns 30m (${percent(info.completed / info.returned)})`,
+            ],
+            ["", "normally about 96% get one"],
+            ["", "back from GitHub/Google, no session"],
         ];
     if (kind === "ANALYTICS_DOWN")
         return [

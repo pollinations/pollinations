@@ -1,0 +1,23 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: the GitHub and Google sign-in funnel over the last
+    30 minutes. returned counts people sent back from the provider with a
+    code, less the account-link callbacks that land on the same route;
+    completed counts the sessions created for them. Counts only.
+
+NODE infra_watch_sign_in_node
+SQL >
+    SELECT
+        -- Signed, so a link whose callback fell outside the window
+        -- can't wrap the count around.
+        toInt64(countIf(event = 'sign_in_returned'))
+            - countIf(event = 'link_completed') AS returned,
+        countIf(event = 'sign_in_completed') AS completed
+    FROM product_event
+    WHERE environment = 'production'
+        AND timestamp >= now() - INTERVAL 30 MINUTE
+        AND event IN ('sign_in_returned', 'sign_in_completed', 'link_completed')
+        AND provider IN ('github', 'google')
+
+TYPE endpoint

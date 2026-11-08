@@ -112,6 +112,10 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.endsWith("/infra_watch_sign_in.json"))
+        return world.signIn
+            ? Response.json({ data: [world.signIn] })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
@@ -167,6 +171,7 @@ beforeEach(() => {
         enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
+        signIn: { returned: 40, completed: 38 },
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
@@ -1019,6 +1024,32 @@ it("opens an Enter card after three failed key checks, never for a refused key, 
     await stub.check();
     await settle(stub);
     expect(await enter()).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("opens a sign-in card after three failing checks with a ping, keeps it while Tinybird can't say, and closes it once sessions come back", async () => {
+    const stub = watch();
+    const signin = async () => (await stored(stub, "state")).open?.signin;
+    // Too few returns to judge, then failing for two checks only.
+    world.signIn = { returned: 9, completed: 0 };
+    await checks(stub, 3);
+    world.signIn = { returned: 40, completed: 12 };
+    await checks(stub, 2);
+    expect(await signin()).toBeUndefined();
+    await stub.check();
+    const card = await signin();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("FAILING: sign-in (GitHub, Google)");
+    expect(post.text).toContain("12 of 40 returns 30m (30%)");
+    // The read fails: the card stays open.
+    world.signIn = null;
+    await stub.check();
+    expect(await signin()).toBeDefined();
+    world.signIn = { returned: 40, completed: 38 };
+    await stub.check();
+    await settle(stub);
+    expect(await signin()).toBeUndefined();
     expect(over(edits(card.messageId).at(-1))).toBe(true);
 });
 

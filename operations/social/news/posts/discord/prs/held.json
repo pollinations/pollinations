@@ -1,21 +1,11 @@
 {
   "held": {
-    "18028": {
-      "merge_sha": "a2a962686bd7e26589a2b5e9c7259f75e67fc967",
-      "merged_at": "2026-10-25T12:31:42Z",
-      "required": []
-    },
     "18816": {
       "merge_sha": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb",
       "merged_at": "2026-10-30T23:50:15Z",
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
-    },
-    "19367": {
-      "merge_sha": "ba13d3b9b3828a1b990be95229c700859cd0445a",
-      "merged_at": "2026-11-08T14:49:59Z",
-      "required": []
     }
   },
   "production": "2d992ba9b1a9a1d3bab91030d33b7b016d0502c9",

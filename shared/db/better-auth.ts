@@ -518,4 +518,7 @@ export const rewards = sqliteTable("rewards", {
   claimedAt: integer("claimed_at", { mode: "timestamp" }),
 }, (table) => [
   index("idx_rewards_user_id").on(table.userId),
+  // Supporter checks look up top-up quests; monthly standings read this month.
+  index("idx_rewards_quest_user").on(table.questId, table.userId),
+  index("idx_rewards_earned_at").on(table.earnedAt),
 ]);

@@ -1,0 +1,37 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: callers (ip_hash) with at least `limit` final
+    requests in the last 10 minutes, with how they were answered, how many
+    API keys and accounts they used, how many came through the legacy
+    bridges, their main model and their /24 (or /48) subnet, so the card can
+    point at the address in Cloudflare's top client IPs. Counts, hashes and
+    the stored subnet only: no raw IPs, no emails.
+
+NODE infra_watch_surges_node
+SQL >
+    %
+    SELECT
+        ip_hash,
+        any(ip_subnet) AS subnet,
+        count() AS requests,
+        countIf(response_status BETWEEN 200 AND 299) AS ok,
+        countIf(response_status BETWEEN 400 AND 499) AS refused,
+        countIf(response_status >= 500) AS failed,
+        topK(1)(response_status)[1] AS top_status,
+        uniq(api_key_id) AS keys,
+        uniq(user_id) AS users,
+        countIf(
+            api_key_id IN ('89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps', 'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz')
+        ) AS legacy,
+        topK(1)(model_requested)[1] AS top_model
+    FROM generation_event_v2
+    WHERE environment = 'production'
+        AND is_final
+        AND start_time >= now() - INTERVAL 10 MINUTE
+        AND ip_hash NOT IN ('', 'undefined')
+    GROUP BY ip_hash
+    HAVING requests >= {{Int32(limit, 3000)}}
+    ORDER BY requests DESC
+
+TYPE endpoint

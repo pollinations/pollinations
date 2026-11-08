@@ -16,8 +16,10 @@ import {
     releaseCommands,
     renderCard,
     STALE_MS,
+    SURGE_HOLD_MS,
     snapshot,
     step,
+    surges,
     waiting,
 } from "./rules.js";
 
@@ -625,6 +627,102 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
     assert.match(ended.text, /ENDED: domain farm\.com/);
     assert.match(ended.text, /LASTED +2 min/);
     assert.equal(ended.color, 0x639922);
+});
+
+// 8 Nov 2026 10:08 UTC: one caller's legacy image requests, refused while
+// D1 failed. And 2 Nov: another caller's refused text requests over IPv6.
+const flood = {
+    ip_hash: "cbce3a63e50c38d8",
+    subnet: "88.20.177.0",
+    requests: 8894,
+    ok: 26,
+    refused: 0,
+    failed: 8868,
+    top_status: 503,
+    keys: 1,
+    users: 1,
+    legacy: 8894,
+    top_model: "sana",
+};
+const refused = {
+    ip_hash: "b9b9c3c6ce9c59ff",
+    subnet: "2603:c020:001e::",
+    requests: 3603,
+    ok: 0,
+    refused: 3603,
+    failed: 0,
+    top_status: 402,
+    keys: 1,
+    users: 1,
+    legacy: 0,
+    top_model: "deepseek/deepseek-v4-flash",
+};
+
+test("a flooding caller opens a red card without a ping that says where to find it", () => {
+    const r = step({}, surges([flood], {}, 0), 0);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open surge:cbce3a63"],
+    );
+    const card = renderCard("surge:cbce3a63", r.state.open["surge:cbce3a63"], {
+        now: 0,
+    });
+    assert.equal(card.ping, false);
+    assert.equal(card.color, 0xe24b4a);
+    const text = plain(card.text);
+    assert.match(text, /FLOODING: caller cbce3a63/);
+    assert.match(text, /REQS +8894 in last 10 min/);
+    assert.match(text, /ANSWERED +26 ok, 0 4xx, 8868 5xx \(503\)/);
+    assert.match(text, /KEYS +1 key, 1 account/);
+    assert.match(text, /SUBNET +88\.20\.177\.0\/24/);
+    assert.match(text, /HOST +image\/text\.pollinations\.ai/);
+    assert.match(text, /find it in Cloudflare top client IPs/);
+
+    const v6 = step({}, surges([refused], {}, 0), 0);
+    const other = plain(
+        renderCard("surge:b9b9c3c6", v6.state.open["surge:b9b9c3c6"], {
+            now: 0,
+        }).text,
+    );
+    assert.match(other, /SUBNET +2603:c020:001e::\/48/);
+    assert.match(other, /HOST +gen\.pollinations\.ai/);
+});
+
+test("a flood card stays open between bursts and ends after two quiet hours", () => {
+    let r = step({}, surges([flood], {}, 0), 0);
+    r = step(
+        r.state,
+        surges([{ ...flood, requests: 3100 }], r.state.open, MIN),
+        MIN,
+    );
+    const key = "surge:cbce3a63";
+    assert.equal(r.state.open[key].info.peak, 8894);
+    // Under the line: held, and the card says since when.
+    const at = MIN + SURGE_HOLD_MS - 1;
+    r = step(r.state, surges([], r.state.open, at), at);
+    assert.deepEqual(
+        r.actions.map((a) => a.type),
+        ["update"],
+    );
+    const held = plain(renderCard(key, r.state.open[key], { now: at }).text);
+    assert.match(held, /REQS +under 3000 since 1970-01-01 00:01 UTC/);
+    assert.match(held, /PEAK +8894 in 10 min/);
+    // A burst within the hold keeps the same card.
+    r = step(r.state, surges([refused, flood], r.state.open, at), at);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open surge:b9b9c3c6", `update ${key}`],
+    );
+    const end = at + SURGE_HOLD_MS;
+    r = step(r.state, surges([], r.state.open, end), end);
+    const closed = r.actions.find((a) => a.key === key);
+    assert.equal(closed.type, "close");
+    const ended = renderCard(key, closed.incident);
+    assert.equal(ended.color, 0x639922);
+    assert.match(plain(ended.text), /ENDED: caller cbce3a63/);
+    assert.match(plain(ended.text), /LASTED +2 h 01 min/);
+    assert.match(plain(ended.text), /SUBNET +88\.20\.177\.0\/24/);
+    assert.doesNotMatch(ended.text, /⏱️/);
 });
 
 test("a burst card says the domain is held and shows how to release it", () => {

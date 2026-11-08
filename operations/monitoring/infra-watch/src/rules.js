@@ -173,6 +173,30 @@ export function legacyDown(rows, open = {}) {
     return found;
 }
 
+// One caller (an ip_hash) flooding: the infra_watch_surges rows, callers with
+// 3,000 or more final requests in the last 10 minutes, about 5 a second.
+// Served or refused, each request reads its key and balance from D1. Floods
+// come in bursts up to an hour apart, so a card stays open until its caller
+// has been under the line for SURGE_HOLD_MS: one card per flood.
+export const SURGE_MIN_REQUESTS = 3000;
+export const SURGE_HOLD_MS = 2 * 60 * 60 * 1000;
+export function surges(rows, open, now) {
+    const found = {};
+    for (const row of rows) {
+        const key = `surge:${row.ip_hash.slice(0, 8)}`;
+        const peak = Math.max(row.requests, open[key]?.info.peak ?? 0);
+        found[key] = { kind: "SURGE", ...row, peak, lastAt: now };
+    }
+    for (const [key, incident] of Object.entries(open))
+        if (
+            key.startsWith("surge:") &&
+            !found[key] &&
+            now - incident.info.lastAt < SURGE_HOLD_MS
+        )
+            found[key] = { ...incident.info, quiet: true };
+    return found;
+}
+
 const CONFIRMED = new Set([
     "gen",
     "public",
@@ -435,6 +459,7 @@ const LABEL = {
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
+    SURGE: "FLOODING",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -446,8 +471,10 @@ const SUBJECT = {
     watch: "infra-watch",
     community: "community monitor",
 };
-// Sign-up cards are about an email domain.
+// Sign-up cards are about an email domain, flood cards about one caller.
+// Both end rather than recover: closed, they turn green and say so.
 const DOMAIN_KEY = /^signup:/;
+const ENDS = /^(signup|surge):/;
 const subjectOf = (key) =>
     key.startsWith("model:")
         ? key.slice(6)
@@ -455,7 +482,9 @@ const subjectOf = (key) =>
           ? `domain ${key.replace(DOMAIN_KEY, "")}`
           : key.startsWith("legacy:")
             ? `legacy ${key.slice(7)} bridge`
-            : SUBJECT[key];
+            : key.startsWith("surge:")
+              ? `caller ${key.slice(6)}`
+              : SUBJECT[key];
 
 // An open card's colour by severity: red down, orange degraded, amber weak
 // primary. A closed card's colour is set by cardColor.
@@ -474,6 +503,9 @@ export const COLOR = {
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
+    // So does one caller flooding, without the ping: the database card pings
+    // when a flood hurts.
+    SURGE: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -495,10 +527,10 @@ function impactColor(key, incident) {
 }
 
 // A card's colour: its status while open; once closed, an outage's impact,
-// and green for a domain card.
+// and green for a domain or flood card.
 function cardColor(key, incident) {
     if (incident.closedAt == null) return COLOR[incident.kind];
-    return DOMAIN_KEY.test(key) ? GREEN : impactColor(key, incident);
+    return ENDS.test(key) ? GREEN : impactColor(key, incident);
 }
 
 // Each AI line's circle, in its colour (lineColor), so the lines show how
@@ -527,7 +559,11 @@ export const waiting = (record, now) =>
 // hostname neither (users are fine); every other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
-    if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
+    if (
+        ["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST", "SURGE"].includes(
+            kind,
+        )
+    )
         return false;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
@@ -550,6 +586,35 @@ const callersText = (callers) =>
 const startRow = (start) => [
     "START",
     `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
+];
+
+// A flooding caller, as Cloudflare's top client IPs can find it: its subnet
+// (the ip_hash can't be matched) and the host it calls. Legacy callers reach
+// gen through the image and text bridges.
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const subnetOf = ({ subnet }) => `${subnet}/${subnet.includes(":") ? 48 : 24}`;
+const surgeRows = (info) => [
+    [
+        "REQS",
+        info.quiet
+            ? `under ${SURGE_MIN_REQUESTS} since ${utc(info.lastAt)}`
+            : `${info.requests} in last 10 min`,
+    ],
+    ["PEAK", `${info.peak} in 10 min`],
+    [
+        "ANSWERED",
+        `${info.ok} ok, ${info.refused} 4xx, ${info.failed} 5xx (${info.top_status})`,
+    ],
+    ["MODEL", info.top_model],
+    ["KEYS", `${plural(info.keys, "key")}, ${plural(info.users, "account")}`],
+    ["SUBNET", subnetOf(info)],
+    [
+        "HOST",
+        info.legacy * 2 >= info.requests
+            ? "image/text.pollinations.ai"
+            : "gen.pollinations.ai",
+    ],
+    ["", "find it in Cloudflare top client IPs"],
 ];
 
 // Rows of an open card: what is true now, plus the frozen start once the
@@ -641,6 +706,7 @@ function openRows(incident, now) {
             ],
         ];
     }
+    if (kind === "SURGE") return surgeRows(info);
     const rows = [
         ["FINAL", `${pct(info.success)} of ${info.nonClient} reqs 15m`],
         ["CALLERS", callersText(info.callers)],
@@ -655,12 +721,21 @@ function openRows(incident, now) {
     return rows;
 }
 
-// Rows of a closed card. A domain card keeps how long it lasted; an outage
+// Rows of a closed card. A domain card keeps how long it lasted, a flood card
+// how long its caller stayed over the line, its peak and subnet; an outage
 // card keeps how it started, its routes then, and now: how long it lasted
 // and what it cost are in its summary line.
 function closedRows(key, incident) {
     if (DOMAIN_KEY.test(key))
         return [["LASTED", duration(incident.closedAt - incident.openedAt)]];
+    if (key.startsWith("surge:")) {
+        const { info } = incident;
+        return [
+            ["LASTED", duration(info.lastAt - incident.openedAt)],
+            ["PEAK", `${info.peak} in 10 min`],
+            ["SUBNET", subnetOf(info)],
+        ];
+    }
     if (!key.startsWith("model:")) return [];
     const { start, latest } = incident;
     const rows = [startRow(start), ...routeRows(start.routes)];
@@ -677,9 +752,9 @@ const percent = (x) => (x < 0.01 ? "<1%" : `${Math.round(x * 100)}%`);
 
 // A closed outage card's last line, in bigger letters: how long it lasted
 // and, for a model, what it cost callers. The card's colour already says how
-// bad it was. Domain cards have no summary.
+// bad it was. Domain and flood cards have no summary.
 function summary(key, incident) {
-    if (DOMAIN_KEY.test(key)) return null;
+    if (ENDS.test(key)) return null;
     const took = `### ⏱️ ${duration(incident.closedAt - incident.openedAt)}`;
     if (!key.startsWith("model:")) return took;
     const { lost } = incident;
@@ -702,9 +777,9 @@ export function renderCard(
     // A released domain's burst card says so in its title too.
     const label =
         incident.info.hold === "released" ? "RELEASED" : LABEL[incident.kind];
-    // Closed, a domain card says how it ended; an outage keeps the worst
-    // status it reached.
-    const ended = incident.kind === "SIGNUP_BURST" ? "ENDED" : null;
+    // Closed, a domain or flood card says it ended; an outage keeps the
+    // worst status it reached.
+    const ended = ENDS.test(key) ? "ENDED" : null;
     const status = closed
         ? (ended ?? LABEL[incident.worst ?? incident.kind])
         : label;

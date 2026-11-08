@@ -112,6 +112,12 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.endsWith("/infra_watch_surges.json")) {
+        world.surgeLimit = url.searchParams.get("limit");
+        return world.surges
+            ? Response.json({ data: world.surges })
+            : new Response("unavailable", { status: 503 });
+    }
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
@@ -167,6 +173,7 @@ beforeEach(() => {
         enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
+        surges: [],
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
@@ -1020,6 +1027,52 @@ it("opens an Enter card after three failed key checks, never for a refused key, 
     await settle(stub);
     expect(await enter()).toBeUndefined();
     expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("opens a flood card without a ping, keeps it while Tinybird can't say or the caller pauses, and ends it after two quiet hours", async () => {
+    const stub = watch();
+    let clock = Date.UTC(2026, 10, 8, 10, 8);
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    const flood = async () =>
+        (await stored(stub, "state")).open?.["surge:cbce3a63"];
+    // 8 Nov 2026 10:08 UTC, as it happened.
+    world.surges = [
+        {
+            ip_hash: "cbce3a63e50c38d83e9d",
+            subnet: "88.20.177.0",
+            requests: 8894,
+            ok: 26,
+            refused: 0,
+            failed: 8868,
+            top_status: 503,
+            keys: 1,
+            users: 1,
+            legacy: 8894,
+            top_model: "sana",
+        },
+    ];
+    await stub.check();
+    expect(world.surgeLimit).toBe("3000");
+    const card = await flood();
+    const [post] = posts(INFRA);
+    expect(post.content).toBeFalsy();
+    expect(post.text).toContain("FLOODING: caller cbce3a63");
+    expect(post.text).toContain("88.20.177.0/24");
+    // The read fails, then the caller pauses: the card stays.
+    world.surges = null;
+    clock += 60_000;
+    await stub.check();
+    world.surges = [];
+    clock += HOURS(1);
+    await stub.check();
+    expect(await flood()).toBeDefined();
+    clock += HOURS(1);
+    await stub.check();
+    await settle(stub);
+    expect(await flood()).toBeUndefined();
+    const ended = edits(card.messageId).at(-1);
+    expect(ended.text).toContain("ENDED: caller cbce3a63");
+    expect(ended.color).toBe(GREEN);
 });
 
 it("opens a community monitor card when no cycle gets done for 90 minutes, says why, and closes it once one does", async () => {

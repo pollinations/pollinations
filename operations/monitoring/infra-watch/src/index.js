@@ -45,8 +45,10 @@ import {
     noteworthy,
     pings,
     renderCard,
+    SURGE_MIN_REQUESTS,
     snapshot,
     step,
+    surges,
     waiting,
 } from "./rules.js";
 
@@ -244,10 +246,11 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up, enterDown] = await Promise.all([
+        const [pub, up, enterDown, flooders] = await Promise.all([
             isUp(PUBLIC),
             isUp(UPSTREAM),
             enterError(this.env.COMMUNITY_PROBE_KEY),
+            this.flooders(),
         ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -313,6 +316,8 @@ export class Watch extends DurableObject {
         // A legacy bridge's open card is judged against the medians it
         // started with.
         if (legacy) Object.assign(found, legacyDown(legacy, open));
+        // A flooding caller's card is held open between its bursts.
+        if (flooders) Object.assign(found, surges(flooders, open, now));
         // The community cycle runs only with gen's catalog read; without it,
         // gen or analytics is down and that card says so.
         if (publicModels)
@@ -324,12 +329,13 @@ export class Watch extends DurableObject {
                     Boolean(this.cycle),
                 ),
             );
-        // Unknown sign-ups or legacy bridges keep their open cards.
+        // Unknown sign-ups, legacy bridges or flooders keep their open cards.
         // A sign-up card Discord hasn't taken yet is retried until it has:
         // its 24-hour window can end first.
         const unknown = [
             signups === null && "signup:",
             legacy === null && "legacy:",
+            flooders === null && "surge:",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -559,6 +565,21 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Callers with SURGE_MIN_REQUESTS or more final requests in the last 10
+    // minutes, from Tinybird, read every check; null when the read failed.
+    async flooders() {
+        try {
+            return await pipe(
+                "infra_watch_surges",
+                { limit: SURGE_MIN_REQUESTS },
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+        } catch (error) {
+            console.error(`surges: ${error.message}`);
+            return null;
+        }
     }
 
     // Each legacy bridge's row from Tinybird, read once an hour from 5

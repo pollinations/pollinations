@@ -173,6 +173,14 @@ export function legacyDown(rows, open = {}) {
     return found;
 }
 
+// Payments in trouble, the infra_watch_payments rows: a Stripe webhook or
+// checkout 5xx in the last 15 minutes, or a pack or auto top-up paid 15
+// minutes to 24 hours ago with no pollen credited. Each is a paying customer
+// and there are none in a normal month, so the first row opens the card.
+export function paymentsFailing(rows) {
+    return rows.length ? { payments: { kind: "PAYMENTS_FAILING", rows } } : {};
+}
+
 const CONFIRMED = new Set([
     "gen",
     "public",
@@ -435,6 +443,7 @@ const LABEL = {
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
+    PAYMENTS_FAILING: "FAILING",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -445,6 +454,7 @@ const SUBJECT = {
     platform: "platform-wide",
     watch: "infra-watch",
     community: "community monitor",
+    payments: "payments",
 };
 // Sign-up cards are about an email domain.
 const DOMAIN_KEY = /^signup:/;
@@ -474,6 +484,7 @@ export const COLOR = {
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
+    PAYMENTS_FAILING: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -552,6 +563,35 @@ const startRow = (start) => [
     `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
 ];
 
+// Server errors first, then each payment with its Stripe ids, oldest first.
+const MAX_PAYMENTS = 3;
+const minute = (at) => `${at.slice(5, 16)} UTC`;
+function paymentRows(rows) {
+    const errors = rows.filter((r) => r.kind === "server_error");
+    const unpaid = rows
+        .filter((r) => r.kind === "not_credited")
+        .sort((a, b) => a.at.localeCompare(b.at));
+    const shown = unpaid.slice(0, MAX_PAYMENTS);
+    return [
+        ...errors.flatMap((r) => [
+            ["5XX", r.id],
+            ["", `${r.n}x ${r.reason} in 15 min, last ${minute(r.at)}`],
+        ]),
+        ...shown.flatMap((r) => [
+            ["PAID", r.id],
+            ...(r.ref ? [["", r.ref]] : []),
+            [
+                "",
+                `$${(r.amount_cents / 100).toFixed(2)} ${r.ref ? "auto top-up" : "pack"}, ${minute(r.at)}`,
+            ],
+            ["", r.reason || "no credit recorded"],
+        ]),
+        ...(unpaid.length > shown.length
+            ? [["", `+${unpaid.length - shown.length} more payments`]]
+            : []),
+    ];
+}
+
 // Rows of an open card: what is true now, plus the frozen start once the
 // card has been updated, so the history stays on the card.
 function openRows(incident, now) {
@@ -604,6 +644,7 @@ function openRows(incident, now) {
             ...(info.error ? [["ERROR", info.error]] : []),
             ["", "probes and community posts paused"],
         ];
+    if (kind === "PAYMENTS_FAILING") return paymentRows(info.rows);
     if (kind === "LEGACY_DOWN") {
         const rows = [
             [

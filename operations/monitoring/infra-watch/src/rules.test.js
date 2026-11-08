@@ -12,6 +12,7 @@ import {
     heartbeat,
     legacyDown,
     noteworthy,
+    paymentsFailing,
     RECOVER_CHECKS,
     releaseCommands,
     renderCard,
@@ -257,6 +258,81 @@ test("Enter down opens after 3 checks and closes on its own check, whatever gen 
     for (const t of [5, 6, 7]) r = step(r.state, { analytics, enter }, t);
     r = step(r.state, { analytics }, 8);
     assert.ok(r.actions.some((a) => a.type === "close" && a.key === "enter"));
+});
+
+// Rows as infra_watch_payments returns them.
+const webhook5xx = {
+    kind: "server_error",
+    id: "/api/webhooks/stripe",
+    ref: "",
+    amount_cents: 0,
+    reason: "500",
+    n: 3,
+    at: "2026-11-08 14:40:02",
+};
+const unpaid = (id, at, extra = {}) => ({
+    kind: "not_credited",
+    id,
+    ref: "",
+    amount_cents: 1000,
+    reason: "",
+    n: 1,
+    at,
+    ...extra,
+});
+
+test("payments fail on any row and open on the first check with a ping", () => {
+    assert.deepEqual(paymentsFailing([]), {});
+    const rows = [
+        unpaid("pi_late", "2026-11-08 14:32:15", {
+            ref: "in_late",
+            amount_cents: 1065,
+            reason: "amount mismatch",
+        }),
+        unpaid("pi_pack", "2026-11-08 13:00:00"),
+        webhook5xx,
+    ];
+    let r = step({}, paymentsFailing(rows), 1);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open payments"],
+    );
+    const card = renderCard("payments", r.state.open.payments, { now: 1 });
+    assert.ok(card.ping);
+    assert.equal(card.color, 0xe24b4a);
+    const text = plain(card.text);
+    assert.ok(text.includes("FAILING: payments"));
+    // The server error first, then the payments oldest first, with ids.
+    const order = [
+        "/api/webhooks/stripe",
+        "3x 500 in 15 min, last 11-08 14:40 UTC",
+        "pi_pack",
+        "$10.00 pack, 11-08 13:00 UTC",
+        "no credit recorded",
+        "pi_late",
+        "in_late",
+        "$10.65 auto top-up, 11-08 14:32 UTC",
+        "amount mismatch",
+    ].map((part) => text.indexOf(part));
+    assert.ok(
+        order.every((at, i) => at > (order[i - 1] ?? -1)),
+        order,
+    );
+    r = step(r.state, {}, 2);
+    assert.equal(r.actions[0].type, "close");
+});
+
+test("a payments card lists at most three payments", () => {
+    const rows = ["01", "02", "03", "04", "05"].map((m) =>
+        unpaid(`pi_${m}`, `2026-11-08 10:${m}:00`),
+    );
+    const r = step({}, paymentsFailing(rows), 1);
+    const text = plain(
+        renderCard("payments", r.state.open.payments, { now: 1 }).text,
+    );
+    assert.ok(text.includes("pi_03"));
+    assert.ok(!text.includes("pi_04"));
+    assert.ok(text.includes("+2 more payments"));
 });
 
 test("analytics outage pauses model incidents but is not gen down", () => {

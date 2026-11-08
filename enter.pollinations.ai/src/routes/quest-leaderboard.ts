@@ -34,8 +34,9 @@ const LEADERBOARD_USER = and(
 );
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
-// Each rebuild scans every counted reward (~0.8s of D1 time). Totals move
-// slowly, so a 15-minute copy keeps the homepage off the shared database.
+// Each rebuild scans every counted reward (~0.8s of D1 time). Enter's
+// 10-minute cron rebuilds this copy before it expires, so visitors rebuild
+// it only when it is missing.
 const LEADERBOARD_CACHE_TTL = 15 * 60;
 const LEADERBOARD_LIMIT = 50;
 
@@ -82,15 +83,19 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
             LEADERBOARD_CACHE_KEY,
             "json",
         );
-        if (cached) return c.json(cached);
-
-        const response = await buildQuestLeaderboard(c.env);
-        await c.env.KV.put(LEADERBOARD_CACHE_KEY, JSON.stringify(response), {
-            expirationTtl: LEADERBOARD_CACHE_TTL,
-        });
-        return c.json(response);
+        return c.json(cached ?? (await refreshQuestLeaderboard(c.env)));
     },
 );
+
+export async function refreshQuestLeaderboard(
+    env: CloudflareBindings,
+): Promise<QuestLeaderboardResponse> {
+    const response = await buildQuestLeaderboard(env);
+    await env.KV.put(LEADERBOARD_CACHE_KEY, JSON.stringify(response), {
+        expirationTtl: LEADERBOARD_CACHE_TTL,
+    });
+    return response;
+}
 
 /**
  * Aggregate every counted reward first, then cap only the returned ranking.

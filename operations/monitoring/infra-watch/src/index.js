@@ -39,6 +39,7 @@ import {
     conditions,
     duration,
     escalates,
+    jobsStale,
     legacyDown,
     lineColor,
     modelOf,
@@ -244,10 +245,11 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up, enterDown] = await Promise.all([
+        const [pub, up, enterDown, freshness] = await Promise.all([
             isUp(PUBLIC),
             isUp(UPSTREAM),
             enterError(this.env.COMMUNITY_PROBE_KEY),
+            this.freshness(),
         ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -280,8 +282,10 @@ export class Watch extends DurableObject {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
-        // Enter is checked on its own, so it is judged whatever gen does.
+        // Enter and the analytics feeds are checked on their own, so they
+        // are judged whatever gen does.
         if (enterDown) found.enter = { kind: "ENTER_DOWN", error: enterDown };
+        if (freshness) Object.assign(found, jobsStale(freshness));
 
         const sweeps = await sweepDomains(
             this.env.DB,
@@ -324,12 +328,13 @@ export class Watch extends DurableObject {
                     Boolean(this.cycle),
                 ),
             );
-        // Unknown sign-ups or legacy bridges keep their open cards.
+        // Unknown sign-ups, legacy bridges or job ages keep their open cards.
         // A sign-up card Discord hasn't taken yet is retried until it has:
         // its 24-hour window can end first.
         const unknown = [
             signups === null && "signup:",
             legacy === null && "legacy:",
+            freshness === null && "stale:",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -559,6 +564,21 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // How old each analytics feed's newest row is, from Tinybird, read every
+    // check; null when the read failed.
+    async freshness() {
+        try {
+            return await pipe(
+                "infra_watch_freshness",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+        } catch (error) {
+            console.error(`freshness: ${error.message}`);
+            return null;
+        }
     }
 
     // Each legacy bridge's row from Tinybird, read once an hour from 5

@@ -110,6 +110,10 @@ async function fake(input, init = {}) {
             ? Response.json({ data: world.legacy })
             : new Response("unavailable", { status: 503 });
     }
+    if (url.pathname.endsWith("/infra_watch_freshness.json"))
+        return world.freshness
+            ? Response.json({ data: world.freshness })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
@@ -167,6 +171,7 @@ beforeEach(() => {
         enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
+        freshness: [],
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
@@ -1582,3 +1587,40 @@ it("tells a served-model mismatch to the maintainers once due, however long deli
     await cycled(stub);
     expect(posts(INFRA)).toHaveLength(2);
 }, 15_000);
+
+it("a stale feed opens after 3 checks with a ping, survives a failed read, and closes once fresh", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.freshness = [
+        { source: "error_event", age_seconds: 20 },
+        { source: "product_event", age_seconds: 1200 },
+    ];
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).open?.["stale:product_event"]).toBe(
+        undefined,
+    );
+    await stub.check();
+    await settle(stub);
+    const { messageId } = (await stored(stub, "state")).open[
+        "stale:product_event"
+    ];
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("STALE: Enter feed (product_event)");
+    expect(posted.text).toContain("20 min old");
+    expect(posted.users.length).toBeGreaterThan(0);
+
+    // Tinybird fails: the card stays open.
+    world.freshness = null;
+    await stub.check();
+    expect(
+        (await stored(stub, "state")).open["stale:product_event"],
+    ).toBeTruthy();
+
+    world.freshness = [{ source: "product_event", age_seconds: 5 }];
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open["stale:product_event"]).toBe(
+        undefined,
+    );
+    expect(over(edits(messageId).at(-1))).toBe(true);
+});

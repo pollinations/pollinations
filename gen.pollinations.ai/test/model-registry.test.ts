@@ -315,6 +315,9 @@ describe("getGenerationModelRegistry", () => {
             (keys[0].expiration ?? 0) - Math.floor(Date.now() / 1000);
         expect(secondsUntilExpiry).toBeGreaterThan(60);
         expect(secondsUntilExpiry).toBeLessThanOrEqual(90);
+        expect(
+            Number(await env.KV.get("heartbeat:community-catalog")),
+        ).toBeCloseTo(Date.now(), -4);
     });
 
     it("dispatches the catalog cron through the Worker service binding", async () => {
@@ -352,6 +355,7 @@ describe("getGenerationModelRegistry", () => {
             .mockImplementation(() => {});
         const context = createExecutionContext();
         const bindings = { ...env, DB: skewedDbBinding() };
+        await env.KV.delete("heartbeat:community-catalog");
         await worker.scheduled(
             createScheduledController({ cron: "* * * * *" }),
             bindings,
@@ -368,6 +372,7 @@ describe("getGenerationModelRegistry", () => {
         );
         const { keys } = await env.KV.list({ prefix: "community-catalog:" });
         expect(keys[0].expiration).toBe(before.keys[0].expiration);
+        expect(await env.KV.get("heartbeat:community-catalog")).toBeNull();
     });
 
     it("serves static models when the community catalog query fails", async () => {

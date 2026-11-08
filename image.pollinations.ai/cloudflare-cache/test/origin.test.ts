@@ -537,7 +537,11 @@ test("without every WEFT_* value the paywall is off: a running generation gives 
     expect(waited.response.headers.get("content-type")).toBe("image/jpeg");
 });
 
-test("a limiter failure is answered as a free request, booking and releasing nothing", async () => {
+test.each([
+    ["GET", "application/json"],
+    ["GET", "image/*"],
+    ["HEAD", "application/json"],
+])("a limiter failure returns 503 without calling gen or releasing a slot (%s, %s)", async (method, accept) => {
     const gen = recordingGen();
     const calls: string[] = [];
     const failing = {
@@ -549,17 +553,27 @@ test("a limiter failure is answered as a free request, booking and releasing not
             release: async () => calls.push("release"),
         }),
     };
-
-    const { response } = await call("/prompt/limiter%20down", {
+    const path = `/prompt/limiter%20down%20${method}%20${encodeURIComponent(accept)}`;
+    const { response, text } = await call(path, {
+        method,
+        headers: { accept },
         testEnv: { ...gen.testEnv, IP_SLOT: failing },
     });
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe(
-        "public, max-age=31536000, immutable",
-    );
-    expect(gen.requests).toHaveLength(1);
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("10");
+    expect(gen.requests).toHaveLength(0);
     expect(calls).toEqual(["take"]);
+    expect(await storedAt(path)).toBeNull();
+    if (accept === "image/*") {
+        expect(response.headers.get("content-type")).toBe("image/jpeg");
+        expect(response.headers.get("cache-control")).toBe("no-store");
+    } else if (method === "GET") {
+        expect(JSON.parse(text)).toMatchObject({
+            status: 503,
+            error: { code: "SERVICE_UNAVAILABLE", message: AT_CAPACITY },
+        });
+    }
 });
 
 test("an exception on a miss path is Hono's 500", async () => {

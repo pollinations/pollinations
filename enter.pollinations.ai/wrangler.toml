@@ -118,9 +118,9 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUG
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
 
-# Rebuilds the quest leaderboard before its 15-minute copy expires.
+# Rebuilds the quest leaderboard before its 20-minute copy expires.
 [env.production.triggers]
-crons = ["*/10 * * * *"]
+crons = ["*/15 * * * *"]
 
 [env.production.observability]
 enabled = true
@@ -193,9 +193,9 @@ STRIPE_PUBLISHABLE_KEY = "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS7
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
 
-# Rebuilds the quest leaderboard before its 15-minute copy expires.
+# Rebuilds the quest leaderboard before its 20-minute copy expires.
 [env.staging.triggers]
-crons = ["*/10 * * * *"]
+crons = ["*/15 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"

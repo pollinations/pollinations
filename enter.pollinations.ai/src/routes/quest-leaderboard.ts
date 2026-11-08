@@ -34,10 +34,11 @@ const LEADERBOARD_USER = and(
 );
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
-// Each rebuild scans every counted reward (~0.8s of D1 time). Enter's
-// 10-minute cron rebuilds this copy before it expires, so visitors rebuild
+// Each rebuild scans every counted reward (~0.8s of D1 time), and visitors
+// rebuilding an expired copy at once lined up with D1 overload bursts.
+// Enter's 15-minute cron rebuilds it before it expires, so visitors rebuild
 // it only when it is missing.
-const LEADERBOARD_CACHE_TTL = 15 * 60;
+const LEADERBOARD_CACHE_TTL = 20 * 60;
 const LEADERBOARD_LIMIT = 50;
 
 const leaderboardEntrySchema = z.object({

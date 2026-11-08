@@ -88,7 +88,7 @@ export default {
         }
         return app.fetch(request, env, ctx);
     },
-    // Every 10 minutes (wrangler.toml).
+    // Every 15 minutes (wrangler.toml).
     async scheduled(_controller, env) {
         await refreshQuestLeaderboard(env);
     },

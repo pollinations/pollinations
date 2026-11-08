@@ -26,6 +26,7 @@ then choose a server:
 | Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems versions and npm download counts, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
 | News & Feeds | `https://gen.pollinations.ai/mcp/news` | Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
 | Research | `https://gen.pollinations.ai/mcp/research` | Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank indicators. Thank you to arXiv for use of its open access interoperability. | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
+| Books | `https://gen.pollinations.ai/mcp/books` | Search Open Library books and authors, read editions and ISBN metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/books-mcp) |
 
 Calculators is free but still requires a key. Time conversion rejects ambiguous or
 skipped local times: include an explicit
@@ -53,6 +54,11 @@ Research lookups are free and require a key. Public sources receive no caller
 credentials. Wikidata supports up to five selected claim properties per call;
 World Bank data requires an official indicator code. Large responses fail
 explicitly; narrow the query when asked.
+
+Books lookups are free and require a key. Open Library receives no caller
+credentials. `search_books` returns work ids for `get_book` and
+`list_editions`; descriptions and subject lists are capped, and edition
+paging uses the returned `total` with `offset`.
 
 Send the key with every request:
 

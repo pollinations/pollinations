@@ -58,7 +58,8 @@ export type McpBindingName =
     | "NETWORK_MCP"
     | "PACKAGES_MCP"
     | "NEWS_MCP"
-    | "RESEARCH_MCP";
+    | "RESEARCH_MCP"
+    | "BOOKS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -311,6 +312,20 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Research lookups are free. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "books",
+        alpha: true,
+        name: "Books",
+        description:
+            "Book and author metadata, editions and ISBNs from Open Library.",
+        binding: "BOOKS_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Open Library lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

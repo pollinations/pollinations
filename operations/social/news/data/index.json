@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-07T06:06:40.595390+00:00",
+  "generated_at": "2026-11-08T06:08:28.287193+00:00",
   "models": [
     {
       "id": "2026-10-13:assemblyai/universal-2",
@@ -4768,69 +4768,6 @@
   ],
   "api": [
     {
-      "id": "pr-16809:GET /account/quests/rewards",
-      "endpoint": "GET /account/quests/rewards",
-      "summary": "Get Quest Rewards",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-08",
-      "pr": 16809,
-      "url": "https://github.com/pollinations/pollinations/pull/16809"
-    },
-    {
-      "id": "pr-16809:GET /models/stats",
-      "endpoint": "GET /models/stats",
-      "summary": "Model Usage Stats",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-08",
-      "pr": 16809,
-      "url": "https://github.com/pollinations/pollinations/pull/16809"
-    },
-    {
-      "id": "pr-16809:PATCH /account/keys/{id}",
-      "endpoint": "PATCH /account/keys/{id}",
-      "summary": "Update API Key",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-08",
-      "pr": 16809,
-      "url": "https://github.com/pollinations/pollinations/pull/16809"
-    },
-    {
-      "id": "pr-16809:POST /account/keys",
-      "endpoint": "POST /account/keys",
-      "summary": "Create API Key",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "body:consent",
-          "before": null,
-          "after": {
-            "type": "object",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "body:description",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-08",
-      "pr": 16809,
-      "url": "https://github.com/pollinations/pollinations/pull/16809"
-    },
-    {
       "id": "pr-16982:GET /account/earnings/transactions",
       "endpoint": "GET /account/earnings/transactions",
       "summary": "Get Earnings Transactions",
@@ -7279,107 +7216,6 @@
         16800
       ],
       "kind": "model"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "🤖",
-      "title": "Claude Haiku 5.5 added",
-      "text": "Use `anthropic/claude-haiku-5.5` for text and image input, tools, adaptive reasoning, and a million-token context window. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-haiku-5.5).",
-      "prs": [
-        16713
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "🤖",
-      "title": "Step 5 Preview added",
-      "text": "`stepfun/step-5-preview` accepts text and images and supports tool calls, structured output, and a million-token context window. [Browse the model](https://enter.pollinations.ai/models?q=stepfun/step-5-preview).",
-      "prs": [
-        16796
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "🎵",
-      "title": "Qwen speech replacement added",
-      "text": "`qwen/qwen-audio-3.0-tts-flash` was added to replace Qwen3-TTS Instruct Flash ahead of its October 10 retirement. It supports instruction-guided emotion, tone, and dialect, plus 12 system voices. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-audio-3.0-tts-flash).",
-      "prs": [
-        16821
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "🔗",
-      "title": "Responses across text models",
-      "text": "Use `/v1/responses` with every text model that supports Chat Completions, including Claude, Gemini, and Chat-registered community models. Models without a native Responses endpoint are adapted through the Chat pipeline. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16811
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "🔗",
-      "title": "Publish non-streaming text models",
-      "text": "Community publishers can register Chat Completions or Responses endpoints that return JSON without token-by-token streaming. Model listings expose `supports_streaming: false`, so callers can tell when an answer will arrive at once. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16732
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "🤖",
-      "title": "Choose Floret’s inner model",
-      "text": "Send `metadata.model` to choose Floret’s inner text model. Floret can also check `paid_only` when you ask it to prefer Quest-compatible models; that preference is conversational, not a restriction. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15299
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "🔗",
-      "title": "Discover the polli skill",
-      "text": "Compatible Agent Skills installers can discover the existing polli CLI skill from `gen.pollinations.ai` through its new well-known index. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16859
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "💡",
-      "title": "A dated Enter Changelog",
-      "text": "Enter’s News page groups model and API changes by date and shows what changed, including capabilities, access, voices, and revised retirement dates. Daily highlights appear alongside it. [Visit Enter](https://enter.pollinations.ai/models).",
-      "prs": [
-        16725,
-        16828
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "🎯",
-      "title": "Quest ranks have movement",
-      "text": "The monthly Quest leaderboard now shows places gained or lost since 00:00 UTC, marks new participants, and gives the top three ranks podium medals. [Visit Pollinations](https://pollinations.ai).",
-      "prs": [
-        16861
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-08",
-      "emoji": "💡",
-      "title": "Pi in a browser workbench",
-      "text": "Pi Workbench runs Pi in a browser sandbox with a project editor, terminal, HTML preview, and ZIP downloads. Visitors can use a Pollinations key or authorize their wallet for model calls.",
-      "prs": [
-        16033
-      ],
-      "kind": "product"
     }
   ]
 }

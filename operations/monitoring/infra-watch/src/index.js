@@ -37,6 +37,7 @@ import {
     COMMUNITY_STUCK_MS,
     communityDown,
     conditions,
+    databaseFailing,
     duration,
     escalates,
     legacyDown,
@@ -244,10 +245,11 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up, enterDown] = await Promise.all([
+        const [pub, up, enterDown, database] = await Promise.all([
             isUp(PUBLIC),
             isUp(UPSTREAM),
             enterError(this.env.COMMUNITY_PROBE_KEY),
+            this.database(),
         ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -280,8 +282,10 @@ export class Watch extends DurableObject {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
-        // Enter is checked on its own, so it is judged whatever gen does.
+        // Enter and its database are checked on their own, so they are
+        // judged whatever gen does.
         if (enterDown) found.enter = { kind: "ENTER_DOWN", error: enterDown };
+        if (database) Object.assign(found, databaseFailing(database));
 
         const sweeps = await sweepDomains(
             this.env.DB,
@@ -324,12 +328,13 @@ export class Watch extends DurableObject {
                     Boolean(this.cycle),
                 ),
             );
-        // Unknown sign-ups or legacy bridges keep their open cards.
-        // A sign-up card Discord hasn't taken yet is retried until it has:
-        // its 24-hour window can end first.
+        // Unknown sign-ups, legacy bridges or database failures keep their
+        // open cards. A sign-up card Discord hasn't taken yet is retried
+        // until it has: its 24-hour window can end first.
         const unknown = [
             signups === null && "signup:",
             legacy === null && "legacy:",
+            database === null && "database",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -559,6 +564,21 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Requests Enter's database failed, per minute over the last 30 minutes,
+    // from Tinybird, read every check; null when the read failed.
+    async database() {
+        try {
+            return await pipe(
+                "infra_watch_database",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+        } catch (error) {
+            console.error(`database: ${error.message}`);
+            return null;
+        }
     }
 
     // Each legacy bridge's row from Tinybird, read once an hour from 5

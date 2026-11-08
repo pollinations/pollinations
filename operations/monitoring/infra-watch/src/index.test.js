@@ -112,6 +112,10 @@ async function fake(input, init = {}) {
     }
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.endsWith("/infra_watch_database.json"))
+        return world.database
+            ? Response.json({ data: world.database })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
@@ -164,6 +168,7 @@ beforeEach(() => {
         agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
+        database: [],
         enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
@@ -1019,6 +1024,36 @@ it("opens an Enter card after three failed key checks, never for a refused key, 
     await stub.check();
     await settle(stub);
     expect(await enter()).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("opens a database card on the first bad minute with a ping, keeps it while Tinybird can't say, and closes it once the window is clean", async () => {
+    const stub = watch();
+    const database = async () => (await stored(stub, "state")).open?.database;
+    // Quiet minutes and a lone failure open nothing.
+    world.database = [{ minute: "2026-11-08 15:20:00", failures: 3 }];
+    await stub.check();
+    expect(await database()).toBeUndefined();
+    // 8 Nov 2026 15:21 UTC, as it happened: one burst minute is enough.
+    world.database = [
+        { minute: "2026-11-08 15:20:00", failures: 3 },
+        { minute: "2026-11-08 15:21:00", failures: 232, top_route: "/*" },
+    ];
+    await stub.check();
+    const card = await database();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("FAILING: Enter database (D1)");
+    expect(post.text).toContain("232 reqs failed in 1 min");
+    // The read fails: the card stays open.
+    world.database = null;
+    await stub.check();
+    expect(await database()).toBeDefined();
+    // The burst leaves the 30-minute window: the card closes.
+    world.database = [];
+    await stub.check();
+    await settle(stub);
+    expect(await database()).toBeUndefined();
     expect(over(edits(card.messageId).at(-1))).toBe(true);
 });
 

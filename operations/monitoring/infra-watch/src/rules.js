@@ -173,6 +173,30 @@ export function legacyDown(rows, open = {}) {
     return found;
 }
 
+// Enter's database (D1) is failing while any minute of the last 30 had at
+// least this many requests fail on it; quiet minutes have 0 to 2. Its bursts
+// last about a minute and fail requests before any model is known, so per-
+// model health never sees them: the first bad minute opens the card, and the
+// 30-minute window keeps that one card open across bursts. `minutes` are the
+// infra_watch_database rows.
+const DATABASE_MIN_FAILURES = 25;
+const minuteMs = (minute) => Date.parse(`${minute.replace(" ", "T")}Z`);
+export function databaseFailing(minutes) {
+    const bursts = minutes.filter((m) => m.failures >= DATABASE_MIN_FAILURES);
+    if (!bursts.length) return {};
+    const worst = bursts.reduce((a, b) => (b.failures > a.failures ? b : a));
+    return {
+        database: {
+            kind: "DATABASE_FAILING",
+            worst: worst.failures,
+            route: worst.top_route,
+            bursts: bursts.length,
+            failures: minutes.reduce((sum, m) => sum + m.failures, 0),
+            lastAt: minuteMs(bursts.at(-1).minute),
+        },
+    };
+}
+
 const CONFIRMED = new Set([
     "gen",
     "public",
@@ -301,6 +325,7 @@ export function snapshot(incident) {
         errorKind: info.errorKind ?? null,
         success: info.success ?? null,
         failingCallers: info.callers?.failing_callers ?? null,
+        worst: info.worst ?? null,
     };
 }
 
@@ -324,12 +349,15 @@ export function noteworthy(before, now) {
     return null;
 }
 
-// Worse in a way that needs a person again: callers now affected, or the
-// affected callers went from one to several.
+// Worse in a way that needs a person again: callers now affected, the
+// affected callers went from one to several, or a database burst at least
+// twice the worst one already pinged.
 export const escalates = (before, now) =>
-    now.kind === "DEGRADED" &&
-    (now.failingCallers ?? 2) > 1 &&
-    (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1);
+    (now.kind === "DATABASE_FAILING" &&
+        now.worst >= 2 * (before.worst ?? Number.POSITIVE_INFINITY)) ||
+    (now.kind === "DEGRADED" &&
+        (now.failingCallers ?? 2) > 1 &&
+        (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1));
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
 const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
@@ -435,12 +463,14 @@ const LABEL = {
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
+    DATABASE_FAILING: "FAILING",
 };
 const SUBJECT = {
     gen: "gen Worker",
     public: "gen.pollinations.ai",
     upstream: "gen.myceli.ai",
     enter: "enter.pollinations.ai",
+    database: "Enter database (D1)",
     analytics: "model status data",
     platform: "platform-wide",
     watch: "infra-watch",
@@ -474,6 +504,7 @@ export const COLOR = {
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
+    DATABASE_FAILING: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -581,6 +612,14 @@ function openRows(incident, now) {
         return [
             ["WHY", `key check failing ${CONFIRM_CHECKS}x`],
             ["ERROR", info.error],
+            ["", "API keys, sign-in, billing fail"],
+        ];
+    if (kind === "DATABASE_FAILING")
+        return [
+            ["WORST", `${info.worst} reqs failed in 1 min`],
+            ["BURSTS", `${info.bursts} min of 30, ${info.failures} failed`],
+            ["LAST", utc(info.lastAt)],
+            ["ROUTE", info.route],
             ["", "API keys, sign-in, billing fail"],
         ];
     if (kind === "ANALYTICS_DOWN")

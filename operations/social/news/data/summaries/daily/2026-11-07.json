@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-07",
+  "period_start": "2026-11-07",
+  "period_end": "2026-11-07",
+  "title": "Parallel Voices joins the app catalog",
+  "summary": "Parallel Voices joined the app catalog, while fixes made text fallback and agent tool rounds more reliable.\n\nThe community-built Parallel Voices app lets people compare answers from several Pollinations text models side by side, including latency and token counts. Users bring their own Pollen.\n\nOpening errors in HTTP 200 text streams can now reach fallback. Error classification also reads the provider's error object, so an echoed prompt containing “NSFW” does not turn unrelated errors into safety refusals. Tests cover a single charge after successful fallback and no charge for genuine safety refusals.\n\nThe text gateway removes replayed reasoning fields from messages sent to routes that reject them, including Mistral and InferencePort. For Mistral Large 4, it converts replayed reasoning into a thinking chunk so the model can retain it alongside tool calls.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 18246,
+      "date": "2026-11-07"
+    },
+    {
+      "number": 18485,
+      "date": "2026-11-07"
+    },
+    {
+      "number": 19251,
+      "date": "2026-11-07"
+    },
+    {
+      "number": 19336,
+      "date": "2026-11-07"
+    },
+    {
+      "number": 19339,
+      "date": "2026-11-07"
+    }
+  ],
+  "generated_at": "2026-11-08T06:05:11.389484+00:00",
+  "daily": [],
+  "changelog": []
+}

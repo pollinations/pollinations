@@ -6,8 +6,15 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
+    },
+    "19375": {
+      "merge_sha": "8648c16bbe7255419478dd04665bcc0414aa3679",
+      "merged_at": "2026-11-08T17:28:54Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
     }
   },
-  "production": "a3292fa85262704abf1b26e217572475cb2529aa",
+  "production": "61f8ea7139434c1f76cdb60d0d5e0693f6218037",
   "master": "ba13d3b9b3828a1b990be95229c700859cd0445a"
 }

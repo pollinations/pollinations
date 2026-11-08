@@ -332,7 +332,11 @@ test("pause stops the box, connect resumes it, and the cron stops boxes whose le
     );
 
     const ctx = createExecutionContext();
-    await worker.scheduled(createScheduledController(), azureEnv, ctx);
+    await worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        azureEnv,
+        ctx,
+    );
     await waitOnExecutionContext(ctx);
 
     expect(azure.boxes.map((box) => box.state)).toEqual([

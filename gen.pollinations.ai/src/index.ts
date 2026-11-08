@@ -34,6 +34,7 @@ import {
     GENERATION_HANDOFF_PATH,
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
+import { refreshCommunityModelRegistryCache } from "./community-models.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -340,9 +341,15 @@ export default {
         }
         return serveSite(request, env) ?? app.fetch(request, env, ctx);
     },
-    // The only cron, every 5 minutes (wrangler.toml). Leases end only after
-    // the keeper has renewed the kept sandboxes.
-    scheduled: async (_controller, env, ctx) => {
+    scheduled: async (controller, env, ctx) => {
+        if (controller.cron === "* * * * *") {
+            await refreshCommunityModelRegistryCache(env).catch((error) => {
+                console.error("Community model catalog refresh failed", error);
+            });
+            return;
+        }
+        // Every 5 minutes. Leases end only after the keeper has renewed the
+        // kept sandboxes; catalog refreshes do not change their cadence.
         await keepSandboxes(env, ctx);
         await stopExpiredAzureSandboxes(env);
     },

@@ -34,7 +34,9 @@ const LEADERBOARD_USER = and(
 );
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
-const LEADERBOARD_CACHE_TTL = 60;
+// Each rebuild scans every counted reward (~0.8s of D1 time). Totals move
+// slowly, so a 15-minute copy keeps the homepage off the shared database.
+const LEADERBOARD_CACHE_TTL = 15 * 60;
 const LEADERBOARD_LIMIT = 50;
 
 const leaderboardEntrySchema = z.object({

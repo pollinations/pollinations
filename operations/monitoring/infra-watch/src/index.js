@@ -45,6 +45,7 @@ import {
     noteworthy,
     pings,
     renderCard,
+    signInFailing,
     snapshot,
     step,
     waiting,
@@ -244,10 +245,11 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up, enterDown] = await Promise.all([
+        const [pub, up, enterDown, signIn] = await Promise.all([
             isUp(PUBLIC),
             isUp(UPSTREAM),
             enterError(this.env.COMMUNITY_PROBE_KEY),
+            this.signIn(),
         ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -280,8 +282,10 @@ export class Watch extends DurableObject {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
-        // Enter is checked on its own, so it is judged whatever gen does.
+        // Enter and its sign-ins are checked on their own, so they are judged
+        // whatever gen does.
         if (enterDown) found.enter = { kind: "ENTER_DOWN", error: enterDown };
+        if (signIn) Object.assign(found, signInFailing(signIn));
 
         const sweeps = await sweepDomains(
             this.env.DB,
@@ -324,12 +328,13 @@ export class Watch extends DurableObject {
                     Boolean(this.cycle),
                 ),
             );
-        // Unknown sign-ups or legacy bridges keep their open cards.
+        // Unknown sign-ups, legacy bridges or sign-ins keep their open cards.
         // A sign-up card Discord hasn't taken yet is retried until it has:
         // its 24-hour window can end first.
         const unknown = [
             signups === null && "signup:",
             legacy === null && "legacy:",
+            signIn === null && "signin",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -791,6 +796,22 @@ export class Watch extends DurableObject {
             changes: before && listingChanges(before.filtered, filtered, list),
             saved: { day, filtered: filtered.map((m) => m.name) },
         };
+    }
+
+    // The last 30 minutes of GitHub and Google sign-ins from Tinybird, read
+    // every check; null when the read failed.
+    async signIn() {
+        try {
+            const [row] = await pipe(
+                "infra_watch_sign_in",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+            return row;
+        } catch (error) {
+            console.error(`sign-in: ${error.message}`);
+            return null;
+        }
     }
 
     // Sign-up bursts, each domain held at once; null if they couldn't be

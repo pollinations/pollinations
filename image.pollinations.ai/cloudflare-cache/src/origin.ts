@@ -325,10 +325,9 @@ export async function generate(c: Context, url: URL, route: string) {
             !weftEnabled(env),
         );
     } catch (error) {
-        // The VM's in-memory queue could not fail: answer as a free request
-        // that books and releases nothing
         logFailure(route, { error: "ip_slot", type: error.name });
-        return background(generateImage(job, () => {}));
+        const { status, body, headers } = failure(503);
+        return withCard(vmResponse(body, status, headers), "busy", job);
     }
 
     if (slot.action === "full") {

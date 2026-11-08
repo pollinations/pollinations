@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-11-08",
+  "period_start": "2026-11-01",
+  "period_end": "2026-11-07",
+  "generated_at": "2026-11-08T06:05:58.899339+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/d0670170ca058c0e5ba9a7440a358747e77778112791144389703c45307b76d4"
+    }
+  ],
+  "text": "## Weekly Update - 2026-11-08\n\nHey <@&1424461167883194418>, here’s what changed this week.\n\n🔀 **Fallback and models**\n- `model` accepts up to four comma-separated IDs or aliases. On retryable failures, the API tries eligible models in order, including on audio routes and `/v1/messages`. Entries must share a category and support the endpoint. Each attempt uses its own pricing, permissions, balance check, and rate limit. Text-stream error handling and image retries after worker connection loss also improved.\n- Added MiniMax M3.1 Flash, two paid Kimi K3.1 Pro variants, and Muse Spark Open. All accept images and have 1,048,576-token context windows. Muse requires reasoning and lacks `response_format` and `seed`. Jev decision requests now use pinned 1.14. GPT Image 2.6 Flare and Sunburst support editing, up to 16 references, transparency, and 4K output; both require purchased Pollen.\n\n🛠️ **Agents and sandboxes**\n- CLI 0.1.80 added `polli acp [agent]` for ACP editors, plus Mistral Vibe setup. Code agents can use client-provided function calls through `/v1/responses`. Five alpha MCP servers cover calculations, diagnostics, metadata, feeds, and research. They need a key but charge no Pollen.\n- Kept E2B sandboxes can opt into idle pause with `idleTimeout` of at least 300 seconds and API timeout over 600 seconds. Authenticated shared-port requests can wake them. Wakes and leases are prepaid. The Sandboxes tab compares five templates, including hourly prices and a 75% launch discount.\n\n🌱 **Quests and community**\n- Claimable Quests moved up. Invite friends pays 2 Quest Pollen per qualifying referral with purchases over 2 Pollen. From November 5, eligible merged PRs earn their reward label, the highest label on a quest issue they close, or 5 Pollen by default. Eligible issue authors earn 2.\n- Community model checks and clearer Trust “endpoint errors” labels were added. Fifteen apps joined the catalog, including Parallel Voices.\n\n📊 **Numbers**\n- Activity combines Usage and Earnings, with filtered CSV export. Model listings now include `top_provider.max_completion_tokens` (`null` if undeclared).\n\n[Repo](https://github.com/pollinations/pollinations) · [Docs](https://docs.pollinations.ai/)"
+}

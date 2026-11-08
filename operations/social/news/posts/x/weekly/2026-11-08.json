@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "weekly",
+  "date": "2026-11-08",
+  "period_start": "2026-11-01",
+  "period_end": "2026-11-07",
+  "generated_at": "2026-11-08T06:05:58.899339+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/737512c0740a71e5d2c62e8d8327e3553b08ea6c3e7a7c02cf5f45717887e9d8"
+    }
+  ],
+  "text": "shipped this week: `model` accepts up to 4 compatible IDs or aliases. Retryable errors try the next model, including on audio and `/v1/messages`. Opening text-stream errors now reach fallback; image jobs retry after worker disconnects. failure remains an option."
+}

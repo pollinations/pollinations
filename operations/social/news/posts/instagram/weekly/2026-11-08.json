@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-11-08",
+  "period_start": "2026-11-01",
+  "period_end": "2026-11-07",
+  "generated_at": "2026-11-08T06:05:58.899339+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/5bb1e631ff3db95df92f9782ff263164a1a001230ade886fb6e92fc81b7a3199"
+    },
+    {
+      "url": "https://media.pollinations.ai/19ad46a2aa425fb05bfc5014c1e4baaba3eca615ca4021217f91cebe5be80dca"
+    },
+    {
+      "url": "https://media.pollinations.ai/aceabab3a2f3f7b1abb40b6ec420c1d2cb42d216e9a64eaab1523ceeec5a21c8"
+    }
+  ],
+  "text": "This week, `model` started accepting fallback chains of up to four IDs or aliases. On a retryable failure, the API tries eligible models in order. Text-stream and image retries got fixes too.\n\nThe CLI added `polli acp [agent]` for ACP editors. Eligible kept E2B sandboxes can now pause when idle and wake on connection. Activity puts Usage and Earnings in one view, and Trust calls out endpoint errors more clearly. Software still finds ways to be software.\n\nCode and updates: github.com/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #AIagents #API #devtools",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

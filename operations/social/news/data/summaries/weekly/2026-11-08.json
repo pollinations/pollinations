@@ -1,0 +1,491 @@
+{
+  "date": "2026-11-08",
+  "period_start": "2026-11-01",
+  "period_end": "2026-11-07",
+  "title": "Model fallback became a caller choice",
+  "summary": "This week gave builders more control over failed requests, more models and agent tools to choose from, and a clearer view of what their apps use and cost.\n\nThe `model` field now accepts up to four comma-separated IDs or aliases. When an upstream attempt fails in a retryable way, the API tries eligible models in order. The chain also works on audio routes and `/v1/messages`; every entry must share a category and support the endpoint. Each attempt uses its model's pricing, permissions, balance check, and rate limit. Related fixes let opening errors in HTTP 200 text streams reach fallback, classify provider errors without mistaking an echoed prompt for a safety refusal, and retry image generation after a worker connection loss. Software remains capable of failing, but callers have more say in what happens next.\n\nMiniMax M3.1 Flash, two paid Kimi K3.1 Pro variants, and Muse Spark Open joined the text catalog. All four accept images and have 1,048,576-token context windows; Muse Spark Open requires reasoning and does not support `response_format` or `seed`. Jev decision requests moved to pinned release 1.14, including requests using older Jev names. For image work, GPT Image 2.6 Flare and Sunburst added generation and editing with up to 16 reference images, transparency, and 4K output. Both require purchased Pollen. Model listings also gained `top_provider.max_completion_tokens`, with `null` when no limit is declared.\n\nThe CLI added Mistral Vibe setup and, in version 0.1.80, `polli acp [agent]` for ACP editors such as Zed and JetBrains IDEs. ACP prompts can include images and files; local tool calls require permission. Code agents can also return caller-supplied function calls through `/v1/responses` and continue after the client sends the results. Five alpha MCP servers cover calculations, network diagnostics, package and model metadata, feeds, and research sources. They require a Pollinations key but charge no Pollen.\n\nKept E2B sandboxes can opt into idle pause when `idleTimeout` is at least 300 seconds and the API timeout exceeds 600 seconds. Connections can resume them, and authenticated requests to shared ports can wake them through a `pollinations.app` host. Wakes and leases are prepaid. A searchable Sandboxes tab now compares five E2B and Azure templates, while the pricing API provides their names, providers, sizes, and disk sizes.",
+  "pr_count": 120,
+  "prs": [
+    {
+      "number": 18753,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18892,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18907,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18927,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18931,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18933,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18936,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18939,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18941,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18942,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18947,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18948,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18949,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18950,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18953,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18957,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18966,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18968,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18970,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18976,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18977,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18980,
+      "date": "2026-11-01"
+    },
+    {
+      "number": 18183,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18388,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18639,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18640,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18641,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18642,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18643,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18644,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18667,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18683,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18698,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18770,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18833,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18870,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18871,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18920,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18960,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18985,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 18998,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 19003,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 19007,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 19012,
+      "date": "2026-11-02"
+    },
+    {
+      "number": 16405,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 17241,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 17840,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18160,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18197,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18198,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18199,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18428,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18483,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18608,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18622,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18656,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18657,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18658,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18726,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18761,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18805,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18863,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 18975,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19038,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19048,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19050,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19063,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19069,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19074,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19080,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19081,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19088,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19089,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19090,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19092,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19093,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19096,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 19097,
+      "date": "2026-11-03"
+    },
+    {
+      "number": 17634,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 17636,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 17760,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18050,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18118,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18306,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18415,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18417,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18425,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18541,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 19124,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 19126,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 19127,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 19146,
+      "date": "2026-11-04"
+    },
+    {
+      "number": 18370,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 18420,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 18750,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19154,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19155,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19157,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19196,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19200,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19203,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19207,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19224,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19228,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19248,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19249,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 19250,
+      "date": "2026-11-05"
+    },
+    {
+      "number": 14795,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 18153,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 18207,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 18215,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 19254,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 19279,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 19283,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 19301,
+      "date": "2026-11-06"
+    },
+    {
+      "number": 18246,
+      "date": "2026-11-07"
+    },
+    {
+      "number": 18485,
+      "date": "2026-11-07"
+    },
+    {
+      "number": 19251,
+      "date": "2026-11-07"
+    },
+    {
+      "number": 19336,
+      "date": "2026-11-07"
+    },
+    {
+      "number": 19339,
+      "date": "2026-11-07"
+    }
+  ],
+  "generated_at": "2026-11-08T06:05:58.899339+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-11-08",
+  "period_start": "2026-11-01",
+  "period_end": "2026-11-07",
+  "generated_at": "2026-11-08T06:05:58.899339+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/6b230b7bc7461544a6db95be0f2cd85373976e700595c55b82f836b7c8822c48"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol. 01: fallbacks & agents\n\nModel fallback chains now accept up to four comma-separated IDs or aliases. Retryable upstream failures try eligible models in order.\n\n1. Chains work on audio routes and /v1/messages. Entries must share a category and support the endpoint. Each attempt gets its own pricing, permissions, balance check and rate limit. Text-stream opening errors and lost image-worker connections got retry fixes too.\n\n2. CLI v0.1.80 added polli acp [agent] for ACP editors. Code agents can return client-provided function calls via /v1/responses. Five alpha MCP servers cover calculations, diagnostics, metadata, feeds and research.\n\n3. Kept E2B sandboxes can opt into idle pause when idleTimeout is at least 300 seconds and the API timeout exceeds 600 seconds. Connections can wake them. The Sandboxes tab compares five templates.\n\n4. Activity combines Usage and Earnings. CSV export respects key and model filters. Trust now labels models that error on more than half their eval questions as “endpoint errors.”\n\nSoftware can still fail, just in a caller-specified order.\n\nCode: https://github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

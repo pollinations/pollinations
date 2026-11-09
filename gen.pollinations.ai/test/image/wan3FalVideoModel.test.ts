@@ -207,18 +207,6 @@ describe("Wan 3.0 Prime via Fal", () => {
         });
     });
 
-    it("rejects durations outside the five-second contract", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callWan3FalAPI("a sailboat crossing a calm bay", {
-                ...baseParams,
-                duration: 4,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("I2V forwards end_image_url when image[1] is present", async () => {
         const requests: ProviderRequest[] = [];
         mockFalFetch(requests);

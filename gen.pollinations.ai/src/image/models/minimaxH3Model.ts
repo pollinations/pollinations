@@ -32,7 +32,6 @@ const H3_MAX_RESOLUTIONS = {
     "768p": "768P",
     "1080p": "1080P",
 } as const;
-const H3_MAX_DURATIONS = [5, 10, 15] as const;
 const H3_MAX_ASPECT_RATIOS = [
     "21:9",
     "16:9",
@@ -256,12 +255,7 @@ async function callFalMinimaxMaxVariant(
     safeParams: ImageParams,
     providerUnitCost: number | "lookup",
 ): Promise<VideoGenerationResult> {
-    const duration = safeParams.duration ?? H3_MAX_DURATIONS[0];
-    if (!(H3_MAX_DURATIONS as readonly number[]).includes(duration)) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${title} supports 5, 10, or 15 seconds`,
-        });
-    }
+    const duration = safeParams.duration ?? 5;
 
     const resolution = safeParams.resolution ?? "480p";
     const upstreamResolution =

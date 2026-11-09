@@ -250,6 +250,9 @@ const CONFIRMED = new Set([
     "platform",
 ]);
 const HOSTS = { gen: true, public: true, upstream: true, enter: true };
+// Checked on their own, so judged whatever gen or analytics does.
+const independent = (key) =>
+    key === "enter" || key === "early" || key.startsWith("stale:");
 // A model incident's model, from its key; null for any other incident.
 export const modelOf = (key) =>
     key.startsWith("model:") ? key.slice(6) : null;
@@ -320,8 +323,8 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, incident] of Object.entries(open)) {
         if (found[key]) continue;
-        if (found.gen && key !== "enter") continue;
-        if (found.analytics && !HOSTS[key]) continue;
+        const blind = found.gen || (found.analytics && !HOSTS[key]);
+        if (blind && !independent(key)) continue;
         // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
         // sample neither counts nor resets the run.
         const model = modelOf(key);

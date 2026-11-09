@@ -275,6 +275,21 @@ const bursts = [
     minute("15:32", 82, 82, "/image/:prompt"),
 ];
 
+test("early-errors and stale-feed cards close on their own checks, whatever gen or analytics does", () => {
+    const early = earlyErrors(bursts).early;
+    const stale = { kind: "JOB_STALE", source: "product_event" };
+    for (const outage of [
+        { gen: { kind: "GEN_DOWN" } },
+        { analytics: { kind: "ANALYTICS_DOWN" } },
+    ]) {
+        let r = { state: {} };
+        for (const t of [1, 2, 3])
+            r = step(r.state, { early, "stale:product_event": stale }, t);
+        for (const t of [4, 5, 6]) r = step(r.state, outage, t);
+        assert.deepEqual(Object.keys(r.state.open), Object.keys(outage));
+    }
+});
+
 test("early errors fail on any minute of 25+ failed requests in the window", () => {
     assert.deepEqual(
         earlyErrors([minute("15:20", 24), minute("15:25", 3)]),

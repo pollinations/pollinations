@@ -1175,7 +1175,7 @@ Generate videos from text prompts or reference images. Returns MP4.
 https://gen.pollinations.ai/video/sunset%20timelapse?model=google/veo-3.1-fast&duration=4
 ```
 
-**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, x-ai/grok-imagine-video-1.5-lite, bytedance/seedance-2.5, alibaba/happyhorse-1.1, kwaivgi/kling-v3.0-std, black-forest-labs/flux-3-max, heygen/heygen-video-1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video, kandinskylab/kandinsky-6.0-lite, mirelo/sfx-2.0
+**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, google/gemini-omni-1.2-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, x-ai/grok-imagine-video-1.5-lite, bytedance/seedance-2.5, alibaba/happyhorse-1.1, kwaivgi/kling-v3.0-std, black-forest-labs/flux-3-max, heygen/heygen-video-1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video, kandinskylab/kandinsky-6.0-lite, mirelo/sfx-2.0
 
 ### Community video models
 
@@ -1185,7 +1185,7 @@ Community video models use a `community/owner/model` id and work on `/video/{pro
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:replicate`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:replicate`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:fal`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `x-ai/grok-imagine-video-1.5-lite`, `x-ai/grok-imagine-video-1.5-lite:openrouter`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `kwaivgi/kling-v3.0-std`, `black-forest-labs/flux-3-max`, `heygen/heygen-video-1`, `heygen/heygen-video-1:openrouter`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`, `kandinskylab/kandinsky-6.0-lite`, `mirelo/sfx-2.0`.
+**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:replicate`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:replicate`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:fal`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `x-ai/grok-imagine-video-1.5-lite`, `x-ai/grok-imagine-video-1.5-lite:openrouter`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `kwaivgi/kling-v3.0-std`, `black-forest-labs/flux-3-max`, `heygen/heygen-video-1`, `heygen/heygen-video-1:openrouter`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`, `kandinskylab/kandinsky-6.0-lite`, `mirelo/sfx-2.0`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -1212,9 +1212,9 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `resolution` | `query` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
-| `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default. · range: `1…120` |
-| `aspectRatio` | `query` | `string` | Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`. |
-| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `black-forest-labs/flux-3-max` generates audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. |
+| `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `google/gemini-omni-1.2-flash`: 3-15s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: 2-15s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default. · range: `1…120` |
+| `aspectRatio` | `query` | `string` | Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`. |
+| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `black-forest-labs/flux-3-max` generates audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1980,8 +1980,16 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].reasoning` | `boolean` | — |
 | `data[].supports_streaming` | `boolean` | False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams. |
 | `data[].context_length` | `number` | — |
+| `data[].video_capabilities` | enum (7) — `"start_frame"`, `"end_frame"`, `"keyframes"`, …[] | Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video. |
+| `data[].min_duration` | `number` | Shortest accepted video or audio `duration` in seconds. |
+| `data[].max_duration` | `number` | Longest accepted video or audio `duration` in seconds. |
+| `data[].default_duration` | `number` | Video length in seconds when the request omits `duration`. |
+| `data[].allowed_durations` | `number`[] | Exact `duration` values in seconds when the model accepts a fixed set instead of a range. |
 | `data[].per_user_rpm` | `number` \| `null` | — |
+| `data[].max_reference_images` | `integer` | Most reference or input images one request accepts. Omitted when the model declares none. |
+| `data[].max_reference_videos` | `integer` | Most reference or input videos one request accepts. Omitted when the model declares none. |
 | `data[].health` | `object` | Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health. |
+| `data[].voices` | `string`[] | Preset voice names for the `voice` parameter. Omitted when the model lists none. |
 
 <sub>`*` = required field</sub>
 
@@ -2090,11 +2098,19 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `reasoning` | `boolean` | — |
 | `supports_streaming` | `boolean` | False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams. |
 | `context_length` | `number` | — |
+| `video_capabilities` | enum (7) — `"start_frame"`, `"end_frame"`, `"keyframes"`, …[] | Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video. |
+| `min_duration` | `number` | Shortest accepted video or audio `duration` in seconds. |
+| `max_duration` | `number` | Longest accepted video or audio `duration` in seconds. |
+| `default_duration` | `number` | Video length in seconds when the request omits `duration`. |
+| `allowed_durations` | `number`[] | Exact `duration` values in seconds when the model accepts a fixed set instead of a range. |
 | `per_user_rpm` | `number` \| `null` | — |
+| `max_reference_images` | `integer` | Most reference or input images one request accepts. Omitted when the model declares none. |
+| `max_reference_videos` | `integer` | Most reference or input videos one request accepts. Omitted when the model declares none. |
 | `health` | `object` | Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health. |
 | `health.status` * | `"healthy"` \| `"degraded"` \| `"down"` \| `"unknown"` | Healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown with no measured requests. |
 | `health.success_rate` * | `number` \| `null` | Success across the last 50 eligible final requests within seven days for community proxies, or the last 24 hours for other models; null with no measured requests. |
 | `health.requests` * | `integer` | Number of eligible final responses in the health sample (at most 50 for community proxies). |
+| `voices` | `string`[] | Preset voice names for the `voice` parameter. Omitted when the model lists none. |
 
 <sub>`*` = required field</sub>
 

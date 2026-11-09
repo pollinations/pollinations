@@ -10,9 +10,7 @@
     "19388": {
       "merge_sha": "b9687318b0024641b6012372c22fe6661c71041c",
       "merged_at": "2026-11-09T00:18:02Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter"
-      ]
+      "required": []
     }
   },
   "production": "2c05fd3dd1088a0f6c60f35b1bbab621d7b0643c",

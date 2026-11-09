@@ -513,14 +513,15 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral-large-4");
     });
 
-    it("pins the Nemotron 3 Ultra fallback to Baseten on Vercel", () => {
+    it("pins the Nemotron 3 Ultra fallback to Baseten on OpenRouter", () => {
         const result = resolveModelConfig(messages, {
-            model: "nvidia/nemotron-3-ultra:vercel",
+            model: "nvidia/nemotron-3-ultra:openrouter:baseten-fp4",
         });
 
         expect(result.options.model).toBe("nvidia/nemotron-3-ultra-550b-a55b");
-        expect(result.options.providerOptions).toEqual({
-            gateway: { only: ["baseten"] },
+        expect(result.options.provider).toEqual({
+            only: ["baseten/fp4"],
+            allow_fallbacks: false,
         });
     });
 

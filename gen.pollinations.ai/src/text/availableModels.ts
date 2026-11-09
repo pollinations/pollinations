@@ -1141,9 +1141,9 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "nvidia/nemotron-3-ultra:vercel",
-        config: portkeyConfig["nvidia/nemotron-3-ultra:vercel"],
-        transform: createReasoningEffortTransform("toggle"),
+        name: "nvidia/nemotron-3-ultra:openrouter:baseten-fp4",
+        config: portkeyConfig["nemotron-3-ultra-openrouter-baseten"],
+        transform: fireworksThinking,
     },
     {
         name: "nvidia/nemotron-3.5-lightning",

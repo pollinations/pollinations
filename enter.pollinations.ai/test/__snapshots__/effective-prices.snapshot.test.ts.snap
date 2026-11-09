@@ -2722,16 +2722,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005,
     },
   },
-  "nvidia/nemotron-3-ultra:vercel": {
+  "nvidia/nemotron-3-ultra:openrouter:baseten-fp4": {
     "cost": {
-      "completionTextTokens": 0.0000024,
-      "promptCachedTokens": 0.00000012,
-      "promptTextTokens": 0.0000006,
+      "completionTextTokens": 0.000002532,
+      "promptCachedTokens": 0.0000001266,
+      "promptTextTokens": 0.000000633,
     },
     "price": {
-      "completionTextTokens": 0.0000024,
-      "promptCachedTokens": 0.00000012,
-      "promptTextTokens": 0.0000006,
+      "completionTextTokens": 0.000002532,
+      "promptCachedTokens": 0.0000001266,
+      "promptTextTokens": 0.000000633,
     },
   },
   "nvidia/nemotron-3.5-lightning": {

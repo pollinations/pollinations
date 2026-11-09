@@ -764,14 +764,10 @@ export const portkeyConfig: PortkeyConfigMap = {
                 normalizeFinishReasonAtTokenLimit: true,
             },
         }),
-    "nvidia/nemotron-3-ultra:vercel": () =>
-        createVercelAIGatewayModelConfig({
-            model: "nvidia/nemotron-3-ultra-550b-a55b",
-            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
-            defaultOptions: {
-                providerOptions: { gateway: { only: ["baseten"] } },
-            },
-        }),
+    "nemotron-3-ultra-openrouter-baseten": createPinnedOpenRouterConfig(
+        "nvidia/nemotron-3-ultra-550b-a55b",
+        "baseten/fp4",
+    ),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Novita's Gemma deployments regressed: 26B rejected most requests with

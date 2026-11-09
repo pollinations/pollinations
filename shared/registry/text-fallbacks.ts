@@ -893,15 +893,16 @@ export const TEXT_FALLBACKS = {
         },
     },
     "nvidia/nemotron-3-ultra": {
-        "nvidia/nemotron-3-ultra:vercel": {
-            provider: "vercel",
-            addedDate: new Date("2026-10-24").getTime(),
-            // Vercel AI Gateway pinned to Baseten's NVFP4 deployment
-            // (2026-10-24); costs more than the DeepInfra primary.
+        "nvidia/nemotron-3-ultra:openrouter:baseten-fp4": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-09").getTime(),
+            // OpenRouter pinned to Baseten's NVFP4 deployment (2026-11-09),
+            // including the 5.5% credit-purchase fee; costs more than the
+            // DeepInfra primary.
             cost: {
-                promptTextTokens: perMillion(0.6),
-                promptCachedTokens: perMillion(0.12),
-                completionTextTokens: perMillion(2.4),
+                promptTextTokens: perMillion(0.6) * 1.055,
+                promptCachedTokens: perMillion(0.12) * 1.055,
+                completionTextTokens: perMillion(2.4) * 1.055,
             },
         },
     },

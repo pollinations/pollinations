@@ -61,6 +61,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "calculate_statistics",
                 "currency_convert",
                 "currency_list",
                 "currency_rates",
@@ -390,4 +391,37 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("calculate_statistics computes summary statistics and quartiles accurately", async (t) => {
+    const client = await clientFor(t);
+    const stats = await call(client, "calculate_statistics", {
+        numbers: [2, 4, 4, 4, 5, 5, 7, 9],
+    });
+    assert.equal(stats.count, 8);
+    assert.equal(stats.sum, 40);
+    assert.equal(stats.mean, 5);
+    assert.equal(stats.median, 4.5);
+    assert.deepEqual(stats.mode, [4]);
+    assert.equal(stats.min, 2);
+    assert.equal(stats.max, 9);
+    assert.equal(stats.range, 7);
+    assert.equal(stats.variance.population, 4);
+    assert.equal(Math.round(stats.variance.sample * 100) / 100, 4.57);
+    assert.equal(stats.std_dev.population, 2);
+    assert.equal(stats.quartiles.q1, 4);
+    assert.equal(stats.quartiles.q3, 5.5);
+    assert.equal(stats.quartiles.iqr, 1.5);
+
+    // Single number edge case
+    const single = await call(client, "calculate_statistics", {
+        numbers: [42],
+    });
+    assert.equal(single.count, 1);
+    assert.equal(single.mean, 42);
+    assert.equal(single.median, 42);
+    assert.deepEqual(single.mode, [42]);
+    assert.equal(single.variance.population, 0);
+    assert.equal(single.variance.sample, null);
+    assert.equal(single.std_dev.sample, null);
 });

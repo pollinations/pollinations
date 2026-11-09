@@ -2400,6 +2400,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-fable-5.2": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "anthropic",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-11-09").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Anthropic first-party rates (platform.claude.com pricing, 2026-11-09);
+        // 5-minute cache writes.
+        cost: {
+            promptTextTokens: perMillion(8),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(10),
+            completionTextTokens: perMillion(40),
+        },
+        title: "Claude Fable 5.2",
+        description:
+            "Frontier intelligence for demanding reasoning and long-horizon agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-fable-5.1": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],

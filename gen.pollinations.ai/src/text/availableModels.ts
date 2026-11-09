@@ -715,6 +715,14 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-fable-5.2",
+        config: portkeyConfig["anthropic/claude-fable-5.2"],
+    },
+    {
+        name: "anthropic/claude-fable-5.2:vercel",
+        config: portkeyConfig["anthropic/claude-fable-5.2:vercel"],
+    },
+    {
         name: "anthropic/claude-sonnet-5.5",
         config: portkeyConfig["anthropic/claude-sonnet-5.5"],
         // Reasoning is mandatory on this route and sampling params are rejected.

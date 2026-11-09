@@ -920,6 +920,19 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-fable-5.2": {
+        "anthropic/claude-fable-5.2:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-11-09").getTime(),
+            // Vercel AI Gateway lists the same rates as Anthropic first-party.
+            cost: {
+                promptTextTokens: perMillion(8),
+                promptCachedTokens: perMillion(0.2),
+                promptCacheWriteTokens: perMillion(10),
+                completionTextTokens: perMillion(40),
+            },
+        },
+    },
     "mistralai/mistral-small-4": {
         "mistralai/mistral-small-4:openrouter": {
             provider: "openrouter",

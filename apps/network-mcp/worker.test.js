@@ -62,6 +62,7 @@ for (const modern of [false, true])
                 "http_probe",
                 "inspect_cidr",
                 "ip_whois",
+                "parse_url",
             ],
         );
         const response = await client.callTool({
@@ -375,10 +376,66 @@ test("tool schemas reject oversized inputs before I/O", async (t) => {
         ["dns_lookup", { name: "example.com", type: "65536" }],
         ["http_probe", { url: "https://example.com", method: "POST" }],
         ["inspect_cidr", { cidr: "::/0", addresses: Array(21).fill("::1") }],
+        ["parse_url", { url: "" }],
+        ["parse_url", { url: `https://example.com/${"a".repeat(2048)}` }],
     ]) {
         assert.equal(
             (await client.callTool({ name, arguments: args })).isError,
             true,
         );
     }
+});
+
+test("parse_url accurately parses URLs, handles query params, and classifies IPs and private ranges", async (t) => {
+    const client = await clientFor(t);
+
+    const res1 = await client.callTool({
+        name: "parse_url",
+        arguments: {
+            url: "https://user:pass@api.pollinations.ai:8443/v1/chat/completions?model=openai&tag=a&tag=b#section",
+        },
+    });
+    assert.notEqual(res1.isError, true);
+    const parsed1 = JSON.parse(res1.content[0].text);
+    assert.equal(parsed1.protocol, "https");
+    assert.equal(parsed1.hostname, "api.pollinations.ai");
+    assert.equal(parsed1.port, 8443);
+    assert.equal(parsed1.pathname, "/v1/chat/completions");
+    assert.equal(parsed1.username, "user");
+    assert.equal(parsed1.password, "pass");
+    assert.equal(parsed1.hash, "#section");
+    assert.equal(parsed1.query_params.model, "openai");
+    assert.deepEqual(parsed1.query_params.tag, ["a", "b"]);
+    assert.equal(parsed1.is_ip, false);
+    assert.equal(parsed1.is_private, false);
+
+    // Private IPv4 test
+    const res2 = await client.callTool({
+        name: "parse_url",
+        arguments: { url: "http://192.168.1.1/admin" },
+    });
+    const parsed2 = JSON.parse(res2.content[0].text);
+    assert.equal(parsed2.port, 80);
+    assert.equal(parsed2.is_ip, true);
+    assert.equal(parsed2.ip_version, 4);
+    assert.equal(parsed2.is_private, true);
+
+    // Localhost test
+    const res3 = await client.callTool({
+        name: "parse_url",
+        arguments: { url: "http://localhost:3000" },
+    });
+    const parsed3 = JSON.parse(res3.content[0].text);
+    assert.equal(parsed3.port, 3000);
+    assert.equal(parsed3.is_private, true);
+
+    // IPv6 Loopback test
+    const res4 = await client.callTool({
+        name: "parse_url",
+        arguments: { url: "http://[::1]:8080/metrics" },
+    });
+    const parsed4 = JSON.parse(res4.content[0].text);
+    assert.equal(parsed4.is_ip, true);
+    assert.equal(parsed4.ip_version, 6);
+    assert.equal(parsed4.is_private, true);
 });

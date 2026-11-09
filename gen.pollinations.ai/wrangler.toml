@@ -97,9 +97,9 @@ run_worker_first = true
 [env.production.images]
 binding = "IMAGES"
 
-# Renews kept sandboxes (src/routes/e2b.ts).
+# Refreshes the community catalog each minute; renews sandboxes every 5 minutes.
 [env.production.triggers]
-crons = ["*/5 * * * *"]
+crons = ["* * * * *", "*/5 * * * *"]
 
 [[env.production.routes]]
 pattern = "gen.myceli.ai"
@@ -262,9 +262,9 @@ AZURE_SANDBOX_IMAGE = "bfc9e318-3cb1-4a00-8c3c-eafb1b671ee8"
 [env.staging.images]
 binding = "IMAGES"
 
-# Renews kept sandboxes (src/routes/e2b.ts).
+# Refreshes the community catalog each minute; renews sandboxes every 5 minutes.
 [env.staging.triggers]
-crons = ["*/5 * * * *"]
+crons = ["* * * * *", "*/5 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"

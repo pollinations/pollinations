@@ -922,6 +922,17 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("routes Muse Ember through Vercel AI Gateway", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/muse-ember",
+        });
+
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+    });
+
     it("routes Step Flash directly to Novita", () => {
         const result = resolveModelConfig(messages, {
             model: "stepfun/step-3.7-flash",

@@ -920,6 +920,19 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "meta/muse-ember": {
+        "meta/muse-ember:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-09").getTime(),
+            // OpenRouter list rates (2026-11-09) with the 5.5% credit fee applied.
+            cost: {
+                promptTextTokens: perMillion(0.1) * 1.055,
+                promptCachedTokens: perMillion(0.004) * 1.055,
+                promptCacheWriteTokens: perMillion(0.125) * 1.055,
+                completionTextTokens: perMillion(0.5) * 1.055,
+            },
+        },
+    },
     "mistralai/mistral-small-4": {
         "mistralai/mistral-small-4:openrouter": {
             provider: "openrouter",

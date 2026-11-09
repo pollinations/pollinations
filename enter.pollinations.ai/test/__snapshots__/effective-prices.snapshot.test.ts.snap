@@ -2120,6 +2120,32 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015,
     },
   },
+  "meta/muse-ember": {
+    "cost": {
+      "completionTextTokens": 0.0000005,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000005,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "meta/muse-ember:openrouter": {
+    "cost": {
+      "completionTextTokens": 0.0000005275,
+      "promptCacheWriteTokens": 0.000000131875,
+      "promptCachedTokens": 0.00000000422,
+      "promptTextTokens": 0.0000001055,
+    },
+    "price": {
+      "completionTextTokens": 0.0000005275,
+      "promptCacheWriteTokens": 0.000000131875,
+      "promptCachedTokens": 0.00000000422,
+      "promptTextTokens": 0.0000001055,
+    },
+  },
   "meta/muse-glimmer-30b": {
     "cost": {
       "completionTextTokens": 0.0000012,

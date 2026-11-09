@@ -1342,6 +1342,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         createVercelAIGatewayModelConfig({
             model: "moonshotai/kimi-k3.1-pro",
         }),
+    "meta/muse-ember": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-ember",
+        }),
+    "meta/muse-ember:openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "meta/muse-ember",
+        }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",

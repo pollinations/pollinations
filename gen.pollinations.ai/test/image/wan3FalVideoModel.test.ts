@@ -41,6 +41,7 @@ type ProviderRequest = {
 function mockFalFetch(
     requests: ProviderRequest[],
     status: "COMPLETED" | "FAILED" = "COMPLETED",
+    reportedDuration: number | null = 5,
 ) {
     return vi
         .spyOn(globalThis, "fetch")
@@ -73,6 +74,7 @@ function mockFalFetch(
             }
             if (href === RESULT_URL) {
                 return Response.json({
+                    duration: reportedDuration,
                     video: { url: VIDEO_URL, content_type: "video/mp4" },
                 });
             }
@@ -205,6 +207,30 @@ describe("Wan 3.0 Prime via Fal", () => {
             status: 502,
             message: "provider rejected prompt",
         });
+    });
+
+    it("forwards longer durations and bills the duration fal reports", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests, "COMPLETED", 9.8);
+
+        const result = await callWan3FalAPI("a sailboat crossing a calm bay", {
+            ...baseParams,
+            duration: 10,
+        });
+
+        expect(requests[0].body?.duration).toBe(10);
+        expect(result).toMatchObject({
+            durationSeconds: 9.8,
+            trackingData: { usage: { completionVideoSeconds: 9.8 } },
+        });
+    });
+
+    it("refuses a result without a reported duration", async () => {
+        mockFalFetch([], "COMPLETED", null);
+
+        await expect(
+            callWan3FalAPI("a sailboat crossing a calm bay", baseParams),
+        ).rejects.toMatchObject({ status: 502 });
     });
 
     it("I2V forwards end_image_url when image[1] is present", async () => {

@@ -11,6 +11,7 @@ import {
     earlyErrors,
     escalates,
     heartbeat,
+    jobsStale,
     legacyDown,
     noteworthy,
     RECOVER_CHECKS,
@@ -837,4 +838,41 @@ test("a legacy bridge card gives the last hour against its medians and pings", (
     const quiet = legacyDown([bridge({ last_hour_requests: 40, degraded: 1 })]);
     const opened = step({}, quiet, 1000 * MIN).state.open["legacy:text"];
     assert.doesNotMatch(renderCard("legacy:text", opened).text, /WHY/);
+});
+
+test("a job is stale past its table's max age, after 3 checks, pinging as the table says", () => {
+    const rows = [
+        { source: "error_event", age_seconds: 15 * 60 },
+        { source: "product_event", age_seconds: 15 * 60 + 1 },
+        { source: "d1_copy", age_seconds: 7 * 60 * 60 },
+        { source: "unknown", age_seconds: 1e9 },
+    ];
+    const found = jobsStale(rows);
+    assert.deepEqual(Object.keys(found), [
+        "stale:product_event",
+        "stale:d1_copy",
+    ]);
+    let state = {};
+    for (let i = 1; i <= CONFIRM_CHECKS; i++) {
+        const next = step(state, found, i * MIN);
+        assert.equal(next.actions.length, i < CONFIRM_CHECKS ? 0 : 2);
+        state = next.state;
+    }
+    const ping = (key) => renderCard(key, state.open[key], { now: 0 });
+    const feed = ping("stale:product_event");
+    assert.equal(feed.ping, true);
+    assert.match(plain(feed.text), /┌─ STALE: Enter feed \(product_event\) ─/);
+    assert.match(plain(feed.text), /NEWEST {2}15 min old/);
+    const copy = ping("stale:d1_copy");
+    assert.equal(copy.ping, false);
+    assert.match(plain(copy.text), /NEWEST {2}7 h 00 min old/);
+    assert.match(plain(copy.text), /MAX {5}6 h 00 min/);
+    // A source with no row in the pipe's day.
+    const empty = jobsStale([{ source: "error_event", age_seconds: 1.8e9 }]);
+    const card = renderCard(
+        "stale:error_event",
+        { kind: "JOB_STALE", openedAt: 0, info: empty["stale:error_event"] },
+        { now: 0 },
+    );
+    assert.match(plain(card.text), /none in the last day/);
 });

@@ -199,6 +199,48 @@ export function earlyErrors(minutes) {
     };
 }
 
+// Background jobs and analytics feeds, each stale while its newest data is
+// older than `maxSeconds`. A row per job: `name` titles its card, `ping`
+// says whether its opening card pings, `effect` what goes wrong meanwhile.
+// Every alert reads error_event or product_event, so those ping; the D1 copy
+// runs every 4 hours and a GitHub cron start can slip by almost 2, so it
+// waits 6 hours and only posts.
+export const STALE_JOBS = {
+    error_event: {
+        name: "error feed (error_event)",
+        maxSeconds: 15 * 60,
+        ping: true,
+        effect: "error alerts are blind",
+    },
+    product_event: {
+        name: "Enter feed (product_event)",
+        maxSeconds: 15 * 60,
+        ping: true,
+        effect: "sign-in, payment data missing",
+    },
+    d1_copy: {
+        name: "D1 to Tinybird copy",
+        maxSeconds: 6 * 60 * 60,
+        ping: false,
+        effect: "KPIs and abuse data stale",
+    },
+};
+// `rows` are { source, age_seconds }, from infra_watch_freshness; a source
+// missing from STALE_JOBS is ignored.
+export function jobsStale(rows) {
+    const found = {};
+    for (const { source, age_seconds } of rows) {
+        const job = STALE_JOBS[source];
+        if (job && age_seconds > job.maxSeconds)
+            found[`stale:${source}`] = {
+                kind: "JOB_STALE",
+                job: source,
+                ageSeconds: age_seconds,
+            };
+    }
+    return found;
+}
+
 const CONFIRMED = new Set([
     "gen",
     "public",
@@ -240,7 +282,8 @@ export function step(state, found, now, recent = []) {
         streaks[key] = streak;
         const incident = open[key];
         if (!incident) {
-            if (streak < (CONFIRMED.has(key) ? CONFIRM_CHECKS : 1)) continue;
+            const confirm = CONFIRMED.has(key) || key.startsWith("stale:");
+            if (streak < (confirm ? CONFIRM_CHECKS : 1)) continue;
             open[key] = {
                 kind: info.kind,
                 worst: info.kind,
@@ -465,6 +508,7 @@ const LABEL = {
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
+    JOB_STALE: "STALE",
     EARLY_ERRORS: "FAILING",
 };
 const SUBJECT = {
@@ -486,7 +530,9 @@ const subjectOf = (key) =>
           ? `domain ${key.replace(DOMAIN_KEY, "")}`
           : key.startsWith("legacy:")
             ? `legacy ${key.slice(7)} bridge`
-            : SUBJECT[key];
+            : key.startsWith("stale:")
+              ? STALE_JOBS[key.slice(6)].name
+              : SUBJECT[key];
 // Early errors are named after Enter's database while it causes at least half
 // of them.
 const d1Main = (info) => info.d1 * 2 >= info.failures;
@@ -514,6 +560,7 @@ export const COLOR = {
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
+    JOB_STALE: RED,
     EARLY_ERRORS: RED,
 };
 const GREEN = 0x639922;
@@ -565,11 +612,13 @@ export const waiting = (record, now) =>
 
 // Who an opening card pings: a weak primary never (the fallback keeps
 // callers whole), a model failing for a single caller neither, a Myceli-only
-// hostname neither (users are fine); every other alert does.
+// hostname neither (users are fine), a stale job as STALE_JOBS says; every
+// other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
     if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
         return false;
+    if (kind === "JOB_STALE") return STALE_JOBS[info.job].ping;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
     return true;
@@ -654,6 +703,20 @@ function openRows(incident, now) {
             ...(info.error ? [["ERROR", info.error]] : []),
             ["", "probes and community posts paused"],
         ];
+    if (kind === "JOB_STALE") {
+        const job = STALE_JOBS[info.job];
+        return [
+            // The pipe looks back one day: older means no row at all.
+            [
+                "NEWEST",
+                info.ageSeconds < 86_400
+                    ? `${duration(info.ageSeconds * 1000)} old`
+                    : "none in the last day",
+            ],
+            ["MAX", duration(job.maxSeconds * 1000)],
+            ["", job.effect],
+        ];
+    }
     if (kind === "LEGACY_DOWN") {
         const rows = [
             [

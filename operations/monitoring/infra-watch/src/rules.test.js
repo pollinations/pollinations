@@ -8,6 +8,7 @@ import {
     communityDown,
     conditions,
     duration,
+    earlyErrors,
     escalates,
     heartbeat,
     jobsStale,
@@ -258,6 +259,70 @@ test("Enter down opens after 3 checks and closes on its own check, whatever gen 
     for (const t of [5, 6, 7]) r = step(r.state, { analytics, enter }, t);
     r = step(r.state, { analytics }, 8);
     assert.ok(r.actions.some((a) => a.type === "close" && a.key === "enter"));
+});
+
+// 8 Nov 2026: D1 stalls of a few seconds, minutes apart.
+const minute = (time, failures, d1_failures = failures, top_route = "/*") => ({
+    minute: `2026-11-08 ${time}:00`,
+    failures,
+    d1_failures,
+    top_route,
+});
+const bursts = [
+    minute("15:20", 2, 0),
+    minute("15:21", 232, 230),
+    minute("15:25", 2, 2, "/v1/models"),
+    minute("15:32", 82, 82, "/image/:prompt"),
+];
+
+test("early errors fail on any minute of 25+ failed requests in the window", () => {
+    assert.deepEqual(
+        earlyErrors([minute("15:20", 24), minute("15:25", 3)]),
+        {},
+    );
+    assert.deepEqual(earlyErrors(bursts).early, {
+        kind: "EARLY_ERRORS",
+        worst: 232,
+        route: "/*",
+        bursts: 2,
+        failures: 318,
+        d1: 314,
+        lastAt: Date.UTC(2026, 10, 8, 15, 32),
+    });
+});
+
+test("early errors open on their first check, ping, and close once clean", () => {
+    let r = step({}, earlyErrors(bursts), 1);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open early"],
+    );
+    const card = renderCard("early", r.state.open.early, { now: 1 });
+    assert.ok(card.ping);
+    assert.equal(card.color, 0xe24b4a);
+    const text = plain(card.text);
+    assert.ok(text.includes("FAILING: Enter database (D1)"));
+    assert.ok(text.includes("232 reqs failed in 1 min"));
+    assert.ok(text.includes("314 database, 4 other"));
+    assert.ok(text.includes("2 min of 30, 318 failed"));
+    assert.ok(text.includes("2026-11-08 15:32 UTC"));
+    r = step(r.state, {}, 2);
+    assert.equal(r.actions[0].type, "close");
+});
+
+test("early errors not mostly from the database are named as such", () => {
+    const r = step({}, earlyErrors([minute("15:21", 40, 10, "/api/x")]), 1);
+    const text = plain(
+        renderCard("early", r.state.open.early, { now: 1 }).text,
+    );
+    assert.ok(text.includes("FAILING: requests before any model"));
+    assert.ok(text.includes("10 database, 30 other"));
+});
+
+test("an early-errors burst pings again only once it doubles the worst one pinged", () => {
+    const at = (worst) => snapshot({ kind: "EARLY_ERRORS", info: { worst } });
+    assert.equal(escalates(at(232), at(400)), false);
+    assert.equal(escalates(at(232), at(464)), true);
 });
 
 test("analytics outage pauses model incidents but is not gen down", () => {

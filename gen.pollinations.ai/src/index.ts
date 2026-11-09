@@ -343,14 +343,30 @@ export default {
     },
     scheduled: async (controller, env, ctx) => {
         if (controller.cron === "* * * * *") {
-            await refreshCommunityModelRegistryCache(env).catch((error) => {
-                console.error("Community model catalog refresh failed", error);
-            });
+            // infra-watch reads the heartbeat's age to spot a failing refresh.
+            await refreshCommunityModelRegistryCache(env)
+                .then(() =>
+                    env.KV.put(
+                        "heartbeat:community-catalog",
+                        Date.now().toString(),
+                    ),
+                )
+                .catch((error) => {
+                    console.error(
+                        "Community model catalog refresh failed",
+                        error,
+                    );
+                });
             return;
         }
         // Every 5 minutes. Leases end only after the keeper has renewed the
-        // kept sandboxes; catalog refreshes do not change their cadence.
-        await keepSandboxes(env, ctx);
-        await stopExpiredAzureSandboxes(env);
+        // kept sandboxes; catalog refreshes do not change their cadence. A
+        // failed keeper still stops expired boxes: a lease outlives one run.
+        try {
+            await keepSandboxes(env, ctx);
+        } finally {
+            await stopExpiredAzureSandboxes(env);
+        }
+        await env.KV.put("heartbeat:sandbox-keeper", Date.now().toString());
     },
 } satisfies ExportedHandler<CloudflareBindings>;

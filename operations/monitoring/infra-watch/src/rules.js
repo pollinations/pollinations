@@ -173,6 +173,32 @@ export function legacyDown(rows, open = {}) {
     return found;
 }
 
+// Requests failing before any model is known (an API-key, sign-in or
+// balance check, mostly Enter's database) are failing while any minute of the
+// last 30 had at least this many; quiet minutes have 0 to 6. They come in
+// bursts of seconds, and per-model health never sees them: the first bad
+// minute opens the card, and the 30-minute window keeps that one card open
+// across bursts. `minutes` are the infra_watch_early_errors rows.
+const EARLY_MIN_FAILURES = 25;
+const minuteMs = (minute) => Date.parse(`${minute.replace(" ", "T")}Z`);
+const total = (rows, field) => rows.reduce((sum, m) => sum + m[field], 0);
+export function earlyErrors(minutes) {
+    const bursts = minutes.filter((m) => m.failures >= EARLY_MIN_FAILURES);
+    if (!bursts.length) return {};
+    const worst = bursts.reduce((a, b) => (b.failures > a.failures ? b : a));
+    return {
+        early: {
+            kind: "EARLY_ERRORS",
+            worst: worst.failures,
+            route: worst.top_route,
+            bursts: bursts.length,
+            failures: total(minutes, "failures"),
+            d1: total(minutes, "d1_failures"),
+            lastAt: minuteMs(bursts.at(-1).minute),
+        },
+    };
+}
+
 // Background jobs and analytics feeds, each stale while its newest data is
 // older than `maxSeconds`. A row per job: `name` titles its card, `ping`
 // says whether its opening card pings, `effect` what goes wrong meanwhile.
@@ -344,6 +370,7 @@ export function snapshot(incident) {
         errorKind: info.errorKind ?? null,
         success: info.success ?? null,
         failingCallers: info.callers?.failing_callers ?? null,
+        worst: info.worst ?? null,
     };
 }
 
@@ -367,12 +394,15 @@ export function noteworthy(before, now) {
     return null;
 }
 
-// Worse in a way that needs a person again: callers now affected, or the
-// affected callers went from one to several.
+// Worse in a way that needs a person again: callers now affected, the
+// affected callers went from one to several, or an early-errors burst at
+// least twice the worst one already pinged.
 export const escalates = (before, now) =>
-    now.kind === "DEGRADED" &&
-    (now.failingCallers ?? 2) > 1 &&
-    (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1);
+    (now.kind === "EARLY_ERRORS" &&
+        now.worst >= 2 * (before.worst ?? Number.POSITIVE_INFINITY)) ||
+    (now.kind === "DEGRADED" &&
+        (now.failingCallers ?? 2) > 1 &&
+        (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1));
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
 const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
@@ -479,6 +509,7 @@ const LABEL = {
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
     JOB_STALE: "STALE",
+    EARLY_ERRORS: "FAILING",
 };
 const SUBJECT = {
     gen: "gen Worker",
@@ -502,6 +533,15 @@ const subjectOf = (key) =>
             : key.startsWith("stale:")
               ? STALE_JOBS[key.slice(6)].name
               : SUBJECT[key];
+// Early errors are named after Enter's database while it causes at least half
+// of them.
+const d1Main = (info) => info.d1 * 2 >= info.failures;
+const titleOf = (key, info) =>
+    key !== "early"
+        ? subjectOf(key)
+        : d1Main(info)
+          ? "Enter database (D1)"
+          : "requests before any model";
 
 // An open card's colour by severity: red down, orange degraded, amber weak
 // primary. A closed card's colour is set by cardColor.
@@ -521,6 +561,7 @@ export const COLOR = {
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
     JOB_STALE: RED,
+    EARLY_ERRORS: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -630,6 +671,15 @@ function openRows(incident, now) {
         return [
             ["WHY", `key check failing ${CONFIRM_CHECKS}x`],
             ["ERROR", info.error],
+            ["", "API keys, sign-in, billing fail"],
+        ];
+    if (kind === "EARLY_ERRORS")
+        return [
+            ["WORST", `${info.worst} reqs failed in 1 min`],
+            ["CAUSE", `${info.d1} database, ${info.failures - info.d1} other`],
+            ["BURSTS", `${info.bursts} min of 30, ${info.failures} failed`],
+            ["LAST", utc(info.lastAt)],
+            ["ROUTE", info.route],
             ["", "API keys, sign-in, billing fail"],
         ];
     if (kind === "ANALYTICS_DOWN")
@@ -771,7 +821,7 @@ export function renderCard(
     const status = closed
         ? (ended ?? LABEL[incident.worst ?? incident.kind])
         : label;
-    const title = `${status}: ${subjectOf(key)}`;
+    const title = `${status}: ${titleOf(key, incident.info)}`;
     const color = cardColor(key, incident);
     const parts = [
         panel(

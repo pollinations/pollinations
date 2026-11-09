@@ -26,7 +26,10 @@ import { callVercelSearch } from "./vercelSearch.ts";
 export const log = debug("pollinations:portkey");
 
 // Portkey applies this millisecond deadline per attempt until provider response
-// headers arrive. Keep retries disabled unless the total deadline is reconsidered.
+// headers arrive, so a silent provider returns a 408 before Cloudflare's ~300s
+// proxy read timeout cuts the connection. That 408 falls back like any other
+// failure, and each fallback attempt gets its own deadline. Portkey's own
+// retries stay disabled: a failed attempt goes to the next model, not again.
 const PORTKEY_REQUEST_TIMEOUT_MS = 290_000;
 
 function buildEndpoint(gatewayUrl: unknown): string {

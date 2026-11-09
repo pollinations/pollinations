@@ -2712,14 +2712,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "nvidia/nemotron-3-ultra": {
     "cost": {
-      "completionTextTokens": 0.0000024,
-      "promptCachedTokens": 0.00000012,
-      "promptTextTokens": 0.0000006,
+      "completionTextTokens": 0.00000264,
+      "promptCachedTokens": 0.00000013,
+      "promptTextTokens": 0.00000066,
     },
     "price": {
-      "completionTextTokens": 0.0000024,
-      "promptCachedTokens": 0.00000012,
-      "promptTextTokens": 0.0000006,
+      "completionTextTokens": 0.00000198,
+      "promptCachedTokens": 0.0000000975,
+      "promptTextTokens": 0.000000495,
     },
   },
   "nvidia/nemotron-3-ultra:deepinfra": {
@@ -2729,9 +2729,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005,
     },
     "price": {
-      "completionTextTokens": 0.0000022,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.0000005,
+      "completionTextTokens": 0.00000165,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.000000375,
     },
   },
   "nvidia/nemotron-3.5-lightning": {

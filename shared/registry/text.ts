@@ -2912,17 +2912,19 @@ const TEXT_BASE_SERVICES = {
             "nemotron-3-ultra-550b-a55b",
             "nemotron",
         ],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-07-27").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
-            // Fireworks NVFP4 serverless rates (2026-09-30).
-            promptTextTokens: perMillion(0.6),
-            promptCachedTokens: perMillion(0.12),
-            completionTextTokens: perMillion(2.4),
+            // Azure Fireworks Models, Data Zone Standard (Azure retail prices,
+            // 2026-11-09): $0.66/$0.13/$2.64 per million. Fireworks drops its
+            // own serverless endpoint on 2026-11-07.
+            promptTextTokens: perMillion(0.66),
+            promptCachedTokens: perMillion(0.13),
+            completionTextTokens: perMillion(2.64),
         },
         title: "Nemotron 3 Ultra",
         description:

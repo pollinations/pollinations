@@ -894,13 +894,11 @@ export const TEXT_FALLBACKS = {
     },
     "nvidia/nemotron-3-ultra": {
         "nvidia/nemotron-3-ultra:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
             provider: "deepinfra",
-            addedDate: new Date("2026-09-30").getTime(),
+            addedDate: new Date("2026-11-09").getTime(),
+            // DeepInfra NVFP4 standard-tier rates (2026-10-24).
             cost: {
-                // DeepInfra standard-tier rates (2026-09-30). Flex is
-                // deliberately excluded because requests may wait up to ten
-                // minutes.
                 promptTextTokens: perMillion(0.5),
                 promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(2.2),

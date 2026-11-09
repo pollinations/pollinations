@@ -207,6 +207,16 @@ export const CHAT_PARAMETERS = {
     // max_tokens as the sampling controls, plus tools and JSON mode.
     inferenceportLightning: [...TOOL_CHAT, "temperature", "stop"],
     deepinfraReasoning: [...EXTENDED_CHAT, "reasoning_effort", "n"],
+    // DeepInfra's Nemotron routes return no logprobs and ignore logit_bias.
+    deepinfraNemotron: [
+        ...SAMPLED_CHAT,
+        ...PENALTIES,
+        "seed",
+        "top_k",
+        "reasoning_effort",
+        "parallel_tool_calls",
+        "n",
+    ],
     openRouterGemma: [
         ...EXTENDED_CHAT,
         ...OPENROUTER_REASONING,

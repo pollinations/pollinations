@@ -216,9 +216,9 @@ export const TEXT_FALLBACKS = {
             priceMultiplier: 1,
         },
     },
-    "typesafe/jev-1.13": {
+    "typesafe/jev-1.14": {
         // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
-        "typesafe/jev-1.13:openrouter:typesafe": {
+        "typesafe/jev-1.14:openrouter:typesafe": {
             provider: "openrouter",
             priceMultiplier: 1,
             cost: {
@@ -830,6 +830,21 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.04) * 1.055,
                 promptImageTokens: perMillion(0.35) * 1.055,
                 completionTextTokens: perMillion(1.5) * 1.055,
+            },
+        },
+    },
+    "meta/muse-spark-open": {
+        // Same model on BaseTen through Vercel's AI Gateway, which adds no
+        // fee. Covers Fireworks failures.
+        "meta/muse-spark-open:vercel:baseten": {
+            // Vercel lists the same parameters as for Muse Wonder (2026-10-23).
+            supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
+            provider: "vercel",
+            // Vercel AI Gateway BaseTen rates (2026-10-23).
+            cost: {
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.15),
+                completionTextTokens: perMillion(4.25),
             },
         },
     },

@@ -337,6 +337,9 @@ export const track = (eventType: EventType) =>
                 );
                 const finalCandidate =
                     finalAttempt?.candidate ?? fallbackCandidates(modelInfo)[0];
+                const billingModel = modelInfo.requested.includes(",")
+                    ? (finalCandidate.entry ?? modelInfo)
+                    : modelInfo;
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -346,9 +349,8 @@ export const track = (eventType: EventType) =>
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
                     : responseForTracking(c.res);
-                // What a rescue changes: the generation's cost, and which owner
-                // earns the reward. Not the price — the caller is charged the
-                // listing they asked for either way.
+                // Catalog routes retain their listing's quote. A caller-listed
+                // alternate is charged at its own price and balance rules.
                 // Emitted only after the response above is captured: any
                 // await before that clone lets the body start streaming, and
                 // cloning a locked stream throws.
@@ -427,7 +429,7 @@ export const track = (eventType: EventType) =>
                 billingStarted = true;
                 try {
                     const requestedCommunityEndpoint =
-                        c.var.model?.communityEndpoint;
+                        billingModel.communityEndpoint;
                     const servedCommunityEndpoint =
                         finalCandidate.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
@@ -440,7 +442,7 @@ export const track = (eventType: EventType) =>
                         apiKeyReservedAmount:
                             c.var.balance.apiKeyReservation?.amount,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
-                        modelPaidOnly: c.var.model?.definition.paidOnly,
+                        modelPaidOnly: billingModel.definition.paidOnly,
                         questPollenOnly: c.var.auth?.apiKey?.questPollenOnly,
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
@@ -705,6 +707,16 @@ function responseForTracking(response: Response): Response {
     return readsBody ? response.clone() : new Response(null, response);
 }
 
+/** A model list is priced at the model that ran; one model at its own price. */
+function quotedModel(
+    request: RequestTrackingData,
+    candidate: FallbackCandidate,
+): ModelDefinition {
+    return request.modelRequested?.includes(",")
+        ? (candidate.definition ?? request.modelDefinition)
+        : request.modelDefinition;
+}
+
 function trackJsonErrorUsage(
     eventType: EventType,
     request: RequestTrackingData,
@@ -735,7 +747,7 @@ function trackJsonErrorUsage(
             model: request.resolvedModelRequested,
             usage,
             servedBy: candidate.definition ?? request.modelDefinition,
-            quotedBy: request.modelDefinition,
+            quotedBy: quotedModel(request, candidate),
             output,
             input: {
                 ...input,
@@ -755,6 +767,7 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
+    const quotedBy = quotedModel(requestTracking, candidate);
     const modelUsed = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
@@ -804,7 +817,7 @@ export async function trackResponse(
                 usage,
                 servedBy:
                     candidate.definition ?? requestTracking.modelDefinition,
-                quotedBy: requestTracking.modelDefinition,
+                quotedBy,
                 input: pricingInput,
             }),
             modelUsed,
@@ -862,7 +875,7 @@ export async function trackResponse(
                 usage,
                 servedBy:
                     candidate.definition ?? requestTracking.modelDefinition,
-                quotedBy: requestTracking.modelDefinition,
+                quotedBy,
                 output,
                 input: billingInput,
             }),
@@ -896,7 +909,7 @@ export async function trackResponse(
             model: resolvedModelRequested,
             usage: {},
             servedBy: candidate.definition ?? requestTracking.modelDefinition,
-            quotedBy: requestTracking.modelDefinition,
+            quotedBy,
             output,
             input: pricingInput,
         });
@@ -938,8 +951,7 @@ export async function trackResponse(
             modelUsed,
         });
     }
-    // Cost follows the model that ran; price follows the one the caller asked
-    // for, so the invoice does not move because a fallback stepped in.
+    // Provider cost follows the serving route; price follows its caller choice.
     const {
         cost,
         price,
@@ -951,7 +963,7 @@ export async function trackResponse(
         model: resolvedModelRequested,
         usage: modelUsage.usage,
         servedBy: candidate.definition ?? requestTracking.modelDefinition,
-        quotedBy: requestTracking.modelDefinition,
+        quotedBy,
         output: modelUsage.output,
         input: billingInput,
     });

@@ -269,10 +269,10 @@ export function responsesToChatRequest(
                       type: "function",
                       function: {
                           name: tool.name,
-                          ...(tool.description === undefined
+                          ...(tool.description == null
                               ? {}
                               : { description: tool.description }),
-                          ...(tool.parameters === undefined
+                          ...(tool.parameters == null
                               ? {}
                               : { parameters: tool.parameters }),
                           ...(tool.strict == null

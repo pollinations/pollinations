@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
+import { requestedModelIds } from "../middleware/model.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
 import {
     type CreateMessageRequest,
@@ -146,8 +147,9 @@ export function createMessagesRoutes(dispatch: Dispatch) {
         async (c) => {
             const request = c.req.valid("json") as CreateMessageRequest;
             // Media models also accept chat requests; they have no Messages form.
+            // A model list is one kind, so its first model stands for it.
             const entry = (await getGenerationModelRegistry(c.env)).resolve(
-                request.model,
+                requestedModelIds(request.model)[0],
             );
             if (
                 entry?.visible &&

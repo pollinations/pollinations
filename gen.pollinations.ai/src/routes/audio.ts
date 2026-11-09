@@ -12,7 +12,10 @@ import {
     MAI_VOICE_21_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    durationError,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -3818,20 +3821,13 @@ async function dispatchAudioGeneration(
 // in the registry; the others ignore it.
 export function resolveAudioDuration(
     model: string,
-    { minDuration, maxDuration, allowedDurations }: ModelDefinition,
+    definition: ModelDefinition,
     duration: number | undefined,
 ): number | undefined {
     if (duration === undefined) return undefined;
-    const accepted = allowedDurations
-        ? allowedDurations.includes(duration)
-        : duration >= (minDuration ?? duration) &&
-          duration <= (maxDuration ?? duration);
-    if (!accepted) {
-        const range =
-            allowedDurations?.join(", ") ?? `${minDuration}-${maxDuration}`;
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported duration for ${model}: ${duration}. It accepts ${range} seconds.`,
-        });
+    const message = durationError(model, definition, duration);
+    if (message) {
+        throw new UpstreamError(400 as ContentfulStatusCode, { message });
     }
     return duration;
 }

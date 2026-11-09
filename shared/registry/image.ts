@@ -1125,6 +1125,7 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
+        // Replicate allows 15 s; capped at the verified synchronous latency limit.
         maxDuration: 10,
         defaultDuration: 5,
     },
@@ -1149,6 +1150,7 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
+        // Replicate allows 15 s; capped at the verified synchronous latency limit.
         maxDuration: 5,
         defaultDuration: 5,
     },

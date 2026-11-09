@@ -756,6 +756,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
+    // -- Azure Fireworks Models (NVIDIA) --------------------------------------
+    "azure/Nemotron-3-Ultra": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3-Ultra/chat/completions?api-version=2024-12-01-preview",
+        ),
+
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
         createDeepInfraModelConfig({
@@ -880,10 +887,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
         "meta/muse-wonder",
         "meta",
-    ),
-    "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
-        "nvidia/nemotron-3.5-lightning",
-        "coreweave/bf16",
     ),
     "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
         createDeepInfraModelConfig({
@@ -1306,13 +1309,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
-    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
-        }),
-    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+    "azure/Nemotron-3.5-Lightning": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3.5-Lightning/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "nvidia/NVIDIA-Nemotron-3.5-Lightning": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Lightning",
         }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({
@@ -1330,6 +1334,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
     "moonshotai/kimi-k3.1-pro": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K3.1-Pro/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "moonshotai/kimi-k3.1-pro:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "moonshotai/kimi-k3.1-pro",
         }),

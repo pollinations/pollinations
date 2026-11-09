@@ -2758,18 +2758,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000045,
     },
   },
-  "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
-    "cost": {
-      "completionTextTokens": 0.000000211,
-      "promptCachedTokens": 0.0000000422,
-      "promptTextTokens": 0.00000007385,
-    },
-    "price": {
-      "completionTextTokens": 0.00000015825,
-      "promptCachedTokens": 0.00000003165,
-      "promptTextTokens": 0.0000000553875,
-    },
-  },
   "nvidia/nemotron-3.5-super-vl": {
     "cost": {
       "completionTextTokens": 0.0000005,

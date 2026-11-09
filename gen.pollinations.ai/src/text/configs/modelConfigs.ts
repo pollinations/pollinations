@@ -881,10 +881,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "meta/muse-wonder",
         "meta",
     ),
-    "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
-        "nvidia/nemotron-3.5-lightning",
-        "coreweave/bf16",
-    ),
     "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
         createDeepInfraModelConfig({
             model: "nvidia/NVIDIA-Nemotron-3.5-Super-VL",

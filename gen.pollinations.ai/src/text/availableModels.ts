@@ -1158,11 +1158,6 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
-        config: portkeyConfig["nemotron-3.5-lightning-openrouter-coreweave"],
-        transform: fireworksThinking,
-    },
-    {
         name: "nvidia/nemotron-3.5-super-vl",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Super-VL"],
         transform: fireworksThinking,

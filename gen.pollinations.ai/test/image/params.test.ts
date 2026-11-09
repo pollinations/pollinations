@@ -6,6 +6,53 @@ import { ImageParamsSchema } from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("ImageParamsSchema", () => {
+    it("accepts Sunburst 2.6 native GIF and vector controls", () => {
+        const gif = ImageParamsSchema.parse({
+            model: "openai/gpt-image-2.6-sunburst",
+            output_format: "gif",
+            frame_count: 9,
+            frame_duration_ms: 200,
+            complexity: "high",
+            quality: "max",
+        });
+        expect(gif.output_format).toBe("gif");
+        expect(gif.frame_count).toBe(9);
+        expect(gif.quality).toBe("max");
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "openai/gpt-image-2.6-sunburst",
+                output_format: "svg",
+                complexity: "low",
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "openai/gpt-image-2.6-sunburst",
+                output_format: "webp",
+                transparent: true,
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects animation without GIF, incompatible alpha and cross-provider options", () => {
+        const model = "openai/gpt-image-2.6-sunburst";
+        for (const input of [
+            { model, output_format: "png", frame_count: 6 },
+            { model, output_format: "gif", frame_count: 17 },
+            { model, output_format: "gif", frame_duration_ms: 19 },
+            { model, output_format: "gif", transparent: true },
+            {
+                model,
+                output_format: "svg",
+                image: ["https://example.com/test.png"],
+            },
+            { model: "openai/gpt-image-2.5-flare", output_format: "gif" },
+            { model: "black-forest-labs/flux.1-schnell", complexity: "high" },
+        ]) {
+            expect(ImageParamsSchema.safeParse(input).success).toBe(false);
+        }
+    });
+
     it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
             model: "black-forest-labs/flux.1-schnell",

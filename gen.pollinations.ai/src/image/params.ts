@@ -12,7 +12,15 @@ const allowedModels = Object.keys(IMAGE_SERVICES) as [
     ImageModelName,
     ...ImageModelName[],
 ];
-const validQualities = ["low", "medium", "high", "hd"] as const;
+const validQualities = [
+    "low",
+    "medium",
+    "high",
+    "hd",
+    "auto",
+    "xhigh",
+    "max",
+] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
@@ -96,6 +104,12 @@ export const ImageParamsSchema = z
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
         quality: z.string().catch("medium"),
+        // Native GPT Image 2.6 Sunburst output controls; legacy defaults are unchanged.
+        output_format: z.enum(["png", "jpeg", "webp", "gif", "svg"]).optional(),
+        frame_count: z.coerce.number().int().min(2).max(16).optional(),
+        frame_duration_ms: z.coerce.number().int().min(20).max(2000).optional(),
+        complexity: z.enum(["low", "medium", "high"]).optional(),
+        background: z.enum(["auto", "opaque", "transparent"]).optional(),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {
@@ -146,6 +160,78 @@ export const ImageParamsSchema = z
         audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
+        const isSunburst26 =
+            data.model === "openai/gpt-image-2.6-sunburst" ||
+            data.model === "openai/gpt-image-2.6-sunburst:fal";
+        if (!isSunburst26) {
+            for (const key of [
+                "output_format",
+                "frame_count",
+                "frame_duration_ms",
+                "complexity",
+                "background",
+            ] as const) {
+                const value = data[key];
+                if (
+                    value === undefined ||
+                    (key === "output_format" && value === "png")
+                )
+                    continue;
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [key],
+                    message:
+                        "This output control is supported only by GPT Image 2.6 Sunburst.",
+                });
+            }
+            if (["auto", "xhigh", "max"].includes(data.quality)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["quality"],
+                    message:
+                        "This quality is supported only by GPT Image 2.6 Sunburst.",
+                });
+            }
+        } else {
+            const format = data.output_format ?? "png";
+            if (
+                format !== "gif" &&
+                (data.frame_count !== undefined ||
+                    data.frame_duration_ms !== undefined)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["frame_count"],
+                    message: "Frame controls require output_format=gif.",
+                });
+            }
+            if (
+                (data.transparent || data.background === "transparent") &&
+                !["png", "webp"].includes(format)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["background"],
+                    message: "Transparent backgrounds require PNG or WebP.",
+                });
+            }
+            if (data.background === "opaque" && data.transparent) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["background"],
+                    message:
+                        "Conflicting background and transparent parameters.",
+                });
+            }
+            if (format === "svg" && data.image.length) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["output_format"],
+                    message: "SVG output is not supported by image edits.",
+                });
+            }
+        }
+
         if (data.resolution) {
             const supported = (IMAGE_SERVICES[data.model] as ModelDefinition)
                 .resolutions;

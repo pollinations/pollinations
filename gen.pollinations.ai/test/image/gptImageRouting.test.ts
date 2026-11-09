@@ -191,6 +191,41 @@ describe("openai/gpt-image-2 Azure routing", () => {
 });
 
 describe("GPT Image direct OpenAI routing", () => {
+    it("forwards Sunburst GIF settings to the OpenAI Images API", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(successResponse());
+        const result = await callGPTImage(
+            "a sparkling fairy",
+            {
+                ...params,
+                model: "openai/gpt-image-2.6-sunburst",
+                width: 1024,
+                height: 1024,
+                quality: "max",
+                complexity: "high",
+                output_format: "gif",
+                frame_count: 9,
+                frame_duration_ms: 200,
+            },
+            userInfo,
+            "openai/gpt-image-2.6-sunburst",
+        );
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(String(url)).toBe(
+            "https://api.openai.com/v1/images/generations",
+        );
+        expect(JSON.parse(String(init?.body))).toMatchObject({
+            model: "gpt-image-2.6-sunburst",
+            output_format: "gif",
+            frame_count: 9,
+            frame_duration_ms: 200,
+            complexity: "high",
+            quality: "max",
+        });
+        expect(result.mimeType).toBe("image/gif");
+    });
+
     const routes = [
         ["openai/gpt-image-1-mini:openai", "gpt-image-1-mini"],
         ["openai/gpt-image-1.5:openai", "gpt-image-1.5"],

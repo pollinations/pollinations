@@ -34,6 +34,11 @@ const PASSTHROUGH_PARAMS = [
     "safe",
     "transparent",
     "guidance_scale",
+    "output_format",
+    "frame_count",
+    "frame_duration_ms",
+    "complexity",
+    "background",
     "duration",
     "audio",
 ] as const;
@@ -41,6 +46,11 @@ const CACHE_PARAMS = [
     "image",
     "transparent",
     "guidance_scale",
+    "output_format",
+    "frame_count",
+    "frame_duration_ms",
+    "complexity",
+    "background",
     "reasoning",
     "duration",
     "fps",
@@ -379,7 +389,8 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         if (mediaLink) c.header("Link", mediaLink);
         const usage = responseImageUsage(c, response);
         const mediaData =
-            mediaType === "image/svg+xml" || mediaType.startsWith("video/")
+            ["image/svg+xml", "image/gif", "image/webp"].includes(mediaType) ||
+            mediaType.startsWith("video/")
                 ? { media_type: mediaType }
                 : {};
 

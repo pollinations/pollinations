@@ -1149,6 +1149,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3.5-lightning",
+        config: portkeyConfig["azure/Nemotron-3.5-Lightning"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "nvidia/nemotron-3.5-lightning:deepinfra",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Lightning"],
         transform: fireworksThinkingWithoutCacheControl,
     },

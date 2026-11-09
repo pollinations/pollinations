@@ -1306,6 +1306,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
+    "azure/Nemotron-3.5-Lightning": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3.5-Lightning/chat/completions?api-version=2024-12-01-preview",
+        ),
     "nvidia/NVIDIA-Nemotron-3.5-Lightning": () =>
         createDeepInfraModelConfig({
             model: "nvidia/NVIDIA-Nemotron-3.5-Lightning",

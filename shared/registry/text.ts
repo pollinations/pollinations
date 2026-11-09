@@ -2935,22 +2935,22 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3.5-lightning": {
-        supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: ["nemotron-3.5-lightning"],
-        provider: "deepinfra",
+        provider: "azure",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
+        paidOnly: false,
+        priceMultiplier: 0.75,
         perUserRpm: 60,
         cost: {
-            // DeepInfra BF16 rates (2026-10-24): $0.06/$0.03/$0.16 per
-            // million. Fireworks drops this model from serverless on
-            // 2026-11-07.
+            // Azure Fireworks Models, Data Zone Standard (Azure retail prices,
+            // 2026-11-09): $0.06/$0.01/$0.22 per million. Fireworks drops its
+            // own serverless endpoint on 2026-11-07.
             promptTextTokens: perMillion(0.06),
-            promptCachedTokens: perMillion(0.03),
-            completionTextTokens: perMillion(0.16),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.22),
         },
         title: "Nemotron 3.5 Lightning",
         description:

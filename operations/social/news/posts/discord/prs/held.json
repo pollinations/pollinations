@@ -6,41 +6,6 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
-    },
-    "19268": {
-      "merge_sha": "4a239c562df97c46d88f93a1cee1a9fbdc23fd5a",
-      "merged_at": "2026-11-09T10:01:45Z",
-      "required": []
-    },
-    "19372": {
-      "merge_sha": "3c913f1a96a156228085e13e95f6416d3bad17c5",
-      "merged_at": "2026-11-09T01:00:21Z",
-      "required": []
-    },
-    "19376": {
-      "merge_sha": "45f3e317e0e59aa7e6906a578daf890f0cc41d0f",
-      "merged_at": "2026-11-09T01:00:21Z",
-      "required": []
-    },
-    "19381": {
-      "merge_sha": "2637d0b4efc921fb9f92f33ed8158ac7dc9973fe",
-      "merged_at": "2026-11-09T01:00:21Z",
-      "required": []
-    },
-    "19383": {
-      "merge_sha": "f7d8c7c594fc6b86ccb4a7918686e4f78c18b924",
-      "merged_at": "2026-11-09T01:07:51Z",
-      "required": []
-    },
-    "19385": {
-      "merge_sha": "64efedc8f45a2c42691b50558ee684c6085b1c74",
-      "merged_at": "2026-11-09T11:13:03Z",
-      "required": []
-    },
-    "19408": {
-      "merge_sha": "167f3edc408d1c0e4fd61cff4b2e3629e7dbf9c4",
-      "merged_at": "2026-11-09T09:03:22Z",
-      "required": []
     }
   },
   "production": "1784db8fca41bac137d79a883a0ae27db5d5389b",

@@ -1709,3 +1709,29 @@ it("a stale feed opens after 3 checks with a ping, survives a failed read, and c
     );
     expect(over(edits(messageId).at(-1))).toBe(true);
 });
+
+it("a gen cron whose heartbeat is too old opens a stale card; one that never beat is skipped", async () => {
+    const stub = watch();
+    world.rows = OK;
+    await env.GEN_KV.put(
+        "heartbeat:community-catalog",
+        String(Date.now() - 10 * 60_000),
+    );
+    await env.GEN_KV.put("heartbeat:sandbox-keeper", String(Date.now()));
+    await checks(stub, 3);
+    await settle(stub);
+    const { open } = await stored(stub, "state");
+    expect(Object.keys(open).filter((key) => key.startsWith("stale:"))).toEqual(
+        ["stale:community-catalog"],
+    );
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("STALE: community model catalog refresh");
+
+    await env.GEN_KV.delete("heartbeat:sandbox-keeper");
+    await env.GEN_KV.put("heartbeat:community-catalog", String(Date.now()));
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open["stale:community-catalog"]).toBe(
+        undefined,
+    );
+});

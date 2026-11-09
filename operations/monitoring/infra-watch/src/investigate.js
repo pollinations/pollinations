@@ -74,7 +74,7 @@ The moment is one of:
 
 You may call read-only tools when they help explain the alert, at most ${MAX_TOOL_CALLS} calls in all:
 - model_status(model, minutes): public status rows of any official model for the last 15 or 60 minutes, for example a fallback target or a related model.
-- recent_errors(model, minutes): server errors of the last minutes (at most 60), for one official model or platform-wide when model is omitted, grouped by kind, largest first, with count, first and last time, median duration and an example request id. error_kind is one of rate_limited, quota_or_billing, content_filtered, auth, timeout, overloaded, network, config or other. omitted_errors counts errors outside the groups shown.
+- recent_errors(model, minutes): server errors of the last minutes (at most 60), for one official model or platform-wide when model is omitted, grouped by kind, largest first, with count, first and last time, median duration and an example request id. error_kind is one of database (Enter's D1 failing: API keys, sign-in and billing), rate_limited, quota_or_billing, content_filtered, auth, timeout, overloaded, network, config or other. omitted_errors counts errors outside the groups shown.
 - caller_spread(model, minutes): for one official model, requests, final 5xx failures, callers and failing callers (each an account), the largest single account's failures, and failures per traffic group: regular users, legacy bridges, operations (our own bots and monitors) and dev (staff).
 
 How to read a status row:

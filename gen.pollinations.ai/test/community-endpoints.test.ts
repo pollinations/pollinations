@@ -1,5 +1,6 @@
 import {
     createExecutionContext,
+    createScheduledController,
     env,
     SELF,
     waitOnExecutionContext,
@@ -252,7 +253,13 @@ fixtureTest(
             .update(userTable)
             .set({ banned: true })
             .where(eq(userTable.id, ownerUserId));
-        await resetGenerationModelRegistryCache(env);
+        const context = createExecutionContext();
+        await worker.scheduled(
+            createScheduledController({ cron: "* * * * *" }),
+            env,
+            context,
+        );
+        await waitOnExecutionContext(context);
         expect(
             (await getCommunityModelRegistryEntries(env)).filter(
                 (row) => row.communityEndpoint.ownerUserId === ownerUserId,

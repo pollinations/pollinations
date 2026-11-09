@@ -771,10 +771,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 normalizeFinishReasonAtTokenLimit: true,
             },
         }),
-    "nemotron-3-ultra-openrouter-baseten": createPinnedOpenRouterConfig(
-        "nvidia/nemotron-3-ultra-550b-a55b",
-        "baseten/fp4",
-    ),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Novita's Gemma deployments regressed: 26B rejected most requests with

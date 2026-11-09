@@ -1146,11 +1146,6 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "nvidia/nemotron-3-ultra:openrouter:baseten-fp4",
-        config: portkeyConfig["nemotron-3-ultra-openrouter-baseten"],
-        transform: fireworksThinking,
-    },
-    {
         name: "nvidia/nemotron-3.5-lightning",
         config: portkeyConfig[
             "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"

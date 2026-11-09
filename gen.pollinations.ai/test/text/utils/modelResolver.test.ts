@@ -513,18 +513,6 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral-large-4");
     });
 
-    it("pins the Nemotron 3 Ultra fallback to Baseten on OpenRouter", () => {
-        const result = resolveModelConfig(messages, {
-            model: "nvidia/nemotron-3-ultra:openrouter:baseten-fp4",
-        });
-
-        expect(result.options.model).toBe("nvidia/nemotron-3-ultra-550b-a55b");
-        expect(result.options.provider).toEqual({
-            only: ["baseten/fp4"],
-            allow_fallbacks: false,
-        });
-    });
-
     it("pins Step 5 Preview to StepFun and its fallback to DeepInfra", () => {
         const primary = resolveModelConfig(messages, {
             model: "stepfun/step-5-preview",

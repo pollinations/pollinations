@@ -430,11 +430,7 @@ export const CreateChatCompletionRequestSchema = z
     })
     .passthrough()
     .superRefine((value, ctx) => {
-        if (
-            value.tool_choice === "required" &&
-            !value.tools?.length &&
-            !value.functions?.length
-        ) {
+        if (value.tool_choice === "required" && !value.tools?.length) {
             ctx.addIssue({
                 code: "custom",
                 path: ["tools"],

@@ -221,6 +221,15 @@ describe("CreateChatCompletionRequestSchema", () => {
         }
     });
 
+    it("does not accept legacy functions in place of tools when tool_choice is required", () => {
+        const result = CreateChatCompletionRequestSchema.safeParse({
+            messages: [{ role: "user", content: "hello" }],
+            tool_choice: "required",
+            functions: [{ name: "weather", parameters: {} }],
+        });
+        expect(result.success).toBe(false);
+    });
+
     it("requires tools when tool_choice is required", () => {
         const tool = {
             type: "function",

@@ -508,7 +508,7 @@ describe("genericOpenAIClient", () => {
         });
     });
 
-    it("reports Portkey's exhausted deadline as 504 without starting a fallback", async () => {
+    it("reports Portkey's timeout as a 504 that starts a fallback", async () => {
         const details = {
             error: {
                 type: "timeout_error",
@@ -529,7 +529,7 @@ describe("genericOpenAIClient", () => {
             upstreamStatus: 408,
             details,
         });
-        expect(isRetryableFallbackError(failure)).toBe(false);
+        expect(isRetryableFallbackError(failure)).toBe(true);
         expect(fetcher).toHaveBeenCalledOnce();
     });
 

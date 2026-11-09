@@ -15,6 +15,7 @@ import { QuestLeaderboard } from "../../pollinations.ai/src/ui/components/QuestL
 import { QuestStandings } from "../frontend/src/components/quests/quest-standings.tsx";
 import worker from "../src/index.ts";
 import {
+    buildQuestLeaderboard,
     buildQuestStandings,
     type QuestStandingsResponse,
 } from "../src/routes/quest-leaderboard.ts";
@@ -161,6 +162,10 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         completedQuests: 58,
         totalPollen: 2844.8,
     });
+
+    // The cron reads rewards in rowid slices; one-row slices split the alias,
+    // the bonus and every exclusion apart and must give the same board.
+    expect(await buildQuestLeaderboard(env, 0, 1)).toEqual(payload);
 });
 
 test("visitors read the scheduled leaderboard copy until the next run", async () => {

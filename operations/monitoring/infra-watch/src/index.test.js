@@ -116,6 +116,10 @@ async function fake(input, init = {}) {
             : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.endsWith("/infra_watch_payments.json"))
+        return world.payments
+            ? Response.json({ data: world.payments })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_early_errors.json"))
         return world.early
             ? Response.json({ data: world.early })
@@ -172,6 +176,7 @@ beforeEach(() => {
         agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
+        payments: [],
         early: [],
         enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
@@ -1029,6 +1034,41 @@ it("opens an Enter card after three failed key checks, never for a refused key, 
     await stub.check();
     await settle(stub);
     expect(await enter()).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("opens a payments card on the first unpaid payment with a ping, keeps it while Tinybird can't say, and closes it once credited", async () => {
+    const stub = watch();
+    const payments = async () => (await stored(stub, "state")).open?.payments;
+    await stub.check();
+    expect(await payments()).toBeUndefined();
+    world.payments = [
+        {
+            kind: "not_credited",
+            id: "pi_3UZX8i7rcjS3l7tr1Scu896L",
+            ref: "in_1UZX8g7rcjS3l7trEyyzuUj8",
+            amount_cents: 1065,
+            reason: "unknown auto top-up attempt",
+            n: 1,
+            at: "2026-11-08 14:32:15",
+        },
+    ];
+    await stub.check();
+    const card = await payments();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("FAILING: payments");
+    expect(post.text).toContain("pi_3UZX8i7rcjS3l7tr1Scu896L");
+    expect(post.text).toContain("in_1UZX8g7rcjS3l7trEyyzuUj8");
+    // The read fails: the card stays open.
+    world.payments = null;
+    await stub.check();
+    expect(await payments()).toBeDefined();
+    // The payment is credited: the card closes.
+    world.payments = [];
+    await stub.check();
+    await settle(stub);
+    expect(await payments()).toBeUndefined();
     expect(over(edits(card.messageId).at(-1))).toBe(true);
 });
 

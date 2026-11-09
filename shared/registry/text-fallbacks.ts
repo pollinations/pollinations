@@ -920,6 +920,13 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-fable-5.2": {
+        "anthropic/claude-fable-5.2:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-11-09").getTime(),
+            // Direct Anthropic standard rates match Bedrock global.
+        },
+    },
     "mistralai/mistral-small-4": {
         "mistralai/mistral-small-4:openrouter": {
             provider: "openrouter",

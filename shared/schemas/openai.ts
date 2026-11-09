@@ -857,6 +857,9 @@ export const OpenAIModelSchema = z
         ),
         per_user_rpm: z.number().positive().nullable().optional(),
         health: ModelHealthSchema.optional(),
+        voices: ModelInfoSchema.shape.voices.describe(
+            "Preset voice names for the `voice` parameter. Omitted when the model lists none.",
+        ),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

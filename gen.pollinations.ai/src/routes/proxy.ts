@@ -408,6 +408,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         max_duration: entry.info.max_duration,
         default_duration: entry.info.default_duration,
         allowed_durations: entry.info.allowed_durations,
+        voices: entry.info.voices,
         ...(entry.info.health && { health: entry.info.health }),
     };
 }

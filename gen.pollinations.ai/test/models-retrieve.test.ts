@@ -771,3 +771,18 @@ test("video models advertise the durations they accept", async () => {
         );
     }
 });
+
+test("speech models advertise the voices they accept", async () => {
+    type ListedModel = { id: string; category: string; voices?: string[] };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    const audio = list.data.filter((model) => model.category === "audio");
+    expect(audio.some((model) => model.voices?.length)).toBe(true);
+    for (const model of audio) {
+        expect(model.voices, model.id).toEqual(
+            registry.resolve(model.id)?.info?.voices,
+        );
+    }
+});

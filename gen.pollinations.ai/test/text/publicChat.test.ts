@@ -236,6 +236,106 @@ async function chatThroughHandler(
 }
 
 it.each([false, true])(
+    "preserves Gemini Search source annotations in Responses (stream=%s)",
+    async (stream) => {
+        const model = "google/gemini-2.5-flash-lite:search";
+        const answer = "Source [1]";
+        const source = {
+            url: "https://example.com/article",
+            title: "An example source",
+            start_index: 7,
+            end_index: 10,
+        };
+        const annotations = [
+            {
+                type: "url_citation",
+                url_citation: { ...source, content: "Excerpt" },
+            },
+        ];
+        const prompt = `Find a source for today's news ${crypto.randomUUID()}`;
+        const { response, text, calls } = await chatThroughHandler(
+            model,
+            "openrouter.ai",
+            async (request) => {
+                expect(new URL(request.url).pathname).toBe(
+                    "/api/v1/chat/completions",
+                );
+                expect(await request.json()).toMatchObject({
+                    plugins: [{ id: "web", engine: "exa" }],
+                });
+                if (!stream) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: answer,
+                                    annotations,
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage,
+                    });
+                }
+                return new Response(
+                    [
+                        { choices: [{ delta: { annotations } }] },
+                        { choices: [{ delta: { content: answer } }] },
+                        { choices: [{ delta: {}, finish_reason: "stop" }] },
+                        { choices: [], usage },
+                        "[DONE]",
+                    ]
+                        .map((chunk) =>
+                            chunk === "[DONE]"
+                                ? "data: [DONE]\n\n"
+                                : `data: ${JSON.stringify(chunk)}\n\n`,
+                        )
+                        .join(""),
+                    { headers: { "content-type": "text/event-stream" } },
+                );
+            },
+            stream,
+            prompt,
+            { path: "/v1/responses", body: { model, input: prompt, stream } },
+        );
+        expect(response.status, text).toBe(200);
+        expect(calls).toBe(1);
+        const annotation = { type: "url_citation", ...source };
+        const expectedText = {
+            type: "output_text",
+            text: answer,
+            annotations: [annotation],
+        };
+        if (!stream) {
+            expect(JSON.parse(text).output[0].content[0]).toMatchObject(
+                expectedText,
+            );
+            return;
+        }
+        const events = text
+            .split("\n")
+            .filter((line) => line.startsWith("data: {"))
+            .map((line) => JSON.parse(line.slice(6)));
+        const completed = events.find(
+            (event) => event.type === "response.completed",
+        );
+        const message = completed.response.output[0];
+        expect(message.content[0]).toMatchObject(expectedText);
+        expect(events).toContainEqual(
+            expect.objectContaining({
+                type: "response.output_text.annotation.added",
+                annotation,
+                annotation_index: 0,
+                content_index: 0,
+                output_index: 0,
+                item_id: message.id,
+            }),
+        );
+    },
+);
+
+it.each([false, true])(
     "classifies Gemini search errors by the provider reason, not echoed input (policy=%s)",
     async (policy) => {
         let attempt = 0;

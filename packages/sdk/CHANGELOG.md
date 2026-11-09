@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.27] - 2026-11-06
+
+### Fixed
+- `chat()` and `text()` reject buffered completions ending with
+  `finish_reason: "error"` instead of returning a partial answer as a success.
+
 ## [5.1.0-alpha.26] - 2026-10-31
 
 ### Removed

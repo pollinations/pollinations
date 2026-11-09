@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-08T06:08:28.287193+00:00",
+  "generated_at": "2026-11-09T06:08:44.105810+00:00",
   "models": [
     {
       "id": "2026-10-13:assemblyai/universal-2",
@@ -7166,56 +7166,6 @@
         16953
       ],
       "kind": "api"
-    },
-    {
-      "date": "2026-10-09",
-      "emoji": "🤖",
-      "title": "GPT-6 Luna Decisions",
-      "text": "Ask choice, score, or predicate questions with `openai/gpt-6-luna-decisions` and get typed answers with probabilities and confidence instead of prose. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
-      "prs": [
-        16701
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-09",
-      "emoji": "🎵",
-      "title": "MAI file transcription",
-      "text": "Transcribe multilingual audio files with `microsoft/mai-transcribe-2`, including automatic language detection and timed segments. [Browse the model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).",
-      "prs": [
-        16798
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-09",
-      "emoji": "🎵",
-      "title": "MAI live transcription",
-      "text": "Send live PCM audio to `microsoft/mai-transcribe-2-streaming` over the realtime WebSocket API and receive incremental finalized text. [Browse the model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2-streaming).",
-      "prs": [
-        16802
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-09",
-      "emoji": "🎵",
-      "title": "MAI-Voice-2.1 speech",
-      "text": "Generate speech with MAI-Voice-2.1, choosing from 97 voices and MP3 or 24 kHz PCM output. [Find the model](https://enter.pollinations.ai/models?q=MAI-Voice-2.1).",
-      "prs": [
-        16800
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-09",
-      "emoji": "🎵",
-      "title": "MAI-Voice-2.1 Flash",
-      "text": "Generate speech with MAI-Voice-2.1 Flash, with the same 97-voice selection and MP3 or 24 kHz PCM output. [Find the model](https://enter.pollinations.ai/models?q=MAI-Voice-2.1%20Flash).",
-      "prs": [
-        16800
-      ],
-      "kind": "model"
     }
   ]
 }

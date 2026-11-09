@@ -2629,11 +2629,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "moonshotai/kimi-k3.1-pro": {
     "cost": {
       "completionTextTokens": 0.0000115,
+      "promptCacheWriteTokens": 0.0000023,
       "promptCachedTokens": 0.00000023,
       "promptTextTokens": 0.0000023,
     },
     "price": {
       "completionTextTokens": 0.0000115,
+      "promptCacheWriteTokens": 0.0000023,
       "promptCachedTokens": 0.00000023,
       "promptTextTokens": 0.0000023,
     },

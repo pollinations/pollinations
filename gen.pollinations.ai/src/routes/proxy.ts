@@ -404,7 +404,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
             per_user_rpm: entry.info.per_user_rpm,
         }),
         ...(entry.info.health && { health: entry.info.health }),
-        ...(entry.info.voices && { voices: entry.info.voices }),
+        voices: entry.info.voices,
     };
 }
 

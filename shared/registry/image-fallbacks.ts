@@ -59,20 +59,6 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
-    "google/gemini-omni-1.2-flash": {
-        "google/gemini-omni-1.2-flash:vercel": {
-            provider: "vercel",
-            // https://vercel.com/ai-gateway/models/gemini-omni-1.2-flash lists
-            // $1.50 input and $9 output per 1M tokens and no video-output rate.
-            // The video rate here is assumed to match Google's $12 (unverified).
-            cost: {
-                promptTextTokens: perMillion(1.5),
-                promptImageTokens: perMillion(1.5),
-                completionTextTokens: perMillion(9),
-                completionVideoTokens: perMillion(12),
-            },
-        },
-    },
     "openai/gpt-image-1-mini": {
         "openai/gpt-image-1-mini:openai": {
             provider: "openai",

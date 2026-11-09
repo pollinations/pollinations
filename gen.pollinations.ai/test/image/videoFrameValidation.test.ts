@@ -9,7 +9,6 @@ import { describe, expect, it } from "vitest";
 const VIDEO_FRAME_LIMITS = [
     ["google/gemini-omni-1.1-flash", 2],
     ["google/gemini-omni-1.2-flash", 2],
-    ["google/gemini-omni-1.2-flash:vercel", 2],
     ["google/veo-3.1-fast", 2],
     ["google/veo-3.1-fast:replicate", 2],
     ["bytedance/seedance-1-pro-fast", 1],

@@ -1,9 +1,27 @@
-import { createExecutionContext, env } from "cloudflare:test";
-import { test as workerTest } from "@shared/test/fixtures/index.ts";
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { apikey } from "@shared/db/better-auth.ts";
+import {
+    createTestApiKey,
+    test as workerTest,
+} from "@shared/test/fixtures/index.ts";
+import {
+    createFetchMock,
+    teardownFetchMock,
+} from "@shared/test/mocks/fetch.ts";
+import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import { isolateVoiceWithElevenLabs } from "../src/routes/audio.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
+
+afterEach(teardownFetchMock);
 
 const errorLog = vi.fn();
 const log = {
@@ -162,5 +180,96 @@ workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
         expect(response.headers.get("content-type")).toContain("audio/mpeg");
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("5");
         expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(1000);
+    },
+);
+
+workerTest(
+    "retries a repeated voice-isolator list and bills only the successful attempt",
+    async () => {
+        const tinybird = createMockTinybird();
+        let calls = 0;
+        const mocks = createFetchMock({
+            tinybird,
+            elevenlabs: {
+                state: {},
+                reset() {},
+                handlerMap: {
+                    "api.elevenlabs.io": async (request) => {
+                        expect(request.url).toContain("/v1/audio-isolation");
+                        expect(
+                            (await request.formData()).get("audio"),
+                        ).toBeInstanceOf(File);
+                        calls++;
+                        if (calls === 1)
+                            return new Response("unavailable", { status: 503 });
+                        return new Response(new Uint8Array([1, 2, 3]), {
+                            headers: {
+                                "content-type": "audio/mpeg",
+                                "character-cost": "60",
+                            },
+                        });
+                    },
+                },
+            },
+        });
+        await mocks.enable("elevenlabs", "tinybird");
+        const { key, id, userId } = await createTestApiKey({
+            user: { packBalance: 1 },
+            allowedModels: ["elevenlabs/voice-isolator"],
+            pollenBudget: 1,
+        });
+        const form = new FormData();
+        form.set("model", "voice-isolator,voice-isolator");
+        form.set("file", createWav(5));
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/audio/voice-isolator", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${key}` },
+                body: form,
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                ELEVENLABS_API_KEY: "test",
+            }),
+            ctx,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("5");
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+            new Uint8Array([1, 2, 3]),
+        );
+        await waitOnExecutionContext(ctx);
+        expect(calls).toBe(2);
+        expect(tinybird.state.events).toHaveLength(2);
+        expect(tinybird.state.events).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    modelUsed: "elevenlabs/voice-isolator",
+                    responseStatus: 503,
+                    isBilledUsage: false,
+                    isFinal: false,
+                }),
+                expect.objectContaining({
+                    modelUsed: "elevenlabs/voice-isolator",
+                    modelProviderUsed: "elevenlabs",
+                    responseStatus: 200,
+                    isBilledUsage: true,
+                    isFinal: true,
+                    tokenCountPromptAudioSeconds: 5,
+                    totalPrice: 0.01,
+                }),
+            ]),
+        );
+        const db = drizzle(env.DB);
+        expect((await getUserBalance(db, userId)).packBalance).toBeCloseTo(
+            1 - 0.01,
+            10,
+        );
+        const [storedKey] = await db
+            .select()
+            .from(apikey)
+            .where(eq(apikey.id, id));
+        expect(storedKey.pollenBalance).toBeCloseTo(1 - 0.01, 10);
     },
 );

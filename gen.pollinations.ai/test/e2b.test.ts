@@ -716,7 +716,11 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     untouched.unshift(structuredClone(e2b.sandboxes[2]));
 
     const ctx = createExecutionContext();
-    await worker.scheduled(createScheduledController(), env, ctx);
+    await worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        env,
+        ctx,
+    );
     await waitOnExecutionContext(ctx);
 
     const [due, old, , ending, paused, dashboard] = e2b.sandboxes;
@@ -906,7 +910,13 @@ test("anyone can read the prices, and they match what gen charges", async () => 
     }>();
     expect(pricing).toMatchObject({
         maxRunning: 8,
-        templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
+        templates: {
+            "pollinations-large": {
+                provider: "e2b",
+                cpuCount: 4,
+                memoryMB: 8192,
+            },
+        },
     });
     // The fake's 2 vCPU, 512 MiB sandbox for 300 s.
     expect(

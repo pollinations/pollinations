@@ -38,11 +38,15 @@ import {
     communityDown,
     conditions,
     duration,
+    earlyErrors,
     escalates,
+    GEN_HEARTBEATS,
+    jobsStale,
     legacyDown,
     lineColor,
     modelOf,
     noteworthy,
+    paymentsFailing,
     pings,
     renderCard,
     snapshot,
@@ -244,11 +248,15 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up, enterDown] = await Promise.all([
-            isUp(PUBLIC),
-            isUp(UPSTREAM),
-            enterError(this.env.COMMUNITY_PROBE_KEY),
-        ]);
+        const [pub, up, enterDown, early, freshness, payments] =
+            await Promise.all([
+                isUp(PUBLIC),
+                isUp(UPSTREAM),
+                enterError(this.env.COMMUNITY_PROBE_KEY),
+                this.early(),
+                this.freshness(now),
+                this.payments(),
+            ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
         const gen = pub ? PUBLIC : UPSTREAM;
@@ -280,8 +288,13 @@ export class Watch extends DurableObject {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
-        // Enter is checked on its own, so it is judged whatever gen does.
+        // Enter, the requests failing before any model, the analytics feeds
+        // and payments are checked on their own, so they are judged whatever
+        // gen does.
         if (enterDown) found.enter = { kind: "ENTER_DOWN", error: enterDown };
+        if (early) Object.assign(found, earlyErrors(early));
+        if (freshness) Object.assign(found, jobsStale(freshness));
+        if (payments) Object.assign(found, paymentsFailing(payments));
 
         const sweeps = await sweepDomains(
             this.env.DB,
@@ -324,12 +337,15 @@ export class Watch extends DurableObject {
                     Boolean(this.cycle),
                 ),
             );
-        // Unknown sign-ups or legacy bridges keep their open cards.
-        // A sign-up card Discord hasn't taken yet is retried until it has:
-        // its 24-hour window can end first.
+        // Unknown sign-ups, legacy bridges, early errors, job ages or payments
+        // keep their open cards. A sign-up card Discord hasn't taken yet is
+        // retried until it has: its 24-hour window can end first.
         const unknown = [
             signups === null && "signup:",
             legacy === null && "legacy:",
+            early === null && "early",
+            freshness === null && "stale:",
+            payments === null && "payments",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -559,6 +575,75 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // Requests that failed before any model was known, per minute over the
+    // last 30 minutes, from Tinybird, read every check; null when the read
+    // failed.
+    async early() {
+        try {
+            return await pipe(
+                "infra_watch_early_errors",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+        } catch (error) {
+            console.error(`early errors: ${error.message}`);
+            return null;
+        }
+    }
+
+    // How old each analytics feed's newest row is, from Tinybird, and each
+    // gen cron's last finished run, from the heartbeat gen writes to its KV;
+    // read every check, null when a read failed. A job that never wrote a
+    // heartbeat is skipped.
+    async freshness(now) {
+        try {
+            const [feeds, ...beats] = await Promise.all([
+                pipe(
+                    "infra_watch_freshness",
+                    {},
+                    {
+                        tinybirdToken: this.env.TINYBIRD_TOKEN,
+                        fetchImpl: fetch,
+                    },
+                ),
+                ...GEN_HEARTBEATS.map((job) =>
+                    this.env.GEN_KV.get(`heartbeat:${job}`),
+                ),
+            ]);
+            return [
+                ...feeds,
+                ...GEN_HEARTBEATS.flatMap((job, i) =>
+                    beats[i] === null
+                        ? []
+                        : [
+                              {
+                                  source: job,
+                                  age_seconds: (now - Number(beats[i])) / 1000,
+                              },
+                          ],
+                ),
+            ];
+        } catch (error) {
+            console.error(`freshness: ${error.message}`);
+            return null;
+        }
+    }
+
+    // Payments in trouble, from Tinybird, read every check; null when the
+    // read failed.
+    async payments() {
+        try {
+            return await pipe(
+                "infra_watch_payments",
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+        } catch (error) {
+            console.error(`payments: ${error.message}`);
+            return null;
+        }
     }
 
     // Each legacy bridge's row from Tinybird, read once an hour from 5

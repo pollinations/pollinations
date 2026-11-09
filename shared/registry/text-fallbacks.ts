@@ -921,16 +921,10 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-fable-5.2": {
-        "anthropic/claude-fable-5.2:vercel": {
-            provider: "vercel",
+        "anthropic/claude-fable-5.2:anthropic": {
+            provider: "anthropic",
             addedDate: new Date("2026-11-09").getTime(),
-            // Vercel AI Gateway lists the same rates as Anthropic first-party.
-            cost: {
-                promptTextTokens: perMillion(8),
-                promptCachedTokens: perMillion(0.2),
-                promptCacheWriteTokens: perMillion(10),
-                completionTextTokens: perMillion(40),
-            },
+            // Direct Anthropic standard rates match Bedrock global.
         },
     },
     "mistralai/mistral-small-4": {

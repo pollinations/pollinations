@@ -670,29 +670,12 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Claude Fable 5.2 to Anthropic with a Vercel fallback", () => {
-        const primary = resolveModelConfig(messages, {
-            model: "anthropic/claude-fable-5.2",
-        });
-        expect(primary.options.model).toBe("claude-fable-5-2");
-        expect(primary.options.modelConfig?.provider).toBe("anthropic");
-        expect(primary.options.max_tokens).toBe(128000);
-
-        const fallback = resolveModelConfig(messages, {
-            model: "anthropic/claude-fable-5.2:vercel",
-        });
-        expect(fallback.options.model).toBe("anthropic/claude-fable-5.2");
-        expect(fallback.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://ai-gateway.vercel.sh/v1",
-        });
-    });
-
     it.each([
         ["anthropic/claude-haiku-5.5", "claude-haiku-5-5", "anthropic"],
         ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", "anthropic"],
         ["anthropic/claude-opus-5.5", "claude-opus-5-5", "bedrock"],
         ["anthropic/claude-fable-5.1", "claude-fable-5-1", "bedrock"],
+        ["anthropic/claude-fable-5.2", "claude-fable-5-2", "bedrock"],
     ])(
         "resolves the configured primary and fallback for %s",
         (model, upstream, provider) => {

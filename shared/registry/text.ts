@@ -2403,13 +2403,13 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-fable-5.2": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-11-09").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Anthropic first-party rates (platform.claude.com pricing, 2026-11-09);
+        // Bedrock global standard rates, verified 2026-11-09.
         // 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(8),

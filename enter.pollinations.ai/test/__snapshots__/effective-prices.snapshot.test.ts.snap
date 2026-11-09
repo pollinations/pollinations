@@ -218,7 +218,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000008,
     },
   },
-  "anthropic/claude-fable-5.2:vercel": {
+  "anthropic/claude-fable-5.2:anthropic": {
     "cost": {
       "completionTextTokens": 0.00004,
       "promptCacheWriteTokens": 0.00001,

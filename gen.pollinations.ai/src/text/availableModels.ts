@@ -717,10 +717,12 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-fable-5.2",
         config: portkeyConfig["anthropic/claude-fable-5.2"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-fable-5.2:vercel",
-        config: portkeyConfig["anthropic/claude-fable-5.2:vercel"],
+        name: "anthropic/claude-fable-5.2:anthropic",
+        config: portkeyConfig["anthropic/claude-fable-5.2:anthropic"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-sonnet-5.5",

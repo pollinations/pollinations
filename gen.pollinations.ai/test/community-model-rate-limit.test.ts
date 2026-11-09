@@ -17,6 +17,7 @@ const QUOTA_BOUND_MODELS = new Set([
     "stealth/glyph-cluster",
     "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
+    ...IMAGE_SERVICES["microsoft/mai-image-2.6-flash"].fallbacks,
     "microsoft/mai-image-2.6",
     "vllm-sr/d3",
 ]);

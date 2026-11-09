@@ -116,6 +116,33 @@ describe("generateTextPortkey", () => {
         },
     );
 
+    it("keeps Muse Spark Open on Fireworks Standard", async () => {
+        const bodies: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_, init) => {
+            bodies.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                choices: [
+                    {
+                        message: { role: "assistant", content: "Hello" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { prompt_tokens: 10, completion_tokens: 1 },
+            });
+        });
+
+        await generateTextPortkey([{ role: "user", content: "Hello" }], {
+            model: "meta/muse-spark-open",
+            service_tier: "priority",
+        });
+
+        expect(bodies).toHaveLength(1);
+        expect(bodies[0]).toMatchObject({
+            model: "accounts/fireworks/models/muse-spark-open",
+            service_tier: "default",
+        });
+    });
+
     it.each([0, 1, 2, 3])(
         "uses the GLM 5.3 chain with %i failed providers",
         async (failures) => {
@@ -540,6 +567,89 @@ describe("generateTextPortkey", () => {
                 function: { name: "read_file", arguments: "{}" },
             },
         ]);
+    });
+
+    it("drops echoed reasoning only for providers that reject it", async () => {
+        const bodies: Record<string, unknown>[] = [];
+        const respond = async (
+            _input: RequestInfo | URL,
+            init?: RequestInit,
+        ) => {
+            bodies.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: {
+                    prompt_tokens: 5,
+                    completion_tokens: 1,
+                    total_tokens: 6,
+                },
+            });
+        };
+        const portkeyFetcher = vi.fn(respond);
+        // Mistral Large 4 calls Mistral directly, without the Portkey fetcher.
+        vi.spyOn(globalThis, "fetch").mockImplementation(respond);
+        const toolCall = {
+            id: "call_1",
+            type: "function",
+            function: { name: "read_file", arguments: "{}" },
+        };
+        const reasoning = {
+            reasoning: "thinking",
+            reasoning_content: "thinking",
+            reasoning_details: [{ type: "reasoning.text", text: "thinking" }],
+        };
+        const messages = [
+            { role: "user", content: "hello" },
+            {
+                role: "assistant",
+                content: null,
+                tool_calls: [toolCall],
+                ...reasoning,
+            },
+            { role: "tool", tool_call_id: "call_1", content: "ok" },
+        ];
+
+        for (const model of [
+            "mistralai/mistral-small-4",
+            "mistralai/mistral-large-3",
+            "inferenceport-ai/lightning-text-v2",
+            "minimax/minimax-m3",
+            "mistralai/mistral-large-4",
+        ]) {
+            await generateTextPortkey(
+                messages,
+                { model, portkeyGatewayUrl: "https://portkey.test" },
+                portkeyFetcher,
+            );
+        }
+
+        const [mistral, azureMistral, inferencePort, fireworks, mistralLarge4] =
+            bodies.map((body) => (body.messages as ChatMessage[])[1]);
+        const withoutReasoning = {
+            role: "assistant",
+            content: null,
+            tool_calls: [toolCall],
+        };
+        expect(mistral).toEqual(withoutReasoning);
+        expect(azureMistral).toEqual(withoutReasoning);
+        expect(inferencePort).toEqual(withoutReasoning);
+        expect(fireworks).toEqual({ ...withoutReasoning, ...reasoning });
+        // Mistral's own reasoning model gets its thinking back as a chunk.
+        expect(mistralLarge4).toEqual({
+            ...withoutReasoning,
+            content: [
+                {
+                    type: "thinking",
+                    thinking: [{ type: "text", text: "thinking" }],
+                },
+            ],
+        });
     });
 
     it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {

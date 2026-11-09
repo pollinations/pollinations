@@ -62,6 +62,8 @@ import {
     analyzeImageSafety,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
+import { falBillableUnits } from "./utils/falBillableUnits.ts";
+import { fetchUpstream } from "./utils/fetchUpstream.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
@@ -308,7 +310,7 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
 }
 
 interface GPTImageConfig {
-    provider: "azure" | "openai";
+    provider: "azure" | "openai" | "fal";
     baseUrl: string;
     modelName: string;
     apiKeyEnv: string;
@@ -324,6 +326,42 @@ const AZURE_API_VERSION = "2025-04-01-preview";
 // (12 RPM per model, not per region), so each 2.5 model has exactly one
 // dedicated resource; extra regions would add no capacity.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
+    "openai/gpt-image-2.6-flare": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2.6-flare",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-2.6-sunburst": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2.6-sunburst",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-2.6-flare:fal": [
+        {
+            provider: "fal",
+            baseUrl: "https://fal.run/openai/gpt-image-2.6/flare",
+            modelName: "gpt-image-2.6-flare",
+            apiKeyEnv: "FAL_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-2.6-sunburst:fal": [
+        {
+            provider: "fal",
+            baseUrl: "https://fal.run/openai/gpt-image-2.6/sunburst",
+            modelName: "gpt-image-2.6-sunburst",
+            apiKeyEnv: "FAL_KEY",
+            region: "direct",
+        },
+    ],
     "openai/gpt-image-1-mini": [
         {
             provider: "azure",
@@ -470,6 +508,71 @@ function gptImageConfigsInTurn(model: string): GPTImageConfig[] {
     const index = (gptImageEndpointIndexes.get(model) ?? 0) % configs.length;
     gptImageEndpointIndexes.set(model, (index + 1) % configs.length);
     return [...configs.slice(index), ...configs.slice(0, index)];
+}
+
+async function callFalGPTImage(
+    config: GPTImageConfig,
+    apiKey: string,
+    params: ImageParams,
+    request: {
+        prompt: string;
+        size: string;
+        quality: string;
+        background?: string;
+    },
+    images: File[] = [],
+): Promise<ImageGenerationResult> {
+    const [width, height] = request.size.split("x").map(Number);
+    const imageUrls = await Promise.all(
+        images.map(
+            async (image) =>
+                `data:${image.type};base64,${Buffer.from(await image.arrayBuffer()).toString("base64")}`,
+        ),
+    );
+    const response = await fetchUpstream(
+        `${config.baseUrl}/${images.length ? "edit" : "text-to-image"}`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Key ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                prompt: request.prompt,
+                image_size: { width, height },
+                quality: request.quality,
+                background: request.background,
+                output_format: "png",
+                num_images: 1,
+                sync_mode: true,
+                enable_safety_checker: true,
+                ...(imageUrls.length ? { image_urls: imageUrls } : {}),
+            }),
+        },
+    );
+    const units = falBillableUnits(response);
+    const result = (await response.json()) as {
+        images?: { url?: string; content_type?: string }[];
+    };
+    const image = result.images?.[0];
+    if (!image?.url) {
+        throw UpstreamError.fromProvider(502, {
+            message: "Fal GPT Image returned no image",
+        });
+    }
+    const buffer = image.url.startsWith("data:")
+        ? base64ToBuffer(image.url)
+        : Buffer.from(await (await fetchUpstream(image.url)).arrayBuffer());
+    return {
+        buffer,
+        mimeType: image.content_type ?? "image/png",
+        trackingData: {
+            actualModel: params.model,
+            usage: {},
+            // fal's pricing API reports $1 per unit; the header includes its rounding.
+            providerBilling: { units, unitCost: 1 },
+        },
+    };
 }
 
 const callGPTImageWithEndpoint = async (
@@ -664,6 +767,15 @@ const callGPTImageWithEndpoint = async (
         if (config.provider === "openai") {
             formData.append("model", config.modelName);
         }
+        if (config.provider === "fal") {
+            return callFalGPTImage(
+                config,
+                apiKey,
+                safeParams,
+                requestBody,
+                formData.getAll("image[]") as File[],
+            );
+        }
         formData.append("size", size);
         formData.append("output_format", outputFormat);
         formData.append("quality", quality);
@@ -692,6 +804,9 @@ const callGPTImageWithEndpoint = async (
 
         logCloudflare(`Edit request response status: ${response.status}`);
     } else {
+        if (config.provider === "fal") {
+            return callFalGPTImage(config, apiKey, safeParams, requestBody);
+        }
         // Standard JSON request for generation - single attempt, no retry logic
         response = await fetch(endpoint, {
             method: "POST",
@@ -790,6 +905,10 @@ const generateImage = async (
         case "openai/gpt-image-2":
         case "openai/gpt-image-2.5-flare":
         case "openai/gpt-image-2.5-sunburst":
+        case "openai/gpt-image-2.6-flare":
+        case "openai/gpt-image-2.6-sunburst":
+        case "openai/gpt-image-2.6-flare:fal":
+        case "openai/gpt-image-2.6-sunburst:fal":
         case "openai/gpt-image-1-mini:openai":
         case "openai/gpt-image-1.5:openai":
         case "openai/gpt-image-2:openai":

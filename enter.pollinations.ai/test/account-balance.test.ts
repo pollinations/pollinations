@@ -178,6 +178,11 @@ describe("GET /api/account/balance", () => {
             Authorization: `Bearer ${created.key}`,
         });
         expect(res.status).toBe(403);
+        const { error } = await res.json<{ error: { fixUrl: string } }>();
+        const fix = new URL(error.fixUrl);
+        expect(fix.pathname).toBe("/grant");
+        expect(fix.searchParams.get("permission")).toBe("usage");
+        expect(fix.searchParams.get("id")).toBe(created.id);
     });
 
     // A pack balance can go negative after a settlement overshoots. Spending

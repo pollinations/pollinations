@@ -1732,9 +1732,9 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         isSpecialized: true,
     },
-    "typesafe/jev-1.13": {
+    "typesafe/jev-1.14": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev", "typesafe/jev"],
+        aliases: ["jev", "typesafe/jev", "typesafe/jev-1.13"],
         provider: "vercel",
         publisher: "TypeSafe",
         category: "decision",
@@ -1742,7 +1742,7 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // Vercel TypeSafe route (2026-10-24), with no gateway surcharge.
+            // Vercel TypeSafe route (2026-11-03), with no gateway surcharge.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
@@ -1760,7 +1760,7 @@ const TEXT_BASE_SERVICES = {
         tools: false,
         reasoning: false,
         // 64k for state + questions together; 32k for state + the longest
-        // question. https://docs.typesafe.ai/model-jaggedness/jev-1.13
+        // question. https://docs.typesafe.ai/models#context-length
         contextLength: 64000,
         isSpecialized: true,
     },
@@ -2540,6 +2540,35 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "moonshotai/kimi-k3.1-pro": {
+        supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vercel AI Gateway list rates (2026-11-03), no gateway fee; cache writes
+        // bill at the input rate (Moonshot 5-minute TTL). Moonshot AI is the
+        // only endpoint.
+        // https://ai-gateway.vercel.sh/v1/models/moonshotai/kimi-k3.1-pro/endpoints
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2),
+            completionTextTokens: perMillion(10),
+        },
+        title: "Kimi K3.1 Pro",
+        description:
+            "Reasoning and agentic coding model with 1M context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "moonshotai/kimi-k3": {
         supportedParameters: CHAT_PARAMETERS.bedrockKimi,
         aliases: ["kimi-k3"],
@@ -2562,6 +2591,34 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "moonshotai/kimi-k3.1-pro-highspeed": {
+        supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vercel AI Gateway list rates (2026-11-03), no gateway fee. Twice the
+        // Kimi K3.1 Pro rate. Moonshot AI is the only endpoint. Vercel reports
+        // 5-minute cache writes in cache_creation_input_tokens at the input rate.
+        cost: {
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Kimi K3.1 Pro Highspeed",
+        description:
+            "High-speed reasoning and agentic coding model with 1M context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -3405,6 +3462,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
+    "minimax/minimax-m3.1-flash": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "MiniMax",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: false,
+        // Fireworks standard serverless rates (2026-10-23).
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.015),
+            completionTextTokens: perMillion(0.6),
+        },
+        title: "MiniMax M3.1 Flash",
+        description:
+            "Multimodal agent model with a 1M-token context for tool use and coding",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meta/muse-glimmer-30b": {
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: ["muse-glimmer"],
@@ -3480,6 +3562,32 @@ const TEXT_BASE_SERVICES = {
         title: "Muse Spark 1.3",
         description:
             "Long-horizon multimodal reasoning for coding, agents and tool-driven workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "meta/muse-spark-open": {
+        supportedParameters: CHAT_PARAMETERS.fireworksMuseSparkOpen,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-10-15").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks serverless standard rates, verified 2026-11-03 after the
+            // preview ended. US-only capacity; Fireworks waives its premium.
+            promptTextTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(4.25),
+        },
+        title: "Muse Spark Open",
+        description:
+            "Agentic coding and tool use with reasoning controls and 1M context",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

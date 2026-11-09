@@ -32,6 +32,10 @@ SQL >
             *,
             lower(concat(message, ' ', upstream_body)) AS text,
             multiIf(
+                -- First: a failed D1 query's message is its SQL, whose
+                -- column names (rate_limit_*, apikey) match the kinds below.
+                positionCaseInsensitive(concat(message, ' ', stack), 'D1_ERROR') > 0
+                    OR message = 'Unable to verify balance. Please try again shortly.', 'database',
                 upstream_status = 429 OR match(text, 'rate.?limit|too many requests'), 'rate_limited',
                 match(text, 'quota|insufficient|billing|credit'), 'quota_or_billing',
                 match(text, 'content.?filter|safety|moderation|policy'), 'content_filtered',

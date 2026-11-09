@@ -34,6 +34,7 @@ import {
     GENERATION_HANDOFF_PATH,
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
+import { refreshCommunityModelRegistryCache } from "./community-models.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -41,7 +42,13 @@ import {
     createDocsRoutes,
     LLMS_FULL_TEXT,
 } from "./routes/docs.ts";
-import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import {
+    E2B_PATH,
+    e2bRoutes,
+    keepSandboxes,
+    sandboxPortHost,
+    servePort,
+} from "./routes/e2b.ts";
 import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
@@ -322,12 +329,44 @@ app.notFound(async (c: Context<Env>) => {
 app.onError(handleError);
 
 export default {
-    fetch: (request: Request, env, ctx) =>
-        serveSite(request, env) ?? app.fetch(request, env, ctx),
-    // The only cron, every 5 minutes (wrangler.toml). Leases end only after
-    // the keeper has renewed the kept sandboxes.
-    scheduled: async (_controller, env, ctx) => {
-        await keepSandboxes(env, ctx);
-        await stopExpiredAzureSandboxes(env);
+    fetch: (request: Request, env, ctx) => {
+        // A port host belongs to a sandbox, a site's host to the site.
+        const port = sandboxPortHost(env, new URL(request.url).hostname);
+        if (port) {
+            return new Hono<Env>()
+                .use("*", edgeRateLimit)
+                .all("*", () => servePort(request, env, ctx, port))
+                .onError(handleError)
+                .fetch(request, env, ctx);
+        }
+        return serveSite(request, env) ?? app.fetch(request, env, ctx);
+    },
+    scheduled: async (controller, env, ctx) => {
+        if (controller.cron === "* * * * *") {
+            // infra-watch reads the heartbeat's age to spot a failing refresh.
+            await refreshCommunityModelRegistryCache(env)
+                .then(() =>
+                    env.KV.put(
+                        "heartbeat:community-catalog",
+                        Date.now().toString(),
+                    ),
+                )
+                .catch((error) => {
+                    console.error(
+                        "Community model catalog refresh failed",
+                        error,
+                    );
+                });
+            return;
+        }
+        // Every 5 minutes. Leases end only after the keeper has renewed the
+        // kept sandboxes; catalog refreshes do not change their cadence. A
+        // failed keeper still stops expired boxes: a lease outlives one run.
+        try {
+            await keepSandboxes(env, ctx);
+        } finally {
+            await stopExpiredAzureSandboxes(env);
+        }
+        await env.KV.put("heartbeat:sandbox-keeper", Date.now().toString());
     },
 } satisfies ExportedHandler<CloudflareBindings>;

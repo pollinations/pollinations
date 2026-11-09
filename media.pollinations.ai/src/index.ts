@@ -2,7 +2,7 @@ import { AGENT_RUN_TOKEN_PREFIX } from "@shared/auth/agent-run-token.ts";
 import { extractApiKey } from "@shared/auth/api-key.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { rateLimit } from "@shared/rate-limit.ts";
+import { limit, rateLimit } from "@shared/rate-limit.ts";
 import {
     invalidSafeTokens,
     parseSafeFeatures,
@@ -80,6 +80,7 @@ interface Env {
     MAX_FILE_SIZE: string;
     DB: D1Database;
     ENTER: Fetcher;
+    UPLOAD_RATE_LIMITER?: RateLimit;
 }
 
 /**
@@ -323,7 +324,7 @@ const api = new Hono<{ Bindings: Env }>();
 const keyCheckRateLimit = rateLimit({ byIp: true });
 const RateLimitedResponse = {
     description:
-        "Too many requests from this API key or IP address; retry after `Retry-After` seconds",
+        "Too many requests from this API key, IP address or account; retry after `Retry-After` seconds",
 };
 const KeyCheckUnavailableResponse = {
     description: "The API key check is temporarily unavailable; retry",
@@ -335,7 +336,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Image metadata is stripped only when requested with `safe=privacy` or the `Pollinations-Safe: privacy` header; `safe=true` also enables privacy. Without it, uploaded bytes are preserved. Privacy processing supports image uploads up to 32 MiB and returns an error for larger or unparseable images. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Each account can upload up to 100 files a minute. Returns an id and its retrieval URL. Image metadata is stripped only when requested with `safe=privacy` or the `Pollinations-Safe: privacy` header; `safe=true` also enables privacy. Without it, uploaded bytes are preserved. Privacy processing supports image uploads up to 32 MiB and returns an error for larger or unparseable images. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         parameters: [
             {
                 in: "query",
@@ -473,6 +474,14 @@ api.post(
                 403,
             );
         }
+        // One account can hold many keys, so uploads are also capped per
+        // account; wrangler.toml sets the limit.
+        await limit(
+            c,
+            c.env.UPLOAD_RATE_LIMITER,
+            authResult.userId ?? authResult.keyId ?? "unattributed",
+            60,
+        );
         // Stored on the file and logged, so finding who uploaded it needs
         // neither the key name nor Enter's D1.
         const uploader = {
@@ -1181,6 +1190,7 @@ app.use(
             "X-Content-Size",
             "X-Safety-Applied",
             "Link",
+            "Retry-After",
         ],
     }),
 );

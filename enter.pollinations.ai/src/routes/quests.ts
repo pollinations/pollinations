@@ -16,8 +16,8 @@ import {
     questStandingsResponseSchema,
 } from "./quest-leaderboard.ts";
 
-// Bumped to v30: the app-spend quest is worth 10 Pollen.
-const CACHE_KEY = "quests:catalog:v30";
+// Bumped to v32: quest bounties come from reward-N labels.
+const CACHE_KEY = "quests:catalog:v32";
 const CACHE_TTL = 60;
 
 export type QuestCatalogResponse = {

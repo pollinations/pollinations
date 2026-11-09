@@ -2244,7 +2244,7 @@ describe("media.pollinations.ai", () => {
         }
 
         function send(
-            mediaEnv: ReturnType<typeof limitedEnv>,
+            mediaEnv: ReturnType<typeof createMediaEnv>,
             method: string,
             path: string,
             { key, ip }: { key: string; ip: string },
@@ -2258,6 +2258,9 @@ describe("media.pollinations.ai", () => {
                         Authorization: `Bearer ${key}`,
                         "CF-Connecting-IP": ip,
                         "Content-Type": "image/png",
+                        ...(method === "POST" && {
+                            "Content-Length": String(TINY_PNG.length),
+                        }),
                     },
                 },
                 mediaEnv,
@@ -2296,6 +2299,26 @@ describe("media.pollinations.ai", () => {
             }
             expect(statuses).toEqual([401, 401, 429]);
             expect(env.ENTER.fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it("caps uploads per account across its keys", async () => {
+            const bucket = createTestR2Bucket();
+            const mediaEnv = {
+                ...createMediaEnv(bucket),
+                UPLOAD_RATE_LIMITER: limiter(2),
+            };
+            const upload = (key: string) =>
+                send(mediaEnv, "POST", "/upload", { key, ip: "203.0.113.7" });
+            const statuses = [];
+            for (const key of ["sk_app_alice", "sk_alice", "sk_app_alice"]) {
+                statuses.push((await upload(key)).status);
+            }
+            expect(statuses).toEqual([200, 200, 429]);
+            expect((await upload("sk_alice")).headers.get("retry-after")).toBe(
+                "60",
+            );
+            expect((await upload("sk_bob")).status).toBe(200);
+            expect(bucket.putCount).toBe(3);
         });
 
         it("caps public gallery reads per IP before D1", async () => {

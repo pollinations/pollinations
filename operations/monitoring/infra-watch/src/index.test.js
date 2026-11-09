@@ -73,6 +73,12 @@ async function fake(input, init = {}) {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.hostname === "discord.test") return discord(url, init);
     if (url.pathname === "/") return new Response("ok");
+    // Enter's key check, made with the probe key.
+    if (url.href === "https://enter.pollinations.ai/api/account/key") {
+        world.enterKey = init.headers.authorization;
+        if (world.enter === "reset") throw new Error("connection reset");
+        return new Response(null, { status: world.enter });
+    }
     if (url.pathname === "/models/status") {
         const regular = url.searchParams.get("traffic") === "regular";
         return Response.json({ data: regular ? world.regular : world.rows });
@@ -104,8 +110,16 @@ async function fake(input, init = {}) {
             ? Response.json({ data: world.legacy })
             : new Response("unavailable", { status: 503 });
     }
+    if (url.pathname.endsWith("/infra_watch_freshness.json"))
+        return world.freshness
+            ? Response.json({ data: world.freshness })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.endsWith("/infra_watch_early_errors.json"))
+        return world.early
+            ? Response.json({ data: world.early })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
@@ -158,8 +172,11 @@ beforeEach(() => {
         agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
+        early: [],
+        enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
+        freshness: [],
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
@@ -991,6 +1008,70 @@ const tells =
     };
 const HOURS = (n) => n * 60 * 60_000;
 
+it("opens an Enter card after three failed key checks, never for a refused key, and closes it once Enter answers", async () => {
+    const stub = watch();
+    const enter = async () => (await stored(stub, "state")).open?.enter;
+    world.enter = 401;
+    await checks(stub, 3);
+    expect(await enter()).toBeUndefined();
+    world.enter = 503;
+    await checks(stub, 2);
+    expect(await enter()).toBeUndefined();
+    world.enter = "reset";
+    await stub.check();
+    const card = await enter();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("DOWN: enter.pollinations.ai");
+    expect(post.text).toContain("connection reset");
+    expect(world.enterKey).toBe("Bearer probe-test");
+    world.enter = 200;
+    await stub.check();
+    await settle(stub);
+    expect(await enter()).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("opens an early-errors card on the first bad minute with a ping, keeps it while Tinybird can't say, and closes it once the window is clean", async () => {
+    const stub = watch();
+    const early = async () => (await stored(stub, "state")).open?.early;
+    // Quiet minutes and a lone failure open nothing.
+    const quiet = {
+        minute: "2026-11-08 15:20:00",
+        failures: 3,
+        d1_failures: 0,
+    };
+    world.early = [quiet];
+    await stub.check();
+    expect(await early()).toBeUndefined();
+    // 8 Nov 2026 15:21 UTC, as it happened: one burst minute is enough.
+    world.early = [
+        quiet,
+        {
+            minute: "2026-11-08 15:21:00",
+            failures: 236,
+            d1_failures: 235,
+            top_route: "/*",
+        },
+    ];
+    await stub.check();
+    const card = await early();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("FAILING: Enter database (D1)");
+    expect(post.text).toContain("236 reqs failed in 1 min");
+    // The read fails: the card stays open.
+    world.early = null;
+    await stub.check();
+    expect(await early()).toBeDefined();
+    // The burst leaves the 30-minute window: the card closes.
+    world.early = [];
+    await stub.check();
+    await settle(stub);
+    expect(await early()).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
 it("opens a community monitor card when no cycle gets done for 90 minutes, says why, and closes it once one does", async () => {
     const stub = watch();
     let clock = Date.UTC(2026, 10, 2, 10, 5);
@@ -1551,3 +1632,40 @@ it("tells a served-model mismatch to the maintainers once due, however long deli
     await cycled(stub);
     expect(posts(INFRA)).toHaveLength(2);
 }, 15_000);
+
+it("a stale feed opens after 3 checks with a ping, survives a failed read, and closes once fresh", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.freshness = [
+        { source: "error_event", age_seconds: 20 },
+        { source: "product_event", age_seconds: 1200 },
+    ];
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).open?.["stale:product_event"]).toBe(
+        undefined,
+    );
+    await stub.check();
+    await settle(stub);
+    const { messageId } = (await stored(stub, "state")).open[
+        "stale:product_event"
+    ];
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("STALE: Enter feed (product_event)");
+    expect(posted.text).toContain("20 min old");
+    expect(posted.users.length).toBeGreaterThan(0);
+
+    // Tinybird fails: the card stays open.
+    world.freshness = null;
+    await stub.check();
+    expect(
+        (await stored(stub, "state")).open["stale:product_event"],
+    ).toBeTruthy();
+
+    world.freshness = [{ source: "product_event", age_seconds: 5 }];
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open["stale:product_event"]).toBe(
+        undefined,
+    );
+    expect(over(edits(messageId).at(-1))).toBe(true);
+});

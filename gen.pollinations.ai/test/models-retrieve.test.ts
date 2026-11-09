@@ -407,6 +407,39 @@ test("model listings carry billing units so agents can price a call", async () =
     }
 });
 
+test("model listings expose reference media limits on /v1/models", async () => {
+    type ListedModel = {
+        id: string;
+        max_reference_images?: number;
+        max_reference_videos?: number;
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+
+    for (const model of list.data) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.max_reference_images, model.id).toEqual(
+            info?.max_reference_images,
+        );
+        expect(model.max_reference_videos, model.id).toEqual(
+            info?.max_reference_videos,
+        );
+    }
+
+    const withRefImages = list.data.filter(
+        (model) => model.max_reference_images !== undefined,
+    );
+    expect(withRefImages.length).toBeGreaterThan(0);
+    const sample = withRefImages[0];
+    const retrieved = (await (
+        await fetchWorker(`/v1/models/${encodeURIComponent(sample.id)}`)
+    ).json()) as ListedModel;
+    expect(retrieved.max_reference_images).toEqual(sample.max_reference_images);
+});
+
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker(
         `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,

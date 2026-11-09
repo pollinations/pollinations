@@ -841,6 +841,8 @@ export const OpenAIModelSchema = z
             ),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        max_reference_images: ModelInfoSchema.shape.max_reference_images,
+        max_reference_videos: ModelInfoSchema.shape.max_reference_videos,
         health: ModelHealthSchema.optional(),
     })
     .meta({

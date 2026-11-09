@@ -2543,21 +2543,22 @@ const TEXT_BASE_SERVICES = {
     "moonshotai/kimi-k3.1-pro": {
         supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
         aliases: [],
-        provider: "vercel",
+        provider: "azure",
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-10-23").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // Vercel AI Gateway list rates (2026-11-03), no gateway fee; cache writes
-        // bill at the input rate (Moonshot 5-minute TTL). Moonshot AI is the
-        // only endpoint.
-        // https://ai-gateway.vercel.sh/v1/models/moonshotai/kimi-k3.1-pro/endpoints
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Microsoft Foundry pricing (Microsoft Tech Community, 2026-11-05): $2.30
+        // input, $0.23 cached input and $11.50 output per 1M tokens. Azure
+        // reports image input separately and no cache writes; both bill at the
+        // input rate (cache writes come from the Vercel fallback).
         cost: {
-            promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.2),
-            promptCacheWriteTokens: perMillion(2),
-            completionTextTokens: perMillion(10),
+            promptTextTokens: perMillion(2.3),
+            promptCachedTokens: perMillion(0.23),
+            promptCacheWriteTokens: perMillion(2.3),
+            promptImageTokens: perMillion(2.3),
+            completionTextTokens: perMillion(11.5),
         },
         title: "Kimi K3.1 Pro",
         description:

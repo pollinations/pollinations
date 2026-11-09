@@ -765,17 +765,16 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Kimi K3.1 Pro through Vercel AI Gateway without fallback", () => {
+    it("routes Kimi K3.1 Pro to its Microsoft Foundry deployment", () => {
         const result = resolveModelConfig(messages, {
             model: "moonshotai/kimi-k3.1-pro",
         });
 
-        expect(result.options.model).toBe("moonshotai/kimi-k3.1-pro");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://ai-gateway.vercel.sh/v1",
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Kimi-K3.1-Pro",
         });
-        expect(result.options.provider).toBeUndefined();
     });
 
     it("pins Mercury to Inception on OpenRouter without fallback", () => {

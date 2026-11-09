@@ -2635,11 +2635,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000023,
     },
     "price": {
-      "completionTextTokens": 0.0000115,
-      "promptCacheWriteTokens": 0.0000023,
-      "promptCachedTokens": 0.00000023,
-      "promptImageTokens": 0.0000023,
-      "promptTextTokens": 0.0000023,
+      "completionTextTokens": 0.000008625,
+      "promptCacheWriteTokens": 0.000001725,
+      "promptCachedTokens": 0.0000001725,
+      "promptImageTokens": 0.000001725,
+      "promptTextTokens": 0.000001725,
     },
   },
   "moonshotai/kimi-k3.1-pro-highspeed": {
@@ -2664,10 +2664,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.00001,
-      "promptCacheWriteTokens": 0.000002,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.0000075,
+      "promptCacheWriteTokens": 0.0000015,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "moonshotai/kimi-k3:deepinfra": {

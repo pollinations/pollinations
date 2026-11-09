@@ -2548,7 +2548,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-10-23").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // Microsoft Foundry pricing (Microsoft Tech Community, 2026-11-05): $2.30
         // input, $0.23 cached input and $11.50 output per 1M tokens. Azure
         // reports image input separately and no cache writes; both bill at the

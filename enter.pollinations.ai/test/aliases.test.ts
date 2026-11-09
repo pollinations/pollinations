@@ -177,8 +177,6 @@ test("Azure models use the approved public-price multipliers", () => {
         // Azure quota covers less than twice Kimi's peak, so overflow reaches
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],
-        // Azure overflow reaches the cash-paid Vercel fallback.
-        ["moonshotai/kimi-k3.1-pro", 1],
         // Azure overflow reaches the cash-paid OpenAI fallback.
         ["openai/gpt-image-1-mini", 1],
         ["openai/gpt-image-1.5", 1],

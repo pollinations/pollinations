@@ -1346,7 +1346,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "Five-second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
+            "2-15 second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [
@@ -1358,8 +1358,8 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 5,
-        maxDuration: 5,
+        minDuration: 2,
+        maxDuration: 15,
         defaultDuration: 5,
     },
     "alibaba/wan-2.7-image": {

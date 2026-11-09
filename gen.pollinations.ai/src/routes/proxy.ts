@@ -403,12 +403,8 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
-        ...(entry.info.max_reference_images !== undefined && {
-            max_reference_images: entry.info.max_reference_images,
-        }),
-        ...(entry.info.max_reference_videos !== undefined && {
-            max_reference_videos: entry.info.max_reference_videos,
-        }),
+        max_reference_images: entry.info.max_reference_images,
+        max_reference_videos: entry.info.max_reference_videos,
         ...(entry.info.health && { health: entry.info.health }),
     };
 }

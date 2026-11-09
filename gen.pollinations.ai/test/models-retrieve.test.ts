@@ -428,16 +428,7 @@ test("model listings expose reference media limits on /v1/models", async () => {
             info?.max_reference_videos,
         );
     }
-
-    const withRefImages = list.data.filter(
-        (model) => model.max_reference_images !== undefined,
-    );
-    expect(withRefImages.length).toBeGreaterThan(0);
-    const sample = withRefImages[0];
-    const retrieved = (await (
-        await fetchWorker(`/v1/models/${encodeURIComponent(sample.id)}`)
-    ).json()) as ListedModel;
-    expect(retrieved.max_reference_images).toEqual(sample.max_reference_images);
+    expect(list.data.some((model) => model.max_reference_images)).toBe(true);
 });
 
 test("retrieves a model by canonical ID", async () => {

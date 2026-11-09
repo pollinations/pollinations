@@ -2551,11 +2551,13 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         // Microsoft Foundry pricing (Microsoft Tech Community, 2026-11-05): $2.30
         // input, $0.23 cached input and $11.50 output per 1M tokens. Azure
-        // reports no cache writes; the rate prices the Vercel fallback's.
+        // reports image input separately and no cache writes; both bill at the
+        // input rate (cache writes come from the Vercel fallback).
         cost: {
             promptTextTokens: perMillion(2.3),
             promptCachedTokens: perMillion(0.23),
             promptCacheWriteTokens: perMillion(2.3),
+            promptImageTokens: perMillion(2.3),
             completionTextTokens: perMillion(11.5),
         },
         title: "Kimi K3.1 Pro",

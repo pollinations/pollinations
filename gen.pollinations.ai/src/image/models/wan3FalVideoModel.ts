@@ -52,11 +52,6 @@ export async function callWan3FalAPI(
         });
 
     const duration = safeParams.duration ?? WAN_3_DURATION_SECONDS;
-    if (duration !== WAN_3_DURATION_SECONDS) {
-        throw UpstreamError.fromProvider(400, {
-            message: "Wan 3.0 supports exactly 5 seconds",
-        });
-    }
 
     const images = safeParams.image ?? [];
     const hasFrames = images.length > 0;

@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-08",
+  "period_start": "2026-11-08",
+  "period_end": "2026-11-08",
+  "title": "Legacy image requests stop when the limiter fails",
+  "summary": "Legacy images fail safely when rate limiting breaks, while catalog and leaderboard caching reduce database work.\n\nIf the per-IP limiter fails, legacy image requests now return 503 with Retry-After: 10 instead of sending an unmetered generation request. Existing cached images remain available.\n\nThe community model catalog now refreshes its shared cache every minute, reducing repeated database scans. The Quest leaderboard rebuilds on a 15-minute schedule, with a cached copy that lasts 20 minutes. Visitors normally read that copy rather than triggering a rebuild; leaderboard totals may lag.\n\nTomadix, a Portuguese-language app for writing prompts and generating images with Pollinations.ai, was added to the image app catalog.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 19367,
+      "date": "2026-11-08"
+    },
+    {
+      "number": 19369,
+      "date": "2026-11-08"
+    },
+    {
+      "number": 19370,
+      "date": "2026-11-08"
+    },
+    {
+      "number": 19375,
+      "date": "2026-11-08"
+    }
+  ],
+  "generated_at": "2026-11-09T06:07:36.982193+00:00",
+  "daily": [],
+  "changelog": []
+}

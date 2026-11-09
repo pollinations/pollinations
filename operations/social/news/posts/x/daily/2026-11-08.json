@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-08",
+  "period_start": "2026-11-08",
+  "period_end": "2026-11-08",
+  "generated_at": "2026-11-09T06:07:36.982193+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/2fbf345b6880d6c9ed5f44c94fea7cad309f2ef51acfc1cf1d64f4a824d54bdb"
+    }
+  ],
+  "text": "Legacy image requests now return 503 (Retry-After: 10) if the per-IP limiter fails. Cached images still work. Model catalog cache refreshes every minute; Quest leaderboard rebuilds every 15 minutes, not on visitor misses. Tomadix joined the image app catalog. Totals may lag."
+}

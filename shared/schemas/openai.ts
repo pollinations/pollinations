@@ -843,7 +843,7 @@ export const OpenAIModelSchema = z
         per_user_rpm: z.number().positive().nullable().optional(),
         health: ModelHealthSchema.optional(),
         voices: ModelInfoSchema.shape.voices.describe(
-            "Voice names this speech model accepts. Omitted for models that generate no audio. When present, the request `voice` value must be one of these.",
+            "Preset voice names for the `voice` parameter. Omitted when the model lists none.",
         ),
     })
     .meta({

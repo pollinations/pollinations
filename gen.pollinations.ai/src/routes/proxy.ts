@@ -404,8 +404,6 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
             per_user_rpm: entry.info.per_user_rpm,
         }),
         ...(entry.info.health && { health: entry.info.health }),
-        // A speech model bills per second and only accepts its own voice names, so a
-        // caller that cannot read them here has to fetch /audio/models to find out.
         ...(entry.info.voices && { voices: entry.info.voices }),
     };
 }

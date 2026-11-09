@@ -752,8 +752,6 @@ test("speech models advertise the voices they accept", async () => {
         data: ListedModel[];
     };
     const registry = await getGenerationModelRegistry(env);
-    // A speech model bills per second and only accepts its own voice names, so the
-    // listing has to carry them or a caller must fetch /audio/models to find out.
     const speech = list.data.filter(
         (model) => model.category === "audio" && model.voices?.length,
     );

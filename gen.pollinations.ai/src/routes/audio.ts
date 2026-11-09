@@ -38,7 +38,6 @@ import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -62,7 +61,7 @@ import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
@@ -191,7 +190,7 @@ async function withAudioFallback(
         c.var.model,
         attempt,
         c.var.track?.attempts,
-        (candidate) => enforceModelRateLimit(c, candidate),
+        (candidate) => requireModelAttemptAccess(c, candidate),
     );
 }
 type AudioRefChunk = {
@@ -441,7 +440,7 @@ export async function generateElevenLabsSpeech(opts: {
     // credits, not exact billable characters; verified against usage analytics.
     const characters = isV4 ? [...text].length : text.length;
 
-    if (isV4 && responseFormat === "flac") {
+    if (responseFormat === "flac") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
                 "This speech model supports mp3, opus, aac, wav, and pcm output; flac is not supported.",
@@ -1861,8 +1860,8 @@ export async function generateMusic(
 
 /**
  * Calls ElevenLabs Sound Effects (text -> sound effect) via /v1/sound-generation.
- * Billed per second of output audio (see registry
- * `elevenlabs/eleven-text-to-sound-v2` cost block).
+ * Billed per metered second (see registry `elevenlabs/eleven-text-to-sound-v2`
+ * cost block).
  */
 export async function generateSoundEffect(opts: {
     prompt: string;
@@ -1889,9 +1888,8 @@ export async function generateSoundEffect(opts: {
                 "Sound effects service is not configured (missing API key)",
         });
     }
-    // SFX always returns 128 kbps MP3. The per-second price is derived from the
-    // MP3 byte rate, so honoring other formats would need per-format billing
-    // math — reject instead of silently downgrading (default "mp3" passes).
+    // SFX always returns 128 kbps MP3; reject other formats instead of silently
+    // downgrading (default "mp3" passes).
     if (responseFormat && responseFormat !== "mp3") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: `elevenlabs/eleven-text-to-sound-v2 only supports mp3 output; response_format=${responseFormat} is not available.`,
@@ -1922,19 +1920,19 @@ export async function generateSoundEffect(opts: {
     const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
+    // Bill ElevenLabs' character-cost meter: 12 credits per second, and a flat
+    // 60 credits when the caller sets no duration, whatever length it returns.
+    const meteredSeconds = getElevenLabsMeteredInputSeconds(response, log);
     const audioBuffer = await response.arrayBuffer();
-    // ElevenLabs Sound Effects returns 128 kbps CBR MP3 (= 16 kB/s, ffprobe-verified).
-    const SFX_MP3_BYTES_PER_SECOND = 16000;
-    const estimatedDuration = audioBuffer.byteLength / SFX_MP3_BYTES_PER_SECOND;
 
     const usageHeaders = buildUsageHeaders(
         "elevenlabs/eleven-text-to-sound-v2",
-        createCompletionAudioSecondsUsage(estimatedDuration),
+        createCompletionAudioSecondsUsage(meteredSeconds),
     );
 
-    log.info("Sound effect success: {bytes} bytes, ~{duration}s", {
+    log.info("Sound effect success: {bytes} bytes, {duration}s metered", {
         bytes: audioBuffer.byteLength,
-        duration: Math.round(estimatedDuration),
+        duration: meteredSeconds,
     });
 
     return new Response(audioBuffer, {
@@ -3022,7 +3020,17 @@ export async function generateXaiSpeech(opts: {
             }),
         }),
         XAI_TTS_ENDPOINT,
-    );
+    ).catch((error: unknown) => {
+        // xAI uses 404 for an unknown caller-supplied voice, not just routing.
+        if (
+            error instanceof UpstreamError &&
+            error.upstreamStatus === 404 &&
+            error.message === `TTS synthesis failed: Voice '${voice}' not found`
+        ) {
+            throw new UpstreamError(400, error);
+        }
+        throw error;
+    });
 
     log.info("xAI TTS success: voice={voice}, chars={chars}", {
         voice,
@@ -3733,8 +3741,9 @@ async function dispatchAudioGeneration(
         case "microsoft/mai-voice-2.1-flash":
         case "microsoft/mai-voice-2.1-flash:vercel":
         case "microsoft/mai-voice-2.1-flash:openrouter": {
-            const upstreamModel = c.var.model
-                .resolved as keyof typeof MAI_TTS_MODEL_SUFFIXES;
+            const upstreamModel = (
+                model in MAI_TTS_MODEL_SUFFIXES ? model : c.var.model.resolved
+            ) as keyof typeof MAI_TTS_MODEL_SUFFIXES;
             const provider = AUDIO_SERVICES[model as AudioModelName].provider;
             return withSafetyHeaders(
                 c,
@@ -3832,18 +3841,11 @@ async function generateAudioFromSpeechRequest(
     request: CreateSpeechRequest,
     log: Logger,
 ): Promise<Response> {
-    const duration = resolveAudioDuration(
-        c.var.model.resolved,
-        c.var.model.definition,
-        request.duration ?? request.seconds,
-    );
     const {
         input,
         safe,
         voice,
-        response_format = c.var.model.resolved in GEMINI_TTS_MODELS
-            ? "wav"
-            : "mp3",
+        response_format,
         steps,
         negative_prompt,
         instrumental,
@@ -3859,67 +3861,89 @@ async function generateAudioFromSpeechRequest(
         loop,
         prompt_influence,
     } = request;
+    let safeInput: Promise<string> | undefined;
+    let safeDialogueInputs:
+        | Promise<{ text: string; voice: string }[]>
+        | undefined;
+    let referenceAudio: Promise<File> | undefined;
 
-    // Speed 1 is every model's normal output, so clients that always send the
-    // OpenAI default keep working on other models.
-    if (
-        speed !== undefined &&
-        speed !== 1 &&
-        !["openai/tts-1", "openai/tts-1-hd"].includes(c.var.model.resolved)
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "The speed parameter is only supported by openai/tts-1 and openai/tts-1-hd",
-        });
-    }
-
-    requireElevenMusicOptions(c.var.model.resolved, {
-        referenceAudio: reference_audio,
-        compositionPlan: composition_plan,
-        conditioningRef: conditioning_ref,
-        storeForInpainting: store_for_inpainting,
-    });
-    if (reference_video && c.var.model.resolved !== SONILO_MODEL) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `reference_video is only supported with model=${SONILO_MODEL}.`,
-        });
-    }
-    requireStableAudioStrength(c.var.model.resolved, {
-        strength,
-        referenceAudio: reference_audio,
-    });
-
-    if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
-        const inputs = parseDialogueInput(input);
-        const safeTexts = await applySafetyToInput(
-            c,
-            inputs.map((turn) => turn.text),
-            safe,
+    return withAudioFallback(c, async (candidate) => {
+        // Declared provider routes retain their public model's options; caller
+        // alternatives use their own model's defaults and validation.
+        const model = candidate.definition?.fallbackOnly
+            ? c.var.model.resolved
+            : candidate.id;
+        const responseFormat =
+            response_format ?? (model in GEMINI_TTS_MODELS ? "wav" : "mp3");
+        const duration = resolveAudioDuration(
+            model,
+            candidate.definition ?? c.var.model.definition,
+            request.duration ?? request.seconds,
         );
-        const safeInputs = inputs.map((turn, index) => ({
-            ...turn,
-            text: safeTexts[index],
-        }));
-        const response = await generateElevenLabsDialogue({
-            inputs: safeInputs,
-            responseFormat: response_format,
-            seed,
-            apiKey: c.env.ELEVENLABS_API_KEY,
-            log,
+
+        // Speed 1 is every model's normal output, so clients that always send
+        // the OpenAI default keep working on other models.
+        if (
+            speed !== undefined &&
+            speed !== 1 &&
+            !["openai/tts-1", "openai/tts-1-hd"].includes(model)
+        ) {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message:
+                    "The speed parameter is only supported by openai/tts-1 and openai/tts-1-hd",
+            });
+        }
+
+        requireElevenMusicOptions(model, {
+            referenceAudio: reference_audio,
+            compositionPlan: composition_plan,
+            conditioningRef: conditioning_ref,
+            storeForInpainting: store_for_inpainting,
         });
-        return withSafetyHeaders(c, response);
-    }
+        if (reference_video && model !== SONILO_MODEL) {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: `reference_video is only supported with model=${SONILO_MODEL}.`,
+            });
+        }
+        requireStableAudioStrength(model, {
+            strength,
+            referenceAudio: reference_audio,
+        });
 
-    const safeInput = await applySafetyToInput(c, input, safe);
-    const referenceAudio = reference_audio
-        ? await fetchReferenceAudio(reference_audio)
-        : undefined;
+        if (candidate.id === "elevenlabs/eleven-v3:dialogue") {
+            safeDialogueInputs ??= (async () => {
+                const inputs = parseDialogueInput(input);
+                const safeTexts = await applySafetyToInput(
+                    c,
+                    inputs.map((turn) => turn.text),
+                    safe,
+                );
+                return inputs.map((turn, index) => ({
+                    ...turn,
+                    text: safeTexts[index],
+                }));
+            })();
+            return withSafetyHeaders(
+                c,
+                await generateElevenLabsDialogue({
+                    inputs: await safeDialogueInputs,
+                    responseFormat,
+                    seed,
+                    apiKey: c.env.ELEVENLABS_API_KEY,
+                    log,
+                }),
+            );
+        }
 
-    return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
-            text: safeInput,
+        safeInput ??= applySafetyToInput(c, input, safe);
+        const text = await safeInput;
+        if (reference_audio) {
+            referenceAudio ??= fetchReferenceAudio(reference_audio);
+        }
+        return dispatchAudioGeneration(c, candidate.id, {
+            text,
             voice,
-            responseFormat: response_format,
+            responseFormat,
             communityEndpoint: candidate.communityEndpoint,
             seed,
             duration,
@@ -3929,7 +3953,7 @@ async function generateAudioFromSpeechRequest(
             storeForInpainting: store_for_inpainting,
             conditioningRef: conditioning_ref,
             compositionPlan: composition_plan,
-            referenceAudio,
+            referenceAudio: await referenceAudio,
             referenceVideo: reference_video,
             strength,
             instructions,
@@ -3944,8 +3968,8 @@ async function generateAudioFromSpeechRequest(
             falKey: c.env.FAL_KEY,
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,
-        }),
-    );
+        });
+    });
 }
 
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
@@ -4003,13 +4027,15 @@ export async function handleVoiceChanger(c: AudioContext): Promise<Response> {
         });
     }
 
-    return changeVoiceWithElevenLabs({
-        audio,
-        voice: typeof voice === "string" && voice !== "" ? voice : "alloy",
-        responseFormat: resolvedFormat,
-        apiKey: c.env.ELEVENLABS_API_KEY,
-        log,
-    });
+    return withAudioFallback(c, () =>
+        changeVoiceWithElevenLabs({
+            audio,
+            voice: typeof voice === "string" && voice !== "" ? voice : "alloy",
+            responseFormat: resolvedFormat,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            log,
+        }),
+    );
 }
 
 export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
@@ -4026,11 +4052,13 @@ export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
             message: "Missing required audio file.",
         });
     }
-    return isolateVoiceWithElevenLabs({
-        audio,
-        apiKey: c.env.ELEVENLABS_API_KEY,
-        log,
-    });
+    return withAudioFallback(c, () =>
+        isolateVoiceWithElevenLabs({
+            audio,
+            apiKey: c.env.ELEVENLABS_API_KEY,
+            log,
+        }),
+    );
 }
 
 export async function handleSpeech(c: AudioContext): Promise<Response> {
@@ -4080,6 +4108,40 @@ export async function handleSpeechWithTimestamps(
     );
 }
 
+/** Multipart body for the OVH and DeepInfra whisper-large-v3 endpoints. */
+export function buildWhisperForm(opts: {
+    file: File;
+    language?: string | null;
+    prompt?: string | null;
+    temperature?: number;
+    isDeepInfra: boolean;
+}): FormData {
+    const { file, language, prompt, temperature, isDeepInfra } = opts;
+    const form = new FormData();
+    const filename =
+        file.name && file.name !== "blob" ? file.name : "audio.mp3";
+    form.append("file", file, filename);
+    if (language) form.append("language", language);
+    if (prompt) form.append("prompt", prompt);
+    if (temperature !== undefined)
+        form.append("temperature", String(temperature));
+    form.append("response_format", "verbose_json");
+    form.append(
+        "model",
+        isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+    );
+    if (isDeepInfra) {
+        // DeepInfra returns segments either way, and drops words when
+        // both granularities are requested.
+        form.append("timestamp_granularities", "word");
+    } else {
+        // OVH leaves segments empty unless asked; srt/vtt cues are those.
+        form.append("timestamp_granularities[]", "word");
+        form.append("timestamp_granularities[]", "segment");
+    }
+    return form;
+}
+
 export async function handleTranscription(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("transcription");
     const formData = c.get("formData");
@@ -4093,11 +4155,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     const language = formData.get("language") as string | null;
     const prompt = formData.get("prompt") as string | null;
     const responseFormat = formData.get("response_format") as string | null;
-    const temperatureRaw = formData.get("temperature") as string | null;
-    const temperature =
-        temperatureRaw !== null && temperatureRaw !== ""
-            ? Number(temperatureRaw)
-            : undefined;
+    const temperature = parseOptionalNumber(
+        formData.get("temperature"),
+        "temperature",
+    );
+    if (temperature !== undefined && (temperature < 0 || temperature > 1)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "temperature must be between 0 and 1",
+        });
+    }
     const speakersExpected = parsePositiveInt(
         formData.get("speakers_expected"),
         "speakers_expected",
@@ -4245,25 +4311,13 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "vtt",
         ]);
 
-        const whisperFormData = new FormData();
-        const filename =
-            file.name && file.name !== "blob" ? file.name : "audio.mp3";
-        whisperFormData.append("file", file, filename);
-        if (language) whisperFormData.append("language", language);
-        whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append(
-            "model",
-            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
-        );
-        if (isDeepInfra) {
-            // DeepInfra returns segments either way, and drops words when
-            // both granularities are requested.
-            whisperFormData.append("timestamp_granularities", "word");
-        } else {
-            // OVH leaves segments empty unless asked; srt/vtt cues are those.
-            whisperFormData.append("timestamp_granularities[]", "word");
-            whisperFormData.append("timestamp_granularities[]", "segment");
-        }
+        const whisperFormData = buildWhisperForm({
+            file,
+            language,
+            prompt,
+            temperature,
+            isDeepInfra,
+        });
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"
@@ -4323,7 +4377,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
-    .use("*", auth(), frontendKeyRateLimit, balance)
+    .use("*", auth(), balance)
     .post(
         "/voice-changer",
         describeRoute({

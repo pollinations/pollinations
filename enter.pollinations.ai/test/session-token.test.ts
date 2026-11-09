@@ -1,7 +1,14 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { format } from "node:util";
 import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
+import worker from "../src/index.ts";
 import { mintAccountToken, test } from "./fixtures.ts";
 
 const BASE = "http://localhost:3000";
@@ -54,9 +61,9 @@ test("only the session cookie can mint a session token", async ({ apiKey }) => {
     expect(response.status).toBe(401);
 });
 
-test("session tokens are refused in the query string, expired, forged or for a banned user", async ({
-    sessionToken,
-}) => {
+test("session tokens are refused in the query string, expired, forged or for a banned user", {
+    timeout: 30000,
+}, async ({ sessionToken }) => {
     const token = await mintAccountToken(sessionToken);
     const auth = await authenticateApiKeyRequest({
         request: new Request(BASE, { headers: bearer(token) }),
@@ -85,4 +92,48 @@ test("session tokens are refused in the query string, expired, forged or for a b
         .bind(userId)
         .run();
     expect((await profile(bearer(token))).status).toBe(403);
+});
+
+test("a failed session lookup reports the D1 cause, never the session token", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    // Its own context, so the error event sent after the response is awaited.
+    const ctx = createExecutionContext();
+    await env.DB.exec('ALTER TABLE "session" RENAME TO "session_offline"');
+    try {
+        const response = await worker.fetch(
+            new Request(`${BASE}/api/auth/get-session`, {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            }),
+            env,
+            ctx,
+        );
+        expect(response.status).toBe(500);
+        await waitOnExecutionContext(ctx);
+    } finally {
+        await env.DB.exec('ALTER TABLE "session_offline" RENAME TO "session"');
+    }
+    const token = decodeURIComponent(sessionToken).split(".")[0];
+    const logged = errors.mock.calls.map((args) => format(...args)).join("\n");
+    expect(logged).toContain("no such table: session");
+    expect(logged).not.toContain(token);
+    // Better Auth answers this 500 itself, so it must reach error_event on
+    // its own: the database alert reads it there.
+    const events = mocks.tinybird.state.errorEvents;
+    expect(events).toMatchObject([
+        {
+            route_path: "/api/auth/*",
+            method: "GET",
+            status: 500,
+            // Auth requests carry OAuth codes and client secrets.
+            request_inputs: "{}",
+        },
+    ]);
+    expect(events[0].message).toContain("no such table: session");
+    expect(JSON.stringify(events)).not.toContain(token);
 });

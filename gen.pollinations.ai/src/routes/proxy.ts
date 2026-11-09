@@ -13,7 +13,6 @@ import {
     model3dCache,
 } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
@@ -387,6 +386,10 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         paid_only: entry.info.paid_only,
         pricing: entry.info.pricing,
+        pricing_units: entry.info.pricing_units,
+        top_provider: {
+            max_completion_tokens: entry.info.max_completion_tokens ?? null,
+        },
         capabilities: entry.info.capabilities,
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
@@ -682,7 +685,6 @@ export const proxyRoutes = new Hono<Env>()
     .get("/register", handleRegisterServer)
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth())
-    .use(frontendKeyRateLimit)
     .use(balance)
     .get(
         "/realtime",
@@ -708,7 +710,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["✍️ Text"],
             summary: "Chat Completions",
             description: [
-                "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API. Use an OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
+                "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API. Use an OpenAI SDK by pointing it to `https://gen.pollinations.ai/v1`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
                 "JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. Larger requests also accept PDF file_data on OpenRouter models (a PDF data URI or raw base64 with mime_type application/pdf) and base64 input_audio.data on thinkingmachines/inkling. For requests over 32 MiB, each inline media item may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days.",
@@ -802,7 +804,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
                 "",
-                "Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.",
+                "Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt and code agents execute their own tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
                 "",
@@ -971,6 +973,8 @@ export const proxyRoutes = new Hono<Env>()
             summary: "Generate Image",
             description: [
                 "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
+                "",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.",
                 "",
                 `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",

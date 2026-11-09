@@ -23,7 +23,7 @@ review; an import milestone is not that handoff.
 
 1. Open the Economics dashboard's Close, Runway, Unit Economics, and Ledgers
    views and record what is missing or stale. Read the current registry and
-   the app's source contracts in `operations/economics/web/src/App.tsx` and
+   the app's source contracts in `operations/dashboards/economics/web/src/App.tsx` and
    `worker/economics.ts`. Create a private task-specific `<collection-dir>`
    outside Git with `evidence/` and a resumable upload manifest.
 2. Read the production and staging Economics endpoints with their respective
@@ -141,7 +141,7 @@ after a check, update that same file with account, service period, checked date,
 outcome, evidence links and next action. Preserve earlier checks. A balance
 snapshot and a monthly evidence review remain separate facts.
 
-`operations/economics/provider-registry.json` retains canonical vendor
+`operations/dashboards/economics/provider-registry.json` retains canonical vendor
 IDs/aliases and model compatibility mappings; join by vendor ID. Do not restore
 vendor definitions or account details into the repository.
 
@@ -281,12 +281,12 @@ name or an undocumented ratio.
   Enter `stripe_event` only for payment identity. Do not append monthly summaries
   to legacy `economics_stripe_sales`; its staging rows were archived and removed.
   Production retains the old source until separately migrated. Use the validated
-  collector in `operations/economics/ingest/stripe-sync.mjs`.
+  collector in `operations/dashboards/economics/ingest/stripe-sync.mjs`.
 - `economics_pollen_usage` stores internal Paid and Quest consumption. Reconcile
   it at provider-month grain. Pollen model ids are accounting identities as
   recorded: today's registry aliases never merge them. A provider label joins
   a Pollen model only when it equals that month's Pollen id or through the
-  reviewed `modelLabels` table in `operations/economics/provider-registry.json`.
+  reviewed `modelLabels` table in `operations/dashboards/economics/provider-registry.json`.
   Add a label with the Pollen id it billed at the time, or `null` when it has
   no Pollen model. Group several ids in one entry only when they are the same
   model at the same provider billed on one line (a persona, resolution, or
@@ -339,7 +339,7 @@ the affected IDs and correct only rejected rows. Never resend accepted rows.
 Validate staging first; production requires separate approval.
 
 Staging verification uses
-`operations/economics/secrets/web.dev.json:TINYBIRD_ECONOMICS_READ_TOKEN`.
+`operations/dashboards/economics/secrets/web.dev.json:TINYBIRD_ECONOMICS_READ_TOKEN`.
 Never use deprecated `TINYBIRD_OPS_READ_TOKEN` to verify the Economics staging
 app; it can resolve to another workspace. Use the scoped ingest token only for
 raw datasource backup/read and the approved append.

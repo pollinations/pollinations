@@ -4,10 +4,12 @@ import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
 import {
     and,
     eq,
+    gt,
     gte,
     inArray,
     isNotNull,
     lt,
+    lte,
     notInArray,
     sql,
 } from "drizzle-orm";
@@ -20,6 +22,7 @@ import type { Env } from "../env.ts";
 import { TOP_UP_QUEST_IDS } from "../services/quests/groups/account-setup.ts";
 import { BYOM_QUEST_IDS } from "../services/quests/groups/agent-usage.ts";
 import { BYOP_QUEST_IDS } from "../services/quests/groups/app-growth.ts";
+import { POLLINATIONS_AI_GITHUB_ID } from "../services/quests/groups/referrals.ts";
 
 // Every quest reward counts except the BYOP app-growth and BYOM model/agent
 // rewards, which pay for other people using what you built.
@@ -29,12 +32,19 @@ const EXCLUDED_QUEST_IDS = [...BYOP_QUEST_IDS, ...BYOM_QUEST_IDS];
 const LEADERBOARD_USER = and(
     notInArray(schema.user.id, ADMIN_USER_IDS),
     sql`coalesce(${schema.user.role}, '') not like '%admin%'`,
-    sql`coalesce(${schema.user.githubId}, 0) != 314960022`,
+    sql`coalesce(${schema.user.githubId}, 0) != ${POLLINATIONS_AI_GITHUB_ID}`,
 );
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
-const LEADERBOARD_CACHE_TTL = 60;
+// Enter's 15-minute cron rebuilds it before it expires, so visitors rebuild
+// it only when it is missing.
+const LEADERBOARD_CACHE_TTL = 20 * 60;
 const LEADERBOARD_LIMIT = 50;
+// A rebuild reads every counted reward. Read in one go (141k rewards, 4.7s),
+// it used up D1's 10-second resource window and failed other requests. The
+// cron reads small rowid slices with a pause between them instead.
+const LEADERBOARD_SLICE_ROWS = 10_000;
+export const LEADERBOARD_SLICE_PAUSE_MS = 5_000;
 
 const leaderboardEntrySchema = z.object({
     githubLogin: z.string(),
@@ -79,54 +89,78 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
             LEADERBOARD_CACHE_KEY,
             "json",
         );
-        if (cached) return c.json(cached);
-
-        const response = await buildQuestLeaderboard(c.env);
-        await c.env.KV.put(LEADERBOARD_CACHE_KEY, JSON.stringify(response), {
-            expirationTtl: LEADERBOARD_CACHE_TTL,
-        });
-        return c.json(response);
+        return c.json(cached ?? (await refreshQuestLeaderboard(c.env)));
     },
 );
+
+export async function refreshQuestLeaderboard(
+    env: CloudflareBindings,
+    slicePauseMs = 0,
+): Promise<QuestLeaderboardResponse> {
+    const response = await buildQuestLeaderboard(env, slicePauseMs);
+    await env.KV.put(LEADERBOARD_CACHE_KEY, JSON.stringify(response), {
+        expirationTtl: LEADERBOARD_CACHE_TTL,
+    });
+    return response;
+}
 
 /**
  * Aggregate every counted reward first, then cap only the returned ranking.
  * This keeps the public totals global even after the board grows beyond the
- * presentation limit.
+ * presentation limit. Rewards are read in rowid slices, `slicePauseMs` apart.
  */
-async function buildQuestLeaderboard(
+export async function buildQuestLeaderboard(
     env: CloudflareBindings,
+    slicePauseMs = 0,
+    sliceRows = LEADERBOARD_SLICE_ROWS,
 ): Promise<QuestLeaderboardResponse> {
     const db = drizzle(env.DB);
     const githubLogin = sql<string>`lower(${schema.user.githubUsername})`;
-    const rows = await db
-        .select({
-            githubLogin,
-            completedQuests:
-                sql<number>`count(distinct ${rewardsTable.questId})`.mapWith(
-                    Number,
-                ),
-            totalPollen:
-                sql<number>`coalesce(sum(${rewardsTable.pollenAmount}), 0)`.mapWith(
-                    Number,
-                ),
-        })
-        .from(rewardsTable)
-        .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
-        .where(
-            and(
-                notInArray(rewardsTable.questId, EXCLUDED_QUEST_IDS),
-                isNotNull(schema.user.githubUsername),
-                LEADERBOARD_USER,
-            ),
-        )
-        .groupBy(githubLogin);
+    const rowid = sql<number>`${rewardsTable}.rowid`;
+    const [{ lastRowid }] = await db
+        .select({ lastRowid: sql<number>`coalesce(max(${rowid}), 0)` })
+        .from(rewardsTable);
 
-    const contributors = rows
-        .map((row) => ({
-            githubLogin: row.githubLogin,
-            completedQuests: row.completedQuests,
-            totalPollen: roundPollenLedgerAmount(row.totalPollen),
+    const byLogin = new Map<string, { quests: Set<string>; pollen: number }>();
+    for (let from = 0; from < lastRowid; from += sliceRows) {
+        if (from > 0 && slicePauseMs > 0) await scheduler.wait(slicePauseMs);
+        const rows = await db
+            .select({
+                githubLogin,
+                questId: rewardsTable.questId,
+                pollen: sql<number>`sum(${rewardsTable.pollenAmount})`.mapWith(
+                    Number,
+                ),
+            })
+            .from(rewardsTable)
+            .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
+            .where(
+                and(
+                    gt(rowid, from),
+                    lte(rowid, from + sliceRows),
+                    notInArray(rewardsTable.questId, EXCLUDED_QUEST_IDS),
+                    isNotNull(schema.user.githubUsername),
+                    LEADERBOARD_USER,
+                ),
+            )
+            .groupBy(githubLogin, rewardsTable.questId);
+        for (const row of rows) {
+            const entry = byLogin.get(row.githubLogin) ?? {
+                quests: new Set<string>(),
+                pollen: 0,
+            };
+            // NOT IN drops null quest ids, so every row names a quest.
+            entry.quests.add(row.questId as string);
+            entry.pollen += row.pollen;
+            byLogin.set(row.githubLogin, entry);
+        }
+    }
+
+    const contributors = [...byLogin]
+        .map(([login, entry]) => ({
+            githubLogin: login,
+            completedQuests: entry.quests.size,
+            totalPollen: roundPollenLedgerAmount(entry.pollen),
         }))
         .sort(
             (a, b) =>

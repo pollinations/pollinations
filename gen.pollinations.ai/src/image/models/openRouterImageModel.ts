@@ -105,19 +105,10 @@ type GeminiImageConfig = {
     upstreamModel: string;
     provider: string;
     generator: string;
-    resolution: "none" | "tiered" | "tiered-2K" | "1K";
-    seed?: boolean;
+    resolution: "none" | "tiered" | "1K";
     reasoning: boolean;
 };
 const GEMINI_IMAGE_CONFIGS = {
-    "google/gemini-nano-banana-2.1": {
-        upstreamModel: "google/gemini-nano-banana-2.1",
-        provider: "google-ai-studio",
-        generator: "Google AI Studio Gemini Nano Banana 2.1",
-        resolution: "tiered-2K",
-        reasoning: false,
-        seed: false,
-    },
     "google/gemini-2.5-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
@@ -328,11 +319,6 @@ function resolveGeminiImageResolution(
             ? tier
             : closest,
     ).name;
-    if (config.resolution === "tiered-2K" && resolution === "4K") {
-        throw UpstreamError.fromProvider(400, {
-            message: "Nano Banana 2.1 supports output up to 2K on this route",
-        });
-    }
     return resolution;
 }
 
@@ -737,7 +723,7 @@ export async function callOpenRouterGrokImagineImage2API(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "x-ai/grok-imagine-image-2.0",
+            actualModel: safeParams.model,
             usage: {
                 ...(inputReferences.length > 0
                     ? { promptImageTokens: inputReferences.length }
@@ -936,7 +922,7 @@ export async function callOpenRouterGeminiImageAPI(
             safeParams.height,
             GEMINI_ASPECT_RATIOS,
         ).label,
-        ...(config.seed !== false && { seed: safeParams.seed }),
+        seed: safeParams.seed,
         provider: {
             only: [config.provider],
             allow_fallbacks: false,
@@ -1118,7 +1104,7 @@ export async function callOpenRouterRecraftFlashAPI(
     return {
         buffer: base64ToBuffer(generatedImage.b64_json),
         trackingData: {
-            actualModel: RECRAFT_FLASH_MODEL,
+            actualModel: safeParams.model,
             // OpenRouter bills this endpoint a fixed $0.007 per output image.
             usage: { completionImageTokens: 1 },
         },

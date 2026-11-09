@@ -4,9 +4,11 @@ import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import { METADATA_USER_ID } from "../utils/stripe-billing/constants.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
@@ -243,6 +245,7 @@ async function creditCheckoutSessionOnce({
                     ${POLLEN_BILLING_PRECISION}
                 ),
                 last_pack_pollen = ?,
+                quest_pollen_restricted = 0,
                 low_balance_notified_at = NULL
                 WHERE id = ?`,
             ).bind(creditsToAdd, creditsToAdd, userId),
@@ -565,8 +568,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
         const webhookSecret = c.env.STRIPE_WEBHOOK_SECRET;
 
         if (!webhookSecret) {
-            console.error("STRIPE_WEBHOOK_SECRET not configured");
-            return c.json({ error: "Webhook secret not configured" }, 500);
+            throw new HTTPException(500, {
+                message: "Webhook secret not configured",
+                cause: "STRIPE_WEBHOOK_SECRET is not set",
+            });
         }
 
         const payload = await c.req.text();
@@ -773,6 +778,25 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         `Stripe auto top-up invoice credited: ${invoice.id} (+${result.pollenCredited} pollen)`,
                     );
                 }
+                // The credit outcome, so a paid invoice left without pollen
+                // shows up next to its payment.
+                c.executionCtx.waitUntil(
+                    sendStripeEventToTinybird(c.env, {
+                        eventType: event.type,
+                        eventId: event.id,
+                        sessionId: invoice.id,
+                        userId: invoice.metadata?.[METADATA_USER_ID] || "",
+                        amountCents: invoice.amount_paid || 0,
+                        currency: invoice.currency || "usd",
+                        paymentStatus: result.credited
+                            ? "credited"
+                            : result.reason,
+                        paymentMethod: "unknown",
+                        customerEmail: invoice.customer_email || "",
+                        livemode: event.livemode,
+                        payload: event,
+                    }),
+                );
                 break;
             }
 

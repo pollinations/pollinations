@@ -2022,9 +2022,8 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-10-20").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal.ai FLUX 3 Max list per-second rates, effective after the
-        // 75%-off promotion ended on 2026-11-07. fal's page lists no separate
-        // audio rate.
+        // fal.ai FLUX 3 Max list per-second rates, effective 2026-11-23 00:00
+        // UTC when fal's promotion ends. fal's page lists no separate audio rate.
         cost: { completionVideoSeconds: 0.17 },
         ...defineCostVariants(
             {

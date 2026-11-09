@@ -40,6 +40,7 @@ import {
     duration,
     earlyErrors,
     escalates,
+    GEN_HEARTBEATS,
     jobsStale,
     legacyDown,
     lineColor,
@@ -251,7 +252,7 @@ export class Watch extends DurableObject {
             isUp(UPSTREAM),
             enterError(this.env.COMMUNITY_PROBE_KEY),
             this.early(),
-            this.freshness(),
+            this.freshness(now),
         ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -586,15 +587,38 @@ export class Watch extends DurableObject {
         }
     }
 
-    // How old each analytics feed's newest row is, from Tinybird, read every
-    // check; null when the read failed.
-    async freshness() {
+    // How old each analytics feed's newest row is, from Tinybird, and each
+    // gen cron's last finished run, from the heartbeat gen writes to its KV;
+    // read every check, null when a read failed. A job that never wrote a
+    // heartbeat is skipped.
+    async freshness(now) {
         try {
-            return await pipe(
-                "infra_watch_freshness",
-                {},
-                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
-            );
+            const [feeds, ...beats] = await Promise.all([
+                pipe(
+                    "infra_watch_freshness",
+                    {},
+                    {
+                        tinybirdToken: this.env.TINYBIRD_TOKEN,
+                        fetchImpl: fetch,
+                    },
+                ),
+                ...GEN_HEARTBEATS.map((job) =>
+                    this.env.GEN_KV.get(`heartbeat:${job}`),
+                ),
+            ]);
+            return [
+                ...feeds,
+                ...GEN_HEARTBEATS.flatMap((job, i) =>
+                    beats[i] === null
+                        ? []
+                        : [
+                              {
+                                  source: job,
+                                  age_seconds: (now - Number(beats[i])) / 1000,
+                              },
+                          ],
+                ),
+            ];
         } catch (error) {
             console.error(`freshness: ${error.message}`);
             return null;

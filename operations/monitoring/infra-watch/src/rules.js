@@ -224,7 +224,22 @@ export const STALE_JOBS = {
         ping: false,
         effect: "KPIs and abuse data stale",
     },
+    // gen's crons, by the heartbeat each writes after a run (GEN_HEARTBEATS).
+    "community-catalog": {
+        name: "community model catalog refresh",
+        maxSeconds: 5 * 60,
+        ping: true,
+        effect: "community model changes not served",
+    },
+    "sandbox-keeper": {
+        name: "sandbox keeper",
+        maxSeconds: 15 * 60,
+        ping: true,
+        effect: "kept sandboxes end, expired Azure ones run on",
+    },
 };
+// The STALE_JOBS rows gen reports by heartbeat instead of Tinybird.
+export const GEN_HEARTBEATS = ["community-catalog", "sandbox-keeper"];
 // `rows` are { source, age_seconds }, from infra_watch_freshness; a source
 // missing from STALE_JOBS is ignored.
 export function jobsStale(rows) {

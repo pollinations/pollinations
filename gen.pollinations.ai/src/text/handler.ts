@@ -19,7 +19,7 @@ import {
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
 import {
@@ -89,6 +89,7 @@ async function gatewayContext(
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        parentRunExpiresAt: c.var.auth?.agentRun?.expiresAt,
     });
     if (
         communityEndpoint.type !== "prompt_agent" &&
@@ -422,7 +423,7 @@ async function generateTextResponse(
             candidates,
             (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
-            (attempt) => enforceModelRateLimit(c, attempt),
+            (attempt) => requireModelAttemptAccess(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();

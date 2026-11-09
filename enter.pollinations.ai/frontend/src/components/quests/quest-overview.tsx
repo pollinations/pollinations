@@ -6,6 +6,7 @@ import {
     CheckIcon,
     Chip,
     ClockIcon,
+    CopyField,
     formatCount,
     InlineLink,
     LoadingStatus,
@@ -577,6 +578,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         <QuestOverviewContent
             key={`${user?.id ?? "anonymous"}:${reloads}`}
             userId={user?.id ?? null}
+            githubId={user?.githubId ?? null}
             sessionUnavailable={sessionUnavailable}
             onRecovered={() => setReloads((count) => count + 1)}
         />
@@ -585,10 +587,12 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 
 function QuestOverviewContent({
     userId,
+    githubId,
     sessionUnavailable,
     onRecovered,
 }: {
     userId: string | null;
+    githubId: number | null;
     sessionUnavailable: boolean;
     /** Rewards are back after an outage skipped the per-user check. */
     onRecovered: () => void;
@@ -831,8 +835,9 @@ function QuestOverviewContent({
     ]);
 
     // Rewards created by a maintainer or another non-catalog source still need
-    // their own claim control. This is deliberately derived from the ledger —
-    // no synthetic catalog entry or special balance path.
+    // their own claim control, as do a repeatable quest's rewards beyond the
+    // one its catalog card shows. This is deliberately derived from the
+    // ledger — no synthetic catalog entry or special balance path.
     const bonusRewardCards = useMemo(() => {
         const catalogIds = new Set(state.catalog.map((quest) => quest.id));
         return (
@@ -840,7 +845,8 @@ function QuestOverviewContent({
                 .filter(
                     (reward) =>
                         reward.questId == null ||
-                        !catalogIds.has(reward.questId),
+                        !catalogIds.has(reward.questId) ||
+                        rewardByKey.get(reward.questId) !== reward,
                 )
                 .map<QuestCard>((reward) => ({
                     key: reward.id,
@@ -861,7 +867,7 @@ function QuestOverviewContent({
                 // Same order as the sections: to claim first, done last.
                 .sort((a, b) => cardSortRank(a) - cardSortRank(b))
         );
-    }, [state.catalog, state.rewards]);
+    }, [state.catalog, state.rewards, rewardByKey]);
 
     // Logged-out totals show what the public catalog offers, not an owned balance.
     const previewTotals = useMemo(() => {
@@ -1099,6 +1105,28 @@ function QuestOverviewContent({
                             />
                         ))}
                     </div>
+                </Section>
+            )}
+            {!state.anonymous && !state.loading && (
+                <Section title="Invite link">
+                    <Text size="sm" tone="muted">
+                        Earn 2 Quest Pollen for each friend who signs up with
+                        your link and buys more than 2 Pollen.
+                    </Text>
+                    {githubId === null ? (
+                        // The link carries the inviter's GitHub id.
+                        <Text size="sm" tone="muted">
+                            <InlineLink href="/account">
+                                Connect GitHub
+                            </InlineLink>{" "}
+                            to get your invite link.
+                        </Text>
+                    ) : (
+                        <CopyField
+                            label="Copy invite link"
+                            value={`${window.location.origin}/?ref=${githubId}`}
+                        />
+                    )}
                 </Section>
             )}
             {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}

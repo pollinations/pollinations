@@ -173,14 +173,91 @@ export function legacyDown(rows, open = {}) {
     return found;
 }
 
+// Payments in trouble, the infra_watch_payments rows: a Stripe webhook or
+// checkout 5xx in the last 15 minutes, or a pack or auto top-up paid 15
+// minutes to 24 hours ago with no pollen credited. Each is a paying customer
+// and there are none in a normal month, so the first row opens the card.
+export function paymentsFailing(rows) {
+    return rows.length ? { payments: { kind: "PAYMENTS_FAILING", rows } } : {};
+}
+
+// Requests failing before any model is known (an API-key, sign-in or
+// balance check, mostly Enter's database) are failing while any minute of the
+// last 30 had at least this many; quiet minutes have 0 to 6. They come in
+// bursts of seconds, and per-model health never sees them: the first bad
+// minute opens the card, and the 30-minute window keeps that one card open
+// across bursts. `minutes` are the infra_watch_early_errors rows.
+const EARLY_MIN_FAILURES = 25;
+const minuteMs = (minute) => Date.parse(`${minute.replace(" ", "T")}Z`);
+const total = (rows, field) => rows.reduce((sum, m) => sum + m[field], 0);
+export function earlyErrors(minutes) {
+    const bursts = minutes.filter((m) => m.failures >= EARLY_MIN_FAILURES);
+    if (!bursts.length) return {};
+    const worst = bursts.reduce((a, b) => (b.failures > a.failures ? b : a));
+    return {
+        early: {
+            kind: "EARLY_ERRORS",
+            worst: worst.failures,
+            route: worst.top_route,
+            bursts: bursts.length,
+            failures: total(minutes, "failures"),
+            d1: total(minutes, "d1_failures"),
+            lastAt: minuteMs(bursts.at(-1).minute),
+        },
+    };
+}
+
+// Background jobs and analytics feeds, each stale while its newest data is
+// older than `maxSeconds`. A row per job: `name` titles its card, `ping`
+// says whether its opening card pings, `effect` what goes wrong meanwhile.
+// Every alert reads error_event or product_event, so those ping; the D1 copy
+// runs every 4 hours and a GitHub cron start can slip by almost 2, so it
+// waits 6 hours and only posts.
+export const STALE_JOBS = {
+    error_event: {
+        name: "error feed (error_event)",
+        maxSeconds: 15 * 60,
+        ping: true,
+        effect: "error alerts are blind",
+    },
+    product_event: {
+        name: "Enter feed (product_event)",
+        maxSeconds: 15 * 60,
+        ping: true,
+        effect: "sign-in, payment data missing",
+    },
+    d1_copy: {
+        name: "D1 to Tinybird copy",
+        maxSeconds: 6 * 60 * 60,
+        ping: false,
+        effect: "KPIs and abuse data stale",
+    },
+};
+// `rows` are { source, age_seconds }, from infra_watch_freshness; a source
+// missing from STALE_JOBS is ignored.
+export function jobsStale(rows) {
+    const found = {};
+    for (const { source, age_seconds } of rows) {
+        const job = STALE_JOBS[source];
+        if (job && age_seconds > job.maxSeconds)
+            found[`stale:${source}`] = {
+                kind: "JOB_STALE",
+                job: source,
+                ageSeconds: age_seconds,
+            };
+    }
+    return found;
+}
+
 const CONFIRMED = new Set([
     "gen",
     "public",
     "upstream",
+    "enter",
     "analytics",
     "platform",
 ]);
-const HOSTS = { gen: true, public: true, upstream: true };
+const HOSTS = { gen: true, public: true, upstream: true, enter: true };
 // A model incident's model, from its key; null for any other incident.
 export const modelOf = (key) =>
     key.startsWith("model:") ? key.slice(6) : null;
@@ -195,8 +272,8 @@ const SEVERITY = ["PRIMARY_WEAK", "DEGRADED"];
 const worse = (a, b) => (SEVERITY.indexOf(b) > SEVERITY.indexOf(a) ? b : a);
 
 export function step(state, found, now, recent = []) {
-    // With gen down, nothing else can be judged, not even a single hostname.
-    // With analytics down, only the hostname checks still have data.
+    // With gen down, only Enter's own check can be judged, not even a single
+    // hostname. With analytics down, the hostname and Enter checks still can.
     const open = { ...(state.open ?? {}) };
     const closed = Object.fromEntries(
         Object.entries(state.closed ?? {}).filter(
@@ -213,7 +290,8 @@ export function step(state, found, now, recent = []) {
         streaks[key] = streak;
         const incident = open[key];
         if (!incident) {
-            if (streak < (CONFIRMED.has(key) ? CONFIRM_CHECKS : 1)) continue;
+            const confirm = CONFIRMED.has(key) || key.startsWith("stale:");
+            if (streak < (confirm ? CONFIRM_CHECKS : 1)) continue;
             open[key] = {
                 kind: info.kind,
                 worst: info.kind,
@@ -250,7 +328,7 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, incident] of Object.entries(open)) {
         if (found[key]) continue;
-        if (found.gen && key !== "gen") continue;
+        if (found.gen && key !== "enter") continue;
         if (found.analytics && !HOSTS[key]) continue;
         // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
         // sample neither counts nor resets the run.
@@ -300,6 +378,7 @@ export function snapshot(incident) {
         errorKind: info.errorKind ?? null,
         success: info.success ?? null,
         failingCallers: info.callers?.failing_callers ?? null,
+        worst: info.worst ?? null,
     };
 }
 
@@ -323,12 +402,15 @@ export function noteworthy(before, now) {
     return null;
 }
 
-// Worse in a way that needs a person again: callers now affected, or the
-// affected callers went from one to several.
+// Worse in a way that needs a person again: callers now affected, the
+// affected callers went from one to several, or an early-errors burst at
+// least twice the worst one already pinged.
 export const escalates = (before, now) =>
-    now.kind === "DEGRADED" &&
-    (now.failingCallers ?? 2) > 1 &&
-    (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1);
+    (now.kind === "EARLY_ERRORS" &&
+        now.worst >= 2 * (before.worst ?? Number.POSITIVE_INFINITY)) ||
+    (now.kind === "DEGRADED" &&
+        (now.failingCallers ?? 2) > 1 &&
+        (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1));
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
 const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
@@ -425,6 +507,7 @@ const LABEL = {
     GEN_DOWN: "DOWN",
     PUBLIC_DOWN: "DOWN",
     UPSTREAM_DOWN: "DOWN",
+    ENTER_DOWN: "DOWN",
     ANALYTICS_DOWN: "BLIND",
     PLATFORM_DROP: "DEGRADED",
     DEGRADED: "DEGRADED",
@@ -433,15 +516,20 @@ const LABEL = {
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
+    PAYMENTS_FAILING: "FAILING",
+    JOB_STALE: "STALE",
+    EARLY_ERRORS: "FAILING",
 };
 const SUBJECT = {
     gen: "gen Worker",
     public: "gen.pollinations.ai",
     upstream: "gen.myceli.ai",
+    enter: "enter.pollinations.ai",
     analytics: "model status data",
     platform: "platform-wide",
     watch: "infra-watch",
     community: "community monitor",
+    payments: "payments",
 };
 // Sign-up cards are about an email domain.
 const DOMAIN_KEY = /^signup:/;
@@ -452,7 +540,18 @@ const subjectOf = (key) =>
           ? `domain ${key.replace(DOMAIN_KEY, "")}`
           : key.startsWith("legacy:")
             ? `legacy ${key.slice(7)} bridge`
-            : SUBJECT[key];
+            : key.startsWith("stale:")
+              ? STALE_JOBS[key.slice(6)].name
+              : SUBJECT[key];
+// Early errors are named after Enter's database while it causes at least half
+// of them.
+const d1Main = (info) => info.d1 * 2 >= info.failures;
+const titleOf = (key, info) =>
+    key !== "early"
+        ? subjectOf(key)
+        : d1Main(info)
+          ? "Enter database (D1)"
+          : "requests before any model";
 
 // An open card's colour by severity: red down, orange degraded, amber weak
 // primary. A closed card's colour is set by cardColor.
@@ -461,6 +560,7 @@ export const COLOR = {
     GEN_DOWN: RED,
     PUBLIC_DOWN: RED,
     UPSTREAM_DOWN: RED,
+    ENTER_DOWN: RED,
     ANALYTICS_DOWN: RED,
     PLATFORM_DROP: RED,
     DEGRADED: 0xd85a30,
@@ -470,6 +570,9 @@ export const COLOR = {
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
+    PAYMENTS_FAILING: RED,
+    JOB_STALE: RED,
+    EARLY_ERRORS: RED,
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
@@ -520,11 +623,13 @@ export const waiting = (record, now) =>
 
 // Who an opening card pings: a weak primary never (the fallback keeps
 // callers whole), a model failing for a single caller neither, a Myceli-only
-// hostname neither (users are fine); every other alert does.
+// hostname neither (users are fine), a stale job as STALE_JOBS says; every
+// other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
     if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
         return false;
+    if (kind === "JOB_STALE") return STALE_JOBS[info.job].ping;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
     return true;
@@ -547,6 +652,35 @@ const startRow = (start) => [
     "START",
     `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
 ];
+
+// Server errors first, then each payment with its Stripe ids, oldest first.
+const MAX_PAYMENTS = 3;
+const minute = (at) => `${at.slice(5, 16)} UTC`;
+function paymentRows(rows) {
+    const errors = rows.filter((r) => r.kind === "server_error");
+    const unpaid = rows
+        .filter((r) => r.kind === "not_credited")
+        .sort((a, b) => a.at.localeCompare(b.at));
+    const shown = unpaid.slice(0, MAX_PAYMENTS);
+    return [
+        ...errors.flatMap((r) => [
+            ["5XX", r.id],
+            ["", `${r.n}x ${r.reason} in 15 min, last ${minute(r.at)}`],
+        ]),
+        ...shown.flatMap((r) => [
+            ["PAID", r.id],
+            ...(r.ref ? [["", r.ref]] : []),
+            [
+                "",
+                `$${(r.amount_cents / 100).toFixed(2)} ${r.ref ? "auto top-up" : "pack"}, ${minute(r.at)}`,
+            ],
+            ["", r.reason || "no credit recorded"],
+        ]),
+        ...(unpaid.length > shown.length
+            ? [["", `+${unpaid.length - shown.length} more payments`]]
+            : []),
+    ];
+}
 
 // Rows of an open card: what is true now, plus the frozen start once the
 // card has been updated, so the history stays on the card.
@@ -573,6 +707,21 @@ function openRows(incident, now) {
             ],
         ];
     }
+    if (kind === "ENTER_DOWN")
+        return [
+            ["WHY", `key check failing ${CONFIRM_CHECKS}x`],
+            ["ERROR", info.error],
+            ["", "API keys, sign-in, billing fail"],
+        ];
+    if (kind === "EARLY_ERRORS")
+        return [
+            ["WORST", `${info.worst} reqs failed in 1 min`],
+            ["CAUSE", `${info.d1} database, ${info.failures - info.d1} other`],
+            ["BURSTS", `${info.bursts} min of 30, ${info.failures} failed`],
+            ["LAST", utc(info.lastAt)],
+            ["ROUTE", info.route],
+            ["", "API keys, sign-in, billing fail"],
+        ];
     if (kind === "ANALYTICS_DOWN")
         return [
             ["WHY", `unreachable ${CONFIRM_CHECKS}x, gen is up`],
@@ -594,6 +743,21 @@ function openRows(incident, now) {
             ...(info.error ? [["ERROR", info.error]] : []),
             ["", "probes and community posts paused"],
         ];
+    if (kind === "PAYMENTS_FAILING") return paymentRows(info.rows);
+    if (kind === "JOB_STALE") {
+        const job = STALE_JOBS[info.job];
+        return [
+            // The pipe looks back one day: older means no row at all.
+            [
+                "NEWEST",
+                info.ageSeconds < 86_400
+                    ? `${duration(info.ageSeconds * 1000)} old`
+                    : "none in the last day",
+            ],
+            ["MAX", duration(job.maxSeconds * 1000)],
+            ["", job.effect],
+        ];
+    }
     if (kind === "LEGACY_DOWN") {
         const rows = [
             [
@@ -698,7 +862,7 @@ export function renderCard(
     const status = closed
         ? (ended ?? LABEL[incident.worst ?? incident.kind])
         : label;
-    const title = `${status}: ${subjectOf(key)}`;
+    const title = `${status}: ${titleOf(key, incident.info)}`;
     const color = cardColor(key, incident);
     const parts = [
         panel(

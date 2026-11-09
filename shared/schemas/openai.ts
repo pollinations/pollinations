@@ -344,7 +344,7 @@ export const CreateChatCompletionRequestSchema = z
         messages: z.array(ChatCompletionRequestMessageSchema),
         model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
-                "AI model for text generation. See /v1/models for full list.",
+                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules.",
         }),
         system: z
             .string()
@@ -448,8 +448,8 @@ const ResponseFunctionToolSchema = z
     .object({
         type: z.literal("function"),
         name: z.string(),
-        description: z.string().optional(),
-        parameters: FunctionParametersSchema.optional(),
+        description: z.string().nullish(),
+        parameters: FunctionParametersSchema.nullish(),
         strict: z.boolean().nullable().optional(),
     })
     .passthrough();

@@ -3573,6 +3573,32 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "meta/muse-spark-open": {
+        supportedParameters: CHAT_PARAMETERS.fireworksMuseSparkOpen,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-10-15").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks serverless standard rates, verified 2026-11-03 after the
+            // preview ended. US-only capacity; Fireworks waives its premium.
+            promptTextTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(4.25),
+        },
+        title: "Muse Spark Open",
+        description:
+            "Agentic coding and tool use with reasoning controls and 1M context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meta/muse-wonder-1.0": {
         supportedParameters: CHAT_PARAMETERS.openRouterMuseWonder,
         aliases: [],

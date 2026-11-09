@@ -44,6 +44,7 @@ describe("provider transform passthrough", () => {
         "z-ai/glm-5.3",
         "z-ai/glm-5.3-flash",
         "minimax/minimax-m3",
+        "meta/muse-spark-open",
     ])("strips unsupported cache_control for %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

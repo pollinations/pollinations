@@ -2262,6 +2262,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-image-2.6-flash:openrouter": {
+    "cost": {
+      "completionImageTokens": 0.000020045,
+      "promptImageTokens": 0.0000026375,
+      "promptTextTokens": 0.00000184625,
+    },
+    "price": {
+      "completionImageTokens": 0.00001503375,
+      "promptImageTokens": 0.000001978125,
+      "promptTextTokens": 0.0000013846875,
+    },
+  },
   "microsoft/mai-transcribe-2": {
     "cost": {
       "promptAudioSeconds": 0.0000277777777777778,
@@ -2656,16 +2668,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "moonshotai/kimi-k3.1-pro": {
     "cost": {
-      "completionTextTokens": 0.00001,
-      "promptCacheWriteTokens": 0.000002,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.0000115,
+      "promptCacheWriteTokens": 0.0000023,
+      "promptCachedTokens": 0.00000023,
+      "promptImageTokens": 0.0000023,
+      "promptTextTokens": 0.0000023,
     },
     "price": {
-      "completionTextTokens": 0.00001,
-      "promptCacheWriteTokens": 0.000002,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.000008625,
+      "promptCacheWriteTokens": 0.000001725,
+      "promptCachedTokens": 0.0000001725,
+      "promptImageTokens": 0.000001725,
+      "promptTextTokens": 0.000001725,
     },
   },
   "moonshotai/kimi-k3.1-pro-highspeed": {
@@ -2680,6 +2694,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.000004,
       "promptCachedTokens": 0.0000002,
       "promptTextTokens": 0.000004,
+    },
+  },
+  "moonshotai/kimi-k3.1-pro:vercel": {
+    "cost": {
+      "completionTextTokens": 0.00001,
+      "promptCacheWriteTokens": 0.000002,
+      "promptCachedTokens": 0.0000002,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.0000075,
+      "promptCacheWriteTokens": 0.0000015,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "moonshotai/kimi-k3:deepinfra": {
@@ -2740,14 +2768,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "nvidia/nemotron-3-ultra": {
     "cost": {
-      "completionTextTokens": 0.0000024,
-      "promptCachedTokens": 0.00000012,
-      "promptTextTokens": 0.0000006,
+      "completionTextTokens": 0.00000264,
+      "promptCachedTokens": 0.00000013,
+      "promptTextTokens": 0.00000066,
     },
     "price": {
-      "completionTextTokens": 0.0000024,
-      "promptCachedTokens": 0.00000012,
-      "promptTextTokens": 0.0000006,
+      "completionTextTokens": 0.00000198,
+      "promptCachedTokens": 0.0000000975,
+      "promptTextTokens": 0.000000495,
     },
   },
   "nvidia/nemotron-3-ultra:deepinfra": {
@@ -2757,33 +2785,33 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005,
     },
     "price": {
-      "completionTextTokens": 0.0000022,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.0000005,
+      "completionTextTokens": 0.00000165,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.000000375,
     },
   },
   "nvidia/nemotron-3.5-lightning": {
     "cost": {
-      "completionTextTokens": 0.0000002,
+      "completionTextTokens": 0.00000022,
       "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.00000005,
+      "promptTextTokens": 0.00000006,
     },
     "price": {
-      "completionTextTokens": 0.0000002,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.00000005,
+      "completionTextTokens": 0.000000165,
+      "promptCachedTokens": 0.0000000075,
+      "promptTextTokens": 0.000000045,
     },
   },
-  "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
+  "nvidia/nemotron-3.5-lightning:deepinfra": {
     "cost": {
-      "completionTextTokens": 0.000000211,
-      "promptCachedTokens": 0.0000000422,
-      "promptTextTokens": 0.00000007385,
+      "completionTextTokens": 0.00000016,
+      "promptCachedTokens": 0.00000003,
+      "promptTextTokens": 0.00000006,
     },
     "price": {
-      "completionTextTokens": 0.000000211,
-      "promptCachedTokens": 0.0000000422,
-      "promptTextTokens": 0.00000007385,
+      "completionTextTokens": 0.00000012,
+      "promptCachedTokens": 0.0000000225,
+      "promptTextTokens": 0.000000045,
     },
   },
   "nvidia/nemotron-3.5-super-vl": {

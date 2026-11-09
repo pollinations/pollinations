@@ -59,11 +59,6 @@ const OPENROUTER_ROUTES = [
         "streamlake",
     ],
     [
-        "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
-        "nvidia/nemotron-3.5-lightning",
-        "coreweave/bf16",
-    ],
-    [
         "nvidia/nemotron-3.5-super-vl:openrouter:together",
         "nvidia/nemotron-3.5-super-vl",
         "together",
@@ -1762,15 +1757,6 @@ describe("static provider fallbacks", () => {
         expect(TEXT_SERVICES).not.toHaveProperty(
             "qwen/qwen3.8-27b:openrouter:reka-fp8",
         );
-        expect(
-            TEXT_SERVICES[
-                "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16"
-            ].cost,
-        ).toMatchObject({
-            promptTextTokens: (0.07 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.04 / 1_000_000) * 1.055,
-            completionTextTokens: (0.2 / 1_000_000) * 1.055,
-        });
         expect(TEXT_SERVICES["meta/muse-spark-open"].cost).toMatchObject({
             promptTextTokens: 1.25 / 1_000_000,
             promptCachedTokens: 0.15 / 1_000_000,

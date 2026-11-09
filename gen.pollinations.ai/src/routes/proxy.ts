@@ -403,21 +403,11 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
-        ...(entry.info.video_capabilities && {
-            video_capabilities: entry.info.video_capabilities,
-        }),
-        ...(entry.info.min_duration !== undefined && {
-            min_duration: entry.info.min_duration,
-        }),
-        ...(entry.info.max_duration !== undefined && {
-            max_duration: entry.info.max_duration,
-        }),
-        ...(entry.info.default_duration !== undefined && {
-            default_duration: entry.info.default_duration,
-        }),
-        ...(entry.info.allowed_durations && {
-            allowed_durations: entry.info.allowed_durations,
-        }),
+        video_capabilities: entry.info.video_capabilities,
+        min_duration: entry.info.min_duration,
+        max_duration: entry.info.max_duration,
+        default_duration: entry.info.default_duration,
+        allowed_durations: entry.info.allowed_durations,
         ...(entry.info.health && { health: entry.info.health }),
     };
 }

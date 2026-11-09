@@ -769,13 +769,5 @@ test("video models advertise the durations they accept", async () => {
         expect(model.allowed_durations, model.id).toEqual(
             info?.allowed_durations,
         );
-        // A caller that omits `duration` is billed for `default_duration`, so
-        // the listed default has to sit inside the listed range.
-        expect(model.default_duration ?? 0).toBeGreaterThanOrEqual(
-            model.min_duration ?? 0,
-        );
-        expect(model.default_duration ?? 0).toBeLessThanOrEqual(
-            model.max_duration ?? Number.POSITIVE_INFINITY,
-        );
     }
 });

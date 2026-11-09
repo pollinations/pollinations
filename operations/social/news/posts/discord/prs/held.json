@@ -11,9 +11,6 @@
       "merge_sha": "a7e88f08a63faebe996dc2768de4a97675d0673e",
       "merged_at": "2026-11-09T14:05:07Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
         "deploy-website-cloudflare.yml:deploy"
       ]
     },
@@ -21,9 +18,6 @@
       "merge_sha": "d47c644d02bcb4292af82edb1499b0cba4b435f7",
       "merged_at": "2026-11-09T14:17:18Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
         "deploy-website-cloudflare.yml:deploy"
       ]
     },
@@ -31,9 +25,6 @@
       "merge_sha": "89095d8933210d914688989d5c17ecdeb5924b16",
       "merged_at": "2026-11-09T14:32:57Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
         "deploy-website-cloudflare.yml:deploy"
       ]
     },
@@ -41,9 +32,6 @@
       "merge_sha": "24cc2057d16f06684c39a025d497a20573aacda0",
       "merged_at": "2026-11-09T14:50:36Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
         "deploy-website-cloudflare.yml:deploy"
       ]
     },
@@ -51,9 +39,6 @@
       "merge_sha": "6b770d7404f4b53cc1a9e1478c16a2ac8b81b6a7",
       "merged_at": "2026-11-09T15:31:33Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
         "deploy-website-cloudflare.yml:deploy"
       ]
     },
@@ -61,9 +46,6 @@
       "merge_sha": "9fa969d9460c4d8c7ab85e829ee0e79c1492a2bd",
       "merged_at": "2026-11-09T15:46:20Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
         "deploy-website-cloudflare.yml:deploy"
       ]
     }

@@ -11,6 +11,7 @@ import {
     SparklesIcon,
     SpeakerIcon,
     TabButton,
+    TerminalIcon,
     TokensIcon,
     UsageIcon,
 } from "@pollinations/ui";
@@ -61,12 +62,14 @@ import {
     sectionLabels,
     UnifiedModelTable,
 } from "./model-table.tsx";
+import { SandboxTemplateList } from "./sandbox-template-list.tsx";
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
 const MODEL_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
+    "decision",
     "image",
     "video",
     "3d",
@@ -75,21 +78,23 @@ const MODEL_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-type PrimaryTab = "models" | "agent" | "mcp";
-type SearchParam = "q" | "agentQ" | "mcpQ";
+type PrimaryTab = "models" | "agent" | "mcp" | "sandbox";
+type SearchParam = "q" | "agentQ" | "mcpQ" | "sandboxQ";
 
 const PRIMARY_TABS = [
     { value: "models", label: "Models", Icon: BeakerIcon },
     { value: "agent", label: "Agents", Icon: BotIcon },
     { value: "mcp", label: "MCP", Icon: McpIcon },
+    { value: "sandbox", label: "Sandboxes", Icon: TerminalIcon },
 ] as const;
 
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
-const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
+const NO_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
 const SEARCH_PARAM_BY_TAB: Record<PrimaryTab, SearchParam> = {
     models: "q",
     agent: "agentQ",
     mcp: "mcpQ",
+    sandbox: "sandboxQ",
 };
 const QUERY_FILTER_KEYS_BY_TAB: Record<
     PrimaryTab,
@@ -97,7 +102,8 @@ const QUERY_FILTER_KEYS_BY_TAB: Record<
 > = {
     models: MODEL_QUERY_FILTER_KEYS,
     agent: AGENT_QUERY_FILTER_KEYS,
-    mcp: MCP_QUERY_FILTER_KEYS,
+    mcp: NO_QUERY_FILTER_KEYS,
+    sandbox: NO_QUERY_FILTER_KEYS,
 };
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -108,9 +114,11 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
+    decision: "decision",
     embedding: "embedding",
     agent: "agent",
     mcp: "MCP server",
+    sandbox: "sandbox template",
 };
 
 function categorizeModels(
@@ -124,9 +132,11 @@ function categorizeModels(
         audio: [],
         realtime: [],
         text: [],
+        decision: [],
         embedding: [],
         agent: [],
         mcp: [],
+        sandbox: [],
     };
 
     for (const model of models) {
@@ -151,11 +161,9 @@ export const Models: FC = () => {
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
     const activePrimaryTab: PrimaryTab =
-        activeTab === "agent"
-            ? "agent"
-            : activeTab === "mcp"
-              ? "mcp"
-              : "models";
+        activeTab === "agent" || activeTab === "mcp" || activeTab === "sandbox"
+            ? activeTab
+            : "models";
     const activeSort = modelSearch.sort ?? "popular";
     const searchParam = SEARCH_PARAM_BY_TAB[activePrimaryTab];
     const supportedFilterKeys = QUERY_FILTER_KEYS_BY_TAB[activePrimaryTab];
@@ -241,7 +249,7 @@ export const Models: FC = () => {
         [modelModels],
     );
     const activeTabModels = useMemo(() => {
-        if (activeTab === "mcp") return [];
+        if (activeTab === "mcp" || activeTab === "sandbox") return [];
         if (activeTab === "agent") return agentModels;
         return modelSections[activeTab];
     }, [activeTab, agentModels, modelSections]);
@@ -321,15 +329,17 @@ export const Models: FC = () => {
     const searchTarget =
         activeTab === "mcp"
             ? "MCP servers"
-            : activeTab === "agent"
-              ? "agents"
-              : activeTab === "all"
-                ? explicitModelSource
-                    ? `${explicitModelSource} models`
-                    : "models"
-                : [explicitModelSource, searchLabel, "models"]
-                      .filter(Boolean)
-                      .join(" ");
+            : activeTab === "sandbox"
+              ? "sandbox templates"
+              : activeTab === "agent"
+                ? "agents"
+                : activeTab === "all"
+                  ? explicitModelSource
+                      ? `${explicitModelSource} models`
+                      : "models"
+                  : [explicitModelSource, searchLabel, "models"]
+                        .filter(Boolean)
+                        .join(" ");
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -501,7 +511,9 @@ export const Models: FC = () => {
                         ? "Agents"
                         : activePrimaryTab === "mcp"
                           ? "MCP"
-                          : "Models"
+                          : activePrimaryTab === "sandbox"
+                            ? "Sandboxes"
+                            : "Models"
                 }
                 actionClassName="ml-auto"
                 action={
@@ -624,14 +636,15 @@ export const Models: FC = () => {
                                 />
                             </div>
                         </div>
-                        {activeTab !== "mcp" && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <ModelSortMenu
-                                    value={activeSort}
-                                    onChange={setActiveSort}
-                                />
-                            </div>
-                        )}
+                        {activePrimaryTab !== "mcp" &&
+                            activePrimaryTab !== "sandbox" && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <ModelSortMenu
+                                        value={activeSort}
+                                        onChange={setActiveSort}
+                                    />
+                                </div>
+                            )}
                     </div>
                 </div>
                 {(activePrimaryTab === "agent" ||
@@ -660,14 +673,14 @@ export const Models: FC = () => {
                 )}
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
+                ) : activeTab === "sandbox" ? (
+                    <SandboxTemplateList query={query} />
                 ) : (
                     <SectionContent loading={catalogLoading}>
                         {catalogError ? (
                             <LoadError
-                                onRetry={() => {
-                                    setCatalogLoading(true);
-                                    void loadModelCatalog();
-                                }}
+                                paths={["/models"]}
+                                onRetry={loadModelCatalog}
                             >
                                 {catalogError}
                             </LoadError>
@@ -690,6 +703,7 @@ export const Models: FC = () => {
                                     audioModels={sectionModels.audio}
                                     realtimeModels={sectionModels.realtime}
                                     textModels={sectionModels.text}
+                                    decisionModels={sectionModels.decision}
                                     embeddingModels={sectionModels.embedding}
                                     agentModels={sectionModels.agent}
                                     activeTab={activeTab}
@@ -698,50 +712,50 @@ export const Models: FC = () => {
                         )}
                     </SectionContent>
                 )}
-                {activeTab !== "mcp" && (
+                {activeTab !== "mcp" && activeTab !== "sandbox" && (
                     <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
                         {activeTab === "agent" && (
                             <p className="flex items-start gap-1.5">
                                 <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                                 <span>
-                                    <strong>agent pricing</strong> — listed
-                                    rates are for the agent&apos;s base model
-                                    running its saved instructions.
+                                    <strong>agent pricing:</strong> listed rates
+                                    are for the agent&apos;s base model running
+                                    its saved instructions.
                                 </span>
                             </p>
                         )}
                         <p className="flex items-start gap-1.5">
                             <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/gen</strong> — flat rate per image or
+                                <strong>/gen:</strong> flat rate per image or
                                 audio generation.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/K · /M</strong> — rates per thousand or
+                                <strong>/K · /M:</strong> rates per thousand or
                                 million tokens.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/sec</strong> — per second of video or
-                                audio.
+                                <strong>/sec · /hr:</strong> per second of video
+                                or audio; sub-cent audio rates use per hour.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/MP · /image</strong> — per megapixel,
-                                or per reference image.
+                                <strong>/MP · /image:</strong> per megapixel, or
+                                per reference image.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/K chars · /K bytes</strong> — speech
+                                <strong>/K chars · /K bytes:</strong> speech
                                 priced per thousand characters or UTF-8 bytes of
                                 input text.
                             </span>
@@ -749,7 +763,7 @@ export const Models: FC = () => {
                         <p className="flex items-start gap-1.5">
                             <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>requests /$1</strong> — estimated from
+                                <strong>requests /$1:</strong> estimated from
                                 the median observed cost over the last 7 days.
                             </span>
                         </p>

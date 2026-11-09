@@ -10,6 +10,7 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -44,7 +45,9 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables & Partial<ModelVariables>;
+    Variables: LoggerVariables &
+        RequestIdVariables &
+        Partial<ModelVariables & AuthVariables>;
 };
 
 function createTextCacheApp() {
@@ -156,6 +159,67 @@ function chatInit(body: unknown): RequestInit {
 }
 
 describe("text cache", () => {
+    it.each(["key", "session"])(
+        "caches caller lists per %s while repeats by the same caller rejoin",
+        async (mode) => {
+            let originHits = 0;
+            const app = new Hono<TestEnv>()
+                .use("*", async (c, next) => {
+                    c.set("log", testLog);
+                    c.set("requestId", "same-request");
+                    c.set("model", {
+                        requested: "pruna,flux",
+                        resolved: "pruna",
+                        definition: {},
+                    } as ModelVariables["model"]);
+                    c.set("auth", {
+                        apiKey:
+                            mode === "key"
+                                ? { id: c.req.header("x-test-caller") }
+                                : undefined,
+                        user:
+                            mode === "session"
+                                ? { id: c.req.header("x-test-caller") }
+                                : undefined,
+                    } as AuthVariables["auth"]);
+                    await next();
+                })
+                .get(
+                    "/text/:prompt",
+                    textCache,
+                    () =>
+                        new Response(`origin:${++originHits}`, {
+                            headers: { "Content-Type": "text/plain" },
+                        }),
+                );
+            const env = createTextCacheEnv();
+            for (const [key, status] of [
+                ["one", "MISS"],
+                ["two", "MISS"],
+                ["one", "HIT"],
+            ]) {
+                const result = await dispatch(
+                    app,
+                    "/text/list?model=pruna,flux",
+                    {
+                        headers: { "x-test-caller": key },
+                    },
+                    env,
+                );
+                expect(
+                    result.response.status,
+                    await result.response.clone().text(),
+                ).toBe(200);
+                await consumeAndWait(result);
+                expect(result.response.headers.get("X-Cache")).toBe(status);
+                expect(result.response.headers.get("Cache-Control")).toBe(
+                    "private, no-store",
+                );
+            }
+            expect(originHits).toBe(2);
+        },
+    );
+
     it("partitions managed-agent cache keys by caller API key", async () => {
         const request = new Request(
             "https://gen.pollinations.ai/v1/chat/completions",
@@ -662,7 +726,7 @@ describe("text cache", () => {
         expect(originHits).toBe(4);
     });
 
-    it("does not cache chat streams without output", async () => {
+    it("caches chat streams without output like any other answer", async () => {
         const body = [
             '{"choices":[{"delta":{"role":"assistant","content":""}}]}',
             '{"choices":[{"delta":{"reasoning_content":"thinking"}}]}',
@@ -691,49 +755,10 @@ describe("text cache", () => {
         const first = await dispatch(app, "/empty", undefined, env);
         expect(await consumeAndWait(first)).toBe(body);
         const second = await dispatch(app, "/empty", undefined, env);
-        await consumeAndWait(second);
+        expect(await consumeAndWait(second)).toBe(body);
         expect(first.response.headers.get("X-Cache")).toBe("MISS");
-        expect(second.response.headers.get("X-Cache")).toBe("MISS");
-        expect(originHits).toBe(2);
-    });
-
-    it("caches chat streams whose output is text, tool calls or a refusal", async () => {
-        const bodies: Record<string, string> = {
-            content:
-                'data: {"choices":[{"delta":{"content":""}}]}\n\n' +
-                'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n' +
-                "data: [DONE]\n\n",
-            tools:
-                'data: {"choices":[{"delta":{"content":null,"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"lookup","arguments":"{}"}}]}}]}\n\n' +
-                "data: [DONE]\n\n",
-            refusal:
-                'data: {"choices":[{"delta":{"refusal":"I can\'t help with that."}}]}\n\n' +
-                "data: [DONE]\n\n",
-        };
-        let originHits = 0;
-        const app = new Hono<TestEnv>()
-            .use("*", async (c, next) => {
-                c.set("log", testLog);
-                c.set("requestId", "test-request");
-                await next();
-            })
-            .get("/full/:kind", textCache, (c) => {
-                originHits += 1;
-                return new Response(bodies[c.req.param("kind")], {
-                    headers: { "Content-Type": "text/event-stream" },
-                });
-            });
-        const env = createTextCacheEnv();
-
-        for (const kind of Object.keys(bodies)) {
-            const first = await dispatch(app, `/full/${kind}`, undefined, env);
-            await consumeAndWait(first);
-            const second = await dispatch(app, `/full/${kind}`, undefined, env);
-            expect(await consumeAndWait(second)).toBe(bodies[kind]);
-            expect(first.response.headers.get("X-Cache")).toBe("MISS");
-            expect(second.response.headers.get("X-Cache")).toBe("HIT");
-        }
-        expect(originHits).toBe(3);
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
+        expect(originHits).toBe(1);
     });
 
     it("does not add text cache headers to routes without cache middleware", async () => {

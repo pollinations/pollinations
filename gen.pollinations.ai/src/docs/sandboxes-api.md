@@ -9,4 +9,8 @@ export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
 export E2B_API_KEY=sk_...
 ```
 
+Sandboxes come back with `domain` set to `pollinations.app`, so the SDKs reach a sandbox and its ports at `https://<port>-<id>.pollinations.app`, on E2B and Azure alike. Each request there is at most 100 MB. The providers' hosts still serve sandboxes directly: `https://<port>-<id>.e2b.app` on E2B, `https://<id>--<port>.<region>.adcproxy.io` on Azure.
+
+Staging returns sandbox IDs ending in `--staging`, so their port hosts are `https://<port>-<id>--staging.pollinations.app`. Use the returned ID for subsequent API calls and SDK connections.
+
 Setup with polli, credits and runtime: [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes).

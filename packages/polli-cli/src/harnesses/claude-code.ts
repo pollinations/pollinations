@@ -128,8 +128,9 @@ export const claudeCode: HarnessAdapter = {
         if (!commandExists("claude", ctx.env)) {
             throw new Error(`Claude Code was not found. ${INSTALL}`);
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        await fetchHarnessModels(model);
+        const { model } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
         const apiKey = await resolveHarnessKey(
             {
                 id: ID,

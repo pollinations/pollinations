@@ -1,16 +1,14 @@
 # Contributing to pollinations.ai
 
-Thank you for considering contributing to the pollinations.ai project! We are thrilled to have you join our community and help us enhance this exciting project. Your contributions are vital to improving our project and expanding its capabilities.
+You can contribute code, documentation, bug reports, or apps. Start with an issue that interests you.
 
 ## How to Contribute
 
-We have multiple projects under the `pollinations.ai` umbrella, and each project has its own set of issues. To make a meaningful contribution:
+The repository contains several projects. To get started:
 
 ### 1. Explore Projects and Issues
 
-Before you start, please refer to the main `README.md` file of the `pollinations.ai` repository. It lists all the insights and provides an overview. There are dedicated issues from versatile topics under the repository [Issues](https://github.com/pollinations/pollinations/issues) section.
-
-Look for issues that interest you and feel free to tackle them!
+Read the [README](README.md) for an overview of the projects, then browse the [issues](https://github.com/pollinations/pollinations/issues).
 
 Issues labeled `POLLEN-QUEST` are open to multiple solutions; you do not need to claim the issue or wait for assignment before starting. Link your PR with `Fixes #N`. Maintainers compare completed approaches, and the author of the selected merged PR can claim the stated reward.
 
@@ -18,13 +16,13 @@ If a quest asks for an app, submit it with the [app submission form](https://git
 
 ### 2. Understand the Issue and Build an MVP
 
-Once you've selected an issue, take the time to thoroughly understand its requirements. For code contributions, focus on building a **Minimum Viable Product (MVP)** that addresses the core problem or implements the key feature described in the issue.
+Read the issue and the relevant code before making changes. Build the smallest solution that meets the requirements.
 
 If you use a coding agent for a quest, ask it to read the [Ponytail skill](.agents/skills/ponytail/SKILL.md). It encourages reusing existing code and keeping the solution small while preserving required tests and safety checks.
 
 ### 3. Documentation Contributions
 
-We are in profound need of members who can help enhance our documentation. If you possess experience in data science, machine learning, LLMs (Large Language Models), or Stable Diffusion, your insights will be invaluable. You can contribute by:
+Help readers understand and use Pollinations. You can contribute by:
 
 - Improving existing documentation to be clearer and more comprehensive.
 - Writing new guides or tutorials that explain complex concepts or workflows.
@@ -53,12 +51,12 @@ Use the repository's app submission issue form when your app is ready for review
 
 ### 5. Code Contributions
 
-If you're interested in coding, we enthusiastically welcome contributions in the following areas:
+Code contributions include:
 
-- **Bug Fixes:** Identifying and resolving issues that hinder the project's functionality.
-- **Feature Enhancements:** Adding new capabilities or improving existing ones.
-- **Code Optimization:** Refactoring and improving the efficiency, readability, and maintainability of the codebase.
-- **New Functionalities:** Developing innovative features that expand the project's scope.
+- **Bug Fixes:** Fixing behavior that does not work as intended.
+- **Feature Enhancements:** Adding or improving features.
+- **Code Optimization:** Making code faster, simpler, or easier to maintain.
+- **New Functionalities:** Building support for new use cases.
 
 ### A Short Hands-on for a Quick Contribution Flow
 
@@ -119,4 +117,4 @@ Document Your Changes Well: Add comments to your code where needed to explain ho
 
 Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
 
-Thank You! Thank you for contributing! Your help makes the pollinations.ai project stronger and more useful for the community. Happy coding!
+Thank you for contributing.

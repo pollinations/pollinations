@@ -304,11 +304,14 @@ function renderParamsTable(_spec: Spec, params: Schema[]): string {
 function pickExample(
     spec: Spec,
     schema: Schema | undefined,
-    opts: { compact?: boolean } = {},
+    // `placeholders` fills strings without an example so response examples
+    // keep required fields such as `id`; request bodies stay runnable without it.
+    opts: { compact?: boolean; placeholders?: boolean } = {},
 ): unknown {
     if (!schema) return undefined;
     const resolved = refName(schema) ? deref(spec, schema) : schema;
     if (resolved.example !== undefined) return resolved.example;
+    if (resolved.const !== undefined) return resolved.const;
 
     const union = asArr(resolved.anyOf).length
         ? asArr(resolved.anyOf)
@@ -326,7 +329,10 @@ function pickExample(
 
     if (resolved.default !== undefined) return resolved.default;
 
-    const type = asStr(resolved.type);
+    // Nullable fields use `type: ["string", "null"]`.
+    const type = asStr(
+        asArr(resolved.type).find((t) => t !== "null") ?? resolved.type,
+    );
     if (type === "object" || resolved.properties) {
         const props = asObj(resolved.properties);
         const required = new Set(asArr(resolved.required) as string[]);
@@ -349,7 +355,7 @@ function pickExample(
     if (type === "string") {
         if (asStr(resolved.format) === "date-time")
             return "2026-01-01T00:00:00Z";
-        return undefined;
+        return opts.placeholders ? "string" : undefined;
     }
     return undefined;
 }
@@ -674,7 +680,9 @@ export function renderEndpoint(
             jsonResp.example !== undefined
                 ? jsonResp.example
                 : jsonResp.schema
-                  ? pickExample(spec, asObj(jsonResp.schema))
+                  ? pickExample(spec, asObj(jsonResp.schema), {
+                        placeholders: true,
+                    })
                   : undefined;
         if (isResponseExampleWorthwhile(ex)) {
             out.push("```json");
@@ -801,7 +809,7 @@ function renderGettingStarted(): string {
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
 
 - \`sk_*\` — secret key for backend use. Never ship it in a browser, mobile app, or repository.
-- \`pk_*\` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user \`sk_*\`; do not use raw publishable keys for new browser generation integrations.
+- \`pk_*\` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user \`sk_*\`; a \`pk_*\` sent as a key gets \`401\`.
 
 **2. Send the key** in the \`Authorization\` header (or as \`?key=\` query param for GET endpoints):
 

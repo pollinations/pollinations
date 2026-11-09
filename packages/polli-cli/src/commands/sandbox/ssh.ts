@@ -53,10 +53,14 @@ export function stderrToTerminal() {
     }) as typeof process.stderr.write;
 }
 
+// The domain connect returns, gen's for both providers. Azure's own port URLs
+// name the sandbox first.
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
-    `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
+    s.domain?.endsWith(".adcproxy.io")
+        ? `${scheme}://${s.sandboxID}--${port}.${s.domain}`
+        : `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
 
-// Runs a script as root through envd, the agent in every E2B sandbox. Its
+// Runs a script as root through envd, the agent in every sandbox. Its
 // Connect RPC takes and returns length-prefixed JSON messages.
 async function runAsRoot(
     s: Connection,
@@ -109,7 +113,8 @@ async function runAsRoot(
 // Pipes stdin and stdout to sshd in the sandbox; ssh runs this per connection.
 export async function proxy(host: string) {
     const id = host.replace(/\.polli$/, "");
-    if (!/^[a-z0-9]+$/.test(id)) {
+    // E2B's IDs, or Azure's UUIDs.
+    if (!/^[a-z0-9-]+$/.test(id)) {
         fail(`Expected <sandbox-id>.polli, got "${host}"`);
     }
     if (typeof WebSocket === "undefined")
@@ -186,6 +191,9 @@ export function setupSsh() {
             "    IdentitiesOnly yes",
             `    UserKnownHostsFile "${join(SSH_DIR, "known_hosts")}"`,
             "    StrictHostKeyChecking accept-new",
+            // Gen serves sandbox ports on Cloudflare, which closes a
+            // WebSocket after 100 seconds without data.
+            "    ServerAliveInterval 30",
             `    ProxyCommand ${polli} sandbox proxy %h`,
             // Later ssh, scp and rsync reuse the first connection, up to 10
             // minutes after it ends.

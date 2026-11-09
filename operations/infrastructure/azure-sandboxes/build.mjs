@@ -1,0 +1,249 @@
+#!/usr/bin/env node
+// Builds the Azure templates' image and imports it into each sandbox group
+// gen's wrangler.toml names (AZURE_SANDBOX_GROUP_URL), then writes the new
+// image ids into its AZURE_SANDBOX_IMAGE lines. It all runs on Azure: a
+// builder box gets this checkout's ../e2b and this folder, builds
+// ../e2b/e2b.Dockerfile on what E2B's builder adds (e2b-base.Dockerfile), then
+// the Dockerfile here, and serves the result
+// from a registry on a port of its own, which Azure imports from. Then a box
+// from the image must start envd with its token before its id is written.
+// Needs `az login` with the Data Owner role on the groups; CI logs in as the
+// pollinations-ci-sandbox-image app (deploy-azure-sandbox-image.yml).
+//
+//   node operations/infrastructure/azure-sandboxes/build.mjs
+import { execFileSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
+
+const here = new URL(".", import.meta.url).pathname;
+const wrangler = `${here}../../../gen.pollinations.ai/wrangler.toml`;
+// Staging first: the builder box runs there, and a broken image fails there
+// before production imports it.
+const staging = (url) => url.endsWith("/pollisbx-staging");
+const groups = [
+    ...readFileSync(wrangler, "utf8").matchAll(
+        /^AZURE_SANDBOX_GROUP_URL = "(.+)"$/gm,
+    ),
+]
+    .map(([, url]) => url)
+    .sort((a, b) => staging(b) - staging(a));
+
+// The image line follows its group's line in each environment's block.
+function pin(group, image) {
+    const lines = readFileSync(wrangler, "utf8").split("\n");
+    const at = lines.indexOf(`AZURE_SANDBOX_GROUP_URL = "${group}"`) + 1;
+    if (!lines[at]?.startsWith("AZURE_SANDBOX_IMAGE = ")) {
+        throw new Error(`no AZURE_SANDBOX_IMAGE line after ${group}`);
+    }
+    lines[at] = `AZURE_SANDBOX_IMAGE = "${image}"`;
+    writeFileSync(wrangler, lines.join("\n"));
+}
+const commit = execFileSync(
+    "git",
+    ["-C", here, "rev-parse", "--short", "HEAD"],
+    {
+        encoding: "utf8",
+    },
+).trim();
+// macOS's tar would add its resource forks.
+const sources = execFileSync(
+    "tar",
+    ["-czf", "-", "-C", `${here}..`, "e2b", "azure-sandboxes"],
+    { env: { ...process.env, COPYFILE_DISABLE: "1" } },
+).toString("base64");
+const token = execFileSync(
+    "az",
+    [
+        "account",
+        "get-access-token",
+        "--resource",
+        "https://dynamicsessions.io",
+        "--query",
+        "accessToken",
+        "-o",
+        "tsv",
+    ],
+    { encoding: "utf8" },
+).trim();
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const region = (group) => new URL(group).hostname.split(".")[1];
+
+async function azure(url, init = {}) {
+    const response = await fetch(
+        `${url}${url.includes("?") ? "&" : "?"}api-version=2026-02-01-preview`,
+        {
+            ...init,
+            headers: {
+                authorization: `Bearer ${token}`,
+                "content-type": "application/json",
+            },
+        },
+    );
+    const text = await response.text();
+    if (!response.ok) {
+        throw new Error(
+            `${init.method ?? "GET"} ${url}: ${response.status} ${text}`,
+        );
+    }
+    return text ? JSON.parse(text) : null;
+}
+
+const put = (url, body) =>
+    azure(url, { method: "PUT", body: JSON.stringify(body) });
+
+// The boxes this run asked for, from the moment it asks. A cancelled or
+// timed-out CI job gets SIGINT, then SIGTERM, and Node skips `finally` on a
+// signal, so one cleanup deletes them all, waiting for creates still in
+// flight. A box deleted already just answers 404 again.
+const boxes = new Map();
+function newBox(group, body) {
+    const box = put(`${group}/sandboxes`, body);
+    boxes.set(box, group);
+    return box;
+}
+const removeBox = (group, id) =>
+    azure(`${group}/sandboxes/${id}`, { method: "DELETE" });
+let cleaningUp = false;
+for (const signal of ["SIGINT", "SIGTERM"]) {
+    process.on(signal, async () => {
+        if (cleaningUp) return;
+        cleaningUp = true;
+        await Promise.allSettled(
+            [...boxes].map(async ([box, group]) =>
+                removeBox(group, (await box).id),
+            ),
+        );
+        process.exit(1);
+    });
+}
+
+async function running(group, id) {
+    for (let tries = 0; tries < 60; tries++) {
+        if ((await azure(`${group}/sandboxes/${id}`)).state === "Running") {
+            return;
+        }
+        await sleep(2000);
+    }
+    throw new Error(`box ${id} did not start`);
+}
+
+const sh = async (group, id, command) =>
+    (
+        await azure(`${group}/sandboxes/${id}/executeShellCommand`, {
+            method: "POST",
+            body: JSON.stringify({ command }),
+        })
+    ).stdout.trim();
+
+// Docker runs without iptables in a box, so builds use the host's network.
+const build = `set -e
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq docker.io docker-buildx >/dev/null
+setsid dockerd --iptables=false --ip6tables=false >/root/dockerd.log 2>&1 </dev/null &
+until docker info >/dev/null 2>&1; do sleep 1; done
+docker run -d --network host --name registry registry:2
+cd /src
+cp /etc/ssl/certs/adc-egress-proxy-ca.crt azure-sandboxes/egress-ca.crt
+docker build --network host -t e2b-base -f azure-sandboxes/e2b-base.Dockerfile \
+    --build-arg BASE="$(sed -n 's/^FROM //p' e2b/e2b.Dockerfile)" azure-sandboxes
+sed 's/^FROM .*/FROM e2b-base/' e2b/e2b.Dockerfile > /root/e2b.Dockerfile
+docker build --network host -t polli-e2b -f /root/e2b.Dockerfile e2b
+docker build --network host -t localhost:5000/polli-azure azure-sandboxes
+docker push localhost:5000/polli-azure | sed -n 's/.*digest: \\(sha256:[0-9a-f]*\\).*/\\1/p' > /root/digest
+`;
+
+// envd must answer only with the token, at Azure's port URL.
+async function smokeTest(group, image) {
+    const accessToken = randomBytes(32).toString("hex");
+    const box = await newBox(group, {
+        sourcesRef: { diskImage: { id: image } },
+        resources: { cpu: "2000m", memory: "2048Mi" },
+        labels: { pollinations_role: "image-smoke-test" },
+        environment: {
+            POLLI_ENVD_INIT: JSON.stringify({
+                accessToken,
+                defaultUser: "user",
+            }),
+        },
+        ports: [{ port: 49983, auth: { anonymous: true } }],
+        cmd: ["/usr/local/bin/polli-box"],
+    });
+    try {
+        await running(group, box.id);
+        const envd = `https://${box.id}--49983.${region(group)}.adcproxy.io`;
+        for (let tries = 0; ; tries++) {
+            if ((await fetch(`${envd}/health`).catch(() => null))?.ok) break;
+            if (tries > 120) throw new Error("envd did not start");
+            await sleep(500);
+        }
+        const read = (headers) =>
+            fetch(`${envd}/files?path=/home/user/.bashrc&username=user`, {
+                headers,
+            }).then((response) => response.status);
+        const [without, withToken] = [
+            await read({}),
+            await read({ "x-access-token": accessToken }),
+        ];
+        if (without !== 401 || withToken !== 200) {
+            throw new Error(
+                `envd answered ${without} without the token, ${withToken} with it`,
+            );
+        }
+    } finally {
+        await removeBox(group, box.id);
+    }
+}
+
+const [home] = groups;
+const builder = await newBox(home, {
+    sourcesRef: { diskImage: { name: "ubuntu", isPublic: true } },
+    resources: { cpu: "4000m", memory: "8192Mi", disk: "61440Mi" },
+    labels: { pollinations_role: "image-builder" },
+    lifecycle: { autoSuspendPolicy: { enabled: false } },
+    ports: [{ port: 5000, auth: { anonymous: true } }],
+});
+console.log(`builder box ${builder.id}`);
+try {
+    await running(home, builder.id);
+    const script = Buffer.from(build).toString("base64");
+    await sh(
+        home,
+        builder.id,
+        `mkdir -p /src && echo ${sources} | base64 -d | tar -xz -C /src && echo ${script} | base64 -d > /root/build.sh && setsid nohup sh -c 'bash /root/build.sh > /root/build.log 2>&1; echo $? > /root/build.exit' >/dev/null 2>&1 </dev/null & echo started`,
+    );
+    let exit = "";
+    while (!exit) {
+        await sleep(15_000);
+        exit = await sh(
+            home,
+            builder.id,
+            "cat /root/build.exit 2>/dev/null || true",
+        );
+        console.log(await sh(home, builder.id, "tail -n 1 /root/build.log"));
+    }
+    const digest = await sh(home, builder.id, "cat /root/digest");
+    if (exit !== "0" || !digest.startsWith("sha256:")) {
+        console.error(await sh(home, builder.id, "tail -n 40 /root/build.log"));
+        throw new Error(`build exited with ${exit}`);
+    }
+    const base = `${builder.id}--5000.${region(home)}.adcproxy.io/polli-azure@${digest}`;
+    for (const group of groups) {
+        let image = await put(`${group}/diskimages`, {
+            image: { base },
+            labels: { name: "pollinations", commit },
+        });
+        while (image.status?.state !== "Ready") {
+            if (image.status?.state === "Failed") {
+                throw new Error(`import failed: ${image.status.errorMessage}`);
+            }
+            await sleep(5000);
+            image = await azure(`${group}/diskimages/${image.id}`);
+        }
+        await smokeTest(group, image.id);
+        pin(group, image.id);
+        console.log(`${group}\n  AZURE_SANDBOX_IMAGE = "${image.id}"`);
+    }
+} finally {
+    await removeBox(home, builder.id);
+}

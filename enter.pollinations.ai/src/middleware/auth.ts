@@ -7,6 +7,7 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import { AUTHENTICATION_REQUIRED_MESSAGE } from "@shared/http/fix-link.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Session, User } from "../auth.ts";
@@ -80,7 +81,6 @@ export const auth = (options: AuthOptions) =>
                 const result = await authenticateApiKeyRequest({
                     request: c.req.raw,
                     env: c.env,
-                    client,
                     ctx: c.executionCtx,
                 });
                 if (!result) return null;
@@ -113,13 +113,18 @@ export const auth = (options: AuthOptions) =>
         }): Promise<void> => {
             if (!user) {
                 throw new HTTPException(401, {
-                    message: options?.message,
+                    message:
+                        options?.message ?? AUTHENTICATION_REQUIRED_MESSAGE,
                 });
             }
         };
 
         const requireUser = (): User => {
-            if (!user) throw new HTTPException(401);
+            if (!user) {
+                throw new HTTPException(401, {
+                    message: AUTHENTICATION_REQUIRED_MESSAGE,
+                });
+            }
             return user;
         };
 

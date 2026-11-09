@@ -382,6 +382,31 @@ test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async 
     }
 });
 
+test("model listings carry billing units so agents can price a call", async () => {
+    type ListedModel = { id: string; pricing_units?: unknown };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.pricing_units, model.id).toEqual(
+            registry.resolve(model.id)?.info.pricing_units,
+        );
+    }
+
+    const withUnits = list.data.filter((model) => model.pricing_units);
+    expect(withUnits.length).toBeGreaterThan(0);
+    for (const model of withUnits) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.pricing_units, model.id).toEqual(model.pricing_units);
+    }
+});
+
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker(
         `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
@@ -448,6 +473,15 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     const list = (await listResponse.json()) as {
         data: Record<string, unknown>[];
     };
+    const registry = await getGenerationModelRegistry(env);
+    for (const model of list.data) {
+        const entry = registry.resolve(String(model.id));
+        expect(entry).not.toBeNull();
+        expect(model.top_provider).toEqual({
+            max_completion_tokens: entry?.info.max_completion_tokens ?? null,
+        });
+        expect(model).not.toHaveProperty("max_completion_tokens");
+    }
     const listed = list.data.find((m) => m.id === "openai/gpt-5-nano");
     expect(listed).toBeDefined();
 

@@ -148,6 +148,51 @@ describe("docs routes", () => {
         expect(requestExampleErrors(schema)).toEqual([]);
     });
 
+    it("accepts validation and upstream details on a 400", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ paths: {} }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
+            ),
+            envWithEnterSchema({ paths: {} }),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        const schema = (await response.json()) as Spec;
+        const details = (
+            schema.paths["/v1/chat/completions"]?.post as
+                | { responses?: Record<string, unknown> }
+                | undefined
+        )?.responses?.["400"] as
+            | {
+                  content?: {
+                      "application/json"?: {
+                          schema?: {
+                              properties?: {
+                                  error?: {
+                                      properties?: { details?: unknown };
+                                  };
+                              };
+                          };
+                      };
+                  };
+              }
+            | undefined;
+        expect(
+            details?.content?.["application/json"]?.schema?.properties?.error
+                ?.properties?.details,
+        ).toEqual({
+            anyOf: [
+                { $ref: "#/components/schemas/ValidationErrorDetails" },
+                { $ref: "#/components/schemas/ErrorDetails" },
+            ],
+        });
+    });
+
     it("lists every sandbox route in the API reference, linking E2B for fields", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json({ paths: {} }),
@@ -167,12 +212,15 @@ describe("docs routes", () => {
         );
         expect(routes.length).toBeGreaterThan(0);
         for (const { method, path } of routes) {
-            const docPath = `${E2B_PATH}${path.replace(":id", "{id}")}`;
+            const docPath = `${E2B_PATH}${path
+                .replace(":id", "{id}")
+                .replace(":port", "{port}")}`;
             const operation = schema.paths[docPath]?.[method.toLowerCase()];
             expect(operation, `${method} ${docPath}`).toMatchObject({
                 tags: ["Sandboxes API"],
             });
-            if (path !== "/pricing") {
+            // Pollinations' own routes have no E2B page.
+            if (path !== "/pricing" && !path.endsWith("/ports/:port")) {
                 expect(operation.description).toContain(
                     "https://docs.e2b.dev/api-reference/sandboxes/",
                 );
@@ -414,7 +462,7 @@ describe("docs routes", () => {
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
-            "Connect User Wallets",
+            "Pollinations Pay",
         );
         expect(schema.tags.map((tag) => tag.name)).toContain("Publish a Model");
         expect(schema.tags.map((tag) => tag.name)).toContain(
@@ -699,8 +747,10 @@ describe("docs routes", () => {
             'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
-        expect(html).toContain("window.location.hash === '#tag/byop'");
-        expect(html).toContain("#tag/connect-user-wallets");
+        expect(html).toContain(
+            "window.location.hash === '#tag/byop' || window.location.hash === '#tag/connect-user-wallets'",
+        );
+        expect(html).toContain("#tag/pollinations-pay");
     });
 
     it("adds the pinned sign-in button without rendering credentials", async () => {
@@ -937,7 +987,7 @@ describe("docs routes", () => {
         );
         expect(walletRes.status).toBe(301);
         expect(walletRes.headers.get("Location")).toBe(
-            "/docs#tag/connect-user-wallets",
+            "/docs#tag/pollinations-pay",
         );
 
         const missingRes = await worker.fetch(
@@ -971,7 +1021,7 @@ describe("docs routes", () => {
         expect(realtimeSection).toContain("`GET /realtime`");
         expect(realtimeSection).toContain("`GET /v1/realtime`");
         expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
-        expect(apiBody).not.toContain("## Connect User Wallets");
+        expect(apiBody).not.toContain("## Pollinations Pay");
 
         const byopRes = await worker.fetch(
             new Request(
@@ -981,7 +1031,7 @@ describe("docs routes", () => {
             ctx,
         );
         expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("## Connect User Wallets");
+        expect(await byopRes.text()).toContain("## Pollinations Pay");
 
         const modelsRes = await worker.fetch(
             new Request(

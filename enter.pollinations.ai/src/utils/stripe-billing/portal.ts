@@ -12,11 +12,18 @@ import {
 import { getOrCreateStripeCustomerId } from "./customer.ts";
 
 /**
- * "card": straight to adding a card, which Stripe makes the default, then
- * back to us. Billing details have no such flow in our API version, so
- * they are edited from the portal's home page.
+ * Straight to one task, then back to us: "card" adds a card, which Stripe
+ * makes the default; "details" edits name, company, address and VAT ID.
  */
-export type BillingPortalFlow = "card";
+export type BillingPortalFlow = "card" | "details";
+
+const FLOW_TYPES = {
+    card: "payment_method_update",
+    details: "customer_update",
+} as const satisfies Record<
+    BillingPortalFlow,
+    Stripe.BillingPortal.SessionCreateParams.FlowData.Type
+>;
 
 export async function createBillingPortalSession(
     env: CloudflareBindings,
@@ -38,9 +45,9 @@ export async function createBillingPortalSession(
         customer,
         configuration,
         return_url: back,
-        ...(flow === "card" && {
+        ...(flow && {
             flow_data: {
-                type: "payment_method_update",
+                type: FLOW_TYPES[flow],
                 after_completion: {
                     type: "redirect",
                     redirect: { return_url: back },

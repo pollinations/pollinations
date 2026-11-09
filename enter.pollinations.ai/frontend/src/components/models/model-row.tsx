@@ -1,4 +1,4 @@
-import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
+import { formatCount, InlineLink, Surface, Tooltip } from "@pollinations/ui";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
@@ -144,7 +144,7 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
                     <strong className="font-semibold text-theme-text-base">
                         Context window:
                     </strong>{" "}
-                    {model.contextLength.toLocaleString()} tokens
+                    {formatCount(model.contextLength)} tokens
                 </span>
             )}
             {videoDuration && (
@@ -333,7 +333,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <PerUserRateLimit value={model.perUserRpm} />
                         </div>
                     )}
-                    {(model.health || showNew || showAlpha) && (
+                    {(model.health ||
+                        showNew ||
+                        showAlpha ||
+                        (model.agent && model.verified)) && (
                         <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                             <ModelStatusChips
                                 health={model.health}
@@ -342,6 +345,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 )}
                                 showNew={showNew}
                                 showAlpha={showAlpha}
+                                verified={Boolean(
+                                    model.agent && model.verified,
+                                )}
                             />
                         </div>
                     )}

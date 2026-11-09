@@ -6,6 +6,18 @@ import { describe, expect, it } from "vitest";
 import { buildTrackingHeaders } from "../../src/image/utils/trackingHeaders.ts";
 
 describe("buildTrackingHeaders", () => {
+    it("accepts a provider receipt without inventing token usage", () => {
+        expect(
+            buildTrackingHeaders("openai/gpt-image-2.6-flare:fal", {
+                usage: {},
+                providerBilling: { units: 0.0248, unitCost: 1 },
+            }),
+        ).toEqual({
+            "x-model-used": "openai/gpt-image-2.6-flare:fal",
+            "x-usage-provider-billable-units": "0.0248",
+            "x-usage-provider-unit-cost": "1",
+        });
+    });
     it("uses explicit provider usage", () => {
         expect(
             buildTrackingHeaders("flux", {

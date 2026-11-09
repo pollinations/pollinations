@@ -24,6 +24,7 @@ import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import { acceptsMarkdown } from "@/middleware/agent-discovery.ts";
 import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
 import { authenticateDocsRequest } from "../docs-client/request-auth.ts";
@@ -64,6 +65,7 @@ import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import SANDBOXES_MD from "../docs/sandboxes.md?raw";
 import SANDBOXES_API_MD from "../docs/sandboxes-api.md?raw";
+import SITES_MD from "../docs/sites.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 import X402_PREPAID_KEYS_MD from "../docs/x402-prepaid-keys.md?raw";
@@ -74,7 +76,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     x402PrepaidKeys: "x402 Prepaid Keys",
-    userWallets: "Connect User Wallets",
+    userWallets: "Pollinations Pay",
     publishModel: "Publish a Model",
     communityModels: "Community Models",
     publishAgent: "Publish an Agent",
@@ -84,6 +86,7 @@ const DOC_TAGS = {
     mcpServers: "MCP Servers",
     sandboxes: "Sandboxes",
     sandboxesApi: "Sandboxes API",
+    sites: "Sites",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -167,6 +170,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.sandboxes]: terminalIcon,
     [DOC_TAGS.sandboxesApi]: terminalIcon,
+    [DOC_TAGS.sites]: docsIcon(
+        '<circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18" />',
+    ),
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
     [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
     [DOC_TAGS.text]: docsIcon(
@@ -255,6 +261,7 @@ const stripLeadingHeading = (md: string) =>
 
 const MCP_DOCS = stripLeadingHeading(MCP_MD.trim());
 const SANDBOXES_DOCS = stripLeadingHeading(SANDBOXES_MD.trim());
+const SITES_DOCS = stripLeadingHeading(SITES_MD.trim());
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
@@ -336,7 +343,7 @@ const REALTIME_DOCS = [
     "",
     "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
-    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
+    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime conversations guide](https://developers.openai.com/api/docs/guides/realtime-conversations).",
     "",
     "```js",
     'import WebSocket from "ws";',
@@ -384,13 +391,14 @@ const GEN_API_DOCS = [
     PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
-const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
+const USER_WALLETS_SECTION = `## Pollinations Pay\n\n${USER_WALLETS_DOCS}`;
 const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
 const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
 const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}\n\n### Sandboxes API\n\n${SANDBOXES_API_MD.trim()}`;
+const SITES_SECTION = `## Sites\n\n${SITES_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -401,6 +409,7 @@ const LLM_DOC_TEXT = [
     CODING_HARNESSES_SECTION,
     MCP_SECTION,
     SANDBOXES_SECTION,
+    SITES_SECTION,
 ].join("\n\n");
 
 const LLM_DOC_SECTIONS: Record<string, string> = {
@@ -412,6 +421,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
     sandboxes: SANDBOXES_SECTION,
+    sites: SITES_SECTION,
     x402: X402_PREPAID_KEYS_DOCS,
 };
 
@@ -428,7 +438,7 @@ export const LLMS_FULL_TEXT = [
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
-    byop: "connect-user-wallets",
+    byop: "pollinations-pay",
     models: "publish-a-model",
     "community-models": "publish-a-model",
     agents: "publish-an-agent",
@@ -465,8 +475,8 @@ ${connectScript}
 <script>
 (function () {
   function normalizeLegacyHash() {
-    if (window.location.hash === '#tag/byop') {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/connect-user-wallets');
+    if (window.location.hash === '#tag/byop' || window.location.hash === '#tag/connect-user-wallets') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/pollinations-pay');
     }
   }
   normalizeLegacyHash();
@@ -612,6 +622,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.publishAgent,
                     DOC_TAGS.publishModel,
                     DOC_TAGS.sandboxes,
+                    DOC_TAGS.sites,
                     DOC_TAGS.codingHarnesses,
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
@@ -701,6 +712,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.sandboxesApi,
                 description: SANDBOXES_API_MD.trim(),
+            },
+            {
+                name: DOC_TAGS.sites,
+                description: SITES_DOCS,
             },
             {
                 name: DOC_TAGS.errors,
@@ -1122,7 +1137,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 return c.redirect(publicUrl.href, 302);
             }
             c.header("Vary", "Accept", { append: true });
-            if (c.req.header("accept")?.includes("text/markdown")) {
+            if (acceptsMarkdown(c.req.header("accept") ?? "")) {
                 // Cloudflare ignores Vary on cached responses: keep it private.
                 c.header("Cache-Control", "private, max-age=3600");
                 return c.body(LLM_DOC_TEXT, 200, {

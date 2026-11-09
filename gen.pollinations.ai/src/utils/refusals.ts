@@ -1,21 +1,8 @@
-import { type Grant, signGrantAgent } from "@shared/auth/agent-run-token.ts";
 import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import type { UserBalance } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { fixLink, type RefusalContext } from "@shared/http/fix-link.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
-import { PermissionRequiredError } from "@shared/http/permission-required-error.ts";
-import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-
-/**
- * Refusals the key's owner can fix. Each one links the enter page that fixes
- * it, and the same link goes into the error message, the JSON `fixUrl` and the
- * chat reply.
- */
-export type RefusalContext = {
-    env: { ENVIRONMENT?: string; BETTER_AUTH_SECRET: string };
-    var: { auth?: AuthVariables["auth"] };
-};
 
 /** The app to return to after a fix: the key's app, else the page that sent the request. */
 export function appOrigin(
@@ -30,57 +17,6 @@ export function appOrigin(
     } catch {
         return undefined;
     }
-}
-
-/** A link to an enter page on the environment that matches this gen. */
-export function fixLink(
-    c: RefusalContext,
-    path: string,
-    params: Record<string, string | undefined>,
-): string {
-    // app.request() tests run without env.
-    const base =
-        c.env?.ENVIRONMENT === "staging"
-            ? PUBLIC_URLS.enter.staging
-            : PUBLIC_URLS.enter.production;
-    const url = new URL(path, base);
-    for (const [key, value] of Object.entries({
-        ...params,
-        redirect: c.var.auth?.appOrigin,
-    })) {
-        if (value) url.searchParams.set(key, value);
-    }
-    return url.toString();
-}
-
-export function permissionRequired(
-    c: RefusalContext,
-    grant: Grant,
-    reason: string,
-): PermissionRequiredError {
-    const id = c.var.auth?.apiKey?.id ?? "";
-    // During an agent run, sign the agent's name into the link so the grant
-    // page can show who asked without trusting the agent to name itself.
-    const agent = c.var.auth?.agentRun?.agentModelId;
-    const sig =
-        agent &&
-        signGrantAgent({
-            secret: c.env.BETTER_AUTH_SECRET,
-            apiKeyId: id,
-            grant,
-            agent,
-        });
-    const fixUrl = fixLink(c, "/grant", {
-        id,
-        ...grant,
-        agent,
-        sig,
-        ref: "agent_grant",
-    });
-    return new PermissionRequiredError(
-        `${reason} Allow it at ${fixUrl}`,
-        fixUrl,
-    );
 }
 
 /**
@@ -110,6 +46,18 @@ export async function requireFunds(
         : balance;
     if (canCoverEstimatedCharge(spendable, cost, paidOnly)) return balance;
 
+    if (balance.questPollenRestricted) {
+        const fixUrl = fixLink(c, "/top-up", {
+            ref: "quest_pollen_restricted",
+        });
+        throw new PaymentRequiredError(
+            "QUEST_POLLEN_RESTRICTED",
+            `We couldn't verify your account, so Quest pollen is locked. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
+            fixUrl,
+            true,
+        );
+    }
+
     if (questPollenOnly) {
         const fixUrl = fixLink(c, "/edit-key", {
             id: apiKey?.id,
@@ -131,7 +79,9 @@ export async function requireFunds(
     const fixUrl = fixLink(c, "/top-up", { ref: "agent_low_balance_topup" });
     throw new PaymentRequiredError(
         "INSUFFICIENT_BALANCE",
-        `Insufficient balance. ${charge}, but your available ${paidOnly ? "paid " : ""}balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`,
+        paidOnly
+            ? `This model requires Paid Pollen, so Quest Pollen can't cover it. ${charge}, but your available paid balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`
+            : `Insufficient balance. ${charge}, but your available balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`,
         fixUrl,
         paidOnly,
     );

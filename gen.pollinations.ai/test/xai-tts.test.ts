@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { XAI_TTS_VOICES } from "../../shared/registry/audio.ts";
+import { isRetryableFallbackError } from "../src/fallback.ts";
 import { generateXaiSpeech } from "../src/routes/audio.ts";
 
 const log = {
@@ -90,6 +91,46 @@ describe("generateXaiSpeech", () => {
             voice_id: "eve",
         });
     });
+
+    it.each([
+        [404, "TTS synthesis failed: Voice 'nyra' not found", 400, false],
+        [404, "Model not found", 502, true],
+        [404, "Not Found", 502, true],
+        [404, "TTS synthesis failed: Voice 'eve' not found", 502, true],
+        [500, "TTS synthesis failed: Voice 'nyra' not found", 500, true],
+        [429, "Rate limit exceeded", 502, true],
+    ])(
+        "classifies upstream %s %s as %s without losing provider evidence",
+        async (upstreamStatus, message, status, retryable) => {
+            const responseBody = JSON.stringify({ error: message });
+            const fetchMock = vi.fn().mockResolvedValueOnce(
+                new Response(responseBody, {
+                    status: upstreamStatus as number,
+                    headers: { "x-request-id": "provider-request" },
+                }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
+
+            const error = await generateXaiSpeech({
+                text: "Hello",
+                voice: "nyra",
+                responseFormat: "mp3",
+                apiKey: "test-key",
+                log,
+            }).catch((error: unknown) => error);
+
+            expect(error).toMatchObject({
+                status,
+                upstreamStatus,
+                message,
+                responseBody,
+                requestUrl: new URL("https://api.x.ai/v1/tts"),
+                upstreamHeaders: { "x-request-id": "provider-request" },
+            });
+            expect(isRetryableFallbackError(error)).toBe(retryable);
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it("rejects requests when xAI is not configured", async () => {
         await expect(

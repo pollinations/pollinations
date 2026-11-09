@@ -34,6 +34,7 @@ import {
     GENERATION_HANDOFF_PATH,
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
+import { refreshCommunityModelRegistryCache } from "./community-models.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -340,10 +341,32 @@ export default {
         }
         return serveSite(request, env) ?? app.fetch(request, env, ctx);
     },
-    // The only cron, every 5 minutes (wrangler.toml). Leases end only after
-    // the keeper has renewed the kept sandboxes.
-    scheduled: async (_controller, env, ctx) => {
-        await keepSandboxes(env, ctx);
-        await stopExpiredAzureSandboxes(env);
+    scheduled: async (controller, env, ctx) => {
+        if (controller.cron === "* * * * *") {
+            // infra-watch reads the heartbeat's age to spot a failing refresh.
+            await refreshCommunityModelRegistryCache(env)
+                .then(() =>
+                    env.KV.put(
+                        "heartbeat:community-catalog",
+                        Date.now().toString(),
+                    ),
+                )
+                .catch((error) => {
+                    console.error(
+                        "Community model catalog refresh failed",
+                        error,
+                    );
+                });
+            return;
+        }
+        // Every 5 minutes. Leases end only after the keeper has renewed the
+        // kept sandboxes; catalog refreshes do not change their cadence. A
+        // failed keeper still stops expired boxes: a lease outlives one run.
+        try {
+            await keepSandboxes(env, ctx);
+        } finally {
+            await stopExpiredAzureSandboxes(env);
+        }
+        await env.KV.put("heartbeat:sandbox-keeper", Date.now().toString());
     },
 } satisfies ExportedHandler<CloudflareBindings>;

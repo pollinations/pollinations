@@ -106,6 +106,13 @@ name = "EDGE_IP_RATE_LIMITER"
 namespace_id = "1005"
 simple = { limit = 100, period = 10 }
 
+# Caps uploads per account after the key check, since one account can make
+# many keys. Normal uploaders stay well below it; it stops the largest bursts.
+[[env.production.ratelimits]]
+name = "UPLOAD_RATE_LIMITER"
+namespace_id = "1006"
+simple = { limit = 100, period = 60 }
+
 [vars]
 MAX_FILE_SIZE = "419430400"  # 400 MiB in bytes
 

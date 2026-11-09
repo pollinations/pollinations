@@ -8,10 +8,13 @@ import {
     communityDown,
     conditions,
     duration,
+    earlyErrors,
     escalates,
     heartbeat,
+    jobsStale,
     legacyDown,
     noteworthy,
+    paymentsFailing,
     RECOVER_CHECKS,
     releaseCommands,
     renderCard,
@@ -235,6 +238,167 @@ test("gen down needs 3 checks in a row, then closes as soon as gen is back", () 
     assert.equal(r.actions[0].type, "open");
     r = step(r.state, {}, 3);
     assert.equal(r.actions[0].type, "close");
+});
+
+test("Enter down opens after 3 checks and closes on its own check, whatever gen does", () => {
+    const enter = { kind: "ENTER_DOWN", error: "HTTP 500" };
+    const gen = { kind: "GEN_DOWN" };
+    let r = { state: {} };
+    for (const t of [1, 2, 3]) r = step(r.state, { gen, enter }, t);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open gen", "open enter"],
+    );
+    // Enter answers again while gen is still down: only Enter closes.
+    r = step(r.state, { gen }, 4);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["update gen", "close enter"],
+    );
+    // And while the status data is down.
+    const analytics = { kind: "ANALYTICS_DOWN" };
+    for (const t of [5, 6, 7]) r = step(r.state, { analytics, enter }, t);
+    r = step(r.state, { analytics }, 8);
+    assert.ok(r.actions.some((a) => a.type === "close" && a.key === "enter"));
+});
+
+// Rows as infra_watch_payments returns them.
+const webhook5xx = {
+    kind: "server_error",
+    id: "/api/webhooks/stripe",
+    ref: "",
+    amount_cents: 0,
+    reason: "500",
+    n: 3,
+    at: "2026-11-08 14:40:02",
+};
+const unpaid = (id, at, extra = {}) => ({
+    kind: "not_credited",
+    id,
+    ref: "",
+    amount_cents: 1000,
+    reason: "",
+    n: 1,
+    at,
+    ...extra,
+});
+
+test("payments fail on any row and open on the first check with a ping", () => {
+    assert.deepEqual(paymentsFailing([]), {});
+    const rows = [
+        unpaid("pi_late", "2026-11-08 14:32:15", {
+            ref: "in_late",
+            amount_cents: 1065,
+            reason: "amount mismatch",
+        }),
+        unpaid("pi_pack", "2026-11-08 13:00:00"),
+        webhook5xx,
+    ];
+    let r = step({}, paymentsFailing(rows), 1);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open payments"],
+    );
+    const card = renderCard("payments", r.state.open.payments, { now: 1 });
+    assert.ok(card.ping);
+    assert.equal(card.color, 0xe24b4a);
+    const text = plain(card.text);
+    assert.ok(text.includes("FAILING: payments"));
+    // The server error first, then the payments oldest first, with ids.
+    const order = [
+        "/api/webhooks/stripe",
+        "3x 500 in 15 min, last 11-08 14:40 UTC",
+        "pi_pack",
+        "$10.00 pack, 11-08 13:00 UTC",
+        "no credit recorded",
+        "pi_late",
+        "in_late",
+        "$10.65 auto top-up, 11-08 14:32 UTC",
+        "amount mismatch",
+    ].map((part) => text.indexOf(part));
+    assert.ok(
+        order.every((at, i) => at > (order[i - 1] ?? -1)),
+        order,
+    );
+    r = step(r.state, {}, 2);
+    assert.equal(r.actions[0].type, "close");
+});
+
+// 8 Nov 2026: D1 stalls of a few seconds, minutes apart.
+const minute = (time, failures, d1_failures = failures, top_route = "/*") => ({
+    minute: `2026-11-08 ${time}:00`,
+    failures,
+    d1_failures,
+    top_route,
+});
+const bursts = [
+    minute("15:20", 2, 0),
+    minute("15:21", 232, 230),
+    minute("15:25", 2, 2, "/v1/models"),
+    minute("15:32", 82, 82, "/image/:prompt"),
+];
+
+test("early errors fail on any minute of 25+ failed requests in the window", () => {
+    assert.deepEqual(
+        earlyErrors([minute("15:20", 24), minute("15:25", 3)]),
+        {},
+    );
+    assert.deepEqual(earlyErrors(bursts).early, {
+        kind: "EARLY_ERRORS",
+        worst: 232,
+        route: "/*",
+        bursts: 2,
+        failures: 318,
+        d1: 314,
+        lastAt: Date.UTC(2026, 10, 8, 15, 32),
+    });
+});
+
+test("early errors open on their first check, ping, and close once clean", () => {
+    let r = step({}, earlyErrors(bursts), 1);
+    assert.deepEqual(
+        r.actions.map((a) => `${a.type} ${a.key}`),
+        ["open early"],
+    );
+    const card = renderCard("early", r.state.open.early, { now: 1 });
+    assert.ok(card.ping);
+    assert.equal(card.color, 0xe24b4a);
+    const text = plain(card.text);
+    assert.ok(text.includes("FAILING: Enter database (D1)"));
+    assert.ok(text.includes("232 reqs failed in 1 min"));
+    assert.ok(text.includes("314 database, 4 other"));
+    assert.ok(text.includes("2 min of 30, 318 failed"));
+    assert.ok(text.includes("2026-11-08 15:32 UTC"));
+    r = step(r.state, {}, 2);
+    assert.equal(r.actions[0].type, "close");
+});
+
+test("a payments card lists at most three payments", () => {
+    const rows = ["01", "02", "03", "04", "05"].map((m) =>
+        unpaid(`pi_${m}`, `2026-11-08 10:${m}:00`),
+    );
+    const r = step({}, paymentsFailing(rows), 1);
+    const text = plain(
+        renderCard("payments", r.state.open.payments, { now: 1 }).text,
+    );
+    assert.ok(text.includes("pi_03"));
+    assert.ok(!text.includes("pi_04"));
+    assert.ok(text.includes("+2 more payments"));
+});
+
+test("early errors not mostly from the database are named as such", () => {
+    const r = step({}, earlyErrors([minute("15:21", 40, 10, "/api/x")]), 1);
+    const text = plain(
+        renderCard("early", r.state.open.early, { now: 1 }).text,
+    );
+    assert.ok(text.includes("FAILING: requests before any model"));
+    assert.ok(text.includes("10 database, 30 other"));
+});
+
+test("an early-errors burst pings again only once it doubles the worst one pinged", () => {
+    const at = (worst) => snapshot({ kind: "EARLY_ERRORS", info: { worst } });
+    assert.equal(escalates(at(232), at(400)), false);
+    assert.equal(escalates(at(232), at(464)), true);
 });
 
 test("analytics outage pauses model incidents but is not gen down", () => {
@@ -750,4 +914,41 @@ test("a legacy bridge card gives the last hour against its medians and pings", (
     const quiet = legacyDown([bridge({ last_hour_requests: 40, degraded: 1 })]);
     const opened = step({}, quiet, 1000 * MIN).state.open["legacy:text"];
     assert.doesNotMatch(renderCard("legacy:text", opened).text, /WHY/);
+});
+
+test("a job is stale past its table's max age, after 3 checks, pinging as the table says", () => {
+    const rows = [
+        { source: "error_event", age_seconds: 15 * 60 },
+        { source: "product_event", age_seconds: 15 * 60 + 1 },
+        { source: "d1_copy", age_seconds: 7 * 60 * 60 },
+        { source: "unknown", age_seconds: 1e9 },
+    ];
+    const found = jobsStale(rows);
+    assert.deepEqual(Object.keys(found), [
+        "stale:product_event",
+        "stale:d1_copy",
+    ]);
+    let state = {};
+    for (let i = 1; i <= CONFIRM_CHECKS; i++) {
+        const next = step(state, found, i * MIN);
+        assert.equal(next.actions.length, i < CONFIRM_CHECKS ? 0 : 2);
+        state = next.state;
+    }
+    const ping = (key) => renderCard(key, state.open[key], { now: 0 });
+    const feed = ping("stale:product_event");
+    assert.equal(feed.ping, true);
+    assert.match(plain(feed.text), /┌─ STALE: Enter feed \(product_event\) ─/);
+    assert.match(plain(feed.text), /NEWEST {2}15 min old/);
+    const copy = ping("stale:d1_copy");
+    assert.equal(copy.ping, false);
+    assert.match(plain(copy.text), /NEWEST {2}7 h 00 min old/);
+    assert.match(plain(copy.text), /MAX {5}6 h 00 min/);
+    // A source with no row in the pipe's day.
+    const empty = jobsStale([{ source: "error_event", age_seconds: 1.8e9 }]);
+    const card = renderCard(
+        "stale:error_event",
+        { kind: "JOB_STALE", openedAt: 0, info: empty["stale:error_event"] },
+        { now: 0 },
+    );
+    assert.match(plain(card.text), /none in the last day/);
 });

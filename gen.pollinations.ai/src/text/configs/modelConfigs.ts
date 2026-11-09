@@ -1046,6 +1046,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/deepseek-v4p1-flash-1017",
         }),
 
+    // -- Fireworks AI (Muse Spark Open) --------------------------------------
+    "accounts/fireworks/models/muse-spark-open": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/muse-spark-open",
+            serviceTier: "default",
+        }),
+
     // -- Kimi K3 (global Bedrock, then Fireworks) -----------------------------
     "kimi-k3-bedrock": () =>
         createBedrockChatConfig("global.moonshotai.kimi-k3"),
@@ -1099,6 +1106,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
+            // Mistral's server rejects unknown message fields on Azure too.
+            { supportsReasoningHistory: false },
         ),
 
     // -- Claude via Anthropic and AWS Bedrock ---------------------------------
@@ -1335,6 +1344,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-wonder-1.0",
+        }),
+    "meta/muse-spark-open:vercel:baseten": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-open",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

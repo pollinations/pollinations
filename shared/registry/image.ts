@@ -2,10 +2,31 @@ import { defineCostVariants, matchResolution } from "./cost-variants";
 import { IMAGE_FALLBACKS } from "./image-fallbacks";
 import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
-import type { ModelDefinition } from "./registry";
+import type { BillingRules, ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
 const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
+
+// The fal fallback reports its complete USD charge, without token counts.
+const GPT_IMAGE_26_BILLING: BillingRules = {
+    adjustments: [
+        {
+            id: "fal.gpt_image_2_6.provider_units.v1",
+            description: "Fallback provider charge instead of token billing",
+            kind: "image",
+            unit: "provider unit",
+            unitCost: 1,
+            publicPricing: {
+                label: "Fallback provider cost",
+                quantity: 1,
+                unit: "USD",
+            },
+            countUnits: (_output, input) => input?.providerBilling?.units ?? 0,
+            resolveUnitCost: (_output, _model, input) =>
+                input?.providerBilling?.unitCost ?? 1,
+        },
+    ],
+};
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
@@ -725,6 +746,54 @@ const IMAGE_BASE_SERVICES = {
         title: "GPT Image 2.5 Sunburst",
         description:
             "Detailed image generation with precise control over reference-image edits",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+        supportsTransparency: true,
+    },
+    "openai/gpt-image-2.6-flare": {
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-11-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.6-flare
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        billing: GPT_IMAGE_26_BILLING,
+        title: "GPT Image 2.6 Flare",
+        description:
+            "Fast image generation and editing with consistent reference details",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+        supportsTransparency: true,
+    },
+    "openai/gpt-image-2.6-sunburst": {
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-11-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.6-sunburst
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        billing: GPT_IMAGE_26_BILLING,
+        title: "GPT Image 2.6 Sunburst",
+        description:
+            "Detailed compositions and precise editing that preserves reference details",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,

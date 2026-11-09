@@ -742,6 +742,36 @@ test("advertises reasoning capability for Azure GPT models that accept reasoning
     }
 });
 
+test("video models advertise the durations they accept", async () => {
+    type ListedModel = {
+        id: string;
+        category: string;
+        video_capabilities?: string[];
+        min_duration?: number;
+        max_duration?: number;
+        default_duration?: number;
+        allowed_durations?: number[];
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    const videos = list.data.filter((model) => model.category === "video");
+    expect(videos.length).toBeGreaterThan(0);
+    for (const model of videos) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.video_capabilities, model.id).toEqual(
+            info?.video_capabilities,
+        );
+        expect(model.min_duration, model.id).toBe(info?.min_duration);
+        expect(model.max_duration, model.id).toBe(info?.max_duration);
+        expect(model.default_duration, model.id).toBe(info?.default_duration);
+        expect(model.allowed_durations, model.id).toEqual(
+            info?.allowed_durations,
+        );
+    }
+});
+
 test("speech models advertise the voices they accept", async () => {
     type ListedModel = { id: string; category: string; voices?: string[] };
     const list = (await (await fetchWorker("/v1/models")).json()) as {

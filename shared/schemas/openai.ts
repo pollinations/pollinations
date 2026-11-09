@@ -841,8 +841,14 @@ export const OpenAIModelSchema = z
             ),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
-        max_reference_images: ModelInfoSchema.shape.max_reference_images,
-        max_reference_videos: ModelInfoSchema.shape.max_reference_videos,
+        max_reference_images:
+            ModelInfoSchema.shape.max_reference_images.describe(
+                "Most reference or input images one request accepts. Omitted when the model declares none.",
+            ),
+        max_reference_videos:
+            ModelInfoSchema.shape.max_reference_videos.describe(
+                "Most reference or input videos one request accepts. Omitted when the model declares none.",
+            ),
         health: ModelHealthSchema.optional(),
     })
     .meta({

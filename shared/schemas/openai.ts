@@ -840,8 +840,34 @@ export const OpenAIModelSchema = z
                 "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
             ),
         context_length: z.number().optional(),
+        video_capabilities: ModelInfoSchema.shape.video_capabilities.describe(
+            "Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video.",
+        ),
+        min_duration: ModelInfoSchema.shape.min_duration.describe(
+            "Shortest accepted video or audio `duration` in seconds.",
+        ),
+        max_duration: ModelInfoSchema.shape.max_duration.describe(
+            "Longest accepted video or audio `duration` in seconds.",
+        ),
+        default_duration: ModelInfoSchema.shape.default_duration.describe(
+            "Video length in seconds when the request omits `duration`.",
+        ),
+        allowed_durations: ModelInfoSchema.shape.allowed_durations.describe(
+            "Exact `duration` values in seconds when the model accepts a fixed set instead of a range.",
+        ),
         per_user_rpm: z.number().positive().nullable().optional(),
+        max_reference_images:
+            ModelInfoSchema.shape.max_reference_images.describe(
+                "Most reference or input images one request accepts. Omitted when the model declares none.",
+            ),
+        max_reference_videos:
+            ModelInfoSchema.shape.max_reference_videos.describe(
+                "Most reference or input videos one request accepts. Omitted when the model declares none.",
+            ),
         health: ModelHealthSchema.optional(),
+        voices: ModelInfoSchema.shape.voices.describe(
+            "Preset voice names for the `voice` parameter. Omitted when the model lists none.",
+        ),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

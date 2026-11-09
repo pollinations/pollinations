@@ -660,7 +660,7 @@ describe("isRetryableFallbackError", () => {
         ).toBe(true);
     });
 
-    it("does not multiply the owned Portkey timeout across fallbacks", () => {
+    it("falls back when Portkey's per-attempt timeout expires", () => {
         expect(
             isRetryableFallbackError(
                 textFailure(408, {
@@ -673,7 +673,7 @@ describe("isRetryableFallbackError", () => {
                     },
                 }),
             ),
-        ).toBe(false);
+        ).toBe(true);
         expect(isRetryableFallbackError(textFailure(408))).toBe(true);
     });
 

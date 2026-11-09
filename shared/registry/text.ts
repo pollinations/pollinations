@@ -2543,21 +2543,22 @@ const TEXT_BASE_SERVICES = {
     "moonshotai/kimi-k3.1-pro": {
         supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
         aliases: [],
-        provider: "vercel",
+        provider: "azure",
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-10-23").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // Vercel AI Gateway list rates (2026-11-03), no gateway fee; cache writes
-        // bill at the input rate (Moonshot 5-minute TTL). Moonshot AI is the
-        // only endpoint.
-        // https://ai-gateway.vercel.sh/v1/models/moonshotai/kimi-k3.1-pro/endpoints
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Microsoft Foundry pricing (Microsoft Tech Community, 2026-11-05): $2.30
+        // input, $0.23 cached input and $11.50 output per 1M tokens. Azure
+        // reports image input separately and no cache writes; both bill at the
+        // input rate (cache writes come from the Vercel fallback).
         cost: {
-            promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.2),
-            promptCacheWriteTokens: perMillion(2),
-            completionTextTokens: perMillion(10),
+            promptTextTokens: perMillion(2.3),
+            promptCachedTokens: perMillion(0.23),
+            promptCacheWriteTokens: perMillion(2.3),
+            promptImageTokens: perMillion(2.3),
+            completionTextTokens: perMillion(11.5),
         },
         title: "Kimi K3.1 Pro",
         description:
@@ -2912,17 +2913,19 @@ const TEXT_BASE_SERVICES = {
             "nemotron-3-ultra-550b-a55b",
             "nemotron",
         ],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-07-27").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
-            // Fireworks NVFP4 serverless rates (2026-09-30).
-            promptTextTokens: perMillion(0.6),
-            promptCachedTokens: perMillion(0.12),
-            completionTextTokens: perMillion(2.4),
+            // Azure Fireworks Models, Data Zone Standard (Azure retail prices,
+            // 2026-11-09): $0.66/$0.13/$2.64 per million. Fireworks drops its
+            // own serverless endpoint on 2026-11-07.
+            promptTextTokens: perMillion(0.66),
+            promptCachedTokens: perMillion(0.13),
+            completionTextTokens: perMillion(2.64),
         },
         title: "Nemotron 3 Ultra",
         description:
@@ -2937,18 +2940,20 @@ const TEXT_BASE_SERVICES = {
     "nvidia/nemotron-3.5-lightning": {
         supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: ["nemotron-3.5-lightning"],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         perUserRpm: 60,
         cost: {
-            // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
-            promptTextTokens: perMillion(0.05),
+            // Azure Fireworks Models, Data Zone Standard (Azure retail prices,
+            // 2026-11-09): $0.06/$0.01/$0.22 per million. Fireworks drops its
+            // own serverless endpoint on 2026-11-07.
+            promptTextTokens: perMillion(0.06),
             promptCachedTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.2),
+            completionTextTokens: perMillion(0.22),
         },
         title: "Nemotron 3.5 Lightning",
         description:

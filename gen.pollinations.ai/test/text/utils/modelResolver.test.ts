@@ -765,17 +765,16 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Kimi K3.1 Pro through Vercel AI Gateway without fallback", () => {
+    it("routes Kimi K3.1 Pro to its Microsoft Foundry deployment", () => {
         const result = resolveModelConfig(messages, {
             model: "moonshotai/kimi-k3.1-pro",
         });
 
-        expect(result.options.model).toBe("moonshotai/kimi-k3.1-pro");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://ai-gateway.vercel.sh/v1",
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Kimi-K3.1-Pro",
         });
-        expect(result.options.provider).toBeUndefined();
     });
 
     it("pins Mercury to Inception on OpenRouter without fallback", () => {
@@ -879,39 +878,29 @@ describe("resolveModelConfig", () => {
         expect(transformed?.options.temperature).toBe(0.2);
     });
 
-    it.each([
-        [
-            "nvidia/nemotron-3-ultra",
-            "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
-            "https://api.fireworks.ai/inference/v1",
-        ],
-        [
-            "nvidia/nemotron-3-ultra:deepinfra",
-            "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
-            "https://api.deepinfra.com/v1/openai",
-        ],
-    ])("routes %s directly to its provider", (model, upstream, host) => {
-        const result = resolveModelConfig(messages, { model });
-
-        expect(result.options.model).toBe(upstream);
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": host,
+    it("routes Nemotron 3 Ultra to its Azure deployment", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3-ultra",
         });
-        expect(result.options.provider).toBeUndefined();
+
+        expect(result.options.model).toBe("Nemotron-3-Ultra");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Nemotron-3-Ultra",
+        });
     });
 
-    it("routes Nemotron 3.5 Lightning directly to Fireworks without fallback", () => {
+    it("routes Nemotron 3.5 Lightning to its Azure deployment", () => {
         const result = resolveModelConfig(messages, {
             model: "nemotron-3.5-lightning",
         });
 
-        expect(result.options.model).toBe(
-            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
-        );
+        expect(result.options.model).toBe("Nemotron-3.5-Lightning");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Nemotron-3.5-Lightning",
         });
         expect(result.options.provider).toBeUndefined();
     });

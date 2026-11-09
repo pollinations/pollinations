@@ -110,6 +110,28 @@ describe("billing deduction", () => {
         });
     });
 
+    it("names the paid-only requirement when Quest Pollen cannot cover a model", async () => {
+        const userId = await createUser({
+            tierBalance: 0.232,
+            packBalance: 0,
+        });
+        await expect(
+            requireFunds(
+                { env, var: {} },
+                0.0001,
+                () => getUserBalance(db, userId),
+                true,
+            ),
+        ).rejects.toMatchObject({
+            status: 402,
+            errorCode: "INSUFFICIENT_BALANCE",
+            paidOnly: true,
+            message: expect.stringContaining(
+                "This model requires Paid Pollen, so Quest Pollen can't cover it.",
+            ),
+        });
+    });
+
     it("settles every admitted parallel request even after restricted paid funds run out", async () => {
         const userId = await createUser({ tierBalance: 35.5, packBalance: 2 });
         await db

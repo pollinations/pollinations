@@ -173,6 +173,14 @@ export function legacyDown(rows, open = {}) {
     return found;
 }
 
+// Payments in trouble, the infra_watch_payments rows: a Stripe webhook or
+// checkout 5xx in the last 15 minutes, or a pack or auto top-up paid 15
+// minutes to 24 hours ago with no pollen credited. Each is a paying customer
+// and there are none in a normal month, so the first row opens the card.
+export function paymentsFailing(rows) {
+    return rows.length ? { payments: { kind: "PAYMENTS_FAILING", rows } } : {};
+}
+
 // Requests failing before any model is known (an API-key, sign-in or
 // balance check, mostly Enter's database) are failing while any minute of the
 // last 30 had at least this many; quiet minutes have 0 to 6. They come in
@@ -197,6 +205,63 @@ export function earlyErrors(minutes) {
             lastAt: minuteMs(bursts.at(-1).minute),
         },
     };
+}
+
+// Background jobs and analytics feeds, each stale while its newest data is
+// older than `maxSeconds`. A row per job: `name` titles its card, `ping`
+// says whether its opening card pings, `effect` what goes wrong meanwhile.
+// Every alert reads error_event or product_event, so those ping; the D1 copy
+// runs every 4 hours and a GitHub cron start can slip by almost 2, so it
+// waits 6 hours and only posts.
+export const STALE_JOBS = {
+    error_event: {
+        name: "error feed (error_event)",
+        maxSeconds: 15 * 60,
+        ping: true,
+        effect: "error alerts are blind",
+    },
+    product_event: {
+        name: "Enter feed (product_event)",
+        maxSeconds: 15 * 60,
+        ping: true,
+        effect: "sign-in, payment data missing",
+    },
+    d1_copy: {
+        name: "D1 to Tinybird copy",
+        maxSeconds: 6 * 60 * 60,
+        ping: false,
+        effect: "KPIs and abuse data stale",
+    },
+    // gen's crons, by the heartbeat each writes after a run (GEN_HEARTBEATS).
+    "community-catalog": {
+        name: "community model catalog refresh",
+        maxSeconds: 5 * 60,
+        ping: true,
+        effect: "community model changes not served",
+    },
+    "sandbox-keeper": {
+        name: "sandbox keeper",
+        maxSeconds: 15 * 60,
+        ping: true,
+        effect: "kept sandboxes end, expired Azure ones run on",
+    },
+};
+// The STALE_JOBS rows gen reports by heartbeat instead of Tinybird.
+export const GEN_HEARTBEATS = ["community-catalog", "sandbox-keeper"];
+// `rows` are { source, age_seconds }, from infra_watch_freshness; a source
+// missing from STALE_JOBS is ignored.
+export function jobsStale(rows) {
+    const found = {};
+    for (const { source, age_seconds } of rows) {
+        const job = STALE_JOBS[source];
+        if (job && age_seconds > job.maxSeconds)
+            found[`stale:${source}`] = {
+                kind: "JOB_STALE",
+                job: source,
+                ageSeconds: age_seconds,
+            };
+    }
+    return found;
 }
 
 const CONFIRMED = new Set([
@@ -240,7 +305,8 @@ export function step(state, found, now, recent = []) {
         streaks[key] = streak;
         const incident = open[key];
         if (!incident) {
-            if (streak < (CONFIRMED.has(key) ? CONFIRM_CHECKS : 1)) continue;
+            const confirm = CONFIRMED.has(key) || key.startsWith("stale:");
+            if (streak < (confirm ? CONFIRM_CHECKS : 1)) continue;
             open[key] = {
                 kind: info.kind,
                 worst: info.kind,
@@ -465,6 +531,8 @@ const LABEL = {
     SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
+    PAYMENTS_FAILING: "FAILING",
+    JOB_STALE: "STALE",
     EARLY_ERRORS: "FAILING",
 };
 const SUBJECT = {
@@ -476,6 +544,7 @@ const SUBJECT = {
     platform: "platform-wide",
     watch: "infra-watch",
     community: "community monitor",
+    payments: "payments",
 };
 // Sign-up cards are about an email domain.
 const DOMAIN_KEY = /^signup:/;
@@ -486,7 +555,9 @@ const subjectOf = (key) =>
           ? `domain ${key.replace(DOMAIN_KEY, "")}`
           : key.startsWith("legacy:")
             ? `legacy ${key.slice(7)} bridge`
-            : SUBJECT[key];
+            : key.startsWith("stale:")
+              ? STALE_JOBS[key.slice(6)].name
+              : SUBJECT[key];
 // Early errors are named after Enter's database while it causes at least half
 // of them.
 const d1Main = (info) => info.d1 * 2 >= info.failures;
@@ -514,6 +585,8 @@ export const COLOR = {
     SIGNUP_BURST: RED,
     LEGACY_DOWN: 0xd85a30,
     COMMUNITY_DOWN: RED,
+    PAYMENTS_FAILING: RED,
+    JOB_STALE: RED,
     EARLY_ERRORS: RED,
 };
 const GREEN = 0x639922;
@@ -565,11 +638,13 @@ export const waiting = (record, now) =>
 
 // Who an opening card pings: a weak primary never (the fallback keeps
 // callers whole), a model failing for a single caller neither, a Myceli-only
-// hostname neither (users are fine); every other alert does.
+// hostname neither (users are fine), a stale job as STALE_JOBS says; every
+// other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
     if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
         return false;
+    if (kind === "JOB_STALE") return STALE_JOBS[info.job].ping;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
     return true;
@@ -592,6 +667,35 @@ const startRow = (start) => [
     "START",
     `${pct(start.success)} of ${start.nonClient} reqs, ${callersText(start.callers)}`,
 ];
+
+// Server errors first, then each payment with its Stripe ids, oldest first.
+const MAX_PAYMENTS = 3;
+const minute = (at) => `${at.slice(5, 16)} UTC`;
+function paymentRows(rows) {
+    const errors = rows.filter((r) => r.kind === "server_error");
+    const unpaid = rows
+        .filter((r) => r.kind === "not_credited")
+        .sort((a, b) => a.at.localeCompare(b.at));
+    const shown = unpaid.slice(0, MAX_PAYMENTS);
+    return [
+        ...errors.flatMap((r) => [
+            ["5XX", r.id],
+            ["", `${r.n}x ${r.reason} in 15 min, last ${minute(r.at)}`],
+        ]),
+        ...shown.flatMap((r) => [
+            ["PAID", r.id],
+            ...(r.ref ? [["", r.ref]] : []),
+            [
+                "",
+                `$${(r.amount_cents / 100).toFixed(2)} ${r.ref ? "auto top-up" : "pack"}, ${minute(r.at)}`,
+            ],
+            ["", r.reason || "no credit recorded"],
+        ]),
+        ...(unpaid.length > shown.length
+            ? [["", `+${unpaid.length - shown.length} more payments`]]
+            : []),
+    ];
+}
 
 // Rows of an open card: what is true now, plus the frozen start once the
 // card has been updated, so the history stays on the card.
@@ -654,6 +758,21 @@ function openRows(incident, now) {
             ...(info.error ? [["ERROR", info.error]] : []),
             ["", "probes and community posts paused"],
         ];
+    if (kind === "PAYMENTS_FAILING") return paymentRows(info.rows);
+    if (kind === "JOB_STALE") {
+        const job = STALE_JOBS[info.job];
+        return [
+            // The pipe looks back one day: older means no row at all.
+            [
+                "NEWEST",
+                info.ageSeconds < 86_400
+                    ? `${duration(info.ageSeconds * 1000)} old`
+                    : "none in the last day",
+            ],
+            ["MAX", duration(job.maxSeconds * 1000)],
+            ["", job.effect],
+        ];
+    }
     if (kind === "LEGACY_DOWN") {
         const rows = [
             [

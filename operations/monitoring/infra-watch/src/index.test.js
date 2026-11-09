@@ -110,8 +110,16 @@ async function fake(input, init = {}) {
             ? Response.json({ data: world.legacy })
             : new Response("unavailable", { status: 503 });
     }
+    if (url.pathname.endsWith("/infra_watch_freshness.json"))
+        return world.freshness
+            ? Response.json({ data: world.freshness })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.endsWith("/infra_watch_payments.json"))
+        return world.payments
+            ? Response.json({ data: world.payments })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_early_errors.json"))
         return world.early
             ? Response.json({ data: world.early })
@@ -168,10 +176,12 @@ beforeEach(() => {
         agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
+        payments: [],
         early: [],
         enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
+        freshness: [],
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
@@ -1027,6 +1037,41 @@ it("opens an Enter card after three failed key checks, never for a refused key, 
     expect(over(edits(card.messageId).at(-1))).toBe(true);
 });
 
+it("opens a payments card on the first unpaid payment with a ping, keeps it while Tinybird can't say, and closes it once credited", async () => {
+    const stub = watch();
+    const payments = async () => (await stored(stub, "state")).open?.payments;
+    await stub.check();
+    expect(await payments()).toBeUndefined();
+    world.payments = [
+        {
+            kind: "not_credited",
+            id: "pi_3UZX8i7rcjS3l7tr1Scu896L",
+            ref: "in_1UZX8g7rcjS3l7trEyyzuUj8",
+            amount_cents: 1065,
+            reason: "unknown auto top-up attempt",
+            n: 1,
+            at: "2026-11-08 14:32:15",
+        },
+    ];
+    await stub.check();
+    const card = await payments();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("FAILING: payments");
+    expect(post.text).toContain("pi_3UZX8i7rcjS3l7tr1Scu896L");
+    expect(post.text).toContain("in_1UZX8g7rcjS3l7trEyyzuUj8");
+    // The read fails: the card stays open.
+    world.payments = null;
+    await stub.check();
+    expect(await payments()).toBeDefined();
+    // The payment is credited: the card closes.
+    world.payments = [];
+    await stub.check();
+    await settle(stub);
+    expect(await payments()).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
 it("opens an early-errors card on the first bad minute with a ping, keeps it while Tinybird can't say, and closes it once the window is clean", async () => {
     const stub = watch();
     const early = async () => (await stored(stub, "state")).open?.early;
@@ -1627,3 +1672,66 @@ it("tells a served-model mismatch to the maintainers once due, however long deli
     await cycled(stub);
     expect(posts(INFRA)).toHaveLength(2);
 }, 15_000);
+
+it("a stale feed opens after 3 checks with a ping, survives a failed read, and closes once fresh", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.freshness = [
+        { source: "error_event", age_seconds: 20 },
+        { source: "product_event", age_seconds: 1200 },
+    ];
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).open?.["stale:product_event"]).toBe(
+        undefined,
+    );
+    await stub.check();
+    await settle(stub);
+    const { messageId } = (await stored(stub, "state")).open[
+        "stale:product_event"
+    ];
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("STALE: Enter feed (product_event)");
+    expect(posted.text).toContain("20 min old");
+    expect(posted.users.length).toBeGreaterThan(0);
+
+    // Tinybird fails: the card stays open.
+    world.freshness = null;
+    await stub.check();
+    expect(
+        (await stored(stub, "state")).open["stale:product_event"],
+    ).toBeTruthy();
+
+    world.freshness = [{ source: "product_event", age_seconds: 5 }];
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open["stale:product_event"]).toBe(
+        undefined,
+    );
+    expect(over(edits(messageId).at(-1))).toBe(true);
+});
+
+it("a gen cron whose heartbeat is too old opens a stale card; one that never beat is skipped", async () => {
+    const stub = watch();
+    world.rows = OK;
+    await env.GEN_KV.put(
+        "heartbeat:community-catalog",
+        String(Date.now() - 10 * 60_000),
+    );
+    await env.GEN_KV.put("heartbeat:sandbox-keeper", String(Date.now()));
+    await checks(stub, 3);
+    await settle(stub);
+    const { open } = await stored(stub, "state");
+    expect(Object.keys(open).filter((key) => key.startsWith("stale:"))).toEqual(
+        ["stale:community-catalog"],
+    );
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("STALE: community model catalog refresh");
+
+    await env.GEN_KV.delete("heartbeat:sandbox-keeper");
+    await env.GEN_KV.put("heartbeat:community-catalog", String(Date.now()));
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open["stale:community-catalog"]).toBe(
+        undefined,
+    );
+});

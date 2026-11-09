@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { saveCredentials, setKeyOverride } from "../lib/config.js";
 import { ExitSignal, setOutputMode } from "../lib/output.js";
-import { authCommand, loginWithDeviceFlow } from "./auth.js";
+import { authCommand, loginWithDeviceFlow, showAuthStatus } from "./auth.js";
 
 vi.mock("../lib/config.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../lib/config.js")>();
@@ -218,4 +218,20 @@ describe("auth login with a key", () => {
         expect(fetch).not.toHaveBeenCalled();
         expect(saveCredentials).not.toHaveBeenCalled();
     });
+});
+
+it("reports a revoked stored key as unauthenticated", async () => {
+    setKeyOverride("sk_revoked");
+    setOutputMode("json");
+    vi.stubGlobal("fetch", async () =>
+        Response.json({ error: "Invalid API key" }, { status: 401 }),
+    );
+    const stdout = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
+    await showAuthStatus();
+    expect(
+        JSON.parse(stdout.mock.calls.map(([text]) => String(text)).join("")),
+    ).toMatchObject({ authenticated: false });
+    expect(saveCredentials).not.toHaveBeenCalled();
 });

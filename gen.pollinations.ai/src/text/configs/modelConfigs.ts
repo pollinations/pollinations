@@ -756,6 +756,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
+    // -- Azure Fireworks Models (NVIDIA) --------------------------------------
+    "azure/Nemotron-3-Ultra": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3-Ultra/chat/completions?api-version=2024-12-01-preview",
+        ),
+
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
         createDeepInfraModelConfig({

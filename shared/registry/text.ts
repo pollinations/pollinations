@@ -2905,25 +2905,26 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3-ultra": {
-        supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
             "nemotron-3-ultra-550b-a55b",
             "nemotron",
         ],
-        provider: "deepinfra",
+        provider: "azure",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-07-27").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
+        paidOnly: false,
+        priceMultiplier: 0.75,
         cost: {
-            // DeepInfra NVFP4 standard-tier rates (2026-10-24). Fireworks
-            // drops this model from serverless on 2026-11-07.
-            promptTextTokens: perMillion(0.5),
-            promptCachedTokens: perMillion(0.1),
-            completionTextTokens: perMillion(2.2),
+            // Azure Fireworks Models, Data Zone Standard (Azure retail prices,
+            // 2026-11-09): $0.66/$0.13/$2.64 per million. Fireworks drops its
+            // own serverless endpoint on 2026-11-07.
+            promptTextTokens: perMillion(0.66),
+            promptCachedTokens: perMillion(0.13),
+            completionTextTokens: perMillion(2.64),
         },
         title: "Nemotron 3 Ultra",
         description:

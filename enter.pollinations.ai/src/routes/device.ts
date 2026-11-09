@@ -1,7 +1,6 @@
 import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import { findPublishableClientKey } from "@shared/auth/api-key-creation.ts";
 import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
-import { isClientMetadataUrl } from "@shared/auth/authorize-config.ts";
 import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -15,7 +14,6 @@ import { z } from "zod";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
-import { fetchClientMetadata } from "../services/client-metadata.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
 
 type AuthedContext = Context<{
@@ -74,9 +72,6 @@ async function isKnownDeviceClient(
     c: Context<Env>,
     clientId: string,
 ): Promise<boolean> {
-    if (isClientMetadataUrl(clientId)) {
-        return (await fetchClientMetadata(clientId)) !== null;
-    }
     const db = drizzle(c.env.DB, { schema });
     const key = await findPublishableClientKey(
         createAuth(c.env, c.executionCtx),

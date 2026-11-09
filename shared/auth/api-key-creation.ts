@@ -148,7 +148,7 @@ export async function findPublishableClientKey(
     authClient: CreateApiKeyAuthClient,
     db: ApiKeyDb,
     clientId: string,
-): Promise<{ id: string } | null> {
+): Promise<typeof schema.apikey.$inferSelect | null> {
     if (!clientId.startsWith("pk_")) return null;
 
     const result = await authClient.api.verifyApiKey({
@@ -165,7 +165,7 @@ export async function findPublishableClientKey(
         where: eq(schema.user.id, clientKey.referenceId),
     });
     if (!owner || isUserBanned(owner)) return null;
-    return { id: clientKey.id };
+    return clientKey;
 }
 
 async function validateClientRedirectBinding(

@@ -10,7 +10,10 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
-import { refreshQuestLeaderboard } from "./routes/quest-leaderboard.ts";
+import {
+    LEADERBOARD_SLICE_PAUSE_MS,
+    refreshQuestLeaderboard,
+} from "./routes/quest-leaderboard.ts";
 import { getCurrentGenOrigin, wellKnownRoutes } from "./routes/well-known.ts";
 import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
 
@@ -90,6 +93,6 @@ export default {
     },
     // Every 15 minutes (wrangler.toml).
     async scheduled(_controller, env) {
-        await refreshQuestLeaderboard(env);
+        await refreshQuestLeaderboard(env, LEADERBOARD_SLICE_PAUSE_MS);
     },
 } satisfies ExportedHandler<Env["Bindings"]>;

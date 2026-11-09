@@ -353,6 +353,44 @@ test("pause stops the box, connect resumes it, and the cron stops boxes whose le
         .where(eq(azureSandbox.sandboxId, kept))
         .get();
     expect(row?.endAt.getTime()).toBeGreaterThan(Date.now() + 590_000);
+    expect(Number(await env.KV.get("heartbeat:sandbox-keeper"))).toBeCloseTo(
+        Date.now(),
+        -4,
+    );
+});
+
+test("a failing keeper still stops expired boxes and skips the heartbeat", async () => {
+    const azure = stubAzure();
+    await env.KV.delete("heartbeat:sandbox-keeper");
+    azure.boxes.push({
+        id: crypto.randomUUID(),
+        state: "Running",
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        labels: { pollinations_user: "owner" },
+    });
+    // D1 refuses the keeper's first statement only.
+    const DB = {
+        prepare: (sql: string) => {
+            if (sql.startsWith('delete from "sandbox_keep"')) {
+                throw new Error("D1_ERROR: overloaded");
+            }
+            return env.DB.prepare(sql);
+        },
+        batch: env.DB.batch.bind(env.DB),
+    } as unknown as CloudflareBindings["DB"];
+
+    const ctx = createExecutionContext();
+    await expect(
+        worker.scheduled(
+            createScheduledController({ cron: "*/5 * * * *" }),
+            { ...azureEnv, DB },
+            ctx,
+        ),
+    ).rejects.toThrow("overloaded");
+    await waitOnExecutionContext(ctx);
+
+    expect(azure.boxes.map((box) => box.state)).toEqual(["Stopped"]);
+    expect(await env.KV.get("heartbeat:sandbox-keeper")).toBeNull();
 });
 
 test("Azure templates refuse to start until Azure is configured", async () => {

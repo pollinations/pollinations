@@ -856,6 +856,14 @@ export const OpenAIModelSchema = z
             "Exact `duration` values in seconds when the model accepts a fixed set instead of a range.",
         ),
         per_user_rpm: z.number().positive().nullable().optional(),
+        max_reference_images:
+            ModelInfoSchema.shape.max_reference_images.describe(
+                "Most reference or input images one request accepts. Omitted when the model declares none.",
+            ),
+        max_reference_videos:
+            ModelInfoSchema.shape.max_reference_videos.describe(
+                "Most reference or input videos one request accepts. Omitted when the model declares none.",
+            ),
         health: ModelHealthSchema.optional(),
         voices: ModelInfoSchema.shape.voices.describe(
             "Preset voice names for the `voice` parameter. Omitted when the model lists none.",

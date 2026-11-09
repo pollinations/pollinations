@@ -888,10 +888,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "meta/muse-wonder",
         "meta",
     ),
-    "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
-        "nvidia/nemotron-3.5-lightning",
-        "coreweave/bf16",
-    ),
     "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
         createDeepInfraModelConfig({
             model: "nvidia/NVIDIA-Nemotron-3.5-Super-VL",
@@ -1313,9 +1309,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
-    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+    "azure/Nemotron-3.5-Lightning": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3.5-Lightning/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "nvidia/NVIDIA-Nemotron-3.5-Lightning": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Lightning",
         }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({

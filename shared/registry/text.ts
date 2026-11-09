@@ -2939,18 +2939,20 @@ const TEXT_BASE_SERVICES = {
     "nvidia/nemotron-3.5-lightning": {
         supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: ["nemotron-3.5-lightning"],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         perUserRpm: 60,
         cost: {
-            // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
-            promptTextTokens: perMillion(0.05),
+            // Azure Fireworks Models, Data Zone Standard (Azure retail prices,
+            // 2026-11-09): $0.06/$0.01/$0.22 per million. Fireworks drops its
+            // own serverless endpoint on 2026-11-07.
+            promptTextTokens: perMillion(0.06),
             promptCachedTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.2),
+            completionTextTokens: perMillion(0.22),
         },
         title: "Nemotron 3.5 Lightning",
         description:

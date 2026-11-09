@@ -1147,15 +1147,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3.5-lightning",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
-        ],
+        config: portkeyConfig["azure/Nemotron-3.5-Lightning"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
-        config: portkeyConfig["nemotron-3.5-lightning-openrouter-coreweave"],
-        transform: fireworksThinking,
+        name: "nvidia/nemotron-3.5-lightning:deepinfra",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Lightning"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "nvidia/nemotron-3.5-super-vl",

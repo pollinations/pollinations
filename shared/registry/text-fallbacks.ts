@@ -865,16 +865,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "nvidia/nemotron-3.5-lightning": {
-        "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
-            supportedParameters: CHAT_PARAMETERS.openRouterNemotron,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+        "nvidia/nemotron-3.5-lightning:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
+            provider: "deepinfra",
+            addedDate: new Date("2026-11-09").getTime(),
             cost: {
-                // OpenRouter CoreWeave BF16 rates (2026-09-21), including the
-                // account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.07) * 1.055,
-                promptCachedTokens: perMillion(0.04) * 1.055,
-                completionTextTokens: perMillion(0.2) * 1.055,
+                // DeepInfra BF16 rates (2026-10-24): $0.06/$0.03/$0.16 per million.
+                promptTextTokens: perMillion(0.06),
+                promptCachedTokens: perMillion(0.03),
+                completionTextTokens: perMillion(0.16),
             },
         },
     },

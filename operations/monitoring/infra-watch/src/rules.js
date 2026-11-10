@@ -274,7 +274,8 @@ const CONFIRMED = new Set([
 ]);
 const HOSTS = { gen: true, public: true, upstream: true, enter: true };
 // Checked on their own, so judged whatever gen or analytics does.
-const independent = (key) => key === "enter" || key === "payments";
+const independent = (key) =>
+    key === "enter" || key === "payments" || key.startsWith("stale:");
 // A model incident's model, from its key; null for any other incident.
 export const modelOf = (key) =>
     key.startsWith("model:") ? key.slice(6) : null;

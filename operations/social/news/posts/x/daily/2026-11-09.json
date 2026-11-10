@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-09",
+  "period_start": "2026-11-09",
+  "period_end": "2026-11-09",
+  "generated_at": "2026-11-10T06:07:38.519878+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/ee1c41c9f692f51a9178647c808f72646908882d174d9b4cfaad03c5456f181a"
+    }
+  ],
+  "text": "Video controls and durations are now in /v1/models. Wan 3.0 accepts 2–15 seconds instead of a fixed 5. Unsupported durations return 400 before dispatch. The model list knows the rules, so your request doesn't have to guess."
+}

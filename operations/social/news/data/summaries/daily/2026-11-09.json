@@ -1,0 +1,136 @@
+{
+  "date": "2026-11-09",
+  "period_start": "2026-11-09",
+  "period_end": "2026-11-09",
+  "title": "More room to make video",
+  "summary": "New video and text options arrived alongside longer Wan 3.0 clips, richer model metadata, and less brittle fallbacks.\n\nGemini Omni 1.2 Flash was added for paid video generation with text or up to two reference images, start and end frames, synchronized audio, and 3 to 15 second output. Wan 3.0 gained a 2 to 15 second duration range instead of a fixed 5 seconds. Video duration metadata was added to `/v1/models`, and unsupported durations now return a 400 before dispatch.\n\nClaude Fable 5.2 was added with a 1M-token context window, image input, tools, and adaptive reasoning. The merged Kimi K3.1 Pro routing change adds a Foundry route and Quest eligibility, with Vercel as fallback; its effective date remains unconfirmed. Both Nemotron models moved off Fireworks serverless, while text requests can try a configured fallback when a provider stays silent until timeout.\n\nThe `/v1/models` response now lists preset voices where available and declared limits for reference images and videos. MAI Image 2.6 Flash also gained an Azure-pinned OpenRouter fallback when its primary route fails, subject to its existing quota limits.",
+  "pr_count": 21,
+  "prs": [
+    {
+      "number": 18289,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 18291,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 18320,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19161,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19163,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19245,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19264,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19267,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19268,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19312,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19338,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19341,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19388,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19390,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19408,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19415,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19416,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19418,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19422,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19426,
+      "date": "2026-11-09"
+    },
+    {
+      "number": 19428,
+      "date": "2026-11-09"
+    }
+  ],
+  "generated_at": "2026-11-10T06:07:38.519878+00:00",
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Gemini Omni 1.2 Flash video",
+      "text": "Generate paid videos with `google/gemini-omni-1.2-flash` from text or up to two reference images. It supports start and end frames, synchronized audio, and 3 to 15 second output from 360p through 4K. [View the model](https://enter.pollinations.ai/models?q=google/gemini-omni-1.2-flash).",
+      "prs": [
+        19245
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Longer Wan 3.0 videos",
+      "text": "Choose any duration from 2 to 15 seconds for Wan 3.0 videos made from text, frames, or reference media. The default stays at 5 seconds. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19418
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Claude Fable 5.2 added",
+      "text": "Use paid-only `anthropic/claude-fable-5.2` for text and image input, tools, and adaptive reasoning. It has a 1M-token context window and accepts up to 20 reference images. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-fable-5.2).",
+      "prs": [
+        19426
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "More details in model listings",
+      "text": "Check `/v1/models` for video controls and durations, preset audio voices, and declared reference image and video limits. Fields appear only where a model defines them. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19338,
+        19341,
+        19390
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
+}

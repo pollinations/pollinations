@@ -679,14 +679,24 @@ describe("generateTextPortkey", () => {
             caller: {
                 provider: { only: ["xai"] },
                 models: ["anthropic/claude-opus-4.7"],
+                preset: "@preset/fallbacks",
+                plugins: [{ id: "web" }],
             },
             sent: {
                 provider: { only: ["xai/zdr"], allow_fallbacks: false },
                 models: undefined,
+                preset: undefined,
+                plugins: undefined,
             },
         },
+        {
+            // The route's own transform still adds its web plugin.
+            model: "google/gemini-2.5-flash-lite:search",
+            caller: { plugins: [{ id: "file-parser" }] },
+            sent: { plugins: [{ id: "web", engine: "exa", max_results: 5 }] },
+        },
     ])(
-        "sends $model only the route's processing tier and provider pins",
+        "sends $model only the route's processing tier, routing and plugins",
         async ({ model, caller, sent }) => {
             syncTextEnvironment({
                 ...env,

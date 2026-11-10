@@ -76,9 +76,21 @@ export async function generateTextPortkey(
     options: TransformOptions = {},
     portkeyFetcher?: OpenAIClientConfig["fetcher"],
 ): Promise<ChatCompletion> {
+    // Processing tiers, upstream routing, presets and plugins decide which
+    // provider runs the request and what it costs, so only the route's config
+    // and transform set them. Drop the caller's before either applies.
+    const {
+        service_tier: _serviceTier,
+        provider: _provider,
+        providerOptions: _providerOptions,
+        models: _models,
+        preset: _preset,
+        plugins: _plugins,
+        ...callerOptions
+    } = options;
     let state: TransformResult = {
         messages,
-        options: normalizeOptions(options),
+        options: normalizeOptions(callerOptions),
     };
     const modelDef = state.options.model
         ? findModelByName(state.options.model)

@@ -12,8 +12,52 @@ import type { FallbackMap } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import { CHAT_PARAMETERS } from "./text-parameters";
 
+// Public chat-audio voices also accepted by direct OpenAI; amuch/dan are Azure-only.
+const OPENAI_CHAT_AUDIO_VOICES = [
+    "alloy",
+    "echo",
+    "fable",
+    "onyx",
+    "nova",
+    "shimmer",
+    "coral",
+    "verse",
+    "ballad",
+    "ash",
+    "sage",
+];
+
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "openai/gpt-5.5": {
+        // Global rates are inferred by removing AWS's documented 10% regional
+        // premium; using them before confirmation is a maintainer-approved risk.
+        "openai/gpt-5.5:aws": {
+            provider: "aws",
+            priceMultiplier: 1,
+        },
+    },
+    "openai/gpt-6.1-terra": {
+        "openai/gpt-6.1-terra:aws": {
+            provider: "aws",
+            priceMultiplier: 1,
+        },
+    },
+    "openai/gpt-audio-mini": {
+        // Direct OpenAI retires this checkpoint on 2027-01-20.
+        "openai/gpt-audio-mini:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+            voices: OPENAI_CHAT_AUDIO_VOICES,
+        },
+    },
+    "openai/gpt-audio-1.5": {
+        "openai/gpt-audio-1.5:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+            voices: OPENAI_CHAT_AUDIO_VOICES,
+        },
+    },
     "openai/gpt-5-nano": {
         "openai/gpt-5-nano:openai": {
             provider: "openai",
@@ -167,14 +211,14 @@ export const TEXT_FALLBACKS = {
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
     "openai/gpt-5.6-sol": {
-        "openai/gpt-5.6-sol:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-sol:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
-    "typesafe/jev-1.13": {
+    "typesafe/jev-1.14": {
         // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
-        "typesafe/jev-1.13:openrouter:typesafe": {
+        "typesafe/jev-1.14:openrouter:typesafe": {
             provider: "openrouter",
             priceMultiplier: 1,
             cost: {
@@ -184,8 +228,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-5.6-luna": {
-        "openai/gpt-5.6-luna:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-luna:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
@@ -222,33 +266,52 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6-astra": {
-        "openai/gpt-6-astra:openai": {
-            provider: "openai",
+        "openai/gpt-6-astra:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
     "openai/gpt-6-sol": {
-        "openai/gpt-6-sol:openai": { provider: "openai" },
+        "openai/gpt-6-sol:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "openai/gpt-5.4": {
-        "openai/gpt-5.4:openai": {
-            provider: "openai",
+        "openai/gpt-5.4:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
     "openai/gpt-6.1-sol": {
-        "openai/gpt-6.1-sol:openai": { provider: "openai" },
+        "openai/gpt-6.1-sol:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "openai/gpt-6-luna": {
-        "openai/gpt-6-luna:openai": { provider: "openai" },
+        "openai/gpt-6-luna:aws": { provider: "aws", priceMultiplier: 1 },
     },
     "x-ai/grok-4.6": {
-        "x-ai/grok-4.6:xai": {
-            provider: "xai",
+        "x-ai/grok-4.6:aws": {
+            provider: "aws",
             priceMultiplier: 1,
             addedDate: new Date("2026-09-24").getTime(),
-            // xAI /v1/language-models/grok-4.6 rates (2026-09-24). Image tokens
-            // bill at the text input rate; reasoning bills as output.
+            // AWS global Standard rates (2026-10-30), with no context surcharge.
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.5),
+                promptImageTokens: perMillion(2),
+                completionTextTokens: perMillion(6),
+            },
+        },
+    },
+    "openai/gpt-5.4-mini": {
+        "openai/gpt-5.4-mini:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
+    "x-ai/grok-4.7": {
+        "x-ai/grok-4.7:xai": {
+            provider: "xai",
+            priceMultiplierVariants: undefined,
+            addedDate: new Date("2026-10-12").getTime(),
+            // Direct xAI retains its own 200K+ provider cost tier.
             cost: {
                 promptTextTokens: perMillion(2),
                 promptCachedTokens: perMillion(0.5),
@@ -262,43 +325,6 @@ export const TEXT_FALLBACKS = {
                         promptCachedTokens: perMillion(1),
                         promptImageTokens: perMillion(4),
                         completionTextTokens: perMillion(12),
-                    },
-                },
-                longContextAtLeast(200_000),
-                {
-                    long_context: {
-                        label: "Long context (≥200K)",
-                        description:
-                            "xAI doubles text, cached, image, and output rates for the whole request.",
-                    },
-                },
-                "<200K context",
-            ),
-        },
-    },
-    "openai/gpt-5.4-mini": {
-        "openai/gpt-5.4-mini:openai": {
-            provider: "openai",
-            priceMultiplier: 1,
-        },
-    },
-    "x-ai/grok-4.7": {
-        "x-ai/grok-4.7:openrouter": {
-            provider: "openrouter",
-            addedDate: new Date("2026-10-12").getTime(),
-            // OpenRouter base xAI rates (2026-10-12), including the account's
-            // 5.5% credit-purchase fee. Images are tokenized into text tokens.
-            cost: {
-                promptTextTokens: perMillion(2) * 1.055,
-                promptCachedTokens: perMillion(0.5) * 1.055,
-                completionTextTokens: perMillion(6) * 1.055,
-            },
-            ...defineCostVariants(
-                {
-                    long_context: {
-                        promptTextTokens: perMillion(4) * 1.055,
-                        promptCachedTokens: perMillion(1) * 1.055,
-                        completionTextTokens: perMillion(12) * 1.055,
                     },
                 },
                 longContextAtLeast(200_000),
@@ -351,8 +377,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-5.6-terra": {
-        "openai/gpt-5.6-terra:openai": {
-            provider: "openai",
+        "openai/gpt-5.6-terra:aws": {
+            provider: "aws",
             priceMultiplier: 1,
         },
     },
@@ -536,6 +562,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
+            cost: {
+                promptTextTokens: perMillion(3),
+                promptCachedTokens: perMillion(0.3),
+                completionTextTokens: perMillion(15),
+            },
+        },
         "moonshotai/kimi-k3:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
@@ -567,6 +602,22 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.5),
                 promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
+            },
+        },
+    },
+    "moonshotai/kimi-k3.1-pro": {
+        "moonshotai/kimi-k3.1-pro:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+            provider: "vercel",
+            addedDate: new Date("2026-11-06").getTime(),
+            // Vercel AI Gateway list rates (2026-11-03), no gateway fee; cache
+            // writes bill at the input rate (Moonshot 5-minute TTL).
+            // https://ai-gateway.vercel.sh/v1/models/moonshotai/kimi-k3.1-pro/endpoints
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.2),
+                promptCacheWriteTokens: perMillion(2),
+                completionTextTokens: perMillion(10),
             },
         },
     },
@@ -730,9 +781,9 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-opus-5.5": {
-        "anthropic/claude-opus-5.5:aws": {
+        "anthropic/claude-opus-5.5:anthropic": {
             priceMultiplier: 1,
-            provider: "aws",
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
@@ -744,8 +795,8 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-fable-5.1": {
-        "anthropic/claude-fable-5.1:aws": {
-            provider: "aws",
+        "anthropic/claude-fable-5.1:anthropic": {
+            provider: "anthropic",
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
@@ -798,6 +849,21 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "meta/muse-spark-open": {
+        // Same model on BaseTen through Vercel's AI Gateway, which adds no
+        // fee. Covers Fireworks failures.
+        "meta/muse-spark-open:vercel:baseten": {
+            // Vercel lists the same parameters as for Muse Wonder (2026-10-23).
+            supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
+            provider: "vercel",
+            // Vercel AI Gateway BaseTen rates (2026-10-23).
+            cost: {
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.15),
+                completionTextTokens: perMillion(4.25),
+            },
+        },
+    },
     "meta/muse-wonder-1.0": {
         "meta/muse-wonder-1.0:vercel": {
             supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
@@ -815,16 +881,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "nvidia/nemotron-3.5-lightning": {
-        "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
-            supportedParameters: CHAT_PARAMETERS.openRouterNemotron,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+        "nvidia/nemotron-3.5-lightning:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
+            provider: "deepinfra",
+            addedDate: new Date("2026-11-09").getTime(),
             cost: {
-                // OpenRouter CoreWeave BF16 rates (2026-09-21), including the
-                // account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.07) * 1.055,
-                promptCachedTokens: perMillion(0.04) * 1.055,
-                completionTextTokens: perMillion(0.2) * 1.055,
+                // DeepInfra BF16 rates (2026-10-24): $0.06/$0.03/$0.16 per million.
+                promptTextTokens: perMillion(0.06),
+                promptCachedTokens: perMillion(0.03),
+                completionTextTokens: perMillion(0.16),
             },
         },
     },
@@ -844,17 +909,22 @@ export const TEXT_FALLBACKS = {
     },
     "nvidia/nemotron-3-ultra": {
         "nvidia/nemotron-3-ultra:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
             provider: "deepinfra",
-            addedDate: new Date("2026-09-30").getTime(),
+            addedDate: new Date("2026-11-09").getTime(),
+            // DeepInfra NVFP4 standard-tier rates (2026-10-24).
             cost: {
-                // DeepInfra standard-tier rates (2026-09-30). Flex is
-                // deliberately excluded because requests may wait up to ten
-                // minutes.
                 promptTextTokens: perMillion(0.5),
                 promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(2.2),
             },
+        },
+    },
+    "anthropic/claude-fable-5.2": {
+        "anthropic/claude-fable-5.2:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-11-09").getTime(),
+            // Direct Anthropic standard rates match Bedrock global.
         },
     },
     "mistralai/mistral-small-4": {

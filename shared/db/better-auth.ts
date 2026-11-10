@@ -5,6 +5,7 @@ import { LISTING_TYPES } from "../community-endpoints.ts";
 import type { SafetyFeature } from "../schemas/safety.ts";
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
   check,
   sqliteTable,
   text,
@@ -42,6 +43,9 @@ export const user = sqliteTable("user", {
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
+  // NULL: not reviewed; true: Quest spending frozen; false: explicitly cleared.
+  // Automatic detection only changes NULL, so it cannot undo a purchase/review.
+  questPollenRestricted: integer("quest_pollen_restricted", { mode: "boolean" }),
   lastTierGrant: integer("last_tier_grant"),
   stripeCustomerId: text("stripe_customer_id").unique(),
   autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })
@@ -51,9 +55,16 @@ export const user = sqliteTable("user", {
   lowBalanceNotifiedAt: integer("low_balance_notified_at"),
   emailUnsubscribedAt: integer("email_unsubscribed_at"),
   lastPackPollen: real("last_pack_pollen"),
+  // The invite link owner or BYOP app owner this user signed up through.
+  referredBy: text("referred_by").references((): AnySQLiteColumn => user.id, {
+    onDelete: "set null",
+  }),
 }, (table) => [
   index("idx_user_email").on(table.email),
+  index("idx_user_referred_by").on(table.referredBy),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
+  // Quest pollen restriction sweeps: accounts made since a sign-up burst.
+  index("idx_user_created_at").on(table.createdAt),
   // GitHub profile lookup for quest checks and account display.
   uniqueIndex("user_github_id_unique").on(table.githubId),
 ]);
@@ -104,6 +115,7 @@ export const account = sqliteTable("account", {
     .notNull(),
 }, (table) => [
   index("idx_account_user_id").on(table.userId),
+  index("idx_account_provider_subject").on(table.accountId, table.providerId),
 ]);
 
 export const verification = sqliteTable("verification", {

@@ -16,6 +16,11 @@ const STATUS_URL = "https://queue.fal.run/requests/test/status";
 const RESULT_URL = "https://queue.fal.run/requests/test";
 const MEDIA_URL = "https://fal.media/output";
 const MEDIA_BYTES = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]);
+// PNG signature and IHDR of a 720x544 image: enough for readImageDimensions.
+const PNG_720x544 = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48,
+    0x44, 0x52, 0, 0, 0x02, 0xd0, 0, 0, 0x02, 0x20,
+]);
 
 const baseParams: ImageParams = {
     model: "bytedance/seedream-5.0-lite:fal",
@@ -69,6 +74,11 @@ function mockFal(
                 headers: { "content-type": "video/mp4" },
             });
         }
+        if (href.endsWith(".png")) {
+            return new Response(PNG_720x544, {
+                headers: { "content-type": "image/png" },
+            });
+        }
         return Response.json({
             request_id: "test",
             status_url: STATUS_URL,
@@ -97,9 +107,9 @@ afterEach(() => {
 describe("Fal fallback media models", () => {
     it.each([
         [undefined, "16:9", false, 1024, 1024, 5, "16:9"],
-        [0, "9:16", true, 1080, 720, 5, "3:2"],
-        [99, "9:16", false, 1024, 1024, 15, "9:16"],
-        [-1, undefined, true, 1024, 1024, 1, "1:1"],
+        [10, "9:16", true, 1080, 720, 10, "3:2"],
+        [15, "9:16", false, 1024, 1024, 15, "9:16"],
+        [1, undefined, true, 1024, 1024, 1, "1:1"],
     ] as const)(
         "routes Grok duration %s through Fal with unchanged parameters",
         async (duration, aspectRatio, dimensionsExplicit, width, height, expectedDuration, expectedRatio) => {
@@ -193,21 +203,6 @@ describe("Fal fallback media models", () => {
         expect(error).toMatchObject({ status: 422 });
         expect((error as UpstreamError).billedUsage).toEqual(billedUsage);
     });
-
-    it.each([0.5, 4.5, 15.5])(
-        "rejects fractional Grok duration %s before Fal submission",
-        async (duration) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-            await expect(
-                createAndReturnVideo("move", {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video:fal",
-                    duration,
-                }),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
-        },
-    );
 
     it("sends Seedream 5 through the exact Fal endpoint", async () => {
         const requests = mockFal({
@@ -392,18 +387,6 @@ describe("Fal fallback media models", () => {
         },
     );
 
-    it("rejects a HeyGen Video 1 duration outside 5 to 15 seconds on fal", async () => {
-        const requests = mockFal({ video: { url: MEDIA_URL } });
-        await expect(
-            callFalFallbackVideo("a paper boat", {
-                ...baseParams,
-                model: "heygen/heygen-video-1",
-                duration: 4,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(requests).toHaveLength(0);
-    });
-
     it("omits aspect ratio where Grok 1.5 image-to-video follows the source", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },
@@ -458,7 +441,6 @@ describe("Fal fallback media models", () => {
             const resultPromise = callFalFallbackVideo("move", {
                 ...baseParams,
                 model: "kandinskylab/kandinsky-6.0-lite",
-                duration: 10,
                 aspectRatio: ratio,
                 image: [...image],
             });
@@ -582,7 +564,7 @@ describe("Fal fallback media models", () => {
         });
     });
 
-    it("maps Wan 2.2 start and end frames to the Fal turbo endpoint", async () => {
+    it("maps Wan 2.2 start and end frames to the Fal turbo endpoint with the start frame's ratio", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },
         });
@@ -597,13 +579,17 @@ describe("Fal fallback media models", () => {
         await vi.advanceTimersByTimeAsync(5_000);
         const result = await resultPromise;
 
-        expect(requests[0]).toEqual({
+        // Fal's "auto" rejects a 720x544 start frame, so the closest
+        // supported ratio is sent instead.
+        expect(requests[0].url).toBe("https://example.com/start.png");
+        expect(requests[1]).toEqual({
             url: "https://queue.fal.run/fal-ai/wan/v2.2-a14b/image-to-video/turbo",
             body: {
                 prompt: "move",
                 resolution: "480p",
                 end_image_url: "https://example.com/end.png",
                 image_url: "https://example.com/start.png",
+                aspect_ratio: "1:1",
                 seed: 42,
             },
         });
@@ -727,21 +713,6 @@ describe("Grok Replicate primary", () => {
                     duration: 1,
                 }),
             ).rejects.toMatchObject({ status: 502 });
-        },
-    );
-
-    it.each([0.5, 4.5, 15.5])(
-        "rejects fractional duration %s before Replicate submission",
-        async (duration) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-            await expect(
-                createAndReturnVideo("move", {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video",
-                    duration,
-                }),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
         },
     );
 

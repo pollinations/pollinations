@@ -19,7 +19,7 @@ import {
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
 import {
@@ -89,6 +89,7 @@ async function gatewayContext(
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        parentRunExpiresAt: c.var.auth?.agentRun?.expiresAt,
     });
     if (
         communityEndpoint.type !== "prompt_agent" &&
@@ -118,6 +119,15 @@ async function gatewayContext(
     };
 }
 
+/**
+ * Whether the request asked the provider to stop on a sequence. A completion
+ * truncated by one of these is valid even when no text survives.
+ */
+function hasStopSequences(stop: unknown): boolean {
+    if (typeof stop === "string") return stop.length > 0;
+    return Array.isArray(stop) && stop.length > 0;
+}
+
 /** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
 export async function generateChatAttempt(
     c: TextContext,
@@ -138,14 +148,63 @@ export async function generateChatAttempt(
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
     );
-    if (!attemptData.stream)
-        requireChatCompletionUsage(
-            result,
-            candidate.communityEndpoint
-                ? new TextEncoder().encode(JSON.stringify(attemptData.messages))
-                      .byteLength
-                : undefined,
+    if (!attemptData.stream) {
+        requireChatCompletionUsage(result);
+        // A stop sequence can truncate the answer to nothing. That is the
+        // completion the caller asked for, not a provider failure, so it must
+        // not be reported as an empty response.
+        const stopsOnRequest = hasStopSequences(attemptData.stop);
+        // Reasoning is not an answer. Tool calls, refusals and media can be
+        // valid without text, but a blank completion must never become a cache hit.
+        const emptyChoices = (result.choices ?? []).filter(
+            ({ message, finish_reason }) =>
+                finish_reason !== "content_filter" &&
+                !(stopsOnRequest && message && finish_reason === "stop") &&
+                (!message ||
+                    !(
+                        (typeof message.content === "string"
+                            ? message.content.trim()
+                            : message.content?.length) ||
+                        message.tool_calls?.length ||
+                        message.function_call ||
+                        message.audio ||
+                        (typeof message.refusal === "string" &&
+                            message.refusal.trim())
+                    )),
         );
+        if (
+            !result.choices?.length ||
+            emptyChoices.length === result.choices.length
+        ) {
+            const tokenLimitReached =
+                (requestData.max_tokens != null ||
+                    requestData.max_completion_tokens != null) &&
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ finish_reason }) => finish_reason === "length",
+                );
+            const { status, ...details } = tokenLimitReached
+                ? {
+                      status: 400 as const,
+                      message:
+                          "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
+                      errorCode: "output_token_limit_exceeded" as const,
+                  }
+                : {
+                      status: 502 as const,
+                      message:
+                          "Chat Completions provider returned an empty response",
+                      errorCode: "empty_response" as const,
+                  };
+            throw new UpstreamError(status, {
+                ...details,
+                requestUrl: result.upstreamRequestUrl,
+                billedUsage: openaiUsageToUsage(
+                    result.usage as Parameters<typeof openaiUsageToUsage>[0],
+                ),
+            });
+        }
+    }
     return buffered ? completionToChatStream(result) : result;
 }
 
@@ -364,7 +423,7 @@ async function generateTextResponse(
             candidates,
             (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
-            (attempt) => enforceModelRateLimit(c, attempt),
+            (attempt) => requireModelAttemptAccess(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
@@ -383,11 +442,6 @@ async function generateTextResponse(
             // Client and billing must see the same validation errors.
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
-                candidate.communityEndpoint
-                    ? new TextEncoder().encode(
-                          JSON.stringify(requestData.messages),
-                      ).byteLength
-                    : undefined,
             ).tee();
             completion.responseStream = publicChatStream(clientBody);
             const response = sendTextStreamResponse(completion, servedModelId);

@@ -23,6 +23,6 @@ jobs:
         with:
           node-version: "24"
           check-latest: true
-      - run: node operations/kpi/scripts/snapshot-github.mjs
+      - run: node operations/dashboards/kpi/scripts/snapshot-github.mjs
         env:
           GH_TOKEN: ${{ github.token }}

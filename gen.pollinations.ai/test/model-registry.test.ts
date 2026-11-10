@@ -1,10 +1,21 @@
-import { env } from "cloudflare:test";
+import {
+    createExecutionContext,
+    createScheduledController,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { exports } from "cloudflare:workers";
+import type { Fetcher as ScheduledFetcher } from "@cloudflare/workers-types/experimental";
 import {
     getModels,
     getRegistryModelDefinition,
 } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CommunityModelEnv } from "../src/community-models.ts";
+import {
+    type CommunityModelEnv,
+    getCommunityModelRegistryEntries,
+} from "../src/community-models.ts";
+import worker from "../src/index.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -57,6 +68,7 @@ describe("getGenerationModelRegistry", () => {
             "openai/gpt-oss-20b",
             "respan/span-01-lite",
             "vllm-sr/d3",
+            "moonshotai/kimi-k3", // Retains Quest access after the AWS move.
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
             // Costs $0 while Vercel offers it as a stealth model.
@@ -108,6 +120,8 @@ describe("getGenerationModelRegistry", () => {
             ["openai/gpt-audio-mini", "stream", true],
             ["openai/gpt-audio-1.5", "max_completion_tokens", true],
             ["x-ai/grok-4.3", "max_tokens", true],
+            ["x-ai/grok-4.7", "logprobs", false],
+            ["x-ai/grok-4.7", "top_logprobs", false],
             ["anthropic/claude-sonnet-4.6", "response_format", true],
             ["anthropic/claude-sonnet-5", "temperature", false],
             ["anthropic/claude-sonnet-5", "response_format", false],
@@ -116,7 +130,15 @@ describe("getGenerationModelRegistry", () => {
             ["google/gemini-3.7-flash", "stop", true],
             ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
             ["nvidia/nemotron-3.5-lightning", "top_k", true],
+            ["nvidia/nemotron-3.5-lightning", "logprobs", true],
+            ["nvidia/nemotron-3.5-lightning:deepinfra", "logprobs", false],
             ["nvidia/nemotron-3-ultra", "top_k", true],
+            ["nvidia/nemotron-3-ultra", "logprobs", true],
+            ["nvidia/nemotron-3-ultra:deepinfra", "logprobs", false],
+            ["meta/muse-spark-open", "tools", true],
+            ["meta/muse-spark-open", "reasoning_effort", true],
+            ["meta/muse-spark-open", "response_format", false],
+            ["meta/muse-spark-open", "seed", false],
             ["nvidia/nemotron-3.5-super-vl", "tools", true],
             ["nvidia/nemotron-3.5-super-vl", "top_k", true],
             ["nvidia/nemotron-3.5-super-vl", "seed", false],
@@ -210,6 +232,44 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
+    it("advertises the native video and 3D routes on their categories", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const visible = registry.visibleEntries();
+
+        const video = visible.filter(
+            (entry) => entry.definition.category === "video",
+        );
+        expect(video.length).toBeGreaterThan(0);
+        for (const entry of video) {
+            expect(entry.supportedEndpoints, entry.id).toContain(
+                "/video/{prompt}",
+            );
+            expect(entry.info.supported_endpoints, entry.id).toContain(
+                "/video/{prompt}",
+            );
+            // Video generation is not an image edit.
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+
+        const model3d = visible.filter(
+            (entry) => entry.definition.category === "3d",
+        );
+        expect(model3d.length).toBeGreaterThan(0);
+        for (const entry of model3d) {
+            expect(entry.supportedEndpoints, entry.id).toContain(
+                "/3d/{prompt}",
+            );
+            expect(entry.info.supported_endpoints, entry.id).toContain(
+                "/3d/{prompt}",
+            );
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+    });
+
     it("serves the community catalog from KV without querying D1", async () => {
         await resetGenerationModelRegistryCache(env);
         const healthy = await getGenerationModelRegistry(env);
@@ -227,6 +287,96 @@ describe("getGenerationModelRegistry", () => {
         expect(fromKv.visibleEntries().map((e) => e.id)).toEqual(
             healthy.visibleEntries().map((e) => e.id),
         );
+    });
+
+    it("refreshes the catalog once on the minute tick before concurrent readers arrive", async () => {
+        await resetGenerationModelRegistryCache(env);
+        const prepare = vi.spyOn(env.DB, "prepare");
+        const context = createExecutionContext();
+        await worker.scheduled(
+            createScheduledController({ cron: "* * * * *" }),
+            env,
+            context,
+        );
+        await waitOnExecutionContext(context);
+
+        // Independent reads bypass the isolate cache, as readers in different
+        // locations do. None should fan out another full-catalog D1 query.
+        await Promise.all(
+            Array.from({ length: 20 }, () =>
+                getCommunityModelRegistryEntries(env),
+            ),
+        );
+        expect(
+            prepare.mock.calls.filter(([query]) =>
+                query.includes('from "community_endpoint"'),
+            ),
+        ).toHaveLength(1);
+        expect(prepare).toHaveBeenCalledTimes(1);
+        const { keys } = await env.KV.list({ prefix: "community-catalog:" });
+        expect(keys).toHaveLength(1);
+        const secondsUntilExpiry =
+            (keys[0].expiration ?? 0) - Math.floor(Date.now() / 1000);
+        expect(secondsUntilExpiry).toBeGreaterThan(60);
+        expect(secondsUntilExpiry).toBeLessThanOrEqual(90);
+        expect(
+            Number(await env.KV.get("heartbeat:community-catalog")),
+        ).toBeCloseTo(Date.now(), -4);
+    });
+
+    it("dispatches the catalog cron through the Worker service binding", async () => {
+        await resetGenerationModelRegistryCache(env);
+        await (
+            exports as unknown as { default: ScheduledFetcher }
+        ).default.scheduled({
+            cron: "* * * * *",
+        });
+        expect(
+            (await env.KV.list({ prefix: "community-catalog:" })).keys,
+        ).toHaveLength(1);
+    });
+
+    it("refreshes the isolate registry within 30 seconds after a cache loss", async () => {
+        await resetGenerationModelRegistryCache(env);
+        await getGenerationModelRegistry(env);
+        const now = Date.now();
+        const { keys } = await env.KV.list({ prefix: "community-catalog:" });
+        await env.KV.delete(keys[0].name);
+        vi.spyOn(Date, "now").mockReturnValue(now + 30_001);
+        const prepare = vi.spyOn(env.DB, "prepare");
+
+        await getGenerationModelRegistry(env);
+
+        expect(prepare).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports a failed scheduled refresh while preserving the expiring catalog", async () => {
+        await resetGenerationModelRegistryCache(env);
+        const entries = await getCommunityModelRegistryEntries(env);
+        const before = await env.KV.list({ prefix: "community-catalog:" });
+        const consoleError = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        const context = createExecutionContext();
+        const bindings = { ...env, DB: skewedDbBinding() };
+        await env.KV.delete("heartbeat:community-catalog");
+        await worker.scheduled(
+            createScheduledController({ cron: "* * * * *" }),
+            bindings,
+            context,
+        );
+        await waitOnExecutionContext(context);
+
+        expect(consoleError).toHaveBeenCalledWith(
+            "Community model catalog refresh failed",
+            expect.any(Error),
+        );
+        expect(await getCommunityModelRegistryEntries(bindings)).toEqual(
+            entries,
+        );
+        const { keys } = await env.KV.list({ prefix: "community-catalog:" });
+        expect(keys[0].expiration).toBe(before.keys[0].expiration);
+        expect(await env.KV.get("heartbeat:community-catalog")).toBeNull();
     });
 
     it("serves static models when the community catalog query fails", async () => {

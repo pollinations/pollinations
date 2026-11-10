@@ -181,6 +181,27 @@ describe("Responses to Chat request", () => {
         });
     });
 
+    it("accepts the SDK's null tool description and parameters without forwarding them", () => {
+        const chat = responsesToChatRequest(
+            request({
+                input: "hi",
+                tools: [
+                    {
+                        type: "function",
+                        name: "lookup",
+                        description: null,
+                        parameters: null,
+                        strict: null,
+                    },
+                ],
+            }),
+        );
+
+        expect(chat.tools).toEqual([
+            { type: "function", function: { name: "lookup" } },
+        ]);
+    });
+
     it.each([
         [{ max_tool_calls: 1 }, "max_tool_calls"],
         [{ truncation: "auto" }, "truncation"],

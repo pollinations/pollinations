@@ -23,13 +23,19 @@ import { getPublicOrigin } from "@shared/public-origin.ts";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
+import { PatternRouter } from "hono/router/pattern-router";
 import type { Env } from "@/env.ts";
-import { agentDiscoveryLinks } from "@/middleware/agent-discovery.ts";
+import {
+    acceptsMarkdown,
+    agentDiscoveryLinks,
+} from "@/middleware/agent-discovery.ts";
 import { logger } from "@/middleware/logger.ts";
+import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import {
     GENERATION_HANDOFF_PATH,
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
+import { refreshCommunityModelRegistryCache } from "./community-models.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -37,7 +43,13 @@ import {
     createDocsRoutes,
     LLMS_FULL_TEXT,
 } from "./routes/docs.ts";
-import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import {
+    E2B_PATH,
+    e2bRoutes,
+    keepSandboxes,
+    sandboxPortHost,
+    servePort,
+} from "./routes/e2b.ts";
 import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
@@ -51,7 +63,6 @@ import { serveSite } from "./sites.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
-export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 const app = new Hono<Env>();
 
@@ -112,9 +123,6 @@ function sitemapXml(c: Context<Env>): Response {
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
             "  <url>",
-            `    <loc>${origin}/</loc>`,
-            "  </url>",
-            "  <url>",
             `    <loc>${origin}/docs</loc>`,
             "  </url>",
             "</urlset>",
@@ -143,7 +151,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
 - [Direct REST API skill](${origin}/.well-known/agent-skills/pollinations-api/SKILL.md): Call the API with curl or fetch when the CLI cannot be installed.
 - [Pollinations SDK skill](${origin}/.well-known/agent-skills/pollinations-sdk/SKILL.md): Use the official npm SDK from code with an API key.
-- [Bring Your Own Pollen skill](${origin}/.well-known/agent-skills/bring-your-own-pollen/SKILL.md): Add user-paid sign-in (OAuth PKCE, fragment, or device flow) so each user spends their own Pollen.
+- [Bring Your Own Pollen skill](${origin}/.well-known/agent-skills/bring-your-own-pollen/SKILL.md): Add user-paid Pollinations Connect (OAuth PKCE, fragment, or device flow) so each user spends their own Pollen.
 - [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.
 - [API quick start and reference](${origin}/docs/llm.txt): Plain-text API reference and guides.
 - [Interactive API docs](${origin}/docs): Browse endpoints and examples in a browser.
@@ -155,7 +163,7 @@ function llmsTxt(c: Context<Env>): Response {
 
 ## Guides
 
-- [Connect User Wallets (BYOP)](${origin}/docs/llm.txt?section=byop): Let users pay with their own Pollen.
+- [Pollinations Pay (BYOP)](${origin}/docs/llm.txt?section=byop): Let users pay with their own Pollen.
 - [Publish an Agent](${origin}/docs/llm.txt?section=publish-an-agent): Publish a hosted agent.
 - [Publish a Model](${origin}/docs/llm.txt?section=publish-a-model): Connect your model endpoint.
 - [Sandboxes](${origin}/docs/llm.txt?section=sandboxes): Run code in a virtual machine.
@@ -214,6 +222,9 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", logger)
     .use("*", async (c, next) => {
         await next();
+        if (c.env.ENVIRONMENT === "staging") {
+            c.header("X-Robots-Tag", "noindex, nofollow");
+        }
         if (c.res.status === 401) {
             c.header(
                 "WWW-Authenticate",
@@ -236,7 +247,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route(GENERATION_HANDOFF_PATH, generationHandoffRoutes)
     .get("/", async (c) => {
         c.header("Vary", "Accept", { append: true });
-        if (c.req.header("accept")?.includes("text/markdown")) {
+        if (acceptsMarkdown(c.req.header("accept") ?? "")) {
             // Cloudflare ignores Vary on cached responses: keep it private.
             return c.body(await llmsTxt(c).text(), 200, {
                 "Content-Type": "text/markdown; charset=utf-8",
@@ -251,6 +262,10 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .all("/api/docs/*", redirectLegacyDocs)
     .all("/api", () => notFound())
     .all("/api/*", () => notFound())
+    // Account calls reach Enter's D1, so they share gen's edge limit: one IP
+    // rotating made-up keys cannot turn into one D1 lookup per request.
+    // Hono's "/account/*" also matches "/account".
+    .use("/account/*", edgeRateLimit)
     .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/*", (c) => {
@@ -303,11 +318,39 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     )
     .route("/", proxyRoutes);
 
+let methodRouter: PatternRouter<string> | undefined;
+
+/** The methods some route serves at this path. */
+function allowedMethods(path: string): Set<string> {
+    if (!methodRouter) {
+        methodRouter = new PatternRouter<string>();
+        for (const route of app.routes) {
+            if (route.method !== "ALL") {
+                methodRouter.add("ALL", route.path, route.method);
+            }
+        }
+    }
+    const methods = new Set(
+        methodRouter.match("GET", path)[0].map(([method]) => method),
+    );
+    if (methods.has("GET")) methods.add("HEAD");
+    return methods;
+}
+
 app.notFound(async (c: Context<Env>) => {
     // Gen's icons and images in public/.
     if (c.req.method === "GET" || c.req.method === "HEAD") {
         const asset = await c.env.ASSETS.fetch(c.req.raw);
         if (asset.status !== 404) return asset;
+    }
+    // A known path called with the wrong method is a 405, not a 404
+    // (RFC 9110 §15.5.6), so a GET probe of POST /v1/chat/completions
+    // does not conclude the endpoint is missing.
+    const allow = allowedMethods(c.req.path);
+    if (allow.size > 0 && !allow.has(c.req.method)) {
+        const response = await handleError(new HTTPException(405), c);
+        response.headers.set("Allow", [...allow].join(", "));
+        return response;
     }
     return handleError(new HTTPException(404), c);
 });
@@ -315,12 +358,44 @@ app.notFound(async (c: Context<Env>) => {
 app.onError(handleError);
 
 export default {
-    fetch: (request: Request, env, ctx) =>
-        serveSite(request, env) ?? app.fetch(request, env, ctx),
-    // The only cron, every 5 minutes (wrangler.toml). Leases end only after
-    // the keeper has renewed the kept sandboxes.
-    scheduled: async (_controller, env, ctx) => {
-        await keepSandboxes(env, ctx);
-        await stopExpiredAzureSandboxes(env);
+    fetch: (request: Request, env, ctx) => {
+        // A port host belongs to a sandbox, a site's host to the site.
+        const port = sandboxPortHost(env, new URL(request.url).hostname);
+        if (port) {
+            return new Hono<Env>()
+                .use("*", edgeRateLimit)
+                .all("*", () => servePort(request, env, ctx, port))
+                .onError(handleError)
+                .fetch(request, env, ctx);
+        }
+        return serveSite(request, env) ?? app.fetch(request, env, ctx);
+    },
+    scheduled: async (controller, env, ctx) => {
+        if (controller.cron === "* * * * *") {
+            // infra-watch reads the heartbeat's age to spot a failing refresh.
+            await refreshCommunityModelRegistryCache(env)
+                .then(() =>
+                    env.KV.put(
+                        "heartbeat:community-catalog",
+                        Date.now().toString(),
+                    ),
+                )
+                .catch((error) => {
+                    console.error(
+                        "Community model catalog refresh failed",
+                        error,
+                    );
+                });
+            return;
+        }
+        // Every 5 minutes. Leases end only after the keeper has renewed the
+        // kept sandboxes; catalog refreshes do not change their cadence. A
+        // failed keeper still stops expired boxes: a lease outlives one run.
+        try {
+            await keepSandboxes(env, ctx);
+        } finally {
+            await stopExpiredAzureSandboxes(env);
+        }
+        await env.KV.put("heartbeat:sandbox-keeper", Date.now().toString());
     },
 } satisfies ExportedHandler<CloudflareBindings>;

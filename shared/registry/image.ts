@@ -2,10 +2,31 @@ import { defineCostVariants, matchResolution } from "./cost-variants";
 import { IMAGE_FALLBACKS } from "./image-fallbacks";
 import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
-import type { ModelDefinition } from "./registry";
+import type { BillingRules, ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
 const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
+
+// The fal fallback reports its complete USD charge, without token counts.
+const GPT_IMAGE_26_BILLING: BillingRules = {
+    adjustments: [
+        {
+            id: "fal.gpt_image_2_6.provider_units.v1",
+            description: "Fallback provider charge instead of token billing",
+            kind: "image",
+            unit: "provider unit",
+            unitCost: 1,
+            publicPricing: {
+                label: "Fallback provider cost",
+                quantity: 1,
+                unit: "USD",
+            },
+            countUnits: (_output, input) => input?.providerBilling?.units ?? 0,
+            resolveUnitCost: (_output, _model, input) =>
+                input?.providerBilling?.unitCost ?? 1,
+        },
+    ],
+};
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
@@ -28,9 +49,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "lykon/dreamshaper-8-lcm": {
-        // "sana" is kept as an alias so existing callers and the legacy image
-        // proxy worker keep working unchanged.
+        // Kept for the legacy image proxy worker, which calls it as "sana", and
+        // for existing callers: hidden from the catalog, still served.
         aliases: ["sana", "dreamshaper"],
+        hidden: true,
         provider: "vast",
         publisher: "Lykon",
         category: "image",
@@ -615,8 +637,9 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
         // Provider retires this route on 2027-04-07.
-        priceMultiplier: 0.75,
-        paidOnly: false,
+        priceMultiplier: 1,
+        // Quest overflow spills onto the cash OpenAI fallback.
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
             promptCachedTokens: perMillion(0.2), // per 1M tokens
@@ -637,8 +660,9 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
         // Provider retires this route on 2026-12-16.
-        priceMultiplier: 0.75,
-        paidOnly: false,
+        priceMultiplier: 1,
+        // Quest overflow spills onto the cash OpenAI fallback.
+        paidOnly: true,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens
@@ -662,8 +686,9 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
         // Provider retires this route on 2027-10-21.
-        paidOnly: false,
-        priceMultiplier: 0.75,
+        // Quest overflow spills onto the cash OpenAI fallback.
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens
@@ -722,6 +747,54 @@ const IMAGE_BASE_SERVICES = {
         title: "GPT Image 2.5 Sunburst",
         description:
             "Detailed image generation with precise control over reference-image edits",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+        supportsTransparency: true,
+    },
+    "openai/gpt-image-2.6-flare": {
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-11-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.6-flare
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        billing: GPT_IMAGE_26_BILLING,
+        title: "GPT Image 2.6 Flare",
+        description:
+            "Fast image generation and editing with consistent reference details",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+        supportsTransparency: true,
+    },
+    "openai/gpt-image-2.6-sunburst": {
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-11-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.6-sunburst
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        billing: GPT_IMAGE_26_BILLING,
+        title: "GPT Image 2.6 Sunburst",
+        description:
+            "Detailed compositions and precise editing that preserves reference details",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
@@ -848,6 +921,36 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 2,
         minDuration: 3,
         maxDuration: 10,
+        defaultDuration: 5,
+    },
+    "google/gemini-omni-1.2-flash": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "video",
+        addedDate: new Date("2026-11-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vertex AI pricing verified 2026-11-05:
+        // https://cloud.google.com/model-garden/pricing
+        // Video output is priced per token: 1931, 5792, 8688 and 17376 tokens per
+        // second at 360p, 720p, 1080p and 4k (with audio).
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            completionTextTokens: perMillion(9),
+            completionVideoTokens: perMillion(12),
+        },
+        resolutions: ["720p", "360p", "1080p", "4k"],
+        title: "Gemini Omni 1.2 Flash",
+        description:
+            "Cinematic video from text or keyframes with synchronized audio at up to 4K",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 3,
+        maxDuration: 15,
         defaultDuration: 5,
     },
     "bytedance/seedance-1-pro-fast": {
@@ -1023,6 +1126,7 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
+        // Replicate allows 15 s; capped at the verified synchronous latency limit.
         maxDuration: 10,
         defaultDuration: 5,
     },
@@ -1047,6 +1151,7 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
+        // Replicate allows 15 s; capped at the verified synchronous latency limit.
         maxDuration: 5,
         defaultDuration: 5,
     },
@@ -1244,7 +1349,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "Five-second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
+            "2-15 second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [
@@ -1256,8 +1361,8 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 5,
-        maxDuration: 5,
+        minDuration: 2,
+        maxDuration: 15,
         defaultDuration: 5,
     },
     "alibaba/wan-2.7-image": {

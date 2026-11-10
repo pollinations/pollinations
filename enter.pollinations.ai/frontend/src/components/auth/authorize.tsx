@@ -10,9 +10,10 @@ import {
 } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
-    CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    getConsentPermissionChoices,
     getGrantedOAuthScope,
+    getPreselectedConsentPermissions,
     isClientMetadataUrl,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
@@ -111,8 +112,10 @@ export function Authorize() {
     const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
         () => new Set(urlScope ?? []),
     );
-    const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
-        requestedScopes.has(p),
+    const visibleOptionalPermissions = getConsentPermissionChoices(
+        requestedScopes,
+        isDeviceMode,
+        parsedRedirectUrl,
     );
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
@@ -155,7 +158,7 @@ export function Authorize() {
                                 .filter(Boolean);
                             setRequestedScopes(new Set(scopes));
                             setAccountPermissions(
-                                sanitizeAuthorizeAccountPermissions(scopes),
+                                getPreselectedConsentPermissions(scopes),
                             );
                         }
                     })
@@ -370,6 +373,11 @@ export function Authorize() {
                     },
                 });
                 if (!res.ok) {
+                    // As in the code flow: don't leave an undeliverable key
+                    // active in the account.
+                    accountClient.keys[":id"]
+                        .$delete({ param: { id } })
+                        .catch(() => {});
                     const data = await res.json().catch(() => null);
                     throw new Error(
                         (data as { message?: string })?.message ||
@@ -461,6 +469,16 @@ export function Authorize() {
                 url.hash = hash.toString();
             }
             window.location.href = url.toString();
+        } else if (window.history.length > 1) {
+            // Unvalidated redirect: return to the page that opened this one
+            // without sending anything to the redirect URL. history.length
+            // also counts forward entries, so open the dashboard if back()
+            // goes nowhere.
+            const fallback = setTimeout(() => navigate({ to: "/" }), 1000);
+            window.addEventListener("pagehide", () => clearTimeout(fallback), {
+                once: true,
+            });
+            window.history.back();
         } else {
             navigate({ to: "/" });
         }
@@ -509,6 +527,14 @@ export function Authorize() {
                 subject={subject}
                 description={access}
                 error={`Couldn’t connect: ${error}`}
+                errorPaths={[
+                    "/api/app-lookup",
+                    "/api/device/info",
+                    // Allow access: create the key, then hand it over.
+                    "/account/keys",
+                    "/api/oauth/code",
+                    "/api/device/approve",
+                ]}
                 actions={
                     <Button
                         intent="neutral"
@@ -568,7 +594,7 @@ export function Authorize() {
                     <Alert intent="warning" className="mb-4">
                         Access goes to a program on this computer, and any
                         program can use this app's name. Only allow it if you
-                        just started this sign-in yourself.
+                        just started this request yourself.
                     </Alert>
                 )}
             <form

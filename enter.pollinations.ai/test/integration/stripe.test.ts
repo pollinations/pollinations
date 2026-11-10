@@ -326,10 +326,17 @@ test.for(checkoutAmounts)(
     "%s should only be accessible when authenticated via session cookie",
     async (route, { sessionToken, mocks }) => {
         await mocks.enable("stripe", "tinybird");
+        // Signed out, the link goes back to the wallet, which asks to sign in.
         const anonymousResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
+            redirect: "manual",
         });
-        expect(anonymousResponse.status).toBe(401);
+        expect(anonymousResponse.status).toBe(302);
+        const back = new URL(anonymousResponse.headers.get("location") ?? "");
+        expect(back.pathname).toBe("/pollen");
+        expect(back.searchParams.get("pack")).toBe(route.split("/").pop());
+        expect(back.searchParams.has("checkout_error")).toBe(false);
+        expect(checkoutSessionRequests(mocks.stripe.state)).toHaveLength(0);
 
         const sessionCookieResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
@@ -362,7 +369,7 @@ test("GET /api/stripe/products returns pack list", async () => {
     );
 });
 
-test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", async ({
+test("GET /api/stripe/checkout/:packKey sends invalid pack keys back to the wallet", async ({
     sessionToken,
     mocks,
 }) => {
@@ -373,11 +380,111 @@ test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", asyn
             headers: {
                 cookie: `better-auth.session_token=${sessionToken}`,
             },
+            redirect: "manual",
         });
-        expect(response.status).toBe(400);
-        const data = (await response.json()) as { error: string };
-        expect(data.error).toBe("Invalid pack");
+        expect(response.status).toBe(302);
+        const back = new URL(response.headers.get("location") ?? "");
+        expect(back.pathname).toBe("/pollen");
+        expect(back.searchParams.get("checkout_error")).toBe("failed");
+        expect(back.searchParams.has("pack")).toBe(false);
     }
+});
+
+// The browser follows this link, so a checkout that can't open goes back to
+// the page it came from with the reason, never to a JSON error.
+test.for([
+    {
+        name: "signed out",
+        query: `?return=top-up&redirect=${encodeURIComponent("https://app.example/chat")}`,
+        signedIn: false,
+        stripeDown: false,
+        expected: {
+            pathname: "/top-up",
+            pack: "p5",
+            checkoutError: null,
+            redirect: "https://app.example/chat",
+        },
+    },
+    {
+        name: "Stripe fails",
+        query: "?return=top-up",
+        signedIn: true,
+        stripeDown: true,
+        expected: {
+            pathname: "/top-up",
+            pack: "p5",
+            checkoutError: "failed",
+            redirect: null,
+        },
+    },
+])(
+    "GET /api/stripe/checkout/p5 sends the buyer back when $name",
+    async (testCase, { sessionToken, mocks }) => {
+        await mocks.enable("stripe", "tinybird");
+        if (testCase.stripeDown)
+            mocks.stripe.state.onCheckoutSessionCreated = async () => {
+                throw new Error("Stripe unavailable");
+            };
+
+        const response = await SELF.fetch(
+            `${base}/checkout/p5${testCase.query}`,
+            {
+                headers: testCase.signedIn
+                    ? { cookie: `better-auth.session_token=${sessionToken}` }
+                    : {},
+                redirect: "manual",
+            },
+        );
+        expect(response.status).toBe(302);
+        const back = new URL(response.headers.get("location") ?? "");
+        expect(back.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+        expect({
+            pathname: back.pathname,
+            pack: back.searchParams.get("pack"),
+            checkoutError: back.searchParams.get("checkout_error"),
+            redirect: back.searchParams.get("redirect"),
+        }).toEqual(testCase.expected);
+        // Stripe failing reaches the error log, which infra-watch reads.
+        expect(
+            mocks.tinybird.state.errorEvents.map((e) => [
+                e.route_path,
+                e.status,
+                e.message,
+            ]),
+        ).toEqual(
+            testCase.stripeDown
+                ? [
+                      [
+                          "/api/stripe/checkout/:packKey",
+                          500,
+                          "Failed to create checkout session",
+                      ],
+                  ]
+                : [],
+        );
+    },
+);
+
+test("POST /api/stripe/checkout/:packKey/session reports a Stripe failure as a 500", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    mocks.stripe.state.onCheckoutSessionCreated = async () => {
+        throw new Error("Stripe unavailable");
+    };
+    const response = await startWalletCheckout(
+        "p5",
+        `better-auth.session_token=${sessionToken}`,
+    );
+    expect(response.status).toBe(500);
+    expect(mocks.tinybird.state.errorEvents).toMatchObject([
+        {
+            route_path: "/api/stripe/checkout/:packKey/session",
+            status: 500,
+            message: "Failed to create checkout session",
+        },
+    ]);
 });
 
 test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", async ({
@@ -2597,7 +2704,12 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
 
     await db
         .update(userTable)
-        .set({ packBalance: 1, autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
+        .set({
+            packBalance: 1,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+            questPollenRestricted: true,
+        })
         .where(eq(userTable.id, user.id));
 
     const invoiceId = "in_paid_once";
@@ -2631,6 +2743,15 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
         .first<{ status: string; failureReason: string | null }>();
 
     expect(updatedUser?.packBalance).toBe(11);
+    expect(
+        (
+            await db
+                .select()
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .get()
+        )?.questPollenRestricted,
+    ).toBe(false);
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -2771,7 +2892,7 @@ test("POST /api/webhooks/stripe credits once when paid and payment_succeeded bot
     mocks,
 }) => {
     void sessionToken;
-    await mocks.enable("stripe");
+    await mocks.enable("stripe", "tinybird");
     const db = drizzle(env.DB);
     const [user] = await db
         .select({ id: userTable.id })
@@ -2811,6 +2932,25 @@ test("POST /api/webhooks/stripe credits once when paid and payment_succeeded bot
         .bind(user.id)
         .first<{ packBalance: number | null }>();
     expect(updatedUser?.packBalance).toBe(11);
+    // Each outcome reaches stripe_event, keyed by the invoice.
+    expect(
+        mocks.tinybird.state.stripeEvents.map((e) => [
+            e.event_type,
+            e.session_id,
+            e.user_id,
+            e.amount_cents,
+            e.payment_status,
+        ]),
+    ).toEqual([
+        ["invoice.paid", invoiceId, user.id, 1065, "credited"],
+        [
+            "invoice.payment_succeeded",
+            invoiceId,
+            user.id,
+            1065,
+            "invoice already credited",
+        ],
+    ]);
 });
 
 test("creditAutoTopUpInvoice credits once for concurrent calls in the same millisecond", async ({
@@ -2863,8 +3003,12 @@ test.for([
     },
 ])(
     "POST /api/webhooks/stripe rejects auto top-up invoice with $name mismatch",
-    async ({ invoiceId, overrides, expectedReason }, { sessionToken }) => {
+    async ({ invoiceId, overrides, expectedReason }, {
+        sessionToken,
+        mocks,
+    }) => {
         void sessionToken;
+        await mocks.enable("tinybird");
         const db = drizzle(env.DB);
         const [user] = await db
             .select({ id: userTable.id })
@@ -2912,6 +3056,17 @@ test.for([
         expect(updatedUser?.packBalance).toBe(1);
         expect(attempt?.status).toBe("failed");
         expect(attempt?.failureReason).toContain(expectedReason);
+        // Not credited, with the reason.
+        expect(mocks.tinybird.state.stripeEvents).toMatchObject([
+            {
+                event_type: "invoice.paid",
+                session_id: invoiceId,
+                payment_status: expectedReason.replace(
+                    "verification mismatch: ",
+                    "",
+                ),
+            },
+        ]);
     },
 );
 
@@ -3651,7 +3806,7 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
     if (!pack) throw new Error("Expected $10 pollen pack");
 
     await env.DB.prepare(
-        "UPDATE user SET low_balance_notified_at = 1 WHERE id = ?",
+        "UPDATE user SET low_balance_notified_at = 1, quest_pollen_restricted = 1 WHERE id = ?",
     )
         .bind(user.id)
         .run();
@@ -3684,6 +3839,15 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
         .bind(user.id)
         .first<{ lastPackPollen: number | null; notifiedAt: number | null }>();
     expect(credited).toEqual({ lastPackPollen: 10, notifiedAt: null });
+    expect(
+        (
+            await db
+                .select()
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .get()
+        )?.questPollenRestricted,
+    ).toBe(false);
 
     expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({

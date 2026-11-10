@@ -370,8 +370,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         // Provider retires this route on 2028-01-11.
-        // Preserve the existing one-third customer price multiplier.
-        priceMultiplier: 1 / 3,
+        priceMultiplier: 0.75,
         paidOnly: false,
         // Azure Global Standard rates (retail prices API and billed meters,
         // 2026-10-12).
@@ -416,6 +415,63 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6.1-terra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-10-26").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        // Azure list rates (2026-10-26), as published in the Azure pricing view.
+        // Above 272K prompt tokens the higher rates apply to the full request.
+        cost: {
+            promptTextTokens: perMillion(1),
+            promptCachedTokens: perMillion(0.05),
+            promptCacheWriteTokens: perMillion(1.25),
+            completionTextTokens: perMillion(5),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(2),
+                    promptCachedTokens: perMillion(0.1),
+                    promptCacheWriteTokens: perMillion(2.5),
+                    completionTextTokens: perMillion(7.5),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    key: "context",
+                    label: "Context",
+                    unit: "tokens",
+                    values: {
+                        "": "≤272K",
+                        long_context: ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.1 Terra",
+        description:
+            "Fast, efficient model for professional work with strong visual reasoning and computer use",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -541,7 +597,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-04").getTime(),
         // Provider retires this route on 2028-01-11.
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
             promptTextTokens: perMillion(10.0),
@@ -598,7 +654,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.2),
@@ -655,7 +711,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-30").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // OpenAI list rates; Azure has not published GPT-6.1 Sol rates yet.
         cost: {
             promptTextTokens: perMillion(2),
@@ -714,7 +770,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -1518,39 +1574,33 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.7": {
-        supportedParameters: CHAT_PARAMETERS.openRouterGrok47,
+        supportedParameters: CHAT_PARAMETERS.grok47,
         aliases: [],
-        provider: "xai",
+        provider: "aws",
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-09-21").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // xAI /v1/language-models/grok-4.7 rates (2026-10-12). Image tokens
-        // bill at the text input rate; reasoning bills as output. Excludes the
-        // $0.005-per-call web search charge (not exposed on this model).
+        // Preserve the existing customer tier while AWS's published cost is flat.
+        priceMultiplierVariants: { long_context: 2 },
+        // AWS global Standard card and price catalog, checked 2026-10-30.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.5),
             promptImageTokens: perMillion(2),
             completionTextTokens: perMillion(6),
         },
-        // xAI reprices the whole request from 200K prompt tokens.
         ...defineCostVariants(
             {
-                long_context: {
-                    promptTextTokens: perMillion(4),
-                    promptCachedTokens: perMillion(1),
-                    promptImageTokens: perMillion(4),
-                    completionTextTokens: perMillion(12),
-                },
+                long_context: {},
             },
             longContextAtLeast(200_000),
             {
                 long_context: {
                     label: "Long context (200K+)",
                     description:
-                        "At least 200,000 prompt tokens; text, cached, and output rates double.",
+                        "At least 200,000 prompt tokens; all token prices double for the full request.",
                 },
             },
             "<200K context",
@@ -1682,9 +1732,9 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         isSpecialized: true,
     },
-    "typesafe/jev-1.13": {
+    "typesafe/jev-1.14": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev", "typesafe/jev"],
+        aliases: ["jev", "typesafe/jev", "typesafe/jev-1.13"],
         provider: "vercel",
         publisher: "TypeSafe",
         category: "decision",
@@ -1692,7 +1742,7 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // Vercel TypeSafe route (2026-10-24), with no gateway surcharge.
+            // Vercel TypeSafe route (2026-11-03), with no gateway surcharge.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
@@ -1710,7 +1760,7 @@ const TEXT_BASE_SERVICES = {
         tools: false,
         reasoning: false,
         // 64k for state + questions together; 32k for state + the longest
-        // question. https://docs.typesafe.ai/model-jaggedness/jev-1.13
+        // question. https://docs.typesafe.ai/models#context-length
         contextLength: 64000,
         isSpecialized: true,
     },
@@ -2273,12 +2323,12 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-opus-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
@@ -2350,15 +2400,43 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-fable-5.2": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-11-09").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Bedrock global standard rates, verified 2026-11-09.
+        // 5-minute cache writes.
+        cost: {
+            promptTextTokens: perMillion(8),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(10),
+            completionTextTokens: perMillion(40),
+        },
+        title: "Claude Fable 5.2",
+        description:
+            "Frontier intelligence for demanding reasoning and long-horizon agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-fable-5.1": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "anthropic",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),
@@ -2371,7 +2449,7 @@ const TEXT_BASE_SERVICES = {
             "Frontier intelligence for complex reasoning, coding and long-running agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
+        maxReferenceImages: 20, // Preserve the image limit across both providers.
         tools: true,
         reasoning: true,
         contextLength: 1000000,
@@ -2490,19 +2568,51 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "moonshotai/kimi-k3.1-pro": {
+        supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+        aliases: [],
+        provider: "azure",
+        publisher: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Microsoft Foundry pricing (Microsoft Tech Community, 2026-11-05): $2.30
+        // input, $0.23 cached input and $11.50 output per 1M tokens. Azure
+        // reports image input separately and no cache writes; both bill at the
+        // input rate (cache writes come from the Vercel fallback).
+        cost: {
+            promptTextTokens: perMillion(2.3),
+            promptCachedTokens: perMillion(0.23),
+            promptCacheWriteTokens: perMillion(2.3),
+            promptImageTokens: perMillion(2.3),
+            completionTextTokens: perMillion(11.5),
+        },
+        title: "Kimi K3.1 Pro",
+        description:
+            "Reasoning and agentic coding model with 1M context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "moonshotai/kimi-k3": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.bedrockKimi,
         aliases: ["kimi-k3"],
-        provider: "fireworks",
+        provider: "aws",
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        // Fireworks standard serverless rates (2026-07-30).
+        // Global Standard rates, including explicit 30-minute cache writes (2026-10-30).
+        // https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-moonshot-ai-kimi-k3.html
         cost: {
             promptTextTokens: perMillion(3),
             promptCachedTokens: perMillion(0.3),
+            promptCacheWriteTokens: perMillion(3.75),
             completionTextTokens: perMillion(15),
         },
         title: "Kimi K3",
@@ -2510,6 +2620,34 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "moonshotai/kimi-k3.1-pro-highspeed": {
+        supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vercel AI Gateway list rates (2026-11-03), no gateway fee. Twice the
+        // Kimi K3.1 Pro rate. Moonshot AI is the only endpoint. Vercel reports
+        // 5-minute cache writes in cache_creation_input_tokens at the input rate.
+        cost: {
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Kimi K3.1 Pro Highspeed",
+        description:
+            "High-speed reasoning and agentic coding model with 1M context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -2803,17 +2941,19 @@ const TEXT_BASE_SERVICES = {
             "nemotron-3-ultra-550b-a55b",
             "nemotron",
         ],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-07-27").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
-            // Fireworks NVFP4 serverless rates (2026-09-30).
-            promptTextTokens: perMillion(0.6),
-            promptCachedTokens: perMillion(0.12),
-            completionTextTokens: perMillion(2.4),
+            // Azure Fireworks Models, Data Zone Standard (Azure retail prices,
+            // 2026-11-09): $0.66/$0.13/$2.64 per million. Fireworks drops its
+            // own serverless endpoint on 2026-11-07.
+            promptTextTokens: perMillion(0.66),
+            promptCachedTokens: perMillion(0.13),
+            completionTextTokens: perMillion(2.64),
         },
         title: "Nemotron 3 Ultra",
         description:
@@ -2828,18 +2968,20 @@ const TEXT_BASE_SERVICES = {
     "nvidia/nemotron-3.5-lightning": {
         supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: ["nemotron-3.5-lightning"],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         perUserRpm: 60,
         cost: {
-            // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
-            promptTextTokens: perMillion(0.05),
+            // Azure Fireworks Models, Data Zone Standard (Azure retail prices,
+            // 2026-11-09): $0.06/$0.01/$0.22 per million. Fireworks drops its
+            // own serverless endpoint on 2026-11-07.
+            promptTextTokens: perMillion(0.06),
             promptCachedTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.2),
+            completionTextTokens: perMillion(0.22),
         },
         title: "Nemotron 3.5 Lightning",
         description:
@@ -3352,6 +3494,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
+    "minimax/minimax-m3.1-flash": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "MiniMax",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: false,
+        // Fireworks standard serverless rates (2026-10-23).
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.015),
+            completionTextTokens: perMillion(0.6),
+        },
+        title: "MiniMax M3.1 Flash",
+        description:
+            "Multimodal agent model with a 1M-token context for tool use and coding",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meta/muse-glimmer-30b": {
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: ["muse-glimmer"],
@@ -3427,6 +3594,32 @@ const TEXT_BASE_SERVICES = {
         title: "Muse Spark 1.3",
         description:
             "Long-horizon multimodal reasoning for coding, agents and tool-driven workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "meta/muse-spark-open": {
+        supportedParameters: CHAT_PARAMETERS.fireworksMuseSparkOpen,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-10-15").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks serverless standard rates, verified 2026-11-03 after the
+            // preview ended. US-only capacity; Fireworks waives its premium.
+            promptTextTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(4.25),
+        },
+        title: "Muse Spark Open",
+        description:
+            "Agentic coding and tool use with reasoning controls and 1M context",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

@@ -1,4 +1,4 @@
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
@@ -196,6 +196,34 @@ describe("ImageParamsSchema", () => {
             ).toBe(false);
         }
     });
+
+    it.each(getVideoModelIds())(
+        "accepts only the registry durations for %s",
+        (model) => {
+            const {
+                minDuration,
+                maxDuration,
+                defaultDuration,
+                allowedDurations,
+            } = IMAGE_SERVICES[
+                model as keyof typeof IMAGE_SERVICES
+            ] as ModelDefinition;
+            const parses = (duration: number) =>
+                ImageParamsSchema.safeParse({ model, duration }).success;
+            expect(parses(defaultDuration as number)).toBe(true);
+            expect(parses((minDuration as number) - 1)).toBe(false);
+            expect(parses((maxDuration as number) + 1)).toBe(false);
+            for (
+                let d = minDuration as number;
+                d <= (maxDuration as number);
+                d++
+            ) {
+                expect(parses(d), String(d)).toBe(
+                    allowedDurations?.includes(d) ?? true,
+                );
+            }
+        },
+    );
 
     it("enforces the public Gemini Omni 1.1 Flash contract", () => {
         for (const resolution of ["360p", "720p", "1080p", "4k"] as const) {

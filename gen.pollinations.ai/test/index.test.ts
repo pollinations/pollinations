@@ -123,6 +123,34 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("lists registered GPU workers only with the GPU token", async () => {
+        const gpuAuth = { authorization: `Bearer ${env.PLN_GPU_TOKEN}` };
+        const registered = await fetchWorker("/register", env, {
+            method: "POST",
+            headers: { ...gpuAuth, "content-type": "application/json" },
+            body: JSON.stringify({ url: "https://worker.test", type: "flux" }),
+        });
+        expect(registered.status).toBe(200);
+
+        const anonymous = await fetchWorker("/register", env);
+        expect(anonymous.status).toBe(401);
+        await expect(anonymous.json()).resolves.toEqual({
+            success: false,
+            message: "Unauthorized",
+        });
+
+        const listed = await fetchWorker("/register", env, {
+            headers: gpuAuth,
+        });
+        expect(listed.status).toBe(200);
+        await expect(listed.json()).resolves.toContainEqual(
+            expect.objectContaining({
+                type: "flux",
+                url: "https://worker.test",
+            }),
+        );
+    });
+
     it("accepts a 28 MiB inline-image chat body before authentication", async () => {
         const body = JSON.stringify({
             model: "openai/gpt-5-nano",
@@ -185,6 +213,23 @@ describe("gen worker routing", () => {
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
     });
 
+    it.each(["/", "/docs", "/docs/llm.txt", "/llms.txt", "/sitemap.xml"])(
+        "excludes staging %s from indexing while keeping production indexable",
+        async (path) => {
+            for (const environment of ["staging", "production"] as const) {
+                const response = await fetchWorker(path, {
+                    ...envWithEnter(),
+                    ENVIRONMENT: environment,
+                });
+
+                expect(response.status).toBe(200);
+                expect(response.headers.get("X-Robots-Tag")).toBe(
+                    environment === "staging" ? "noindex, nofollow" : null,
+                );
+            }
+        },
+    );
+
     it("serves gen's icons after the routes", async () => {
         // Like Cloudflare's asset server: 405 for methods other than GET/HEAD.
         const ASSETS = {
@@ -205,6 +250,27 @@ describe("gen worker routing", () => {
             method: "POST",
         });
         expect(post.status).toBe(404);
+    });
+
+    it("answers 405 with Allow for a known path called with the wrong method", async () => {
+        for (const [path, method, allow] of [
+            ["/v1/chat/completions", "GET", "POST"],
+            ["/v1/images/generations", "DELETE", "POST"],
+            ["/v1/models", "POST", "GET, HEAD"],
+            ["/image/a%20cat", "POST", "GET, HEAD"],
+        ]) {
+            const response = await fetchWorker(path, envWithEnter(), {
+                method,
+            });
+            expect(response.status, `${method} ${path}`).toBe(405);
+            expect(response.headers.get("Allow")).toBe(allow);
+            const body = (await response.json()) as {
+                error: { code: string };
+            };
+            expect(body.error.code).toBe("METHOD_NOT_ALLOWED");
+        }
+
+        expect((await fetchWorker("/v1/no-such-endpoint")).status).toBe(404);
     });
 
     it("serves the docs web app manifest", async () => {
@@ -315,10 +381,7 @@ describe("gen worker routing", () => {
         const locs = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
             (match) => match[1],
         );
-        expect(locs).toEqual([
-            "https://staging.gen.pollinations.ai/",
-            "https://staging.gen.pollinations.ai/docs",
-        ]);
+        expect(locs).toEqual(["https://staging.gen.pollinations.ai/docs"]);
     });
 
     it("serves llms-full.txt with the full guide and CLI skill in one file", async () => {
@@ -503,6 +566,34 @@ describe("gen worker routing", () => {
         expect(agentHome.headers.get("Vary")).toBe("Accept");
         expect(await agentHome.text()).toMatch(/^# Pollinations\n/);
 
+        const caseInsensitive = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "Text/Markdown" },
+        });
+        expect(caseInsensitive.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+
+        const rejectedMarkdown = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/html, text/markdown;q=0" },
+        });
+        expect(rejectedMarkdown.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const htmlPreferred = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.1, text/html;q=0.9" },
+        });
+        expect(htmlPreferred.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const markdownPreferred = await fetchWorker("/docs", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.9, text/html;q=0.1" },
+        });
+        expect(markdownPreferred.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+
         const browserHome = await fetchWorker("/", envWithEnter(), {
             headers: { Accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
         });
@@ -625,25 +716,14 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
-    it("lists DreamShaper with the sana alias and flat per-image pricing", async () => {
+    it("keeps the hidden DreamShaper out of /image/models", async () => {
         const response = await fetchWorker("/image/models", envWithEnter());
 
         expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            aliases?: string[];
-            pricing: Record<string, string>;
-        }[];
-        expect(
-            models.find((model) => model.name === "lykon/dreamshaper-8-lcm"),
-        ).toMatchObject({
-            name: "lykon/dreamshaper-8-lcm",
-            aliases: ["sana", "dreamshaper"],
-            pricing: {
-                completionImageTokens: "0.0001",
-                currency: "pollen",
-            },
-        });
+        const models = (await response.json()) as { name: string }[];
+        expect(models.map((model) => model.name)).not.toContain(
+            "lykon/dreamshaper-8-lcm",
+        );
     });
 
     it("lists Recraft vector with aliases, modalities, and flat pricing", async () => {

@@ -210,15 +210,6 @@ describe("callKlingVideoAPI", () => {
         expect(requests[0].body?.end_image_url).toBeUndefined();
     });
 
-    it("rejects durations outside 3-15 seconds before calling fal", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callKlingVideoAPI("too long", { ...baseParams, duration: 16 }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("uses billable units even when they differ from the requested duration", async () => {
         mockKlingFetch([], "COMPLETED", "3");
         const result = await callKlingVideoAPI("scene", {

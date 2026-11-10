@@ -24,6 +24,45 @@ async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
 
+for (const variant of ["flare", "sunburst"]) {
+    const model = `openai/gpt-image-2.6-${variant}`;
+    test(`${model} requires purchased Pollen and hides its fallback`, async ({
+        apiKey,
+        paidApiKey,
+    }) => {
+        const headers = { Authorization: `Bearer ${apiKey}` };
+        const denied = await fetchWorker(
+            `/image/paid-only-check?model=${model}`,
+            { headers },
+        );
+        expect(denied.status).toBe(402);
+        const internal = await fetchWorker(
+            `/image/hidden-route-check?model=${model}:fal`,
+            { headers },
+        );
+        expect(internal.status).toBe(400);
+        const unpaidCatalog = await fetchWorker("/image/models", { headers });
+        expect(
+            ((await unpaidCatalog.json()) as { name: string }[]).some(
+                (item) => item.name === model,
+            ),
+        ).toBe(false);
+        const catalog = await fetchWorker("/image/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        });
+        const models = (await catalog.json()) as {
+            name: string;
+            paid_only: boolean;
+            aliases: string[];
+        }[];
+        expect(models.find((item) => item.name === model)).toMatchObject({
+            paid_only: true,
+            aliases: [],
+        });
+        expect(models.some((item) => item.name === `${model}:fal`)).toBe(false);
+    });
+}
+
 test("banned app owners block direct keys and existing BYOP keys", async () => {
     const owner = await createTestApiKey();
     const caller = await createTestApiKey();
@@ -295,6 +334,7 @@ test("filters non-Azure and non-Fireworks text models by paid balance", async ({
         "openai/gpt-oss-20b",
         "respan/span-01-lite",
         "vllm-sr/d3",
+        "moonshotai/kimi-k3", // Retains Quest access after the AWS move.
         // Costs $0 while Vercel offers it as a stealth model.
         "stealth/glyph-cluster",
     ];

@@ -6,7 +6,9 @@ import {
     createAnthropicConfig,
     createAzureModelConfig,
     createAzureResponsesModelConfig,
+    createBedrockChatConfig,
     createBedrockNativeConfig,
+    createBedrockResponsesConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
     createInferencePortModelConfig,
@@ -107,11 +109,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         },
     }),
     // Both gateways preserve the native TypeSafe Decisions protocol.
-    "jev-1.13": () =>
+    "jev-1.14": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-            model: "typesafe-ai/jev-1.13.0",
+            model: "typesafe-ai/jev-1.14.0",
             defaultOptions: {
                 providerOptions: {
                     gateway: { only: ["typesafe-ai"] },
@@ -119,11 +121,11 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "typesafe/jev-1.13:openrouter:typesafe": () => ({
+    "typesafe/jev-1.14:openrouter:typesafe": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         defaultOptions: {
             provider: {
                 only: ["typesafe"],
@@ -280,15 +282,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.3-codex/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
-    "gpt-5.4-openai": () => ({
-        provider: "openai",
-        model: "gpt-5.4-2026-03-05",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-5.4-bedrock": () => createBedrockChatConfig("global.openai.gpt-5.4"),
     "gpt-5.4": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -318,6 +312,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
+    "gpt-5.5-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.5"),
     "gpt-5.5": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
@@ -332,60 +328,40 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
-    "gpt-5.6-sol-openai": () => ({
-        provider: "openai",
-        model: "gpt-5.6-sol",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-5.6-sol-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.6-sol"),
     "gpt-5.6-sol": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
-    "gpt-5.6-terra-openai": () => ({
-        provider: "openai",
-        model: "gpt-5.6-terra",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-5.6-terra-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.6-terra"),
+    "gpt-6.1-terra": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.1-terra/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-6.1-terra-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6.1-terra"),
     "gpt-5.6-terra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
-    "gpt-5.6-luna-openai": () => ({
-        provider: "openai",
-        model: "gpt-5.6-luna",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-5.6-luna-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-5.6-luna"),
     "gpt-5.6-luna": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
-    "gpt-6-astra-openai": () => ({
-        provider: "openai",
-        model: "gpt-6-astra",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        directEndpoint: "https://api.openai.com/v1/chat/completions",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        serviceTier: "default",
-        ...azureOpenAIParameters,
-    }),
+    "gpt-6-astra-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6-astra"),
     "gpt-6-astra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -411,27 +387,31 @@ export const portkeyConfig: PortkeyConfigMap = {
             azureOpenAIParameters,
         ),
 
-    // -- OpenAI direct (GPT-6) -------------------------------------------------
-    "gpt-6-sol-openai": () => ({
-        provider: "openai",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        model: "gpt-6-sol",
-    }),
-    "gpt-6.1-sol-openai": () => ({
-        provider: "openai",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        model: "gpt-6.1-sol",
-    }),
-    "gpt-6-luna-openai": () => ({
-        provider: "openai",
-        responsesEndpoint: "https://api.openai.com/v1/responses",
-        authKey: textEnvironmentValue("OPENAI_API_KEY"),
-        model: "gpt-6-luna",
-    }),
+    // -- AWS Bedrock fallback (GPT-6) ---------------------------------------
+    "gpt-6-sol-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6-sol"),
+    "gpt-6.1-sol-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6.1-sol"),
+    "gpt-6-luna-bedrock": () =>
+        createBedrockResponsesConfig("global.openai.gpt-6-luna"),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
+    "gpt-audio-mini-openai": () => ({
+        provider: "openai",
+        model: "gpt-audio-mini-2025-12-15",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
+    "gpt-audio-1.5-openai": () => ({
+        provider: "openai",
+        model: "gpt-audio-1.5",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
@@ -475,18 +455,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesStreamUpstream: true,
     }),
 
-    // -- xAI direct -----------------------------------------------------------
-    "grok-4.6-xai": () => ({
-        provider: "openai",
-        directEndpoint: "https://api.x.ai/v1/chat/completions",
-        authKey: textEnvironmentValue("XAI_API_KEY"),
-        model: "grok-4.6",
-    }),
+    // -- Grok: AWS global and direct xAI --------------------------------------
+    "grok-4.6-bedrock": () => createBedrockChatConfig("global.xai.grok-4.6"),
+    "grok-4.7-bedrock": () => createBedrockChatConfig("global.xai.grok-4.7"),
     "grok-4.7-xai": () => ({
         provider: "openai",
         directEndpoint: "https://api.x.ai/v1/chat/completions",
         authKey: textEnvironmentValue("XAI_API_KEY"),
         model: "grok-4.7",
+        serviceTier: "default",
     }),
 
     // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
@@ -779,6 +756,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
+    // -- Azure Fireworks Models (NVIDIA) --------------------------------------
+    "azure/Nemotron-3-Ultra": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3-Ultra/chat/completions?api-version=2024-12-01-preview",
+        ),
+
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
         createDeepInfraModelConfig({
@@ -835,7 +819,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "moonshotai/Kimi-K2.6": () =>
         createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
     "moonshotai/Kimi-K3": () =>
-        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K3" }),
+        createDeepInfraModelConfig({
+            model: "moonshotai/Kimi-K3",
+            serviceTier: "default",
+        }),
     "meta-llama/Llama-3.3-70B-Instruct-Turbo": () =>
         createDeepInfraModelConfig({
             model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
@@ -856,19 +843,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             directEndpoint:
                 "https://api.deepinfra.com/v1/openai/chat/completions",
             defaultOptions: { max_tokens: 16384, service_tier: "priority" },
-        }),
-    // The base slug "xai" also matches xai/zdr/us and the priority tiers,
-    // which bill above the quoted rate, so they are excluded explicitly.
-    "grok-4.7-openrouter": () =>
-        createOpenRouterModelConfig({
-            model: "x-ai/grok-4.7",
-            defaultOptions: {
-                provider: {
-                    only: ["xai"],
-                    ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
-                    allow_fallbacks: false,
-                },
-            },
         }),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
@@ -913,10 +887,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
         "meta/muse-wonder",
         "meta",
-    ),
-    "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
-        "nvidia/nemotron-3.5-lightning",
-        "coreweave/bf16",
     ),
     "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
         createDeepInfraModelConfig({
@@ -1079,11 +1049,26 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/deepseek-v4p1-flash-1017",
         }),
 
-    // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
+    // -- Fireworks AI (Muse Spark Open) --------------------------------------
+    "accounts/fireworks/models/muse-spark-open": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/muse-spark-open",
+            serviceTier: "default",
+        }),
+
+    // -- Kimi K3 (global Bedrock, then Fireworks) -----------------------------
+    "kimi-k3-bedrock": () =>
+        createBedrockChatConfig("global.moonshotai.kimi-k3"),
     "accounts/fireworks/models/kimi-k3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k3",
+            serviceTier: "default",
         }),
+    "moonshotai/kimi-k3.1-pro-highspeed": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro-highspeed",
+        }),
+    // -- Fireworks AI (Qwen) ------------------------------------------------
     "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
@@ -1124,6 +1109,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
+            // Mistral's server rejects unknown message fields on Azure too.
+            { supportsReasoningHistory: false },
         ),
 
     // -- Claude via Anthropic and AWS Bedrock ---------------------------------
@@ -1136,6 +1123,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAnthropicConfig({
             model: "claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
+        }),
+    "anthropic/claude-fable-5.2": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5-2",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.2:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-2",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>
         createAnthropicConfig({
@@ -1188,13 +1185,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5": () =>
-        createAnthropicConfig({
-            model: "claude-opus-5-5",
-            defaultOptions: { max_tokens: 128000 },
-        }),
-    "anthropic/claude-opus-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5.5:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-fable-5": () =>
@@ -1203,13 +1200,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1": () =>
-        createAnthropicConfig({
-            model: "claude-fable-5-1",
-            defaultOptions: { max_tokens: 128000 },
-        }),
-    "anthropic/claude-fable-5.1:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-fable-5-1",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.1:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>
@@ -1256,11 +1253,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             responsesEndpoint: undefined,
             directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
             defaultOptions: {
-                providerOptions: { gateway: { only: ["google"] } },
+                providerOptions: { gateway: { only: ["vertex", "google"] } },
             },
         }),
-    "google/gemini-2.5-flash-lite:search:vercel": () =>
-        portkeyConfig["google/gemini-2.5-flash-lite"](),
+    "google/gemini-2.5-flash-lite:search:vercel": () => ({
+        ...portkeyConfig["google/gemini-2.5-flash-lite"](),
+        defaultOptions: {
+            providerOptions: { gateway: { only: ["google"] } },
+        },
+    }),
     "google/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",
@@ -1311,15 +1312,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
         }),
+    "accounts/fireworks/models/minimax-m3p1-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m3p1-flash",
+            serviceTier: "default",
+        }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
-    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
-        }),
-    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+    "azure/Nemotron-3.5-Lightning": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3.5-Lightning/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "nvidia/NVIDIA-Nemotron-3.5-Lightning": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Lightning",
         }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({
@@ -1336,6 +1343,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["deepinfra"] } },
             },
         }),
+    "moonshotai/kimi-k3.1-pro": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K3.1-Pro/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "moonshotai/kimi-k3.1-pro:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro",
+        }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
@@ -1347,6 +1363,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-wonder-1.0",
+        }),
+    "meta/muse-spark-open:vercel:baseten": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-open",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

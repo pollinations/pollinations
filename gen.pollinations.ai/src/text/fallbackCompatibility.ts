@@ -146,5 +146,14 @@ export function supportsTextFallbackRequest(
     definition: ModelDefinition | undefined,
     request: Record<string, unknown>,
 ): boolean {
+    // Azure chat audio has voices that the direct OpenAI fallback cannot serve.
+    const audio = request.audio as { voice?: string } | undefined;
+    const voice = audio?.voice ?? request.voice;
+    if (
+        typeof voice === "string" &&
+        definition?.voices &&
+        !definition.voices.includes(voice)
+    )
+        return false;
     return textCapabilityError(definition, request) === undefined;
 }

@@ -118,6 +118,8 @@ function chatMessages(request: CreateResponseRequest): ChatMessage[] {
     };
     for (const raw of request.input) {
         const item = object(raw);
+        // Stateless: earlier reasoning is not replayed to Chat providers.
+        if (item.type === "reasoning") continue;
         if (item.type !== "function_call_output") flushToolMedia();
         if (item.type === "function_call") {
             const call = ResponseFunctionCallSchema.safeParse(item);
@@ -172,8 +174,6 @@ function chatMessages(request: CreateResponseRequest): ChatMessage[] {
             });
             continue;
         }
-        // Stateless: earlier reasoning is not replayed to Chat providers.
-        if (item.type === "reasoning") continue;
         if (item.type !== undefined && item.type !== "message") {
             invalid(`Unsupported input item: ${String(item.type)}`);
         }

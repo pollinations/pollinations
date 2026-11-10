@@ -640,3 +640,39 @@ it("preserves screenshot tool results on the Responses Chat adapter", () => {
         content: "Screenshot captured",
     });
 });
+
+it("keeps tool results together when reasoning sits between them", () => {
+    const call = (call_id: string) => ({
+        type: "function_call",
+        call_id,
+        name: "browser",
+        arguments: "{}",
+    });
+    const chat = responsesToChatRequest(
+        request({
+            input: [
+                call("a"),
+                call("b"),
+                {
+                    type: "function_call_output",
+                    call_id: "a",
+                    output: [
+                        {
+                            type: "input_image",
+                            image_url:
+                                "https://media.pollinations.ai/screenshot.png",
+                        },
+                    ],
+                },
+                { type: "reasoning", id: "rs_1", summary: [] },
+                { type: "function_call_output", call_id: "b", output: "done" },
+            ],
+        }),
+    );
+    expect(chat.messages.map((message) => message.role)).toEqual([
+        "assistant",
+        "tool",
+        "tool",
+        "user",
+    ]);
+});

@@ -235,6 +235,118 @@ async function chatThroughHandler(
     return { response, text, calls, balance, events };
 }
 
+it.each([false, true])(
+    "classifies Gemini search errors by the provider reason, not echoed input (policy=%s)",
+    async (policy) => {
+        let attempt = 0;
+        const { response, text, calls, balance, events } =
+            await chatThroughHandler(
+                "google/gemini-2.5-flash-lite:search",
+                ["openrouter.ai", "ai-gateway.vercel.sh"],
+                async () => {
+                    if (attempt++ === 0) {
+                        return Response.json(
+                            {
+                                error: {
+                                    code: policy ? 403 : 429,
+                                    message: policy
+                                        ? "Gemini blocked the request: PROHIBITED_CONTENT"
+                                        : "Provider returned error",
+                                },
+                                request: { prompt: "Explain the NSFW label" },
+                            },
+                            { status: policy ? 403 : 429 },
+                        );
+                    }
+                    return Response.json({
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "Recovered",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage,
+                    });
+                },
+                false,
+            );
+        expect(response.status, text).toBe(policy ? 422 : 200);
+        expect(calls).toBe(policy ? 1 : 2);
+        const final = events.filter((event) => event.isFinal);
+        expect(final).toHaveLength(1);
+        if (policy) {
+            expect(JSON.parse(text).error.code).toBe("UNPROCESSABLE_ENTITY");
+            expect(balance.packBalance).toBe(100);
+            expect(final[0].isBilledUsage).toBe(false);
+        } else {
+            expect(JSON.parse(text).choices[0].message.content).toBe(
+                "Recovered",
+            );
+            expect(events).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        isFinal: false,
+                        responseStatus: 502,
+                        fallbackUsed: false,
+                    }),
+                    expect.objectContaining({
+                        isFinal: true,
+                        responseStatus: 200,
+                        fallbackUsed: true,
+                        isBilledUsage: true,
+                    }),
+                ]),
+            );
+            expect(events.filter((event) => event.isBilledUsage)).toHaveLength(
+                1,
+            );
+            expect(final[0].totalPrice).toBeCloseTo(
+                100 - balance.packBalance,
+                10,
+            );
+        }
+    },
+);
+
+it.each([
+    { status: 400, details: undefined },
+    {
+        status: 422,
+        details: { message: "Gemini blocked the request: PROHIBITED_CONTENT" },
+    },
+])(
+    "does not retry or bill embedded $status errors matching Workerd",
+    async ({ status, details }) => {
+        const { response, text, calls, balance, events } =
+            await chatThroughHandler(
+                "openai/gpt-5-nano",
+                ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+                JSON.stringify({
+                    error: {
+                        message: "Network connection lost.",
+                        code: 400,
+                        details,
+                    },
+                }),
+                false,
+            );
+        expect(response.status, text).toBe(status);
+        expect(calls).toBe(1);
+        expect(balance.packBalance).toBe(100);
+        expect(events.filter((event) => event.isBilledUsage)).toHaveLength(0);
+        expect(events).toContainEqual(
+            expect.objectContaining({
+                responseStatus: status,
+                isBilledUsage: false,
+            }),
+        );
+    },
+);
+
 it("drops OpenRouter's provider cost from client streams", async () => {
     const model = "inception/mercury-3";
     const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]\n\n`;
@@ -384,6 +496,75 @@ const chatProtocolCases = [
         limitField: "max_output_tokens",
     },
 ];
+
+it("keeps a stop-truncated empty answer as a 200 completion", async () => {
+    const model = "openai/gpt-5-nano";
+    const host = ["myceli-prod-eastus.openai.azure.com", "api.openai.com"];
+    const wire = JSON.stringify({
+        id: "stop-truncated",
+        object: "chat.completion",
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "" },
+                finish_reason: "stop",
+            },
+        ],
+        usage: { prompt_tokens: 12, completion_tokens: 1, total_tokens: 13 },
+    });
+    const prompt = `Stop truncation ${crypto.randomUUID()}`;
+
+    const stopped = await chatThroughHandler(
+        model,
+        host,
+        async () =>
+            new Response(wire, {
+                headers: { "content-type": "application/json" },
+            }),
+        false,
+        prompt,
+        {
+            path: "/v1/chat/completions",
+            body: {
+                model,
+                stream: false,
+                max_tokens: 40,
+                stop: ["1"],
+                messages: [{ role: "user", content: prompt }],
+            },
+        },
+    );
+    expect(stopped.response.status, stopped.text).toBe(200);
+    const stoppedBody = JSON.parse(stopped.text);
+    expect(stoppedBody.choices[0].message.content).toBe("");
+    expect(stoppedBody.choices[0].finish_reason).toBe("stop");
+
+    // Without a configured stop sequence the empty answer is still an error.
+    const bare = await chatThroughHandler(
+        model,
+        host,
+        async () =>
+            new Response(wire, {
+                headers: { "content-type": "application/json" },
+            }),
+        false,
+        `${prompt} bare`,
+        {
+            path: "/v1/chat/completions",
+            body: {
+                model,
+                stream: false,
+                max_tokens: 40,
+                messages: [{ role: "user", content: `${prompt} bare` }],
+            },
+        },
+    );
+    expect(bare.response.status, bare.text).toBe(502);
+    expect(JSON.parse(bare.text).error).toMatchObject({
+        code: "empty_response",
+    });
+});
 
 it.each([
     ...chatProtocolCases,

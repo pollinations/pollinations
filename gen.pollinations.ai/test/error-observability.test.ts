@@ -368,6 +368,46 @@ describe("error observability", () => {
         });
     });
 
+    it.each([
+        ["image", throwImageError],
+        ["3D", throw3dError],
+        ["text", throwTextError],
+    ] as const)(
+        "preserves a caller's payment refusal through the %s boundary",
+        async (_name, throwError) => {
+            const app = new Hono<Env>();
+            app.use("*", logger);
+            app.get("/", () =>
+                throwError(
+                    new PaymentRequiredError(
+                        "QUEST_POLLEN_ONLY",
+                        "Allow paid Pollen for the selected alternative.",
+                        "https://enter.test/edit-key?id=caller",
+                        true,
+                    ),
+                ),
+            );
+            app.onError(handleError);
+            const response = await app.fetch(
+                new Request("https://gen.test/"),
+                {
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "error",
+                    LOG_FORMAT: "text",
+                } as unknown as CloudflareBindings,
+                createExecutionContext(),
+            );
+            expect(response.status).toBe(402);
+            expect(await response.json()).toMatchObject({
+                error: {
+                    code: "QUEST_POLLEN_ONLY",
+                    message: "Allow paid Pollen for the selected alternative.",
+                    fixUrl: "https://enter.test/edit-key?id=caller",
+                },
+            });
+        },
+    );
+
     it.each(["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"] as const)(
         "preserves the payment reason %s and its fix link in the 402 envelope",
         async (code) => {
@@ -402,6 +442,24 @@ describe("error observability", () => {
             expect(getErrorCodesForStatus(402)).toContain(code);
         },
     );
+
+    it.each([
+        [400, "content_policy_violation"],
+        [400, "output_token_limit_exceeded"],
+        [400, "unsupported_parameter"],
+        [402, "QUEST_POLLEN_RESTRICTED"],
+        [429, "community_model_rate_limit"],
+        [502, "empty_response"],
+    ] as const)("publishes the %s %s error code", (status, code) => {
+        const body = {
+            status,
+            success: false,
+            error: { code, message: "documented", timestamp: "2026-11-02" },
+        };
+        expect(createErrorResponseSchema(status).safeParse(body).success).toBe(
+            true,
+        );
+    });
 
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];

@@ -49,9 +49,15 @@ export function rateLimit({ byIp }: { byIp: boolean }) {
     });
 }
 
-async function limit(c: Context, limiter: RateLimit | undefined, key: string) {
+/** A 429 once `key` is over `limiter`; `retryAfter` is its period in seconds. */
+export async function limit(
+    c: Context,
+    limiter: RateLimit | undefined,
+    key: string,
+    retryAfter = 10,
+) {
     if (limiter && !(await limiter.limit({ key })).success) {
-        c.header("Retry-After", "10");
+        c.header("Retry-After", String(retryAfter));
         throw new HTTPException(429, {
             message: "Too many requests. Please slow down.",
         });

@@ -28,7 +28,7 @@ One script tag adds a Connect button that runs the OAuth code flow below for you
 Use one `<polli-connect>` per page; additional elements show an error instead of a Connect button.
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
 
 <polli-connect app-key="pk_yourkey" budget="10" expiry="7"></polli-connect>
 
@@ -86,6 +86,8 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Content-Type: application/json' \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
+
+New users who sign up through your app count as your referrals. You earn 2 Quest Pollen for each one who buys more than 2 Pollen. This works whether or not earnings are enabled. Claim the reward from the Invite friends quest on the [Quests page](https://enter.pollinations.ai/quests).
 
 ## ⚙️ Web Apps (OAuth Code Flow)
 

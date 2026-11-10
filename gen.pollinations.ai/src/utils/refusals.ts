@@ -85,7 +85,9 @@ export async function requireFunds(
     const fixUrl = fixLink(c, "/top-up", { ref: "agent_low_balance_topup" });
     throw new PaymentRequiredError(
         "INSUFFICIENT_BALANCE",
-        `Insufficient balance. ${charge}, but your available ${paidOnly ? "paid " : ""}balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`,
+        paidOnly
+            ? `This model requires Paid Pollen, so Quest Pollen can't cover it. ${charge}, but your available paid balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`
+            : `Insufficient balance. ${charge}, but your available balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`,
         fixUrl,
         paidOnly,
     );

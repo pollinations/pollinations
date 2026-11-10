@@ -675,6 +675,7 @@ describe("resolveModelConfig", () => {
         ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", "anthropic"],
         ["anthropic/claude-opus-5.5", "claude-opus-5-5", "bedrock"],
         ["anthropic/claude-fable-5.1", "claude-fable-5-1", "bedrock"],
+        ["anthropic/claude-fable-5.2", "claude-fable-5-2", "bedrock"],
     ])(
         "resolves the configured primary and fallback for %s",
         (model, upstream, provider) => {
@@ -714,17 +715,17 @@ describe("resolveModelConfig", () => {
 
     it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
         const primary = resolveModelConfig(messages, {
-            model: "typesafe/jev-1.13",
+            model: "typesafe/jev-1.14",
         });
-        expect(primary.options.model).toBe("typesafe-ai/jev-1.13.0");
+        expect(primary.options.model).toBe("typesafe-ai/jev-1.14.0");
         expect(primary.options.providerOptions).toEqual({
             gateway: { only: ["typesafe-ai"] },
             typesafe: { longContext: true },
         });
         const backup = resolveModelConfig(messages, {
-            model: "typesafe/jev-1.13:openrouter:typesafe",
+            model: "typesafe/jev-1.14:openrouter:typesafe",
         });
-        expect(backup.options.model).toBe("typesafe/jev-1.13");
+        expect(backup.options.model).toBe("typesafe/jev-1.14");
         expect(backup.options.provider).toEqual({
             only: ["typesafe"],
             ignore: ["cloudflare"],
@@ -765,6 +766,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Kimi K3.1 Pro to its Microsoft Foundry deployment", () => {
+        const result = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k3.1-pro",
+        });
+
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Kimi-K3.1-Pro",
+        });
+    });
+
     it("pins Mercury to Inception on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inception/mercury-2",
@@ -775,6 +788,19 @@ describe("resolveModelConfig", () => {
             only: ["Inception"],
             allow_fallbacks: false,
         });
+    });
+
+    it("routes Kimi K3.1 Pro Highspeed through Vercel AI Gateway without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k3.1-pro-highspeed",
+        });
+
+        expect(result.options.model).toBe("moonshotai/kimi-k3.1-pro-highspeed");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("pins Mercury 3 to Inception on OpenRouter without fallback", () => {
@@ -853,39 +879,29 @@ describe("resolveModelConfig", () => {
         expect(transformed?.options.temperature).toBe(0.2);
     });
 
-    it.each([
-        [
-            "nvidia/nemotron-3-ultra",
-            "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
-            "https://api.fireworks.ai/inference/v1",
-        ],
-        [
-            "nvidia/nemotron-3-ultra:deepinfra",
-            "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
-            "https://api.deepinfra.com/v1/openai",
-        ],
-    ])("routes %s directly to its provider", (model, upstream, host) => {
-        const result = resolveModelConfig(messages, { model });
-
-        expect(result.options.model).toBe(upstream);
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": host,
+    it("routes Nemotron 3 Ultra to its Azure deployment", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3-ultra",
         });
-        expect(result.options.provider).toBeUndefined();
+
+        expect(result.options.model).toBe("Nemotron-3-Ultra");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Nemotron-3-Ultra",
+        });
     });
 
-    it("routes Nemotron 3.5 Lightning directly to Fireworks without fallback", () => {
+    it("routes Nemotron 3.5 Lightning to its Azure deployment", () => {
         const result = resolveModelConfig(messages, {
             model: "nemotron-3.5-lightning",
         });
 
-        expect(result.options.model).toBe(
-            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
-        );
+        expect(result.options.model).toBe("Nemotron-3.5-Lightning");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Nemotron-3.5-Lightning",
         });
         expect(result.options.provider).toBeUndefined();
     });
@@ -1150,6 +1166,23 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes MiniMax M3.1 Flash directly to Fireworks Standard", () => {
+        const result = resolveModelConfig(messages, {
+            model: "minimax/minimax-m3.1-flash",
+            service_tier: "priority",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/minimax-m3p1-flash",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.service_tier).toBe("default");
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes DeepSeek V4.1 Flash 1017 directly to Fireworks with a DeepInfra fallback", () => {
         const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash-1017",
@@ -1172,6 +1205,28 @@ describe("resolveModelConfig", () => {
         expect(fallback.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+    });
+
+    it("routes Muse Spark Open directly to Fireworks with a BaseTen fallback on Vercel", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "meta/muse-spark-open",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "meta/muse-spark-open:vercel:baseten",
+        });
+
+        expect(primary.options.model).toBe(
+            "accounts/fireworks/models/muse-spark-open",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.model).toBe("meta/muse-spark-open");
+        expect(fallback.options.providerOptions).toEqual({
+            gateway: { only: ["baseten"] },
         });
     });
 

@@ -407,6 +407,30 @@ test("model listings carry billing units so agents can price a call", async () =
     }
 });
 
+test("model listings expose reference media limits on /v1/models", async () => {
+    type ListedModel = {
+        id: string;
+        max_reference_images?: number;
+        max_reference_videos?: number;
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+
+    for (const model of list.data) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.max_reference_images, model.id).toEqual(
+            info?.max_reference_images,
+        );
+        expect(model.max_reference_videos, model.id).toEqual(
+            info?.max_reference_videos,
+        );
+    }
+    expect(list.data.some((model) => model.max_reference_images)).toBe(true);
+});
+
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker(
         `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
@@ -473,6 +497,15 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     const list = (await listResponse.json()) as {
         data: Record<string, unknown>[];
     };
+    const registry = await getGenerationModelRegistry(env);
+    for (const model of list.data) {
+        const entry = registry.resolve(String(model.id));
+        expect(entry).not.toBeNull();
+        expect(model.top_provider).toEqual({
+            max_completion_tokens: entry?.info.max_completion_tokens ?? null,
+        });
+        expect(model).not.toHaveProperty("max_completion_tokens");
+    }
     const listed = list.data.find((m) => m.id === "openai/gpt-5-nano");
     expect(listed).toBeDefined();
 
@@ -729,6 +762,51 @@ test("advertises reasoning capability for Azure GPT models that accept reasoning
         expect(entry, id).toBeDefined();
         expect(entry?.capabilities, id).toEqual(
             expect.arrayContaining(["reasoning"]),
+        );
+    }
+});
+
+test("video models advertise the durations they accept", async () => {
+    type ListedModel = {
+        id: string;
+        category: string;
+        video_capabilities?: string[];
+        min_duration?: number;
+        max_duration?: number;
+        default_duration?: number;
+        allowed_durations?: number[];
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    const videos = list.data.filter((model) => model.category === "video");
+    expect(videos.length).toBeGreaterThan(0);
+    for (const model of videos) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.video_capabilities, model.id).toEqual(
+            info?.video_capabilities,
+        );
+        expect(model.min_duration, model.id).toBe(info?.min_duration);
+        expect(model.max_duration, model.id).toBe(info?.max_duration);
+        expect(model.default_duration, model.id).toBe(info?.default_duration);
+        expect(model.allowed_durations, model.id).toEqual(
+            info?.allowed_durations,
+        );
+    }
+});
+
+test("speech models advertise the voices they accept", async () => {
+    type ListedModel = { id: string; category: string; voices?: string[] };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    const audio = list.data.filter((model) => model.category === "audio");
+    expect(audio.some((model) => model.voices?.length)).toBe(true);
+    for (const model of audio) {
+        expect(model.voices, model.id).toEqual(
+            registry.resolve(model.id)?.info?.voices,
         );
     }
 });

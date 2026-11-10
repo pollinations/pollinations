@@ -30,7 +30,7 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 - `apps/` — Applications maintained in this repository
 - `operations/app-management/` — Community app catalog and automation
 - `operations/` — Internal dashboards, monitoring, data sync, news, app management and infrastructure; folder map in `operations/README.md`
-- `operations/social/` — Discord/Reddit/GitHub automation
+- `operations/news/` — News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data
 - `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 
 ## API Gateway
@@ -266,7 +266,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Project Manager
 
-A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/infrastructure/project-manager/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`, and the reward labels `reward-1`, `reward-3`, `reward-5`, `reward-10`, `reward-15`, `reward-25`, `reward-50`, which set a PR's or a quest's Pollen reward) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

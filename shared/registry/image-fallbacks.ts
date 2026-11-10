@@ -93,6 +93,12 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-14").getTime(),
         },
     },
+    "openai/gpt-image-2.6-flare": {
+        "openai/gpt-image-2.6-flare:fal": { provider: "fal", cost: {} },
+    },
+    "openai/gpt-image-2.6-sunburst": {
+        "openai/gpt-image-2.6-sunburst:fal": { provider: "fal", cost: {} },
+    },
     "black-forest-labs/flux.1-kontext-pro": {
         "black-forest-labs/flux.1-kontext-pro:replicate": {
             provider: "replicate",
@@ -194,6 +200,18 @@ export const IMAGE_FALLBACKS = {
         "prunaai/p-image-edit:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "microsoft/mai-image-2.6-flash": {
+        "microsoft/mai-image-2.6-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter's only endpoint is Azure, at our deployment's rates.
+            cost: {
+                promptTextTokens: perMillion(1.75) * 1.055,
+                promptImageTokens: perMillion(2.5) * 1.055,
+                completionImageTokens: perMillion(19) * 1.055,
+            },
         },
     },
     "google/gemini-2.5-flash-image": {

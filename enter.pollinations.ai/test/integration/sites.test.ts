@@ -318,11 +318,19 @@ describe("/api/account/sites", () => {
                 headers: { Authorization: `Bearer ${apiKey}` },
             })
         ).json();
-        const grant = `https://enter.pollinations.ai/grant?id=${id}&permission=machines&ref=agent_grant`;
+        // Enter links to its own origin, localhost in tests.
+        const grant = `http://localhost:3000/grant?id=${id}&permission=machines&ref=agent_grant`;
         expect((await response.json()).error).toMatchObject({
             message: `API key does not have 'account:machines' permission. Allow it at ${grant}`,
             fixUrl: grant,
         });
+    });
+
+    test("a request without a valid key says where to get one", async () => {
+        const res = await sites("not-a-key", "GET");
+        expect(res.status).toBe(401);
+        const { error } = await res.json<{ error: { message: string } }>();
+        expect(error.message).toContain("https://enter.pollinations.ai/keys");
     });
 
     test("deleting the account deletes its sites but keeps takedowns reserved", async ({

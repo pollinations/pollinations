@@ -365,6 +365,61 @@ jobs:
         working-directory: media.pollinations.ai
         run: npm test -- test/docs.test.ts
 
+  # The production deploy runs these suites only after a merge. Select servers
+  # the way it does: the app folder plus its deploy.json `watch` paths.
+  mcp:
+    name: Test MCP servers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          check-latest: true
+
+      - name: Get changed MCP servers
+        id: mcp
+        run: |
+          git diff --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
+          FILTER="--changed=$RUNNER_TEMP/changed.txt"
+          # A change to this workflow tests every server.
+          if grep -qx '.github/workflows/ci-pull-request-checks.yml' "$RUNNER_TEMP/changed.txt"; then
+            FILTER=
+          fi
+          if [ -z "$FILTER" ] || grep -q '^packages/mcp/' "$RUNNER_TEMP/changed.txt"; then
+            echo "core=true" >> "$GITHUB_OUTPUT"
+          fi
+          # apps/mcp is the hosted server built on packages/mcp.
+          APPS=$(node operations/infrastructure/deployment/discover.cjs --scope=apps $FILTER)
+          APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(apps.filter(({ name }) => /(^|-)mcp$/.test(name)).map(({ path }) => path).join(" "))' "$APPS")
+          echo "MCP applications: $APPS"
+          echo "apps=$APPS" >> "$GITHUB_OUTPUT"
+
+      - name: Test packages/mcp
+        if: steps.mcp.outputs.core == 'true'
+        run: |
+          npm ci --prefix packages/mcp
+          npm test --prefix packages/mcp
+
+      # Installs each server as its deploy.json `install` does.
+      - name: Test changed MCP applications
+        if: steps.mcp.outputs.apps != ''
+        env:
+          APPS: ${{ steps.mcp.outputs.apps }}
+        run: |
+          for app in $APPS; do
+            echo "::group::$app"
+            (cd "$app" && bash -c "$(node -p 'require("./deploy.json").install')" && npm test)
+            echo "::endgroup::"
+          done
+
   website:
     name: Build pollinations.ai
     runs-on: ubuntu-latest
@@ -414,7 +469,7 @@ jobs:
     name: Check formatting and linting
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, enter, gen, media-docs, website]
+    needs: [lint, enter, gen, media-docs, mcp, website]
     if: always()
 
     steps:

@@ -4053,6 +4053,144 @@ describe("trackResponse missing usage", () => {
     });
 });
 
+describe("trackResponse community proxy usage", () => {
+    const proxy = createCommunityEndpoint("proxy-usage-owner");
+    const agent: CommunityEndpointRuntime = {
+        ...proxy,
+        type: "endpoint_agent",
+    };
+    const served = (endpoint: CommunityEndpointRuntime): FallbackCandidate => ({
+        id: endpoint.modelId,
+        definition: communityModelDefinition(endpoint),
+        communityEndpoint: endpoint,
+    });
+    const json = (usage: Record<string, string>) =>
+        Response.json(
+            { choices: [] },
+            { headers: { "x-model-used": proxy.modelId, ...usage } },
+        );
+    const stream = (body: string) =>
+        new Response(body, {
+            headers: { "content-type": "text/event-stream" },
+        });
+    const overCompletion = { "x-usage-completion-text-tokens": "200001" };
+
+    it.each([
+        ["Chat JSON completion tokens", () => json(overCompletion)],
+        [
+            "reasoning added to visible output",
+            () =>
+                json({
+                    "x-usage-completion-text-tokens": "150000",
+                    "x-usage-completion-reasoning-tokens": "50001",
+                }),
+        ],
+        [
+            "cached prompt tokens",
+            () =>
+                json({
+                    "x-usage-prompt-text-tokens": "1",
+                    "x-usage-prompt-cached-tokens": "2000000",
+                }),
+        ],
+        [
+            "a Chat stream's terminal usage",
+            () =>
+                stream(
+                    `data: ${JSON.stringify({
+                        model: "upstream-test-model",
+                        choices: [],
+                        usage: {
+                            prompt_tokens: 10,
+                            completion_tokens: 200_001,
+                            total_tokens: 200_011,
+                        },
+                    })}\n\ndata: [DONE]\n\n`,
+                ),
+        ],
+        [
+            "a Responses stream's terminal usage",
+            () =>
+                stream(
+                    `event: response.completed\ndata: ${JSON.stringify({
+                        type: "response.completed",
+                        response: {
+                            object: "response",
+                            model: "upstream-test-model",
+                            status: "completed",
+                            usage: {
+                                input_tokens: 10,
+                                output_tokens: 200_001,
+                                total_tokens: 200_011,
+                            },
+                        },
+                    })}\n\n`,
+                ),
+        ],
+    ])(
+        "does not bill a proxy past the ceiling: %s",
+        async (_name, response) => {
+            const reply = response();
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(
+                    reply.headers.get("content-type") === "text/event-stream",
+                ),
+                reply,
+                served(proxy),
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: 502,
+                isBilledUsage: false,
+                usage: {},
+                errorTracking: { errorResponseCode: "usage_invalid" },
+            });
+            expect(tracking.price).toBeUndefined();
+        },
+    );
+
+    it.each([
+        [
+            "a proxy exactly at both ceilings",
+            "generate.text",
+            served(proxy),
+            {
+                "x-usage-prompt-text-tokens": "2000000",
+                "x-usage-completion-text-tokens": "200000",
+            },
+        ],
+        // An agent's usage is the sum of its own steps, and it is free.
+        ["an agent", "generate.text", served(agent), overCompletion],
+        [
+            "a registry model",
+            "generate.text",
+            candidateFixture(),
+            overCompletion,
+        ],
+        // Embedding batches are sized by their input, not by one answer.
+        [
+            "a proxy's embeddings",
+            "generate.embedding",
+            served(proxy),
+            { "x-usage-prompt-text-tokens": "2000001" },
+        ],
+    ] as const)(
+        "still bills %s",
+        async (_name, eventType, candidate, usage) => {
+            const tracking = await trackResponse(
+                eventType,
+                requestTrackingFixture(),
+                json(usage),
+                candidate,
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: 200,
+                isBilledUsage: true,
+            });
+        },
+    );
+});
+
 function makeAdjustment(
     ruleId: string,
     cost: number,

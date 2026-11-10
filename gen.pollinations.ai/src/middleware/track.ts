@@ -951,6 +951,24 @@ export async function trackResponse(
             modelUsed,
         });
     }
+    // A community proxy reports its own usage and its owner earns from it, so
+    // a claim past the ceilings is never charged.
+    if (
+        eventType === "generate.text" &&
+        candidate.communityEndpoint?.type === "proxy" &&
+        !plausibleProxyUsage(modelUsage.usage)
+    ) {
+        return notBilled({
+            responseStatus: 502,
+            modelUsed,
+            usage: {},
+            contentFilterResults,
+            errorTracking: {
+                errorResponseCode: "usage_invalid",
+                errorMessage: `Community provider reported implausible usage: ${JSON.stringify(modelUsage.usage)}`,
+            },
+        });
+    }
     // Provider cost follows the serving route; price follows its caller choice.
     const {
         cost,
@@ -991,6 +1009,24 @@ export async function trackResponse(
                   )
                 : undefined,
     };
+}
+
+// The most one text call to a community proxy may report, summed over every
+// prompt and every completion bucket.
+const MAX_PROXY_PROMPT_TOKENS = 2_000_000;
+const MAX_PROXY_COMPLETION_TOKENS = 200_000;
+
+function plausibleProxyUsage(usage: Usage): boolean {
+    let prompt = 0;
+    let completion = 0;
+    for (const [type, amount] of Object.entries(usage)) {
+        if (type.startsWith("prompt")) prompt += amount;
+        else completion += amount;
+    }
+    return (
+        prompt <= MAX_PROXY_PROMPT_TOKENS &&
+        completion <= MAX_PROXY_COMPLETION_TOKENS
+    );
 }
 
 // A text answer reporting no tokens is billed at zero. Say why on its row,

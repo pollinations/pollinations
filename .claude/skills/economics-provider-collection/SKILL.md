@@ -176,14 +176,14 @@ only usage; it cannot mark the account complete.
   and `not found after archive check`; keep access failures separate from empty
   searches. On resume, read those records before collecting the same data again.
   Never clear a financial gap merely because a file was found or uploaded.
-- Open each active provider's documented registry/guide link and verify the
+- Open each active provider's documented journal/guide link and verify the
   account and page. Record every failed link, changed route, login failure or
   connector error and report it with its consequence; do not silently skip the
   provider. Use visible provider navigation to find a replacement, verify it,
-  then replace the stale URL in its owning registry/guide and briefly report
+  then replace the stale URL in its owning journal/guide and briefly report
   the correction. A working link to the wrong account is an account blocker,
   not a reason to rewrite the account target. Record lifecycle exclusions from
-  the registry; unfamiliar providers and failed links are not exclusions.
+  the vendor journal; unfamiliar providers and failed links are not exclusions.
 - Turn each dashboard alert and reconciliation residual into a checklist action.
   Keep actionable gaps separate from expected billing notices. A postpaid
   estimate already included in the forecast is pending reconciliation, not
@@ -261,9 +261,12 @@ Do not build a permanent provider integration for a bounded monthly task. Run
 the documented command or use the dashboard directly.
 
 Use regular Chrome for dashboard collection, not the embedded browser: the
-user's saved passwords and interactive sign-in are in Chrome. The user permits
-this workflow to use multiple existing Google Workspace Chrome windows/profiles
-and prepare provider sign-ins. First enumerate all connected Chrome instances
+user's saved passwords and interactive sign-in are in Chrome. Before driving
+the user's Chrome, ask the user in the current session; a grant from an earlier
+session does not carry over. If they decline, leave the dashboard components
+open and continue with the other sources. Once granted, the workflow may use
+multiple existing Google Workspace Chrome windows/profiles and prepare provider
+sign-ins. First enumerate all connected Chrome instances
 and their tabs. Group the private vendor journal's access targets by `workspace`
 and use its account `loginEmail` to choose the intended provider login. Prefer
 an existing matching provider tab; otherwise open the documented URL in an
@@ -437,7 +440,7 @@ raw datasource backup/read and the approved append.
 
 Maintain the workflow as it is used: replace an outdated procedure in its
 owning guide after verifying the correction. Keep shared rules here, provider
-routes in their guides/registry, and task facts in the private checklist. Remove
+routes in their guides/journals, and task facts in the private checklist. Remove
 superseded or duplicate instructions; do not accumulate incident narratives.
 Updates should state the action, required evidence and stopping condition.
 

@@ -5,16 +5,18 @@ import {
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withD1Calls } from "../src/d1-calls.ts";
+import { detachedContext } from "../src/utils/execute-generation.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function captureErrorEvents() {
+function captureErrorEvents(delayMs = 0) {
     const events: Record<string, unknown>[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const url = new URL(input instanceof Request ? input.url : input);
         if (url.searchParams.get("name") === "error_event") {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
             events.push(JSON.parse(String(init?.body)));
         }
         return new Response("{}");
@@ -81,5 +83,31 @@ describe("D1 call timing", () => {
         });
         expect(JSON.stringify(events[0])).not.toContain("secret");
         expect(JSON.stringify(events[0])).not.toContain("D1_ERROR");
+    });
+
+    it("settles a coordinator job only after telemetry from billing that fails after the response", async () => {
+        const events = captureErrorEvents(50);
+        const { ctx, settled } = detachedContext();
+        withD1Calls(
+            env,
+            ctx,
+            () => ({ route_path: "generation", method: "GET" }),
+            () => {
+                // Post-response billing: its failing query registers the
+                // telemetry send while settlement is already waiting.
+                ctx.waitUntil(
+                    env.DB.prepare("UPDATE missing_table SET balance = ?")
+                        .bind(1)
+                        .run()
+                        .catch(() => {}),
+                );
+            },
+        );
+        await settled();
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            route_path: "generation",
+            error_code: "D1_FAILED",
+        });
     });
 });

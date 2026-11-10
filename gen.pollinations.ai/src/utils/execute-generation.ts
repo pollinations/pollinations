@@ -84,19 +84,34 @@ function generationExecutor(
     return executor;
 }
 
-/** Runs a provider handler for the coordinator alarm that owns the job. */
-export async function executeGeneration(
-    job: GenerationJob,
-    env: CloudflareBindings,
-): Promise<DetachedGeneration> {
+/** An ExecutionContext for detached work. settled() also waits for work
+ * registered while earlier work runs, such as the D1 telemetry a failing
+ * post-response billing query sends. */
+export function detachedContext() {
     const promises: Promise<unknown>[] = [];
-    let cacheWrite: Promise<void> | undefined;
-    const executionCtx = {
+    const ctx = {
         waitUntil(promise: Promise<unknown>) {
             promises.push(promise);
         },
         passThroughOnException() {},
     } as ExecutionContext;
+    const settled = async () => {
+        for (let done = 0; done < promises.length; ) {
+            const pending = promises.slice(done);
+            done = promises.length;
+            await Promise.allSettled(pending);
+        }
+    };
+    return { ctx, settled };
+}
+
+/** Runs a provider handler for the coordinator alarm that owns the job. */
+export async function executeGeneration(
+    job: GenerationJob,
+    env: CloudflareBindings,
+): Promise<DetachedGeneration> {
+    let cacheWrite: Promise<void> | undefined;
+    const { ctx: executionCtx, settled } = detachedContext();
 
     const request = new Request(job.request.url, {
         method: job.request.method,
@@ -113,7 +128,7 @@ export async function executeGeneration(
                 cacheWrite = promise;
             }).fetch(request, env, executionCtx),
     );
-    const settlement = Promise.allSettled(promises).then(() => {});
+    const settlement = settled();
 
     try {
         const failed = !response.ok;

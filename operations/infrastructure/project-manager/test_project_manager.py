@@ -4,7 +4,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 spec = importlib.util.spec_from_file_location("project_manager", Path(__file__).with_name("project_manager.py"))
 manager = importlib.util.module_from_spec(spec)
@@ -69,6 +69,28 @@ class ClassificationTest(unittest.TestCase):
         write.assert_any_call("item", fields["Work type"], None)
         native_type.assert_not_called()
 
+    def test_unavailable_classifier_skips_without_failing(self):
+        context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 3, "ISSUE_NODE_ID": "pr-node",
+                   "GITHUB_TOKEN": "test", "POLLINATIONS_TOKEN": "test", "GITHUB_EVENT": {},
+                   "ITEM_DATA": {"labels": []}}
+        with patch.multiple(manager, **context), \
+             patch.object(manager, "dev_fields", return_value={}), \
+             patch.object(manager, "fetch_pr_files", return_value=[]), \
+             patch.object(manager, "closing_issues", return_value=[]), \
+             patch.object(manager, "ask_ai", return_value=None), \
+             patch.object(manager, "add_to_dev") as add:
+            manager.main()
+        add.assert_not_called()
+
+    def test_rejected_ai_request_fails_at_once_but_outage_returns_none(self):
+        with patch.object(manager.time, "sleep"):
+            with patch.object(manager.requests, "post", return_value=Mock(status_code=503, text="")):
+                self.assertIsNone(manager.ask_ai("system", "user"))
+            with patch.object(manager.requests, "post", return_value=Mock(status_code=401, text="")) as post:
+                with self.assertRaises(SystemExit):
+                    manager.ask_ai("system", "user")
+        post.assert_called_once()
+
     def test_missing_linked_issue_node_fails_and_is_not_cached(self):
         manager.closing_issues.cache_clear()
         linked = {"node": {"closingIssuesReferences": {"nodes": []}}}
@@ -77,6 +99,36 @@ class ClassificationTest(unittest.TestCase):
                 manager.closing_issues()
             self.assertEqual(manager.closing_issues(), [])
         manager.closing_issues.cache_clear()
+
+
+class RewardCommentTest(unittest.TestCase):
+    def post(self, event, item, is_pr=True):
+        with patch.multiple(manager, GITHUB_EVENT=event, ITEM_DATA=item, IS_PULL_REQUEST=is_pr, ISSUE_NUMBER=42), \
+             patch.object(manager.requests, "post", return_value=Mock(status_code=201)) as create:
+            manager.write_reward_comment()
+        return create.call_args.kwargs["json"]["body"] if create.called else None
+
+    def test_default_reward_is_announced_once_on_opening(self):
+        opened, item = {"action": "opened"}, {"created_at": "2026-11-05T00:00:00Z", "user": {"type": "User"}}
+        self.assertTrue(self.post(opened, item).startswith("Reward: 5 pollen\n"))
+        self.assertTrue(self.post(opened, item, is_pr=False).startswith("Reward: 2 pollen\n"))
+        # Bots, re-runs (the manual dispatch has no action) and items from before the rollout get none.
+        self.assertIsNone(self.post(opened, {**item, "user": {"type": "Bot"}}))
+        self.assertIsNone(self.post({}, item))
+        self.assertIsNone(self.post(opened, {**item, "created_at": "2026-11-04T23:59:59Z"}))
+
+    def test_app_submissions_access_requests_and_census_responses_get_no_reward_comment(self):
+        fields = {name: {"id": name, "options": {}} for name in ("Area", "Source", "Priority")}
+        for label, title in (("APP-SUBMISSION", ""), ("HONEY-CENSUS", ""), ("BUG", "[Community Model Publisher Access] me")):
+            item = {"created_at": "2026-11-05T00:00:00Z", "user": {"type": "User"}, "labels": [{"name": label}]}
+            with self.subTest(label=label), \
+                 patch.multiple(manager, IS_PULL_REQUEST=False, ISSUE_NUMBER=42, ISSUE_NODE_ID="issue", GITHUB_TOKEN="test", ISSUE_TITLE=title,
+                                POLLINATIONS_TOKEN="test", GITHUB_EVENT={"action": "opened"}, ITEM_DATA=item, DRY_RUN=True), \
+                 patch.object(manager, "dev_fields", return_value=fields), \
+                 patch.object(manager, "classify", return_value={"area": "Community models", "type": None, "priority": None}), \
+                 patch.object(manager.requests, "post") as create:
+                manager.main()
+            create.assert_not_called()
 
 
 if __name__ == "__main__":

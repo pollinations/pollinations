@@ -220,4 +220,43 @@ describe("CreateChatCompletionRequestSchema", () => {
             expect(result.success).toBe(false);
         }
     });
+
+    it("does not accept legacy functions in place of tools when tool_choice is required", () => {
+        const result = CreateChatCompletionRequestSchema.safeParse({
+            messages: [{ role: "user", content: "hello" }],
+            tool_choice: "required",
+            functions: [{ name: "weather", parameters: {} }],
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("requires tools when tool_choice is required", () => {
+        const tool = {
+            type: "function",
+            function: { name: "weather", parameters: {} },
+        };
+        for (const tools of [undefined, []]) {
+            const result = CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                tool_choice: "required",
+                ...(tools && { tools }),
+            });
+            expect(result.success).toBe(false);
+        }
+
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                tool_choice: "required",
+                tools: [tool],
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                tool_choice: "auto",
+                tools: [],
+            }).success,
+        ).toBe(true);
+    });
 });

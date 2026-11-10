@@ -339,7 +339,13 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 | `POST /v1/messages` | Anthropic Messages API for Claude Code and the Anthropic SDKs |
 | `GET /text/{prompt}` | Simple GET for prototyping; returns plain text |
 
-**Available models:** stealth/glyph-cluster, openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-6.1-terra, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, inception/mercury-3, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-4-argon, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4.1-flash-1017, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, vllm-sr/d3, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, perplexity/pplx-decider-v1.2, liquid/d1, inferenceport-ai/lightning-text-v2.1, inferenceport-ai/lightning-text-v2, microsoft/microsoft-decision-1, openai/gpt-6-luna-decisions, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-opus-5.5:fast, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, nvidia/nemotron-3.5-super-vl, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, meta/muse-spark-1.3, meta/muse-wonder-1.0, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+**Available models:** stealth/glyph-cluster, openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-6.1-terra, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, inception/mercury-3, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-4-argon, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4.1-flash-1017, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, vllm-sr/d3, respan/span-01-lite, typesafe/jev-1.14, jaredpalmer/kev-4b, perplexity/pplx-decider-v1.2, liquid/d1, inferenceport-ai/lightning-text-v2.1, inferenceport-ai/lightning-text-v2, microsoft/microsoft-decision-1, openai/gpt-6-luna-decisions, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-opus-5.5:fast, anthropic/claude-fable-5, anthropic/claude-fable-5.2, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3.1-pro, moonshotai/kimi-k3, moonshotai/kimi-k3.1-pro-highspeed, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, nvidia/nemotron-3.5-super-vl, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, minimax/minimax-m3.1-flash, meta/muse-glimmer-30b, meta/muse-spark-1.2, meta/muse-spark-1.3, meta/muse-spark-open, meta/muse-wonder-1.0, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+
+### Caller-selected fallbacks
+
+Set `model` to a comma-separated list of up to four model IDs or aliases, such as `"model-a,model-b,model-a"`. Models are tried in the supplied order on retryable upstream failures; repeated entries request separate attempts. All entries must have the same model category and support the requested endpoint. Listed alternatives excluded by the API key's permissions are skipped. List requests are cached per API key or signed-in session user because their alternatives depend on that caller’s permissions and budget.
+
+An explicit list replaces each model's configured fallback routes. The model that serves determines the price and whether Paid Pollen is required; balance checks, key budgets and rate limits apply before its attempt. A single-model request keeps its configured fallback routes and original pricing rules. Find model IDs, categories and supported endpoints in [`GET /v1/models`](https://gen.pollinations.ai/v1/models).
 
 ### Responses API
 
@@ -504,9 +510,9 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
-### Typed decisions (`typesafe/jev-1.13`)
+### Typed decisions (`typesafe/jev-1.14`)
 
-`typesafe/jev-1.13` (aliases `jev` and `typesafe/jev`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
+`typesafe/jev-1.14` (aliases `jev`, `typesafe/jev`, and `typesafe/jev-1.13`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
 
 ```json
 {
@@ -527,7 +533,7 @@ The response carries `answers`, one field per question, each with `type` and its
 ```json
 {
   "id": "dec-…",
-  "model": "typesafe/jev-1.13",
+  "model": "typesafe/jev-1.14",
   "provider": "TypeSafe",
   "answers": {
     "department": {
@@ -642,7 +648,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | Field | Type | Description |
 |---|---|---|
 | `messages` * | `object`[] | — |
-| `model` | `string` | AI model for text generation. See /v1/models for full list. · default: `"openai/gpt-5.4-nano"` |
+| `model` | `string` | AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules. · default: `"openai/gpt-5.4-nano"` |
 | `system` | `any` | Optional system prompt prepended before `messages` (same extension as GET /text). |
 | `metadata` | `object` \| `null` | Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts. |
 | `modalities` | `"text"` \| `"audio"`[] | — |
@@ -831,7 +837,7 @@ Built-in models use their configured Responses URL. Community text models and en
 
 OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.
 
-Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.
+Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt and code agents execute their own tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.
 
 Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.
 
@@ -862,8 +868,8 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `tools` | `object`[] | — |
 | `tools[].type` * | `"function"` | — |
 | `tools[].name` * | `string` | — |
-| `tools[].description` | `string` | — |
-| `tools[].parameters` | `object` | — |
+| `tools[].description` | `any` | — |
+| `tools[].parameters` | `object` \| `null` | — |
 | `tools[].strict` | `any` | — |
 | `tool_choice` | `any` | — |
 | `parallel_tool_calls` | `boolean` | — |
@@ -925,7 +931,7 @@ Identical requests may be answered from a shared cache, also for callers without
 | Field | Type | Description |
 |---|---|---|
 | `messages` * | `object`[] | — |
-| `model` | `string` | AI model for text generation. See /v1/models for full list. · default: `"openai/gpt-5.4-nano"` |
+| `model` | `string` | AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules. · default: `"openai/gpt-5.4-nano"` |
 | `system` | `any` | Optional system prompt prepended before `messages` (same extension as GET /text). |
 | `metadata` | `object` \| `null` | Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts. |
 | `modalities` | `"text"` \| `"audio"`[] | — |
@@ -1027,7 +1033,7 @@ Generate images from text prompts via a simple GET request. Returns JPEG, PNG, o
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=black-forest-labs/flux.1-schnell
 ```
 
-**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux-3-image-klein, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-nano-banana-2.1, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-2.1-turbo, qwen/qwen-image-2.1-pro, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
+**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux-3-image-klein, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-nano-banana-2.1, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, openai/gpt-image-2.6-flare, openai/gpt-image-2.6-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-2.1-turbo, qwen/qwen-image-2.1-pro, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
 
 ### Community image models
 
@@ -1039,7 +1045,7 @@ Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the
 
 Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.
 
-**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.1.1-pro:replicate`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux-3-image-klein`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-nano-banana-2.1`, `google/gemini-nano-banana-2.1:vercel`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-5.0-pro:replicate`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-2.1-turbo`, `qwen/qwen-image-2.1-pro`, `qwen/qwen-image-2.1-pro:openrouter`, `qwen/qwen-image-3`, `qwen/qwen-image-3:openrouter`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `x-ai/grok-imagine-image-2.0:openrouter`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `recraft/recraft-v4.1-flash:openrouter`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image:replicate`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
+**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.1.1-pro:replicate`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux-3-image-klein`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6-flash:openrouter`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-nano-banana-2.1`, `google/gemini-nano-banana-2.1:vercel`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-5.0-pro:replicate`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `openai/gpt-image-2.6-flare`, `openai/gpt-image-2.6-flare:fal`, `openai/gpt-image-2.6-sunburst`, `openai/gpt-image-2.6-sunburst:fal`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-2.1-turbo`, `qwen/qwen-image-2.1-pro`, `qwen/qwen-image-2.1-pro:openrouter`, `qwen/qwen-image-3`, `qwen/qwen-image-3:openrouter`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `x-ai/grok-imagine-image-2.0:openrouter`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `recraft/recraft-v4.1-flash:openrouter`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image:replicate`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -1049,16 +1055,16 @@ Browse all available models and their capabilities at [`/image/models`](https://
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the image to generate |
 | `model` | `query` | `string` | Model to use. See /image/models for the current canonical IDs and aliases. · default: `"tongyi-mai/z-image-turbo"` |
-| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
-| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, black-forest-labs/flux.1.1-pro, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`. · default: `"medium"` |
+| `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Supported by GPT Image models and `grok-imagine-image-2.0`. · default: `"medium"` |
 | `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support. |
 | `reference_images` | `query` | `string` | Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
-| `transparent` | `query` | `boolean` | Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`; other models return 400. |
+| `transparent` | `query` | `boolean` | Generate an image with a transparent background. Unsupported models return 400. |
 | `resolution` | `query` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
 
 <sub>`*` = required parameter</sub>
@@ -1169,7 +1175,7 @@ Generate videos from text prompts or reference images. Returns MP4.
 https://gen.pollinations.ai/video/sunset%20timelapse?model=google/veo-3.1-fast&duration=4
 ```
 
-**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, x-ai/grok-imagine-video-1.5-lite, bytedance/seedance-2.5, alibaba/happyhorse-1.1, kwaivgi/kling-v3.0-std, black-forest-labs/flux-3-max, heygen/heygen-video-1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video, kandinskylab/kandinsky-6.0-lite, mirelo/sfx-2.0
+**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, google/gemini-omni-1.2-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, x-ai/grok-imagine-video-1.5-lite, bytedance/seedance-2.5, alibaba/happyhorse-1.1, kwaivgi/kling-v3.0-std, black-forest-labs/flux-3-max, heygen/heygen-video-1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video, kandinskylab/kandinsky-6.0-lite, mirelo/sfx-2.0
 
 ### Community video models
 
@@ -1179,7 +1185,7 @@ Community video models use a `community/owner/model` id and work on `/video/{pro
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:replicate`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:replicate`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:fal`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `x-ai/grok-imagine-video-1.5-lite`, `x-ai/grok-imagine-video-1.5-lite:openrouter`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `kwaivgi/kling-v3.0-std`, `black-forest-labs/flux-3-max`, `heygen/heygen-video-1`, `heygen/heygen-video-1:openrouter`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`, `kandinskylab/kandinsky-6.0-lite`, `mirelo/sfx-2.0`.
+**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:replicate`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:replicate`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:fal`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `x-ai/grok-imagine-video-1.5-lite`, `x-ai/grok-imagine-video-1.5-lite:openrouter`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `kwaivgi/kling-v3.0-std`, `black-forest-labs/flux-3-max`, `heygen/heygen-video-1`, `heygen/heygen-video-1:openrouter`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`, `kandinskylab/kandinsky-6.0-lite`, `mirelo/sfx-2.0`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -1197,8 +1203,8 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the video to generate |
 | `model` | `query` | `string` | Model to use. See /image/models for the current canonical IDs and aliases. · default: `"google/veo-3.1-fast"` |
-| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
-| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, black-forest-labs/flux.1.1-pro, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support. |
@@ -1206,9 +1212,9 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `resolution` | `query` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
-| `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default. · range: `1…120` |
-| `aspectRatio` | `query` | `string` | Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`. |
-| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `black-forest-labs/flux-3-max` generates audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. |
+| `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `google/gemini-omni-1.2-flash`: 3-15s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: 2-15s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default. · range: `1…120` |
+| `aspectRatio` | `query` | `string` | Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`. |
+| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `black-forest-labs/flux-3-max` generates audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1967,14 +1973,23 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `data[].pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `data[].pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
+| `data[].top_provider` * | `object` | — |
 | `data[].capabilities` | `string`[] | — |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
 | `data[].reasoning` | `boolean` | — |
 | `data[].supports_streaming` | `boolean` | False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams. |
 | `data[].context_length` | `number` | — |
+| `data[].video_capabilities` | enum (7) — `"start_frame"`, `"end_frame"`, `"keyframes"`, …[] | Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video. |
+| `data[].min_duration` | `number` | Shortest accepted video or audio `duration` in seconds. |
+| `data[].max_duration` | `number` | Longest accepted video or audio `duration` in seconds. |
+| `data[].default_duration` | `number` | Video length in seconds when the request omits `duration`. |
+| `data[].allowed_durations` | `number`[] | Exact `duration` values in seconds when the model accepts a fixed set instead of a range. |
 | `data[].per_user_rpm` | `number` \| `null` | — |
+| `data[].max_reference_images` | `integer` | Most reference or input images one request accepts. Omitted when the model declares none. |
+| `data[].max_reference_videos` | `integer` | Most reference or input videos one request accepts. Omitted when the model declares none. |
 | `data[].health` | `object` | Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health. |
+| `data[].voices` | `string`[] | Preset voice names for the `voice` parameter. Omitted when the model lists none. |
 
 <sub>`*` = required field</sub>
 
@@ -2075,17 +2090,27 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
+| `top_provider` * | `object` | — |
+| `top_provider.max_completion_tokens` * | `integer` \| `null` | Maximum output tokens; null when no limit is declared. |
 | `capabilities` | `string`[] | — |
 | `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `tools` | `boolean` | — |
 | `reasoning` | `boolean` | — |
 | `supports_streaming` | `boolean` | False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams. |
 | `context_length` | `number` | — |
+| `video_capabilities` | enum (7) — `"start_frame"`, `"end_frame"`, `"keyframes"`, …[] | Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video. |
+| `min_duration` | `number` | Shortest accepted video or audio `duration` in seconds. |
+| `max_duration` | `number` | Longest accepted video or audio `duration` in seconds. |
+| `default_duration` | `number` | Video length in seconds when the request omits `duration`. |
+| `allowed_durations` | `number`[] | Exact `duration` values in seconds when the model accepts a fixed set instead of a range. |
 | `per_user_rpm` | `number` \| `null` | — |
+| `max_reference_images` | `integer` | Most reference or input images one request accepts. Omitted when the model declares none. |
+| `max_reference_videos` | `integer` | Most reference or input videos one request accepts. Omitted when the model declares none. |
 | `health` | `object` | Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health. |
 | `health.status` * | `"healthy"` \| `"degraded"` \| `"down"` \| `"unknown"` | Healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown with no measured requests. |
 | `health.success_rate` * | `number` \| `null` | Success across the last 50 eligible final requests within seven days for community proxies, or the last 24 hours for other models; null with no measured requests. |
 | `health.requests` * | `integer` | Number of eligible final responses in the health sample (at most 50 for community proxies). |
+| `voices` | `string`[] | Preset voice names for the `voice` parameter. Omitted when the model lists none. |
 
 <sub>`*` = required field</sub>
 
@@ -3062,7 +3087,7 @@ Create a prompt agent or deploy `agent.ts` from a public GitHub repository. Code
 |---|---|---|
 | `systemPrompt` * | `string` | length: `1…8000` |
 | `baseModel` * | `string` | length: `1…253` |
-| `mcpServers` | enum (6) — `"pollinations"`, `"ask-jev"`, `"ffmpeg"`, …[] | default: `[]` |
+| `mcpServers` | enum (11) — `"pollinations"`, `"ask-jev"`, `"ffmpeg"`, …[] | default: `[]` |
 | `name` * | `string` | length: `1…120` |
 | `title` * | `string` | length: `1…42` |
 | `description` | `string` | default: `""` · max length: `1000` |
@@ -3337,7 +3362,7 @@ Stored image, video, audio, and 3D files are linked through `Link: <https://medi
 | `GET /media?tag={tag}` | List the public gallery for a tag (no auth) |
 | `DELETE /media/{id}` | Delete a published item you own (secret `sk_` key) |
 
-Upload requires a secret (`sk_`) API key; retrieval is public. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
+Upload requires a secret (`sk_`) API key; retrieval is public. Each account can upload up to 100 files a minute; more return `429` with `Retry-After`. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
 
 Raw file body (streams to storage; returns a random, unlisted ID):
 
@@ -3376,7 +3401,7 @@ Untagged files cannot be deleted. They expire after 30 days, but reads refresh r
 
 #### `POST` `/upload` — Upload media
 
-Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Image metadata is stripped only when requested with `safe=privacy` or the `Pollinations-Safe: privacy` header; `safe=true` also enables privacy. Without it, uploaded bytes are preserved. Privacy processing supports image uploads up to 32 MiB and returns an error for larger or unparseable images. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
+Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Each account can upload up to 100 files a minute. Returns an id and its retrieval URL. Image metadata is stripped only when requested with `safe=privacy` or the `Pollinations-Safe: privacy` header; `safe=true` also enables privacy. Without it, uploaded bytes are preserved. Privacy processing supports image uploads up to 32 MiB and returns an error for larger or unparseable images. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
 
 **Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.
 
@@ -3616,15 +3641,17 @@ E2B's SDKs and CLI work unchanged:
 ```bash
 export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
 export E2B_API_KEY=sk_...
-# Sandboxes on Azure (pollinations-azure, pollinations-azure-large, pollinations-azure-xl) also need this; it serves E2B's too:
-export E2B_SANDBOX_URL=https://gen.pollinations.ai/alpha/e2b/sandbox
 ```
+
+Sandboxes come back with `domain` set to `pollinations.app`, so the SDKs reach a sandbox and its ports at `https://<port>-<id>.pollinations.app`, on E2B and Azure alike. Each request there is at most 100 MB. The providers' hosts still serve sandboxes directly: `https://<port>-<id>.e2b.app` on E2B, `https://<id>--<port>.<region>.adcproxy.io` on Azure.
+
+Staging returns sandbox IDs ending in `--staging`, so their port hosts are `https://<port>-<id>--staging.pollinations.app`. Use the returned ID for subsequent API calls and SDK connections.
 
 Setup with polli, credits and runtime: [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes).
 
 #### `GET` `/alpha/e2b/pricing` — Get sandbox pricing
 
-Pollinations' rates in credits per vCPU-second and per GiB-second of memory, each template's size and rates, and how many sandboxes an account can run at once. The top-level rates apply to other E2B templates. No key needed.
+Pollinations' rates in credits per vCPU-second and per GiB-second of memory, each Pollinations template's name, provider (`e2b` or `azure`), size, disk and rates, and how many sandboxes an account can run at once. The top-level rates apply to other E2B templates. No key needed.
 
 📤 **Response** · `200` — Rates, template sizes and the running limit.
 
@@ -3638,7 +3665,7 @@ curl "https://gen.pollinations.ai/alpha/e2b/pricing"
 
 #### `POST` `/alpha/e2b/sandboxes` — Create sandbox (v1)
 
-Kept for E2B's CLI; prefer v2. Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
+Kept for E2B's CLI; prefer v2. Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
 
 Request and response fields: [E2B · Create sandbox](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox)
 
@@ -3659,7 +3686,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes" \
 
 #### `POST` `/alpha/e2b/v2/sandboxes` — Create sandbox
 
-Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
+Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
 
 Request and response fields: [E2B · Create sandbox (v2)](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox-v2)
 
@@ -3831,7 +3858,7 @@ curl -X PUT "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/net
 
 #### `POST` `/alpha/e2b/sandboxes/{id}/timeout` — Set sandbox timeout
 
-Extra runtime is prepaid from your credits; a shorter timeout refunds nothing. Over 600 seconds keeps the sandbox running until then; 600 or less ends that.
+Extra runtime is prepaid from your credits; a shorter timeout refunds nothing. Over 600 seconds keeps the sandbox running until then; 600 or less ends that. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.
 
 Request and response fields: [E2B · Set sandbox timeout](https://docs.e2b.dev/api-reference/sandboxes/set-sandbox-timeout)
 
@@ -3858,7 +3885,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/ti
 
 #### `POST` `/alpha/e2b/sandboxes/{id}/connect` — Connect or resume sandbox (v1)
 
-Kept for E2B's CLI; prefer v2. Resumes a paused sandbox. Only `timeout` is used, 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then.
+Kept for E2B's CLI; prefer v2. Resumes a paused sandbox. Only `timeout` and `idleTimeout` are used, `timeout` 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.
 
 Request and response fields: [E2B · Connect to sandbox](https://docs.e2b.dev/api-reference/sandboxes/connect-to-sandbox)
 
@@ -3885,7 +3912,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/co
 
 #### `POST` `/alpha/e2b/v2/sandboxes/{id}/connect` — Connect or resume sandbox
 
-Resumes a paused sandbox. Only `timeout` is used, 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then.
+Resumes a paused sandbox. Only `timeout` and `idleTimeout` are used, `timeout` 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then. With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.
 
 Request and response fields: [E2B · Connect sandbox (v2)](https://docs.e2b.dev/api-reference/sandboxes/connect-sandbox-v2)
 
@@ -3906,6 +3933,58 @@ curl -X POST "https://gen.pollinations.ai/alpha/e2b/v2/sandboxes/example-sandbox
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{"timeout":600}'
+```
+
+---
+
+#### `PUT` `/alpha/e2b/sandboxes/{id}/ports/{port}` — Share sandbox port
+
+Not part of E2B's API. Makes the port at `https://{port}-{id}.pollinations.app`, returned as `url`, take only requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. E2B sandboxes only; envd's port 49983 can't be shared.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+| `port` * | `path` | `integer` | Port the sandbox serves, 1 to 65535. |
+
+<sub>`*` = required parameter</sub>
+
+📥 **Request body** · `application/json`
+
+📤 **Response** · `200` — `url`: where the port is served.
+
+💻 **Example**
+
+```bash
+curl -X PUT "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/ports/8080" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"a-long-random-string","header":"X-Telegram-Bot-Api-Secret-Token"}'
+```
+
+---
+
+#### `DELETE` `/alpha/e2b/sandboxes/{id}/ports/{port}` — Unshare sandbox port
+
+Not part of E2B's API. Stops serving a shared port.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+| `port` * | `path` | `integer` | Port the sandbox serves, 1 to 65535. |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `204` — The port is no longer served.
+
+💻 **Example**
+
+```bash
+curl -X DELETE "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/ports/8080" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
 ### Account

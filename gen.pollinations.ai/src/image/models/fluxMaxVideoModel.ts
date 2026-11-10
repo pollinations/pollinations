@@ -102,11 +102,6 @@ export async function callFluxMaxVideoAPI(
     }
 
     const duration = safeParams.duration ?? 5;
-    if (!Number.isInteger(duration) || duration < 5 || duration > 20) {
-        throw UpstreamError.fromProvider(400, {
-            message: "FLUX 3 Max supports whole-second durations from 5 to 20",
-        });
-    }
     const [startImage, endImage] = safeParams.image ?? [];
     const isImageToVideo = Boolean(startImage);
     const aspectRatio = fluxMaxAspectRatio(safeParams, isImageToVideo);

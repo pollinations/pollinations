@@ -387,6 +387,9 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         paid_only: entry.info.paid_only,
         pricing: entry.info.pricing,
         pricing_units: entry.info.pricing_units,
+        top_provider: {
+            max_completion_tokens: entry.info.max_completion_tokens ?? null,
+        },
         capabilities: entry.info.capabilities,
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
@@ -400,6 +403,14 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
+        video_capabilities: entry.info.video_capabilities,
+        min_duration: entry.info.min_duration,
+        max_duration: entry.info.max_duration,
+        default_duration: entry.info.default_duration,
+        allowed_durations: entry.info.allowed_durations,
+        voices: entry.info.voices,
+        max_reference_images: entry.info.max_reference_images,
+        max_reference_videos: entry.info.max_reference_videos,
         ...(entry.info.health && { health: entry.info.health }),
     };
 }
@@ -801,7 +812,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
                 "",
-                "Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.",
+                "Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt and code agents execute their own tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
                 "",

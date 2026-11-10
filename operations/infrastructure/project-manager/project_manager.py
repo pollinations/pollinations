@@ -61,6 +61,8 @@ SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
 LABEL_SOURCES = [("Apps", "APP-SUBMISSION"), ("Quests", "POLLEN-QUEST")]
 NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
+# Same date as REWARDS_START in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
+REWARDS_START = "2026-11-05T00:00:00Z"
 
 
 def log_debug(msg: str):
@@ -111,6 +113,9 @@ def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
                 },
                 timeout=120,
             )
+            # A rejected key or request won't fix itself; only outages are retried.
+            if 400 <= r.status_code < 500 and r.status_code != 429:
+                fail(f"AI HTTP {r.status_code}: {r.text[:500]}")
             if r.status_code != 200:
                 log_error(f"AI HTTP {r.status_code}: {r.text[:500]}")
             else:
@@ -319,8 +324,8 @@ def fetch_pr_files() -> list:
         page += 1
 
 
-def classify(brief: str, areas: list) -> dict:
-    """Area and type for work; priority only for issues."""
+def classify(brief: str, areas: list) -> Optional[dict]:
+    """Area and type for work; priority only for issues. None while the classifier is down."""
     if IS_PULL_REQUEST:
         files = fetch_pr_files()
         facts = f"Changed files ({len(files)}):\n" + "\n".join(files[:300])
@@ -338,7 +343,7 @@ Body: {ISSUE_BODY[:2000]}
 {facts}
 """)
     if raw is None:
-        fail(f"AI classification failed for #{ISSUE_NUMBER}")
+        return None
     try:
         return classification_answer(raw, areas, IS_PULL_REQUEST)
     except ValueError as error:
@@ -358,6 +363,26 @@ def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
     if not is_pr and raw.get("priority") not in PRIORITIES:
         raise ValueError(f"invalid priority: {raw.get('priority')!r}")
     return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"]}
+
+
+def write_reward_comment():
+    """Announce the reward. Enter pays it without reading this comment."""
+    # Only when opened, so a re-run never repeats it.
+    if (GITHUB_EVENT.get("action") != "opened" or ITEM_DATA.get("user", {}).get("type") == "Bot"
+            or ITEM_DATA.get("created_at", "") < REWARDS_START):
+        return
+    if IS_PULL_REQUEST:
+        reward, rule = 5, "The PR author can claim this once it is merged into main. A reward label on this PR, or else on the POLLEN-QUEST issue it closes, sets the amount instead."
+    else:
+        reward, rule = 2, "The issue author can claim this once a merged PR closes this issue, also when they wrote the fix."
+    body = f"Reward: {reward} pollen\n\n{rule} Claim at https://enter.pollinations.ai/quests."
+    try:
+        r = requests.post(f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/comments",
+                          headers=GITHUB_HEADERS, json={"body": body}, timeout=10)
+    except requests.RequestException as e:
+        fail(f"Exception posting the reward comment on #{ISSUE_NUMBER}: {e}")
+    if r.status_code != 201:
+        fail(f"Failed to post the reward comment on #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
 
 
 def main():
@@ -386,6 +411,10 @@ def main():
         answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
     else:
         answer = classify(brief, areas)
+        if answer is None:
+            # An outage is not the contributor's failure: leave the item for a workflow_dispatch run.
+            print(f"SKIP #{ISSUE_NUMBER}\tclassifier unavailable\t{ISSUE_TITLE}")
+            return
         if not IS_PULL_REQUEST and answer["area"] is None:
             log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
             return
@@ -410,6 +439,11 @@ def main():
     if output := os.getenv("CLASSIFICATION_OUTPUT"):
         with open(output, "w") as stream:
             json.dump({"area": answer["area"], "type": answer["type"], "source": source}, stream)
+
+    # App listings have their own reward; access requests earn none. Same rules as
+    # ISSUE_REPORT_EXCLUDED_TITLE in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
+    if IS_PULL_REQUEST or not ("APP-SUBMISSION" in labels or re.match(r"\[Community(?: Model)? Publisher Access\]", ISSUE_TITLE, re.I)):
+        write_reward_comment()
 
 
 if __name__ == "__main__":

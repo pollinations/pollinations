@@ -9,6 +9,7 @@ import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
     type OpenAIImageUsage,
+    PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
     usageToOpenAIImageUsage,
 } from "@shared/registry/usage-headers.ts";
@@ -81,6 +82,12 @@ function responseImageUsage(
     // /v1/images/* records fallback_used = false.
     const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
     if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
+    // Some providers report a charge instead of token counts. Preserve the
+    // receipt when wrapping the media response in OpenAI-compatible JSON.
+    for (const name of Object.values(PROVIDER_BILLING_HEADERS)) {
+        const value = response.headers.get(name);
+        if (value !== null) c.header(name, value);
+    }
     return usageToOpenAIImageUsage(usage);
 }
 
@@ -339,7 +346,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             normalizedJsonBody(
                 JSON.stringify({
                     prompt: safePrompt,
-                    model: c.var.model.resolved,
+                    model: c.var.model.requested.includes(",")
+                        ? c.var.model.requested
+                        : c.var.model.resolved,
                     ...resolved,
                     ...collectPassthrough(body, ...CACHE_PARAMS),
                 }),

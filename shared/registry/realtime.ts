@@ -102,8 +102,8 @@ export const REALTIME_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Scribe v2 Realtime: $0.39 per streamed audio hour.
-            promptAudioSeconds: 0.39 / 3600,
+            // ElevenLabs Scale API plan: $0.22 per streamed audio hour (2026-11-10).
+            promptAudioSeconds: 0.22 / 3600,
         },
         title: "Scribe v2 Realtime",
         description:

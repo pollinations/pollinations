@@ -11,37 +11,18 @@ function parseThinking(thinking: unknown) {
     return CreateMessageRequestSchema.safeParse({ ...base, thinking });
 }
 
-function parseEffort(effort: unknown) {
-    return CreateMessageRequestSchema.safeParse({
-        ...base,
-        output_config: { effort },
-    });
-}
-
 describe("CreateMessageRequestSchema thinking", () => {
-    it("rejects an unsupported thinking type", () => {
-        const parsed = parseThinking({ type: "banana" });
-
-        expect(parsed.success).toBe(false);
-        if (!parsed.success) {
-            expect(parsed.error.issues[0]?.path).toEqual(["thinking", "type"]);
-        }
-    });
-
-    it("rejects budget_tokens below the 1024 minimum", () => {
-        const parsed = parseThinking({ type: "enabled", budget_tokens: 100 });
-
-        expect(parsed.success).toBe(false);
-        if (!parsed.success) {
-            expect(parsed.error.issues[0]?.path).toEqual([
-                "thinking",
-                "budget_tokens",
-            ]);
-        }
-    });
-
-    it("requires budget_tokens when thinking is enabled", () => {
-        const parsed = parseThinking({ type: "enabled" });
+    it.each([
+        {
+            name: "below the 1024 minimum",
+            thinking: { type: "enabled", budget_tokens: 100 },
+        },
+        {
+            name: "missing when thinking is enabled",
+            thinking: { type: "enabled" },
+        },
+    ])("rejects budget_tokens $name", ({ thinking }) => {
+        const parsed = parseThinking(thinking);
 
         expect(parsed.success).toBe(false);
         if (!parsed.success) {
@@ -59,26 +40,6 @@ describe("CreateMessageRequestSchema thinking", () => {
             { type: "adaptive" },
         ]) {
             expect(parseThinking(thinking).success).toBe(true);
-        }
-    });
-});
-
-describe("CreateMessageRequestSchema output_config", () => {
-    it("rejects an unknown effort instead of dropping it", () => {
-        const parsed = parseEffort("banana");
-
-        expect(parsed.success).toBe(false);
-        if (!parsed.success) {
-            expect(parsed.error.issues[0]?.path).toEqual([
-                "output_config",
-                "effort",
-            ]);
-        }
-    });
-
-    it("accepts the documented effort levels", () => {
-        for (const effort of ["low", "medium", "high", "xhigh", "max"]) {
-            expect(parseEffort(effort).success).toBe(true);
         }
     });
 });

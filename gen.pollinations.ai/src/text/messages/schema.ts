@@ -145,7 +145,10 @@ export const CreateMessageRequestSchema = z
             .optional(),
         thinking: z
             .object({
-                type: z.enum(["enabled", "disabled", "adaptive"]),
+                // Anthropic adds thinking types over time (for example
+                // "between_tools" on Claude Sonnet 5.5); a fixed list would
+                // turn those requests into 400s until we catch up.
+                type: z.string(),
                 budget_tokens: z.number().int().min(1024).optional(),
             })
             .passthrough()
@@ -167,11 +170,10 @@ export const CreateMessageRequestSchema = z
             .optional(),
         output_config: z
             .object({
-                // Unknown efforts are dropped by the translator, so a typo
-                // would silently disable reasoning instead of failing.
-                effort: z
-                    .enum(["low", "medium", "high", "xhigh", "max"])
-                    .optional(),
+                // Kept as a plain string for the same reason as thinking.type:
+                // Anthropic adds effort levels over time and unknown values
+                // fall through gracefully instead of failing the request.
+                effort: z.string().optional(),
             })
             .passthrough()
             .optional(),

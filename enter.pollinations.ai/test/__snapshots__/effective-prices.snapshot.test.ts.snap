@@ -1032,6 +1032,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioSeconds": 0.002,
     },
   },
+  "elevenlabs/eleven-text-to-sound-v3": {
+    "cost": {
+      "completionAudioSeconds": 0.002,
+    },
+    "price": {
+      "completionAudioSeconds": 0.002,
+    },
+  },
+  "elevenlabs/eleven-text-to-sound-v3:fal": {
+    "cost": {
+      "completionAudioSeconds": 0.002,
+    },
+    "price": {
+      "completionAudioSeconds": 0.002,
+    },
+  },
   "elevenlabs/eleven-v3": {
     "cost": {
       "completionAudioTokens": 0.00008,

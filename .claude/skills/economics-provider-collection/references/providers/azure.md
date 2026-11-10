@@ -5,8 +5,9 @@ Canonical vendor: `azure`
 ## Verified — 2026-08-22
 
 - Status: client-credential authentication and the invoices API work.
-- Dashboard login: `thomas@myceli.ai`. Use the registry's billing-profile link
-  → Payment methods → Azure credits → View all credits (verified 2026-09-05).
+- Dashboard login: `thomas@myceli.ai`. Use the vendor journal's
+  billing-profile link → Payment methods → Azure credits → View all credits
+  (verified 2026-09-05).
 - Account routing: use only the Chrome window signed in as
   `thomas@myceli.ai`; never open Azure in the `elliot@myceli.ai` window.
 - Billing account:

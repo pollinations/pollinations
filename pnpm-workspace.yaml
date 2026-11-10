@@ -1,0 +1,9 @@
+packages:
+  - shared
+  - enter.pollinations.ai
+  - gen.pollinations.ai
+  - packages/auth
+  - packages/sdk
+  - packages/ui
+  - operations/dashboards/economics/web
+  - media.pollinations.ai

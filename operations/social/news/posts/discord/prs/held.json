@@ -55,16 +55,13 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19247": {
       "merge_sha": "e97d34d35c1a61592d07a7d29925ac009e583cbd",
       "merged_at": "2026-11-09T23:54:14Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/monitoring/infra-watch"
-      ]
+      "required": []
     },
     "19253": {
       "merge_sha": "076a19869b0935064a24edec582ceda0e73341cd",
@@ -79,8 +76,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19267": {
@@ -89,8 +85,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19323": {
@@ -104,10 +99,7 @@
       "merge_sha": "457109c207168e047d08ebe935ecc5116ebc86e2",
       "merged_at": "2026-11-10T09:59:48Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/economics",
-        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
     "19405": {
@@ -127,9 +119,7 @@
     "19424": {
       "merge_sha": "035e8daae32019fb55766513645860bb42c5ea5f",
       "merged_at": "2026-11-10T09:44:26Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/monitoring/infra-watch"
-      ]
+      "required": []
     },
     "19434": {
       "merge_sha": "1e37be83d0838dd435c4a6c814e6ff561ce17622",
@@ -137,8 +127,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19457": {
@@ -147,8 +136,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     }
   },

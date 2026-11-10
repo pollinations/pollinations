@@ -716,25 +716,14 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
-    it("lists DreamShaper with the sana alias and flat per-image pricing", async () => {
+    it("keeps the hidden DreamShaper out of /image/models", async () => {
         const response = await fetchWorker("/image/models", envWithEnter());
 
         expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            aliases?: string[];
-            pricing: Record<string, string>;
-        }[];
-        expect(
-            models.find((model) => model.name === "lykon/dreamshaper-8-lcm"),
-        ).toMatchObject({
-            name: "lykon/dreamshaper-8-lcm",
-            aliases: ["sana", "dreamshaper"],
-            pricing: {
-                completionImageTokens: "0.0001",
-                currency: "pollen",
-            },
-        });
+        const models = (await response.json()) as { name: string }[];
+        expect(models.map((model) => model.name)).not.toContain(
+            "lykon/dreamshaper-8-lcm",
+        );
     });
 
     it("lists Recraft vector with aliases, modalities, and flat pricing", async () => {

@@ -49,9 +49,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "lykon/dreamshaper-8-lcm": {
-        // "sana" is kept as an alias so existing callers and the legacy image
-        // proxy worker keep working unchanged.
+        // Kept for the legacy image proxy worker, which calls it as "sana", and
+        // for existing callers: hidden from the catalog, still served.
         aliases: ["sana", "dreamshaper"],
+        hidden: true,
         provider: "vast",
         publisher: "Lykon",
         category: "image",

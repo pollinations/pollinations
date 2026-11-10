@@ -36,7 +36,8 @@ Primary evidence sources:
 ## Daily usage export — verified 2026-09-05
 
 - API: `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/billable-usage?from=YYYY-MM-DD&to=YYYY-MM-DD`.
-- Myceli credential: existing `CLOUDFLARE_MYCELI_API_TOKEN`; account ID from registry.
+- Myceli credential: existing `CLOUDFLARE_MYCELI_API_TOKEN`; account ID from
+  the vendor journal.
 - Query each intersecting billing cycle, including its anchor day. A calendar
   query can silently omit the preceding cycle's days. Myceli anchor: day 22.
   For August, query `2026-07-22`–`2026-08-22` and `2026-08-22`–`2026-09-01`,

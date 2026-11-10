@@ -428,7 +428,17 @@ export const CreateChatCompletionRequestSchema = z
             .max(128)
             .optional(), // deprecated, supported
     })
-    .passthrough();
+    .passthrough()
+    .superRefine((value, ctx) => {
+        if (value.tool_choice === "required" && !value.tools?.length) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["tools"],
+                message:
+                    'tool_choice "required" requires at least one tool in tools.',
+            });
+        }
+    });
 
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
@@ -889,6 +899,7 @@ export const GetModelsResponseSchema = z
 // Shared fields between image generation and editing requests
 const imageModelField = z
     .string()
+    .min(1)
     .optional()
     .default("black-forest-labs/flux.1-schnell")
     .meta({
@@ -897,6 +908,7 @@ const imageModelField = z
 // Edits need a model that reads the source image; schnell is text-only.
 const imageEditModelField = z
     .string()
+    .min(1)
     .optional()
     .default("openai/gpt-image-1-mini")
     .meta({

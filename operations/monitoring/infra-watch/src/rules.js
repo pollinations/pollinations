@@ -202,6 +202,7 @@ export function earlyErrors(minutes) {
             bursts: bursts.length,
             failures: total(minutes, "failures"),
             d1: total(minutes, "d1_failures"),
+            firstAt: minuteMs(bursts[0].minute),
             lastAt: minuteMs(bursts.at(-1).minute),
         },
     };
@@ -414,6 +415,12 @@ export function noteworthy(before, now) {
         return `final success moved from ${pct(before.success)} to ${pct(now.success)}`;
     if ((before.failingCallers ?? 0) <= 1 && (now.failingCallers ?? 0) > 1)
         return `failing callers went from ${before.failingCallers ?? 0} to ${now.failingCallers}`;
+    if (
+        now.worst != null &&
+        before.worst != null &&
+        now.worst >= 2 * before.worst
+    )
+        return `worst minute went from ${before.worst} to ${now.worst} failed requests`;
     return null;
 }
 
@@ -824,13 +831,22 @@ function openRows(incident, now) {
     return rows;
 }
 
-// Rows of a closed card. A domain card keeps how long it lasted; an outage
-// card keeps how it started, its routes then, and now: how long it lasted
-// and what it cost are in its summary line.
+// How long an incident lasted. Early errors come in bursts of seconds and
+// their card stays open for the 30-minute window: from the first bad minute
+// to the end of the last.
+export const lasted = (incident) =>
+    incident.kind === "EARLY_ERRORS"
+        ? incident.info.lastAt + 60_000 - incident.start.firstAt
+        : incident.closedAt - incident.openedAt;
+
+// Rows of a closed card. A domain card keeps how long it lasted; a model
+// card keeps how it started, its routes then, and now; any other outage
+// keeps its box as last seen. How long it lasted and what it cost are in
+// its summary line.
 function closedRows(key, incident) {
     if (DOMAIN_KEY.test(key))
         return [["LASTED", duration(incident.closedAt - incident.openedAt)]];
-    if (!key.startsWith("model:")) return [];
+    if (!key.startsWith("model:")) return openRows(incident);
     const { start, latest } = incident;
     const rows = [startRow(start), ...routeRows(start.routes)];
     if (latest)
@@ -849,7 +865,7 @@ const percent = (x) => (x < 0.01 ? "<1%" : `${Math.round(x * 100)}%`);
 // bad it was. Domain cards have no summary.
 function summary(key, incident) {
     if (DOMAIN_KEY.test(key)) return null;
-    const took = `### ⏱️ ${duration(incident.closedAt - incident.openedAt)}`;
+    const took = `### ⏱️ ${duration(lasted(incident))}`;
     if (!key.startsWith("model:")) return took;
     const { lost } = incident;
     if (!lost) return `${took} · impact unknown`;
@@ -886,6 +902,12 @@ export function renderCard(
             color,
         ),
     ];
+    // Caller enrichment is cached separately from the current health rows.
+    // Keep its window explicit even when the card's final success has changed.
+    if (!closed && incident.info.callers && incident.enriched?.at != null)
+        parts.push(
+            `*Caller counts: separate 15m sample, checked <t:${unix(incident.enriched.at)}:f>.*`,
+        );
     if (!closed) parts.push(`*open since <t:${unix(incident.openedAt)}:R>*`);
     for (const line of lines)
         parts.push(

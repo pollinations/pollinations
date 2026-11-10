@@ -18,7 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 2
+      # One table at a time: two parallel page streams were paging prod D1
+      # when it stalled on 2026-11-10 12:30 UTC.
+      max-parallel: 1
       matrix:
         datasource:
           - d1_user

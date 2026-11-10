@@ -5,7 +5,7 @@ import { decodePaymentSignatureHeader } from "@x402/core/http";
 import type { PaymentPayload } from "@x402/core/types";
 import stableStringify from "fast-json-stable-stringify";
 import { HTTPException } from "hono/http-exception";
-import { CompactEncrypt, compactDecrypt } from "jose";
+import { CompactEncrypt } from "jose";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 
@@ -43,28 +43,48 @@ async function encryptKey(key: string, secret: string): Promise<string> {
         .encrypt(await encryptionKey(secret));
 }
 
-async function decryptKey(ciphertext: string, secret: string): Promise<string> {
-    const { plaintext } = await compactDecrypt(
-        ciphertext,
-        await encryptionKey(secret),
-    );
-    return new TextDecoder().decode(plaintext);
+async function sha256Hex(text: string): Promise<string> {
+    const digest = await crypto.subtle.digest("SHA-256", encoder.encode(text));
+    return Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+    ).join("");
 }
 
 export async function paymentId(signature: string): Promise<string> {
     return paymentIdForPayload(decodePaymentSignatureHeader(signature));
 }
 
+// Purchases recorded before transfer ids are stored under a hash of the whole
+// envelope. This only matches the original envelope: one with changed
+// unsigned fields hashes differently and relies on Weft refusing the nonce.
+export async function legacyPaymentId(signature: string): Promise<string> {
+    return sha256Hex(stableStringify(decodePaymentSignatureHeader(signature)));
+}
+
+// One purchase per signed transfer. The EIP-3009 nonce is unique per token
+// and payer; unsigned envelope fields (resource, extensions) are left out so
+// they cannot mint a second purchase for the same transfer.
 export async function paymentIdForPayload(
     payment: PaymentPayload,
 ): Promise<string> {
-    const digest = await crypto.subtle.digest(
-        "SHA-256",
-        encoder.encode(stableStringify(payment)),
+    const { authorization } = payment.payload as {
+        authorization?: { from?: string; nonce?: string };
+    };
+    if (
+        !authorization?.from ||
+        !/^0x[0-9a-fA-F]{64}$/.test(authorization.nonce ?? "")
+    )
+        throw new Error("x402 payment has no EIP-3009 authorization");
+    return sha256Hex(
+        [
+            payment.accepted.network,
+            payment.accepted.asset,
+            authorization.from,
+            authorization.nonce,
+        ]
+            .join(":")
+            .toLowerCase(),
     );
-    return Array.from(new Uint8Array(digest), (byte) =>
-        byte.toString(16).padStart(2, "0"),
-    ).join("");
 }
 
 export async function getPurchase(
@@ -79,6 +99,13 @@ export async function getPurchase(
     );
 }
 
+// Settlement publishes the signed payment on-chain, so anyone can rebuild a
+// PAYMENT-SIGNATURE header. Only the request that records the payment gets
+// its key; a stored key is never returned and a recorded payment never
+// resumed. Support checks wallet ownership and payment terms instead.
+export const PAYMENT_USED =
+    "x402 payment already used. If it was charged and you have no key, contact hello@pollinations.ai with the transaction.";
+
 export async function preparePurchase(
     env: Env["Bindings"],
     ctx: ExecutionContext | undefined,
@@ -86,22 +113,6 @@ export async function preparePurchase(
     userId: string,
     packKey: string,
 ): Promise<{ id: string; key: string }> {
-    const existing = await getPurchase(env.DB, id);
-    if (existing) {
-        if (existing.user_id !== userId || existing.pack_key !== packKey) {
-            throw new HTTPException(409, {
-                message: "Payment already belongs to another purchase",
-            });
-        }
-        return {
-            id: existing.key_id,
-            key: await decryptKey(
-                existing.encrypted_key,
-                env.BETTER_AUTH_SECRET,
-            ),
-        };
-    }
-
     // A pending key cannot spend Pollen. It becomes usable only after Weft
     // settles and creditPurchase atomically funds the wallet and key budget.
     const created = await createApiKeyForUser({
@@ -124,19 +135,13 @@ export async function preparePurchase(
             .bind(id, userId, created.id, packKey, encrypted, Date.now())
             .run();
     } catch (error) {
-        // A concurrent retry may have won the unique payment-id insert.
         await env.DB.prepare(
             "DELETE FROM apikey WHERE id = ? AND pollen_balance = 0",
         )
             .bind(created.id)
             .run();
-        const winner = await getPurchase(env.DB, id);
-        if (!winner || winner.user_id !== userId || winner.pack_key !== packKey)
-            throw error;
-        return {
-            id: winner.key_id,
-            key: await decryptKey(winner.encrypted_key, env.BETTER_AUTH_SECRET),
-        };
+        if (!(await getPurchase(env.DB, id))) throw error;
+        throw new HTTPException(409, { message: PAYMENT_USED });
     }
     return { id: created.id, key: created.key };
 }

@@ -2,11 +2,13 @@ import { env } from "cloudflare:test";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withModelFallback } from "../../src/fallback.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
+import { getChatRequestData } from "../../src/text/requestUtils.ts";
 import type { ChatMessage } from "../../src/text/types.js";
 
 const azureModelConfig = {
@@ -651,6 +653,97 @@ describe("generateTextPortkey", () => {
             ],
         });
     });
+
+    it.each([
+        {
+            model: "z-ai/glm-5.3-flash",
+            caller: { service_tier: "priority" },
+            sent: { service_tier: undefined },
+        },
+        {
+            model: "google/gemini-2.5-flash-lite",
+            caller: {
+                providerOptions: { gateway: { serviceTier: "priority" } },
+            },
+            sent: {
+                providerOptions: { gateway: { only: ["vertex", "google"] } },
+            },
+        },
+        {
+            // A tier the route sets on purpose is still sent.
+            model: "meta/llama-4-scout:deepinfra:priority",
+            caller: { service_tier: "flex" },
+            sent: { service_tier: "priority" },
+        },
+        {
+            // OpenRouter's provider pin keeps zero data retention.
+            model: "x-ai/grok-4.20:openrouter:xai-zdr",
+            caller: {
+                modelConfig: {
+                    provider: "openai",
+                    model: "caller/model",
+                    directEndpoint: "https://example.com/v1/chat/completions",
+                },
+                provider: { only: ["xai"] },
+                models: ["anthropic/claude-opus-4.7"],
+                preset: "@preset/fallbacks",
+                plugins: [{ id: "web" }],
+            },
+            sent: {
+                model: "x-ai/grok-4.20",
+                provider: { only: ["xai/zdr"], allow_fallbacks: false },
+                models: undefined,
+                preset: undefined,
+                plugins: undefined,
+            },
+        },
+        {
+            // The route's own transform still adds its web plugin.
+            model: "google/gemini-2.5-flash-lite:search",
+            caller: { plugins: [{ id: "file-parser" }] },
+            sent: { plugins: [{ id: "web", engine: "exa", max_results: 5 }] },
+        },
+    ])(
+        "sends $model only the route's processing tier, routing and plugins",
+        async ({ model, caller, sent }) => {
+            syncTextEnvironment({
+                ...env,
+                AI_GATEWAY_API_KEY: "test-vercel-key",
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+                FIREWORKS_NEO_API_KEY: "test-fireworks-key",
+            });
+            let body: Record<string, unknown> = {};
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_input, init) => {
+                    body = JSON.parse(String(init?.body));
+                    return Response.json({
+                        choices: [
+                            {
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 5,
+                            completion_tokens: 1,
+                            total_tokens: 6,
+                        },
+                    });
+                },
+            );
+            const { messages, ...options } = getChatRequestData(
+                CreateChatCompletionRequestSchema.parse({
+                    model,
+                    messages: [{ role: "user", content: "Hi" }],
+                    ...caller,
+                }),
+            );
+            await generateTextPortkey(messages, options);
+            for (const [key, value] of Object.entries(sent)) {
+                expect(body[key]).toEqual(value);
+            }
+        },
+    );
 
     it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {
         vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(

@@ -2488,3 +2488,29 @@ describe("refusal-only completions", () => {
         expect(chunks).toEqual([refusal]);
     });
 });
+
+describe("buffered chat completion errors", () => {
+    it("rejects partial completions with finish_reason=error", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                choices: [
+                    {
+                        message: {
+                            role: "assistant",
+                            content: "Partial answer",
+                        },
+                        finish_reason: "error",
+                    },
+                ],
+            }),
+        );
+        const client = newClient();
+        await expect(client.text("Write a report")).rejects.toMatchObject({
+            code: "STREAM_ERROR",
+            status: 502,
+        });
+        await expect(
+            client.chat([{ role: "user", content: "Write a report" }]),
+        ).rejects.toMatchObject({ code: "STREAM_ERROR", status: 502 });
+    });
+});

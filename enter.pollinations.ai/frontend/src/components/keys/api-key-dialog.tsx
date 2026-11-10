@@ -49,6 +49,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setPollenBudget,
         setExpiryDays,
         setQuestPollenOnly,
+        setCacheDisabled,
     } = keyPermissions;
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -102,6 +103,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 setPollenBudget(null);
                 setExpiryDays(null);
                 setQuestPollenOnly(false);
+                setCacheDisabled(false);
             }
             return;
         }
@@ -125,6 +127,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setPollenBudget,
         setExpiryDays,
         setQuestPollenOnly,
+        setCacheDisabled,
     ]);
 
     return (

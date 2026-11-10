@@ -33,6 +33,7 @@ type CreateApiKeyForUserInput = {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     questPollenOnly?: boolean;
+    cacheDisabled?: boolean;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
     defaultCreatedVia: string;
@@ -237,6 +238,7 @@ export async function createApiKeyForUser({
     allowedModels,
     pollenBudget,
     questPollenOnly = false,
+    cacheDisabled = false,
     accountPermissions,
     metadata,
     defaultCreatedVia,
@@ -315,6 +317,7 @@ export async function createApiKeyForUser({
         d1Updates.pollenBalance = effectivePollenBudget;
     }
     if (questPollenOnly) d1Updates.questPollenOnly = true;
+    if (cacheDisabled) d1Updates.cacheDisabled = true;
     if (!isPublishable && attribution) {
         d1Updates.byopClientKeyId = attribution.clientId;
     }
@@ -336,6 +339,7 @@ export async function createApiKeyForUser({
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: effectivePollenBudget ?? null,
         questPollenOnly,
+        cacheDisabled,
         byopClientKeyId:
             !isPublishable && attribution ? attribution.clientId : null,
         metadata: finalMetadata,

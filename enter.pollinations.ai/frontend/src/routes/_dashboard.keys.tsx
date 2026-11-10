@@ -67,6 +67,7 @@ function KeysPage() {
                 pollenBudget: formState.pollenBudget,
                 accountPermissions: formState.accountPermissions,
                 questPollenOnly: formState.questPollenOnly,
+                cacheDisabled: formState.cacheDisabled,
             },
         });
 

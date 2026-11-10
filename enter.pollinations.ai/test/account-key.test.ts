@@ -85,6 +85,38 @@ test("API key auth keeps rejecting a refused key from the cache", {
     expect(await authenticateKey(key)).toBeNull();
 });
 
+test("API key auth reports the cache setting of the key and its account", {
+    timeout: 30000,
+}, async ({ accountToken, mocks }) => {
+    await mocks.enable("tinybird");
+    const off = await createApiKeyViaApi(accountToken, {
+        name: "cache-off",
+        cacheDisabled: true,
+    });
+    const on = await createApiKeyViaApi(accountToken, { name: "cache-on" });
+
+    let auth = await authenticateKey(off.key);
+    expect(auth?.apiKey?.cacheDisabled).toBe(true);
+    expect(auth?.user.cacheDisabled).toBe(false);
+    expect((await authenticateKey(on.key))?.apiKey?.cacheDisabled).toBe(false);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/profile",
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            },
+            body: JSON.stringify({ cacheDisabled: true }),
+        },
+    );
+    expect(response.status).toBe(200);
+    auth = await authenticateKey(on.key);
+    expect(auth?.user.cacheDisabled).toBe(true);
+    expect(auth?.apiKey?.cacheDisabled).toBe(false);
+});
+
 test("GET /api/account/key - returns 401 without API key", async () => {
     const response = await SELF.fetch(`http://localhost:3000${endpoint}`);
     expect(response.status).toBe(401);

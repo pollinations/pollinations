@@ -6,6 +6,7 @@ import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 
 /** Caller-specific attempts must not share another payer's refusal or result. */
 export function callerCacheScope(
@@ -190,6 +191,17 @@ function replaceCapturedResponse(
     c.res = captured;
 }
 
+/** Agent runs, and callers who turned the cache off, never share results. */
+function sharesCache(c: Context<GenerationCacheEnv>): boolean {
+    const { auth, model } = c.var as GenerationCacheEnv["Variables"] &
+        Partial<AuthVariables & ModelVariables>;
+    return (
+        !model?.cachePrivate &&
+        !auth?.user?.cacheDisabled &&
+        !auth?.apiKey?.cacheDisabled
+    );
+}
+
 async function lookup(
     c: Context<GenerationCacheEnv>,
     adapter: GenerationCacheAdapter,
@@ -230,7 +242,6 @@ function capture(
 export function createGenerationCache(adapter: GenerationCacheAdapter) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
         const log = c.get("log").getChild(adapter.label);
-        const cacheKey = await adapter.getKey(c);
         const track = (
             c.var as GenerationCacheEnv["Variables"] & {
                 track?: {
@@ -241,6 +252,27 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         ).track;
         const coordinate = track?.streamRequested !== true;
 
+        if (!sharesCache(c)) {
+            // A private request never reads or fills a shared entry. The
+            // coordinator still hands a non-streamed result back through the
+            // cache, so it gets a one-off entry named by this request's id.
+            if (coordinate) {
+                c.set("generationCache", {
+                    adapter,
+                    key: await hashGenerationCacheIdentity(
+                        adapter.storage,
+                        `run:${c.var.requestId}`,
+                    ),
+                });
+            }
+            await next();
+            // Nor may a browser or proxy replay it.
+            c.header("X-Cache", "MISS");
+            c.header("Cache-Control", "private, no-store");
+            return;
+        }
+
+        const cacheKey = await adapter.getKey(c);
         try {
             const cached = await lookup(c, adapter, cacheKey);
             if (cached) return cached;

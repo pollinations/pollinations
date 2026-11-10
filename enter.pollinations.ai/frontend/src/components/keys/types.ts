@@ -10,6 +10,7 @@ export interface ApiKey {
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
     questPollenOnly?: boolean;
+    cacheDisabled?: boolean;
     byopClientKeyId?: string | null;
 }
 
@@ -19,6 +20,7 @@ export interface ApiKeyUpdateParams {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     questPollenOnly?: boolean;
+    cacheDisabled?: boolean;
     expiresAt?: Date | null;
     redirectUris?: string[];
     earningsEnabled?: boolean;
@@ -47,6 +49,8 @@ export type CreateApiKey = {
     accountPermissions?: string[] | null;
     /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
     questPollenOnly?: boolean;
+    /** Never use or fill the shared generation cache */
+    cacheDisabled?: boolean;
     /** Allowed OAuth redirect URLs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];
     /** Enable BYOP app earnings for publishable app keys */

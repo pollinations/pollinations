@@ -55,6 +55,10 @@ export const user = sqliteTable("user", {
   lowBalanceNotifiedAt: integer("low_balance_notified_at"),
   emailUnsubscribedAt: integer("email_unsubscribed_at"),
   lastPackPollen: real("last_pack_pollen"),
+  // Every request by this account skips the shared generation cache.
+  cacheDisabled: integer("cache_disabled", { mode: "boolean" })
+    .default(sql`0`)
+    .notNull(),
   // The invite link owner or BYOP app owner this user signed up through.
   referredBy: text("referred_by").references((): AnySQLiteColumn => user.id, {
     onDelete: "set null",
@@ -163,6 +167,10 @@ export const apikey = sqliteTable("apikey", {
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
   questPollenOnly: integer("quest_pollen_only", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  // Every request by this key skips the shared generation cache.
+  cacheDisabled: integer("cache_disabled", { mode: "boolean" })
     .default(false)
     .notNull(),
   byopClientKeyId: text("byop_client_key_id"),

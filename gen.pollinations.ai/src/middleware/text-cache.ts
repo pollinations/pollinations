@@ -42,21 +42,16 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        if (variables.model?.requested?.includes(",")) {
-            c.set("generationCachePrivate", true);
-        }
-        // Agent runs are unique; caller lists are stable per key because their
-        // choices depend on that key's permissions and available budget.
-        const cacheScope = variables.model?.cacheScope;
-        const partition = cacheScope
-            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
-            : variables.model?.requested?.includes(",")
-              ? `caller-list:${callerCacheScope(variables.auth)}`
-              : undefined;
+        // A caller's model list is cached per caller: its choices depend on
+        // that key's permissions and available budget.
+        const callerList = variables.model?.requested?.includes(",");
+        if (callerList) c.set("generationCachePrivate", true);
         return generateCacheKey(
             c.req.raw,
             bodyText,
-            partition,
+            callerList
+                ? `caller-list:${callerCacheScope(variables.auth)}`
+                : undefined,
             getRequiredSafetyFeatures(variables.model),
         );
     },

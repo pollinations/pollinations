@@ -110,7 +110,7 @@ export const packageTools = [
     ],
     [
         "package_downloads",
-        "Read npm download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). npm packages only; PyPI and crates.io publish no comparable public counts.",
+        "Read npm download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). npm packages only.",
         {
             name: z.string().trim().min(1).max(214),
             range: z

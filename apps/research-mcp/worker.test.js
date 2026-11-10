@@ -279,6 +279,7 @@ for (const modern of [false, true]) {
                 "get_entity",
                 "search_articles",
                 "get_article",
+                "arxiv_search",
                 "get_indicator_data",
                 "list_countries",
             ].sort(),

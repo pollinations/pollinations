@@ -735,6 +735,23 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "elevenlabs/scribe-v3": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-11-10").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // https://elevenlabs.io/pricing/api — base transcription, no paid extras.
+        cost: { promptAudioSeconds: 0.2 / 3600 },
+        title: "Scribe v3",
+        description:
+            "Accurate multilingual transcription with speaker labels and word timestamps",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     "elevenlabs/scribe-v2": {
         aliases: ["scribe_v2", "scribe-v2", "scribe"],
         provider: "elevenlabs",

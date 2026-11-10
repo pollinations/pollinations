@@ -1438,6 +1438,7 @@ export async function transcribeWithOpenRouterGemini(opts: {
 }
 
 export async function transcribeWithElevenLabs(opts: {
+    modelName?: "elevenlabs/scribe-v2" | "elevenlabs/scribe-v3";
     file: File;
     language?: string;
     responseFormat?: string;
@@ -1446,6 +1447,7 @@ export async function transcribeWithElevenLabs(opts: {
     numSpeakers?: number;
 }): Promise<Response> {
     const {
+        modelName = "elevenlabs/scribe-v2",
         file,
         language,
         responseFormat = "json",
@@ -1470,7 +1472,10 @@ export async function transcribeWithElevenLabs(opts: {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("model_id", "scribe_v2");
+    formData.append(
+        "model_id",
+        modelName === "elevenlabs/scribe-v3" ? "scribe_v3" : "scribe_v2",
+    );
     if (language) {
         formData.append("language_code", language);
     }
@@ -1515,7 +1520,7 @@ export async function transcribeWithElevenLabs(opts: {
     );
 
     const usageHeaders = buildUsageHeaders(
-        "elevenlabs/scribe-v2",
+        modelName,
         createAudioSecondsUsage(meteredInputSeconds),
     );
 
@@ -4318,8 +4323,12 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             });
         }
-        if (candidate.id === "elevenlabs/scribe-v2") {
+        if (
+            candidate.id === "elevenlabs/scribe-v2" ||
+            candidate.id === "elevenlabs/scribe-v3"
+        ) {
             return transcribeWithElevenLabs({
+                modelName: candidate.id,
                 file,
                 language: language || undefined,
                 responseFormat: responseFormat || undefined,

@@ -1116,6 +1116,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.000108333333333333,
     },
   },
+  "elevenlabs/scribe-v3": {
+    "cost": {
+      "promptAudioSeconds": 0.0000555555555555556,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000555555555555556,
+    },
+  },
+  "elevenlabs/scribe-v3-live": {
+    "cost": {
+      "promptAudioSeconds": 0.0000611111111111111,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000611111111111111,
+    },
+  },
   "elevenlabs/stem-separation": {
     "cost": {
       "promptAudioSeconds": 0.005,

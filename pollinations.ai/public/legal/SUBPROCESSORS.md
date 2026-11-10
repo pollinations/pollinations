@@ -16,7 +16,6 @@ These providers process personal data for us. Some process it outside the EEA, i
 | E2B | Code sandboxes |
 | Exa | Web search |
 | Composio | Connected-account tools |
-| Crossref | Scholarly metadata and DOI search |
 
 ## Model providers
 

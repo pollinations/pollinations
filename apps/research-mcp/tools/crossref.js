@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { fetchJson } from "../fetch.js";
 
 const API_ROOT = "https://api.crossref.org/works";
+const MAILTO = "mailto=hello@pollinations.ai";
 const ABSTRACT_LIMIT = 8_000;
 
 function cleanString(val) {
@@ -14,10 +14,12 @@ function cleanString(val) {
 
 function formatAuthors(authors) {
     if (!Array.isArray(authors)) return [];
-    return authors.map((a) => {
-        const name = [a.given, a.family].filter(Boolean).join(" ");
-        return name || a.name || "Unknown Author";
-    });
+    return authors
+        .map((a) => {
+            const name = [a.given, a.family].filter(Boolean).join(" ");
+            return name || a.name || null;
+        })
+        .filter(Boolean);
 }
 
 function extractDate(item) {
@@ -33,21 +35,19 @@ function extractDate(item) {
 }
 
 function formatWork(item) {
-    const title = Array.isArray(item.title) ? item.title[0] : item.title;
-    const container = Array.isArray(item["container-title"])
-        ? item["container-title"][0]
-        : item["container-title"];
+    const title = cleanString(item.title?.[0]) || null;
+    const container = cleanString(item["container-title"]?.[0]) || null;
     const abstract = item.abstract ? cleanString(item.abstract) : null;
 
     return {
-        doi: item.DOI,
-        title: cleanString(title) || "Untitled Work",
+        doi: item.DOI ?? null,
+        title,
         authors: formatAuthors(item.author),
-        container: cleanString(container) || null,
+        container,
         published: extractDate(item),
-        type: item.type || "journal-article",
-        citations: item["is-referenced-by-count"] ?? 0,
-        url: item.URL || `https://doi.org/${item.DOI}`,
+        type: item.type ?? null,
+        citations: item["is-referenced-by-count"] ?? null,
+        url: item.URL || (item.DOI ? `https://doi.org/${item.DOI}` : null),
         abstract: abstract ? abstract.slice(0, ABSTRACT_LIMIT) : null,
     };
 }
@@ -60,6 +60,7 @@ export const crossRefTools = [
             query: z
                 .string()
                 .min(1)
+                .max(500)
                 .describe(
                     "Search query (keywords, paper title, or author name)",
                 ),
@@ -73,9 +74,9 @@ export const crossRefTools = [
                     "Maximum number of results to return (1-50, default 10)",
                 ),
         },
-        async ({ query, limit = 10 }, fetchFn = fetchJson) => {
-            const url = `${API_ROOT}?query=${encodeURIComponent(query.trim())}&rows=${limit}&select=DOI,title,author,container-title,published,published-print,published-online,created,type,is-referenced-by-count,URL,abstract`;
-            const data = await fetchFn(url);
+        async ({ query, limit }, fetchJson) => {
+            const url = `${API_ROOT}?query=${encodeURIComponent(query.trim())}&rows=${limit}&${MAILTO}&select=DOI,title,author,container-title,published,published-print,published-online,created,type,is-referenced-by-count,URL,abstract`;
+            const data = await fetchJson(url);
             const items = data?.message?.items || [];
             return {
                 totalResults: data?.message?.["total-results"] ?? items.length,
@@ -91,19 +92,17 @@ export const crossRefTools = [
             doi: z
                 .string()
                 .min(1)
+                .max(200)
                 .describe(
                     "Digital Object Identifier (e.g. '10.1038/s41586-020-2649-2')",
                 ),
         },
-        async ({ doi }, fetchFn = fetchJson) => {
+        async ({ doi }, fetchJson) => {
             const normalizedDoi = doi
                 .trim()
                 .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "");
-            const url = `${API_ROOT}/${encodeURIComponent(normalizedDoi)}`;
-            const data = await fetchFn(url);
-            if (!data?.message) {
-                throw new Error(`Publication with DOI "${doi}" not found.`);
-            }
+            const url = `${API_ROOT}/${encodeURIComponent(normalizedDoi)}?${MAILTO}`;
+            const data = await fetchJson(url);
             return {
                 work: formatWork(data.message),
             };

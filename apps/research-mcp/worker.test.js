@@ -281,6 +281,8 @@ for (const modern of [false, true]) {
                 "get_article",
                 "get_indicator_data",
                 "list_countries",
+                "crossref_search",
+                "crossref_work",
             ].sort(),
         );
     });
@@ -498,6 +500,7 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     mock.method(globalThis, "fetch", async (input) => {
         const url = new URL(input);
         assert.equal(url.hostname, "api.crossref.org");
+        assert.equal(url.searchParams.get("mailto"), "hello@pollinations.ai");
         if (url.pathname === "/works") {
             return Response.json({
                 status: "ok",

@@ -66,6 +66,7 @@ for (const modern of [false, true])
                 "currency_rates",
                 "check_contrast",
                 "create_qr",
+                "calculate_hash",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -390,4 +391,34 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+test("calculate_hash computes SHA-256 and other digests locally in hex and base64", async (t) => {
+    const client = await clientFor(t);
+    const sha256Hex = await call(client, "calculate_hash", {
+        text: "hello world",
+        algorithm: "SHA-256",
+        encoding: "hex",
+    });
+    assert.equal(
+        sha256Hex.hash,
+        "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+    );
+    assert.equal(sha256Hex.byteLength, 32);
+
+    const sha256Base64 = await call(client, "calculate_hash", {
+        text: "hello world",
+        algorithm: "SHA-256",
+        encoding: "base64",
+    });
+    assert.equal(
+        sha256Base64.hash,
+        "uU0nuZNNPgilLlLX2n2r+sSE7+N6U4DukIj3rOLvzek=",
+    );
+
+    const sha1 = await call(client, "calculate_hash", {
+        text: "hello world",
+        algorithm: "SHA-1",
+    });
+    assert.equal(sha1.hash, "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed");
+    assert.equal(sha1.byteLength, 20);
 });

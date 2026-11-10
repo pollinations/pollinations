@@ -3,9 +3,10 @@ TOKEN infra_watch_read READ
 DESCRIPTION >
     infra-watch monitor: payments in trouble, one row each, ids only.
     `server_error`: Stripe webhook or checkout 5xx in the last 15 minutes,
-    per route, leaving out Enter's database (D1) failing, which the database
-    card covers. `not_credited`: a pack or auto top-up payment that succeeded
-    15 minutes to 24 hours ago with no credit recorded. A pack payment is
+    per route, leaving out Enter's database (D1) failing, raw or wrapped by
+    drizzle as "Failed query:", which the database card covers.
+    `not_credited`: a pack or auto top-up payment that succeeded 15 minutes
+    to 24 hours ago with no credit recorded. A pack payment is
     credited by its checkout session's success event, an auto top-up payment
     by its invoice's credit outcome (Stripe links the payment to its invoice
     as payment_details.order_reference). `reason` is the invoice's last
@@ -27,6 +28,7 @@ SQL >
         AND toInt32(status) >= 500
         AND (route_path = '/api/webhooks/stripe' OR startsWith(route_path, '/api/stripe/checkout'))
         AND positionCaseInsensitive(concat(message, ' ', stack), 'D1_ERROR') = 0
+        AND positionCaseInsensitive(concat(message, ' ', stack), 'Failed query:') = 0
     GROUP BY route_path
 
     UNION ALL

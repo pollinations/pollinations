@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-09T06:08:44.105810+00:00",
+  "generated_at": "2026-11-10T06:08:40.539256+00:00",
   "models": [
     {
       "id": "2026-10-13:assemblyai/universal-2",
@@ -4764,81 +4764,210 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-11-09:anthropic/claude-fable-5.2",
+      "model_id": "anthropic/claude-fable-5.2",
+      "title": "Claude Fable 5.2",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-09",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 20
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000008",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.00001",
+            "completionTextTokens": "0.00004"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-09:google/gemini-omni-1.2-flash",
+      "model_id": "google/gemini-omni-1.2-flash",
+      "title": "Gemini Omni 1.2 Flash",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-11-09",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 2
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptImageTokens": "0.0000015",
+            "completionTextTokens": "0.000009",
+            "completionVideoTokens": "0.000012"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-09:moonshotai/kimi-k3.1-pro",
+      "model_id": "moonshotai/kimi-k3.1-pro",
+      "title": "Kimi K3.1 Pro",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-09",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000002",
+            "completionTextTokens": "0.00001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001725",
+            "promptCachedTokens": "0.0000001725",
+            "promptCacheWriteTokens": "0.000001725",
+            "promptImageTokens": "0.000001725",
+            "completionTextTokens": "0.000008625"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-09:nvidia/nemotron-3-ultra",
+      "model_id": "nvidia/nemotron-3-ultra",
+      "title": "Nemotron 3 Ultra",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-09",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000006",
+            "promptCachedTokens": "0.00000012",
+            "completionTextTokens": "0.0000024"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000495",
+            "promptCachedTokens": "0.0000000975",
+            "completionTextTokens": "0.00000198"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-09:nvidia/nemotron-3.5-lightning",
+      "model_id": "nvidia/nemotron-3.5-lightning",
+      "title": "Nemotron 3.5 Lightning",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-09",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000005",
+            "promptCachedTokens": "0.00000001",
+            "completionTextTokens": "0.0000002"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000045",
+            "promptCachedTokens": "0.0000000075",
+            "completionTextTokens": "0.000000165"
+          }
+        }
+      }
     }
   ],
   "api": [
-    {
-      "id": "pr-16982:GET /account/earnings/transactions",
-      "endpoint": "GET /account/earnings/transactions",
-      "summary": "Get Earnings Transactions",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:query:limit",
-          "before": {
-            "type": "number",
-            "required": false
-          },
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": true
-        }
-      ],
-      "date": "2026-10-10",
-      "pr": 16982,
-      "url": "https://github.com/pollinations/pollinations/pull/16982"
-    },
-    {
-      "id": "pr-16982:GET /account/key/usage",
-      "endpoint": "GET /account/key/usage",
-      "summary": "Get API Key Usage",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:query:limit",
-          "before": {
-            "type": "number",
-            "required": false
-          },
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": true
-        }
-      ],
-      "date": "2026-10-10",
-      "pr": 16982,
-      "url": "https://github.com/pollinations/pollinations/pull/16982"
-    },
-    {
-      "id": "pr-16982:GET /account/usage",
-      "endpoint": "GET /account/usage",
-      "summary": "Get Usage History",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:query:limit",
-          "before": {
-            "type": "number",
-            "required": false
-          },
-          "after": {
-            "type": "integer",
-            "required": false
-          },
-          "breaking": true
-        }
-      ],
-      "date": "2026-10-10",
-      "pr": 16982,
-      "url": "https://github.com/pollinations/pollinations/pull/16982"
-    },
     {
       "id": "pr-17130:POST /v1/responses",
       "endpoint": "POST /v1/responses",
@@ -5821,6 +5950,48 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-09",
+      "emoji": "🎨",
+      "title": "Gemini Omni 1.2 Flash video",
+      "text": "Generate paid videos with `google/gemini-omni-1.2-flash` from text or up to two reference images. It supports start and end frames, synchronized audio, and 3 to 15 second output from 360p through 4K. [View the model](https://enter.pollinations.ai/models?q=google/gemini-omni-1.2-flash).",
+      "prs": [
+        19245
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-09",
+      "emoji": "🎨",
+      "title": "Longer Wan 3.0 videos",
+      "text": "Choose any duration from 2 to 15 seconds for Wan 3.0 videos made from text, frames, or reference media. The default stays at 5 seconds. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19418
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-09",
+      "emoji": "🤖",
+      "title": "Claude Fable 5.2 added",
+      "text": "Use paid-only `anthropic/claude-fable-5.2` for text and image input, tools, and adaptive reasoning. It has a 1M-token context window and accepts up to 20 reference images. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-fable-5.2).",
+      "prs": [
+        19426
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-09",
+      "emoji": "🔗",
+      "title": "More details in model listings",
+      "text": "Check `/v1/models` for video controls and durations, preset audio voices, and declared reference image and video limits. Fields appear only where a model defines them. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19338,
+        19341,
+        19390
+      ],
+      "kind": "api"
+    },
     {
       "date": "2026-11-06",
       "emoji": "🤖",
@@ -7116,56 +7287,6 @@
         17125
       ],
       "kind": "product"
-    },
-    {
-      "date": "2026-10-10",
-      "emoji": "🎨",
-      "title": "A new Play playground",
-      "text": "Generate images, video and audio in one place, with uploads, previews, downloads and API examples built from your request. Shareable URLs keep supported settings together. [Try Play](https://pollinations.ai/play).",
-      "prs": [
-        16213
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-10",
-      "emoji": "✨",
-      "title": "PDFs in chat requests",
-      "text": "Send base64 PDFs to supported Claude and GPT models, including GPT models using the Responses API. Chat `file` parts and `/v1/messages` PDF document blocks are supported. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16898
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-10",
-      "emoji": "🤖",
-      "title": "Discover hosted MCP servers",
-      "text": "Agents can find hosted MCP servers through `/.well-known/ai-catalog.json` and read public Server Cards for connection details. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        16862
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-10",
-      "emoji": "🔗",
-      "title": "Discover the API spec",
-      "text": "The new `/.well-known/api-catalog` gives agents a standard way to find the OpenAPI specification and plain-text guide. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16908
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-10",
-      "emoji": "💡",
-      "title": "Check model eligibility",
-      "text": "Entries from `/v1/models` and `/v1/models/{model}` now include `paid_only`, so OpenAI-compatible clients can tell which models require paid Pollen without another lookup. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        16953
-      ],
-      "kind": "api"
     }
   ]
 }

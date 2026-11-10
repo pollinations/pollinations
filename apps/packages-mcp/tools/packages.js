@@ -8,6 +8,8 @@ export async function lookup({ ecosystem, name, version }) {
         npm: /^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/,
         pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
         crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
+        packagist:
+            /^[a-z0-9](?:[_.-]?[a-z0-9]+)*\/[a-z0-9](?:[_.-]?[a-z0-9]+)*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -55,6 +57,40 @@ export async function lookup({ ecosystem, name, version }) {
                 info.package_url ?? `https://pypi.org/project/${encoded}/`,
         };
     }
+    if (ecosystem === "packagist") {
+        const [vendor, pkg] = name.split("/");
+        const data = await fetchJson(
+            `https://packagist.org/p2/${encodeURIComponent(vendor)}/${encodeURIComponent(pkg)}.json`,
+        );
+        const versions = data.packages?.[name];
+        if (!Array.isArray(versions) || versions.length === 0) {
+            throw new Error(`Packagist package ${name} not found`);
+        }
+        const selected = version
+            ? versions.find((v) => v.version === version)
+            : versions
+                  .filter((v) => valid(v.version) && !prerelease(v.version))
+                  .sort((a, b) => rcompare(a.version, b.version))[0] ||
+              versions[0];
+        if (!selected) {
+            throw new Error(
+                `Packagist version ${version} not found for ${name}`,
+            );
+        }
+        return {
+            ecosystem,
+            name: selected.name,
+            version: selected.version,
+            description: selected.description,
+            license: selected.license,
+            homepage: selected.homepage,
+            source: selected.source,
+            dependencies: selected.require ?? {},
+            requireDev: selected["require-dev"] ?? {},
+            suggest: selected.suggest,
+            registryUrl: `https://packagist.org/packages/${encodeURIComponent(vendor)}/${encodeURIComponent(pkg)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -92,9 +128,11 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI package metadata or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, Rust highest non-yanked stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI package metadata, crates.io sparse-index versions, or Packagist PHP packages with dependencies and requirements. Default: npm latest tag, PyPI latest, Rust/PHP highest stable version. Does not install or execute packages.",
         {
-            ecosystem: z.enum(["npm", "pypi", "crates"]).default("npm"),
+            ecosystem: z
+                .enum(["npm", "pypi", "crates", "packagist"])
+                .default("npm"),
             name: z.string().trim().min(1).max(214),
             version: z
                 .string()

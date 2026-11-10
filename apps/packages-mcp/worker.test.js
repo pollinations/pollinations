@@ -477,3 +477,43 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
         "https://pypi.org/pypi/example/1!2.0/json",
     ]);
 });
+
+test("Packagist package lookup selects highest stable and exact versions", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        assert.equal(url, "https://packagist.org/p2/monolog/monolog.json");
+        return Response.json({
+            packages: {
+                "monolog/monolog": [
+                    {
+                        name: "monolog/monolog",
+                        version: "3.2.0",
+                        description: "Logging for PHP",
+                        license: ["MIT"],
+                        require: { php: ">=8.1" },
+                        source: {
+                            url: "https://github.com/Seldaek/monolog.git",
+                        },
+                    },
+                    {
+                        name: "monolog/monolog",
+                        version: "3.1.0",
+                        description: "Older logging",
+                        license: ["MIT"],
+                    },
+                ],
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "packagist",
+        name: "monolog/monolog",
+    });
+    assert.equal(latest.name, "monolog/monolog");
+    assert.equal(latest.version, "3.2.0");
+    assert.deepEqual(latest.dependencies, { php: ">=8.1" });
+    assert.equal(
+        latest.registryUrl,
+        "https://packagist.org/packages/monolog/monolog",
+    );
+});

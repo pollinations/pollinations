@@ -22,7 +22,7 @@ const EXPECTED_TOOLS = [
     "getEarnings",
     "getModelStatus",
     "getUsage",
-    "isolateVocals",
+    "isolateSpeech",
     "listKeys",
     "listModels",
     "listQuests",

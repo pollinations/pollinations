@@ -6,7 +6,6 @@ import {
     createTextContent,
     fetchJsonWithAuth,
     fetchMediaLink,
-    fetchResponseWithAuth,
 } from "../utils/coreUtils.js";
 
 function publicAudioUrl(source) {
@@ -70,37 +69,34 @@ async function fetchPublicAudio(source) {
 }
 
 /**
- * Audio the gateway stored comes back as its enclosure link. Without one, hand
- * the bytes back as an audio block instead of dropping the result.
+ * Send one audio file to a gen endpoint that stores the result and answers with
+ * its public URL. The bytes never travel through the server, so a missing
+ * enclosure link is an error rather than a base64 fallback.
  */
-async function audioResult(response, name) {
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
-    const mediaUrl = response.headers
-        .get("Link")
-        ?.match(/^<([^>]+)>; rel="enclosure"$/)?.[1];
-    if (mediaUrl) {
-        await response.body?.cancel();
-        return createMCPResponse([
-            {
-                type: "resource_link",
-                uri: mediaUrl,
-                name,
-                mimeType: contentType,
-            },
-            createTextContent({ url: mediaUrl, mimeType: contentType }, true),
-        ]);
+async function transformSpeech(params, context, { endpoint, name }) {
+    requireApiKey(context);
+    const { source, ...fields } = params;
+    const { blob, filename } = await fetchPublicAudio(publicAudioUrl(source));
+
+    const form = new FormData();
+    form.append("file", blob, filename);
+    for (const [field, value] of Object.entries(fields)) {
+        if (value !== undefined) form.append(field, value);
     }
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    let binary = "";
-    for (let index = 0; index < bytes.length; index += 0x8000) {
-        binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
-    }
+
+    const { contentType, mediaUrl } = await fetchMediaLink(
+        buildUrl(endpoint),
+        { method: "POST", body: form },
+        context,
+    );
     return createMCPResponse([
-        { type: "audio", data: btoa(binary), mimeType: contentType },
-        createTextContent(
-            { mimeType: contentType, sizeBytes: bytes.length },
-            true,
-        ),
+        {
+            type: "resource_link",
+            uri: mediaUrl,
+            name,
+            mimeType: contentType,
+        },
+        createTextContent({ url: mediaUrl, mimeType: contentType }, true),
     ]);
 }
 
@@ -130,41 +126,18 @@ export async function transcribeAudio(params, context) {
     ]);
 }
 
-export async function isolateVocals({ source, model }, context) {
-    requireApiKey(context);
-    const { blob, filename } = await fetchPublicAudio(publicAudioUrl(source));
-
-    const form = new FormData();
-    form.append("file", blob, filename);
-    if (model) form.append("model", model);
-
-    const response = await fetchResponseWithAuth(
-        buildUrl("/v1/audio/voice-isolator"),
-        { method: "POST", body: form },
-        context,
-    );
-    return audioResult(response, "Isolated vocals");
+export async function isolateSpeech(params, context) {
+    return transformSpeech(params, context, {
+        endpoint: "/v1/audio/voice-isolator",
+        name: "Isolated speech",
+    });
 }
 
-export async function changeVoice(
-    { source, voice, model, response_format },
-    context,
-) {
-    requireApiKey(context);
-    const { blob, filename } = await fetchPublicAudio(publicAudioUrl(source));
-
-    const form = new FormData();
-    form.append("file", blob, filename);
-    form.append("voice", voice);
-    if (model) form.append("model", model);
-    if (response_format) form.append("response_format", response_format);
-
-    const response = await fetchResponseWithAuth(
-        buildUrl("/v1/audio/voice-changer"),
-        { method: "POST", body: form },
-        context,
-    );
-    return audioResult(response, "Voice-changed audio");
+export async function changeVoice(params, context) {
+    return transformSpeech(params, context, {
+        endpoint: "/v1/audio/voice-changer",
+        name: "Voice-changed audio",
+    });
 }
 
 async function generateAudio(params, context) {
@@ -173,6 +146,7 @@ async function generateAudio(params, context) {
     const { text, ...options } = params;
     const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/audio/${encodeURIComponent(text)}`, options),
+        {},
         context,
     );
     return createMCPResponse([
@@ -286,8 +260,8 @@ export const audioTools = [
         transcribeAudio,
     ],
     [
-        "isolateVocals",
-        "Remove music and background noise from a public audio or video URL, leaving the isolated vocals, and return the audio as a resource link.",
+        "isolateSpeech",
+        "Remove music, ambient sound, and other background noise from an audio or video file while preserving spoken audio, and return the audio as a resource link.",
         {
             source: z
                 .url()
@@ -296,14 +270,14 @@ export const audioTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Voice-isolation model. Use listModels with type=audio for the live list",
+                    "Speech-isolation model. Use listModels with type=audio for the live list",
                 ),
         },
-        isolateVocals,
+        isolateSpeech,
     ],
     [
         "changeVoice",
-        "Re-speak spoken audio from a public HTTPS URL in another voice and return the audio as a resource link.",
+        "Transform the speaker identity in a public audio file while preserving its words, timing, emotion, and delivery; accepts preset voice names or custom voice IDs, and returns the audio as a resource link.",
         {
             source: z
                 .url()

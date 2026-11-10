@@ -33,7 +33,8 @@ export async function requireFunds(
     paidOnly = false,
 ): Promise<UserBalance> {
     const apiKey = c.var.auth?.apiKey;
-    const charge = `This request costs about ${usd(cost)}`;
+    // A cost that would print as $0.0000 says nothing: name the bound instead.
+    const charge = `This request costs ${cost < 0.00005 ? "less than $0.0001" : `about ${usd(cost)}`}`;
     const budget = apiKey?.pollenBalance;
     if (typeof budget === "number" && budget < Math.max(0, cost)) {
         throw keyBudgetExhausted(

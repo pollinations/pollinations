@@ -132,6 +132,21 @@ describe("billing deduction", () => {
         });
     });
 
+    it("names a bound instead of a cost that would print as zero", async () => {
+        const userId = await createUser({ tierBalance: 0, packBalance: 0 });
+        await expect(
+            requireFunds({ env, var: {} }, Number.MIN_VALUE, () =>
+                getUserBalance(db, userId),
+            ),
+        ).rejects.toMatchObject({
+            status: 402,
+            errorCode: "INSUFFICIENT_BALANCE",
+            message: expect.stringContaining(
+                "This request costs less than $0.0001, but your available balance is $0.0000.",
+            ),
+        });
+    });
+
     it("settles every admitted parallel request even after restricted paid funds run out", async () => {
         const userId = await createUser({ tierBalance: 35.5, packBalance: 2 });
         await db

@@ -5,12 +5,11 @@ DESCRIPTION >
     `server_error`: Stripe webhook or checkout 5xx in the last 15 minutes,
     per route, leaving out Enter's database (D1) failing, raw or wrapped by
     drizzle as "Failed query:", which the database card covers.
-    `not_credited`: a pack or auto top-up payment that succeeded 15 minutes
-    to 24 hours ago with no credit recorded. A pack payment is
-    credited by its checkout session's success event, an auto top-up payment
-    by its invoice's credit outcome (Stripe links the payment to its invoice
-    as payment_details.order_reference). `reason` is the invoice's last
-    outcome when it was not credited.
+    `not_credited`: a payment that succeeded 15 minutes to 24 hours ago with
+    no credit recorded. A pack payment (it carries a packKey) is credited by
+    its checkout session's success event, an auto top-up payment by its
+    invoice's credit outcome (Stripe links the payment to its invoice as
+    payment_details.order_reference).
 
 NODE infra_watch_payments_node
 SQL >
@@ -19,76 +18,56 @@ SQL >
         route_path AS id,
         '' AS ref,
         toInt32(0) AS amount_cents,
-        toString(max(toInt32(status))) AS reason,
+        toString(max(status)) AS reason,
         count() AS n,
         max(timestamp) AS at
     FROM error_event
     WHERE environment = 'production'
         AND timestamp >= now() - INTERVAL 15 MINUTE
-        AND toInt32(status) >= 500
+        AND status >= 500
         AND (route_path = '/api/webhooks/stripe' OR startsWith(route_path, '/api/stripe/checkout'))
-        AND positionCaseInsensitive(concat(message, ' ', stack), 'D1_ERROR') = 0
-        AND positionCaseInsensitive(concat(message, ' ', stack), 'Failed query:') = 0
+        AND multiSearchAnyCaseInsensitive(concat(message, ' ', stack), ['D1_ERROR', 'Failed query:']) = 0
     GROUP BY route_path
 
     UNION ALL
 
     SELECT
         'not_credited' AS kind,
-        payment AS id,
+        session_id AS id,
         invoice AS ref,
-        amount AS amount_cents,
-        last_outcome AS reason,
+        amount_cents,
+        '' AS reason,
         toUInt64(1) AS n,
-        paid_at AS at
+        timestamp AS at
     FROM (
         SELECT
-            anyIf(session_id, paid) AS payment,
-            anyIf(invoice, paid) AS invoice,
-            anyIf(amount_cents, paid) AS amount,
-            maxIf(timestamp, paid) AS paid_at,
-            argMaxIf(payment_status, timestamp, outcome) AS last_outcome,
-            countIf(credit) AS credits
-        FROM (
-            SELECT
-                timestamp,
-                session_id,
-                amount_cents,
-                payment_status,
-                event_type = 'payment_intent.succeeded' AS paid,
-                event_type IN ('invoice.paid', 'invoice.payment_succeeded') AS outcome,
-                JSONExtractString(payload, 'data', 'object', 'metadata', 'packKey') AS pack,
-                if(
-                    paid,
-                    JSONExtractString(payload, 'data', 'object', 'payment_details', 'order_reference'),
-                    ''
-                ) AS invoice,
-                event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
-                    OR (outcome AND payment_status IN ('credited', 'invoice already credited', 'not an auto top-up invoice')) AS credit,
-                multiIf(
-                    paid AND pack != '', session_id,
-                    paid AND startsWith(invoice, 'in_'), invoice,
-                    credit AND NOT outcome, JSONExtractString(payload, 'data', 'object', 'payment_intent'),
-                    outcome, session_id,
-                    ''
-                ) AS link
+            session_id,
+            amount_cents,
+            timestamp,
+            JSONExtractString(payload, 'data', 'object', 'metadata', 'packKey') AS pack,
+            JSONExtractString(payload, 'data', 'object', 'payment_details', 'order_reference') AS invoice
+        FROM stripe_event
+        WHERE livemode = 1
+            AND event_type = 'payment_intent.succeeded'
+            AND timestamp >= now() - INTERVAL 24 HOUR
+            AND timestamp < now() - INTERVAL 15 MINUTE
+        ORDER BY timestamp
+        LIMIT 1 BY session_id
+    )
+    WHERE (pack != '' AND session_id NOT IN (
+            SELECT JSONExtractString(payload, 'data', 'object', 'payment_intent')
             FROM stripe_event
             WHERE livemode = 1
                 AND timestamp >= now() - INTERVAL 25 HOUR
-                AND event_type IN (
-                    'payment_intent.succeeded',
-                    'checkout.session.completed',
-                    'checkout.session.async_payment_succeeded',
-                    'invoice.paid',
-                    'invoice.payment_succeeded'
-                )
-        )
-        WHERE link != ''
-        GROUP BY link
-    )
-    WHERE payment != ''
-        AND credits = 0
-        AND paid_at >= now() - INTERVAL 24 HOUR
-        AND paid_at < now() - INTERVAL 15 MINUTE
+                AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
+        ))
+        OR (pack = '' AND startsWith(invoice, 'in_') AND invoice NOT IN (
+            SELECT session_id
+            FROM stripe_event
+            WHERE livemode = 1
+                AND timestamp >= now() - INTERVAL 25 HOUR
+                AND event_type IN ('invoice.paid', 'invoice.payment_succeeded')
+                AND payment_status IN ('credited', 'invoice already credited', 'not an auto top-up invoice')
+        ))
 
 TYPE endpoint

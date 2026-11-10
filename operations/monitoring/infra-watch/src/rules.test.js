@@ -289,7 +289,6 @@ test("payments fail on any row and open on the first check with a ping", () => {
         unpaid("pi_late", "2026-11-08 14:32:15", {
             ref: "in_late",
             amount_cents: 1065,
-            reason: "amount mismatch",
         }),
         unpaid("pi_pack", "2026-11-08 13:00:00"),
         webhook5xx,
@@ -314,7 +313,6 @@ test("payments fail on any row and open on the first check with a ping", () => {
         "pi_late",
         "in_late",
         "$10.65 auto top-up, 11-08 14:32 UTC",
-        "amount mismatch",
     ].map((part) => text.indexOf(part));
     assert.ok(
         order.every((at, i) => at > (order[i - 1] ?? -1)),

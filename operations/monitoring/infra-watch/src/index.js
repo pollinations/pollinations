@@ -42,6 +42,7 @@ import {
     escalates,
     GEN_HEARTBEATS,
     jobsStale,
+    lasted,
     legacyDown,
     lineColor,
     modelOf,
@@ -404,8 +405,7 @@ export class Watch extends DurableObject {
                         tinybird,
                     );
                 const id = incident.messageId;
-                const closing =
-                    Boolean(model) && investigates(incident.kind) && reserve();
+                const closing = investigates(incident.kind) && reserve();
                 // With a closing line to come, the card closes with
                 // "checking why…" now and gets its last edit from the note.
                 const delivered = await this.writes(async () => {
@@ -949,7 +949,7 @@ export class Watch extends DurableObject {
             const apiKey = this.env.POLLINATIONS_API_KEY;
             if (!apiKey) throw new Error("POLLINATIONS_API_KEY missing");
             const footprint = closing && {
-                down: duration(incident.closedAt - incident.openedAt),
+                down: duration(lasted(incident)),
                 lost: incident.lost,
             };
             const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };

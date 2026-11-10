@@ -1145,7 +1145,13 @@ it("opens an early-errors card on the first bad minute with a ping, keeps it whi
     await stub.check();
     await settle(stub);
     expect(await early()).toBeUndefined();
-    expect(over(edits(card.messageId).at(-1))).toBe(true);
+    // Like a model card: it keeps its box, and ends on a green AI line under
+    // the red opening one.
+    const last = edits(card.messageId).at(-1);
+    expect(over(last)).toBe(true);
+    expect(last.text).toContain("236 reqs failed in 1 min");
+    expect(last.text).toMatch(/🔴 <t:\d+:t> Line 1\.\n🟢 <t:\d+:t> Line 2\./);
+    expect(last.text.split("\n").at(-1)).toBe("### ⏱️ 1 min");
 });
 
 it("opens a community monitor card when no cycle gets done for 90 minutes, says why, and closes it once one does", async () => {

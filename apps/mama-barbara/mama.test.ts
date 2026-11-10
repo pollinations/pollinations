@@ -3,9 +3,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 process.env.TELEGRAM_BOT_TOKEN = "test-token";
-const { budgetWarning, checkSignIns, expiryWarning, load } = await import(
-    "./mama.ts"
-);
+const { budgetWarning, checkSignIns, expiryWarning, load, onUpdate } =
+    await import("./mama.ts");
 
 const inDays = (days: number) =>
     new Date(Date.now() + days * 86_400_000).toISOString();
@@ -98,4 +97,70 @@ test("checkSignIns sends each warning once, and nothing more when gen fails", as
     await checkSignIns();
     assert.equal(sent.length, 3);
     assert.match(sent[2], /clear the expiry/);
+});
+
+test("Delete her removes a Barbara whose key the sign-in may not revoke", async (t) => {
+    const owner = {
+        key: "sk_owner",
+        barbaras: [{ bot: "old_bot", botId: 1, box: "iold", created: "" }],
+    };
+    let saves = 0;
+    await load({
+        get: async () => ({ 42: owner }),
+        put: async () => {
+            saves++;
+        },
+    } as never);
+    let revoke = new Response("Enter is down", { status: 500 });
+    const shown: string[] = [];
+    t.mock.method(
+        globalThis,
+        "fetch",
+        async (url: string, init: RequestInit) => {
+            const { pathname } = new URL(url);
+            if (pathname.endsWith("/answerCallbackQuery"))
+                return Response.json({ ok: true, result: true });
+            if (
+                pathname.endsWith("/editMessageText") ||
+                pathname.endsWith("/sendMessage")
+            ) {
+                shown.push(JSON.parse(String(init.body)).text);
+                return Response.json({ ok: true, result: {} });
+            }
+            if (pathname === "/account/keys")
+                return Response.json({
+                    data: [{ id: "k1", name: "polli-sandbox-iold" }],
+                });
+            if (pathname === "/account/keys/k1") return revoke.clone();
+            // Her box is already gone.
+            return new Response("Sandbox not found", { status: 404 });
+        },
+    );
+    const tapDelete = () =>
+        onUpdate({
+            update_id: 1,
+            callback_query: {
+                id: "q",
+                from: { id: 42, first_name: "Owner" },
+                data: "deleted:1",
+                message: { message_id: 7 },
+            },
+        });
+
+    // Any other failure keeps her listed, so the owner can try again.
+    await tapDelete();
+    assert.match(shown[0], /That didn't work: 500/);
+    assert.equal(owner.barbaras.length, 1);
+    assert.equal(saves, 0);
+
+    revoke = new Response("An API key can only edit or revoke keys…", {
+        status: 403,
+    });
+    await tapDelete();
+    assert.match(
+        shown[1],
+        /@old_bot is deleted\. I couldn't revoke her key polli-sandbox-iold; revoke it at https:\/\/enter\.pollinations\.ai\/keys\./,
+    );
+    assert.equal(owner.barbaras.length, 0);
+    assert.equal(saves, 1);
 });

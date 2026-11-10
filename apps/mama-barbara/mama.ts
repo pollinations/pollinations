@@ -14,8 +14,10 @@ if (!TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not set");
 const ENTER = "https://enter.pollinations.ai";
 const GEN = "https://gen.pollinations.ai";
 // `keys` lets gen give each new box a key of its own (see logIn in
-// gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes.
-const SCOPE = "generate machines keys";
+// gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes. That
+// key carries `profile` and `usage`, and a key only creates, edits or revokes
+// keys within its own permissions.
+const SCOPE = "generate profile usage machines keys";
 // The computers a new Barbara can get; gen's pricing list gives their CPUs,
 // memory and rates. Only E2B's, whose envd Mama reaches directly (envd.ts).
 const SIZES: Record<string, string> = {
@@ -744,7 +746,10 @@ const deleteView = (b: Barbara): View => ({
     },
 });
 
-// Deletes her box and revokes its key; the bot stays the owner's.
+// Deletes her box and revokes its key; the bot stays the owner's. Enter
+// refuses the revoke (403) when her key is outside this sign-in's limits, as
+// one made under an earlier sign-in can be. She is deleted all the same, and
+// the name of the key that stays on the account is returned.
 async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
     const boxKey = keyOf(await keysOf(key), b);
     await gen(key, `/alpha/e2b/sandboxes/${b.box}`, {
@@ -752,11 +757,18 @@ async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
     }).catch((error) => {
         if (!String(error).includes("404")) throw error;
     });
+    let keyLeft: string | undefined;
     if (boxKey)
-        await gen(key, `/account/keys/${boxKey.id}`, { method: "DELETE" });
+        await gen(key, `/account/keys/${boxKey.id}`, {
+            method: "DELETE",
+        }).catch((error: Error) => {
+            if (!error.message.startsWith("403 ")) throw error;
+            keyLeft = boxKey.name;
+        });
     const user = userOf(owner.id);
     user.barbaras = user.barbaras.filter((x) => x.botId !== b.botId);
     save();
+    return keyLeft;
 }
 
 async function budgetView(owner: TgUser, b: Barbara): Promise<View> {
@@ -1064,11 +1076,14 @@ async function onButton(q: Callback) {
     }
     if (action === "delete") return show(owner.id, deleteView(b), messageId);
     if (action === "deleted" && key) {
-        await deleteBarbara(owner, b, key);
+        const keyLeft = await deleteBarbara(owner, b, key);
+        const leftover = keyLeft
+            ? ` I couldn't revoke her key ${keyLeft}; revoke it at ${ENTER}/keys.`
+            : "";
         return show(
             owner.id,
             {
-                text: `@${b.bot} is deleted. Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
+                text: `@${b.bot} is deleted.${leftover} Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
                 reply_markup: userOf(owner.id).barbaras.length
                     ? {
                           inline_keyboard: [

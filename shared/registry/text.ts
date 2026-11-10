@@ -4320,6 +4320,10 @@ const TEXT_BASE_SERVICES = {
         description: "Flags unsafe content for moderation",
         inputModalities: ["text"],
         outputModalities: ["text"],
+        contextLength: 32768,
+        // OVH's SSE returns only [DONE] for oversized input. Request JSON to
+        // preserve its 400 context error, then replay successful answers as SSE.
+        supportsStreaming: false,
         isSpecialized: true,
     },
 } as const satisfies Record<string, ModelDefinition>;

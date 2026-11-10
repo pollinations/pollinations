@@ -57,12 +57,16 @@ export function resolveModelConfig(
     );
 
     // Filter out undefined values so they don't overwrite config defaults.
-    // A processing tier changes what the provider charges us, so only route
-    // config may set one: drop the caller's `service_tier` and
-    // `providerOptions`, where Vercel reads tiers under several keys.
+    // Tiers and upstream routing change what the provider charges us, and
+    // routing pins keep privacy guarantees, so only route config may set
+    // them: drop the caller's `service_tier`, `providerOptions` (Vercel reads
+    // tiers and pins there), and OpenRouter's `provider` pins and `models`
+    // fallback list.
     const {
         service_tier: _serviceTier,
         providerOptions: _providerOptions,
+        provider: _provider,
+        models: _models,
         ...definedOptions
     } = Object.fromEntries(
         Object.entries(options).filter(([_, v]) => v !== undefined),

@@ -673,8 +673,20 @@ describe("generateTextPortkey", () => {
             caller: { service_tier: "flex" },
             sent: { service_tier: "priority" },
         },
+        {
+            // OpenRouter's provider pin keeps zero data retention.
+            model: "x-ai/grok-4.20:openrouter:xai-zdr",
+            caller: {
+                provider: { only: ["xai"] },
+                models: ["anthropic/claude-opus-4.7"],
+            },
+            sent: {
+                provider: { only: ["xai/zdr"], allow_fallbacks: false },
+                models: undefined,
+            },
+        },
     ])(
-        "sends $model only the route's processing tier",
+        "sends $model only the route's processing tier and provider pins",
         async ({ model, caller, sent }) => {
             syncTextEnvironment({
                 ...env,

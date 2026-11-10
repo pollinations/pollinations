@@ -71,6 +71,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "unit_convert",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -390,4 +391,60 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("unit conversion handles digital, physical and temperature units with exact ratios", async (t) => {
+    const client = await clientFor(t);
+
+    // Digital data conversion (binary KiB to decimal MB)
+    const bytes = await call(client, "unit_convert", { value: 1024, from: "KiB", to: "MB" });
+    assert.equal(bytes.result, 1.048576);
+    assert.equal(bytes.category, "data");
+    assert.equal(bytes.from, "KiB");
+    assert.equal(bytes.to, "MB");
+
+    // Temperature with offset math (C to F and K)
+    const tempF = await call(client, "unit_convert", { value: 100, from: "celsius", to: "fahrenheit" });
+    assert.equal(tempF.result, 212);
+    assert.equal(tempF.category, "temperature");
+
+    const tempK = await call(client, "unit_convert", { value: 0, from: "C", to: "K" });
+    assert.equal(tempK.result, 273.15);
+
+    // Imperial to metric length with aliases
+    const dist = await call(client, "unit_convert", { value: 1, from: "miles", to: "kilometers" });
+    assert.equal(dist.result, 1.609344);
+    assert.equal(dist.category, "length");
+
+    // Mass conversion
+    const mass = await call(client, "unit_convert", { value: 1, from: "pounds", to: "grams" });
+    assert.equal(mass.result, 453.59237);
+    assert.equal(mass.category, "mass");
+
+    // Speed conversion (mph to km/h)
+    const speed = await call(client, "unit_convert", { value: 60, from: "mph", to: "km/h" });
+    assert.equal(speed.result, 96.56064);
+    assert.equal(speed.category, "speed");
+
+    // Area conversion (1 acre to square meters)
+    const area = await call(client, "unit_convert", { value: 1, from: "acre", to: "sq_m" });
+    assert.equal(area.result, 4046.856422);
+    assert.equal(area.category, "area");
+
+    // Volume conversion (1 US gallon to liters)
+    const vol = await call(client, "unit_convert", { value: 1, from: "gal", to: "l" });
+    assert.equal(vol.result, 3.785411784);
+    assert.equal(vol.category, "volume");
+
+    // Category mismatch error
+    await assert.rejects(
+        () => call(client, "unit_convert", { value: 10, from: "kg", to: "km" }),
+        /Incompatible unit categories/,
+    );
+
+    // Unknown unit error
+    await assert.rejects(
+        () => call(client, "unit_convert", { value: 10, from: "unknown_unit", to: "kg" }),
+        /Unknown source unit/,
+    );
 });

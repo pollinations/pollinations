@@ -322,3 +322,48 @@ describe("polli acp", () => {
         ]);
     });
 });
+
+it("shows a refusal explanation and reports a refused ACP turn", async () => {
+    vi.stubEnv("POLLINATIONS_API_KEY", "sk_test");
+    const explanation = "I cannot help with that request.";
+    const { bodies } = stubFetch([
+        sse([
+            { type: "response.refusal.delta", delta: explanation },
+            {
+                type: "response.output_item.done",
+                item: {
+                    ...message,
+                    content: [{ type: "refusal", refusal: explanation }],
+                },
+            },
+            { type: "response.completed" },
+        ]),
+        sse([{ type: "response.completed" }]),
+    ]);
+    const updates: SessionUpdate[] = [];
+    const { app } = await acpAgent();
+    await client({ name: "test" })
+        .onNotification("session/update", ({ params }) => {
+            updates.push(params.update);
+        })
+        .connectWith(app, async (ctx) => {
+            await ctx.request("initialize", { protocolVersion: 1 });
+            const session = await ctx.request("session/new", {
+                cwd: "/tmp",
+                mcpServers: [],
+            });
+            const turn = (text: string) =>
+                ctx.request("session/prompt", {
+                    sessionId: session.sessionId,
+                    prompt: [{ type: "text", text }],
+                });
+            const result = await turn("Refused request");
+            expect(updates).toContainEqual({
+                sessionUpdate: "agent_message_chunk",
+                content: { type: "text", text: explanation },
+            });
+            expect(result.stopReason).toBe("refusal");
+            await turn("Try again");
+        });
+    expect(bodies[1].input).toEqual([user("Try again")]);
+});

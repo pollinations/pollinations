@@ -8,6 +8,7 @@ export async function lookup({ ecosystem, name, version }) {
         npm: /^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/,
         pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
         crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
+        golang: /^[a-zA-Z0-9][-a-zA-Z0-9_.]*(?:\/[a-zA-Z0-9][-a-zA-Z0-9_.]*)+$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -55,46 +56,80 @@ export async function lookup({ ecosystem, name, version }) {
                 info.package_url ?? `https://pypi.org/project/${encoded}/`,
         };
     }
-    // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
-    const lower = name.toLowerCase();
-    const path =
-        lower.length < 3
-            ? `${lower.length}/${lower}`
-            : lower.length === 3
-              ? `3/${lower[0]}/${lower}`
-              : `${lower.slice(0, 2)}/${lower.slice(2, 4)}/${lower}`;
-    const releases = (await fetchText(`https://index.crates.io/${path}`))
-        .trim()
-        .split("\n")
-        .map((line) => JSON.parse(line));
-    const selected = version
-        ? releases.find((r) => r.vers === version)
-        : releases
-              .filter((r) => !r.yanked && valid(r.vers) && !prerelease(r.vers))
-              .sort((a, b) => rcompare(a.vers, b.vers))[0];
-    if (!selected)
-        throw new Error(
-            version
-                ? "Crate version not found"
-                : "No non-yanked stable release; request an exact version",
+    if (ecosystem === "crates") {
+        // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
+        const lower = name.toLowerCase();
+        const path =
+            lower.length < 3
+                ? `${lower.length}/${lower}`
+                : lower.length === 3
+                  ? `3/${lower[0]}/${lower}`
+                  : `${lower.slice(0, 2)}/${lower.slice(2, 4)}/${lower}`;
+        const releases = (await fetchText(`https://index.crates.io/${path}`))
+            .trim()
+            .split("\n")
+            .map((line) => JSON.parse(line));
+        const selected = version
+            ? releases.find((r) => r.vers === version)
+            : releases
+                  .filter(
+                      (r) => !r.yanked && valid(r.vers) && !prerelease(r.vers),
+                  )
+                  .sort((a, b) => rcompare(a.vers, b.vers))[0];
+        if (!selected)
+            throw new Error(
+                version
+                    ? "Crate version not found"
+                    : "No non-yanked stable release; request an exact version",
+            );
+        return {
+            ecosystem,
+            name: selected.name,
+            version: selected.vers,
+            rustVersion: selected.rust_version,
+            dependencies: selected.deps,
+            features: { ...selected.features, ...selected.features2 },
+            yanked: selected.yanked,
+            registryUrl: `https://crates.io/crates/${encodeURIComponent(selected.name)}/${encodeURIComponent(selected.vers)}`,
+        };
+    }
+    if (ecosystem === "golang") {
+        const targetVersion = version ? encodeURIComponent(version) : "latest";
+        const modulePath = name
+            .split("/")
+            .map((part) => encodeURIComponent(part))
+            .join("/");
+        const info = await fetchJson(
+            `https://proxy.golang.org/${modulePath}/@v/${targetVersion}.info`,
         );
-    return {
-        ecosystem,
-        name: selected.name,
-        version: selected.vers,
-        rustVersion: selected.rust_version,
-        dependencies: selected.deps,
-        features: { ...selected.features, ...selected.features2 },
-        yanked: selected.yanked,
-        registryUrl: `https://crates.io/crates/${encodeURIComponent(selected.name)}/${encodeURIComponent(selected.vers)}`,
-    };
+        let modFile = null;
+        try {
+            modFile = await fetchText(
+                `https://proxy.golang.org/${modulePath}/@v/${encodeURIComponent(info.Version)}.mod`,
+            );
+        } catch {
+            // .mod file might not exist or be needed
+        }
+
+        return {
+            ecosystem,
+            name,
+            version: info.Version,
+            time: info.Time,
+            origin: info.Origin ?? null,
+            goMod: modFile,
+            registryUrl: `https://pkg.go.dev/${encodeURI(name)}@${encodeURIComponent(info.Version)}`,
+        };
+    }
 }
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI package metadata or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, Rust highest non-yanked stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI package metadata, Go module proxy info, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, Go latest, Rust highest non-yanked stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
-            ecosystem: z.enum(["npm", "pypi", "crates"]).default("npm"),
+            ecosystem: z
+                .enum(["npm", "pypi", "crates", "golang"])
+                .default("npm"),
             name: z.string().trim().min(1).max(214),
             version: z
                 .string()

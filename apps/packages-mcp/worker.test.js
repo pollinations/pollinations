@@ -477,3 +477,37 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
         "https://pypi.org/pypi/example/1!2.0/json",
     ]);
 });
+
+test("golang module proxy lookup returns version, timestamp, mod file and registry link", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const target = new URL(url);
+        assert.equal(target.hostname, "proxy.golang.org");
+        if (target.pathname.endsWith(".info")) {
+            return Response.json({
+                Version: "v1.2.3",
+                Time: "2026-01-01T12:00:00Z",
+                Origin: { VCS: "git", URL: "https://github.com/gin-gonic/gin" },
+            });
+        }
+        if (target.pathname.endsWith(".mod")) {
+            return new Response("module github.com/gin-gonic/gin\n\ngo 1.22\n");
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const client = await clientFor(t);
+    const mod = await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "github.com/gin-gonic/gin",
+    });
+
+    assert.equal(mod.ecosystem, "golang");
+    assert.equal(mod.name, "github.com/gin-gonic/gin");
+    assert.equal(mod.version, "v1.2.3");
+    assert.equal(mod.time, "2026-01-01T12:00:00Z");
+    assert.ok(mod.goMod.includes("module github.com/gin-gonic/gin"));
+    assert.equal(
+        mod.registryUrl,
+        "https://pkg.go.dev/github.com/gin-gonic/gin@v1.2.3",
+    );
+});

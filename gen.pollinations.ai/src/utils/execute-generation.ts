@@ -11,6 +11,7 @@ import type {
 } from "@/middleware/generation-deduplication.ts";
 import { logger } from "@/middleware/logger.ts";
 import { generationExecutorRoutes } from "@/routes/generation-executor.ts";
+import { nameD1Caller, withD1Calls } from "../d1-calls.ts";
 
 async function drainResponse(response: Response): Promise<void> {
     const reader = response.body?.getReader();
@@ -60,6 +61,7 @@ function generationExecutor(
             c.header("X-Request-Id", job.requestId);
             await next();
         })
+        .use("*", nameD1Caller)
         .use("*", logger)
         .use("*", authFromSnapshot(job.auth))
         .use("*", async (c, next) => {
@@ -101,9 +103,16 @@ export async function executeGeneration(
         headers: job.request.headers,
         body: job.request.body?.slice().buffer,
     });
-    const response = await generationExecutor(job, (promise) => {
-        cacheWrite = promise;
-    }).fetch(request, env, executionCtx);
+    const response = await withD1Calls(
+        env,
+        executionCtx,
+        // The method only: the job URL can carry the prompt.
+        () => ({ route_path: "generation", method: request.method }),
+        () =>
+            generationExecutor(job, (promise) => {
+                cacheWrite = promise;
+            }).fetch(request, env, executionCtx),
+    );
     const settlement = Promise.allSettled(promises).then(() => {});
 
     try {

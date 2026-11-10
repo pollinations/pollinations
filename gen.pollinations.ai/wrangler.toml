@@ -94,6 +94,12 @@ run_worker_first = true
 # Production routes
 [env.production]
 
+# Workers Logs for one request in ten, so D1 stalls can be traced to gen's own
+# queries. Full sampling would bill gen's ~4M daily requests at debug level.
+[env.production.observability]
+enabled = true
+head_sampling_rate = 0.1
+
 [env.production.images]
 binding = "IMAGES"
 

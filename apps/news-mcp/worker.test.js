@@ -31,6 +31,7 @@ test("private worker exposes seven tools using the MCP transport", async () => {
         "earthquake_event",
         "earthquake_search",
         "feed_read",
+        "history_on_this_day",
         "hn_item",
         "hn_search",
         "hn_stories",
@@ -58,7 +59,7 @@ test("private worker exposes seven tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 7);
+    assert.equal((await c.listTools()).tools.length, 8);
     await c.close();
 });
 
@@ -382,4 +383,43 @@ test("Atom xml:base applies through feed, entry and link", () => {
         result.entries[0].link,
         "https://example.net/base/posts/2026/hello",
     );
+});
+
+test("history_on_this_day fetches historical events without credentials", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const u = new URL(url);
+        assert.equal(u.hostname, "en.wikipedia.org");
+        assert.equal(u.pathname, "/api/rest_v1/feed/onthisday/selected/01/15");
+        return Response.json({
+            selected: [
+                {
+                    text: "Wikipedia was launched.",
+                    year: 2001,
+                    pages: [
+                        {
+                            title: "Wikipedia",
+                            description: "Free online encyclopedia",
+                            content_urls: {
+                                desktop: {
+                                    page: "https://en.wikipedia.org/wiki/Wikipedia",
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+    const c = await client();
+    const result = await c.callTool({
+        name: "history_on_this_day",
+        arguments: { month: 1, day: 15, type: "selected", limit: 5 },
+    });
+    assert.equal(result.isError, undefined);
+    const parsed = JSON.parse(result.content[0].text);
+    assert.equal(parsed.month, 1);
+    assert.equal(parsed.day, 15);
+    assert.equal(parsed.items[0].year, 2001);
+    assert.equal(parsed.items[0].pages[0].title, "Wikipedia");
+    await c.close();
 });

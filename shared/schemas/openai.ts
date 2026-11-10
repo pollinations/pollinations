@@ -899,6 +899,7 @@ export const GetModelsResponseSchema = z
 // Shared fields between image generation and editing requests
 const imageModelField = z
     .string()
+    .min(1)
     .optional()
     .default("black-forest-labs/flux.1-schnell")
     .meta({
@@ -907,6 +908,7 @@ const imageModelField = z
 // Edits need a model that reads the source image; schnell is text-only.
 const imageEditModelField = z
     .string()
+    .min(1)
     .optional()
     .default("openai/gpt-image-1-mini")
     .meta({

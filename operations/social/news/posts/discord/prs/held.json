@@ -14,11 +14,6 @@
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
-    "19095": {
-      "merge_sha": "08ae4eb53eed984e9295176154d98ad42a14a0d4",
-      "merged_at": "2026-11-10T09:44:26Z",
-      "required": []
-    },
     "19114": {
       "merge_sha": "87d14e739d3d255293a092b8a55787c2b2203857",
       "merged_at": "2026-11-10T09:26:52Z",
@@ -105,11 +100,6 @@
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
-    "19397": {
-      "merge_sha": "c91560e81bd49302954c01408b34494989612bea",
-      "merged_at": "2026-11-10T10:02:20Z",
-      "required": []
-    },
     "19399": {
       "merge_sha": "457109c207168e047d08ebe935ecc5116ebc86e2",
       "merged_at": "2026-11-10T09:59:48Z",
@@ -141,11 +131,6 @@
         "deploy-applications.yml:Deploy operations/monitoring/infra-watch"
       ]
     },
-    "19428": {
-      "merge_sha": "c869e10b2fa1433f7ce38d7913fc566284b4d009",
-      "merged_at": "2026-11-09T20:28:36Z",
-      "required": []
-    },
     "19434": {
       "merge_sha": "1e37be83d0838dd435c4a6c814e6ff561ce17622",
       "merged_at": "2026-11-10T01:30:23Z",
@@ -156,16 +141,6 @@
         "deploy-website-cloudflare.yml:deploy"
       ]
     },
-    "19436": {
-      "merge_sha": "9a677619f355726092565d99d73d7ca6290231b3",
-      "merged_at": "2026-11-10T04:13:06Z",
-      "required": []
-    },
-    "19438": {
-      "merge_sha": "92ec56966f8ec257b46be8eaa4b910bcfe27ee8f",
-      "merged_at": "2026-11-10T07:12:51Z",
-      "required": []
-    },
     "19457": {
       "merge_sha": "de3570890998a947e8d583cd4ca239710c4b1d50",
       "merged_at": "2026-11-10T12:25:11Z",
@@ -175,16 +150,6 @@
         "deploy-cloudflare-production.yml:deploy-media",
         "deploy-website-cloudflare.yml:deploy"
       ]
-    },
-    "19458": {
-      "merge_sha": "90813edb2e30b3d322c9ad837200b08643a2105d",
-      "merged_at": "2026-11-10T13:31:21Z",
-      "required": []
-    },
-    "19460": {
-      "merge_sha": "73f070dd5e44da86d680bc53981002c0fe8d0b8b",
-      "merged_at": "2026-11-10T17:00:09Z",
-      "required": []
     }
   },
   "production": "25e984deb9cece013e795c9e9b3c222ae36ee323",

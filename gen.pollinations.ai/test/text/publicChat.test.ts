@@ -235,6 +235,146 @@ async function chatThroughHandler(
     return { response, text, calls, balance, events };
 }
 
+it.each([
+    {
+        path: "/v1/chat/completions",
+        model: "qwen/qwen3guard-gen-8b",
+        stream: false,
+    },
+    { path: "/v1/chat/completions", model: "qwen-safety", stream: true },
+    { path: "/v1/responses", model: "qwen/qwen3guard-gen-8b", stream: true },
+    { path: "/v1/messages", model: "qwen3guard-gen-8b", stream: true },
+])(
+    "preserves QwenGuard context errors without billing on $path ($model, stream=$stream)",
+    async ({ path, model, stream }) => {
+        const message =
+            "This model's maximum context length is 32768 tokens. However, your request has 70331 input tokens. Please reduce the length of the input messages.";
+        const { response, text, calls, balance, events } =
+            await chatThroughHandler(
+                model,
+                "oai.endpoints.kepler.ai.cloud.ovh.net",
+                async (request) => {
+                    const body = (await request.json()) as { stream?: boolean };
+                    // OVH loses the context error when asked for SSE.
+                    return body.stream
+                        ? new Response("data: [DONE]\n\n", {
+                              headers: { "content-type": "text/event-stream" },
+                          })
+                        : Response.json(
+                              {
+                                  message: JSON.stringify({
+                                      error: {
+                                          message,
+                                          type: "BadRequestError",
+                                          code: 400,
+                                      },
+                                  }),
+                              },
+                              { status: 400 },
+                          );
+                },
+                stream,
+                undefined,
+                {
+                    path,
+                    body: {
+                        model,
+                        stream,
+                        ...(path === "/v1/responses"
+                            ? {
+                                  input: "Oversized input",
+                                  max_output_tokens: 10000,
+                              }
+                            : {
+                                  messages: [
+                                      {
+                                          role: "user",
+                                          content: "Oversized input",
+                                      },
+                                  ],
+                                  max_tokens: 10000,
+                              }),
+                    },
+                },
+            );
+        expect(response.status, text).toBe(400);
+        expect(JSON.parse(text).error.message).toContain(message);
+        expect(calls).toBe(1);
+        expect(balance.packBalance).toBe(100);
+        expect(events.filter((event) => event.isBilledUsage)).toHaveLength(0);
+        expect(events).toContainEqual(
+            expect.objectContaining({
+                responseStatus: 400,
+                isBilledUsage: false,
+            }),
+        );
+    },
+);
+
+it("replays QwenGuard classifications with terminal usage for streaming callers", async () => {
+    const providerUsage = {
+        prompt_tokens: 326,
+        completion_tokens: 8,
+        total_tokens: 334,
+    };
+    const { response, text, calls, events } = await chatThroughHandler(
+        "qwen/qwen3guard-gen-8b",
+        "oai.endpoints.kepler.ai.cloud.ovh.net",
+        async (request) => {
+            expect(await request.json()).toMatchObject({
+                model: "Qwen3Guard-Gen-8B",
+                stream: false,
+            });
+            return Response.json({
+                id: "chatcmpl-qwenguard",
+                object: "chat.completion",
+                created: 1,
+                model: "Qwen3Guard-Gen-8B",
+                choices: [
+                    {
+                        index: 0,
+                        message: {
+                            role: "assistant",
+                            content: "Safety: Safe\nCategories: None",
+                        },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: providerUsage,
+            });
+        },
+    );
+    expect(response.status, text).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    expect(text).toContain("Safety: Safe\\nCategories: None");
+    expect(text).toContain(JSON.stringify(providerUsage));
+    expect(text).toContain("data: [DONE]\n\n");
+    expect(text).not.toContain("usage_missing");
+    expect(calls).toBe(1);
+    expect(events.filter((event) => event.isBilledUsage)).toHaveLength(1);
+});
+
+it("rejects buffered QwenGuard classifications without usage before starting SSE", async () => {
+    const { response, text, balance, events } = await chatThroughHandler(
+        "qwen/qwen3guard-gen-8b",
+        "oai.endpoints.kepler.ai.cloud.ovh.net",
+        async () =>
+            Response.json({
+                choices: [
+                    {
+                        message: { role: "assistant", content: "Safety: Safe" },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+    );
+    expect(response.status, text).toBe(502);
+    expect(JSON.parse(text).error.code).toBe("BAD_GATEWAY");
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(balance.packBalance).toBe(100);
+    expect(events.filter((event) => event.isBilledUsage)).toHaveLength(0);
+});
+
 it.each([false, true])(
     "classifies Gemini search errors by the provider reason, not echoed input (policy=%s)",
     async (policy) => {

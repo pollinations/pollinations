@@ -17,7 +17,7 @@ SQL >
         'server_error' AS kind,
         route_path AS id,
         '' AS ref,
-        toInt32(0) AS amount_cents,
+        0 AS amount_cents,
         toString(max(status)) AS reason,
         count() AS n,
         max(timestamp) AS at
@@ -37,7 +37,7 @@ SQL >
         invoice AS ref,
         amount_cents,
         '' AS reason,
-        toUInt64(1) AS n,
+        1 AS n,
         timestamp AS at
     FROM (
         SELECT
@@ -49,25 +49,28 @@ SQL >
         FROM stripe_event
         WHERE livemode = 1
             AND event_type = 'payment_intent.succeeded'
-            AND timestamp >= now() - INTERVAL 24 HOUR
-            AND timestamp < now() - INTERVAL 15 MINUTE
-        ORDER BY timestamp
+            AND timestamp >= now() - INTERVAL 25 HOUR
+        ORDER BY timestamp DESC
         LIMIT 1 BY session_id
     )
-    WHERE (pack != '' AND session_id NOT IN (
-            SELECT JSONExtractString(payload, 'data', 'object', 'payment_intent')
-            FROM stripe_event
-            WHERE livemode = 1
-                AND timestamp >= now() - INTERVAL 25 HOUR
-                AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
-        ))
-        OR (pack = '' AND startsWith(invoice, 'in_') AND invoice NOT IN (
-            SELECT session_id
-            FROM stripe_event
-            WHERE livemode = 1
-                AND timestamp >= now() - INTERVAL 25 HOUR
-                AND event_type IN ('invoice.paid', 'invoice.payment_succeeded')
-                AND payment_status IN ('credited', 'invoice already credited', 'not an auto top-up invoice')
-        ))
+    WHERE timestamp >= now() - INTERVAL 24 HOUR
+        AND timestamp < now() - INTERVAL 15 MINUTE
+        AND (
+            (pack != '' AND session_id NOT IN (
+                SELECT JSONExtractString(payload, 'data', 'object', 'payment_intent')
+                FROM stripe_event
+                WHERE livemode = 1
+                    AND timestamp >= now() - INTERVAL 25 HOUR
+                    AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
+            ))
+            OR (pack = '' AND startsWith(invoice, 'in_') AND invoice NOT IN (
+                SELECT session_id
+                FROM stripe_event
+                WHERE livemode = 1
+                    AND timestamp >= now() - INTERVAL 25 HOUR
+                    AND event_type IN ('invoice.paid', 'invoice.payment_succeeded')
+                    AND payment_status IN ('credited', 'invoice already credited', 'not an auto top-up invoice')
+            ))
+        )
 
 TYPE endpoint

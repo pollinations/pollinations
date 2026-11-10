@@ -37,8 +37,6 @@ function publicAudioUrl(source) {
     return url;
 }
 
-const PLAIN_TEXT_TRANSCRIPTS = new Set(["srt", "text", "vtt"]);
-
 export async function transcribeAudio(params, context) {
     requireApiKey(context);
     const source = publicAudioUrl(params.source);
@@ -91,15 +89,16 @@ export async function transcribeAudio(params, context) {
         context,
     );
 
-    // srt, vtt and text are plain text; json, verbose_json and diarized_json are
-    // JSON, and only some of those carry a top-level text field.
-    if (PLAIN_TEXT_TRANSCRIPTS.has(params.response_format)) {
+    // Every format but plain json passes through untouched: text, srt and vtt
+    // are not JSON, and gen's verbose_json and diarized_json carry segments,
+    // speakers and usage next to `text`.
+    if (params.response_format && params.response_format !== "json") {
         return createMCPResponse([createTextContent(await response.text())]);
     }
 
     const result = await response.json();
     if (typeof result?.text !== "string") {
-        return createMCPResponse([createTextContent(result, true)]);
+        throw new Error("Transcription returned no text");
     }
     return createMCPResponse([
         createTextContent(result.text),

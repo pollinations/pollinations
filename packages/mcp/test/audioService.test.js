@@ -158,7 +158,7 @@ test("transcribeAudio forwards response_format and returns srt as plain text", a
     assert.match(result.content[0].text, /Hello/);
 });
 
-test("transcribeAudio keeps diarized JSON that has no text field", async (t) => {
+test("transcribeAudio returns diarized JSON whole", async (t) => {
     const originalFetch = globalThis.fetch;
     const calls = [];
     t.after(() => {
@@ -172,9 +172,13 @@ test("transcribeAudio keeps diarized JSON that has no text field", async (t) => 
                 headers: { "Content-Type": "audio/mpeg" },
             });
         }
+        // Gen's diarized shape, which always includes text as well.
         return Response.json({
-            segments: [{ speaker: "A", text: "hi" }],
-            speakers: ["A"],
+            task: "transcribe",
+            duration: 12.5,
+            text: "hi there",
+            segments: [{ speaker: "A", start: 0, end: 1.4, text: "hi there" }],
+            usage: { type: "duration", seconds: 12.5 },
         });
     };
 
@@ -187,9 +191,14 @@ test("transcribeAudio keeps diarized JSON that has no text field", async (t) => 
         CONTEXT,
     );
 
+    assert.equal(calls[1].init.body.get("response_format"), "diarized_json");
     assert.equal(calls[1].init.body.get("speakers_expected"), "2");
+    // The segments and speakers survive; returning only `text` would drop them.
     assert.deepEqual(JSON.parse(result.content[0].text), {
-        segments: [{ speaker: "A", text: "hi" }],
-        speakers: ["A"],
+        task: "transcribe",
+        duration: 12.5,
+        text: "hi there",
+        segments: [{ speaker: "A", start: 0, end: 1.4, text: "hi there" }],
+        usage: { type: "duration", seconds: 12.5 },
     });
 });

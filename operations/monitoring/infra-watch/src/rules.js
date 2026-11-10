@@ -252,7 +252,7 @@ const CONFIRMED = new Set([
 const HOSTS = { gen: true, public: true, upstream: true, enter: true };
 // Checked on their own, so judged whatever gen or analytics does.
 const independent = (key) =>
-    key === "enter" || key === "early" || key.startsWith("stale:");
+    key === "enter" || key === "payments" || key.startsWith("stale:");
 // A model incident's model, from its key; null for any other incident.
 export const modelOf = (key) =>
     key.startsWith("model:") ? key.slice(6) : null;
@@ -267,8 +267,8 @@ const SEVERITY = ["PRIMARY_WEAK", "DEGRADED"];
 const worse = (a, b) => (SEVERITY.indexOf(b) > SEVERITY.indexOf(a) ? b : a);
 
 export function step(state, found, now, recent = []) {
-    // With gen down, only Enter's own check can be judged, not even a single
-    // hostname. With analytics down, the hostname and Enter checks still can.
+    // With gen down, only the independent checks can be judged, not even a
+    // single hostname. With analytics down, the hostname checks can be too.
     const open = { ...(state.open ?? {}) };
     const closed = Object.fromEntries(
         Object.entries(state.closed ?? {}).filter(

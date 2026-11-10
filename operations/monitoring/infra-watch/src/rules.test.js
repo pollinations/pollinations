@@ -275,7 +275,7 @@ const bursts = [
     minute("15:32", 82, 82, "/image/:prompt"),
 ];
 
-test("early-errors and stale-feed cards close on their own checks, whatever gen or analytics does", () => {
+test("a stale-feed card closes on its own check during a gen or analytics outage; an early-errors card waits", () => {
     const early = earlyErrors(bursts).early;
     const stale = { kind: "JOB_STALE", source: "product_event" };
     for (const outage of [
@@ -286,7 +286,11 @@ test("early-errors and stale-feed cards close on their own checks, whatever gen 
         for (const t of [1, 2, 3])
             r = step(r.state, { early, "stale:product_event": stale }, t);
         for (const t of [4, 5, 6]) r = step(r.state, outage, t);
-        assert.deepEqual(Object.keys(r.state.open), Object.keys(outage));
+        // The early pipe reads gen's errors too, so a quiet gen proves nothing.
+        assert.deepEqual(
+            Object.keys(r.state.open).sort(),
+            ["early", ...Object.keys(outage)].sort(),
+        );
     }
 });
 

@@ -810,3 +810,29 @@ test("speech models advertise the voices they accept", async () => {
         );
     }
 });
+
+test("media models advertise the resolutions they accept", async () => {
+    type ListedModel = { id: string; resolutions?: string[] };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.resolutions, model.id).toEqual(
+            registry.resolve(model.id)?.info.resolutions,
+        );
+    }
+    const withResolutions = list.data.filter(
+        (model) => model.resolutions?.length,
+    );
+    expect(withResolutions.length).toBeGreaterThan(0);
+    for (const model of withResolutions) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.resolutions, model.id).toEqual(model.resolutions);
+    }
+});

@@ -53,6 +53,7 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
+import { getVisibleImageModels } from "@shared/registry/registry.ts";
 import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,
@@ -146,12 +147,16 @@ const ImageEditMultipartSchema = z
             "Provide source files or URLs using image or image[]. Repeat either field for multiple images.",
     });
 
-// Build dynamic model lists from registry for use in API descriptions
+// Build dynamic model lists from registry for use in API descriptions,
+// leaving out hidden models as /models does
+const visibleImageIds = new Set<string>(getVisibleImageModels());
 const imageModelNames = getImageModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .map((id) => `\`${id}\``)
     .join(", ");
 
 const videoModelNames = getVideoModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .map((id) => `\`${id}\``)
     .join(", ");
 

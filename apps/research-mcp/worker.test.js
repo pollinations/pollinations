@@ -267,6 +267,23 @@ test("arXiv parses Atom entries, maps sort names and rejects malformed IDs befor
     assert.equal(requests.length, 2);
 });
 
+test("arXiv error entries pass on arXiv's message", async (t) => {
+    mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response(`<feed><entry>
+    <id>https://arxiv.org/api/errors#incorrect_id_format_for_x</id>
+    <title>Error</title>
+    <summary>incorrect id format for x</summary>
+  </entry></feed>`),
+    );
+    const c = await client(t);
+    const result = await call(c, "arxiv_search", { query: "ti:" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /arXiv: incorrect id format for x/);
+});
+
 test("World Bank uses arbitrary official codes, source metadata, descending years, missing-value filtering and country lookup", async (t) => {
     mock.method(globalThis, "fetch", async (input) => {
         const url = new URL(input);

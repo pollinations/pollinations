@@ -20,9 +20,13 @@ const text = (xml, tag) => {
 function parse(xml) {
     const papers = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(
         ([, entry]) => {
-            const [, id, version] = text(entry, "id").match(
-                /abs\/(.+?)(?:v(\d+))?$/,
-            );
+            const match = text(entry, "id")?.match(/abs\/(.+?)(?:v(\d+))?$/);
+            // arXiv reports a bad query as an entry with an error id.
+            if (!match)
+                throw new Error(
+                    `arXiv: ${text(entry, "summary") ?? "unrecognised entry"}`,
+                );
+            const [, id, version] = match;
             return {
                 id,
                 version: version ? Number(version) : null,

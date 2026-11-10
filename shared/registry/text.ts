@@ -4312,9 +4312,11 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: false,
         cost: {
-            // OVHcloud lists this moderation endpoint as free (2026-10-12).
-            promptTextTokens: perMillion(0),
-            completionTextTokens: perMillion(0),
+            // OVHcloud GA starts 2026-12-10 at EUR 0.10/M tokens.
+            // Provisional USD conversion: ECB 2026-11-10, EUR/USD 1.1214.
+            // Confirm input/output rates and billing currency before release.
+            promptTextTokens: perMillion(0.11214),
+            completionTextTokens: perMillion(0.11214),
         },
         title: "Qwen3Guard 8B",
         description: "Flags unsafe content for moderation",

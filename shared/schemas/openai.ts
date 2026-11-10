@@ -865,6 +865,9 @@ export const OpenAIModelSchema = z
         allowed_durations: ModelInfoSchema.shape.allowed_durations.describe(
             "Exact `duration` values in seconds when the model accepts a fixed set instead of a range.",
         ),
+        resolutions: ModelInfoSchema.shape.resolutions.describe(
+            "Output resolutions the model accepts for the `resolution` parameter, such as `1k`, `2k` or `1080p`. The first entry is the default. Omitted when the model declares none.",
+        ),
         per_user_rpm: z.number().positive().nullable().optional(),
         max_reference_images:
             ModelInfoSchema.shape.max_reference_images.describe(

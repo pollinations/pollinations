@@ -387,7 +387,8 @@ jobs:
       - name: Get changed MCP servers
         id: mcp
         run: |
-          git diff --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
+          # --no-renames keeps the old path of a file moved out of a server.
+          git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
           FILTER="--changed=$RUNNER_TEMP/changed.txt"
           # A change to this workflow tests every server.
           if grep -qx '.github/workflows/ci-pull-request-checks.yml' "$RUNNER_TEMP/changed.txt"; then

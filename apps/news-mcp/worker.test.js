@@ -31,6 +31,7 @@ test("private worker exposes seven tools using the MCP transport", async () => {
         "earthquake_event",
         "earthquake_search",
         "feed_read",
+        "github_trending",
         "hn_item",
         "hn_search",
         "hn_stories",
@@ -58,7 +59,7 @@ test("private worker exposes seven tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 7);
+    assert.equal((await c.listTools()).tools.length, 8);
     await c.close();
 });
 
@@ -382,4 +383,56 @@ test("Atom xml:base applies through feed, entry and link", () => {
         result.entries[0].link,
         "https://example.net/base/posts/2026/hello",
     );
+});
+
+test("github_trending queries GitHub Search API, formats repositories, and ignores caller credentials", async (t) => {
+    let requestedUrl = null;
+    let authHeader = null;
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        requestedUrl = String(input);
+        const headers = new Headers(init?.headers);
+        authHeader = headers.get("authorization");
+        return new Response(
+            JSON.stringify({
+                total_count: 1,
+                items: [
+                    {
+                        id: 123456,
+                        name: "awesome-pollinations",
+                        full_name: "pollinations/awesome-pollinations",
+                        description: "Curated AI models",
+                        html_url:
+                            "https://github.com/pollinations/awesome-pollinations",
+                        stargazers_count: 420,
+                        forks_count: 50,
+                        language: "TypeScript",
+                        created_at: "2026-11-05T00:00:00Z",
+                        updated_at: "2026-11-10T00:00:00Z",
+                        owner: { login: "pollinations" },
+                    },
+                ],
+            }),
+            { headers: { "content-type": "application/json" } },
+        );
+    });
+
+    const c = await client();
+    const result = await c.callTool({
+        name: "github_trending",
+        arguments: { language: "typescript", days: 7, limit: 5 },
+    });
+    assert.equal(result.isError, undefined);
+    assert.equal(authHeader, null); // verifies caller credentials are never forwarded
+    assert.ok(requestedUrl.includes("api.github.com/search/repositories"));
+    assert.ok(
+        requestedUrl.includes("language%3Atypescript") ||
+            requestedUrl.includes("language:typescript"),
+    );
+
+    const data = JSON.parse(result.content[0].text);
+    assert.equal(data.count, 1);
+    assert.equal(data.repositories[0].name, "awesome-pollinations");
+    assert.equal(data.repositories[0].stars, 420);
+    assert.equal(data.repositories[0].owner, "pollinations");
+    await c.close();
 });

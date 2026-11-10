@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import type { BillingOverview } from "../frontend/src/backend-types.ts";
 import { autoTopUpStatus } from "../frontend/src/components/pollen/auto-top-up-status.ts";
+import { BillingPanel } from "../frontend/src/components/pollen/payment-details.tsx";
 import {
     describePaymentMethod,
     formatAddress,
@@ -232,6 +233,56 @@ describe("saved payment methods and billing details", () => {
                 country: "EE",
             }),
         ).toBe("Tartu mnt 1, 10115 Tallinn, Estonia");
+    });
+});
+
+describe("billing panel", () => {
+    it("hides the saved card and address until shown, keeping their badges", () => {
+        const html = renderToStaticMarkup(
+            createElement(BillingPanel, {
+                billing: {
+                    ...billing({
+                        billingDetailsComplete: false,
+                        autoTopUp: {
+                            lastIssue: {
+                                kind: "failed",
+                                occurredAt: "2026-09-29T12:00:00.000Z",
+                            },
+                        },
+                    }),
+                    billingDetails: {
+                        name: "Anna Tamm",
+                        company: null,
+                        taxIds: [],
+                        email: "anna@example.com",
+                        line1: "Tartu mnt 1",
+                        line2: null,
+                        city: "Tallinn",
+                        state: null,
+                        postalCode: "10115",
+                        country: "EE",
+                    },
+                },
+            }),
+        );
+        for (const secret of ["4242", "Anna Tamm", "Tallinn", "anna@"])
+            expect(html).not.toContain(secret);
+        expect(html).toContain("Declined");
+        expect(html).toContain("Incomplete");
+        expect(html).toContain('aria-label="Show payment method"');
+        expect(html).toContain('aria-label="Show billing details"');
+    });
+
+    it("has nothing to hide before the first purchase", () => {
+        const html = renderToStaticMarkup(
+            createElement(BillingPanel, {
+                billing: billing({ paymentMethods: [] }),
+            }),
+        );
+        expect(html).toContain("No payment method saved yet");
+        expect(html).toContain("Added at your first purchase");
+        expect(html).not.toContain("Show payment method");
+        expect(html).not.toContain("Show billing details");
     });
 });
 

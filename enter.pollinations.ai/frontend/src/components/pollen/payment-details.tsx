@@ -1,6 +1,8 @@
 import {
     CardIcon,
+    EyeIcon,
     EyeOffIcon,
+    IconButton,
     InlineLink,
     Surface,
     WalletIcon,
@@ -28,26 +30,64 @@ import { Footnotes, PaymentHelp } from "./pollen-balance.tsx";
  * fix it is said in Top-up.
  */
 export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
+    const [methodsShown, setMethodsShown] = useState(false);
+    const [detailsShown, setDetailsShown] = useState(false);
+    useResetWhenShownAgain(() => {
+        setMethodsShown(false);
+        setDetailsShown(false);
+    });
     const lastIssue = billing.autoTopUp.lastIssue;
     const declined = lastIssue?.kind === "failed" && !billing.autoTopUp.enabled;
-    const incomplete =
-        hasDefaultPaymentMethod(billing) && !billing.billingDetailsComplete;
+    const hasDefault = hasDefaultPaymentMethod(billing);
+    const incomplete = hasDefault && !billing.billingDetailsComplete;
+    const hasMethods = billing.paymentMethods.length > 0;
+    const hasDetails = billing.billingDetails !== null;
     return (
         <>
             <div className="grid gap-3 sm:grid-cols-2">
                 <Surface className="flex flex-col gap-2">
-                    <CardHeading>Payment method</CardHeading>
-                    <PaymentMethods
-                        methods={billing.paymentMethods}
-                        declined={declined}
-                    />
+                    <CardHeader>
+                        <CardHeading>Payment method</CardHeading>
+                        {hasMethods && (
+                            <ShowToggle
+                                what="payment method"
+                                shown={methodsShown}
+                                onToggle={() => setMethodsShown((s) => !s)}
+                            />
+                        )}
+                    </CardHeader>
+                    {hasMethods && !methodsShown ? (
+                        <Hidden>
+                            {declined && hasDefault && <Badge>Declined</Badge>}
+                        </Hidden>
+                    ) : (
+                        <PaymentMethods
+                            methods={billing.paymentMethods}
+                            declined={declined}
+                        />
+                    )}
                 </Surface>
                 <Surface className="flex flex-col gap-2">
-                    <CardHeading>Details</CardHeading>
-                    <Details
-                        details={billing.billingDetails}
-                        incomplete={incomplete}
-                    />
+                    <CardHeader>
+                        <CardHeading>Details</CardHeading>
+                        {hasDetails && (
+                            <ShowToggle
+                                what="billing details"
+                                shown={detailsShown}
+                                onToggle={() => setDetailsShown((s) => !s)}
+                            />
+                        )}
+                    </CardHeader>
+                    {hasDetails && !detailsShown ? (
+                        <Hidden>
+                            {incomplete && <Badge>Incomplete</Badge>}
+                        </Hidden>
+                    ) : (
+                        <Details
+                            details={billing.billingDetails}
+                            incomplete={incomplete}
+                        />
+                    )}
                 </Surface>
             </div>
             {/* Where this data lives: true as written, no broader claim. */}
@@ -204,6 +244,40 @@ const PortalLink: FC<{
         </span>
     );
 };
+
+/** A card's heading - eye on right */
+const CardHeader: FC<{ children: ReactNode }> = ({ children }) => (
+    <div className="flex min-h-6 items-center justify-between gap-2">
+        {children}
+    </div>
+);
+
+/** eye is shown, eye with line is hidden */
+const ShowToggle: FC<{
+    what: string;
+    shown: boolean;
+    onToggle: () => void;
+}> = ({ what, shown, onToggle }) => (
+    <IconButton
+        variant="ghost"
+        title={`${shown ? "Hide" : "Show"} ${what}`}
+        onClick={onToggle}
+    >
+        {shown ? (
+            <EyeOffIcon className="h-4 w-4" />
+        ) : (
+            <EyeIcon className="h-4 w-4" />
+        )}
+    </IconButton>
+);
+
+/** stands in for a saved card or address until user shows it */
+const Hidden: FC<{ children?: ReactNode }> = ({ children }) => (
+    <p className="flex flex-wrap items-center gap-2 text-sm text-theme-text-muted">
+        Hidden
+        {children}
+    </p>
+);
 
 /** A problem on the card or address it concerns, as one word. */
 const Badge: FC<{ children: ReactNode }> = ({ children }) => (

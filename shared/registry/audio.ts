@@ -641,6 +641,22 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
         allowedDurations: [30],
     },
+    "elevenlabs/eleven-text-to-sound-v3": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-11-10").getTime(),
+        priceMultiplier: 1,
+        // Workspace analytics: $0.002/submitted second; auto-duration costs $0.01.
+        cost: { completionAudioSeconds: 0.002 },
+        title: "Eleven Text to Sound v3",
+        description:
+            "Prompt-following sound effects, vocals and loops from text",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
     "elevenlabs/eleven-text-to-sound-v2": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
         provider: "elevenlabs",

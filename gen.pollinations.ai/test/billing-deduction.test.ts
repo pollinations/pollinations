@@ -127,7 +127,7 @@ describe("billing deduction", () => {
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "This model requires Paid Pollen, so Quest Pollen can't cover it.",
+                "This model requires Paid Pollen, so Quest Pollen can't cover it. This request costs about $0.0001, but your available paid balance is $0.0000.",
             ),
         });
     });

@@ -208,13 +208,24 @@ test("JWT inspection reports claims, verifies HS256 and refuses to guess", async
     });
     assert.equal(expired.expired, true);
 
+    // Flip the first signature character: A and B are both valid base64url, so
+    // the token still parses but the signature no longer matches.
+    const [header, payload, signature] = signed.token.split(".");
+    const tamperedSignature = `${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
     const tampered = await call(client, "jwt_inspect", {
-        token: signed.token.replace("eyJ", "eyJ"),
-        secret: "wrong",
+        token: `${header}.${payload}.${tamperedSignature}`,
+        secret: "hunter2",
     });
     assert.equal(tampered.validSignature, false);
     // A bad signature must not be reported as "expired"; nothing is known.
     assert.equal(tampered.expired, null);
+
+    const wrongSecret = await call(client, "jwt_inspect", {
+        token: signed.token,
+        secret: "wrong",
+    });
+    assert.equal(wrongSecret.validSignature, false);
+    assert.equal(wrongSecret.expired, null);
 
     const unverified = await call(client, "jwt_inspect", {
         token: signed.token,

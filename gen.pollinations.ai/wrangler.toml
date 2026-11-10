@@ -28,6 +28,7 @@ services = [
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
     { binding = "CALCULATORS_MCP", service = "pollinations-calculators-mcp" },
+    { binding = "ENCODING_MCP", service = "pollinations-encoding-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -157,6 +158,10 @@ service = "pollinations-machines-mcp"
 [[env.production.services]]
 binding = "CALCULATORS_MCP"
 service = "pollinations-calculators-mcp"
+
+[[env.production.services]]
+binding = "ENCODING_MCP"
+service = "pollinations-encoding-mcp"
 
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
@@ -445,6 +450,10 @@ service = "pollinations-machines-mcp"
 [[env.test.services]]
 binding = "CALCULATORS_MCP"
 service = "pollinations-calculators-mcp"
+
+[[env.test.services]]
+binding = "ENCODING_MCP"
+service = "pollinations-encoding-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"

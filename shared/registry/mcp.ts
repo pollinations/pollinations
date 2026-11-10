@@ -55,6 +55,7 @@ export type McpBindingName =
     | "COMPUTER_MCP"
     | "MACHINES_MCP"
     | "CALCULATORS_MCP"
+    | "ENCODING_MCP"
     | "NETWORK_MCP"
     | "PACKAGES_MCP"
     | "NEWS_MCP"
@@ -259,6 +260,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Local utilities and public ECB rates. No Pollen charge.",
+            rates: [],
+        },
+    },
+    {
+        id: "encoding",
+        alpha: true,
+        name: "Encodings",
+        description:
+            "Base64, hex and URL encodings, SHA and HMAC digests, JWTs, UUIDv7/ULID ids and CRC-32.",
+        binding: "ENCODING_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Local arithmetic on the input. No Pollen charge.",
             rates: [],
         },
     },

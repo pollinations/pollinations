@@ -175,6 +175,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "encoding",
+                alpha: true,
+                name: "Encodings",
+                description:
+                    "Base64, hex and URL encodings, SHA and HMAC digests, JWTs, UUIDv7/ULID ids and CRC-32.",
+                url: "https://gen.pollinations.ai/mcp/encoding",
+                pricing: {
+                    description:
+                        "Local arithmetic on the input. No Pollen charge.",
+                    rates: [],
+                },
+            },
+            {
                 id: "network",
                 alpha: true,
                 name: "Network",

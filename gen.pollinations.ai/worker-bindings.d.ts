@@ -9,6 +9,7 @@ interface CloudflareBindings {
     COMPUTER_MCP: Fetcher;
     MACHINES_MCP: Fetcher;
     CALCULATORS_MCP: Fetcher;
+    ENCODING_MCP: Fetcher;
     NETWORK_MCP: Fetcher;
     PACKAGES_MCP: Fetcher;
     NEWS_MCP: Fetcher;

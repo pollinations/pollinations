@@ -502,15 +502,20 @@ describe("generation caller cancellation", () => {
         expect(fetchMock).not.toHaveBeenCalled();
         expect(gen().data).toBeNull();
         expect(gen().isLoading).toBe(false);
+        expect(gen().error).toBeNull();
         await unmount();
     });
 
-    it("forwards caller aborts to an in-flight request", async () => {
+    it("cancels an in-flight request quietly when the caller aborts", async () => {
         const fetchMock = vi
             .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(chatResponse("last result"))
             .mockImplementation(abortableFetch);
         const { gen, unmount } = await mountTextGeneration(authValue());
         const caller = new AbortController();
+        await act(async () => {
+            await gen().run("first");
+        });
         let pending!: Promise<void>;
         await act(async () => {
             pending = gen().run("slow", { signal: caller.signal });
@@ -518,12 +523,13 @@ describe("generation caller cancellation", () => {
         await act(async () => {
             caller.abort();
         });
-        expect(fetchMock.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+        expect(fetchMock.mock.calls[1]?.[1]?.signal?.aborted).toBe(true);
         await act(async () => {
             await pending;
         });
         expect(gen().isLoading).toBe(false);
-        expect(gen().data).toBeNull();
+        expect(gen().error).toBeNull();
+        expect(gen().data).toBe("last result");
         await unmount();
     });
 });

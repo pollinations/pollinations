@@ -344,9 +344,10 @@ export interface GenerationValue<A extends unknown[], T> {
  * is sent until `run`. A key change or unmount aborts the request in flight and
  * clears the result, so a stale response never reaches the next user.
  */
-function useGeneration<A extends unknown[], T>(
-    request: GenerationRequest<A, T>,
-): GenerationValue<A, T> {
+function useGeneration<
+    A extends [input: unknown, options?: { signal?: AbortSignal }],
+    T,
+>(request: GenerationRequest<A, T>): GenerationValue<A, T> {
     const { apiKey, logout } = useRequiredAuth();
     const [data, setData] = useState<T | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -376,7 +377,14 @@ function useGeneration<A extends unknown[], T>(
             lastArgsRef.current = args;
             setIsLoading(true);
             setError(null);
+            const callerSignal = args[1]?.signal;
+            const abort = () => controller.abort();
             try {
+                if (callerSignal?.aborted) {
+                    abort();
+                    return;
+                }
+                callerSignal?.addEventListener("abort", abort, { once: true });
                 if (!apiKey) {
                     throw new Error("Log in to Pollinations to generate");
                 }
@@ -394,6 +402,7 @@ function useGeneration<A extends unknown[], T>(
                 setData(null);
                 setError(err instanceof Error ? err : new Error(String(err)));
             } finally {
+                callerSignal?.removeEventListener("abort", abort);
                 if (controllerRef.current === controller) {
                     controllerRef.current = null;
                     setIsLoading(false);
@@ -417,74 +426,40 @@ function useGeneration<A extends unknown[], T>(
     );
 }
 
-async function withCallerSignal<T>(
-    signal: AbortSignal,
-    callerSignal: AbortSignal | undefined,
-    request: (signal: AbortSignal) => Promise<T>,
-): Promise<T> {
-    if (!callerSignal) return request(signal);
-    const controller = new AbortController();
-    const abort = () => controller.abort();
-    signal.addEventListener("abort", abort);
-    callerSignal.addEventListener("abort", abort);
-    if (signal.aborted || callerSignal.aborted) controller.abort();
-    try {
-        return await request(controller.signal);
-    } finally {
-        signal.removeEventListener("abort", abort);
-        callerSignal.removeEventListener("abort", abort);
-    }
-}
-
 const imageRequest = (
     client: Pollinations,
     signal: AbortSignal,
     prompt: string,
     options?: ImageGenerateOptions,
-) =>
-    withCallerSignal(signal, options?.signal, (signal) =>
-        client.image(prompt, { ...options, signal }),
-    );
+) => client.image(prompt, { ...options, signal });
 
 const textRequest = (
     client: Pollinations,
     signal: AbortSignal,
     prompt: string,
     options?: TextGenerateOptions,
-) =>
-    withCallerSignal(signal, options?.signal, (signal) =>
-        client.text(prompt, { ...options, signal }),
-    );
+) => client.text(prompt, { ...options, signal });
 
 const audioRequest = (
     client: Pollinations,
     signal: AbortSignal,
     text: string,
     options?: AudioGenerateOptions,
-) =>
-    withCallerSignal(signal, options?.signal, (signal) =>
-        client.audio(text, { ...options, signal }),
-    );
+) => client.audio(text, { ...options, signal });
 
 const videoRequest = (
     client: Pollinations,
     signal: AbortSignal,
     prompt: string,
     options?: VideoGenerateOptions,
-) =>
-    withCallerSignal(signal, options?.signal, (signal) =>
-        client.video(prompt, { ...options, signal }),
-    );
+) => client.video(prompt, { ...options, signal });
 
 const transcriptionRequest = (
     client: Pollinations,
     signal: AbortSignal,
     audio: ArrayBuffer | Blob,
     options?: TranscribeOptions,
-) =>
-    withCallerSignal(signal, options?.signal, (signal) =>
-        client.transcribe(audio, { ...options, signal }),
-    );
+) => client.transcribe(audio, { ...options, signal });
 
 /** Image bytes, content type and keyless URL. `run(prompt, options?)`. */
 export function useImageGeneration() {

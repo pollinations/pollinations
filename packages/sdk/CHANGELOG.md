@@ -2,6 +2,16 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.28] - 2026-11-10
+
+### Fixed
+- Generation hooks honor the caller's `AbortSignal` like `cancel()`, keeping
+  the last result without setting an error.
+- Changing `PolliProvider`'s `appKey` resets authentication to the new app's
+  storage namespace.
+- `Message` accepts assistant turns with `null` content and `tool_calls`, so
+  tool-use history can be passed back without casts.
+
 ## [5.1.0-alpha.27] - 2026-11-06
 
 ### Fixed

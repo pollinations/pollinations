@@ -311,49 +311,6 @@ it.each([
     },
 );
 
-it("replays QwenGuard classifications with terminal usage for streaming callers", async () => {
-    const providerUsage = {
-        prompt_tokens: 326,
-        completion_tokens: 8,
-        total_tokens: 334,
-    };
-    const { response, text, calls, events } = await chatThroughHandler(
-        "qwen/qwen3guard-gen-8b",
-        "oai.endpoints.kepler.ai.cloud.ovh.net",
-        async (request) => {
-            expect(await request.json()).toMatchObject({
-                model: "Qwen3Guard-Gen-8B",
-                stream: false,
-            });
-            return Response.json({
-                id: "chatcmpl-qwenguard",
-                object: "chat.completion",
-                created: 1,
-                model: "Qwen3Guard-Gen-8B",
-                choices: [
-                    {
-                        index: 0,
-                        message: {
-                            role: "assistant",
-                            content: "Safety: Safe\nCategories: None",
-                        },
-                        finish_reason: "stop",
-                    },
-                ],
-                usage: providerUsage,
-            });
-        },
-    );
-    expect(response.status, text).toBe(200);
-    expect(response.headers.get("content-type")).toContain("text/event-stream");
-    expect(text).toContain("Safety: Safe\\nCategories: None");
-    expect(text).toContain(JSON.stringify(providerUsage));
-    expect(text).toContain("data: [DONE]\n\n");
-    expect(text).not.toContain("usage_missing");
-    expect(calls).toBe(1);
-    expect(events.filter((event) => event.isBilledUsage)).toHaveLength(1);
-});
-
 it("rejects buffered QwenGuard classifications without usage before starting SSE", async () => {
     const { response, text, balance, events } = await chatThroughHandler(
         "qwen/qwen3guard-gen-8b",

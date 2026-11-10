@@ -1032,6 +1032,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioSeconds": 0.002,
     },
   },
+  "elevenlabs/eleven-text-to-sound-v3": {
+    "cost": {
+      "completionAudioSeconds": 0.002,
+    },
+    "price": {
+      "completionAudioSeconds": 0.002,
+    },
+  },
+  "elevenlabs/eleven-text-to-sound-v3:fal": {
+    "cost": {
+      "completionAudioSeconds": 0.002,
+    },
+    "price": {
+      "completionAudioSeconds": 0.002,
+    },
+  },
   "elevenlabs/eleven-v3": {
     "cost": {
       "completionAudioTokens": 0.00008,
@@ -1093,6 +1109,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "elevenlabs/scribe-v2-realtime": {
+    "cost": {
+      "promptAudioSeconds": 0.0000611111111111111,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000611111111111111,
+    },
+  },
+  "elevenlabs/scribe-v3": {
+    "cost": {
+      "promptAudioSeconds": 0.0000555555555555556,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000555555555555556,
+    },
+  },
+  "elevenlabs/scribe-v3-live": {
     "cost": {
       "promptAudioSeconds": 0.0000611111111111111,
     },

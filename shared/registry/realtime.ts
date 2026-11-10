@@ -93,6 +93,23 @@ export const REALTIME_SERVICES = {
             "cedar",
         ],
     },
+    "elevenlabs/scribe-v3-live": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "realtime",
+        addedDate: new Date("2026-11-10").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // https://elevenlabs.io/pricing/api — base transcription, no paid extras.
+        cost: { promptAudioSeconds: 0.22 / 3600 },
+        title: "Scribe v3 Live",
+        description:
+            "Accurate live multilingual transcription with incremental and final results",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
     "elevenlabs/scribe-v2-realtime": {
         aliases: ["scribe-realtime"],
         provider: "elevenlabs",

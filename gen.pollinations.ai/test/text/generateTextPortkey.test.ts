@@ -2,11 +2,13 @@ import { env } from "cloudflare:test";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withModelFallback } from "../../src/fallback.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
+import { getChatRequestData } from "../../src/text/requestUtils.ts";
 import type { ChatMessage } from "../../src/text/types.js";
 
 const azureModelConfig = {
@@ -677,12 +679,18 @@ describe("generateTextPortkey", () => {
             // OpenRouter's provider pin keeps zero data retention.
             model: "x-ai/grok-4.20:openrouter:xai-zdr",
             caller: {
+                modelConfig: {
+                    provider: "openai",
+                    model: "caller/model",
+                    directEndpoint: "https://example.com/v1/chat/completions",
+                },
                 provider: { only: ["xai"] },
                 models: ["anthropic/claude-opus-4.7"],
                 preset: "@preset/fallbacks",
                 plugins: [{ id: "web" }],
             },
             sent: {
+                model: "x-ai/grok-4.20",
                 provider: { only: ["xai/zdr"], allow_fallbacks: false },
                 models: undefined,
                 preset: undefined,
@@ -723,10 +731,14 @@ describe("generateTextPortkey", () => {
                     });
                 },
             );
-            await generateTextPortkey([{ role: "user", content: "Hi" }], {
-                model,
-                ...caller,
-            });
+            const { messages, ...options } = getChatRequestData(
+                CreateChatCompletionRequestSchema.parse({
+                    model,
+                    messages: [{ role: "user", content: "Hi" }],
+                    ...caller,
+                }),
+            );
+            await generateTextPortkey(messages, options);
             for (const [key, value] of Object.entries(sent)) {
                 expect(body[key]).toEqual(value);
             }

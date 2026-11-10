@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Pollinations Studio",
+    "url": "https://pollinations-studio-1.vercel.app",
+    "description": "AI studio using gen.pollinations.ai for batch image generation (up to 10 parallel prompts), custom model selection, and multi-model AI chat with Bring Your Own Pollen (BYOP) authentication.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "lekezoa",
+    "githubUserId": "341785504",
+    "repositoryUrl": "https://github.com/lekezoa/pollinations-studio",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-09",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19413",
+    "approvedDate": "2026-11-10",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/2136e778-7784-4d66-b55f-c595e1482a2c"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Tomadix",
     "url": "https://tomadix.ibitweb.com.br",
     "description": "Tomadix is an AI-powered creative platform designed to help users create professional prompts and generate high-quality images using artificial intelligence. Made with Pollinations.ai.",

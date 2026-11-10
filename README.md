@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Pollinations Studio](https://pollinations-studio-1.vercel.app) | AI studio using gen.pollinations.ai for batch image generation (up to 10 parallel prompts), custom model selection, and multi-model AI chat with Bring Your Own Pollen (BYOP) authentication. | [@lekezoa](https://github.com/lekezoa) |
 | [🖼️ Tomadix](https://tomadix.ibitweb.com.br) | Tomadix is an AI-powered creative platform designed to help users create professional prompts and generate high-quality images using artificial intelligence. Made with Pollinations.ai. | [@gereiz](https://github.com/gereiz) |
 | [💬 Parallel Voices](https://ezzelddin-abdallah.github.io/pollinations-parallel-voices) | Ask one question to several Pollinations text models at once and compare every answer side by side, with latency and token counts per model. Bring your own Pollen. | [@EzzElddin-AbdAllah](https://github.com/EzzElddin-AbdAllah) |
 | [💬 DynaSpark AI](https://dynaspark.th3.qzz.io) | DynaSpark AI is a versatile multimodal assistant for text, code, image and video generation, data analysis, and web and document processing, powered by Pollinations AI and BYOP models. | [@Th3-C0der](https://github.com/Th3-C0der) |
@@ -30,7 +31,6 @@
 | [🖼️ PIXOO64 Media Art](https://github.com/idodov/pixoo64_art) | Pixoo64 Media Album Art is a native Home Assistant custom integration that transforms the Divoom Pixoo64 64×64 LED matrix into an intelligent media and visual display hub. Beyond traditional cover art | [@idodov](https://github.com/idodov) |
 | [🎮 Prompt Brawl](https://lotxo1.github.io/prompt-brawl) | Describe a fighter in one line: the AI designs it (portrait, stats, moves, a weakness) and commentates the brawl. Ladder, daily boss, voice and share links. Players pay with their own Pollen. | [@lotxo1](https://github.com/lotxo1) |
 | [🎮 Wanderpost](https://kreggscode.github.io/wanderpost) | **Explorable postcard worlds.** You type a scene, and the first postcard is painted from it. Then you click the doors, paths and windows **in the picture** to step into the next view — one painted pos | [@kreggscode](https://github.com/kreggscode) |
-| [🖼️ Pollinations Image Studio](https://lahoucine98-pollinations-image-studio.static.hf.space) | Pollinations Image Studio is a web app that allows users to generate AI images using the Pollinations API. Users can connect their Pollinations account through OAuth and create images directly in thei | [@lahoucinebathoum](https://github.com/lahoucinebathoum) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

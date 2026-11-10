@@ -61,6 +61,8 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "base64_decode",
+                "base64_encode",
                 "currency_convert",
                 "currency_list",
                 "currency_rates",
@@ -390,4 +392,19 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("base64 encoding and decoding preserves UTF-8 text and supports url_safe mode", async (t) => {
+    const client = await clientFor(t);
+    const encoded = await call(client, "base64_encode", {
+        text: "Hello, Pollinations! 🚀",
+        url_safe: true,
+    });
+    assert.equal(typeof encoded.encoded, "string");
+    assert.doesNotMatch(encoded.encoded, /[+/=]/);
+
+    const decoded = await call(client, "base64_decode", {
+        encoded: encoded.encoded,
+    });
+    assert.equal(decoded.decoded, "Hello, Pollinations! 🚀");
 });

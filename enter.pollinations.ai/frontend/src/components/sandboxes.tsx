@@ -442,7 +442,7 @@ export function SidebarSandboxes() {
         >
             {counts.running > 0 && (
                 <>
-                    <PlayIcon className="h-3 w-3 shrink-0" />
+                    <PlayIcon className="h-3 w-3 shrink-0 text-intent-success-text" />
                     {counts.running}
                     <span className="sr-only"> running</span>
                 </>
@@ -450,7 +450,7 @@ export function SidebarSandboxes() {
             {counts.paused > 0 && (
                 <>
                     <PauseIcon
-                        className={`h-3 w-3 shrink-0 ${counts.running > 0 ? "ml-1" : ""}`}
+                        className={`h-3 w-3 shrink-0 text-intent-danger-text ${counts.running > 0 ? "ml-1" : ""}`}
                     />
                     {counts.paused}
                     <span className="sr-only"> paused</span>

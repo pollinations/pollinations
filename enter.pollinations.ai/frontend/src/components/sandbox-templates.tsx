@@ -17,7 +17,7 @@ import type { FC, ReactNode } from "react";
 import { BalanceAccessChip } from "./models/model-status-chips.tsx";
 
 // Two significant digits, as the prices are shown.
-const amount = (value: number) => String(Number(value.toPrecision(2)));
+export const amount = (value: number) => String(Number(value.toPrecision(2)));
 const gb = (mb: number) => Math.round(mb / 1024);
 const hourly = (template: (typeof SANDBOX_TEMPLATES)[number]) =>
     perSecond(callerRates(template.provider), template) * 3600;
@@ -33,7 +33,9 @@ const PROVIDER_LOGOS: Record<SandboxProvider, string> = {
     azure: "/brand-logos/microsoft.svg",
 };
 
-const ProviderLogo: FC<{ provider: SandboxProvider }> = ({ provider }) => {
+export const ProviderLogo: FC<{ provider: SandboxProvider }> = ({
+    provider,
+}) => {
     const logo = PROVIDER_LOGOS[provider];
     const className = "h-8 w-8 shrink-0 text-ink-900 opacity-55";
     return (
@@ -57,8 +59,30 @@ const ProviderLogo: FC<{ provider: SandboxProvider }> = ({ provider }) => {
     );
 };
 
+// A size as three figures: cores, memory and, when known, disk.
+export const SizeStats: FC<{
+    cpuCount: number;
+    memoryMB: number;
+    diskSizeMB?: number;
+}> = ({ cpuCount, memoryMB, diskSizeMB }) => (
+    <dl className="flex gap-6">
+        {[
+            [String(cpuCount), "vCPU"],
+            [`${memoryMB / 1024} GB`, "memory"],
+            ...(diskSizeMB ? [[`${gb(diskSizeMB)} GB`, "disk"]] : []),
+        ].map(([value, label]) => (
+            <div key={label} className="flex flex-col-reverse gap-0.5">
+                <dt className="text-xs text-theme-text-muted">{label}</dt>
+                <dd className="text-lg font-semibold leading-none text-theme-text-strong">
+                    {value}
+                </dd>
+            </div>
+        ))}
+    </dl>
+);
+
 // One price row, laid out like the Models list's ledger: label, value, unit.
-const LedgerRow: FC<{
+export const LedgerRow: FC<{
     Icon: FC<{ className?: string }>;
     label: string;
     children: ReactNode;
@@ -103,31 +127,7 @@ export const SandboxTemplateList: FC<{
                                     aria-hidden="true"
                                     className="h-10 w-px shrink-0 bg-divider"
                                 />
-                                <dl className="flex gap-6">
-                                    {[
-                                        [String(template.cpuCount), "vCPU"],
-                                        [
-                                            `${template.memoryMB / 1024} GB`,
-                                            "memory",
-                                        ],
-                                        [
-                                            `${gb(template.diskSizeMB)} GB`,
-                                            "disk",
-                                        ],
-                                    ].map(([value, label]) => (
-                                        <div
-                                            key={label}
-                                            className="flex flex-col-reverse gap-0.5"
-                                        >
-                                            <dt className="text-xs text-theme-text-muted">
-                                                {label}
-                                            </dt>
-                                            <dd className="text-lg font-semibold leading-none text-theme-text-strong">
-                                                {value}
-                                            </dd>
-                                        </div>
-                                    ))}
-                                </dl>
+                                <SizeStats {...template} />
                             </div>
                             <div className="grid w-56 grid-cols-[6.5rem_3.5rem_3.5rem] gap-x-1">
                                 <LedgerRow Icon={WalletIcon} label="Pollen">

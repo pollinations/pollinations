@@ -19,6 +19,7 @@ import {
     PauseIcon,
     PlayIcon,
     PlusIcon,
+    PulseIcon,
     RefreshIcon,
     Section,
     Surface,
@@ -44,7 +45,14 @@ import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
-import { LAUNCH_DISCOUNT, SandboxTemplateList } from "./sandbox-templates.tsx";
+import {
+    amount,
+    LAUNCH_DISCOUNT,
+    LedgerRow,
+    ProviderLogo,
+    SandboxTemplateList,
+    SizeStats,
+} from "./sandbox-templates.tsx";
 
 // Gen serves E2B's API here and keeps the sandbox rules and billing.
 const E2B_PATH = "/alpha/e2b";
@@ -160,6 +168,29 @@ const TemplateName = ({ id, size }: { id: string; size?: Size }) => (
         <span className="font-normal opacity-60">({templateSource(id)})</span>
     </>
 );
+
+// When a running sandbox stops, as a value and a small unit like the price
+// row: "3:30 PM" "in 30 min", or past two days "Nov 14" "in 3 d".
+const stopsAt = (endAt: string) => {
+    const end = new Date(endAt);
+    const minutes = Math.max(
+        0,
+        Math.round((end.getTime() - Date.now()) / 60000),
+    );
+    if (minutes >= 48 * 60) {
+        return {
+            at: end.toLocaleDateString([], { month: "short", day: "numeric" }),
+            left: `in ${Math.round(minutes / 1440)} d`,
+        };
+    }
+    return {
+        at: end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+        left:
+            minutes < 60
+                ? `in ${minutes} min`
+                : `in ${Math.round(minutes / 60)} h`,
+    };
+};
 
 // Past half of E2B's longest timeout, it runs until it's stopped.
 const forever = (until: string) =>
@@ -322,46 +353,86 @@ function SandboxCard({
 }) {
     const running = sandbox.state === "running";
     const endless = running && forever(sandbox.endAt);
+    const template = templateOf(sandbox);
+    // Built like a template card: what it is on the left, its status and
+    // price on the right, then the ssh command and the actions.
     return (
-        <Surface className="flex flex-col gap-3 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0">
-                    <Text
-                        tone="strong"
-                        weight="semibold"
-                        className={
-                            sandbox.metadata?.name
-                                ? "break-all"
-                                : "break-all font-mono"
-                        }
+        <Surface className="flex flex-col gap-3">
+            <div className="grid gap-3 @lg:grid-cols-[minmax(0,1fr)_14rem] @lg:items-center @lg:gap-x-6">
+                <div className="flex min-w-0 flex-col gap-2">
+                    <span
+                        className={`break-all font-semibold text-theme-text-strong ${sandbox.metadata?.name ? "" : "font-mono"}`}
                     >
                         {sandbox.metadata?.name ?? sandbox.sandboxID}
-                    </Text>
-                    <Text size="sm" tone="muted">
-                        {templateTitle(templateOf(sandbox), sandbox)} ·{" "}
-                        {templateSource(templateOf(sandbox))} ·{" "}
-                        {pollen(
-                            perSecond(pricing, templateOf(sandbox), sandbox) *
-                                3600,
-                        )}{" "}
-                        an hour while running
-                    </Text>
+                    </span>
+                    <div className="flex items-center gap-2.5">
+                        <ProviderLogo
+                            provider={
+                                sandboxTemplate(template)?.provider ?? "e2b"
+                            }
+                        />
+                        <span
+                            aria-hidden="true"
+                            className="h-10 w-px shrink-0 bg-divider"
+                        />
+                        <SizeStats
+                            cpuCount={sandbox.cpuCount}
+                            memoryMB={sandbox.memoryMB}
+                            diskSizeMB={sandboxTemplate(template)?.diskSizeMB}
+                        />
+                    </div>
                 </div>
-                <Chip intent={running ? "success" : "neutral"} size="md">
-                    {!running
-                        ? "Paused"
-                        : endless
-                          ? "Runs until you stop it"
-                          : `Runs until ${new Date(sandbox.endAt).toLocaleString()}`}
-                </Chip>
+                <div className="grid w-56 grid-cols-[6.5rem_3.5rem_3.5rem] gap-x-1">
+                    <LedgerRow Icon={PulseIcon} label="Status">
+                        <div className="col-span-2 flex">
+                            <Chip
+                                intent={running ? "success" : "neutral"}
+                                size="sm"
+                            >
+                                {running ? "Running" : "Paused"}
+                            </Chip>
+                        </div>
+                    </LedgerRow>
+                    {running && (
+                        <LedgerRow Icon={ClockIcon} label="Stops">
+                            {endless ? (
+                                <span className="col-span-2 whitespace-nowrap text-sm text-theme-text-strong">
+                                    when you stop it
+                                </span>
+                            ) : (
+                                <>
+                                    <span className="whitespace-nowrap text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+                                        {stopsAt(sandbox.endAt).at}
+                                    </span>
+                                    <span className="whitespace-nowrap text-xs text-theme-text-muted">
+                                        {stopsAt(sandbox.endAt).left}
+                                    </span>
+                                </>
+                            )}
+                        </LedgerRow>
+                    )}
+                    <LedgerRow Icon={WalletIcon} label="Price">
+                        <span className="text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+                            $
+                            {amount(
+                                perSecond(pricing, template, sandbox) * 3600,
+                            )}
+                        </span>
+                        <span className="text-xs text-theme-text-muted">
+                            /hour
+                        </span>
+                    </LedgerRow>
+                </div>
             </div>
-            <CopyField
-                label={`Copy ssh command for ${sandbox.sandboxID}`}
-                value={`ssh ${sandbox.sandboxID}.polli`}
-            />
+            {/* Only as wide as the command needs. */}
+            <div className="w-fit min-w-0 max-w-full">
+                <CopyField
+                    label={`Copy ssh command for ${sandbox.sandboxID}`}
+                    value={`ssh ${sandbox.sandboxID}.polli`}
+                />
+            </div>
             <ButtonGroup>
                 <Button
-                    size="sm"
                     intent="commit"
                     icon={
                         !running ? (
@@ -383,7 +454,6 @@ function SandboxCard({
                 </Button>
                 {running && (
                     <Button
-                        size="sm"
                         intent="commit"
                         icon={<PauseIcon />}
                         disabled={busy}
@@ -393,7 +463,6 @@ function SandboxCard({
                     </Button>
                 )}
                 <Button
-                    size="sm"
                     intent="danger"
                     icon={<TrashIcon />}
                     disabled={busy}
@@ -611,13 +680,17 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                 <div className="flex flex-col gap-3">
                     {pricing && sandboxes.length > 0 && (
                         <>
-                            <Text size="sm" tone={full ? "strong" : "muted"}>
-                                {running} of {pricing.maxRunning} running.
-                                {full &&
-                                    " Pause or kill one to start or resume another."}
-                            </Text>
+                            {/* The limit shows only once it's reached; the
+                                footnote names it otherwise. */}
+                            {full && (
+                                <Text size="sm" tone="strong">
+                                    {running} of {pricing.maxRunning} running.
+                                    Pause or kill one to start or resume
+                                    another.
+                                </Text>
+                            )}
                             <div
-                                className="flex flex-col gap-2"
+                                className="@container flex flex-col gap-3"
                                 aria-live="polite"
                             >
                                 {sandboxes.map((sandbox) => (

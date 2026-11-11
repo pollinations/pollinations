@@ -795,7 +795,7 @@ export async function trackResponse(
         // handler reports on the error (an xAI video rejected after generation).
         const usage =
             error instanceof UpstreamError ? error.billedUsage : undefined;
-        if (!usage) {
+        if (!usage || isImplausibleProxyUsage(eventType, candidate, usage)) {
             return notBilled({
                 modelUsed,
                 ...trackJsonErrorUsage(
@@ -951,13 +951,7 @@ export async function trackResponse(
             modelUsed,
         });
     }
-    // A community proxy reports its own usage and its owner earns from it, so
-    // a claim past the ceilings is never charged.
-    if (
-        eventType === "generate.text" &&
-        candidate.communityEndpoint?.type === "proxy" &&
-        !plausibleProxyUsage(modelUsage.usage)
-    ) {
+    if (isImplausibleProxyUsage(eventType, candidate, modelUsage.usage)) {
         return notBilled({
             responseStatus: 502,
             modelUsed,
@@ -967,6 +961,7 @@ export async function trackResponse(
                 errorResponseCode: "usage_invalid",
                 errorMessage: `Community provider reported implausible usage: ${JSON.stringify(modelUsage.usage)}`,
             },
+            errorOutput: { usage: modelUsage.usage },
         });
     }
     // Provider cost follows the serving route; price follows its caller choice.
@@ -1011,12 +1006,23 @@ export async function trackResponse(
     };
 }
 
-// The most one text call to a community proxy may report, summed over every
-// prompt and every completion bucket.
+// A community proxy reports its own usage and its owner earns from it, so a
+// text call that claims more than this, summed over every prompt and every
+// completion bucket, is never charged.
 const MAX_PROXY_PROMPT_TOKENS = 2_000_000;
 const MAX_PROXY_COMPLETION_TOKENS = 200_000;
 
-function plausibleProxyUsage(usage: Usage): boolean {
+function isImplausibleProxyUsage(
+    eventType: EventType,
+    candidate: FallbackCandidate,
+    usage: Usage,
+): boolean {
+    if (
+        eventType !== "generate.text" ||
+        candidate.communityEndpoint?.type !== "proxy"
+    ) {
+        return false;
+    }
     let prompt = 0;
     let completion = 0;
     for (const [type, amount] of Object.entries(usage)) {
@@ -1024,8 +1030,8 @@ function plausibleProxyUsage(usage: Usage): boolean {
         else completion += amount;
     }
     return (
-        prompt <= MAX_PROXY_PROMPT_TOKENS &&
-        completion <= MAX_PROXY_COMPLETION_TOKENS
+        prompt > MAX_PROXY_PROMPT_TOKENS ||
+        completion > MAX_PROXY_COMPLETION_TOKENS
     );
 }
 
@@ -1076,7 +1082,9 @@ function zeroUsageNote(
 }
 
 function streamErrorClass(code: string | undefined): string {
-    if (code === "usage_missing") return "UpstreamUsageError";
+    if (code === "usage_missing" || code === "usage_invalid") {
+        return "UpstreamUsageError";
+    }
     if (code === "upstream_stream_error") return "UpstreamStreamError";
     return "UpstreamFinishReasonError";
 }

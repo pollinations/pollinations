@@ -4144,8 +4144,35 @@ describe("trackResponse community proxy usage", () => {
                 isBilledUsage: false,
                 usage: {},
                 errorTracking: { errorResponseCode: "usage_invalid" },
+                // The claim itself is kept for the error log.
+                errorOutput: { usage: expect.any(Object) },
             });
             expect(tracking.price).toBeUndefined();
+        },
+    );
+
+    // An empty answer is an error the provider still charged for.
+    it.each([
+        ["past the ceiling", 200_001, false],
+        ["at the ceiling", 200_000, true],
+    ])(
+        "bills a proxy's failed answer only within the ceiling: %s",
+        async (_name, completionTextTokens, isBilledUsage) => {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(),
+                new Response(null, { status: 502 }),
+                served(proxy),
+                undefined,
+                new UpstreamError(502, {
+                    message: "Provider returned an empty response",
+                    billedUsage: { promptTextTokens: 1, completionTextTokens },
+                }),
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: 502,
+                isBilledUsage,
+            });
         },
     );
 

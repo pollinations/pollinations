@@ -47,13 +47,6 @@ export const DASHBOARD_NAV_ITEMS = [
     },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon, group: "yours" },
     {
-        id: "sandboxes",
-        to: "/sandboxes",
-        label: "Sandboxes",
-        icon: TerminalIcon,
-        group: "yours",
-    },
-    {
         id: "activity",
         to: "/activity",
         label: "Activity",
@@ -97,6 +90,15 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: McpIcon,
         group: "resources",
     },
+    // One row for sandboxes, in the catalog: its page lists the templates
+    // for everyone and, above them, the ones you run.
+    {
+        id: "sandboxes",
+        to: "/sandboxes",
+        label: "Sandboxes",
+        icon: TerminalIcon,
+        group: "resources",
+    },
 ] as const satisfies readonly {
     id: string;
     to: string;
@@ -128,16 +130,11 @@ export function isDashboardPath(path: string): boolean {
 const RESOURCE_ITEMS = DASHBOARD_NAV_ITEMS.filter(
     (item) => item.group === "resources",
 );
-const PUBLIC_YOURS_ITEMS = DASHBOARD_NAV_ITEMS.filter(
-    (item) => item.id === "quests" || item.id === "sandboxes",
-);
+const QUESTS_ITEM = DASHBOARD_NAV_ITEMS.filter((item) => item.id === "quests");
 
 // Signed out there is no card of your own; Quests, the way to earn free
-// pollen, and Sandboxes, with its templates and prices, join the resources.
+// pollen, joins the resources.
 export const SIGNED_OUT_NAV_ITEMS = [
     ...RESOURCE_ITEMS,
-    ...PUBLIC_YOURS_ITEMS.map((item) => ({
-        ...item,
-        group: "resources" as const,
-    })),
+    ...QUESTS_ITEM.map((item) => ({ ...item, group: "resources" as const })),
 ];

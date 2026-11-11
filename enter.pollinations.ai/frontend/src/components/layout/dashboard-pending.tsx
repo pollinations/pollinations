@@ -8,7 +8,7 @@ const pageTitles: Record<string, readonly string[]> = {
     "/models": ["Models"],
     "/agents": ["Agents"],
     "/my-models": ["My Listings"],
-    "/sandboxes": ["Sandboxes"],
+    "/sandboxes": ["New sandbox"],
     "/keys": ["Keys"],
     "/pollen": ["Pollen", "Top-up", "Billing"],
     "/activity": ["Overview", "Last events"],

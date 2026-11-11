@@ -56,8 +56,8 @@ type DashboardNavItem = {
 };
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
-// Docs), and everything about you as one block at the bottom: Credits and
-// Quests with their balances, what you build (My Listings, Keys, Sandboxes),
+// sandboxes, Docs), and everything about you as one block at the bottom:
+// Credits and Quests with their balances, what you build (My Listings, Keys),
 // Activity, then your name, the way to Settings. A thin line opens each part. Signed out, the bottom holds the sign-in
 // buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";

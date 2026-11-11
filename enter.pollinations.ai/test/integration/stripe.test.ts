@@ -4020,52 +4020,56 @@ test("checkout card update retries without crediting twice", async ({
     expect(customer.invoice_settings.default_payment_method).toBe(card.id);
 });
 
-test("POST /api/webhooks/stripe credits the top-up quest bonus with the pack", async ({
-    sessionToken,
-    mocks,
-}) => {
-    void sessionToken;
-    await mocks.enable("tinybird");
-    const userId = await getSeededUserId();
-    const db = drizzle(env.DB);
-    const readTierBalance = async () => {
-        const [row] = await db
-            .select({ tierBalance: userTable.tierBalance })
-            .from(userTable)
-            .where(eq(userTable.id, userId));
-        return row?.tierBalance ?? 0;
-    };
-    const pack = getPollenPackByAmount(10);
-    if (!pack) throw new Error("Expected $10 pollen pack");
-    const tierBefore = await readTierBalance();
+// A card pays at once; a bank transfer or a voucher is paid later.
+test.for([
+    "checkout.session.completed",
+    "checkout.session.async_payment_succeeded",
+])(
+    "POST /api/webhooks/stripe %s credits the top-up quest bonus with the pack",
+    async (eventType, { sessionToken, mocks }) => {
+        void sessionToken;
+        await mocks.enable("tinybird");
+        const userId = await getSeededUserId();
+        const db = drizzle(env.DB);
+        const readTierBalance = async () => {
+            const [row] = await db
+                .select({ tierBalance: userTable.tierBalance })
+                .from(userTable)
+                .where(eq(userTable.id, userId));
+            return row?.tierBalance ?? 0;
+        };
+        const pack = getPollenPackByAmount(10);
+        if (!pack) throw new Error("Expected $10 pollen pack");
+        const tierBefore = await readTierBalance();
 
-    const response = await postSignedStripeWebhook({
-        id: "evt_test_top_up_bonus",
-        type: "checkout.session.completed",
-        livemode: false,
-        data: {
-            object: {
-                id: "cs_test_top_up_bonus",
-                object: "checkout.session",
-                metadata: { userId, packKey: pack.packKey },
-                payment_status: "paid",
-                amount_subtotal: pack.amountUsd * 100,
-                amount_total: pack.amountUsd * 100,
-                currency: "usd",
-                payment_method_types: ["card"],
+        const response = await postSignedStripeWebhook({
+            id: "evt_test_top_up_bonus",
+            type: eventType,
+            livemode: false,
+            data: {
+                object: {
+                    id: "cs_test_top_up_bonus",
+                    object: "checkout.session",
+                    metadata: { userId, packKey: pack.packKey },
+                    payment_status: "paid",
+                    amount_subtotal: pack.amountUsd * 100,
+                    amount_total: pack.amountUsd * 100,
+                    currency: "usd",
+                    payment_method_types: ["card"],
+                },
             },
-        },
-    });
-    expect(response.status).toBe(200);
+        });
+        expect(response.status).toBe(200);
 
-    // The bonus is credited in waitUntil, after the webhook ACK.
-    await expect.poll(readTierBalance).toBeCloseTo(tierBefore + 5);
-    const [reward] = await db
-        .select({ claimedAt: rewardsTable.claimedAt })
-        .from(rewardsTable)
-        .where(eq(rewardsTable.questId, "top_up_since_launch"));
-    expect(reward?.claimedAt).toBeTruthy();
-});
+        // The bonus is credited in waitUntil, after the webhook ACK.
+        await expect.poll(readTierBalance).toBeCloseTo(tierBefore + 5);
+        const [reward] = await db
+            .select({ claimedAt: rewardsTable.claimedAt })
+            .from(rewardsTable)
+            .where(eq(rewardsTable.questId, "top_up_since_launch"));
+        expect(reward?.claimedAt).toBeTruthy();
+    },
+);
 
 test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card issuer and Radar score", async ({
     mocks,

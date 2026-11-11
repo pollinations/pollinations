@@ -25,7 +25,7 @@ import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import { type FC, type ReactNode, useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { TopUpPanel } from "./top-up-panel.tsx";
@@ -426,7 +426,7 @@ const TopUpBonusNote: FC<{ billing: BillingOverview | null }> = ({
         const load = async () => {
             const [catalogResponse, rewardsResponse] = await Promise.all([
                 apiClient.quests.catalog.$get(),
-                apiClient.quests.rewards.$get(),
+                accountClient.quests.rewards.$get(),
             ]);
             if (!catalogResponse.ok || !rewardsResponse.ok) return;
             const [{ quests }, { rewards }] = await Promise.all([
@@ -457,7 +457,7 @@ const TopUpBonusNote: FC<{ billing: BillingOverview | null }> = ({
             <span>
                 Your next top-up adds{" "}
                 <strong className="font-semibold text-theme-text-strong">
-                    ${formatPollen(bonus)} quest credit
+                    {formatPollen(bonus)} Quest pollen
                 </strong>
             </span>
         </p>

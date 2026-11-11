@@ -7,7 +7,8 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
-import { creditTopUpQuestRewards } from "../services/quest-checker.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import { METADATA_USER_ID } from "../utils/stripe-billing/constants.ts";
 import {
@@ -394,10 +395,11 @@ function emitCheckoutSessionAnalytics(
 }
 
 /**
- * Credit the top-up quest bonus with a newly credited checkout. Runs in
- * waitUntil so a quest failure never fails the pack credit or the ACK.
+ * Check the top-up quests after a newly credited checkout; the check credits
+ * their rewards. Runs in waitUntil so a quest failure never fails the pack
+ * credit or the ACK.
  */
-function creditTopUpQuestRewardsLater(
+function checkTopUpQuestsLater(
     c: {
         env: CloudflareBindings;
         executionCtx: { waitUntil(p: Promise<unknown>): void };
@@ -408,8 +410,8 @@ function creditTopUpQuestRewardsLater(
     const userId = session.metadata?.userId;
     if (!result.success || !userId) return;
     c.executionCtx.waitUntil(
-        creditTopUpQuestRewards(c.env, userId).catch((error) =>
-            console.error("Top-up quest reward failed:", error),
+        checkQuestsForUser(c.env, userId, [ACCOUNT_SETUP_QUEST_GROUP]).catch(
+            (error) => console.error("Top-up quest check failed:", error),
         ),
     );
 }
@@ -693,7 +695,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         break;
                     }
 
-                    creditTopUpQuestRewardsLater(c, session, result);
+                    checkTopUpQuestsLater(c, session, result);
                     emitCheckoutSessionAnalytics(
                         c,
                         event,
@@ -726,7 +728,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     break;
                 }
 
-                creditTopUpQuestRewardsLater(c, session, result);
+                checkTopUpQuestsLater(c, session, result);
                 emitCheckoutSessionAnalytics(
                     c,
                     event,

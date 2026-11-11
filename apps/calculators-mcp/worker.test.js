@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { crc32 } from "node:zlib";
 import {
     Client,
     StreamableHTTPClientTransport,
@@ -65,6 +66,7 @@ for (const modern of [false, true])
                 "currency_list",
                 "currency_rates",
                 "check_contrast",
+                "checksum_crc32",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -353,6 +355,38 @@ test("time duration preserves nanoseconds", async (t) => {
         end: "2026-01-01T00:00:00.000000002Z",
     });
     assert.equal(result.totalSeconds, 1e-9);
+});
+
+test("CRC-32 matches Node's reference implementation over UTF-8 bytes", async (t) => {
+    const client = await clientFor(t);
+    for (const text of [
+        "123456789",
+        "Café — Ω 👋",
+        "line one\nline two",
+        "a".repeat(4000),
+    ]) {
+        const bytes = Buffer.from(text, "utf8"),
+            expected = crc32(bytes),
+            result = await call(client, "checksum_crc32", { text });
+        assert.equal(result.bytes, bytes.length);
+        assert.equal(result.decimal, expected);
+        assert.equal(result.crc32, expected.toString(16).padStart(8, "0"));
+    }
+    assert.equal(
+        (await call(client, "checksum_crc32", { text: "123456789" })).crc32,
+        "cbf43926",
+    );
+    for (const text of ["", "👋".repeat(4001)])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "checksum_crc32",
+                    arguments: { text },
+                })
+            ).isError,
+            true,
+            text.slice(0, 8) || "empty",
+        );
 });
 
 test("currency tools use fixed public rates without forwarding caller credentials", async (t) => {

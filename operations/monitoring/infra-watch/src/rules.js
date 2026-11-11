@@ -119,6 +119,29 @@ export function conditions({
     return found;
 }
 
+// Expected production registry pools; DreamShaper retains the "sana" key.
+// Klein uses a separate VPC backend and never registers here.
+export const GPU_POOLS = {
+    flux: { name: "Flux", expected: 1 },
+    zimage: { name: "Z-Image", expected: 1 },
+    sana: { name: "DreamShaper", expected: 2 },
+};
+const GPU_RECOVER_CHECKS = 3;
+export function gpuPoolsMissing(pools) {
+    const found = {};
+    for (const [pool, { expected }] of Object.entries(GPU_POOLS)) {
+        const active = pools[pool].length;
+        if (active < expected)
+            found[`gpu:${pool}`] = {
+                kind: "GPU_MISSING",
+                pool,
+                active,
+                expected,
+            };
+    }
+    return found;
+}
+
 // The community cycle (community.js) runs every half hour. It is down after
 // COMMUNITY_FAILURES failed cycles in a row, about 90 minutes, with the last
 // error (a refused probe key, a rejected Discord post) saying why; or while
@@ -202,6 +225,7 @@ export function earlyErrors(minutes) {
             bursts: bursts.length,
             failures: total(minutes, "failures"),
             d1: total(minutes, "d1_failures"),
+            firstAt: minuteMs(bursts[0].minute),
             lastAt: minuteMs(bursts.at(-1).minute),
         },
     };
@@ -287,8 +311,8 @@ const SEVERITY = ["PRIMARY_WEAK", "DEGRADED"];
 const worse = (a, b) => (SEVERITY.indexOf(b) > SEVERITY.indexOf(a) ? b : a);
 
 export function step(state, found, now, recent = []) {
-    // With gen down, only Enter's own check can be judged, not even a single
-    // hostname. With analytics down, the hostname and Enter checks still can.
+    // Enter and GPU registry checks are independent of gen and analytics.
+    // With analytics down, hostname checks can still be judged too.
     const open = { ...(state.open ?? {}) };
     const closed = Object.fromEntries(
         Object.entries(state.closed ?? {}).filter(
@@ -305,7 +329,10 @@ export function step(state, found, now, recent = []) {
         streaks[key] = streak;
         const incident = open[key];
         if (!incident) {
-            const confirm = CONFIRMED.has(key) || key.startsWith("stale:");
+            const confirm =
+                CONFIRMED.has(key) ||
+                key.startsWith("stale:") ||
+                key.startsWith("gpu:");
             if (streak < (confirm ? CONFIRM_CHECKS : 1)) continue;
             open[key] = {
                 kind: info.kind,
@@ -343,8 +370,13 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, incident] of Object.entries(open)) {
         if (found[key]) continue;
-        if (found.gen && key !== "enter") continue;
-        if (found.analytics && !HOSTS[key]) continue;
+        const gpu = key.startsWith("gpu:");
+        if (found.gen && key !== "enter" && !gpu) continue;
+        if (found.analytics && !HOSTS[key] && !gpu) continue;
+        if (gpu) {
+            clears[key] = (state.clears?.[key] ?? 0) + 1;
+            if (clears[key] < GPU_RECOVER_CHECKS) continue;
+        }
         // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
         // sample neither counts nor resets the run.
         const model = modelOf(key);
@@ -414,6 +446,12 @@ export function noteworthy(before, now) {
         return `final success moved from ${pct(before.success)} to ${pct(now.success)}`;
     if ((before.failingCallers ?? 0) <= 1 && (now.failingCallers ?? 0) > 1)
         return `failing callers went from ${before.failingCallers ?? 0} to ${now.failingCallers}`;
+    if (
+        now.worst != null &&
+        before.worst != null &&
+        now.worst >= 2 * before.worst
+    )
+        return `worst minute went from ${before.worst} to ${now.worst} failed requests`;
     return null;
 }
 
@@ -533,6 +571,7 @@ const LABEL = {
     COMMUNITY_DOWN: "DOWN",
     PAYMENTS_FAILING: "FAILING",
     JOB_STALE: "STALE",
+    GPU_MISSING: "GPU MISSING",
     EARLY_ERRORS: "FAILING",
 };
 const SUBJECT = {
@@ -557,7 +596,9 @@ const subjectOf = (key) =>
             ? `legacy ${key.slice(7)} bridge`
             : key.startsWith("stale:")
               ? STALE_JOBS[key.slice(6)].name
-              : SUBJECT[key];
+              : key.startsWith("gpu:")
+                ? `${GPU_POOLS[key.slice(4)].name} GPU pool`
+                : SUBJECT[key];
 // Early errors are named after Enter's database while it causes at least half
 // of them.
 const d1Main = (info) => info.d1 * 2 >= info.failures;
@@ -587,6 +628,7 @@ export const COLOR = {
     COMMUNITY_DOWN: RED,
     PAYMENTS_FAILING: RED,
     JOB_STALE: RED,
+    GPU_MISSING: RED,
     EARLY_ERRORS: RED,
 };
 const GREEN = 0x639922;
@@ -759,6 +801,12 @@ function openRows(incident, now) {
             ["", "probes and community posts paused"],
         ];
     if (kind === "PAYMENTS_FAILING") return paymentRows(info.rows);
+    if (kind === "GPU_MISSING")
+        return [
+            ["ACTIVE", `${info.active} of ${info.expected} registered`],
+            ["WHY", `below expected capacity ${CONFIRM_CHECKS}x`],
+            ["", "image generation capacity reduced"],
+        ];
     if (kind === "JOB_STALE") {
         const job = STALE_JOBS[info.job];
         return [
@@ -824,13 +872,22 @@ function openRows(incident, now) {
     return rows;
 }
 
-// Rows of a closed card. A domain card keeps how long it lasted; an outage
-// card keeps how it started, its routes then, and now: how long it lasted
-// and what it cost are in its summary line.
+// How long an incident lasted. Early errors come in bursts of seconds and
+// their card stays open for the 30-minute window: from the first bad minute
+// to the end of the last.
+export const lasted = (incident) =>
+    incident.kind === "EARLY_ERRORS"
+        ? incident.info.lastAt + 60_000 - incident.start.firstAt
+        : incident.closedAt - incident.openedAt;
+
+// Rows of a closed card. A domain card keeps how long it lasted; a model
+// card keeps how it started, its routes then, and now; any other outage
+// keeps its box as last seen. How long it lasted and what it cost are in
+// its summary line.
 function closedRows(key, incident) {
     if (DOMAIN_KEY.test(key))
         return [["LASTED", duration(incident.closedAt - incident.openedAt)]];
-    if (!key.startsWith("model:")) return [];
+    if (!key.startsWith("model:")) return openRows(incident);
     const { start, latest } = incident;
     const rows = [startRow(start), ...routeRows(start.routes)];
     if (latest)
@@ -849,7 +906,7 @@ const percent = (x) => (x < 0.01 ? "<1%" : `${Math.round(x * 100)}%`);
 // bad it was. Domain cards have no summary.
 function summary(key, incident) {
     if (DOMAIN_KEY.test(key)) return null;
-    const took = `### ⏱️ ${duration(incident.closedAt - incident.openedAt)}`;
+    const took = `### ⏱️ ${duration(lasted(incident))}`;
     if (!key.startsWith("model:")) return took;
     const { lost } = incident;
     if (!lost) return `${took} · impact unknown`;

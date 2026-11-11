@@ -10,6 +10,7 @@ import {
     duration,
     earlyErrors,
     escalates,
+    gpuPoolsMissing,
     heartbeat,
     jobsStale,
     legacyDown,
@@ -348,6 +349,7 @@ test("early errors fail on any minute of 25+ failed requests in the window", () 
         bursts: 2,
         failures: 318,
         d1: 314,
+        firstAt: Date.UTC(2026, 10, 8, 15, 21),
         lastAt: Date.UTC(2026, 10, 8, 15, 32),
     });
 });
@@ -367,8 +369,13 @@ test("early errors open on their first check, ping, and close once clean", () =>
     assert.ok(text.includes("314 database, 4 other"));
     assert.ok(text.includes("2 min of 30, 318 failed"));
     assert.ok(text.includes("2026-11-08 15:32 UTC"));
-    r = step(r.state, {}, 2);
+    r = step(r.state, {}, 40 * 60_000);
     assert.equal(r.actions[0].type, "close");
+    // Closed, it keeps its box and says how long requests failed (15:21 to
+    // the end of 15:32), not how long the card stayed open.
+    const closed = renderCard("early", r.actions[0].incident);
+    assert.ok(plain(closed.text).includes("232 reqs failed in 1 min"));
+    assert.equal(closed.text.split("\n").at(-1), "### ⏱️ 12 min");
 });
 
 test("a payments card lists at most three payments", () => {
@@ -397,6 +404,9 @@ test("an early-errors burst pings again only once it doubles the worst one pinge
     const at = (worst) => snapshot({ kind: "EARLY_ERRORS", info: { worst } });
     assert.equal(escalates(at(232), at(400)), false);
     assert.equal(escalates(at(232), at(464)), true);
+    // A doubled burst also earns the card an AI line.
+    assert.equal(noteworthy(at(232), at(400)), null);
+    assert.match(noteworthy(at(232), at(464)), /232 to 464/);
 });
 
 test("analytics outage pauses model incidents but is not gen down", () => {
@@ -695,6 +705,8 @@ test("infrastructure cards follow the same life and stay red when closed", () =>
     const closed = renderCard("gen", { ...gen, closedAt: 7 * MIN });
     // No request counts: it keeps its status, and red.
     assert.match(plain(closed.text), /┌─ DOWN: gen Worker ─/);
+    // It keeps its box as last seen, like a model card keeps its start.
+    assert.match(plain(closed.text), /both hostnames failing/);
     assert.equal(closed.color, 0xe24b4a);
     assert.equal(closed.text.split("\n").at(-1), "### ⏱️ 7 min");
 });
@@ -976,4 +988,19 @@ test("a job is stale past its table's max age, after 3 checks, pinging as the ta
         { now: 0 },
     );
     assert.match(plain(card.text), /none in the last day/);
+});
+
+test("GPU pool counts flag capacity below the expected fleet and allow replacements", () => {
+    const found = gpuPoolsMissing({ flux: [], zimage: [{}], sana: [{}] });
+    assert.deepEqual(Object.keys(found), ["gpu:flux", "gpu:sana"]);
+    assert.deepEqual(found["gpu:sana"], {
+        kind: "GPU_MISSING",
+        pool: "sana",
+        active: 1,
+        expected: 2,
+    });
+    assert.deepEqual(
+        gpuPoolsMissing({ flux: [{}], zimage: [{}], sana: [{}, {}, {}] }),
+        {},
+    );
 });

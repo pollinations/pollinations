@@ -109,6 +109,19 @@ export const modelsCommand = new Command("models")
         "60",
     )
     .action(async (query: string | undefined, opts) => {
+        // Search, source and reliability are /models query parameters.
+        const params = new URLSearchParams();
+        if (query) params.set("query", query);
+        if (opts.source) params.set("source", opts.source);
+        if (opts.reliability) params.set("reliability", opts.reliability);
+
+        const listModels = async () =>
+            (await gen<ModelEntry[]>(`/models?${params}`)).filter(
+                (m) =>
+                    (opts.type === "all" || m.category === opts.type) &&
+                    (!opts.voices || m.voices?.length),
+            );
+
         if (opts.stats) {
             try {
                 const windowMinutes = Number(opts.window);
@@ -123,28 +136,18 @@ export const modelsCommand = new Command("models")
                 }
 
                 const rows = await fetchModelStats(windowMinutes);
-                const wantType = opts.type as string;
-                // Decision models record text events, so match them by name.
-                const decisionNames =
-                    wantType === "decision"
-                        ? new Set(
-                              (await gen<ModelEntry[]>("/text/models"))
-                                  .filter((m) => m.category === "decision")
-                                  .map((m) => m.name),
-                          )
+                // Video and 3D share image events; category and search belong
+                // to the catalog rather than the billing event type.
+                const names =
+                    opts.type !== "all" || params.size || opts.voices
+                        ? new Set((await listModels()).map((m) => m.name))
                         : undefined;
-                const valid = rows.filter((r) => {
-                    if (r.model === "undefined") return false;
-                    if (Number(r.total_requests ?? 0) <= 1) return false;
-                    if (wantType === "all") return true;
-                    if (decisionNames)
-                        return decisionNames.has(String(r.model));
-                    const t = String(r.event_type ?? "").replace(
-                        "generate.",
-                        "",
-                    );
-                    return t === wantType;
-                });
+                const valid = rows.filter(
+                    (r) =>
+                        r.model !== "undefined" &&
+                        Number(r.total_requests ?? 0) > 1 &&
+                        (!names || names.has(String(r.model))),
+                );
                 if (getOutputMode() === "json") {
                     printResult(valid);
                 } else {
@@ -175,20 +178,8 @@ export const modelsCommand = new Command("models")
             return;
         }
 
-        // Search, source and reliability are /models query parameters.
-        const params = new URLSearchParams();
-        if (query) params.set("query", query);
-        if (opts.source) params.set("source", opts.source);
-        if (opts.reliability) params.set("reliability", opts.reliability);
-
         try {
-            const models = (
-                await gen<ModelEntry[]>(`/models?${params}`)
-            ).filter(
-                (m) =>
-                    (opts.type === "all" || m.category === opts.type) &&
-                    (!opts.voices || m.voices?.length),
-            );
+            const models = await listModels();
 
             if (getOutputMode() === "json") {
                 printResult(models);

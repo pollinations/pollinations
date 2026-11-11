@@ -223,11 +223,17 @@ export const Models: FC = () => {
         [query, supportedFilterKeys],
     );
     const explicitModelSource = getExplicitModelQuerySource(parsedQuery);
-    const visibleSearch = getModelQueryVisibleSearch(
+    const visibleSearchText = getModelQueryVisibleSearch(
         search,
         filterTokens,
         draftFilter,
     );
+    // Keep the space while the user types the next word. The query sent to
+    // the router and the filters above still use the trimmed value.
+    const visibleSearch =
+        visibleSearchText && search.endsWith(" ")
+            ? `${visibleSearchText} `
+            : visibleSearchText;
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
     const modelModels = useMemo(() => {
@@ -370,7 +376,7 @@ export const Models: FC = () => {
               ]
                   .filter(Boolean)
                   .join(" ")
-            : [...preservedFilters, nextSearch.trim()]
+            : [...preservedFilters, nextSearch.trimStart()]
                   .filter(Boolean)
                   .join(" ");
 

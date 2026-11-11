@@ -49,9 +49,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "lykon/dreamshaper-8-lcm": {
-        // "sana" is kept as an alias so existing callers and the legacy image
-        // proxy worker keep working unchanged.
+        // Kept for the legacy image proxy worker, which calls it as "sana", and
+        // for existing callers: hidden from the catalog, still served.
         aliases: ["sana", "dreamshaper"],
+        hidden: true,
         provider: "vast",
         publisher: "Lykon",
         category: "image",
@@ -1771,7 +1772,7 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             promptImageTokens: 0, // included in output-video price
-            completionVideoSeconds: 0.05, // per reported output second at 720p
+            completionVideoSeconds: 0.07, // per reported output second at 720p
         },
         resolutions: ["720p"],
         title: "Grok Video Pro",

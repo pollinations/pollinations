@@ -622,11 +622,12 @@ export function isValidPerUserRpm(value: string): boolean {
     return Number.isFinite(parsed) && parsed > 0;
 }
 
-/** Keep the public model id in sync with the provider model until edited. */
+/** Suggest a public model ID from the provider model when creating a listing. */
 export function nextFormState(
     current: EndpointFormState,
     key: keyof EndpointFormState,
     value: string,
+    isEdit: boolean,
 ): EndpointFormState {
     if (key === "modality") {
         const modality = normalizeCommunityEndpointModality(value);
@@ -645,6 +646,7 @@ export function nextFormState(
     }
     const next = { ...current, [key]: value };
     if (
+        !isEdit &&
         key === "upstreamModel" &&
         (!current.name.trim() || current.name === current.upstreamModel)
     ) {

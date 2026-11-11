@@ -247,6 +247,35 @@ describe("generation request deduplication", () => {
         );
     });
 
+    it("replays HEAD as GET so the executor caches a body", async () => {
+        const cache = new Map<string, string>();
+        let job: GenerationJobHead | undefined;
+        const generation = createApp(createAdapter(cache));
+        const bindings = {
+            GENERATION_COORDINATOR: {
+                getByName: () => ({
+                    startAndWait: async (head: GenerationJobHead) => {
+                        job = head;
+                        cache.set("same-request", "generated");
+                        return { status: "cached" as const };
+                    },
+                }),
+            },
+        } as unknown as CloudflareBindings;
+
+        const response = await generation.app.fetch(
+            new Request("https://gen.pollinations.ai/generate?model=test", {
+                method: "HEAD",
+            }),
+            bindings,
+            executionContext(),
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe("");
+        expect(job?.request.method).toBe("GET");
+    });
+
     it("reports a fresh generation as a MISS and saves it only once", async () => {
         const cache = new Map<string, string>();
         const adapter = createAdapter(cache);

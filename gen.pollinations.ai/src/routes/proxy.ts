@@ -53,6 +53,7 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
+import { getVisibleImageModels } from "@shared/registry/registry.ts";
 import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,
@@ -146,12 +147,16 @@ const ImageEditMultipartSchema = z
             "Provide source files or URLs using image or image[]. Repeat either field for multiple images.",
     });
 
-// Build dynamic model lists from registry for use in API descriptions
+// Build dynamic model lists from registry for use in API descriptions,
+// leaving out hidden models as /models does
+const visibleImageIds = new Set<string>(getVisibleImageModels());
 const imageModelNames = getImageModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .map((id) => `\`${id}\``)
     .join(", ");
 
 const videoModelNames = getVideoModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .map((id) => `\`${id}\``)
     .join(", ");
 
@@ -166,7 +171,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
         description: [
             "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
             "",
-            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` creates a transcription session automatically.`,
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` or \`elevenlabs/scribe-v3-live\` creates a transcription session automatically.`,
             "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,

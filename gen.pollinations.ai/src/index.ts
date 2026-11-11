@@ -36,6 +36,7 @@ import {
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
 import { refreshCommunityModelRegistryCache } from "./community-models.ts";
+import { nameD1Caller, withD1Calls } from "./d1-calls.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -219,6 +220,7 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
+    .use("*", nameD1Caller)
     .use("*", logger)
     .use("*", async (c, next) => {
         await next();
@@ -358,44 +360,62 @@ app.notFound(async (c: Context<Env>) => {
 app.onError(handleError);
 
 export default {
-    fetch: (request: Request, env, ctx) => {
-        // A port host belongs to a sandbox, a site's host to the site.
-        const port = sandboxPortHost(env, new URL(request.url).hostname);
-        if (port) {
-            return new Hono<Env>()
-                .use("*", edgeRateLimit)
-                .all("*", () => servePort(request, env, ctx, port))
-                .onError(handleError)
-                .fetch(request, env, ctx);
-        }
-        return serveSite(request, env) ?? app.fetch(request, env, ctx);
-    },
-    scheduled: async (controller, env, ctx) => {
-        if (controller.cron === "* * * * *") {
-            // infra-watch reads the heartbeat's age to spot a failing refresh.
-            await refreshCommunityModelRegistryCache(env)
-                .then(() =>
-                    env.KV.put(
-                        "heartbeat:community-catalog",
-                        Date.now().toString(),
-                    ),
-                )
-                .catch((error) => {
-                    console.error(
-                        "Community model catalog refresh failed",
-                        error,
-                    );
-                });
-            return;
-        }
-        // Every 5 minutes. Leases end only after the keeper has renewed the
-        // kept sandboxes; catalog refreshes do not change their cadence. A
-        // failed keeper still stops expired boxes: a lease outlives one run.
-        try {
-            await keepSandboxes(env, ctx);
-        } finally {
-            await stopExpiredAzureSandboxes(env);
-        }
-        await env.KV.put("heartbeat:sandbox-keeper", Date.now().toString());
-    },
+    fetch: (request: Request, env, ctx) =>
+        withD1Calls(
+            env,
+            ctx,
+            () => ({ route_path: "", method: request.method }),
+            () => {
+                // A port host belongs to a sandbox, a site's host to the site.
+                const port = sandboxPortHost(
+                    env,
+                    new URL(request.url).hostname,
+                );
+                if (port) {
+                    return new Hono<Env>()
+                        .use("*", edgeRateLimit)
+                        .all("*", () => servePort(request, env, ctx, port))
+                        .onError(handleError)
+                        .fetch(request, env, ctx);
+                }
+                return serveSite(request, env) ?? app.fetch(request, env, ctx);
+            },
+        ),
+    scheduled: (controller, env, ctx) =>
+        withD1Calls(
+            env,
+            ctx,
+            () => ({ route_path: controller.cron, method: "CRON" }),
+            () => runScheduled(controller, env, ctx),
+        ),
 } satisfies ExportedHandler<CloudflareBindings>;
+
+async function runScheduled(
+    controller: ScheduledController,
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+): Promise<void> {
+    if (controller.cron === "* * * * *") {
+        // infra-watch reads the heartbeat's age to spot a failing refresh.
+        await refreshCommunityModelRegistryCache(env)
+            .then(() =>
+                env.KV.put(
+                    "heartbeat:community-catalog",
+                    Date.now().toString(),
+                ),
+            )
+            .catch((error) => {
+                console.error("Community model catalog refresh failed", error);
+            });
+        return;
+    }
+    // Every 5 minutes. Leases end only after the keeper has renewed the
+    // kept sandboxes; catalog refreshes do not change their cadence. A
+    // failed keeper still stops expired boxes: a lease outlives one run.
+    try {
+        await keepSandboxes(env, ctx);
+    } finally {
+        await stopExpiredAzureSandboxes(env);
+    }
+    await env.KV.put("heartbeat:sandbox-keeper", Date.now().toString());
+}

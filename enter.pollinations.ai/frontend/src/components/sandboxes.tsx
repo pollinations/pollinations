@@ -428,35 +428,6 @@ function SandboxCard({
     );
 }
 
-// The page tells the drawer after every load, so its count follows starts,
-// pauses and kills.
-const SANDBOXES_LOADED_EVENT = "pollinations:sandboxes-loaded";
-
-/** How many sandboxes run, on the drawer's Sandboxes row; nothing at zero. */
-export function SidebarSandboxes() {
-    const [running, setRunning] = useState(0);
-    useEffect(() => {
-        const count = (list: Sandbox[]) =>
-            setRunning(list.filter((s) => s.state === "running").length);
-        const onLoaded = (event: Event) =>
-            count((event as CustomEvent<Sandbox[]>).detail);
-        e2b<Sandbox[]>("/v2/sandboxes").then(count, () => {});
-        window.addEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
-        return () =>
-            window.removeEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
-    }, []);
-    if (running === 0) return null;
-    return (
-        <Chip
-            intent="neutral"
-            size="sm"
-            className="ml-auto bg-transparent text-theme-text-soft"
-        >
-            {running} running
-        </Chip>
-    );
-}
-
 // Your sandboxes, then the templates you start new ones from. Signed out
 // the templates are just a price list; the sign-in banner is the way in.
 export function Sandboxes({ signedIn }: { signedIn: boolean }) {
@@ -472,24 +443,21 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
 
     const load = useCallback(async () => {
         setLoadError(null);
-        try {
-            // The pricing is public: signed out it still lists the
-            // templates that can start; your sandboxes need you signed in.
-            const [prices, list] = await Promise.all([
-                e2b<Pricing>("/pricing"),
-                signedIn ? e2b<Sandbox[]>("/v2/sandboxes") : [],
-            ]);
-            setPricing(prices);
-            setSandboxes(list);
-            if (signedIn) {
-                window.dispatchEvent(
-                    new CustomEvent(SANDBOXES_LOADED_EVENT, { detail: list }),
-                );
-            }
-        } catch (error) {
+        // The pricing is public and loads on its own, so the templates show
+        // even when your sandboxes can't load; those need you signed in.
+        const [prices, list] = await Promise.allSettled([
+            e2b<Pricing>("/pricing"),
+            signedIn ? e2b<Sandbox[]>("/v2/sandboxes") : [],
+        ]);
+        if (prices.status === "fulfilled") setPricing(prices.value);
+        if (list.status === "fulfilled") setSandboxes(list.value);
+        const failed = [prices, list].find(
+            (result) => result.status === "rejected",
+        );
+        if (failed) {
             setLoadError(
-                error instanceof Error
-                    ? error.message
+                failed.reason instanceof Error
+                    ? failed.reason.message
                     : "Couldn’t load sandboxes.",
             );
         }
@@ -700,7 +668,14 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                         the cards and the create picker always agree. */}
                     {pricing && (
                         <SandboxTemplateList
-                            templates={Object.keys(pricing.templates)}
+                            prices={Object.fromEntries(
+                                Object.entries(pricing.templates).map(
+                                    ([id, size]) => [
+                                        id,
+                                        perSecond(pricing, id, size) * 3600,
+                                    ],
+                                ),
+                            )}
                             create={
                                 signedIn
                                     ? {

@@ -7,6 +7,8 @@ export const Route = createFileRoute("/_dashboard/sandboxes")({
 
 // Public: signed out, the page is the templates' price list.
 function SandboxesPage() {
-    const { user, sessionUnavailable } = useLoaderData({ from: "/_dashboard" });
-    return <Sandboxes signedIn={Boolean(user) || sessionUnavailable} />;
+    // Only a confirmed user loads private sandboxes; while sign-in is down
+    // the page is the public price list.
+    const { user } = useLoaderData({ from: "/_dashboard" });
+    return <Sandboxes signedIn={Boolean(user)} />;
 }

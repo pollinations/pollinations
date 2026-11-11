@@ -6,26 +6,6 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (text)"
       ]
-    },
-    "19475": {
-      "merge_sha": "5be1b6b89db7d66e79ae4e77854f52a081c71c7a",
-      "merged_at": "2026-11-10T23:48:50Z",
-      "required": []
-    },
-    "19476": {
-      "merge_sha": "66f87bc30c810421bc71c01add63829f2dc132bb",
-      "merged_at": "2026-11-10T23:48:50Z",
-      "required": []
-    },
-    "19477": {
-      "merge_sha": "2f8d6795c05e67764200a875463461c24425f422",
-      "merged_at": "2026-11-10T23:42:33Z",
-      "required": []
-    },
-    "19479": {
-      "merge_sha": "34d2dc336486d59c6591ac558d3c4731382c77da",
-      "merged_at": "2026-11-11T00:13:28Z",
-      "required": []
     }
   },
   "production": "e1e3ddb52865803039b17230707e34787b67e1fa",

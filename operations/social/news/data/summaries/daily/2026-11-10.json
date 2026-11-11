@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-10",
+  "period_start": "2026-11-10",
+  "period_end": "2026-11-10",
+  "title": "Three new ElevenLabs audio models",
+  "summary": "Three ElevenLabs audio models arrived alongside fixes for model listings, developer tools, and API request handling.\n\nAdded paid-only `elevenlabs/eleven-text-to-sound-v3` for MP3 sound effects, with duration, looping, and prompt influence controls. `elevenlabs/scribe-v3` adds batch transcription with word timestamps and speaker labels. `elevenlabs/scribe-v3-live` adds realtime transcription with incremental and final transcripts. The existing sound-effects and Scribe v2 models remain available.\n\nDreamShaper is no longer listed in the model catalog or image API docs, though direct image generation still accepts its ID and legacy aliases. Editing a community endpoint's provider model now preserves its public ID, and Enter keeps spaces intact while a multiword search is being typed. Pollinations Studio joined the image app catalog with batch image generation and multi-model chat.\n\nPolli CLI 0.1.81 fixes filtered model stats, reports rejected keys as unauthenticated, and shows ACP refusal explanations. `@pollinations/sdk` 5.1.0-alpha.27 rejects failed buffered chat and text completions instead of returning partial answers as successes. The Connect Polli CLI quest now explains that it requires `polli auth login` with browser approval; `--with-token` does not count, and the account must still be at least 3 days old.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 18440,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19114,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19153,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19160,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19173,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19323,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19397,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19399,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19405,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19407,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19434,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19460,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19473,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19475,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19476,
+      "date": "2026-11-10"
+    },
+    {
+      "number": 19477,
+      "date": "2026-11-10"
+    }
+  ],
+  "generated_at": "2026-11-11T06:07:07.401409+00:00",
+  "daily": [
+    {
+      "emoji": "🎵",
+      "title": "ElevenLabs SFX v3",
+      "text": "Generate MP3 sound effects from text with `elevenlabs/eleven-text-to-sound-v3`. Set duration, looping, and prompt influence. Paid access is required. [View the model](https://enter.pollinations.ai/models?q=elevenlabs/eleven-text-to-sound-v3).",
+      "prs": [
+        19475
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Scribe v3 batch transcription",
+      "text": "Transcribe audio with `elevenlabs/scribe-v3`, including word timestamps and speaker labels in supported response formats. Paid access is required. [View the model](https://enter.pollinations.ai/models?q=elevenlabs/scribe-v3).",
+      "prs": [
+        19476
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Scribe v3 Live transcription",
+      "text": "Use `elevenlabs/scribe-v3-live` for realtime transcription sessions with incremental and final transcripts. Paid access is required. [View the model](https://enter.pollinations.ai/models?q=elevenlabs/scribe-v3-live).",
+      "prs": [
+        19476
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
+}

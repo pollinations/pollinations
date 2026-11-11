@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-10",
+  "period_start": "2026-11-10",
+  "period_end": "2026-11-10",
+  "generated_at": "2026-11-11T06:07:07.401409+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/b6f4caee5c75ab5cf72ec1ed5dce5577d066ce289a656bec17c6fc357e4e5131"
+    }
+  ],
+  "text": "added ElevenLabs SFX v3 for MP3 sound effects (paid-only), Scribe v3 for batch transcription with word timestamps and speaker labels, and Scribe v3 Live for realtime incremental and final transcripts. Existing sound-effects and Scribe v2 models remain available."
+}

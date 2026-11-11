@@ -44,14 +44,28 @@ export const SandboxTemplateList: FC<{
                     key={template.id}
                     className="grid gap-3 @md:grid-cols-[minmax(0,1fr)_auto]"
                 >
-                    <div className="flex min-w-0 flex-col gap-1">
-                        {/* The size is the title: it is what people
-                            compare, and it tells every template apart. */}
-                        <span className="font-medium leading-tight text-theme-text-strong">
-                            {template.cpuCount} vCPU ·{" "}
-                            {template.memoryMB / 1024} GB memory ·{" "}
-                            {gb(template.diskSizeMB)} GB disk
-                        </span>
+                    <div className="flex min-w-0 flex-col gap-3">
+                        {/* The size leads: it is what people compare, and it
+                            tells every template apart. */}
+                        <dl className="flex gap-6">
+                            {[
+                                [String(template.cpuCount), "vCPU"],
+                                [`${template.memoryMB / 1024} GB`, "memory"],
+                                [`${gb(template.diskSizeMB)} GB`, "disk"],
+                            ].map(([value, label]) => (
+                                <div
+                                    key={label}
+                                    className="flex flex-col-reverse gap-0.5"
+                                >
+                                    <dt className="text-xs text-theme-text-muted">
+                                        {label}
+                                    </dt>
+                                    <dd className="text-lg font-semibold leading-none text-theme-text-strong">
+                                        {value}
+                                    </dd>
+                                </div>
+                            ))}
+                        </dl>
                         <span className="flex items-center gap-1.5 text-sm text-theme-text-muted">
                             <ClockIcon className="h-3.5 w-3.5 shrink-0" />
                             <span>

@@ -686,7 +686,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                     </Footnotes>
                 </Section>
             )}
-            <Section title="New sandbox">
+            <Section title="Templates">
                 {loadError && (
                     <LoadError onRetry={load} paths={["/alpha/e2b/pricing"]}>
                         {loadError}

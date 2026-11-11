@@ -272,10 +272,11 @@ describe("json config clients", () => {
         ctx.env.APPDATA = join(ctx.home, "Roaming");
         ctx.env.XDG_CONFIG_HOME = join(ctx.home, "xdg");
         // Zed's own config dir per platform (zed crates/paths config_dir).
-        const zedDir = {
-            win32: join(ctx.home, "Roaming", "Zed"),
-            darwin: join(ctx.home, ".config", "zed"),
-        }[process.platform as string] ?? join(ctx.home, "xdg", "zed");
+        const zedDir =
+            {
+                win32: join(ctx.home, "Roaming", "Zed"),
+                darwin: join(ctx.home, ".config", "zed"),
+            }[process.platform as string] ?? join(ctx.home, "xdg", "zed");
         const zed = findClient("zed");
         await zed?.install(ctx, [SERVERS[1]], "sk-test");
         const config = JSON.parse(

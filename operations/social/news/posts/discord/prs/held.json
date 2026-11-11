@@ -13,8 +13,102 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "19175": {
+      "merge_sha": "c1618ae1cc1d003e938ad915286e2410ed1303ba",
+      "merged_at": "2026-11-11T09:03:24Z",
+      "required": [
+        "deploy-cloudflare-production.yml:Deploy apps/ffmpeg-mcp",
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "19238": {
+      "merge_sha": "0b1f4e457f8e021da0804c3d9afc47a97aa1d34a",
+      "merged_at": "2026-11-11T09:00:21Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "19318": {
+      "merge_sha": "922fbaf87d54184f848f7f2e36ada8a046af7824",
+      "merged_at": "2026-11-11T08:51:47Z",
+      "required": [
+        "deploy-cloudflare-production.yml:Deploy apps/calculators-mcp"
+      ]
+    },
+    "19342": {
+      "merge_sha": "6b98ebac2038dfd13efc578391f47813b5635e42",
+      "merged_at": "2026-11-11T08:57:41Z",
+      "required": [
+        "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/calculators-mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/composio-mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/computer-mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/exa-mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/ffmpeg-mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/machines-mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/network-mcp",
+        "deploy-cloudflare-production.yml:Deploy apps/packages-mcp",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "19380": {
+      "merge_sha": "f2ab0566f51b4b82be4c5176e6f5be50f7412343",
+      "merged_at": "2026-11-11T08:51:47Z",
+      "required": [
+        "deploy-cloudflare-production.yml:Deploy apps/packages-mcp"
+      ]
+    },
+    "19403": {
+      "merge_sha": "3e118b4796b8a534eea2d6e322ddfd317722a819",
+      "merged_at": "2026-11-11T08:32:07Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "19433": {
+      "merge_sha": "79523664b1fe12671ef636e144bf869135d266ef",
+      "merged_at": "2026-11-11T09:00:38Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/monitoring/infra-watch",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-infra_watch"
+      ]
+    },
+    "19446": {
+      "merge_sha": "ede3643b88813f1e34ee7a66e6b010f82cf1d2b3",
+      "merged_at": "2026-11-11T08:36:25Z",
+      "required": []
+    },
+    "19454": {
+      "merge_sha": "59dfafd6f59c13086123ab56d765d418b865a4cf",
+      "merged_at": "2026-11-11T08:36:25Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "19481": {
+      "merge_sha": "51dfad3e6cd7c0ed00c5eba634e80e2f3963a514",
+      "merged_at": "2026-11-11T10:17:14Z",
+      "required": []
+    },
+    "19485": {
+      "merge_sha": "d7e785b86fd38a6dd9e1cc5071cf166f27dcf901",
+      "merged_at": "2026-11-11T04:15:16Z",
+      "required": []
+    },
+    "19492": {
+      "merge_sha": "3aca50fab14a34cc6a5c22a5a8b14fba8cf4bd0a",
+      "merged_at": "2026-11-11T07:13:00Z",
+      "required": []
     }
   },
-  "production": "caab90c77aebc25f2a0ceedf43fc1ce7c4360d14",
+  "production": "27c0a3941b32870cfc6ee80c0bf5878026ee2376",
   "master": "ba13d3b9b3828a1b990be95229c700859cd0445a"
 }

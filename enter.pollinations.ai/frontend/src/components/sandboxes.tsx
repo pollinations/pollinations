@@ -21,7 +21,6 @@ import {
     PlusIcon,
     RefreshIcon,
     Section,
-    SparklesIcon,
     Surface,
     TabButton,
     TerminalIcon,
@@ -30,12 +29,10 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     SANDBOX_PROVIDERS,
     sandboxTemplate,
 } from "@shared/registry/sandbox.ts";
-import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { genFetch } from "../api.ts";
 import { genDocsUrl } from "../config.ts";
@@ -46,11 +43,7 @@ import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
-import {
-    CHEAPEST_HOURLY,
-    LAUNCH_DISCOUNT,
-    SandboxTemplateList,
-} from "./sandbox-templates.tsx";
+import { LAUNCH_DISCOUNT, SandboxTemplateList } from "./sandbox-templates.tsx";
 
 // Gen serves E2B's API here and keeps the sandbox rules and billing.
 const E2B_PATH = "/alpha/e2b";
@@ -423,9 +416,8 @@ export function SidebarSandboxes() {
 }
 
 // Your sandboxes, then the templates you start new ones from. Signed out
-// only the templates show, and Create asks you to sign in.
+// the templates are just a price list; the sign-in banner is the way in.
 export function Sandboxes({ signedIn }: { signedIn: boolean }) {
-    const navigate = useNavigate();
     const [pricing, setPricing] = useState<Pricing>();
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -553,14 +545,6 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
         );
     }
 
-    function startCreate(template: string) {
-        if (!signedIn) {
-            void navigate({ to: "/sign-in", search: { next: "/sandboxes" } });
-            return;
-        }
-        setPending({ action: "create", name: generateFunName(), template });
-    }
-
     return (
         <Section
             title="Sandboxes"
@@ -656,15 +640,22 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                     )}
                     {(pricing || !signedIn) && (
                         <SandboxTemplateList
-                            createLabel={
-                                !signedIn
-                                    ? "Sign in to create"
-                                    : creating
-                                      ? "Creating…"
-                                      : "Create"
+                            create={
+                                signedIn
+                                    ? {
+                                          label: creating
+                                              ? "Creating…"
+                                              : "Create",
+                                          disabled: full || creating,
+                                          onCreate: (template) =>
+                                              setPending({
+                                                  action: "create",
+                                                  name: generateFunName(),
+                                                  template,
+                                              }),
+                                      }
+                                    : undefined
                             }
-                            disabled={signedIn && (full || creating)}
-                            onCreate={startCreate}
                         />
                     )}
                 </div>
@@ -675,61 +666,41 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                 <p className="flex items-start gap-1.5">
                     <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Pay with{" "}
-                        <span className="whitespace-nowrap">
-                            <WalletKindIcon
-                                kind="tier"
-                                className="mr-1 inline align-[-2px]"
-                            />
-                            Quest Pollen
-                        </span>{" "}
-                        or{" "}
-                        <span className="whitespace-nowrap">
-                            <WalletKindIcon
-                                kind="paid"
-                                className="mr-1 inline align-[-2px]"
-                            />
-                            Paid Pollen
-                        </span>{" "}
-                        in 10-minute steps, from {pollen(CHEAPEST_HOURLY)} an
-                        hour.
+                        Paid 10 minutes at a time.
+                        {LAUNCH_DISCOUNT > 0 &&
+                            ` Launch price: ${LAUNCH_DISCOUNT}% off.`}
                     </span>
                 </p>
-                {LAUNCH_DISCOUNT > 0 && (
-                    <p className="flex items-start gap-1.5">
-                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>Launch price: {LAUNCH_DISCOUNT}% off.</span>
-                    </p>
-                )}
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        A paused sandbox costs nothing and keeps its files.
-                        Sandboxes pause when their time runs out
+                        Sandboxes pause when their time runs out. A paused one
+                        costs nothing, keeps its files and resumes when you
+                        connect.
                         {pricing && (
-                            <>; up to {pricing.maxRunning} run at once</>
+                            <> Up to {pricing.maxRunning} run at once.</>
                         )}
-                        .
                     </span>
                 </p>
                 <div className="flex items-start gap-1.5">
                     <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
                         <p>
-                            A Linux computer in the cloud. Connect with SSH or
-                            VS Code: run this once, then use the ssh command on
-                            its card. A paused sandbox resumes, and it keeps
-                            running while you’re connected, paid 10 minutes at a
-                            time. See the{" "}
+                            A Linux computer in the cloud.
+                            {signedIn &&
+                                " Connect with SSH or VS Code: run this once, then use the ssh command on its card."}{" "}
+                            See the{" "}
                             <InlineLink href={genDocsUrl("#tag/sandboxes")}>
                                 Sandboxes docs
                             </InlineLink>
                             .
                         </p>
-                        <CopyField
-                            label="Copy the polli setup command"
-                            value={SSH_SETUP}
-                        />
+                        {signedIn && (
+                            <CopyField
+                                label="Copy the polli setup command"
+                                value={SSH_SETUP}
+                            />
+                        )}
                     </div>
                 </div>
             </Footnotes>

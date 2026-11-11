@@ -28,8 +28,6 @@ const shares = Object.values(SANDBOX_PROVIDERS).map(({ share }) => share);
 
 // The launch promo's discount, from the provider that discounts least.
 export const LAUNCH_DISCOUNT = Math.round((1 - Math.max(...shares)) * 100);
-// The cheapest template's hourly price, for the page's footnote.
-export const CHEAPEST_HOURLY = Math.min(...SANDBOX_TEMPLATES.map(hourly));
 
 // Brand logos from /brand-logos, drawn in the text colour as on the Models
 // list. E2B's is the "E" mark from its own dashboard (Apache-2.0).
@@ -77,15 +75,17 @@ const LedgerRow: FC<{
     </div>
 );
 
-// Every sandbox template with its price; each Create starts a sandbox from
-// it (or asks a signed-out visitor to sign in). Like a Models list card: the
+// Every sandbox template with its price; each Create starts a sandbox from it. Like a Models list card: the
 // provider and the size on the left, the price ledger on the right, then the
 // two ways to start one, the polli command and Create.
 export const SandboxTemplateList: FC<{
-    createLabel: string;
-    disabled: boolean;
-    onCreate: (template: string) => void;
-}> = ({ createLabel, disabled, onCreate }) => (
+    /** Signed out there is none: the cards are just the price list. */
+    create?: {
+        label: string;
+        disabled: boolean;
+        onCreate: (template: string) => void;
+    };
+}> = ({ create }) => (
     <div className="@container flex flex-col gap-3">
         {SANDBOX_TEMPLATES.map((template) => {
             const perHour = hourly(template);
@@ -123,7 +123,7 @@ export const SandboxTemplateList: FC<{
                             ))}
                         </dl>
                     </div>
-                    <div className="grid grid-cols-[6.5rem_auto_auto] gap-x-1 justify-self-start">
+                    <div className="grid grid-cols-[6.5rem_6ch_3.5rem] gap-x-1 justify-self-start">
                         <LedgerRow Icon={WalletIcon} label="Pollen">
                             <div className="col-span-2 flex">
                                 <BalanceAccessChip access="quest" />
@@ -146,24 +146,30 @@ export const SandboxTemplateList: FC<{
                             </span>
                         </LedgerRow>
                     </div>
-                    {/* Only as wide as the command needs. */}
-                    <div className="w-fit max-w-full">
-                        <CopyField
-                            label={`Copy the command that creates a ${template.id} sandbox`}
-                            value={`polli sandbox create ${template.id}`}
-                        />
-                    </div>
-                    <Button
-                        type="button"
-                        intent="commit"
-                        icon={<TerminalIcon />}
-                        aria-haspopup={disabled ? undefined : "dialog"}
-                        disabled={disabled}
-                        className="justify-self-start"
-                        onClick={() => onCreate(template.id)}
-                    >
-                        {createLabel}
-                    </Button>
+                    {create && (
+                        <>
+                            {/* Only as wide as the command needs. */}
+                            <div className="w-fit max-w-full">
+                                <CopyField
+                                    label={`Copy the command that creates a ${template.id} sandbox`}
+                                    value={`polli sandbox create ${template.id}`}
+                                />
+                            </div>
+                            <Button
+                                type="button"
+                                intent="commit"
+                                icon={<TerminalIcon />}
+                                aria-haspopup={
+                                    create.disabled ? undefined : "dialog"
+                                }
+                                disabled={create.disabled}
+                                className="justify-self-start"
+                                onClick={() => create.onCreate(template.id)}
+                            >
+                                {create.label}
+                            </Button>
+                        </>
+                    )}
                 </Surface>
             );
         })}

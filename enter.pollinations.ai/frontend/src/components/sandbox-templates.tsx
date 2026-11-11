@@ -16,9 +16,6 @@ import {
 import type { FC, ReactNode } from "react";
 import { BalanceAccessChip } from "./models/model-status-chips.tsx";
 
-// An always-on sandbox runs about 720 hours a month.
-const HOURS_PER_MONTH = 720;
-
 // Two significant digits, as the prices are shown.
 const amount = (value: number) => String(Number(value.toPrecision(2)));
 const gb = (mb: number) => Math.round(mb / 1024);
@@ -139,8 +136,7 @@ export const SandboxTemplateList: FC<{
                                     </div>
                                 </LedgerRow>
                                 {/* As on the Models list, the price in $ (1 pollen
-                            is about $1); under it, smaller and unlabelled,
-                            the same price over a month left on. */}
+                                    is about $1). */}
                                 <LedgerRow Icon={ClockIcon} label="Price">
                                     <span className="text-right text-sm font-semibold tabular-nums text-theme-text-strong">
                                         ${amount(perHour)}
@@ -149,15 +145,6 @@ export const SandboxTemplateList: FC<{
                                         /hour
                                     </span>
                                 </LedgerRow>
-                                <div className="col-span-full grid grid-cols-subgrid items-center">
-                                    <span aria-hidden="true" />
-                                    <span className="text-right text-xs tabular-nums text-theme-text-muted">
-                                        ${amount(perHour * HOURS_PER_MONTH)}
-                                    </span>
-                                    <span className="text-xs text-theme-text-muted">
-                                        /month
-                                    </span>
-                                </div>
                             </div>
                         </div>
                         {create && (

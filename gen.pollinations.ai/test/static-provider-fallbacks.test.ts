@@ -1815,7 +1815,7 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("bills Gemini 4 Carbon's Vercel backup at the promotional rates it is priced at", () => {
+    it("bills Gemini 4 Carbon's Vercel backup at its promotional cost and the standard price", () => {
         const primary = TEXT_SERVICES["google/gemini-4-carbon"];
         const fallback = TEXT_SERVICES["google/gemini-4-carbon:vercel"];
         expect(primary).toMatchObject({
@@ -1837,7 +1837,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.012, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.012, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.024, 12);
     });
 
     it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {

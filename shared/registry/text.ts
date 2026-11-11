@@ -1180,17 +1180,16 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-11-11").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Vertex global promotional rates (2026-11-11), valid through 2026-11-30.
-        // Google's 50% credit-back on net spend is not netted. From 2026-12-01
-        // Vertex lists $4 input, $0.20 cached input and $20 output.
+        // Vertex global list rates from 2026-12-01 (Google pricing, verified
+        // 2026-11-11). Google's promotional $2/$10 ran through 2026-11-30.
         cost: {
-            promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.1),
-            promptCacheWriteTokens: perMillion(2), // No Vertex cache-write rate listed; input rate assumed.
-            promptAudioTokens: perMillion(2),
-            promptImageTokens: perMillion(2),
-            promptVideoTokens: perMillion(2),
-            completionTextTokens: perMillion(10),
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(4), // No Vertex cache-write rate listed; input rate assumed.
+            promptAudioTokens: perMillion(4),
+            promptImageTokens: perMillion(4),
+            promptVideoTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
         },
         billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 4 Carbon",

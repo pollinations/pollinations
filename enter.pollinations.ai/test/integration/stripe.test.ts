@@ -4713,7 +4713,9 @@ test("GET /api/stripe/billing lists saved payment methods and the customer's bil
     });
 });
 
-/** A paid p10 checkout, credited through the webhook, that Stripe can find by its payment. */
+const REFUNDED_PACK_BOUGHT_AT = Date.UTC(2026, 0, 15);
+
+/** A paid p10 checkout from January, credited through the webhook, that Stripe can find by its payment. Auto top-up is on. */
 async function buyRefundablePack(stripeState: MockStripeState) {
     const userId = await getSeededUserId();
     const balanceBefore = (await readRefundState(userId)).packBalance;
@@ -4730,6 +4732,14 @@ async function buyRefundablePack(stripeState: MockStripeState) {
         status: "complete",
         payment_intent: "pi_refunded",
     });
+    await env.DB.batch([
+        env.DB.prepare(
+            "UPDATE stripe_checkout_credits SET created_at = ? WHERE user_id = ?",
+        ).bind(REFUNDED_PACK_BOUGHT_AT, userId),
+        env.DB.prepare(
+            "UPDATE user SET auto_top_up_enabled = 1 WHERE id = ?",
+        ).bind(userId),
+    ]);
     return { userId, balanceBefore };
 }
 
@@ -4757,12 +4767,17 @@ function chargeRefundedEvent(
 async function readRefundState(userId: string) {
     const state = await env.DB.prepare(
         `SELECT COALESCE(pack_balance, 0) AS packBalance,
+            auto_top_up_enabled AS autoTopUp,
             (SELECT COALESCE(SUM(pollen_credited), 0) FROM stripe_checkout_credits
              WHERE user_id = user.id) AS netCredited
         FROM user WHERE id = ?`,
     )
         .bind(userId)
-        .first<{ packBalance: number; netCredited: number }>();
+        .first<{
+            packBalance: number;
+            autoTopUp: number;
+            netCredited: number;
+        }>();
     if (!state) throw new Error("Expected seeded test user");
     return state;
 }
@@ -4777,6 +4792,7 @@ test("charge.refunded takes a fully refunded pack back once, and the next purcha
     );
     expect(await readRefundState(userId)).toEqual({
         packBalance: balanceBefore + 10,
+        autoTopUp: 1,
         netCredited: 10,
     });
 
@@ -4787,10 +4803,20 @@ test("charge.refunded takes a fully refunded pack back once, and the next purcha
         );
         expect(response.status).toBe(200);
     }
+    // Auto top-up goes off: the lower balance must not charge the card again.
     expect(await readRefundState(userId)).toEqual({
         packBalance: balanceBefore,
+        autoTopUp: 0,
         netCredited: 0,
     });
+    // Quests count the credits since a launch date, so the reversal carries
+    // its purchase's date and cancels it in the same window.
+    const { results: creditTimes } = await env.DB.prepare(
+        "SELECT DISTINCT created_at AS createdAt FROM stripe_checkout_credits WHERE user_id = ?",
+    )
+        .bind(userId)
+        .all();
+    expect(creditTimes).toEqual([{ createdAt: REFUNDED_PACK_BOUGHT_AT }]);
 
     mocks.stripe.state.requests.length = 0;
     await SELF.fetch(`${base}/checkout/p10`, {
@@ -4825,6 +4851,7 @@ test.for([
         expect(response.status).toBe(200);
         expect(await readRefundState(userId)).toEqual({
             packBalance: balanceBefore + 10,
+            autoTopUp: 1,
             netCredited: 10,
         });
     },

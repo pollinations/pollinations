@@ -561,7 +561,8 @@ const handleCheckoutSessionCompleted = async (
 // A full refund of a pack bought at checkout is recorded as a negative credit
 // row keyed by the refunded session, so a repeated event hits the primary key
 // and changes nothing. Partial refunds, failed refunds and refunded automatic
-// top-ups are corrected by hand.
+// top-ups are corrected by hand, and so is a refund that arrives before its
+// purchase was credited.
 async function reversePollenForRefund(
     env: CloudflareBindings,
     stripe: Stripe,
@@ -587,10 +588,10 @@ async function reversePollenForRefund(
     const sessionId = sessions?.data[0]?.id;
     const credit = sessionId
         ? await env.DB.prepare(
-              "SELECT user_id AS userId, pollen_credited AS pollen FROM stripe_checkout_credits WHERE session_id = ?",
+              "SELECT user_id AS userId, pollen_credited AS pollen, created_at AS createdAt FROM stripe_checkout_credits WHERE session_id = ?",
           )
               .bind(sessionId)
-              .first<{ userId: string; pollen: number }>()
+              .first<{ userId: string; pollen: number; createdAt: number }>()
         : null;
     if (!credit) {
         console.warn(
@@ -599,6 +600,9 @@ async function reversePollenForRefund(
         return;
     }
 
+    // The row carries its purchase's date: quests sum the credits since a
+    // launch date, and the two have to cancel in the same window. Auto top-up
+    // goes off so the lower balance does not charge the card again.
     try {
         await env.DB.batch([
             env.DB.prepare(
@@ -611,14 +615,15 @@ async function reversePollenForRefund(
                 event.type,
                 credit.userId,
                 -credit.pollen,
-                Date.now(),
+                credit.createdAt,
             ),
             env.DB.prepare(
                 `UPDATE user
                 SET pack_balance = ROUND(
                     COALESCE(pack_balance, 0) - ?,
                     ${POLLEN_BILLING_PRECISION}
-                )
+                ),
+                auto_top_up_enabled = 0
                 WHERE id = ?`,
             ).bind(credit.pollen, credit.userId),
         ]);

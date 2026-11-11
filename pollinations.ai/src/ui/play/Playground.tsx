@@ -807,6 +807,7 @@ export function Playground() {
             (value) => value === linkedModel?.category,
         );
         if (linkedModel && linkedCategory) {
+            configuredModelRef.current = linkedModel.id;
             setSelectedModel(linkedModel.id);
             setActiveCategory(linkedCategory);
             return;

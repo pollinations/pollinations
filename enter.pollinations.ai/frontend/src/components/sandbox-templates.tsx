@@ -93,14 +93,15 @@ export const SandboxTemplateList: FC<{
             (template) => {
                 const perHour = hourly(template);
                 return (
-                    // Two columns when wide: the size over the command on the left,
-                    // the price over Create on the right, so Create lines up with
-                    // the price's icons. Stacked in that order when narrow.
+                    // Two columns from half a screen: the size on the left, the
+                    // price over Create on the right, so Create lines up with the
+                    // price's icons. The command takes the row below; only when
+                    // wide is there room for it beside Create. Stacked on phones.
                     <Surface
                         key={template.id}
-                        className="grid items-center gap-3 @xl:grid-cols-[minmax(0,1fr)_auto] @xl:gap-x-6"
+                        className="grid items-center gap-3 @lg:grid-cols-[minmax(0,1fr)_auto] @lg:gap-x-6"
                     >
-                        <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5 @lg:col-start-1 @lg:row-span-2 @lg:row-start-1 @2xl:row-span-1">
                             <ProviderLogo provider={template.provider} />
                             <span
                                 aria-hidden="true"
@@ -129,7 +130,7 @@ export const SandboxTemplateList: FC<{
                                 ))}
                             </dl>
                         </div>
-                        <div className="grid grid-cols-[6.5rem_6ch_3.5rem] gap-x-1 justify-self-start">
+                        <div className="grid grid-cols-[6.5rem_6ch_3.5rem] gap-x-1 justify-self-start @lg:col-start-2 @lg:row-start-1">
                             <LedgerRow Icon={WalletIcon} label="Pollen">
                                 <div className="col-span-2 flex">
                                     <BalanceAccessChip access="quest" />
@@ -159,7 +160,7 @@ export const SandboxTemplateList: FC<{
                         {create && (
                             <>
                                 {/* Only as wide as the command needs. */}
-                                <div className="w-fit max-w-full">
+                                <div className="w-fit max-w-full @lg:col-span-2 @lg:row-start-3 @2xl:col-span-1 @2xl:col-start-1 @2xl:row-start-2">
                                     <CopyField
                                         label={`Copy the command that creates a ${template.id} sandbox`}
                                         value={`polli sandbox create ${template.id}`}
@@ -173,7 +174,7 @@ export const SandboxTemplateList: FC<{
                                         create.disabled ? undefined : "dialog"
                                     }
                                     disabled={create.disabled}
-                                    className="justify-self-start"
+                                    className="justify-self-start @lg:col-start-2 @lg:row-start-2"
                                     onClick={() => create.onCreate(template.id)}
                                 >
                                     {create.label}

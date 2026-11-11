@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-10T06:08:40.539256+00:00",
+  "generated_at": "2026-11-11T06:08:12.767108+00:00",
   "models": [
     {
       "id": "2026-10-13:assemblyai/universal-2",
@@ -4965,30 +4965,366 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-11-10:lykon/dreamshaper-8-lcm",
+      "model_id": "lykon/dreamshaper-8-lcm",
+      "title": "DreamShaper 8 LCM",
+      "previous_title": null,
+      "action": "RETIRE",
+      "category": "image",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [],
+          "after": null
+        },
+        "input_modalities": {
+          "before": [
+            "text"
+          ],
+          "after": null
+        },
+        "output_modalities": {
+          "before": [
+            "image"
+          ],
+          "after": null
+        },
+        "paid_only": {
+          "before": false,
+          "after": null
+        },
+        "per_user_rpm": {
+          "before": 300,
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionImageTokens": "0.0001"
+          },
+          "after": null
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:elevenlabs/eleven-text-to-sound-v3",
+      "model_id": "elevenlabs/eleven-text-to-sound-v3",
+      "title": "Eleven Text to Sound v3",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioSeconds": "0.002"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:z-ai/glm-5.3-flashx",
+      "model_id": "z-ai/glm-5.3-flashx",
+      "title": "GLM-5.3-FlashX",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000039035",
+            "promptCachedTokens": "0.00000009495",
+            "completionTextTokens": "0.00000131875"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000039035",
+            "promptCachedTokens": "0.000000079125",
+            "completionTextTokens": "0.00000131875"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:x-ai/grok-imagine-video",
+      "model_id": "x-ai/grok-imagine-video",
+      "title": "Grok Video Pro",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "video",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.05"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.07"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:moonshotai/kimi-k2.7-code",
+      "model_id": "moonshotai/kimi-k2.7-code",
+      "title": "Kimi K2.7 Code",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000708116",
+            "promptCachedTokens": "0.00000015825",
+            "promptCacheWriteTokens": "0.000000708116",
+            "promptImageTokens": "0.000000708116",
+            "completionTextTokens": "0.00000353425"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000633",
+            "promptCachedTokens": "0.0000001688",
+            "promptCacheWriteTokens": "0.000000633",
+            "promptImageTokens": "0.000000633",
+            "completionTextTokens": "0.0000036925"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:mistralai/mistral-large-4",
+      "model_id": "mistralai/mistral-large-4",
+      "title": "Mistral Large 4",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000136",
+            "promptCachedTokens": "0.00000014",
+            "completionTextTokens": "0.00000418"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000007",
+            "promptCachedTokens": "0.00000007",
+            "completionTextTokens": "0.0000021"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:qwen/qwen3guard-gen-8b",
+      "model_id": "qwen/qwen3guard-gen-8b",
+      "title": "Qwen3Guard 8B",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "context_length": {
+          "before": null,
+          "after": 32768
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:elevenlabs/scribe-v2",
+      "model_id": "elevenlabs/scribe-v2",
+      "title": "Scribe v2",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000061111111"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000055555556"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:elevenlabs/scribe-v2-realtime",
+      "model_id": "elevenlabs/scribe-v2-realtime",
+      "title": "Scribe v2 Realtime",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "realtime",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000108333333"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000061111111"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:elevenlabs/scribe-v3",
+      "model_id": "elevenlabs/scribe-v3",
+      "title": "Scribe v3",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000055555556"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-10:elevenlabs/scribe-v3-live",
+      "model_id": "elevenlabs/scribe-v3-live",
+      "title": "Scribe v3 Live",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "realtime",
+      "date": "2026-11-10",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000061111111"
+          }
+        }
+      }
     }
   ],
   "api": [
-    {
-      "id": "pr-17130:POST /v1/responses",
-      "endpoint": "POST /v1/responses",
-      "summary": "Create Response",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "body:client_metadata",
-          "before": null,
-          "after": {
-            "type": "object|null",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-11",
-      "pr": 17130,
-      "url": "https://github.com/pollinations/pollinations/pull/17130"
-    },
     {
       "id": "pr-17507:POST /account/my-models/endpoint-agents",
       "endpoint": "POST /account/my-models/endpoint-agents",
@@ -5950,6 +6286,36 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-10",
+      "emoji": "🎵",
+      "title": "ElevenLabs SFX v3",
+      "text": "Generate MP3 sound effects from text with `elevenlabs/eleven-text-to-sound-v3`. Set duration, looping, and prompt influence. Paid access is required. [View the model](https://enter.pollinations.ai/models?q=elevenlabs/eleven-text-to-sound-v3).",
+      "prs": [
+        19475
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-10",
+      "emoji": "🎵",
+      "title": "Scribe v3 batch transcription",
+      "text": "Transcribe audio with `elevenlabs/scribe-v3`, including word timestamps and speaker labels in supported response formats. Paid access is required. [View the model](https://enter.pollinations.ai/models?q=elevenlabs/scribe-v3).",
+      "prs": [
+        19476
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-10",
+      "emoji": "🎵",
+      "title": "Scribe v3 Live transcription",
+      "text": "Use `elevenlabs/scribe-v3-live` for realtime transcription sessions with incremental and final transcripts. Paid access is required. [View the model](https://enter.pollinations.ai/models?q=elevenlabs/scribe-v3-live).",
+      "prs": [
+        19476
+      ],
+      "kind": "model"
+    },
     {
       "date": "2026-11-09",
       "emoji": "🎨",
@@ -7254,37 +7620,6 @@
       "text": "Address CatGPT or Opposite Prompt by @mention in any channel; they no longer respond to ordinary messages in their former channels. [Join the community chat](https://chat.pollinations.ai).",
       "prs": [
         17230
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-11",
-      "emoji": "🚀",
-      "title": "Sandboxes beyond 24 hours",
-      "text": "Set sandbox timeouts beyond a day through the existing API calls or `polli sandbox create --timeout`. Daily restarts preserve files, memory, and processes, but drop open connections. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16896,
-        17091
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-11",
-      "emoji": "💡",
-      "title": "A larger sandbox option",
-      "text": "Sandbox creation now supports opting into `pollinations-large`, a 4 vCPU, 8 GB template, alongside the unchanged 2 vCPU, 2 GB default. The E2B template itself was not created by this change. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17115
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-11",
-      "emoji": "🤖",
-      "title": "Polli takes follow-ups",
-      "text": "Send a follow-up while Polli is working in Discord: it can queue the message for its next model call instead of rejecting it. Replies can include text, reactions, or both. [Visit the community chat](https://chat.pollinations.ai).",
-      "prs": [
-        17125
       ],
       "kind": "product"
     }

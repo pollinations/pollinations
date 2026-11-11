@@ -32,6 +32,7 @@ import { accountClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { LoadError, PageLoading } from "../layout/dashboard-loading.tsx";
 import type { ApiModelInfo } from "../models/model-catalog.ts";
+import { Footnotes } from "../pollen/pollen-balance.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -454,10 +455,8 @@ export function CommunityEndpoints({
     return (
         <>
             {error && <Alert intent="danger">{error}</Alert>}
-            {/* One card: agents, models and apps behind tab buttons. Agents
-                and models also show your publisher details (when you can
-                publish publicly), then the tab's note. The open tab's
-                Create sits on the tab row. */}
+            {/* One card: agents, models and apps behind tab buttons, then the
+                tab's note. The open tab's Create sits on the tab row. */}
             <Section title="My Listings" id="listings">
                 <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <div className="flex flex-wrap gap-1.5">
@@ -526,106 +525,6 @@ export function CommunityEndpoints({
                                 )}
                             </div>
                         )}
-                        {canPublish && (
-                            <form
-                                className="flex flex-col gap-4"
-                                onSubmit={(event) =>
-                                    void handleProviderSubmit(event)
-                                }
-                            >
-                                <div className="space-y-3">
-                                    <ProviderProfileField
-                                        icon={<AccountIcon />}
-                                        label="Publisher name"
-                                        help="Shown as the publisher on all your public models."
-                                    >
-                                        <Input
-                                            name="community-provider-name"
-                                            value={providerName}
-                                            placeholder="Your service"
-                                            autoComplete="organization"
-                                            className="w-full min-w-0"
-                                            required={Boolean(
-                                                providerUrl.trim(),
-                                            )}
-                                            maxLength={
-                                                COMMUNITY_PROVIDER_NAME_MAX_LENGTH
-                                            }
-                                            onChange={(event) =>
-                                                setProviderName(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    </ProviderProfileField>
-                                    <ProviderProfileField
-                                        icon={<GlobeIcon />}
-                                        label="Website or privacy policy"
-                                        help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Publisher name."
-                                    >
-                                        <Input
-                                            type="url"
-                                            name="community-provider-url"
-                                            value={providerUrl}
-                                            placeholder="https://example.com"
-                                            autoComplete="url"
-                                            className="w-full min-w-0"
-                                            required={Boolean(
-                                                providerName.trim(),
-                                            )}
-                                            maxLength={
-                                                COMMUNITY_PROVIDER_URL_MAX_LENGTH
-                                            }
-                                            onChange={(event) =>
-                                                setProviderUrl(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    </ProviderProfileField>
-                                    <ProviderProfileField
-                                        icon={<ImageIcon />}
-                                        label="Brand icon URL"
-                                        help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
-                                    >
-                                        <Input
-                                            type="url"
-                                            name="community-provider-icon-url"
-                                            value={providerIconUrl}
-                                            placeholder="https://media.pollinations.ai/…"
-                                            autoComplete="url"
-                                            className="w-full min-w-0"
-                                            onChange={(event) =>
-                                                setProviderIconUrl(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    </ProviderProfileField>
-                                </div>
-                                {!providerIsSaved && (
-                                    <div className="flex items-center gap-3">
-                                        <Button
-                                            type="button"
-                                            intent="neutral"
-                                            disabled={isSavingProvider}
-                                            onClick={resetProviderChanges}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            intent="commit"
-                                            disabled={isSavingProvider}
-                                        >
-                                            {isSavingProvider
-                                                ? "Saving…"
-                                                : "Save"}
-                                        </Button>
-                                    </div>
-                                )}
-                            </form>
-                        )}
                         {listingTab === "agents"
                             ? !canPublish && (
                                   <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
@@ -662,6 +561,110 @@ export function CommunityEndpoints({
                     </>
                 )}
             </Section>
+
+            {/* One publisher for all your public agents and models, so it
+                sits in its own card rather than inside a listings tab; apps
+                don't use it, so the Apps tab hides it. */}
+            {canPublish && listingTab !== "apps" && (
+                <Section title="Publisher" id="publisher">
+                    <form
+                        className="flex flex-col gap-3"
+                        onSubmit={(event) => void handleProviderSubmit(event)}
+                    >
+                        <Surface className="flex flex-col gap-4">
+                            <div className="space-y-3">
+                                <ProviderProfileField
+                                    icon={<AccountIcon />}
+                                    label="Publisher name"
+                                    help="Shown as the publisher on all your public agents and models."
+                                >
+                                    <Input
+                                        name="community-provider-name"
+                                        value={providerName}
+                                        placeholder="Your service"
+                                        autoComplete="organization"
+                                        className="w-full min-w-0"
+                                        required={Boolean(providerUrl.trim())}
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_NAME_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderName(event.target.value)
+                                        }
+                                    />
+                                </ProviderProfileField>
+                                <ProviderProfileField
+                                    icon={<GlobeIcon />}
+                                    label="Website or privacy policy"
+                                    help="Shown with your public agents and models. Use one HTTPS link to your website or privacy policy; set it together with Publisher name."
+                                >
+                                    <Input
+                                        type="url"
+                                        name="community-provider-url"
+                                        value={providerUrl}
+                                        placeholder="https://example.com"
+                                        autoComplete="url"
+                                        className="w-full min-w-0"
+                                        required={Boolean(providerName.trim())}
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_URL_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderUrl(event.target.value)
+                                        }
+                                    />
+                                </ProviderProfileField>
+                                <ProviderProfileField
+                                    icon={<ImageIcon />}
+                                    label="Brand icon URL"
+                                    help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                                >
+                                    <Input
+                                        type="url"
+                                        name="community-provider-icon-url"
+                                        value={providerIconUrl}
+                                        placeholder="https://media.pollinations.ai/…"
+                                        autoComplete="url"
+                                        className="w-full min-w-0"
+                                        onChange={(event) =>
+                                            setProviderIconUrl(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </ProviderProfileField>
+                            </div>
+                            {!providerIsSaved && (
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        intent="neutral"
+                                        disabled={isSavingProvider}
+                                        onClick={resetProviderChanges}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        intent="commit"
+                                        disabled={isSavingProvider}
+                                    >
+                                        {isSavingProvider ? "Saving…" : "Save"}
+                                    </Button>
+                                </div>
+                            )}
+                        </Surface>
+                        <Footnotes>
+                            <p className="flex items-start gap-1.5">
+                                <AccountIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    Shown on all your public agents and models.
+                                </span>
+                            </p>
+                        </Footnotes>
+                    </form>
+                </Section>
+            )}
 
             {editing && (
                 <CommunityEndpointDialog

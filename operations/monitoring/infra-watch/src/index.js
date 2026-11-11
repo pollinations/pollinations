@@ -257,9 +257,11 @@ export class Watch extends DurableObject {
                 isUp(PUBLIC),
                 isUp(UPSTREAM),
                 enterError(this.env.COMMUNITY_PROBE_KEY),
-                this.early(),
+                // Requests that failed before any model was known, per
+                // minute over the last 30 minutes.
+                this.tinybird("infra_watch_early_errors"),
                 this.freshness(now),
-                this.payments(),
+                this.tinybird("infra_watch_payments"),
                 this.gpuPools(),
             ]);
         const hosts = { public: pub, upstream: up };
@@ -582,18 +584,16 @@ export class Watch extends DurableObject {
         };
     }
 
-    // Requests that failed before any model was known, per minute over the
-    // last 30 minutes, from Tinybird, read every check; null when the read
-    // failed.
-    async early() {
+    // A Tinybird pipe's rows, read every check; null when the read failed.
+    async tinybird(name) {
         try {
             return await pipe(
-                "infra_watch_early_errors",
+                name,
                 {},
                 { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
             );
         } catch (error) {
-            console.error(`early errors: ${error.message}`);
+            console.error(`${name}: ${error.message}`);
             return null;
         }
     }
@@ -654,21 +654,6 @@ export class Watch extends DurableObject {
             ];
         } catch (error) {
             console.error(`freshness: ${error.message}`);
-            return null;
-        }
-    }
-
-    // Payments in trouble, from Tinybird, read every check; null when the
-    // read failed.
-    async payments() {
-        try {
-            return await pipe(
-                "infra_watch_payments",
-                {},
-                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
-            );
-        } catch (error) {
-            console.error(`payments: ${error.message}`);
             return null;
         }
     }

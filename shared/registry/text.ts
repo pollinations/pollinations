@@ -2548,14 +2548,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Inceptron int4 rates (2026-10-24), including the
+            // OpenRouter Inceptron int4 rates (2026-11-11), including the
             // account's 5.5% credit-purchase fee. Same int4 checkpoint as
             // Moonshot's own endpoint; no separate cache-write rate.
-            promptTextTokens: perMillion(0.6712) * 1.055,
-            promptCachedTokens: perMillion(0.15) * 1.055,
-            promptCacheWriteTokens: perMillion(0.6712) * 1.055,
-            promptImageTokens: perMillion(0.6712) * 1.055,
-            completionTextTokens: perMillion(3.35) * 1.055,
+            promptTextTokens: perMillion(0.6) * 1.055,
+            promptCachedTokens: perMillion(0.16) * 1.055,
+            promptCacheWriteTokens: perMillion(0.6) * 1.055,
+            promptImageTokens: perMillion(0.6) * 1.055,
+            completionTextTokens: perMillion(3.5) * 1.055,
         },
         title: "Kimi K2.7 Code",
         description:
@@ -3330,11 +3330,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Z.AI fp8 route rates (2026-10-12), including the
+            // OpenRouter Z.AI fp8 route rates (2026-11-11), including the
             // mandatory 5.5% OpenRouter credit fee. Image inputs are
             // tokenized into promptTextTokens; no separate usage is reported.
             promptTextTokens: perMillion(0.37) * 1.055,
-            promptCachedTokens: perMillion(0.09) * 1.055,
+            promptCachedTokens: perMillion(0.075) * 1.055,
             completionTextTokens: perMillion(1.25) * 1.055,
         },
         title: "GLM-5.3-FlashX",
@@ -3664,11 +3664,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Mistral direct API list rates (docs.mistral.ai pricing); the
-            // 50% launch offer from 2026-10-06 ran for two weeks.
-            promptTextTokens: perMillion(1.36),
-            promptCachedTokens: perMillion(0.14),
-            completionTextTokens: perMillion(4.18),
+            // Mistral direct API standard rates, verified 2026-11-11:
+            // https://docs.mistral.ai/inference/pricing
+            promptTextTokens: perMillion(0.7),
+            promptCachedTokens: perMillion(0.07),
+            completionTextTokens: perMillion(2.1),
         },
         title: "Mistral Large 4",
         description:
@@ -4320,6 +4320,10 @@ const TEXT_BASE_SERVICES = {
         description: "Flags unsafe content for moderation",
         inputModalities: ["text"],
         outputModalities: ["text"],
+        contextLength: 32768,
+        // OVH's SSE returns only [DONE] for oversized input. Request JSON to
+        // preserve its 400 context error, then replay successful answers as SSE.
+        supportsStreaming: false,
         isSpecialized: true,
     },
 } as const satisfies Record<string, ModelDefinition>;

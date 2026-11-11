@@ -6,11 +6,12 @@ import { balance } from "@/middleware/balance.ts";
 import type {
     GenerationErrorSnapshot,
     GenerationJob,
+    GenerationJobHead,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
 import { logger } from "@/middleware/logger.ts";
-import { frontendKeyBilling } from "@/middleware/rate-limit-durable.ts";
 import { generationExecutorRoutes } from "@/routes/generation-executor.ts";
+import { nameD1Caller, withD1Calls } from "../d1-calls.ts";
 
 async function drainResponse(response: Response): Promise<void> {
     const reader = response.body?.getReader();
@@ -60,6 +61,7 @@ function generationExecutor(
             c.header("X-Request-Id", job.requestId);
             await next();
         })
+        .use("*", nameD1Caller)
         .use("*", logger)
         .use("*", authFromSnapshot(job.auth))
         .use("*", async (c, next) => {
@@ -71,7 +73,6 @@ function generationExecutor(
             });
             await next();
         })
-        .use("*", frontendKeyBilling)
         .use("*", balance)
         .use("*", async (c, next) => {
             c.var.balance.balanceCheckResult = job.balanceCheckResult;
@@ -83,29 +84,51 @@ function generationExecutor(
     return executor;
 }
 
-/** Runs a provider handler under the Durable Object alarm's lifetime. */
-export async function executeGeneration(
-    job: GenerationJob,
-    env: CloudflareBindings,
-): Promise<DetachedGeneration> {
+/** An ExecutionContext for detached work. settled() also waits for work
+ * registered while earlier work runs, such as the D1 telemetry a failing
+ * post-response billing query sends. */
+export function detachedContext() {
     const promises: Promise<unknown>[] = [];
-    let cacheWrite: Promise<void> | undefined;
-    const executionCtx = {
+    const ctx = {
         waitUntil(promise: Promise<unknown>) {
             promises.push(promise);
         },
         passThroughOnException() {},
     } as ExecutionContext;
+    const settled = async () => {
+        for (let done = 0; done < promises.length; ) {
+            const pending = promises.slice(done);
+            done = promises.length;
+            await Promise.allSettled(pending);
+        }
+    };
+    return { ctx, settled };
+}
+
+/** Runs a provider handler for the coordinator alarm that owns the job. */
+export async function executeGeneration(
+    job: GenerationJob,
+    env: CloudflareBindings,
+): Promise<DetachedGeneration> {
+    let cacheWrite: Promise<void> | undefined;
+    const { ctx: executionCtx, settled } = detachedContext();
 
     const request = new Request(job.request.url, {
         method: job.request.method,
         headers: job.request.headers,
         body: job.request.body?.slice().buffer,
     });
-    const response = await generationExecutor(job, (promise) => {
-        cacheWrite = promise;
-    }).fetch(request, env, executionCtx);
-    const settlement = Promise.allSettled(promises).then(() => {});
+    const response = await withD1Calls(
+        env,
+        executionCtx,
+        // The method only: the job URL can carry the prompt.
+        () => ({ route_path: "generation", method: request.method }),
+        () =>
+            generationExecutor(job, (promise) => {
+                cacheWrite = promise;
+            }).fetch(request, env, executionCtx),
+    );
+    const settlement = settled();
 
     try {
         const failed = !response.ok;
@@ -123,9 +146,75 @@ export async function executeGeneration(
         }
 
         await cacheWrite;
-        return { result: { status: "cached" }, settlement };
+        // This execution produced a fresh cache entry (the R2 has() pre-check
+        // inside missed), so the requester experienced a MISS, not a HIT.
+        return { result: { status: "generated" }, settlement };
     } catch (error) {
         await settlement;
         throw error;
     }
 }
+
+export const GENERATION_HANDOFF_PATH = "/internal/generation";
+export const GENERATION_HANDOFF_HEADER = "x-generation-handoff";
+
+/** JSON form of an outcome; the error body travels as base64. */
+type HandoffOutcome =
+    | { status: "cached" }
+    | { status: "generated" }
+    | {
+          status: "failed";
+          error: Omit<GenerationErrorSnapshot, "body"> & { body: string };
+      };
+
+export async function readHandoffResponse(
+    response: Response,
+): Promise<GenerationOutcome> {
+    if (!response.ok) {
+        throw new Error(`Generation handoff returned HTTP ${response.status}`);
+    }
+    const outcome = await response.json<HandoffOutcome>();
+    if (outcome.status !== "failed") return outcome;
+    const body = new Uint8Array(Buffer.from(outcome.error.body, "base64"));
+    return { status: "failed", error: { ...outcome.error, body } };
+}
+
+function handoffOutcome(outcome: GenerationOutcome): HandoffOutcome {
+    if (outcome.status !== "failed") return outcome;
+    const body = Buffer.from(outcome.error.body).toString("base64");
+    return { status: "failed", error: { ...outcome.error, body } };
+}
+
+/** Runs a job handed off by a coordinator alarm, under this request's zone. */
+export const generationHandoffRoutes = new Hono<Env>().post(
+    "/:id{[0-9a-f]{64}}",
+    async (c) => {
+        const coordinators = c.env.GENERATION_COORDINATOR;
+        let id: DurableObjectId;
+        try {
+            id = coordinators.idFromString(c.req.param("id"));
+        } catch {
+            return c.notFound();
+        }
+        // RPC typing can't map the auth snapshot; the value is unchanged.
+        const job = (await coordinators
+            .get(id)
+            .takeHandoff(
+                c.req.header(GENERATION_HANDOFF_HEADER) ?? "",
+            )) as GenerationJobHead | null;
+        if (!job) return c.notFound();
+        const body = new Uint8Array(await c.req.arrayBuffer());
+        const { result, settlement } = await executeGeneration(
+            {
+                ...job,
+                request: {
+                    ...job.request,
+                    ...(body.byteLength > 0 && { body }),
+                },
+            },
+            c.env,
+        );
+        c.executionCtx.waitUntil(settlement);
+        return c.json(handoffOutcome(result));
+    },
+);

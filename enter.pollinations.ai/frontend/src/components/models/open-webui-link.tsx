@@ -33,15 +33,18 @@ export function isOpenWebUiChattable(model: {
 export function OpenWebUiLink({
     modelId,
     title,
+    "aria-describedby": describedBy,
 }: {
     modelId: string;
     title: string;
+    "aria-describedby"?: string;
 }) {
     return (
         <InlineLink
             href={openWebUiChatUrl(modelId)}
             className="model-title-link inline-flex min-w-0 max-w-full items-baseline"
             aria-label={`Open ${title} in Open WebUI`}
+            aria-describedby={describedBy}
         >
             <span className="min-w-0 truncate">{title}</span>
         </InlineLink>

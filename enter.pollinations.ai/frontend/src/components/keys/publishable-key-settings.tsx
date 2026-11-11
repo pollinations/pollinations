@@ -1,6 +1,13 @@
-import { Button, Field, InfoTip, Input, Text } from "@pollinations/ui";
+import { Button, Field, InfoTip, Input } from "@pollinations/ui";
 import { AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
+
+/**
+ * Pre-filled callback for app keys so local dev works out of the box. Loopback
+ * ports are wildcarded (RFC 8252 §7.3), so only the path needs editing. The
+ * dev sees it in the editor and should remove it before production.
+ */
+export const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];
@@ -36,22 +43,18 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     }
 
     return (
-        <AuthInfoCard title={null}>
-            <div className="space-y-3">
-                <div className="flex items-center">
-                    <Text
-                        size="sm"
-                        weight="semibold"
-                        tone="strong"
-                        className="polli:leading-5"
-                    >
-                        Redirect URLs
-                    </Text>
+        <AuthInfoCard
+            title={
+                <>
+                    Redirect URLs
                     <InfoTip
                         text="Your app receives users at these URLs after consent. For local development, match a localhost redirect to your dev server’s path; remove it before production."
                         label="Redirect URLs information"
                     />
-                </div>
+                </>
+            }
+        >
+            <div className="space-y-2">
                 {redirectUris.map((uri, index) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
@@ -69,6 +72,15 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                                     onChange={(e) =>
                                         update(index, e.target.value)
                                     }
+                                    // Typing over the pre-filled default should
+                                    // replace it, not append to it.
+                                    onFocus={(e) => {
+                                        if (
+                                            uri === DEFAULT_LOCALHOST_REDIRECT
+                                        ) {
+                                            e.currentTarget.select();
+                                        }
+                                    }}
                                     className="w-full"
                                     placeholder="https://myapp.com/auth/callback"
                                     disabled={disabled}

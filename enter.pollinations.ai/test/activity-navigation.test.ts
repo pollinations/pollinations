@@ -1,3 +1,5 @@
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { activityCsv } from "../frontend/src/components/activity/activity-csv";
 import {
@@ -10,6 +12,295 @@ import {
     switchActivityView,
     toggleActivityBucket,
 } from "../frontend/src/components/activity/activity-period";
+import { formatActivityPollenThreshold } from "../frontend/src/components/activity/format-activity-pollen";
+import {
+    earningsRow,
+    usageRow,
+    useActivityData,
+} from "../frontend/src/components/activity/use-activity-data";
+import { Route as ActivityRoute } from "../frontend/src/routes/_dashboard.activity";
+
+vi.mock("../frontend/src/api.ts", () => ({ apiClient: {} }));
+vi.mock("react", async (importOriginal) => {
+    const actual = await importOriginal<typeof React>();
+    return { ...actual, useState: vi.fn(actual.useState) };
+});
+vi.hoisted(() => {
+    vi.stubGlobal("window", { location: { origin: "http://localhost:3000" } });
+    vi.stubEnv("MODE", "development");
+});
+afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.mocked(React.useState).mockReset();
+});
+
+const NO_PICKS = { keys: [], models: [] };
+
+it("shows table amounts with at most 5 digits", () => {
+    expect(
+        [2.2313, 12.34567, 0.203, 0.008307, 0.000833, 0.00002, 0].map(
+            formatActivityPollenThreshold,
+        ),
+    ).toEqual([
+        "2.2313",
+        "12.345",
+        "0.203",
+        "0.0083",
+        "0.0008",
+        "<0.0001",
+        "0",
+    ]);
+});
+
+it("keeps unknown usage in totals without labeling it as Paid or Quest", () => {
+    const rows = ["unknown", null, "pack", "tier"].map((meter_source, i) => ({
+        date: "2026-08-08 04:00:00",
+        api_key_id: "key",
+        api_key: "Example",
+        model: "example-model",
+        meter_source,
+        requests: i + 1,
+        cost_usd: 2 * (i + 1),
+    }));
+    vi.mocked(React.useState).mockReturnValueOnce([
+        { key: "usage:day:2026-08-08", rows: rows.map(usageRow) },
+        vi.fn(),
+    ]);
+    function Summary() {
+        const { totals, entries } = useActivityData({
+            tab: "usage",
+            period: { granularity: "day", period: "2026-08-08" },
+            metric: "requests",
+            group: "model",
+            picks: NO_PICKS,
+        });
+        expect([totals.requests, totals.pollen]).toEqual([10, 20]);
+        expect(entries[0]).toMatchObject({ requests: 10, pollen: 20 });
+        for (const usage of [totals, entries[0]])
+            expect(usage).toMatchObject({
+                paidRequests: 3,
+                paidPollen: 6,
+                tierRequests: 4,
+                tierPollen: 8,
+            });
+        return null;
+    }
+    renderToStaticMarkup(React.createElement(Summary));
+});
+
+it("keeps the tab, metric, grouping and picks in URL search and ignores unsupported values", () => {
+    const validate = ActivityRoute.options.validateSearch;
+    expect(
+        validate?.({
+            tab: "earnings",
+            group: "key",
+            metric: "requests",
+            keys: ["a"],
+            models: ["m"],
+        }),
+    ).toMatchObject({
+        tab: "earnings",
+        group: "key",
+        metric: "requests",
+        keys: ["a"],
+        models: ["m"],
+    });
+    for (const group of [undefined, "model", "invalid", ["key"]])
+        expect(validate?.({ group }).group).toBeUndefined();
+    for (const tab of ["usage", "invalid"])
+        expect(validate?.({ tab }).tab).toBeUndefined();
+    expect(validate?.({ keys: [1] }).keys).toBeUndefined();
+});
+
+it("groups usage with consistent labels, complete totals, picks and metric sorting", () => {
+    const rows = [
+        {
+            api_key_id: "a",
+            api_key: "Same name",
+            model: "image",
+            meter_source: "pack",
+            requests: 2,
+            cost_usd: 8,
+        },
+        {
+            api_key_id: "a",
+            api_key: "Same name",
+            model: "text",
+            meter_source: "tier",
+            requests: 3,
+            cost_usd: 4,
+        },
+        {
+            api_key_id: "b",
+            api_key: "Same name",
+            model: "text",
+            meter_source: "pack",
+            requests: 10,
+            cost_usd: 2,
+        },
+        {
+            api_key_id: "deleted",
+            api_key: null,
+            model: null,
+            meter_source: "unknown",
+            requests: 1,
+            cost_usd: 1,
+        },
+    ].map((row) => ({ date: "2026-08-08", ...row }));
+    rows.unshift({ ...rows[0], date: "2026-08-09", cost_usd: 100 });
+    rows[1] = { ...rows[1], api_key: "Old name" };
+    rows[2] = { ...rows[2], api_key: "Old name" };
+    function Summary() {
+        const view = {
+            tab: "usage" as const,
+            period: {
+                granularity: "month" as const,
+                period: "2026-08",
+                bucket: "2026-08-08",
+            },
+            metric: "pollen" as const,
+            group: "key" as const,
+            picks: NO_PICKS,
+        };
+        const keys = useActivityData(view);
+        const models = useActivityData({ ...view, group: "model" });
+        expect(keys.chartData).toEqual(models.chartData);
+        expect(keys.totals.pollen).toBe(15);
+        expect(keys.totals.requests).toBe(16);
+        expect(keys.entries.map((row) => row.id)).toEqual([
+            "keys:a",
+            "keys:b",
+            "keys:deleted",
+        ]);
+        const requests = useActivityData({ ...view, metric: "requests" });
+        expect(requests.entries.map((row) => row.value)).toEqual([
+            "b",
+            "a",
+            "deleted",
+        ]);
+        expect(models.entries.reduce((sum, row) => sum + row.pollen, 0)).toBe(
+            15,
+        );
+        expect(models.entries.find((row) => row.value === "")).toMatchObject({
+            label: "Unknown model",
+            pollen: 1,
+        });
+        expect(keys.entries.find((row) => row.value === "b")?.label).toBe(
+            "Same name (b)",
+        );
+        expect(keys.entries.find((row) => row.value === "a")).toMatchObject({
+            label: "Same name (a)",
+            pollen: 12,
+            requests: 5,
+            paidPollen: 8,
+            tierPollen: 4,
+            paidRequests: 2,
+            tierRequests: 3,
+        });
+        expect(
+            keys.entries.find((row) => row.value === "deleted"),
+        ).toMatchObject({
+            label: "Unnamed key",
+            pollen: 1,
+            paidPollen: 0,
+            tierPollen: 0,
+        });
+        // Key rows stay listed to pick from; the model pick narrows them.
+        const picked = useActivityData({
+            ...view,
+            picks: { keys: ["a"], models: ["text"] },
+        });
+        expect(
+            picked.entries.map(({ value, selected, pollen }) => ({
+                value,
+                selected,
+                pollen,
+            })),
+        ).toEqual([
+            { value: "a", selected: true, pollen: 4 },
+            { value: "b", selected: false, pollen: 2 },
+        ]);
+        expect(picked.totals.pollen).toBe(4);
+        const unknown = useActivityData({
+            ...view,
+            group: "model",
+            picks: { keys: [], models: [""] },
+        });
+        expect(unknown.entries).toHaveLength(3);
+        expect(unknown.entries.filter((row) => row.selected)).toHaveLength(1);
+        expect(unknown.totals.pollen).toBe(1);
+        return null;
+    }
+    // The existing server-render harness seeds the hook's fetched rows.
+    for (let i = 0; i < 5; i++) {
+        vi.mocked(React.useState)
+            .mockReturnValueOnce([
+                { key: "usage:month:2026-08", rows: rows.map(usageRow) },
+                vi.fn(),
+            ])
+            .mockReturnValueOnce([
+                { key: "usage:month:2026-08", pending: false, error: null },
+                vi.fn(),
+            ]);
+    }
+    renderToStaticMarkup(React.createElement(Summary));
+});
+
+it("lists apps and models together and adds up earnings picks", () => {
+    const earning = (
+        source: "byop_markup" | "community_model",
+        entity_id: string,
+        entity_name: string,
+        pollen_earned: number,
+    ) => ({
+        date: "2026-08-08",
+        source,
+        entity_id,
+        entity_name,
+        requests: 1,
+        paid_requests: 1,
+        tier_requests: 0,
+        baseline_price: 0,
+        pollen_earned,
+        paid_earned: pollen_earned,
+        tier_earned: 0,
+        cost_usd: 0,
+        reward_rate: 0,
+    });
+    const rows = [
+        earning("byop_markup", "a", "", 3),
+        earning("byop_markup", "b", "Bot", 2),
+        earning("community_model", "m", "My model", 5),
+    ].map(earningsRow);
+    vi.mocked(React.useState).mockReturnValueOnce([
+        { key: "earnings:day:2026-08-08", rows },
+        vi.fn(),
+    ]);
+    function Summary() {
+        const { totals, entries } = useActivityData({
+            tab: "earnings",
+            period: { granularity: "day", period: "2026-08-08" },
+            metric: "pollen",
+            group: "model",
+            picks: { keys: ["a"], models: ["m"] },
+        });
+        expect(totals.pollen).toBe(8);
+        expect(
+            entries.map(({ list, label, selected }) => ({
+                list,
+                label,
+                selected,
+            })),
+        ).toEqual([
+            { list: "models", label: "My model", selected: true },
+            { list: "keys", label: "Unnamed app", selected: true },
+            { list: "keys", label: "Bot", selected: false },
+        ]);
+        return null;
+    }
+    renderToStaticMarkup(React.createElement(Summary));
+});
 
 describe("activity period and bar selection", () => {
     beforeEach(() => {

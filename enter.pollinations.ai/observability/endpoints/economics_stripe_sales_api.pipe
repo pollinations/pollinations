@@ -1,83 +1,105 @@
 DESCRIPTION >
-    Monthly Stripe sales from reviewed account balance activity. The latest
-    version of each account-month-currency fact is used.
+    Sales derived from Stripe financial source facts. Enter supplies charge identity,
+    never another revenue amount. Collection receipts prove account/month coverage.
 
 TOKEN "operations_read" READ
 
-NODE latest_sales
+NODE enter_charges
 SQL >
-    %
-    SELECT
-        splitByChar(':', entry_id)[2] AS account_id,
-        tupleElement(latest, 1) AS month,
-        upper(tupleElement(latest, 2)) AS currency,
-        tupleElement(latest, 3) AS gross_amount,
-        tupleElement(latest, 4) AS refund_amount,
-        tupleElement(latest, 5) AS fee_amount,
-        tupleElement(latest, 6) AS payment_count,
-        tupleElement(latest, 7) AS refunds_count,
-        tupleElement(latest, 8) AS coverage_end,
-        tupleElement(latest, 9) AS expected_accounts,
-        tupleElement(latest, 10) AS revenue_stream,
-        tupleElement(latest, 11) AS reversal_amount
-    FROM
-    (
-        SELECT
-            entry_id,
-            argMax(
-                tuple(
-                    month,
-                    currency,
-                    gross_sales,
-                    refunds,
-                    stripe_fees,
-                    payments,
-                    refund_count,
-                    coverage_end,
-                    expected_accounts,
-                    revenue_stream,
-                    reversals
-                ),
-                recorded_at
-            ) AS latest
-        FROM economics_stripe_sales
-        GROUP BY entry_id
-    )
+    SELECT DISTINCT if(event_type = 'charge.succeeded',
+        JSONExtractString(payload, 'data', 'object', 'id'),
+        JSONExtractString(payload, 'data', 'object', 'latest_charge')) AS charge_id
+    FROM stripe_event
+    WHERE livemode = 1 AND event_type IN ('charge.succeeded', 'payment_intent.succeeded') AND charge_id != ''
+
+NODE failed_charges
+SQL >
+    SELECT DISTINCT account_id, source_id
+    FROM economics_stripe_transactions
+    WHERE reporting_category = 'charge_failure'
+
+NODE monthly_facts
+SQL >
+    SELECT t.account_id AS account_id, formatDateTime(created, '%Y-%m') AS month,
+        t.revenue_stream AS revenue_stream, currency,
+        sumIf(amount, reporting_category = 'charge') AS gross,
+        -sumIf(amount, reporting_category IN ('refund', 'refund_failure')) AS refund_minor,
+        -sumIf(amount, reporting_category IN ('dispute', 'dispute_reversal', 'charge_failure', 'partial_capture_reversal')) AS reversal_minor,
+        sum(fee) - sumIf(amount, reporting_category = 'fee') AS fees,
+        sumIf(fee, reporting_category IN ('dispute', 'dispute_reversal')) AS dispute_fees,
+        countIf(reporting_category = 'charge') AS payments,
+        countIf(reporting_category = 'refund') AS refund_count,
+        countIf(reporting_category = 'charge' AND revenue_stream = 'pollen'
+            AND e.charge_id = '' AND f.source_id = '') AS enter_unmatched_payments,
+        -sumIf(amount, classification = 'prior_period_fraud' AND reporting_category IN ('refund', 'refund_failure')) AS fraud_refunds_minor,
+        -sumIf(amount, classification = 'prior_period_fraud' AND reporting_category IN ('dispute', 'dispute_reversal')) AS fraud_reversals_minor,
+        sumIf(fee, classification = 'prior_period_fraud') AS fraud_fees_minor,
+        countIf(classification = 'prior_period_fraud') AS fraud_transactions,
+        arrayDistinct(arrayFlatten(groupArrayIf(evidence, classification = 'prior_period_fraud'))) AS fraud_evidence,
+        count() AS transactions
+    FROM economics_stripe_transactions AS t
+    LEFT JOIN enter_charges AS e ON t.source_id = e.charge_id
+    LEFT JOIN failed_charges AS f ON t.account_id = f.account_id AND t.source_id = f.source_id
+    GROUP BY account_id, month, revenue_stream, currency
+
+NODE account_facts
+SQL >
+    SELECT s.account_id AS account_id, s.month AS month, s.revenue_stream AS revenue_stream,
+        if(f.currency = '', s.default_currency, f.currency) AS currency,
+        f.gross AS gross, f.refund_minor AS refund_minor, f.reversal_minor AS reversal_minor, f.fees AS fees, f.dispute_fees AS dispute_fees,
+        f.payments AS payments, f.refund_count AS refund_count,
+        f.enter_unmatched_payments AS enter_unmatched_payments,
+        f.fraud_refunds_minor AS fraud_refunds_minor, f.fraud_reversals_minor AS fraud_reversals_minor,
+        f.fraud_fees_minor AS fraud_fees_minor, f.fraud_transactions AS fraud_transactions, f.fraud_evidence AS fraud_evidence
+    FROM economics_stripe_sync AS s
+    LEFT JOIN (SELECT * FROM monthly_facts
+        WHERE gross != 0 OR refund_minor != 0 OR reversal_minor != 0 OR fees != 0 OR payments != 0 OR refund_count != 0) AS f
+        ON s.account_id = f.account_id AND s.month = f.month
+
+NODE account_counts
+SQL >
+    SELECT account_id, month, sum(transactions) AS transactions
+    FROM monthly_facts GROUP BY account_id, month
 
 NODE month_coverage
 SQL >
-    SELECT month,
-        toUInt8(
-            countIf(isNull(coverage_end)) = 0
-            AND min(coverage_end) >= addMonths(toDate(concat(month, '-01')), 1)
-            AND min(expected_accounts) = max(expected_accounts)
-            AND min(expected_accounts) > 0
-            AND uniq(account_id) = max(expected_accounts)
-            AND countIf(account_id = '') = 0
-            AND countIf(revenue_stream NOT IN ('pollen', 'kofi')) = 0
-        ) AS coverage_complete
-    FROM latest_sales
-    GROUP BY month
+    SELECT s.month AS month,
+        arrayStringConcat(arraySort(arrayFilter(x -> NOT has(groupUniqArray(s.account_id), x),
+            arrayDistinct(arrayFlatten(groupArray(expected_account_ids))))), ', ') AS missing_accounts,
+        countIf(s.transaction_count != c.transactions) AS count_mismatches,
+        min(s.coverage_end) AS coverage_end,
+        min(s.collected_at) AS collected_at,
+        toUInt8(missing_accounts = '' AND count_mismatches = 0
+            AND min(s.coverage_end) >= addMonths(toDate(concat(s.month, '-01')), 1)) AS coverage_complete
+    FROM economics_stripe_sync AS s
+    LEFT JOIN account_counts AS c ON s.account_id = c.account_id AND s.month = c.month
+    GROUP BY s.month
 
 NODE endpoint
 SQL >
-    %
-    SELECT
-        s.month AS month,
-        currency,
-        revenue_stream,
-        round(sum(gross_amount), 2) AS gross_sales,
-        round(sum(refund_amount), 2) AS refunds,
-        round(sum(reversal_amount), 2) AS reversals,
-        round(sum(gross_amount) - sum(refund_amount) - sum(reversal_amount), 2) AS net_sales,
-        round(sum(fee_amount), 2) AS stripe_fees,
-        round(sum(gross_amount) - sum(refund_amount) - sum(reversal_amount) - sum(fee_amount), 2) AS net_after_fees,
-        sum(payment_count) AS payments,
-        sum(refunds_count) AS refund_count,
-        min(c.coverage_complete) AS coverage_complete
-    FROM latest_sales AS s
-    INNER JOIN month_coverage AS c ON s.month = c.month
-    GROUP BY s.month, currency, revenue_stream
+    SELECT f.month AS month, f.currency AS currency, f.revenue_stream AS revenue_stream,
+        sum(gross) / 100 AS gross_sales,
+        sum(refund_minor) / 100 AS refunds,
+        sum(reversal_minor) / 100 AS reversals,
+        (sum(gross) - sum(refund_minor) - sum(reversal_minor)) / 100 AS net_sales,
+        sum(fees) / 100 AS stripe_fees,
+        sum(dispute_fees) / 100 AS dispute_fees,
+        (sum(gross) - sum(refund_minor) - sum(reversal_minor) - sum(fees)) / 100 AS net_after_fees,
+        sum(payments) AS payments, sum(refund_count) AS refund_count,
+        sum(enter_unmatched_payments) AS enter_unmatched_payments,
+        sum(fraud_refunds_minor) / 100 AS fraud_refunds,
+        sum(fraud_reversals_minor) / 100 AS fraud_reversals,
+        sum(fraud_fees_minor) / 100 AS fraud_fees,
+        sum(fraud_transactions) AS fraud_transactions,
+        arraySort(arrayDistinct(arrayFlatten(groupArray(fraud_evidence)))) AS fraud_evidence,
+        any(c.coverage_complete) AS coverage_complete,
+        any(c.missing_accounts) AS missing_accounts,
+        any(c.count_mismatches) AS count_mismatches,
+        toString(min(c.coverage_end)) AS coverage_end,
+        toString(min(c.collected_at)) AS collected_at
+    FROM account_facts AS f
+    INNER JOIN month_coverage AS c ON f.month = c.month
+    GROUP BY f.month, f.currency, f.revenue_stream
     ORDER BY month DESC, revenue_stream, currency
 
 TYPE ENDPOINT

@@ -9,14 +9,19 @@ export const MAX_REWARD_AMOUNT = 10_000;
 
 /**
  * Idempotency key for a reward one person can earn once. Keyed on the GitHub
- * id, which outlives the account row, so a deleted-and-recreated account
- * cannot earn it again.
+ * id, else the Google account id. Both outlive the account row, so a
+ * deleted-and-recreated account cannot earn it again.
  */
-export function rewardKey(questId: string, githubId: number | null): string {
-    if (githubId === null) {
-        throw new Error(`Reward ${questId} requires a GitHub identity`);
+export function rewardKey(
+    questId: string,
+    identity: { githubId?: number | null; googleId?: string | null },
+): string {
+    if (identity.githubId != null) {
+        return `quest:${questId}:github:${identity.githubId}`;
     }
-    return `quest:${questId}:github:${githubId}`;
+    if (identity.googleId)
+        return `quest:${questId}:google:${identity.googleId}`;
+    throw new Error(`Reward ${questId} requires a GitHub or Google identity`);
 }
 
 export interface RecordRewardInput {
@@ -124,7 +129,7 @@ export async function recordRewards(
 /**
  * Claims one pending reward and credits the chosen balance bucket. The balance
  * update is gated on the preceding `claimed_at IS NULL` update, so retries and
- * double-clicks cannot double-pay.
+ * double-clicks cannot double-pay. Account restrictions freeze spending, not claims.
  */
 export async function claimReward(
     db: AuthDb,

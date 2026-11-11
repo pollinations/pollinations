@@ -8,10 +8,22 @@ on:
       - 'enter.pollinations.ai/**'
       - 'gen.pollinations.ai/**'
       - 'media.pollinations.ai/**'
+      - 'operations/monitoring/infra-watch/**'
       - 'shared/**'
       - 'packages/sdk/**'
       - 'packages/ui/**'
       - 'packages/mcp/**'
+      - 'BRING_YOUR_OWN_MODEL.md'
+      - 'BRING_YOUR_OWN_POLLEN.md'
+      - 'BUILD_YOUR_OWN_AGENT.md'
+      - 'CODING_HARNESSES.md'
+      - 'packages/polli-cli/README.md'
+      - 'packages/polli-cli/SKILL.md'
+      - 'packages/polli-cli/TASKS.md'
+      - '.claude/skills/bring-your-own-pollen/SKILL.md'
+      - '.claude/skills/pollinations-api/SKILL.md'
+      - '.claude/skills/pollinations-sdk/SKILL.md'
+      - '.claude/skills/quest-contributor/SKILL.md'
       - 'apps/*-mcp/**'
       - 'package.json'
       - 'package-lock.json'
@@ -26,11 +38,8 @@ on:
           - enter
           - gen
           - media
+          - infra-watch
         default: all
-      finalize_canonical_permissions:
-        description: 'Repeat canonical allowlist cleanup after both Enter and Gen deploy (use service=all)'
-        type: boolean
-        default: false
 
 concurrency:
   group: pollinations-cloudflare-production
@@ -47,8 +56,8 @@ jobs:
       enter: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'enter') || steps.filter.outputs.enter == 'true' }}
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
       media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
+      infra_watch: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'infra-watch') || steps.filter.outputs.infra_watch == 'true' }}
       mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
-      canonical_permissions: ${{ inputs.finalize_canonical_permissions || steps.filter.outputs.canonical_permissions == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -70,8 +79,6 @@ jobs:
           # top-level `on.push.paths` filters had.
           base: ${{ github.ref }}
           filters: |
-            canonical_permissions:
-              - 'enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql'
             enter:
               - 'enter.pollinations.ai/**'
               - 'shared/**'
@@ -82,10 +89,21 @@ jobs:
               - '.github/workflows/deploy-cloudflare-production.yml'
             gen:
               - 'gen.pollinations.ai/**'
-              # A migration-only repair must finish the blocked canonical
-              # rollout, including Gen and the post-deploy permission cleanup.
-              - 'enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql'
               - 'packages/mcp/**'
+              - 'packages/ui/src/styles/tokens.css'
+              - 'packages/ui/src/brand/lockup-horizontal-white.svg'
+              - 'packages/ui/src/brand/lockup-horizontal.svg'
+              - 'BRING_YOUR_OWN_MODEL.md'
+              - 'BRING_YOUR_OWN_POLLEN.md'
+              - 'BUILD_YOUR_OWN_AGENT.md'
+              - 'CODING_HARNESSES.md'
+              - 'packages/polli-cli/README.md'
+              - 'packages/polli-cli/SKILL.md'
+              - 'packages/polli-cli/TASKS.md'
+              - '.claude/skills/bring-your-own-pollen/SKILL.md'
+              - '.claude/skills/pollinations-api/SKILL.md'
+              - '.claude/skills/pollinations-sdk/SKILL.md'
+              - '.claude/skills/quest-contributor/SKILL.md'
               - 'shared/**'
               - 'package.json'
               - 'package-lock.json'
@@ -97,6 +115,12 @@ jobs:
               # move together.
               - 'shared/**'
               - 'enter.pollinations.ai/drizzle/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/deploy-cloudflare-production.yml'
+            infra_watch:
+              - 'operations/monitoring/infra-watch/**'
+              - 'shared/gpu-registry.ts'
               - '.github/workflows/deploy-cloudflare-production.yml'
 
       - name: Detect changed MCP applications
@@ -107,10 +131,53 @@ jobs:
           CURRENT_SHA: ${{ github.sha }}
         run: |
           git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" > changed.txt
-          APPS=$(node operations/deployment/discover.cjs --scope=apps --changed=changed.txt)
+          APPS=$(node operations/infrastructure/deployment/discover.cjs --scope=apps --changed=changed.txt)
           MCP_APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(JSON.stringify(apps.filter(({ name }) => name.endsWith("-mcp"))))' "$APPS")
           echo "MCP applications: $MCP_APPS"
           echo "apps=$MCP_APPS" >> "$GITHUB_OUTPUT"
+
+  deploy-infra-watch:
+    needs: [changes, migrate]
+    if: >-
+      !cancelled() &&
+      github.ref == 'refs/heads/production' &&
+      needs.changes.outputs.infra_watch == 'true' &&
+      (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: operations/monitoring/infra-watch
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          check-latest: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      # Preserve the existing deployed secrets; this job changes code only.
+      - name: Deploy infra-watch
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npx wrangler deploy
+
+      - name: Verify production GPU registry binding
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: |
+          set -euo pipefail
+          version_id="$(npx wrangler deployments list --json | jq -r 'max_by(.created_on).versions[] | select(.percentage == 100) | .version_id')"
+          test -n "$version_id"
+          npx wrangler versions view "$version_id" --json \
+            | jq -e '.resources.bindings | any(.name == "GEN_KV" and .namespace_id == "a621f17ad3e34000971cffa616675c5b")'
 
   # Gen's suite runs BEFORE the migration, not inside deploy-gen after it. Two
   # reasons. It keeps a red gen test from letting a schema change reach
@@ -132,6 +199,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install dependencies
         run: npm ci
@@ -165,17 +233,6 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
-      - name: Require verified live permission compatibility for canonical promotion
-        # Deliberately applies to manual retries too: path filters are not
-        # evidence that 0062 has already reached the production database.
-        env:
-          COMPAT_VERIFIED: ${{ vars.CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED }}
-        run: |
-          if [ "$COMPAT_VERIFIED" != "true" ]; then
-            echo "Deploy and verify alias-aware model permissions against the old registry first."
-            echo "Then set CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED=true and rerun this promotion."
-            exit 1
-          fi
       - name: Checkout code
         uses: actions/checkout@v5
 
@@ -183,6 +240,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -211,6 +269,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -272,6 +331,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -289,8 +349,6 @@ jobs:
       # rollback. Deploying first guarantees latest == deployed so the secret
       # push can never hit that state. A brand-new secret is briefly missing in
       # the few seconds between deploy and push, which self-heals.
-      # Gen deploy scripts use the root lockfile-installed Wrangler: the test
-      # pool's older workspace CLI drops VPC keys from Vite's generated config.
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
@@ -317,37 +375,14 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
         run: npm run apply-lifecycle:production --workspace pollinations-gen
 
-  # Prerequisite: alias-aware permission readers must already be verified live
-  # before promoting 0062. This second pass fixes old Enter writes made between
-  # the first migration and deployment; it does not replace that prerequisite.
-  finalize-canonical-permissions:
-    needs: [changes, deploy-enter, deploy-gen]
-    if: >-
-      !cancelled() &&
-      needs.changes.outputs.canonical_permissions == 'true' &&
-      needs.deploy-enter.result == 'success' &&
-      needs.deploy-gen.result == 'success'
-    runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '24'
-      - name: Install dependencies
-        run: npm ci
-      - name: Finalize canonical model permissions
-        working-directory: enter.pollinations.ai
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
-        run: npx wrangler d1 execute DB --remote --env production --file drizzle/0062_standardize-model-permissions.sql
-
   deploy-media:
     needs: [changes, migrate]
-    if: needs.changes.outputs.media == 'true'
+    # always() as in deploy-enter: a skipped test-gen (no gen changes) would
+    # otherwise skip this job through migrate, even when media changed.
+    if: >-
+      always() &&
+      needs.changes.outputs.media == 'true' &&
+      needs.migrate.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -357,13 +392,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
-      - name: Install shared dependencies
-        run: npm install --workspace shared --include-workspace-root=false
-
-      - name: Install media dependencies
-        run: npm install
-        working-directory: ./media.pollinations.ai
+      - name: Install workspace dependencies
+        run: npm ci
 
       - name: Test
         run: npm test
@@ -407,6 +439,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Setup SOPS
         if: matrix.app.sops != 'none'
@@ -421,4 +454,4 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
           SOPS_AGE_KEY: ${{ matrix.app.sops == 'default' && secrets.SOPS_AGE_KEY || '' }}
-        run: operations/deployment/deploy.sh "${{ matrix.app.path }}"
+        run: operations/infrastructure/deployment/deploy.sh "${{ matrix.app.path }}"

@@ -50,11 +50,44 @@ export const docsCommand = new Command("docs")
 
                 let content = doc;
                 if (endpoint) {
-                    const sections = doc.split(/^(?=#{1,6} )/m);
+                    const sections = [""];
+                    let inFence = false;
+                    for (const line of doc.split(/(?<=\n)/)) {
+                        if (line.startsWith("```")) inFence = !inFence;
+                        // Shell comments inside examples are not headings.
+                        if (!inFence && /^#{1,6} /.test(line)) {
+                            sections.push("");
+                        }
+                        sections[sections.length - 1] += line;
+                    }
                     const needle = endpoint.replace(/^\//, "").toLowerCase();
-                    const matches = sections.filter((s) =>
-                        s.split("\n")[0].toLowerCase().includes(needle),
-                    );
+                    // The preamble before the first heading is not a section title.
+                    const headingMatches: string[] = [];
+                    let selectedLevel = 0;
+                    for (const section of sections) {
+                        const level = section.match(/^(#{1,6}) /)?.[1].length;
+                        if (!level) continue;
+                        // Keep a matching heading's children in the same block.
+                        if (selectedLevel && level > selectedLevel) {
+                            headingMatches[headingMatches.length - 1] +=
+                                section;
+                        } else if (
+                            section
+                                .split("\n")[0]
+                                .toLowerCase()
+                                .includes(needle)
+                        ) {
+                            selectedLevel = level;
+                            headingMatches.push(section);
+                        } else {
+                            selectedLevel = 0;
+                        }
+                    }
+                    const matches = headingMatches.length
+                        ? headingMatches
+                        : sections.filter((s) =>
+                              s.toLowerCase().includes(needle),
+                          );
 
                     if (matches.length === 0) {
                         printError(`No docs found matching "${endpoint}"`);
@@ -70,7 +103,9 @@ export const docsCommand = new Command("docs")
                 if (isJson) {
                     printResult({ endpoint: endpoint ?? null, content });
                 } else {
-                    process.stdout.write(styleMarkdown(content));
+                    process.stdout.write(
+                        process.stdout.isTTY ? styleMarkdown(content) : content,
+                    );
                     process.stdout.write("\n");
                 }
             } catch (err) {

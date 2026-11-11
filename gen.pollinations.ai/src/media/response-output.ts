@@ -85,13 +85,17 @@ export function createTextResponse(
     };
 }
 
-/** A completed generation presented as the normal Responses event lifecycle. */
-export function textResponseStream(
-    response: ReturnType<typeof createTextResponse>,
-) {
-    const item = response.output[0];
-    const part = item.content[0];
-    const position = { item_id: item.id, output_index: 0, content_index: 0 };
+type OutputItem = {
+    id?: string;
+    type?: string;
+    content?: { type?: string; text?: string }[];
+};
+
+/** A finished Response presented as the normal Responses event lifecycle. */
+export function textResponseStream(response: {
+    output: object[];
+    status?: string;
+}) {
     const events: [string, Record<string, unknown>][] = [
         [
             "response.created",
@@ -104,29 +108,53 @@ export function textResponseStream(
                 },
             },
         ],
-        [
+    ];
+    for (const [output_index, item] of (
+        response.output as OutputItem[]
+    ).entries()) {
+        const isMessage = item.type === "message";
+        events.push([
             "response.output_item.added",
             {
-                output_index: 0,
-                item: { ...item, status: "in_progress", content: [] },
+                output_index,
+                item: {
+                    ...item,
+                    status: "in_progress",
+                    ...(isMessage && { content: [] }),
+                },
             },
-        ],
-        [
-            "response.content_part.added",
-            { ...position, part: { ...part, text: "" } },
-        ],
-        [
-            "response.output_text.delta",
-            { ...position, delta: part.text, logprobs: [] },
-        ],
-        [
-            "response.output_text.done",
-            { ...position, text: part.text, logprobs: [] },
-        ],
-        ["response.content_part.done", { ...position, part }],
-        ["response.output_item.done", { output_index: 0, item }],
-        ["response.completed", { response }],
-    ];
+        ]);
+        for (const [content_index, part] of (isMessage
+            ? (item.content ?? [])
+            : []
+        ).entries()) {
+            const position = { item_id: item.id, output_index, content_index };
+            const text = part.type === "output_text";
+            events.push([
+                "response.content_part.added",
+                { ...position, part: text ? { ...part, text: "" } : part },
+            ]);
+            if (text)
+                events.push(
+                    [
+                        "response.output_text.delta",
+                        { ...position, delta: part.text, logprobs: [] },
+                    ],
+                    [
+                        "response.output_text.done",
+                        { ...position, text: part.text, logprobs: [] },
+                    ],
+                );
+            events.push(["response.content_part.done", { ...position, part }]);
+        }
+        events.push(["response.output_item.done", { output_index, item }]);
+    }
+    events.push([
+        response.status === "incomplete" || response.status === "failed"
+            ? `response.${response.status}`
+            : "response.completed",
+        { response },
+    ]);
     return new Blob([
         events
             .map(

@@ -56,10 +56,10 @@ async def _fake_run_agent(messages, **kwargs):
 
 @pytest.mark.parametrize(
     "routing",
-    [{"image": "flux"}, {"video": " "}, {"text": None}],
+    [{"image": "flux"}, {"video": " "}, {"model": None}],
 )
 def test_invalid_routing_shape_is_rejected(routing):
-    body = _request_body(stream=False) | {"routing": routing}
+    body = _request_body(stream=False) | {"metadata": routing}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -68,12 +68,24 @@ def test_invalid_routing_shape_is_rejected(routing):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("routing", [None, {"text": "auto"}])
+def test_top_level_routing_is_rejected_with_metadata_hint(monkeypatch):
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"text": "openai"}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 422
+    assert "metadata.model" in response.text
+
+
+@pytest.mark.parametrize("routing", [None, {"model": "auto"}])
 def test_omitted_and_auto_routing_values_remain_allowed(monkeypatch, routing):
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
     body = _request_body(stream=False)
     if routing is not None:
-        body["routing"] = routing
+        body["metadata"] = routing
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -92,7 +104,7 @@ def test_invalid_routing_preference_returns_stable_422(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"video": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -114,7 +126,7 @@ def test_unavailable_routing_registry_returns_503(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"video": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -142,7 +154,7 @@ def test_non_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"image_generation": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"image_generation": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -170,7 +182,7 @@ def test_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
-    body = _request_body(stream=True) | {"routing": {"image_generation": "flux"}}
+    body = _request_body(stream=True) | {"metadata": {"image_generation": "flux"}}
 
     with TestClient(api_mod.app).stream(
         "POST", "/v1/chat/completions", json=body, headers=_HEADERS
@@ -324,10 +336,48 @@ def test_stream_error_never_emits_success_usage(monkeypatch):
 
     assert response.status_code == 200
     payloads = _stream_payloads(response.text)
-    assert all(payload["usage"] is None for payload in payloads)
-    assert payloads[-1]["choices"][0]["finish_reason"] == "stop"
+    chunks, error_event = payloads[:-1], payloads[-1]
+    assert all(payload["usage"] is None for payload in chunks)
+    assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
     assert "Generation failed." in response.text
     assert "broken" not in response.text
+    # Without terminal usage the gateway accepts the stream only when it has an
+    # error event; otherwise it reports "omitted terminal usage" (#17294).
+    assert error_event == {
+        "error": {
+            "message": "Generation failed.",
+            "type": "server_error",
+            "code": "generation_failed",
+        }
+    }
+    assert response.text.rstrip().endswith("data: [DONE]")
+
+
+@pytest.mark.parametrize("stream_options", [None, {"include_usage": True}])
+def test_stream_error_after_tool_call_ends_with_error_event(
+    monkeypatch, stream_options
+):
+    async def failing_events(messages, **kwargs):
+        yield {
+            "type": "tool_start",
+            "id": "call_1",
+            "name": "generate_video",
+            "arguments": "{}",
+        }
+        raise RuntimeError("broken")
+
+    monkeypatch.setattr(api_mod, "run_agent_events", failing_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options=stream_options),
+        headers=_HEADERS,
+    )
+
+    payloads = _stream_payloads(response.text)
+    assert payloads[-1]["error"]["code"] == "generation_failed"
+    assert not any(payload.get("usage") for payload in payloads)
+    assert "broken" not in response.text
+    assert response.text.rstrip().endswith("data: [DONE]")
 
 
 def test_stream_emits_keepalives_during_silence(monkeypatch):

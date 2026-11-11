@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Chip } from "../../primitives/Chip.tsx";
-import { getModalityKey, modalityBgVar, modalityColorVar } from "./themes.ts";
+import { getModalityKey, modalityBgVar, modalityTextColor } from "./themes.ts";
 
 /**
  * A `Chip` colored as a model modality: faint modality background + a readable
@@ -36,7 +36,7 @@ export function ModalityChip({
             className={className}
             style={{
                 backgroundColor: modalityBgVar(key),
-                color: `color-mix(in oklab, ${modalityColorVar(key)} 72%, var(--polli-color-text-strong))`,
+                color: modalityTextColor(key),
             }}
         >
             {children}

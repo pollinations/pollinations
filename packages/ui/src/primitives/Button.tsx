@@ -6,7 +6,13 @@ import type {
 import { cn } from "../lib/cn.ts";
 
 /** Semantic action roles. Label recipes live on Chip. */
-type ButtonIntent = "danger" | "info" | "neutral" | "brand" | "commit";
+type ButtonIntent =
+    | "danger"
+    | "info"
+    | "neutral"
+    | "brand"
+    | "commit"
+    | "surface";
 export type ButtonAppearance = "pill" | "raised";
 
 const pillSizes = {
@@ -55,6 +61,11 @@ const intentClasses: Record<ButtonIntent, string> = {
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
+    // A quiet white pill on the desk, like the colour toggle; hover previews
+    // the accent as the ambient button does.
+    surface:
+        "polli:bg-surface-opaque polli:text-theme-text-strong " +
+        "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors",
     // Secondary actions never take the accent: one step stronger grey on hover.
     neutral:
         "polli:bg-theme-bg-subtle polli:text-theme-text-base " +

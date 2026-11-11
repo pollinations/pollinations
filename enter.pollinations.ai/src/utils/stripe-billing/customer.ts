@@ -56,6 +56,7 @@ export async function getUserStripeBillingRow(
             stripeCustomerId: userTable.stripeCustomerId,
             autoTopUpEnabled: userTable.autoTopUpEnabled,
             autoTopUpAmountUsd: userTable.autoTopUpAmountUsd,
+            lastPackPollen: userTable.lastPackPollen,
         })
         .from(userTable)
         .where(eq(userTable.id, userId))

@@ -5,9 +5,11 @@ import {
 } from "cloudflare:test";
 import { communityEndpoint } from "@shared/db/better-auth.ts";
 import type { ModelHealthRow } from "@shared/model-health.ts";
+import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     createTestApiKey,
     createTestUser,
+    RESTRICTED_TEST_CATEGORIES,
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
@@ -54,7 +56,7 @@ function mockCatalogHealth(
             );
             if (
                 url.pathname === "/v0/pipes/model_catalog_health.json" ||
-                url.pathname === "/v0/pipes/model_route_health.json"
+                url.pathname === "/v0/pipes/model_health_24h.json"
             ) {
                 return Response.json(
                     {
@@ -202,14 +204,16 @@ test("show all does not bypass key permissions or paid access", async ({
     apiKey,
 }) => {
     mockCatalogHealth([]);
-    const restricted = await fetchWorker("/text/models?reliability=all", {
+    const restricted = await fetchWorker("/models?reliability=all", {
         headers: { Authorization: `Bearer ${restrictedApiKey}` },
     });
     expect(
-        ((await restricted.json()) as { name: string }[]).map(
-            (model) => model.name,
+        new Set(
+            ((await restricted.json()) as { category: string }[]).map(
+                (model) => model.category,
+            ),
         ),
-    ).toEqual([RESTRICTED_TEXT_TEST_MODEL]);
+    ).toEqual(new Set(RESTRICTED_TEST_CATEGORIES));
     const unpaid = await fetchWorker("/models?reliability=all", {
         headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -220,7 +224,17 @@ test("show all does not bypass key permissions or paid access", async ({
     ).toBe(false);
 });
 
-test("community reliability is discovery-only and show all preserves manual hiding and privacy", async () => {
+test("every catalog entry states paid_only as a boolean", async () => {
+    const response = await fetchWorker("/models?reliability=all");
+    const models = (await response.json()) as ModelInfo[];
+
+    expect(models.length).toBeGreaterThan(0);
+    for (const model of models) {
+        expect(typeof model.paid_only, model.name).toBe("boolean");
+    }
+});
+
+test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });
     const { key: ownerKey } = await createTestApiKey({ userId: ownerUserId });
@@ -242,6 +256,7 @@ test("community reliability is discovery-only and show all preserves manual hidi
                 hiddenAt: name === "hidden" ? new Date() : null,
                 hiddenBy: name === "hidden" ? "owner" : null,
                 payload: JSON.stringify({
+                    paidOnly: false,
                     bearerTokenCiphertext:
                         "test-placeholder-not-used-for-generation",
                     api: "chat_completions",
@@ -258,6 +273,7 @@ test("community reliability is discovery-only and show all preserves manual hidi
     const id = `community/${owner}/public`;
     const passingId = `community/${owner}/passing`;
     const privateId = `community/${owner}/private`;
+    const legacyHiddenId = `community/${owner}/hidden`;
     mockCatalogHealth([
         {
             model: id,
@@ -285,6 +301,9 @@ test("community reliability is discovery-only and show all preserves manual hidi
     const normalModels = (await normal.json()) as { name: string }[];
     expect(normalModels.some((model) => model.name === id)).toBe(false);
     expect(normalModels.some((model) => model.name === passingId)).toBe(true);
+    expect(normalModels.some((model) => model.name === legacyHiddenId)).toBe(
+        true,
+    );
     const ownerList = await fetchWorker("/models?source=community", {
         headers: { Authorization: `Bearer ${ownerKey}` },
     });
@@ -301,12 +320,115 @@ test("community reliability is discovery-only and show all preserves manual hidi
             .filter((model) => model.name.startsWith(`community/${owner}/`))
             .map((model) => model.name)
             .sort(),
-    ).toEqual([passingId, id].sort());
+    ).toEqual([passingId, id, legacyHiddenId].sort());
     expect(
         (await fetchWorker(`/v1/models/${encodeURIComponent(id)}`)).status,
     ).toBe(200);
     const registry = await getGenerationModelRegistry(env);
     expect(registry.resolve(id)?.visible).toBe(true);
+});
+
+test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async () => {
+    type CatalogPrice = Pick<ModelInfo, "pricing" | "pricing_variants"> & {
+        name?: string;
+        id?: string;
+    };
+    const model = "black-forest-labs/flux-3-image";
+    const cutoff = Date.parse("2026-10-08T15:00:00Z");
+    const now = vi.spyOn(Date, "now").mockReturnValue(cutoff - 1);
+    const registry = await getGenerationModelRegistry(env);
+    for (const [time, rate, twoK] of [
+        [cutoff - 1, 0.024, 0.05],
+        [cutoff, 0.024, 0.05],
+        [cutoff + 60_000, 0.048, 0.1],
+    ]) {
+        now.mockReturnValue(time);
+        const currentRegistry = await getGenerationModelRegistry(env);
+        if (time < cutoff + 60_000) {
+            expect(currentRegistry).toBe(registry);
+        } else {
+            expect(currentRegistry).not.toBe(registry);
+        }
+        for (const path of [
+            "/models",
+            "/image/models",
+            "/v1/models",
+            `/v1/models/${encodeURIComponent(model)}`,
+        ]) {
+            const response = await fetchWorker(path);
+            expect(response.status).toBe(200);
+            const body = await response.json<
+                CatalogPrice[] | CatalogPrice | { data: CatalogPrice[] }
+            >();
+            const info = Array.isArray(body)
+                ? body.find((info) => info.name === model)
+                : "data" in body
+                  ? body.data.find((info) => info.id === model)
+                  : body;
+            expect(Number(info?.pricing.completionImageTokens)).toBeCloseTo(
+                rate * 1.055,
+                10,
+            );
+            if (Array.isArray(body)) {
+                expect(
+                    Number(
+                        info?.pricing_variants?.find(
+                            (variant) => variant.name === "2k",
+                        )?.pricing.completionImageTokens,
+                    ),
+                ).toBeCloseTo(twoK * 1.055, 10);
+            }
+        }
+    }
+});
+
+test("model listings carry billing units so agents can price a call", async () => {
+    type ListedModel = { id: string; pricing_units?: unknown };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.pricing_units, model.id).toEqual(
+            registry.resolve(model.id)?.info.pricing_units,
+        );
+    }
+
+    const withUnits = list.data.filter((model) => model.pricing_units);
+    expect(withUnits.length).toBeGreaterThan(0);
+    for (const model of withUnits) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.pricing_units, model.id).toEqual(model.pricing_units);
+    }
+});
+
+test("model listings expose reference media limits on /v1/models", async () => {
+    type ListedModel = {
+        id: string;
+        max_reference_images?: number;
+        max_reference_videos?: number;
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+
+    for (const model of list.data) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.max_reference_images, model.id).toEqual(
+            info?.max_reference_images,
+        );
+        expect(model.max_reference_videos, model.id).toEqual(
+            info?.max_reference_videos,
+        );
+    }
+    expect(list.data.some((model) => model.max_reference_images)).toBe(true);
 });
 
 test("retrieves a model by canonical ID", async () => {
@@ -327,8 +449,16 @@ test("retrieves a model by canonical ID", async () => {
         aliases: expect.any(Array),
         category: "text",
         community: false,
+        tags: [{ name: "text" }],
         title: expect.any(String),
     });
+});
+
+test("retrieves a canonical ID with an unencoded slash", async () => {
+    const response = await fetchWorker("/v1/models/openai/gpt-5-nano");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string };
+    expect(body.id).toBe("openai/gpt-5-nano");
 });
 
 test("retrieves a publisher-qualified canonical ID", async ({ paidApiKey }) => {
@@ -367,6 +497,15 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     const list = (await listResponse.json()) as {
         data: Record<string, unknown>[];
     };
+    const registry = await getGenerationModelRegistry(env);
+    for (const model of list.data) {
+        const entry = registry.resolve(String(model.id));
+        expect(entry).not.toBeNull();
+        expect(model.top_provider).toEqual({
+            max_completion_tokens: entry?.info.max_completion_tokens ?? null,
+        });
+        expect(model).not.toHaveProperty("max_completion_tokens");
+    }
     const listed = list.data.find((m) => m.id === "openai/gpt-5-nano");
     expect(listed).toBeDefined();
 
@@ -474,19 +613,17 @@ test("keeps supported Chat parameters identical for aliases and list entries", a
     expect(alias).not.toHaveProperty("default_parameters");
 });
 
-test("advertises direct Responses support through supported_endpoints", async () => {
-    const supported = await fetchWorker("/v1/models/qwen-large");
-    expect(supported.status).toBe(200);
-    await expect(supported.json()).resolves.toMatchObject({
-        supported_endpoints: expect.arrayContaining(["/v1/responses"]),
-    });
-
-    const unsupported = await fetchWorker("/v1/models/claude");
-    expect(unsupported.status).toBe(200);
-    const unsupportedBody = (await unsupported.json()) as {
-        supported_endpoints?: string[];
-    };
-    expect(unsupportedBody.supported_endpoints).not.toContain("/v1/responses");
+test("advertises Responses for native and Chat-adapted text models", async () => {
+    for (const model of ["qwen-large", "claude"]) {
+        const response = await fetchWorker(`/v1/models/${model}`);
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            supported_endpoints: expect.arrayContaining([
+                "/v1/chat/completions",
+                "/v1/responses",
+            ]),
+        });
+    }
 });
 
 test("returns 404 for an unknown model", async () => {
@@ -560,7 +697,7 @@ test("retired Nova models and aliases disappear from catalogs and cannot generat
 test("returns 404 when API key permissions exclude the model", async ({
     restrictedApiKey,
 }) => {
-    const excluded = await fetchWorker("/v1/models/krea", {
+    const excluded = await fetchWorker("/v1/models/whisper-1", {
         headers: { Authorization: `Bearer ${restrictedApiKey}` },
     });
     expect(excluded.status).toBe(404);
@@ -625,6 +762,51 @@ test("advertises reasoning capability for Azure GPT models that accept reasoning
         expect(entry, id).toBeDefined();
         expect(entry?.capabilities, id).toEqual(
             expect.arrayContaining(["reasoning"]),
+        );
+    }
+});
+
+test("video models advertise the durations they accept", async () => {
+    type ListedModel = {
+        id: string;
+        category: string;
+        video_capabilities?: string[];
+        min_duration?: number;
+        max_duration?: number;
+        default_duration?: number;
+        allowed_durations?: number[];
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    const videos = list.data.filter((model) => model.category === "video");
+    expect(videos.length).toBeGreaterThan(0);
+    for (const model of videos) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.video_capabilities, model.id).toEqual(
+            info?.video_capabilities,
+        );
+        expect(model.min_duration, model.id).toBe(info?.min_duration);
+        expect(model.max_duration, model.id).toBe(info?.max_duration);
+        expect(model.default_duration, model.id).toBe(info?.default_duration);
+        expect(model.allowed_durations, model.id).toEqual(
+            info?.allowed_durations,
+        );
+    }
+});
+
+test("speech models advertise the voices they accept", async () => {
+    type ListedModel = { id: string; category: string; voices?: string[] };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    const audio = list.data.filter((model) => model.category === "audio");
+    expect(audio.some((model) => model.voices?.length)).toBe(true);
+    for (const model of audio) {
+        expect(model.voices, model.id).toEqual(
+            registry.resolve(model.id)?.info?.voices,
         );
     }
 });

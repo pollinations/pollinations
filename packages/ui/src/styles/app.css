@@ -25,6 +25,13 @@
         @apply font-body;
     }
 
+    /* Selected text takes the honey accent instead of the browser's blue:
+       11.6:1 in light, 4.5:1 in dark. */
+    ::selection {
+        background-color: var(--polli-color-bg-active);
+        color: var(--polli-color-text-strong);
+    }
+
     body.polli-ui-body {
         max-width: 800px;
         @apply mx-auto min-h-screen overflow-x-hidden bg-app-bg px-4 pt-4 pb-8 font-body font-medium text-base text-theme-text-strong sm:px-6 md:px-8;

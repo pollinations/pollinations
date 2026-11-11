@@ -11,6 +11,17 @@ describe("TabButton", () => {
         );
         expect(html).toContain('aria-label="Choose model"');
     });
+    test("draws the icon before the label, hidden from assistive tech", () => {
+        const html = renderToStaticMarkup(
+            <TabButton active={false} icon={<svg data-testid="icon" />}>
+                Newest
+            </TabButton>,
+        );
+
+        expect(html.indexOf("icon")).toBeLessThan(html.indexOf("Newest"));
+        expect(html).toContain('aria-hidden="true"');
+    });
+
     test("keeps neutral selected and unselected states distinct", () => {
         const active = renderToStaticMarkup(
             <TabButton active intent="neutral">

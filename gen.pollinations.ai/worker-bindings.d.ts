@@ -1,4 +1,5 @@
 interface CloudflareBindings {
+    ASSETS: Fetcher;
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
     ASK_JEV_MCP: Fetcher;
@@ -6,6 +7,12 @@ interface CloudflareBindings {
     EXA_MCP: Fetcher;
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
+    MACHINES_MCP: Fetcher;
+    CALCULATORS_MCP: Fetcher;
+    NETWORK_MCP: Fetcher;
+    PACKAGES_MCP: Fetcher;
+    NEWS_MCP: Fetcher;
+    RESEARCH_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
@@ -15,11 +22,21 @@ interface CloudflareBindings {
     OVHCLOUD_API_KEY: string;
     PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
+    D3_KEY?: string;
     DASHSCOPE_API_KEY: string;
     DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
+    E2B_API_KEY?: string;
+    // Azure sandboxes (src/routes/azure-sandboxes.ts): off without the secret.
+    AZURE_SANDBOX_CLIENT_SECRET?: string;
+    AZURE_SANDBOX_CLIENT_ID?: string;
+    AZURE_SANDBOX_TENANT_ID?: string;
+    // The sandbox group's data-plane URL, which names its region.
+    AZURE_SANDBOX_GROUP_URL?: string;
+    // The disk image every Azure sandbox boots.
+    AZURE_SANDBOX_IMAGE?: string;
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
@@ -39,9 +56,12 @@ interface CloudflareBindings {
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
+    /** Public origin that runs coordinator jobs; unset runs them in the alarm. */
+    GENERATION_EXECUTION_ORIGIN?: string;
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
     AI_GATEWAY_API_KEY?: string;
+    ANTHROPIC_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;
     AWS_REGION: string;
@@ -75,16 +95,16 @@ interface CloudflareBindings {
     GOOGLE_PROJECT_ID: string;
     KLEIN_URL: string;
     MISTRAL_API_KEY: string;
+    NOVITA_API_KEY?: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
     XAI_API_KEY: string;
-    POLLEN_REFILL_PER_HOUR?: number;
-    POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
+    EDGE_IP_RATE_LIMITER?: RateLimit;
 }
 
 declare namespace Cloudflare {

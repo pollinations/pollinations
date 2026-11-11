@@ -29,39 +29,6 @@ export function capitalize(str: string): string {
     return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
 }
 
-export type ExponentialBackoffOptions = {
-    maxAttempts?: number;
-    minDelay?: number;
-    maxDelay?: number;
-    jitter?: number; // 0 to 1 (e.g., 0.25 = ±25%)
-};
-
-export function exponentialBackoffDelay(
-    attempt: number,
-    options: ExponentialBackoffOptions = {},
-): number {
-    const {
-        minDelay = 100,
-        maxDelay = 10000,
-        maxAttempts = 5,
-        jitter = 0.25,
-    } = options;
-
-    if (attempt === 0) return 0;
-
-    const base = (maxDelay / minDelay) ** (1 / (maxAttempts - 1));
-    const delay = minDelay * base ** (attempt - 1);
-
-    if (jitter > 0) {
-        const jitterRange = delay * jitter;
-        const jitterOffset = jitterRange * (Math.random() * 2 - 1);
-        return delay + jitterOffset;
-    }
-
-    // return clamped delay
-    return Math.max(minDelay, Math.min(maxDelay, delay));
-}
-
 const resetColor = "\x1b[0m";
 
 export type AnsiColor =

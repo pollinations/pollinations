@@ -1,37 +1,26 @@
-import { Tooltip } from "@pollinations/ui";
-import type { FC, ReactNode } from "react";
+import type { FC } from "react";
+import { CATEGORY_LABELS } from "../models/model-categories.ts";
+import type { ModelCategory } from "../models/types.ts";
 
 export const ModelsBadge: FC<{
     permissions: Record<string, string[]> | null;
 }> = ({ permissions }) => {
     const models = permissions?.models ?? null;
-    const isAllModels = models === null;
-    const modelCount = models?.length ?? 0;
-
-    const tooltipContent = (): ReactNode => {
-        if (isAllModels) return "Access to all models";
-        if (modelCount === 0) return "No models allowed";
-        return (
-            <span className="block text-left leading-relaxed">
-                <span className="mb-1 block text-theme-text-base">
-                    Allowed models
-                </span>
-                <span className="block font-mono text-xs whitespace-nowrap">
-                    {models?.map((model) => (
-                        <span className="block" key={model}>
-                            {model}
-                        </span>
-                    ))}
-                </span>
-            </span>
-        );
-    };
-
+    const text =
+        models === null
+            ? "All"
+            : models.length === 0
+              ? "None"
+              : models
+                    .map(
+                        (category) =>
+                            CATEGORY_LABELS[category as ModelCategory] ??
+                            category,
+                    )
+                    .join(", ");
     return (
-        <Tooltip content={tooltipContent()} ariaLabel="Show allowed models">
-            <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                {isAllModels ? "All" : modelCount}
-            </span>
-        </Tooltip>
+        <span className="text-xs font-medium text-theme-text-strong">
+            {text}
+        </span>
     );
 };

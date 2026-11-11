@@ -521,37 +521,40 @@ it("reuses a checked cookie for 60 seconds and renews it without extending expir
     expect(upstream).toHaveBeenCalledOnce();
 });
 
-it.each([
-    401,
-    403,
-    500,
-    503,
-    "network",
-    "timeout",
-])("distinguishes UserInfo failure %s from revoked access", async (failure) => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    const upstream = userUpstream();
-    const auth = createPollinationsAuth({ ...config, fetch: upstream });
-    const session = await authenticatedSession(auth);
-    vi.setSystemTime(Date.now() + 60_000);
-    if (typeof failure === "string")
-        upstream.mockRejectedValueOnce(new Error(String(failure)));
-    else
-        upstream.mockResolvedValueOnce(new Response(null, { status: failure }));
-    const request = new Request("https://kpi.pollinations.ai/auth/session", {
-        headers: { Cookie: `pollinations_session=${session}` },
-    });
-    const result = await auth.handle(request);
-    expect(result?.status).toBe(failure === 401 || failure === 403 ? 401 : 503);
-    expect(result?.headers.get("Set-Cookie")).toBeNull();
-    if (result?.status === 503) {
-        expect(await result.json()).toEqual({
-            error: new AuthUnavailableError().message,
-        });
-        // The same cookie works when Enter recovers.
-        expect((await auth.handle(request))?.status).toBe(200);
-    }
-});
+it.each([401, 403, 500, 503, "network", "timeout"])(
+    "distinguishes UserInfo failure %s from revoked access",
+    async (failure) => {
+        vi.useFakeTimers({ toFake: ["Date"] });
+        const upstream = userUpstream();
+        const auth = createPollinationsAuth({ ...config, fetch: upstream });
+        const session = await authenticatedSession(auth);
+        vi.setSystemTime(Date.now() + 60_000);
+        if (typeof failure === "string")
+            upstream.mockRejectedValueOnce(new Error(String(failure)));
+        else
+            upstream.mockResolvedValueOnce(
+                new Response(null, { status: failure }),
+            );
+        const request = new Request(
+            "https://kpi.pollinations.ai/auth/session",
+            {
+                headers: { Cookie: `pollinations_session=${session}` },
+            },
+        );
+        const result = await auth.handle(request);
+        expect(result?.status).toBe(
+            failure === 401 || failure === 403 ? 401 : 503,
+        );
+        expect(result?.headers.get("Set-Cookie")).toBeNull();
+        if (result?.status === 503) {
+            expect(await result.json()).toEqual({
+                error: new AuthUnavailableError().message,
+            });
+            // The same cookie works when Enter recovers.
+            expect((await auth.handle(request))?.status).toBe(200);
+        }
+    },
+);
 
 it("shows a retryable login error when UserInfo is temporarily unavailable", async () => {
     const upstream = userUpstream()

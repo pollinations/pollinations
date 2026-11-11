@@ -1,7 +1,9 @@
+import { findUsableApiKey } from "@shared/auth/api-key.ts";
 import {
     getRedirectUris,
     parseMetadata,
 } from "@shared/auth/api-key-metadata.ts";
+import { isClientMetadataUrl } from "@shared/auth/authorize-config.ts";
 import { isUserBanned } from "@shared/auth/ban.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -10,8 +12,8 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { fetchClientMetadata } from "../services/client-metadata.ts";
 import { redirectUriMatchesAllowlist } from "./url-utils.ts";
 
 async function resolveAttribution(
@@ -47,10 +49,10 @@ async function resolveAttribution(
 const AppLookupQuerySchema = z.object({
     client_id: z
         .string()
-        .startsWith("pk_")
+        .regex(/^(pk_|https:\/\/)/)
         .optional()
         .describe(
-            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username. Canonical OAuth name.",
+            "Your publishable App Key (pk_...), or the https URL of a Client ID Metadata Document. When provided, the consent screen shows your app name and GitHub username (or the document's host). Canonical OAuth name.",
         ),
     app_key: z
         .string()
@@ -86,36 +88,40 @@ export const appLookupRoutes = new Hono<Env>().get(
         if (!resolvedAppKey) {
             return c.json({ found: false });
         }
-
-        const db = drizzle(c.env.DB, { schema });
-        const auth = createAuth(c.env);
-        const result = await auth.api.verifyApiKey({
-            body: { key: resolvedAppKey },
-        });
-        if (result.valid && result.key) {
-            const keyRow = await db.query.apikey.findFirst({
-                where: eq(schema.apikey.id, result.key.id),
+        if (isClientMetadataUrl(resolvedAppKey)) {
+            // A metadata-document client has no pk_ owner: the host serving
+            // the document vouches for it. The document is public, so no
+            // redirect check here; the consent page and POST /api/oauth/code
+            // match the redirect exactly.
+            const metadata = await fetchClientMetadata(resolvedAppKey);
+            if (!metadata) return c.json({ found: false });
+            return c.json({
+                found: true,
+                clientHost: new URL(resolvedAppKey).hostname,
+                appName: metadata.clientName,
+                redirectUris: metadata.redirectUris,
             });
-            if (keyRow) {
-                // Bind client_id to redirect_uri before delivering attribution.
-                // Without this, a stolen client_id could be paired with any
-                // redirect: the consent screen would brand the legitimate app
-                // (confused-deputy) and the minted sk_ would land at the
-                // attacker's URL. RFC 6749 §3.1.2 / RFC 8252 §7.3.
-                if (redirectUri) {
-                    const meta = parseMetadata(keyRow.metadata);
-                    const allowlist = getRedirectUris(meta);
-                    if (!redirectUriMatchesAllowlist(redirectUri, allowlist)) {
-                        return c.json({
-                            found: false as const,
-                            error: "redirect_uri_mismatch" as const,
-                        });
-                    }
-                }
-                return c.json(await resolveAttribution(db, keyRow));
-            }
         }
 
-        return c.json({ found: false });
+        const keyRow = await findUsableApiKey(c.env, resolvedAppKey);
+        if (!keyRow) return c.json({ found: false });
+
+        // Bind client_id to redirect_uri before delivering attribution.
+        // Without this, a stolen client_id could be paired with any
+        // redirect: the consent screen would brand the legitimate app
+        // (confused-deputy) and the minted sk_ would land at the
+        // attacker's URL. RFC 6749 §3.1.2 / RFC 8252 §7.3.
+        if (redirectUri) {
+            const meta = parseMetadata(keyRow.metadata);
+            const allowlist = getRedirectUris(meta);
+            if (!redirectUriMatchesAllowlist(redirectUri, allowlist)) {
+                return c.json({
+                    found: false as const,
+                    error: "redirect_uri_mismatch" as const,
+                });
+            }
+        }
+        const db = drizzle(c.env.DB, { schema });
+        return c.json(await resolveAttribution(db, keyRow));
     },
 );

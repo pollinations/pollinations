@@ -150,7 +150,7 @@ describe("wanVideoModel billing usage", () => {
         });
     });
 
-    it("bills video seconds only for wan and snaps duration to the 2.6 enum", async () => {
+    it("bills video seconds only for wan 2.6", async () => {
         setReplicateEnv();
         const calls: ReplicateCall[] = [];
         mockReplicateFetch(calls, 5);
@@ -158,11 +158,11 @@ describe("wanVideoModel billing usage", () => {
         const result = await callWanAPI("a calm ocean at sunrise", {
             ...baseParams,
             model: "alibaba/wan-2.6",
-            duration: 3, // snaps to nearest allowed (5)
+            duration: 5,
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.6-t2v");
-        // Landscape dims -> 720p landscape size; duration snapped to 5.
+        // Landscape dims -> 720p landscape size.
         expect(calls[0].input.size).toBe("1280*720");
         expect(calls[0].input.duration).toBe(5);
         expect(calls[0].cancelAfter).toBe("6m");
@@ -179,14 +179,14 @@ describe("wanVideoModel billing usage", () => {
 
         const result = await callWanFastAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "alibaba/wan-2.2-fast",
+            model: "alibaba/wan-2.2-fast:replicate",
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.2-t2v-fast");
         expect(calls[0].input.resolution).toBe("480p");
         expect(calls[0].cancelAfter).toBe("6m");
         expect(result.trackingData).toEqual({
-            actualModel: "alibaba/wan-2.2-fast",
+            actualModel: "alibaba/wan-2.2-fast:replicate",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -281,7 +281,7 @@ describe("wanVideoModel image-to-video routing", () => {
 
         await callWanFastAPI("a cat walking", {
             ...baseParams,
-            model: "alibaba/wan-2.2-fast",
+            model: "alibaba/wan-2.2-fast:replicate",
             image: [INPUT_IMAGE_URL, LAST_IMAGE_URL],
         });
 
@@ -338,19 +338,18 @@ describe("wanVideoModel reference-to-video routing", () => {
         });
     });
 
-    it("wan-pro R2V clamps duration to the 10s R2V ceiling", async () => {
+    it("wan-pro R2V rejects durations past its 10s ceiling", async () => {
         setReplicateEnv();
-        const calls: ReplicateCall[] = [];
-        mockReplicateFetch(calls, 10);
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        await callWanProAPI("cinematic style", {
-            ...baseParams,
-            reference_images: [REF_IMAGE_URL],
-            duration: 15,
-        });
-
-        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
-        expect(calls[0].input.duration).toBe(10);
+        await expect(
+            callWanProAPI("cinematic style", {
+                ...baseParams,
+                reference_images: [REF_IMAGE_URL],
+                duration: 15,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("wan-pro rejects frame + reference combination with 400", async () => {

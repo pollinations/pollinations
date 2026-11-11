@@ -90,10 +90,15 @@ export function useModelQuerySearch({
               ? replaceModelQueryFilterToken(search, draft.index, editing.token)
               : removeModelQueryFilterToken(search, draft.index);
     const query = draft ? cancelledDraft() : search.trim();
-    const visibleSearch =
+    const visibleText =
         value !== undefined && draft
             ? draft.value
             : getModelQueryVisibleSearch(search, tokens, draft);
+    // Keep the space while the user types the next word, as on the Models page.
+    const visibleSearch =
+        visibleText && localSearch.endsWith(" ")
+            ? `${visibleText} `
+            : visibleText;
     const parsed = parseModelQuery(query);
     const matches = (model: ModelPrice) => matchesModelQuery(model, parsed);
     const suggestions = getModelQuerySuggestions(
@@ -101,7 +106,13 @@ export function useModelQuerySearch({
         models,
     );
     const options = draft
-        ? suggestions.map(getModelQueryDraftSuggestionValue)
+        ? suggestions.map((option) =>
+              getModelQueryDraftSuggestionValue(
+                  option,
+                  visibleSearch,
+                  draft.value,
+              ),
+          )
         : pickable
           ? [
                 ...suggestions,
@@ -140,7 +151,7 @@ export function useModelQuerySearch({
                       ...editable.slice(0, -1),
                       `${draft.key}:${editable.at(-1) ?? ""}`,
                   ]
-                : [value.trim()]),
+                : [value.trimStart()]),
         ]
             .filter(Boolean)
             .join(" ");
@@ -202,6 +213,10 @@ export function useModelQuerySearch({
                 setSearch(cancelledDraft());
                 resetDraft();
             } else if (last) {
+                // Auto-repeat is the tail of a held key that just cleared the
+                // text. It must not arm removal, or clearing a search would
+                // select the last filter.
+                if (event.repeat) return;
                 if (pendingRemoval === last.index) {
                     setSearch(removeModelQueryFilterToken(search, last.index));
                     resetDraft();

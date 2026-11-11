@@ -1,5 +1,4 @@
 import { UpstreamError } from "@shared/error.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -33,7 +32,6 @@ const H3_MAX_RESOLUTIONS = {
     "768p": "768P",
     "1080p": "1080P",
 } as const;
-const H3_MAX_DURATIONS = [5, 10, 15] as const;
 const H3_MAX_ASPECT_RATIOS = [
     "21:9",
     "16:9",
@@ -257,12 +255,7 @@ async function callFalMinimaxMaxVariant(
     safeParams: ImageParams,
     providerUnitCost: number | "lookup",
 ): Promise<VideoGenerationResult> {
-    const duration = safeParams.duration ?? H3_MAX_DURATIONS[0];
-    if (!(H3_MAX_DURATIONS as readonly number[]).includes(duration)) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${title} supports 5, 10, or 15 seconds`,
-        });
-    }
+    const duration = safeParams.duration ?? 5;
 
     const resolution = safeParams.resolution ?? "480p";
     const upstreamResolution =
@@ -300,17 +293,6 @@ async function callFalMinimaxMaxVariant(
               ? imageEndpoint
               : textEndpoint;
     const requestedAspectRatio = safeParams.aspectRatio;
-    if (
-        !hasFrames &&
-        requestedAspectRatio &&
-        !H3_MAX_ASPECT_RATIOS.includes(
-            requestedAspectRatio as (typeof H3_MAX_ASPECT_RATIOS)[number],
-        )
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${title} does not support aspectRatio ${requestedAspectRatio}`,
-        });
-    }
 
     return callFalH3API(
         title,
@@ -403,7 +385,6 @@ export async function callMinimaxH3MaxTurboAPI(
         undefined,
         prompt,
         safeParams,
-        // Turbo's reviewed registry rate applies to fal's weighted units.
-        IMAGE_SERVICES[H3_MAX_TURBO_MODEL].cost.completionVideoSeconds,
+        "lookup",
     );
 }

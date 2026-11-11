@@ -13,21 +13,7 @@ export async function callAlibabaVideo(
     params: ImageParams,
     version: "2.6" | "3.0",
 ): Promise<VideoGenerationResult> {
-    const requestedDuration = params.duration ?? 5;
-    const duration =
-        version === "2.6"
-            ? [5, 10, 15].reduce((best, value) =>
-                  Math.abs(value - requestedDuration) <
-                  Math.abs(best - requestedDuration)
-                      ? value
-                      : best,
-              )
-            : requestedDuration;
-    if (!(version === "3.0" ? [5] : [5, 10, 15]).includes(duration)) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Unsupported Wan ${version} duration: ${duration}`,
-        });
-    }
+    const duration = params.duration ?? 5;
     const frames = params.image ?? [];
     const references = [
         ...(params.reference_images ?? []).map((url) => ({
@@ -49,7 +35,8 @@ export async function callAlibabaVideo(
         });
     }
     const ratio =
-        version === "2.6" && ["16:9", "9:16"].includes(params.aspectRatio ?? "")
+        params.aspectRatio &&
+        (version === "3.0" || ["16:9", "9:16"].includes(params.aspectRatio))
             ? params.aspectRatio
             : closestRatioLogSpace(
                   params.width,
@@ -75,7 +62,7 @@ export async function callAlibabaVideo(
                       resolution: (params.resolution ?? "480p").toUpperCase(),
                       ratio: frames.length ? "adaptive" : ratio,
                       duration,
-                      audio: params.audio,
+                      audio: params.audio ?? true,
                       seed: params.seed,
                       prompt_extend: true,
                       watermark: false,

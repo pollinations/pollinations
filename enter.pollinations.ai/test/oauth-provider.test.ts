@@ -119,25 +119,31 @@ describe("Better Auth OAuth Provider", () => {
     test.for([
         ["register", 403],
         ["create-client", 401],
-    ] as const)("rejects client creation through %s", async ([path, status], {
-        sessionToken,
-    }) => {
-        const response = await SELF.fetch(`${BASE}/api/auth/oauth2/${path}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
-                Origin: BASE,
-            },
-            body: JSON.stringify({
-                client_name: "Unregistered dashboard",
-                redirect_uris: ["https://untrusted.pollinations.ai/callback"],
-                token_endpoint_auth_method: "none",
-                ...(path === "create-client" && { skip_consent: true }),
-            }),
-        });
-        expect(response.status).toBe(status);
-    });
+    ] as const)(
+        "rejects client creation through %s",
+        async ([path, status], { sessionToken }) => {
+            const response = await SELF.fetch(
+                `${BASE}/api/auth/oauth2/${path}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Origin: BASE,
+                    },
+                    body: JSON.stringify({
+                        client_name: "Unregistered dashboard",
+                        redirect_uris: [
+                            "https://untrusted.pollinations.ai/callback",
+                        ],
+                        token_endpoint_auth_method: "none",
+                        ...(path === "create-client" && { skip_consent: true }),
+                    }),
+                },
+            );
+            expect(response.status).toBe(status);
+        },
+    );
 
     test("continues the standard flow through sign-in", async () => {
         const response = await authorize();
@@ -285,20 +291,9 @@ test("fresh GitHub sign-in resumes the signed OAuth request through the actual c
         redirect: "manual",
     });
     expect(completed.status).toBe(302);
-    const resume = new URL(completed.headers.get("Location") || "");
-    expect(resume.pathname).toBe("/api/auth/oauth2/authorize");
-    const resumed = await SELF.fetch(resume, {
-        headers: {
-            Cookie:
-                completed.headers
-                    .get("Set-Cookie")
-                    ?.match(/better-auth\.session_token=[^;]+/)?.[0] || "",
-            Accept: "text/html",
-        },
-        redirect: "manual",
-    });
-    expect(resumed.status).toBe(302);
-    const app = new URL(resumed.headers.get("Location") || "", BASE);
+    // The provider plugin resumes the signed request inside the callback, so
+    // GitHub's return lands on the app with a code.
+    const app = new URL(completed.headers.get("Location") || "", BASE);
     expect(app.origin + app.pathname).toBe(REDIRECT_URI);
     expect(app.searchParams.get("state")).toBe("test-state");
     expect(app.searchParams.get("code")).toBeTruthy();

@@ -27,16 +27,21 @@ async function connect(userId: string, github?: string): Promise<Client> {
     return client;
 }
 
-async function bash(
+function bash(
     client: Client,
     command: string,
     stdin?: string,
     cwd?: string,
 ): Promise<{ text: string; isError: boolean }> {
-    const result = await client.callTool({
-        name: "bash",
-        arguments: { command, stdin, cwd },
-    });
+    return callTool(client, "bash", { command, stdin, cwd });
+}
+
+async function callTool(
+    client: Client,
+    name: string,
+    args: Record<string, unknown>,
+): Promise<{ text: string; isError: boolean }> {
+    const result = await client.callTool({ name, arguments: args });
     const content = result.content as { type: string; text?: string }[];
     const text = content
         .filter((part) => part.type === "text")
@@ -61,10 +66,10 @@ describe("computer MCP worker", () => {
         expect(response.status).toBe(401);
     });
 
-    it("exposes a single bash tool", async () => {
+    it("exposes bash and javascript tools", async () => {
         const client = await connect("user-tools");
         const { tools } = await client.listTools();
-        expect(tools.map((tool) => tool.name)).toEqual(["bash"]);
+        expect(tools.map((tool) => tool.name)).toEqual(["bash", "javascript"]);
         expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
         await client.close();
     });
@@ -181,6 +186,35 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("keeps UTF-8 intact through command substitution", async () => {
+        const client = await connect("user-substitution");
+        // "Época" is 6 bytes; each line prints the byte count of $x.
+        const count = '; printf "%s" "$x" | wc -c';
+        const result = await bash(
+            client,
+            [
+                `printf '{"t":"\\\\u00c9poca"}' > e.json`,
+                `x=$(printf '\\303\\211poca')${count}`,
+                `x=$(jq -r .t e.json)${count}`,
+                `x=$(jq -r .t e.json | cat)${count}`,
+                `x=$(base64 -d <<< w4lwb2Nh)${count}`,
+                `f() { printf 'Época'; }; x=$(f)${count}`,
+                `x=$(printf 'Época'; exit 3); echo "$?"`,
+                'echo "A $(jq -r .t e.json)" | jq -R .',
+            ].join("\n"),
+            undefined,
+            "/workspace/substitution",
+        );
+        expect(result.isError, result.text).toBe(false);
+        expect(result.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(5).fill("6"),
+            "3",
+            '"A Época"',
+            "",
+        ]);
+        await client.close();
+    });
+
     it("empties /tmp after every call", async () => {
         const client = await connect("user-tmp");
         const write = await bash(
@@ -200,6 +234,48 @@ describe("computer MCP worker", () => {
         expect(result.isError).toBe(true);
         expect(result.text).toContain("[stderr]");
         expect(result.text).toContain("[exit code 1]");
+        await client.close();
+    });
+
+    it("runs JavaScript modules against the same files", async () => {
+        const client = await connect("user-javascript");
+        await bash(
+            client,
+            "cat > /workspace/js/lib.js",
+            "export const double = (n) => n * 2;\n",
+            "/workspace/js",
+        );
+        const run = await callTool(client, "javascript", {
+            cwd: "/workspace/js",
+            code: `
+                import fs from "node:fs/promises";
+                import { double } from "./lib.js";
+                export default async () => {
+                    console.log("hello");
+                    await fs.writeFile("/workspace/js/out.txt", String(double(21)));
+                    await fs.writeFile("/tmp/scratch.txt", "tmp");
+                    const scratch = await fs.readFile("/tmp/scratch.txt", "utf8");
+                    const page = await fetch("https://example.com/");
+                    return { doubled: double(21), scratch, status: page.status };
+                };
+            `,
+        });
+        expect(run.isError).toBe(false);
+        expect(run.text).toBe(
+            'hello\n\n[result]\n{"doubled":42,"scratch":"tmp","status":200}',
+        );
+        const read = await bash(client, "cat /workspace/js/out.txt");
+        expect(read.text).toBe("42");
+        await client.close();
+    });
+
+    it("reports thrown JavaScript errors", async () => {
+        const client = await connect("user-javascript-errors");
+        const run = await callTool(client, "javascript", {
+            code: 'export default () => { throw new Error("boom"); };',
+        });
+        expect(run.isError).toBe(true);
+        expect(run.text).toContain("boom");
         await client.close();
     });
 

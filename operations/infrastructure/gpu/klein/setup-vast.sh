@@ -26,7 +26,6 @@ CACHE_DIR="${CACHE_DIR:-/workspace/hf-cache}"
 TUNNEL_ENABLED="${TUNNEL_ENABLED:-false}"
 TUNNEL_TOKEN_FILE="/root/.cloudflared_token"
 TUNNEL_ENABLED_FILE="/root/.cloudflared_tunnel_enabled"
-CLOUDFLARED_MIN_VERSION="2026.5.2"
 CLOUDFLARED_METRICS="127.0.0.1:20241"
 
 if [ -z "${PLN_GPU_TOKEN:-}" ]; then
@@ -44,17 +43,6 @@ fi
 apt-get update -qq
 apt-get install -y -qq curl git screen python3-venv
 
-cloudflared_version=""
-if command -v cloudflared >/dev/null; then
-    cloudflared_version=$(cloudflared --version 2>/dev/null | awk '{print $3}')
-fi
-if [ -z "$cloudflared_version" ] || \
-    ! dpkg --compare-versions "$cloudflared_version" ge "$CLOUDFLARED_MIN_VERSION"; then
-    curl -fsSL --retry 5 -o /tmp/cloudflared.deb \
-        https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-    dpkg -i /tmp/cloudflared.deb >/dev/null
-fi
-
 if [ -n "$SKIP_CLONE" ]; then
     :
 elif [ -d "$WORK_DIR/.git" ]; then
@@ -64,6 +52,8 @@ else
     git clone --depth 1 --branch "$GIT_BRANCH" \
         https://github.com/pollinations/pollinations.git "$WORK_DIR"
 fi
+
+bash "$WORK_DIR/operations/infrastructure/gpu/install-cloudflared.sh"
 
 KLEIN_DIR="$WORK_DIR/operations/infrastructure/gpu/klein"
 mkdir -p "$CACHE_DIR"
@@ -100,6 +90,8 @@ cd "$KLEIN_DIR"
 exec "$VENV/bin/python" -u handler.py
 EOF
 
+install -m 700 "$WORK_DIR/operations/infrastructure/gpu/watch-tunnel.sh" /root/watch-tunnel.sh
+
 cat > /root/onstart.sh <<'EOF'
 #!/bin/bash
 screen -S klein -X quit 2>/dev/null || true
@@ -118,7 +110,7 @@ if [ ! -s /root/.cloudflared_token ]; then
 fi
 
 screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:8000/health >/dev/null; do echo "Waiting for Klein health before joining the production tunnel" >> /root/cloudflared.log; sleep 3; done; while true; do cloudflared tunnel --no-autoupdate --protocol quic --metrics 127.0.0.1:20241 run --token-file /root/.cloudflared_token >> /root/cloudflared.log 2>&1; sleep 5; done'
-screen -dmS cloudflared-watchdog bash -c 'low_checks=0; while true; do sleep 10; connections=$(curl -fsS --max-time 2 http://127.0.0.1:20241/metrics 2>/dev/null | grep "^cloudflared_tunnel_ha_connections " | cut -d" " -f2); if [ "${connections:-0}" -lt 2 ] 2>/dev/null; then low_checks=$((low_checks + 1)); else low_checks=0; fi; if [ "$low_checks" -ge 3 ]; then echo "$(date -u +%FT%TZ) Restarting cloudflared: fewer than two HA connections for 30 seconds" >> /root/cloudflared.log; pid=$(pgrep -x cloudflared | head -n 1); if [ -n "$pid" ]; then kill "$pid"; fi; low_checks=0; sleep 10; fi; done'
+screen -dmS cloudflared-watchdog bash /root/watch-tunnel.sh 127.0.0.1:20241 /root/cloudflared.log 2
 EOF
 chmod 700 /root/run-klein.sh /root/onstart.sh
 
@@ -133,6 +125,7 @@ if [ "$TUNNEL_ENABLED" = true ]; then
     tunnel_ready=false
     reject_tunnel() {
         screen -S cloudflared -X quit 2>/dev/null || true
+        screen -S cloudflared-watchdog -X quit 2>/dev/null || true
         rm -f "$TUNNEL_ENABLED_FILE"
         echo "$1" >&2
         echo "Tunnel stopped and disabled; do not promote this host" >&2

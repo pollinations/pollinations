@@ -2,7 +2,9 @@ import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import {
     type FallbackCandidate,
@@ -12,7 +14,7 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { UserImageError } from "../userImage.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -29,7 +31,6 @@ import {
     type AuthResult,
     createAndReturnImageCached,
     type ImageGenerationResult,
-    isGPTImageRefusedByAzure,
 } from "./createAndReturnImages.ts";
 import {
     createAndReturnVideo,
@@ -67,6 +68,7 @@ const EDIT_DIMENSION_STEP = 16;
 const MIN_EDIT_DIMENSION = 256;
 
 const IMAGE_ENV_KEYS = [
+    "AI_GATEWAY_API_KEY",
     "AWS_ACCESS_KEY_ID",
     "AWS_REGION",
     "AWS_SECRET_ACCESS_KEY",
@@ -81,7 +83,9 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_API_KEY",
+    "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
     "DASHSCOPE_API_KEY",
     "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
@@ -94,6 +98,7 @@ const IMAGE_ENV_KEYS = [
     "NOVA_REEL_S3_BUCKET",
     "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
+    "AI_GATEWAY_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
@@ -128,21 +133,20 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
+    model = c.var.model,
 ): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
-    const resolvedModel = c.var.model.resolved;
+    const resolvedModel = model.resolved;
     const mergedParams: Record<string, unknown> = {
         ...queryParams,
         ...body,
-        model: c.var.model.communityEndpoint
-            ? DEFAULT_IMAGE_MODEL
-            : resolvedModel,
+        model: model.communityEndpoint ? DEFAULT_IMAGE_MODEL : resolvedModel,
     };
     delete mergedParams.prompt;
     delete mergedParams.key;
 
     const communityReferences =
-        c.var.model.communityEndpoint?.modality === "video"
+        model.communityEndpoint?.modality === "video"
             ? CommunityReferenceParamsSchema.safeParse(mergedParams)
             : null;
     if (communityReferences && !communityReferences.success) {
@@ -155,12 +159,39 @@ function parseImageParams(
         delete mergedParams.reference_images;
         delete mergedParams.reference_videos;
         delete mergedParams.reference_audios;
+        // Community video endpoints never receive a size, so the image-only
+        // 16 px floor must not reject an aspect ratio like 16x9.
+        delete mergedParams.width;
+        delete mergedParams.height;
     }
     const parseResult = ImageParamsSchema.safeParse(mergedParams);
     if (!parseResult.success) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // A reference image the model cannot consume used to be dropped silently,
+    // billing a fresh generation that ignored the caller's picture. Reject it
+    // like the text protocols already do (docs/text-generation.md). Community
+    // endpoints get the image and decide for themselves.
+    if (
+        parseResult.data.image.length > 0 &&
+        !model.communityEndpoint &&
+        !model.definition.inputModalities?.includes("image")
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: ${resolvedModel} does not accept image input. Choose a model that lists "image" under input_modalities.`,
+        });
+    }
+    // Community endpoints receive the flag and decide for themselves.
+    if (
+        parseResult.data.transparent &&
+        !model.communityEndpoint &&
+        !model.definition.supportsTransparency
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
         });
     }
     return {
@@ -217,6 +248,8 @@ function mediaHeaders(
 }
 
 export function throwImageError(error: unknown): never {
+    if (error instanceof HTTPException && !(error instanceof UpstreamError))
+        throw error;
     const upstream =
         error instanceof UpstreamError
             ? error
@@ -275,6 +308,7 @@ async function generateMediaWithFallback(
     c: ImageContext,
     prompt: string,
     safeParams: RuntimeImageParams,
+    body: Record<string, unknown>,
 ): Promise<{
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
@@ -285,11 +319,10 @@ async function generateMediaWithFallback(
             candidate.definition?.provider === "azure" &&
             candidate.definition.publisher === "OpenAI"
         ) {
-            // Every Azure region refused, or the reference image host is
-            // rate limiting. Timeouts and 5xx stay terminal so an image Azure
-            // may have produced is not paid for twice.
+            // Every Azure region failed, or the reference image host is rate
+            // limiting and the next target downloads it again.
             return (
-                isGPTImageRefusedByAzure(error) ||
+                isRetryableFallbackError(error) ||
                 (error instanceof UserImageError &&
                     error.upstreamStatus === 429)
             );
@@ -299,7 +332,28 @@ async function generateMediaWithFallback(
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
-            const params = { ...safeParams, model: attempt.id };
+            let params = { ...safeParams, model: attempt.id };
+            if (c.var.model.requested.includes(",") && attempt.entry) {
+                const parsed = parseImageParams(c, body, {
+                    ...c.var.model,
+                    resolved: attempt.id,
+                    definition: attempt.entry.definition,
+                    communityEndpoint: attempt.communityEndpoint,
+                });
+                params =
+                    attempt.entry.definition.category === "image" &&
+                    attempt.entry.definition.inputModalities?.includes("image")
+                        ? await resolveEditDimensionsForImage(parsed)
+                        : parsed;
+            }
+            c.var.track.setPricingInput({
+                resolution: params.resolution,
+                quality: params.quality,
+                hasImage: (params.image?.length ?? 0) > 0,
+                hasReferenceVideo: (params.reference_videos?.length ?? 0) > 0,
+                maxImageDimension: Math.max(params.width, params.height),
+                megapixels: (params.width * params.height) / 1_000_000,
+            });
             if (attempt.communityEndpoint) {
                 const isVideo = attempt.communityEndpoint.modality === "video";
                 const generated = isVideo
@@ -333,7 +387,7 @@ async function generateMediaWithFallback(
             return { result: generated, params };
         },
         c.var.track?.attempts,
-        (attempt) => enforceModelRateLimit(c, attempt),
+        (attempt) => requireModelAttemptAccess(c, attempt),
         shouldFallback,
     );
     return {
@@ -402,20 +456,13 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
-    c.var.track.setPricingInput({
-        resolution: safeParams.resolution,
-        quality: safeParams.quality,
-        hasImage: (safeParams.image?.length ?? 0) > 0,
-        hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
-        maxImageDimension: Math.max(safeParams.width, safeParams.height),
-        megapixels: (safeParams.width * safeParams.height) / 1_000_000,
-    });
 
     try {
         const { result, params, servedIndex } = await generateMediaWithFallback(
             c,
             originalPrompt,
             safeParams,
+            body,
         );
         if (result.trackingData.pricingInput) {
             c.var.track.setPricingInput(result.trackingData.pricingInput);
@@ -463,19 +510,24 @@ function extractRegisterToken(
     return null;
 }
 
-function isAuthorizedRegisterWrite(
+async function isAuthorizedRegisterRequest(
     c: ImageContext,
     body: Record<string, unknown>,
-): boolean {
+): Promise<boolean> {
     const expected = getImageEnv("PLN_GPU_TOKEN");
-    if (!expected) return false;
-    return extractRegisterToken(c, body) === expected;
+    const presented = extractRegisterToken(c, body);
+    if (!expected || !presented) return false;
+    return secretEquals(presented, expected);
 }
 
 export async function handleRegisterServer(c: ImageContext): Promise<Response> {
     syncImageEnvironment(c.env);
 
     if (c.req.method === "GET") {
+        // The list exposes worker hostnames, so reads need the token too.
+        if (!(await isAuthorizedRegisterRequest(c, {}))) {
+            return c.json({ success: false, message: "Unauthorized" }, 401);
+        }
         const params = new URL(c.req.url).searchParams;
         const directUrl = params.get("url");
         const ip = params.get("ip");
@@ -488,9 +540,6 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        if (!isAuthorizedRegisterWrite(c, {})) {
-            return c.json({ success: false, message: "Unauthorized" }, 401);
-        }
         if (!isValidType(typeParam)) {
             return c.json(
                 { success: false, message: `Invalid type "${typeParam}"` },
@@ -512,7 +561,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
 
-    if (!isAuthorizedRegisterWrite(c, body)) {
+    if (!(await isAuthorizedRegisterRequest(c, body))) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
     }
 

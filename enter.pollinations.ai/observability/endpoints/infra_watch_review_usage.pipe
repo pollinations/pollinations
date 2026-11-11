@@ -1,0 +1,22 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch review: API use of the accounts asking for a review over the
+    last 30 days, one row per account that made a request. Read by the
+    infra-watch review of held Setup rewards.
+
+NODE infra_watch_review_usage_node
+SQL >
+    %
+    SELECT
+        user_id,
+        count() AS requests,
+        uniq(resolved_model_requested) AS models,
+        toUnixTimestamp(max(start_time)) AS last_request
+    FROM generation_events_classified
+    WHERE start_time >= now() - INTERVAL 30 DAY
+        AND is_final
+        AND user_id IN {{Array(user_ids, 'String', required=True)}}
+    GROUP BY user_id
+
+TYPE endpoint

@@ -1,0 +1,25 @@
+DESCRIPTION >
+    Stripe balance transactions, one source fact per account and transaction ID. No checkout or monthly summaries.
+
+TOKEN "operations_read" READ
+TOKEN "operations_ingest" READ
+TOKEN "operations_ingest" APPEND
+
+SCHEMA >
+    `account_id` String `json:$.account_id`,
+    `transaction_id` String `json:$.transaction_id`,
+    `source_id` String `json:$.source_id`,
+    `created` DateTime64(3) `json:$.created`,
+    `available_on` DateTime64(3) `json:$.available_on`,
+    `currency` LowCardinality(String) `json:$.currency`,
+    `amount` Int64 `json:$.amount`,
+    `fee` Int64 `json:$.fee`,
+    `net` Int64 `json:$.net`,
+    `reporting_category` LowCardinality(String) `json:$.reporting_category`,
+    `type` LowCardinality(String) `json:$.type`,
+    `revenue_stream` LowCardinality(String) `json:$.revenue_stream`,
+    `classification` String `json:$.classification`,
+    `evidence` Array(String) `json:$.evidence[:]`
+
+ENGINE MergeTree
+ENGINE_SORTING_KEY account_id, transaction_id

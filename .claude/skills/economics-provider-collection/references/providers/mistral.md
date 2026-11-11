@@ -29,6 +29,16 @@ Collection steps:
    cumulatively against that balance rather than by invoice month.
 4. Reconcile only OP Pollen rows whose actual billing vendor is `mistral`.
 
+## Verified — 2026-10-01
+
+- The Myceli direct account billed September service, so it remains in monthly
+  account coverage despite an earlier provisional August end date.
+- The original monthly invoice can arrive on the first day of the next month.
+  Its `Pay As You Go details` section states the previous month's service
+  dates and line-item usage before prepaid credit is applied. Archive the PDF
+  by its issue date, book gross service usage to its stated service month, and
+  keep the credit application separate from usage and cash payment.
+
 Known traps:
 
 - Do not use the runtime inference key as an Admin API credential.

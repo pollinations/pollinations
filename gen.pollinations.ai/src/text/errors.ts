@@ -1,4 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { ValidationError } from "@shared/http/validation-error.ts";
+import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
     CONTENT_POLICY_STATUS,
@@ -13,6 +15,11 @@ function serializeDetails(details: unknown): string | undefined {
 
 /** Classify provider errors consistently for HTTP responses and stream metrics. */
 export function apiErrorStatus(details: unknown, status: number): number {
+    // Classify the provider's error, not echoed request data beside it. Keep
+    // nested diagnostics such as OpenRouter's error.metadata.raw available.
+    if (details && typeof details === "object" && "error" in details) {
+        details = details.error;
+    }
     const serialized = serializeDetails(details) ?? "";
     if (isContentPolicyViolation(serialized)) return CONTENT_POLICY_STATUS;
     if (
@@ -25,7 +32,10 @@ export function apiErrorStatus(details: unknown, status: number): number {
 }
 
 export function throwTextError(error: ServiceError): never {
-    if (error instanceof UpstreamError) throw error;
+    // Preserve local refusals and already classified upstream errors, including
+    // their status, remedy links, and the type used by text notices.
+    if (error instanceof HTTPException || error instanceof ValidationError)
+        throw error;
     const status =
         typeof error.status === "number"
             ? error.status

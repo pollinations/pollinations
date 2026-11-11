@@ -31,7 +31,7 @@ describe("downloadUserImage", () => {
             status: 400,
             requestUrl: new URL(imageUrl),
             errorCode: "failed_to_download_image",
-            message: `Failed to read image ${imageUrl}: Network connection lost`,
+            message: `Failed to read media ${imageUrl}: Network connection lost`,
         });
     });
 

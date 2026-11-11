@@ -52,6 +52,7 @@ export {
 export {
     CopyButton,
     type CopyButtonProps,
+    CopyStateIcon,
 } from "./compositions/CopyButton.tsx";
 export { CopyField, type CopyFieldProps } from "./compositions/CopyField.tsx";
 export {
@@ -60,6 +61,10 @@ export {
     EditableComboboxToken,
     type EditableComboboxTokenProps,
 } from "./compositions/EditableCombobox.tsx";
+export {
+    EmptyState,
+    type EmptyStateProps,
+} from "./compositions/EmptyState.tsx";
 export {
     ExternalLinkButton,
     type ExternalLinkButtonProps,
@@ -86,10 +91,20 @@ export {
 } from "./compositions/MultiSelect.tsx";
 export { NavItem, type NavItemProps } from "./compositions/NavItem.tsx";
 export {
+    OUTAGE_MESSAGE,
+    OutageNotice,
+    type OutageNoticeProps,
+    useOnline,
+} from "./compositions/OutageNotice.tsx";
+export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./compositions/PeriodPicker.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
+export {
+    SocialCount,
+    type SocialCountProps,
+} from "./compositions/SocialCount.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
 export {
     ToolCallDetails,
@@ -97,6 +112,7 @@ export {
     type ToolCallStatus,
 } from "./compositions/ToolCallDetails.tsx";
 export { cn } from "./lib/cn-app.ts";
+export { formatCount } from "./lib/format-count.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
@@ -151,12 +167,24 @@ export {
     type IconButtonProps,
     type IconButtonVariant,
 } from "./primitives/IconButton.tsx";
+export { IconTile, type IconTileProps } from "./primitives/IconTile.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
+export { LiveDot } from "./primitives/LiveDot.tsx";
 export { LoadingStatus } from "./primitives/LoadingStatus.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
+export {
+    SegmentedControl,
+    type SegmentedControlOption,
+    type SegmentedControlProps,
+} from "./primitives/SegmentedControl.tsx";
+export { Skeleton, type SkeletonProps } from "./primitives/Skeleton.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
+export {
+    StableLabel,
+    type StableLabelProps,
+} from "./primitives/StableLabel.tsx";
 export { Surface, type SurfaceProps } from "./primitives/Surface.tsx";
 export {
     Switch,

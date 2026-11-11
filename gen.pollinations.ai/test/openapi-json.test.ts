@@ -134,6 +134,23 @@ describe("/openapi.json", () => {
             "text/event-stream",
         ]);
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
+        // Most errors omit details, e.g. a 404 for an unknown model.
+        expect(schema).toHaveProperty(
+            [
+                "paths",
+                "/v1/models/{model}",
+                "get",
+                "responses",
+                "404",
+                "content",
+                "application/json",
+                "schema",
+                "properties",
+                "error",
+                "required",
+            ],
+            ["code", "message", "timestamp"],
+        );
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
         expect(schema.paths["/alpha/audio/stem-separation"]).toBeDefined();
@@ -262,6 +279,7 @@ describe("/openapi.json", () => {
             "3d",
             "embedding",
             "realtime",
+            "decision",
         ]);
         expect(
             (
@@ -350,6 +368,20 @@ describe("/openapi.json", () => {
             };
             expect(inputType.enum).toEqual(["query", "document"]);
         }
+    });
+
+    it("leaves the hidden DreamShaper out of the spec", async () => {
+        const ctx = createExecutionContext();
+        mockMediaSchema();
+
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/openapi.json"),
+            envWithEnterSchema(ENTER_SCHEMA),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(await response.text()).not.toContain("lykon/dreamshaper-8-lcm");
     });
 
     it("returns the same spec as /docs/open-api/generate-schema", async () => {

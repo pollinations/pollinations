@@ -32,6 +32,7 @@ function normalizeEffort(value: unknown): string | undefined {
  */
 export function createGeminiThinkingTransform(
     modelType: GeminiModelType = "v2.5",
+    transport: "portkey" | "gateway" = "portkey",
 ): TransformFn {
     return (messages, options) => {
         const effort = normalizeEffort(options.reasoning_effort);
@@ -52,6 +53,19 @@ export function createGeminiThinkingTransform(
                         ? 0
                         : (EFFORT_TO_BUDGET[effort] ?? EFFORT_TO_BUDGET.medium),
             };
+            if (transport === "gateway") {
+                updatedOptions.reasoning = {
+                    enabled: effort !== "none",
+                    ...(effort === "none"
+                        ? {}
+                        : {
+                              max_tokens:
+                                  EFFORT_TO_BUDGET[effort] ??
+                                  EFFORT_TO_BUDGET.medium,
+                          }),
+                };
+                delete updatedOptions.thinking;
+            }
             delete updatedOptions.reasoning_effort;
         } else if (modelType === "v3-pro" && effort === "none") {
             // Gemini 3 Pro can't fully disable thinking; use the lowest supported level.

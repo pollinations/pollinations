@@ -1,0 +1,22 @@
+TOKEN tinybird_read_public READ
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Catalog health for official models and agents: final 2xx and 5xx requests per
+model over the last 24 hours, counted at hour grain, so the window spans 24 to
+25 hours. Fallback rescues are successes for the requested model; caller 4xx
+are excluded. Rows match the `model_route_health` rollup shape.
+
+NODE endpoint
+SQL >
+    SELECT
+        model,
+        event_type,
+        1 AS is_rollup,
+        sumMerge(status_2xx) AS status_2xx,
+        sumMerge(errors_5xx) AS errors_5xx
+    FROM model_health_hourly
+    WHERE hour >= toStartOfHour(now() - INTERVAL 24 HOUR)
+    GROUP BY model, event_type
+
+TYPE endpoint

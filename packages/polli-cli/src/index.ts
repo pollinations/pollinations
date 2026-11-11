@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 
+import { acpCommand } from "./commands/acp.js";
 import { agentsCommand } from "./commands/agents.js";
 import { authCommand, whoamiCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
@@ -13,6 +14,8 @@ import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
+import { sandboxCommand } from "./commands/sandbox/index.js";
+import { sitesCommand } from "./commands/sites.js";
 import { updateCommand } from "./commands/update.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
@@ -70,6 +73,15 @@ program.addCommand(myModelsCommand);
 
 // Coding harness integrations
 program.addCommand(harnessCommand);
+
+// Editors (Agent Client Protocol)
+program.addCommand(acpCommand);
+
+// E2B sandboxes
+program.addCommand(sandboxCommand);
+
+// Static sites
+program.addCommand(sitesCommand);
 
 // Generation
 program.addCommand(createGenCommand());

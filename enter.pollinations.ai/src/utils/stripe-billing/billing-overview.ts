@@ -51,6 +51,7 @@ export async function getBillingOverview(
             packAmountUsd,
             lastIssue,
         },
+        lastPackPollen: user.lastPackPollen,
         paymentMethods: (savedMethods?.data ?? [])
             .map((method) => toSavedPaymentMethod(method, paymentMethod?.id))
             .sort((a, b) => Number(b.isDefault) - Number(a.isDefault)),

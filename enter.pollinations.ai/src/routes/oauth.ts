@@ -1,5 +1,9 @@
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { getRedirectUris } from "@shared/auth/api-key-metadata.ts";
-import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
+import {
+    isClientMetadataUrl,
+    PKCE_S256_CHALLENGE_REGEX,
+} from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import type { Context } from "hono";
@@ -8,6 +12,7 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { fetchClientMetadata } from "../services/client-metadata.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
 import {
     type DeviceTokenRequest,
@@ -59,12 +64,12 @@ function tokenError(c: Context<Env>, error: string, description?: string) {
 
 const CreateCodeSchema = z.object({
     apiKey: z.string().min(1),
-    clientId: z.string().startsWith("pk_"),
+    clientId: z.string().regex(/^(pk_|https:\/\/)/),
     redirectUri: z.string().min(1),
     scope: z.string().optional(),
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
     codeChallengeMethod: z.literal("S256"),
-    expiresIn: z.number().int().positive().nullish(),
+    expiresIn: apiKeyExpiresInSchema.nullish(),
 });
 
 /**
@@ -91,18 +96,28 @@ export const oauthRoutes = new Hono<Env>()
             // check runs at sk_ minting, but the code is the artifact that
             // leaves our origin, so it must never bind an unregistered
             // redirect (RFC 6749 §3.1.2). verifyApiKey returns the key row
-            // with metadata already parsed.
-            const result = await c.var.auth.client.api.verifyApiKey({
-                body: { key: body.clientId },
-            });
-            if (!result.valid || !result.key) {
+            // with metadata already parsed. A metadata-document client has
+            // no pk_ to check at minting, so this is its only binding check;
+            // its allowlist is the document's redirect_uris.
+            let allowlist: string[] | undefined;
+            if (isClientMetadataUrl(body.clientId)) {
+                allowlist = (await fetchClientMetadata(body.clientId))
+                    ?.redirectUris;
+            } else {
+                const result = await c.var.auth.client.api.verifyApiKey({
+                    body: { key: body.clientId },
+                });
+                if (result.valid && result.key) {
+                    allowlist = getRedirectUris(result.key.metadata ?? {});
+                }
+            }
+            if (!allowlist) {
                 throw new HTTPException(400, {
                     message: "Unknown client_id",
                 });
             }
             // Exact matching (incl. query) — the code rides the query string,
             // so the legacy flow's extra-query leniency doesn't apply here.
-            const allowlist = getRedirectUris(result.key.metadata ?? {});
             if (
                 !redirectUriMatchesAllowlistExact(body.redirectUri, allowlist)
             ) {

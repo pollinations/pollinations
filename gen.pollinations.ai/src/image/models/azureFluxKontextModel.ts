@@ -45,20 +45,17 @@ const AZURE_FLUX_2_CONFIG = {
         upstreamModel: "FLUX.2-pro",
         modelPath: "flux-2-pro",
         title: "FLUX.2 Pro",
-        maxReferenceImages: 8,
     },
     "black-forest-labs/flux.2-flex": {
         upstreamModel: "FLUX.2-flex",
         modelPath: "flux-2-flex",
         title: "FLUX.2 Flex",
-        maxReferenceImages: 10,
     },
 } as const;
 
 type AzureFlux2Model = keyof typeof AZURE_FLUX_2_CONFIG;
 
-const AZURE_FLUX_2_MAX_PIXELS = 2048 * 2048;
-const AZURE_FLUX_2_MIN_SIDE = 256;
+// Azure rejects out-of-range sizes itself; only the step is checked here.
 const AZURE_FLUX_2_DIMENSION_STEP = 16;
 
 function flux2Endpoint(modelPath: string): string {
@@ -66,6 +63,7 @@ function flux2Endpoint(modelPath: string): string {
 }
 
 type AzureFluxResponse = {
+    stop_reason?: unknown;
     data?: Array<{
         b64_json?: string;
         content_filter_results?: unknown;
@@ -123,6 +121,9 @@ function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     const categories = filteredCategories(first?.content_filter_results);
     if (categories.length > 0) {
         return `Content filter blocked categories: ${categories.join(", ")}`;
+    }
+    if (data.stop_reason === "refusal") {
+        return "Provider reported stop_reason=refusal";
     }
 
     const rootError = errorSummary(data.error);
@@ -330,25 +331,17 @@ export async function callAzureFlux11Pro(
             message: "FLUX 1.1 Pro supports text-to-image generation only",
         });
     }
-    if (safeParams.guidance_scale !== undefined || safeParams.transparent) {
+    if (safeParams.guidance_scale !== undefined) {
         throw UpstreamError.fromProvider(400, {
-            message:
-                "FLUX 1.1 Pro does not support guidance_scale or transparency",
+            message: "FLUX 1.1 Pro does not support guidance_scale",
         });
     }
     const { width, height } = safeParams;
-    if (
-        width < 256 ||
-        height < 256 ||
-        width > 1440 ||
-        height > 1440 ||
-        width % 32 !== 0 ||
-        height % 32 !== 0 ||
-        width * height > 1_600_000
-    ) {
+    // Azure rejects out-of-range sizes itself; only the step is checked here.
+    if (width % 32 !== 0 || height % 32 !== 0) {
         throw UpstreamError.fromProvider(400, {
             message:
-                "FLUX 1.1 Pro requires 256–1440px sides in multiples of 32 and at most 1.6 megapixels",
+                "FLUX 1.1 Pro requires width and height in multiples of 32",
         });
     }
 
@@ -419,22 +412,12 @@ function validateFlux2Dimensions(
     width: number,
     height: number,
 ): void {
-    if (width < AZURE_FLUX_2_MIN_SIDE || height < AZURE_FLUX_2_MIN_SIDE) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${modelTitle} requires width and height of at least ${AZURE_FLUX_2_MIN_SIDE}px`,
-        });
-    }
     if (
         width % AZURE_FLUX_2_DIMENSION_STEP !== 0 ||
         height % AZURE_FLUX_2_DIMENSION_STEP !== 0
     ) {
         throw UpstreamError.fromProvider(400, {
             message: `${modelTitle} requires width and height to be multiples of ${AZURE_FLUX_2_DIMENSION_STEP}px`,
-        });
-    }
-    if (width * height > AZURE_FLUX_2_MAX_PIXELS) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${modelTitle} supports at most 4,194,304 pixels`,
         });
     }
 }
@@ -459,11 +442,6 @@ export async function callAzureFlux2(
     }
 
     validateFlux2Dimensions(config.title, safeParams.width, safeParams.height);
-    if (safeParams.image.length > config.maxReferenceImages) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${config.title} supports at most ${config.maxReferenceImages} reference images`,
-        });
-    }
 
     const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
     if (!apiKey) {

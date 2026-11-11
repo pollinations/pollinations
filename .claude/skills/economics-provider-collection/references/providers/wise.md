@@ -19,6 +19,12 @@ Primary evidence sources:
 - Dashboard/export: Wise Activities export; per-balance statement CSVs
   (Balances → statement) — complete settled truth incl. fees and running
   balance, and the workaround while the statement API's SCA key is unregistered.
+- In the signed-in Myceli.AI OÜ Business account, open any balance →
+  Download → Go to my statements → Statements → Create a statement. Select
+  Last month, all four currencies, CSV, and “Display transactions with fees
+  shown separately.” Download the resulting ZIP; it contains one CSV per
+  currency, including empty files for currencies with no movements. Confirm
+  the displayed period and currency list before download.
 - Local files: Wise CSV/JSON/screenshots already placed in `<collection-dir>/evidence/`.
 - Transaction context: `economics_bank_ledger`.
 
@@ -36,8 +42,12 @@ Collection steps:
 1. Prefer existing `economics_bank_ledger` when it already covers the requested
    period; it is the Economics cash ledger derived from Wise.
 2. For a missing or live period, request Wise activities with explicit ISO 8601
-   `since` and `until` bounds, `size=100`, and follow `cursor` with
-   `nextCursor` until it is null. Re-read the preceding 35 days: an activity
+   `since` and `until` bounds, `size=100`, and pass the response's `cursor`
+   as the next request's `nextCursor` until the response cursor is null.
+   Do not use `cursor` as a query parameter or look for a response
+   `nextCursor`: either mistake can repeat or truncate the first page.
+   Verify unique resource IDs and date coverage after pagination.
+   Re-read the preceding 35 days: an activity
    created as pending before the month boundary can settle inside the requested
    month. The statement settlement date still decides which month is booked.
 3. For cash-now verification, list `STANDARD` balances and convert each balance
@@ -48,6 +58,15 @@ Collection steps:
 5. Use this skill when exported transaction
    evidence needs to become an entry.
 6. For reconciliation, compare against invoice entries and `economics_bank_ledger`.
+   For foreign-currency invoices, match the original `Exchange To` and
+   `Exchange To Amount` to the invoice currency and total; do not reconstruct
+   the charge with a monthly exchange rate. When fees are shown separately,
+   join the original payment and its `FEE-<TransferWise ID>` row by ID,
+   settlement date and currency. Verify that principal plus the separate fee
+   equals the existing Bank debit before qualifying the invoice. If the
+   statement amount already equals the debit, do not add the fee again.
+   Preserve both originals and their source file/member references. A matched
+   top-up invoice proves funding, not calendar-month usage.
 
 For a monthly pull, use the existing encrypted credentials in a task-scoped
 process and call the official Wise APIs directly. Do not add a permanent Wise

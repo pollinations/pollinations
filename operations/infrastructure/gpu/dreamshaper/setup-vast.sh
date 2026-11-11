@@ -28,13 +28,6 @@ fi
 apt-get update -qq
 apt-get install -y -qq curl dnsutils git psmisc screen python3.12-venv python3.12-dev
 
-if ! command -v cloudflared >/dev/null || \
-    ! cloudflared tunnel run --help 2>&1 | grep -q -- '--token-file'; then
-    curl -fsSL --retry 5 -o /tmp/cloudflared.deb \
-        https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-    dpkg -i /tmp/cloudflared.deb >/dev/null
-fi
-
 install -d -m 755 "$(dirname "$WORK_DIR")"
 if [ -d "$WORK_DIR/.git" ]; then
     git -C "$WORK_DIR" fetch --depth 1 origin "$GIT_BRANCH"
@@ -43,6 +36,8 @@ else
     git clone --depth 1 --branch "$GIT_BRANCH" \
         https://github.com/pollinations/pollinations.git "$WORK_DIR"
 fi
+
+bash "$WORK_DIR/operations/infrastructure/gpu/install-cloudflared.sh"
 
 if [ ! -d "$VENV" ]; then
     python3.12 -m venv "$VENV"
@@ -99,6 +94,8 @@ exec "$VENV/bin/python" -u server.py
 EOF
 chmod 700 /root/run-dreamshaper.sh
 
+install -m 700 "$WORK_DIR/operations/infrastructure/gpu/watch-tunnel.sh" /root/watch-tunnel.sh
+
 cat > /root/onstart.sh <<EOF
 #!/bin/bash
 set -euo pipefail
@@ -110,6 +107,7 @@ screen -wipe >/dev/null 2>&1 || true
 pkill -TERM -f "/root/run-dreamshaper.sh" 2>/dev/null || true
 screen -S dreamshaper -X quit 2>/dev/null || true
 screen -S cloudflared -X quit 2>/dev/null || true
+screen -S cloudflared-watchdog -X quit 2>/dev/null || true
 # Uvicorn's spawned workers and resource tracker can outlive their parent.
 # This venv is dedicated to DreamShaper, so terminate every process using it.
 pkill -TERM -f "$VENV/bin/python" 2>/dev/null || true
@@ -133,7 +131,8 @@ screen -dmS dreamshaper bash -c 'while true; do /root/run-dreamshaper.sh >> /roo
 if [ ! -f /root/.cloudflared/tunnel-enabled ]; then
     exit 0
 fi
-screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:$PORT/health >/dev/null; do sleep 5; done; while true; do cloudflared tunnel --no-autoupdate run --token-file /root/.cloudflared/tunnel-token >> /root/cloudflared.log 2>&1; sleep 5; done'
+screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:$PORT/health >/dev/null; do sleep 5; done; while true; do cloudflared tunnel --no-autoupdate --metrics 127.0.0.1:20241 run --token-file /root/.cloudflared/tunnel-token >> /root/cloudflared.log 2>&1; sleep 5; done'
+screen -dmS cloudflared-watchdog bash /root/watch-tunnel.sh 127.0.0.1:20241 /root/cloudflared.log
 EOF
 chmod 700 /root/onstart.sh
 

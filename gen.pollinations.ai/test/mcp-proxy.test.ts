@@ -1,7 +1,12 @@
 import { env, SELF } from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
+import {
+    MCP_SERVERS,
+    MCP_USAGE_HEADERS,
+    type McpServerDefinition,
+} from "@shared/registry/mcp.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
@@ -23,6 +28,7 @@ test("lists the MCP servers exposed through Gen", async () => {
         data: [
             {
                 id: "pollinations",
+                alpha: true,
                 name: "Pollinations",
                 description:
                     "Access Pollinations models and API capabilities through agent tools.",
@@ -35,6 +41,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "ask-jev",
+                alpha: true,
                 name: "Ask Jev",
                 description:
                     "Evaluate state with typed choice, score, and probability questions.",
@@ -47,6 +54,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "ffmpeg",
+                alpha: true,
                 name: "FFmpeg",
                 description:
                     "Trim, convert, resize, compress, and remix audio and video.",
@@ -67,6 +75,7 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "exa",
+                alpha: true,
                 name: "Exa Search",
                 description:
                     "Search the live web and fetch clean content from source pages.",
@@ -97,9 +106,10 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "composio",
+                alpha: true,
                 name: "Connectors",
                 description:
-                    "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
+                    "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
                 url: "https://gen.pollinations.ai/mcp/composio",
                 pricing: {
                     description: "Launch price",
@@ -118,9 +128,10 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "computer",
+                alpha: true,
                 name: "Computer",
                 description:
-                    "A private persistent computer: files and a bash shell that survive between runs.",
+                    "A private persistent computer: files that survive between runs, a bash shell and JavaScript.",
                 url: "https://gen.pollinations.ai/mcp/computer",
                 pricing: {
                     description: "Preview price",
@@ -135,6 +146,81 @@ test("lists the MCP servers exposed through Gen", async () => {
                             unit: "call",
                         },
                     ],
+                },
+            },
+            {
+                id: "machines",
+                alpha: true,
+                name: "Machines",
+                description:
+                    "Start, pause, resume, and run commands and file operations in Linux sandboxes.",
+                url: "https://gen.pollinations.ai/mcp/machines",
+                pricing: {
+                    description:
+                        "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
+                id: "calculators",
+                alpha: true,
+                name: "Calculators",
+                description:
+                    "Time, cron schedules, Unicode, color contrast, QR codes, and ECB currency rates.",
+                url: "https://gen.pollinations.ai/mcp/calculators",
+                pricing: {
+                    description:
+                        "Local utilities and public ECB rates. No Pollen charge.",
+                    rates: [],
+                },
+            },
+            {
+                id: "network",
+                alpha: true,
+                name: "Network",
+                description:
+                    "Public DNS records, HTTP diagnostics, IPv4/IPv6 subnets and RDAP registration data.",
+                url: "https://gen.pollinations.ai/mcp/network",
+                pricing: {
+                    description: "Network diagnostics. No Pollen charge.",
+                    rates: [],
+                },
+            },
+            {
+                id: "packages",
+                alpha: true,
+                name: "Packages",
+                description:
+                    "Package versions, known vulnerabilities and public Hugging Face models and Spaces.",
+                url: "https://gen.pollinations.ai/mcp/packages",
+                pricing: {
+                    description: "Public registry lookups. No Pollen charge.",
+                    rates: [],
+                },
+            },
+            {
+                id: "news",
+                alpha: true,
+                name: "News & Feeds",
+                description:
+                    "Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes.",
+                url: "https://gen.pollinations.ai/mcp/news",
+                pricing: {
+                    description: "Free public sources. Upstream limits apply.",
+                    rates: [],
+                },
+            },
+            {
+                id: "research",
+                alpha: true,
+                name: "Research",
+                description:
+                    "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+                url: "https://gen.pollinations.ai/mcp/research",
+                pricing: {
+                    description:
+                        "Research lookups are free. No additional MCP fee.",
+                    rates: [],
                 },
             },
         ],
@@ -215,20 +301,97 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
-test.for([
-    "pollinations",
-    "ask-jev",
-])("requires a Pollinations credential before invoking %s", async (serverId) => {
+test("routes Machines with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "list_sandboxes", arguments: {} },
+    };
     const response = await SELF.fetch(
-        `https://gen.pollinations.ai/mcp/${serverId}`,
+        "https://gen.pollinations.ai/mcp/machines",
         {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(MCP_REQUEST),
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
         },
     );
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
 });
+
+test.for(MCP_SERVERS.map(({ id }) => id))(
+    "requires a Pollinations credential before invoking %s",
+    async (serverId) => {
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+        expect(response.status).toBe(401);
+    },
+);
+
+test.for(
+    MCP_SERVERS.filter(
+        (server: McpServerDefinition) =>
+            server.billing === "downstream" &&
+            server.forwardAuthorization !== true,
+    ).map(({ id }) => id),
+)(
+    "free %s strips caller credentials and remains callable with zero balance",
+    async (serverId) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 0 },
+        });
+        const payload = {
+            ...MCP_REQUEST,
+            params: { name: "opaque_proxy_test", arguments: {} },
+        };
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    Cookie: "session=private",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            },
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            pathname: "/",
+            authorization: null,
+            cookie: null,
+            payload,
+        });
+        expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+            tierBalance: 0,
+            packBalance: 0,
+        });
+    },
+);
 
 test("proxies FFmpeg without caller credentials and bills reported usage", async () => {
     const { key, userId } = await createTestApiKey({
@@ -296,7 +459,9 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
 });
 
 test("routes Composio with the authenticated user", async () => {
-    const { key, userId } = await createTestApiKey();
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
     const response = await SELF.fetch(
         "https://gen.pollinations.ai/mcp/composio",
         {
@@ -354,6 +519,135 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.9998,
         packBalance: 0,
+    });
+});
+
+test("refuses agent run tokens on Connectors", async () => {
+    const parent = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/composio",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(403);
+});
+
+test("keeps agent run tokens minted from a secret key on Computer", async () => {
+    const parent = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/computer",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain(`computer:${parent.userId}`);
+});
+
+test.for(["composio", "computer"])(
+    "routes the account owner's dashboard session to %s",
+    async (serverId) => {
+        const { userId } = await createTestApiKey({
+            user: { tierBalance: 1 },
+        });
+        const token = await signSessionToken({
+            secret: env.BETTER_AUTH_SECRET,
+            userId,
+        });
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toContain(userId);
+    },
+);
+
+test("refuses receipt-billed tool calls from an empty wallet but keeps initialization free", async () => {
+    const { key } = await createTestApiKey();
+    const callFfmpeg = (body: unknown) =>
+        SELF.fetch("https://gen.pollinations.ai/mcp/ffmpeg", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+
+    const refused = await callFfmpeg(MCP_REQUEST);
+    expect(refused.status).toBe(402);
+    expect(await refused.json()).toMatchObject({
+        error: { code: "INSUFFICIENT_BALANCE" },
+    });
+    const initialized = await callFfmpeg({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {},
+    });
+    expect(initialized.status).toBe(200);
+});
+
+test("refuses tool calls from a Quest Pollen only key without Quest Pollen", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 10 },
+        questPollenOnly: true,
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/ffmpeg",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(402);
+    expect(await response.json()).toMatchObject({
+        error: { code: "QUEST_POLLEN_ONLY" },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 10,
     });
 });
 

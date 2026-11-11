@@ -1,4 +1,5 @@
 import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
+import { handleError } from "@shared/error.ts";
 import {
     calculateServiceFeeCents,
     describePollenPack,
@@ -9,6 +10,7 @@ import {
     SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -50,8 +52,23 @@ export const stripeRoutes = new Hono<Env>()
      * new cards and every method the pay modal doesn't show.
      */
     .get("/checkout/:packKey", async (c) => {
-        const session = await createPackCheckoutSession(c, "hosted");
-        if (session instanceof Response) return session;
+        // A server error is reported like any other, then the buyer is sent
+        // back below.
+        const session = await createPackCheckoutSession(c, "hosted").catch(
+            (error) => handleError(error, c),
+        );
+        if (session instanceof Response) {
+            // A link the buyer followed, so never a JSON error: back to the
+            // page they came from, which asks a signed-out buyer to sign in
+            // and tells everyone else that checkout didn't open.
+            const back = walletReturnUrl(c);
+            const packKey = c.req.param("packKey");
+            if (isPollenPackKey(packKey))
+                back.searchParams.set("pack", packKey);
+            if (session.status !== 401)
+                back.searchParams.set("checkout_error", "failed");
+            return c.redirect(back.toString());
+        }
         // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
         return c.redirect(session.url as string);
     })
@@ -62,7 +79,7 @@ export const stripeRoutes = new Hono<Env>()
      * with Stripe.js paying through the buyer's saved card.
      */
     .post("/checkout/:packKey/session", async (c) => {
-        const session = await createPackCheckoutSession(c, "custom");
+        const session = await createPackCheckoutSession(c, "elements");
         if (session instanceof Response) return session;
         return c.json({
             clientSecret: session.client_secret as string,
@@ -153,14 +170,18 @@ export const stripeRoutes = new Hono<Env>()
      */
     .get("/billing", async (c) => {
         const user = await requireSessionUser(c);
-        return c.json(await getBillingOverview(c.env, user.id));
+        return c.json({
+            ...(await getBillingOverview(c.env, user.id)),
+            ipCountry: c.req.header("cf-ipcountry") ?? null,
+        });
     })
 
     /**
      * POST /api/stripe/billing/portal
      * Create a Stripe Customer Portal session for billing management.
-     * `flow: "card"` opens adding a card (made the default) and returns
-     * once it is done. Without it, the portal's home page.
+     * `flow: "card"` opens adding a card (made the default), `flow:
+     * "details"` the billing details; either returns once it is done.
+     * Without it, the portal's home page.
      */
     .post("/billing/portal", async (c) => {
         const user = await requireSessionUser(c);
@@ -188,7 +209,9 @@ export const stripeRoutes = new Hono<Env>()
                             ? body.pack
                             : undefined,
                 },
-                body?.flow === "card" ? "card" : undefined,
+                body?.flow === "card" || body?.flow === "details"
+                    ? body.flow
+                    : undefined,
             );
 
             if (!session.url) {
@@ -280,26 +303,27 @@ export const stripeRoutes = new Hono<Env>()
 
 /**
  * How the session is shown: Stripe's hosted page, or our pay modal
- * (`custom`: the saved card, rendered by Stripe.js).
+ * (`elements`: the saved card, rendered by Stripe.js).
  */
-type CheckoutUiMode = "hosted" | "custom";
+type CheckoutUiMode = "hosted" | "elements";
 
 /**
  * Create a pack Checkout Session for the signed-in buyer. Every UI mode
- * shares everything (pricing, fee, tax, 3DS rule, metadata, card gate, ban
- * checks, Adaptive Pricing); only how Stripe shows it and returns the buyer
- * differs. Returns an error response, or a session with a url (hosted) or
- * client_secret (in the wallet).
+ * shares pricing, fees, tax, metadata, and buyer checks. The hosted crypto
+ * link selects only crypto and keeps USD pricing. Returns an error response
+ * or a session with a url (hosted) or client_secret (in the wallet).
  *
  * Path parameter is the pack key ("p2".."p100"). Pollen is the canonical
- * unit: 1 pollen ≈ $1. Checkout sends USD price_data and Stripe Adaptive
- * Pricing localizes presentment. CF-IPCountry → CohortId for analytics.
+ * unit: 1 pollen ≈ $1. Checkout sends USD price_data; Stripe Adaptive
+ * Pricing may localize the regular checkout. CF-IPCountry → CohortId for analytics.
  */
 async function createPackCheckoutSession(
     c: Context<Env>,
     uiMode: CheckoutUiMode,
 ): Promise<Response | Stripe.Checkout.Session> {
     const pack = getPollenPackByKey(c.req.param("packKey") ?? "");
+    const cryptoCheckout =
+        uiMode === "hosted" && c.req.query("payment_method") === "crypto";
 
     if (!pack) {
         return c.json({ error: "Invalid pack" }, 400);
@@ -343,10 +367,10 @@ async function createPackCheckoutSession(
     // default PMC) would hide a misconfigured deploy.
     const pmcId = c.env.STRIPE_PMC;
     if (!pmcId) {
-        console.error(
-            `Missing required env var STRIPE_PMC for checkout on ${c.env.ENVIRONMENT}`,
-        );
-        return c.json({ error: "Checkout configuration error" }, 500);
+        throw new HTTPException(500, {
+            message: "Checkout configuration error",
+            cause: `Missing required env var STRIPE_PMC on ${c.env.ENVIRONMENT}`,
+        });
     }
 
     try {
@@ -366,7 +390,7 @@ async function createPackCheckoutSession(
         const requestThreeDSecure = !priorCredit || pack.amountUsd < 10;
 
         // packKey identifies the pack; the webhook looks up its fixed USD
-        // amount to credit, independent of how Adaptive Pricing localized the
+        // amount to credit, independent of how Adaptive Pricing may localize the
         // presentment currency.
         const packMetadata = {
             userId,
@@ -378,7 +402,9 @@ async function createPackCheckoutSession(
 
         const checkoutSession = await stripe.checkout.sessions.create({
             mode: "payment",
-            payment_method_configuration: pmcId,
+            ...(cryptoCheckout
+                ? { payment_method_types: ["crypto"] as const }
+                : { payment_method_configuration: pmcId }),
             line_items: [
                 {
                     price_data: {
@@ -407,14 +433,13 @@ async function createPackCheckoutSession(
                     quantity: 1,
                 },
             ],
-            adaptive_pricing: { enabled: true },
-            ...(requestThreeDSecure && {
-                payment_method_options: {
-                    card: { request_three_d_secure: "any" },
-                },
-            }),
-            // Enable discount/promotion codes
-            allow_promotion_codes: true,
+            adaptive_pricing: { enabled: !cryptoCheckout },
+            ...(requestThreeDSecure &&
+                !cryptoCheckout && {
+                    payment_method_options: {
+                        card: { request_three_d_secure: "any" },
+                    },
+                }),
             // Automatic tax & VAT
             automatic_tax: { enabled: true },
             // Auto billing address - collects only what's needed (country for tax)
@@ -428,9 +453,11 @@ async function createPackCheckoutSession(
             },
             // Optional "save for future purchases" checkbox. Saved cards are
             // prefilled on the buyer's next checkout.
-            saved_payment_method_options: {
-                payment_method_save: "enabled",
-            },
+            ...(!cryptoCheckout && {
+                saved_payment_method_options: {
+                    payment_method_save: "enabled",
+                },
+            }),
             payment_intent_data: {
                 metadata: packMetadata,
             },
@@ -452,7 +479,7 @@ async function createPackCheckoutSession(
                 : {
                       // Payments finish inside the modal; only methods that
                       // need a redirect come back through return_url.
-                      ui_mode: "custom",
+                      ui_mode: "elements",
                       return_url: successUrl,
                   }),
         });
@@ -465,9 +492,8 @@ async function createPackCheckoutSession(
             uiMode === "hosted"
                 ? checkoutSession.url
                 : checkoutSession.client_secret;
-        if (!ready) {
-            return c.json({ error: "Failed to create checkout session" }, 500);
-        }
+        if (!ready)
+            throw new Error("Stripe returned no checkout URL or client secret");
         captureFromRequest(c, "checkout_started", userId, {
             pack_key: pack.packKey,
             // Where the buyer came from, so checkouts divide by views of that
@@ -476,10 +502,11 @@ async function createPackCheckoutSession(
         });
         return checkoutSession;
     } catch (error) {
-        // Log full error server-side for debugging
-        console.error("Stripe checkout error:", error);
-        // Return generic message to client - don't expose internal error details
-        return c.json({ error: "Failed to create checkout session" }, 500);
+        // The cause reaches the error log; the buyer gets the generic message.
+        throw new HTTPException(500, {
+            message: "Failed to create checkout session",
+            cause: error,
+        });
     }
 }
 
@@ -523,28 +550,7 @@ async function isInternalRequest(
     const header = request.headers.get("Authorization") ?? "";
     if (!header.startsWith("Bearer ")) return false;
 
-    const presentedToken = header.slice("Bearer ".length);
-    const [presentedDigest, expectedDigest] = await Promise.all([
-        sha256Utf8(presentedToken),
-        sha256Utf8(expectedToken),
-    ]);
-    return constantTimeBytesEqual(presentedDigest, expectedDigest);
-}
-
-async function sha256Utf8(value: string): Promise<Uint8Array> {
-    const bytes = new TextEncoder().encode(value);
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    return new Uint8Array(digest);
-}
-
-function constantTimeBytesEqual(left: Uint8Array, right: Uint8Array): boolean {
-    if (left.length !== right.length) return false;
-
-    let mismatch = 0;
-    for (let index = 0; index < left.length; index += 1) {
-        mismatch |= left[index] ^ right[index];
-    }
-    return mismatch === 0;
+    return secretEquals(header.slice("Bearer ".length), expectedToken);
 }
 
 function normalizeStripePortalError(error: unknown): string {

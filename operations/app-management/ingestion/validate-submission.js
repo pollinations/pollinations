@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { execFileSync } = require("node:child_process");
+const { downloadScreenshot, screenshotErrors } = require("./screenshot.js");
 const {
     buildApp,
     findCatalogDuplicate,
@@ -38,7 +39,7 @@ function isOpenQuest(number) {
     );
 }
 
-function main() {
+async function main() {
     if (!/^\d+$/.test(ISSUE_NUMBER || ""))
         throw new Error("ISSUE_NUMBER must be numeric");
     if (!/^[A-Za-z0-9-]+$/.test(ISSUE_AUTHOR || ""))
@@ -69,6 +70,19 @@ function main() {
         throw new Error("Issue snapshot metadata is incomplete");
     const submission = parseSubmission(issue.body);
     const errors = validateSubmission(submission);
+    if (submission.screenshotUrl) {
+        try {
+            errors.push(
+                ...(await screenshotErrors(
+                    await downloadScreenshot(submission.screenshotUrl),
+                )),
+            );
+        } catch {
+            errors.push(
+                "Screenshot could not be downloaded; upload it again in the Screenshot field.",
+            );
+        }
+    }
     const duplicate = findCatalogDuplicate(
         submission,
         undefined,
@@ -144,11 +158,9 @@ function main() {
     if (!result.valid) process.exitCode = 2;
 }
 
-try {
-    main();
-} catch (error) {
+main().catch((error) => {
     process.stdout.write(
         `${JSON.stringify({ valid: false, system_error: error.message })}\n`,
     );
     process.exitCode = 1;
-}
+});

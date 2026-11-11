@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    type EarningsRow,
-    MAX_EARNINGS_DAYS,
-    parseDaysWindow,
-    totalPollenEarned,
-} from "./earnings.js";
+import { type EarningsRow, totalPollenEarned } from "./earnings.js";
 
 const row = (overrides: Partial<EarningsRow> = {}): EarningsRow => ({
     date: "",
@@ -19,36 +14,6 @@ const row = (overrides: Partial<EarningsRow> = {}): EarningsRow => ({
     cost_usd: 0.5,
     reward_rate: 0.2,
     ...overrides,
-});
-
-describe("parseDaysWindow", () => {
-    it("accepts a plain day count", () => {
-        expect(parseDaysWindow("30")).toBe(30);
-    });
-
-    it("rejects zero, negatives and non-integers", () => {
-        expect(() => parseDaysWindow("0")).toThrow(
-            "--days must be a positive integer",
-        );
-        expect(() => parseDaysWindow("-5")).toThrow(
-            "--days must be a positive integer",
-        );
-        expect(() => parseDaysWindow("1.5")).toThrow(
-            "--days must be a positive integer",
-        );
-        expect(() => parseDaysWindow("abc")).toThrow(
-            "--days must be a positive integer",
-        );
-    });
-
-    it("rejects windows beyond the API maximum", () => {
-        expect(() => parseDaysWindow(String(MAX_EARNINGS_DAYS + 1))).toThrow(
-            `--days must be ${MAX_EARNINGS_DAYS} or less`,
-        );
-        expect(parseDaysWindow(String(MAX_EARNINGS_DAYS))).toBe(
-            MAX_EARNINGS_DAYS,
-        );
-    });
 });
 
 describe("totalPollenEarned", () => {

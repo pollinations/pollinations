@@ -1,8 +1,9 @@
-import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
+import { formatCount, InlineLink, Surface, Tooltip } from "@pollinations/ui";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import { CopyValue } from "./copy-value.tsx";
+import { ModelDescription } from "./model-description.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -69,7 +70,7 @@ export const PerPollenEstimate: FC<{
         ? "This model is free to use."
         : isUnavailable
           ? "Usage data from the last 7 days is unavailable, so this estimate cannot be calculated."
-          : `About ${value} ${requestLabel} per pollen. Estimated from the median observed cost over the last 7 days.`;
+          : `About ${value} ${requestLabel} per $1. Estimated from the median observed cost over the last 7 days.`;
     const tooltip = isFree ? (
         <span>
             This model is{" "}
@@ -88,7 +89,7 @@ export const PerPollenEstimate: FC<{
     ) : (
         <span className="flex flex-col gap-0.5">
             <strong className="font-semibold text-theme-text-strong">
-                About {value} {requestLabel} per pollen
+                About {value} {requestLabel} per $1
             </strong>
             <span className="text-theme-text-muted">
                 Estimated from the median observed cost over the last 7 days.
@@ -110,7 +111,7 @@ export const PerPollenEstimate: FC<{
                     prefix={!isFree && !isUnavailable ? "≈" : undefined}
                 />
             ) : (
-                <ModelRateValue value={value} unit="req /pollen" />
+                <ModelRateValue value={value} unit="req /$1" />
             )}
         </Tooltip>
     );
@@ -143,7 +144,7 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
                     <strong className="font-semibold text-theme-text-base">
                         Context window:
                     </strong>{" "}
-                    {model.contextLength.toLocaleString()} tokens
+                    {formatCount(model.contextLength)} tokens
                 </span>
             )}
             {videoDuration && (
@@ -254,9 +255,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         />
                     </div>
                     {modelDescription && (
-                        <p className="line-clamp-2 text-xs leading-snug text-theme-text-muted">
-                            {modelDescription}
-                        </p>
+                        <ModelDescription text={modelDescription} />
                     )}
                     {model.brandUrl && model.publisher && (
                         <InlineLink
@@ -334,7 +333,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <PerUserRateLimit value={model.perUserRpm} />
                         </div>
                     )}
-                    {(model.health || showNew || showAlpha) && (
+                    {(model.health ||
+                        showNew ||
+                        showAlpha ||
+                        (model.agent && model.verified)) && (
                         <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                             <ModelStatusChips
                                 health={model.health}
@@ -343,6 +345,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 )}
                                 showNew={showNew}
                                 showAlpha={showAlpha}
+                                verified={Boolean(
+                                    model.agent && model.verified,
+                                )}
                             />
                         </div>
                     )}

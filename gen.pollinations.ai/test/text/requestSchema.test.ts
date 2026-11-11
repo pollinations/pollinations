@@ -43,6 +43,119 @@ describe("CreateChatCompletionRequestSchema", () => {
         });
     });
 
+    it("preserves Gemini tool-call signatures for the next turn", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            model: "google/gemini-3.8-flash",
+            messages: [
+                {
+                    role: "assistant",
+                    content: null,
+                    tool_calls: [
+                        {
+                            id: "call_1",
+                            type: "function",
+                            function: {
+                                name: "emit",
+                                arguments: "{}",
+                                thought_signature: "opaque-signature",
+                            },
+                        },
+                    ],
+                },
+                { role: "tool", tool_call_id: "call_1", content: "ok" },
+            ],
+        });
+
+        expect(result.messages[0]).toMatchObject({
+            tool_calls: [
+                {
+                    function: {
+                        name: "emit",
+                        arguments: "{}",
+                        thought_signature: "opaque-signature",
+                    },
+                },
+            ],
+        });
+    });
+
+    it("forwards a Gemini signature sent in Google's extra_content field", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            model: "google/gemini-3.8-flash",
+            messages: [
+                {
+                    role: "assistant",
+                    content: null,
+                    tool_calls: [
+                        {
+                            id: "call_1",
+                            type: "function",
+                            function: { name: "emit", arguments: "{}" },
+                            extra_content: {
+                                google: {
+                                    thought_signature: "opaque-signature",
+                                },
+                            },
+                        },
+                    ],
+                },
+                { role: "tool", tool_call_id: "call_1", content: "ok" },
+            ],
+        });
+
+        expect(result.messages[0]).toMatchObject({
+            tool_calls: [
+                {
+                    id: "call_1",
+                    type: "function",
+                    function: {
+                        name: "emit",
+                        arguments: "{}",
+                        thought_signature: "opaque-signature",
+                    },
+                },
+            ],
+        });
+    });
+
+    it("drops a malformed extra_content field instead of rejecting the request", () => {
+        for (const extra_content of [
+            { google: null },
+            { google: { thought_signature: null } },
+            "x",
+        ]) {
+            const result = CreateChatCompletionRequestSchema.parse({
+                messages: [
+                    {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                            {
+                                id: "call_1",
+                                type: "function",
+                                function: { name: "emit", arguments: "{}" },
+                                extra_content,
+                            },
+                        ],
+                    },
+                    { role: "tool", tool_call_id: "call_1", content: "ok" },
+                ],
+            });
+
+            expect(result.messages[0]).toEqual({
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                    {
+                        id: "call_1",
+                        type: "function",
+                        function: { name: "emit", arguments: "{}" },
+                    },
+                ],
+            });
+        }
+    });
+
     it("preserves explicit prompt-cache breakpoints on content parts", () => {
         const result = CreateChatCompletionRequestSchema.parse({
             prompt_cache_key: "stable-prefix",
@@ -81,5 +194,69 @@ describe("CreateChatCompletionRequestSchema", () => {
             messages: [{ role: "user", content: "" }],
         });
         expect(result.messages).toEqual([{ role: "user", content: "" }]);
+    });
+
+    it("accepts a string system prompt and tolerates explicit null", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+            system: "be concise",
+        });
+        expect(result.system).toBe("be concise");
+
+        const explicitNull = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+            system: null,
+        });
+        expect(explicitNull.system).toBeNull();
+    });
+
+    it("rejects a non-string system prompt instead of dropping it", () => {
+        const cases = [["be concise"], 12345, { text: "be concise" }, true];
+        for (const system of cases) {
+            const result = CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                system,
+            });
+            expect(result.success).toBe(false);
+        }
+    });
+
+    it("does not accept legacy functions in place of tools when tool_choice is required", () => {
+        const result = CreateChatCompletionRequestSchema.safeParse({
+            messages: [{ role: "user", content: "hello" }],
+            tool_choice: "required",
+            functions: [{ name: "weather", parameters: {} }],
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("requires tools when tool_choice is required", () => {
+        const tool = {
+            type: "function",
+            function: { name: "weather", parameters: {} },
+        };
+        for (const tools of [undefined, []]) {
+            const result = CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                tool_choice: "required",
+                ...(tools && { tools }),
+            });
+            expect(result.success).toBe(false);
+        }
+
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                tool_choice: "required",
+                tools: [tool],
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                tool_choice: "auto",
+                tools: [],
+            }).success,
+        ).toBe(true);
     });
 });

@@ -1822,17 +1822,12 @@ export function Playground() {
                     {apiUrl && (
                         <ApiUrlCard
                             url={
-                                result && result.type !== "text"
+                                apiMethod === "GET" &&
+                                result?.type === activeCategory
                                     ? (result.requestUrl ?? apiUrl)
                                     : apiUrl
                             }
-                            fields={
-                                result &&
-                                result.type !== "text" &&
-                                result.type !== "audio"
-                                    ? undefined
-                                    : apiFields
-                            }
+                            fields={apiFields}
                         />
                     )}
                 </div>

@@ -237,13 +237,16 @@ def model_rows(job, diff, agent=None):
                     modalities = " → ".join(", ".join(label(v) for v in model.get(field) or [])
                                             for field in ("input_modalities", "output_modalities"))
                     note = category if job == "community" else modalities.strip(" →")
-                    if model.get("agent"):
-                        note = f"Agent on {plain(model['base_model'])}" if model.get("base_model") else "Agent"
                     changes = [part for part in (note, features) if part]
                 name = title(model)
                 if job == "models" and model.get("publisher"):
                     name = f"{plain(model['publisher'][:80])} - {name}"
                 suffix = access(model) if kind == "added" else ""
+                context = ""
+                if job == "community" and kind == "added" and model.get("agent"):
+                    base = f"Base: {plain(model['base_model'])}" if model.get("base_model") else "Base: unspecified"
+                    context = " · ".join(part for part in (base, features, suffix) if part)
+                    changes, suffix = [], ""
                 # One colored marker per consecutive kind of change, not per field.
                 detail, previous_color = "", None
                 for change in changes:
@@ -251,17 +254,19 @@ def model_rows(job, diff, agent=None):
                     previous_color = change[0]
                 separator = " " if kind == "changed" else " · "
                 row = f"- **{name}**" + (separator + detail if detail else "") + (f" · {suffix}" if suffix else "")
+                if job == "community" and kind == "removed":
+                    row = name
                 group = publisher(model) if job == "community" else category
-                groups[group].append((name.casefold(), model["name"], row))
-    return {key: [row for _, _, row in sorted(rows)] for key, rows in groups.items()}
+                groups[group].append((context, name.casefold(), model["name"], row))
+    return {key: [(context, row) for context, _, _, row in sorted(rows)] for key, rows in groups.items()}
 
 
 def discord_length(text):
     return len(text.encode("utf-16-le")) // 2
 
 
-def card_descriptions(groups, community, rates, links):
-    """Pack whole rows, repeating a group's heading only if it crosses a card boundary."""
+def card_descriptions(groups, community, rates, links, compact=False):
+    """Pack whole names/rows, repeating publisher and shared context after overflow."""
     descriptions, text = [], ""
     keys = sorted(groups, key=str.casefold) if community else [key for key in CATEGORIES if key in groups]
     for key in keys:
@@ -269,16 +274,24 @@ def card_descriptions(groups, community, rates, links):
         if community and rates is not None:
             heading += f" · {rates[key]:.1f}% success" if key in rates else " · No recent samples"
         heading = f"**{heading}**\n"
-        for index, row in enumerate(groups[key]):
-            addition = ("\n\n" if text else "") + heading + row if index == 0 else "\n" + row
+        previous_context = None
+        for index, (context, row) in enumerate(groups[key]):
+            prefix = heading + (context + "\n" if context else "")
+            if index == 0:
+                addition = ("\n\n" if text else "") + prefix + row
+            elif context != previous_context:
+                addition = "\n\n" + context + "\n" + row
+            else:
+                addition = (", " if compact else "\n") + row
             if discord_length(text + addition + "\n\n" + links) > 4096:
                 if text:
                     descriptions.append(text)
-                text = heading + row
+                text = prefix + row
                 if discord_length(text + "\n\n" + links) > 4096:
                     raise ValueError("A model row exceeds Discord's card limit")
             else:
                 text += addition
+            previous_context = context
     if text:
         descriptions.append(text)
     return descriptions
@@ -295,7 +308,7 @@ def messages(job, diff, rates=None):
         first = True
         for kind, subtitle, color in actions:
             groups = model_rows(job, {kind: diff.get(kind, {})}, agent)
-            for index, description in enumerate(card_descriptions(groups, community, rates, links)):
+            for index, description in enumerate(card_descriptions(groups, community, rates, links, community and kind == "removed")):
                 content = f"## {report_title}\n" if first else ""
                 if index == 0:
                     content += f"### {subtitle}"

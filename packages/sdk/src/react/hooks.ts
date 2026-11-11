@@ -297,6 +297,7 @@ export function useAccountKeyUsage(
         days,
         limit,
         before,
+        before_event_id,
         granularity,
         period,
     } = options;
@@ -307,6 +308,7 @@ export function useAccountKeyUsage(
             if (days) params.set("days", String(days));
             if (limit) params.set("limit", String(limit));
             if (before) params.set("before", before);
+            if (before_event_id) params.set("before_event_id", before_event_id);
             if (granularity) params.set("granularity", granularity);
             if (period) params.set("period", period);
             return fetchAccountJson<UsageResponse>(
@@ -316,7 +318,7 @@ export function useAccountKeyUsage(
                 params,
             );
         },
-        [days, limit, before, granularity, period],
+        [days, limit, before, before_event_id, granularity, period],
     );
     return useAccountResource(fetcher, enabled);
 }

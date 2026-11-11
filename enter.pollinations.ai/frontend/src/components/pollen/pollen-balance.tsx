@@ -24,7 +24,8 @@ import {
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
-import type { FC, ReactNode } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
+import { accountClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { TopUpPanel } from "./top-up-panel.tsx";
@@ -364,48 +365,111 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     returnToTopUp,
     onWalletChange,
     initialPack,
-}) => (
-    <>
-        {/* The packs and their choices in an inner card, the small print
-            under it, as in every other section. */}
-        <Surface variant="card">
-            <TopUpPanel
-                initialBilling={initialBilling}
-                returnToTopUp={returnToTopUp}
-                onWalletChange={onWalletChange}
-                initialPack={initialPack}
-            />
-        </Surface>
-        <Footnotes>
-            {/* When auto top-up charges, stated before anyone turns it on.
-                "Paid": Quest Pollen doesn't trigger it. */}
-            <p className="flex items-start gap-1.5">
-                <RefreshIcon
-                    aria-hidden="true"
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+}) => {
+    // The bonus note asks again after every change made here: /top-up keeps
+    // its billing when the reload fails, so billing alone would miss one.
+    const [walletChanges, setWalletChanges] = useState(0);
+    return (
+        <>
+            {/* The packs and their choices in an inner card, the small
+                print under it, as in every other section. */}
+            <Surface variant="card">
+                <TopUpPanel
+                    initialBilling={initialBilling}
+                    returnToTopUp={returnToTopUp}
+                    onWalletChange={() => {
+                        setWalletChanges((count) => count + 1);
+                        onWalletChange?.();
+                    }}
+                    initialPack={initialPack}
                 />
-                <span>
-                    Auto top-up buys its pack when your paid balance reaches{" "}
-                    {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen
-                </span>
-            </p>
-            <p className="flex items-start gap-1.5">
-                <ReceiptIcon
-                    aria-hidden="true"
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+            </Surface>
+            <Footnotes>
+                <TopUpBonusNote
+                    billing={initialBilling}
+                    walletChanges={walletChanges}
                 />
-                <span>
-                    Prices include the {SERVICE_FEE_NAME.toLowerCase()}, plus
-                    tax at payment
-                </span>
-            </p>
-            <PaymentTrustBadge
-                className="mt-0 pt-0"
-                country={initialBilling?.ipCountry}
-            />
-        </Footnotes>
-    </>
-);
+                {/* When auto top-up charges, stated before anyone turns it
+                    on. "Paid": Quest Pollen doesn't trigger it. */}
+                <p className="flex items-start gap-1.5">
+                    <RefreshIcon
+                        aria-hidden="true"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    />
+                    <span>
+                        Auto top-up buys its pack when your paid balance reaches{" "}
+                        {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen
+                    </span>
+                </p>
+                <p className="flex items-start gap-1.5">
+                    <ReceiptIcon
+                        aria-hidden="true"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    />
+                    <span>
+                        Prices include the {SERVICE_FEE_NAME.toLowerCase()},
+                        plus tax at payment
+                    </span>
+                </p>
+                <PaymentTrustBadge
+                    className="mt-0 pt-0"
+                    country={initialBilling?.ipCountry}
+                />
+            </Footnotes>
+        </>
+    );
+};
+
+const TOP_UP_QUEST_ID = "top_up_since_launch";
+
+/**
+ * The top-up quest reward while it is unearned: the Stripe webhook credits it
+ * with the next pack bought at checkout. It asks again when the billing
+ * reloads and after every change made in the panel, so a purchase hides it.
+ * "Manual": automatic top-ups don't count for the quest.
+ */
+const TopUpBonusNote: FC<{
+    billing: BillingOverview | null;
+    walletChanges: number;
+}> = ({ billing, walletChanges }) => {
+    const [bonus, setBonus] = useState<number | null>(null);
+
+    // walletChanges is not read: a change made in the panel asks again.
+    useEffect(() => {
+        if (!billing) return;
+        let cancelled = false;
+        accountClient.quests
+            .$get()
+            .then(async (response) => {
+                if (!response.ok) return null;
+                const { quests } = await response.json();
+                const quest = quests.find((q) => q.id === TOP_UP_QUEST_ID);
+                return quest?.status === "open" ? quest.rewardAmount : null;
+            })
+            // No bonus line when quests can't load; buying still works.
+            .catch(() => null)
+            .then((next) => {
+                if (!cancelled) setBonus(next);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [billing, walletChanges]);
+
+    // Billing that failed to reload says nothing about the quest: no promise.
+    if (!billing || !bonus) return null;
+    return (
+        <p className="flex items-start gap-1.5">
+            <WalletKindIcon kind="tier" className="mt-0.5" />
+            <span>
+                Your next manual top-up adds{" "}
+                <strong className="font-semibold text-theme-text-strong">
+                    {formatPollen(bonus)} Quest pollen
+                </strong>
+            </span>
+        </p>
+    );
+};
 
 /**
  * The dashboard's footnote block: 8px between lines, 4px inset. The section's

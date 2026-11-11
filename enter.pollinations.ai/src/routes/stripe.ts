@@ -17,6 +17,8 @@ import { HTTPException } from "hono/http-exception";
 import type Stripe from "stripe";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import {
     captureFromRequest,
@@ -39,6 +41,11 @@ import {
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
 import { expireOpenStripeCheckoutSessions } from "../utils/stripe-fraud-ban.ts";
+
+// A failed quest check behind a top-up bonus is tried again, this often and
+// this far apart, before the pack is confirmed without the bonus.
+const BONUS_CHECK_TRIES = 3;
+const BONUS_CHECK_RETRY_MS = 1000;
 
 /**
  * Stripe pack configuration
@@ -103,6 +110,23 @@ export const stripeRoutes = new Hono<Env>()
             .bind(sessionId, user.id)
             .first<{ pollen_credited: number }>();
         if (credit) {
+            // The wallet reloads once, on "credited", and the webhook's own
+            // quest check may still be running: the top-up bonus is in first.
+            // A check that keeps failing must not hide a paid pack; the next
+            // quest check credits the bonus then.
+            for (let attempt = 1; ; attempt++) {
+                const settled = await checkQuestsForUser(c.env, user.id, [
+                    ACCOUNT_SETUP_QUEST_GROUP,
+                ]).then(
+                    (result) => result.success,
+                    (error) => {
+                        console.error("Top-up quest check failed:", error);
+                        return false;
+                    },
+                );
+                if (settled || attempt === BONUS_CHECK_TRIES) break;
+                await scheduler.wait(BONUS_CHECK_RETRY_MS);
+            }
             return c.json({
                 status: "credited" as const,
                 pollen: credit.pollen_credited,

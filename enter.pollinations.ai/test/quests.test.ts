@@ -768,7 +768,7 @@ test("account quests merge earned rewards into completed status", async ({
     });
 });
 
-test("quest check records product rewards and claim endpoint credits one", async ({
+test("quest check records product rewards and credits the top-up ones without a claim", async ({
     apiKey: _apiKey,
     mocks,
     accountToken,
@@ -818,14 +818,6 @@ test("quest check records product rewards and claim endpoint credits one", async
     const secondCheck = await checkQuestsForUser(env, user.id);
     expect(secondCheck.recorded).toBe(0);
 
-    const [balance] = await db
-        .select({ tierBalance: schema.user.tierBalance })
-        .from(schema.user)
-        .where(eq(schema.user.id, user.id));
-    // The fixture key already earned and auto-claimed the first-key reward;
-    // the top-up reward waits for a manual claim.
-    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
-
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/quests/rewards",
         {
@@ -848,8 +840,8 @@ test("quest check records product rewards and claim endpoint credits one", async
         }[];
     };
 
-    // History shape, not exact catalog: no internal fields leak, the API-key
-    // reward auto-claims, and another earned reward remains manually claimable.
+    // History shape, not exact catalog: no internal fields leak, and the
+    // API-key and top-up rewards are claimed by the check itself.
     expect(payload.rewards.length).toBeGreaterThan(0);
     for (const reward of payload.rewards) {
         expect(reward).not.toHaveProperty("idempotencyKey");
@@ -865,37 +857,61 @@ test("quest check records product rewards and claim endpoint credits one", async
     if (!firstApiKeyReward) throw new Error("Expected first API key reward");
     expect(firstApiKeyReward.claimedAt).not.toBeNull();
 
-    const topUpReward = payload.rewards.find(
-        (reward) => reward.questId === TOP_UP_SINCE_LAUNCH_QUEST_ID,
+    // 101 Pollen bought since launch earns both top-up rewards.
+    const topUpRewards = payload.rewards.filter(
+        (reward) =>
+            reward.questId === TOP_UP_SINCE_LAUNCH_QUEST_ID ||
+            reward.questId === TOP_UP_100_SINCE_LAUNCH_QUEST_ID,
     );
+    expect(topUpRewards).toHaveLength(2);
+    for (const reward of topUpRewards) {
+        expect(reward.claimedAt).not.toBeNull();
+    }
 
-    if (!topUpReward) throw new Error("Expected top-up reward");
-    expect(topUpReward.claimedAt).toBeNull();
-    const claimResponse = await SELF.fetch(
-        `http://localhost:3000/api/account/quests/rewards/${topUpReward.id}/claim`,
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${accountToken}`,
-            },
-        },
-    );
-    expect(claimResponse.status).toBe(200);
-    const claimPayload = (await claimResponse.json()) as {
-        claimed: boolean;
-        reward: { claimedAt: string | null; pollenAmount: number };
-    };
-    expect(claimPayload.claimed).toBe(true);
-    expect(claimPayload.reward.claimedAt).not.toBeNull();
-    expect(claimPayload.reward.pollenAmount).toBe(5);
-
-    const [claimedBalance] = await db
+    // The fixture key's first-key reward was credited before; the check adds
+    // exactly the top-up rewards.
+    const [balance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(claimedBalance?.tierBalance).toBeCloseTo(
-        (user.tierBalance ?? 0) + 5,
+    expect(balance?.tierBalance).toBeCloseTo(
+        (user.tierBalance ?? 0) +
+            topUpRewards.reduce((sum, reward) => sum + reward.pollenAmount, 0),
     );
+});
+
+// A bonus recorded while top-up rewards still waited for a claim, or one whose
+// claim failed, has no newly earned reward to be credited with.
+test("quest check credits a top-up reward an earlier check left unclaimed", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const { rewardIds } = await recordRewards(db, [
+        {
+            idempotencyKey: `quest:${TOP_UP_SINCE_LAUNCH_QUEST_ID}:test:${user.id}`,
+            userId: user.id,
+            questId: TOP_UP_SINCE_LAUNCH_QUEST_ID,
+            title: "Top up",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+
+    await checkQuestsForUser(env, user.id);
+
+    const [reward] = await db
+        .select({ claimedAt: schema.rewards.claimedAt })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.id, rewardIds[0]));
+    expect(reward?.claimedAt).not.toBeNull();
+    const [balance] = await db
+        .select({ tierBalance: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 5);
 });
 
 test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({

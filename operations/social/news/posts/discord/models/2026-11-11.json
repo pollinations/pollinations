@@ -1,0 +1,45 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-11-11",
+  "previous_date": "2026-11-04",
+  "generated_at": "2026-11-11T14:03:35.843996+00:00",
+  "messages": [
+    {
+      "content": "## Official model updates\n### ✨ New",
+      "embeds": [
+        {
+          "description": "**🧠 Text**\n- **Anthropic - Claude Fable 5.2** · text, image → text · reasoning, tool calling · 💳 Paid\n- **Meta - Muse Spark Open** · text, image → text · reasoning, tool calling · 🌱 Quest\n- **MiniMax - MiniMax M3.1 Flash** · text, image → text · reasoning, tool calling · 🌱 Quest\n- **Moonshot AI - Kimi K3.1 Pro** · text, image → text · reasoning, tool calling · 🌱 Quest\n- **Moonshot AI - Kimi K3.1 Pro Highspeed** · text, image → text · reasoning, tool calling · 💳 Paid\n\n**🎨 Image**\n- **OpenAI - GPT Image 2.6 Flare** · text, image → image · 💳 Paid\n- **OpenAI - GPT Image 2.6 Sunburst** · text, image → image · 💳 Paid\n\n**🎬 Video**\n- **Google - Gemini Omni 1.2 Flash** · text, image → video · 💳 Paid\n\n**🔊 Audio**\n- **ElevenLabs - Eleven Text to Sound v3** · text → audio · 💳 Paid\n- **ElevenLabs - Scribe v3** · audio → text · 💳 Paid\n\n**🎙️ Realtime**\n- **ElevenLabs - Scribe v3 Live** · audio → text · 💳 Paid",
+          "color": 11104483
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🔄 Updated",
+      "embeds": [
+        {
+          "description": "**🧠 Text**\n- **Mistral - Mistral Large 4** 🟢 Text output 49.8% cheaper; Cached input 50% cheaper; Text input 48.5% cheaper\n- **Moonshot AI - Kimi K2.7 Code** 🔴 Text output 4.5% more expensive · 🟢 Cache writes 10.6% cheaper · 🔴 Cached input 6.7% more expensive · 🟢 Image input 10.6% cheaper; Text input 10.6% cheaper\n- **NVIDIA - Nemotron 3 Ultra** 🟢 Text output 17.5% cheaper; Cached input 18.8% cheaper; Text input 17.5% cheaper\n- **NVIDIA - Nemotron 3.5 Lightning** 🟢 Text output 17.5% cheaper; Cached input 25% cheaper; Text input 10% cheaper\n- **Qwen - Qwen3Guard 8B** 🔵 Context: unspecified → 32768; Supports streaming: unspecified → no\n- **Z.ai - GLM-5.3-FlashX** 🟢 Cached input 16.7% cheaper\n\n**🧭 Decision**\n- **TypeSafe - Jev** 🔵 Aliases: jev, typesafe/jev → jev, typesafe/jev, typesafe/jev-1.13; Replaces Jev; old ID remains an alias\n\n**🎬 Video**\n- **Alibaba - Wan 3.0** 🔵 Maximum duration (s): 5 → 15; Minimum duration (s): 5 → 2\n- **xAI - Grok Video Pro** 🔴 40% more expensive\n\n**🔊 Audio**\n- **ElevenLabs - Scribe v2** 🟢 9.1% cheaper\n\n**🎙️ Realtime**\n- **ElevenLabs - Scribe v2 Realtime** 🟢 43.6% cheaper",
+          "color": 5793266
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🗑️ Removed",
+      "embeds": [
+        {
+          "description": "**🎨 Image**\n- **Lykon - DreamShaper 8 LCM**\n\n[Browse models](https://enter.pollinations.ai/models) · [API docs](https://gen.pollinations.ai/docs)",
+          "color": 14981968
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    }
+  ]
+}

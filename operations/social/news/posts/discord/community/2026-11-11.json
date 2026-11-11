@@ -1,0 +1,60 @@
+{
+  "platform": "discord",
+  "scope": "community_weekly",
+  "date": "2026-11-11",
+  "previous_date": "2026-11-04",
+  "generated_at": "2026-11-11T14:03:42.841497+00:00",
+  "messages": [
+    {
+      "content": "## Community model updates\n### ✨ New",
+      "embeds": [
+        {
+          "description": "**👤 chigwell · 94.4% success**\n- **claude-fable-5-2** · text · reasoning, tool calling · 💳 Paid\n- **gpt-image-2.6** · image · 💳 Paid\n- **kimi-k3.1-pro** · text · reasoning, tool calling · 💳 Paid\n\n**👤 JustScriptzz · 42.0% success**\n- **Claude Opus 4.6** · text · reasoning, tool calling · 🌱 Quest\n- **Gemini 4 Argon** · text · reasoning · 🌱 Quest\n- **GPT 5.6 Terra** · text · reasoning · 🌱 Quest\n- **Grok 4.7** · text · reasoning · 🌱 Quest\n- **Mistral Large 4** · text · reasoning · 🌱 Quest\n\n**👤 MarcosFRG · 94.4% success**\n- **GLM 5.3 \\(Paid\\)** · text · reasoning, tool calling · 💳 Paid\n\n**👤 vendouple · 88.7% success**\n- **Deepseek v4.1 Flash 1017** · text · reasoning, tool calling · 🌱 Quest\n\n**👤 YoannDev90 · 91.7% success**\n- **Mistral Large 4** · text · reasoning, tool calling · 🌱 Quest",
+          "color": 11104483
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🔄 Updated",
+      "embeds": [
+        {
+          "description": "**👤 chigwell · 94.4% success**\n- **gpt-6.1-sol** 🔴 Text output 25% more expensive; Text input 50% more expensive · 🔵 Input removed: image; Safety required: none → sexual, violence\n\n**👤 Lorodn4x · 92.0% success**\n- **DeepSeek V4 Pro** 🔴 Reasoning 11011.1% more expensive; Text output 11011.1% more expensive; Cached input 99900% more expensive; Text input 5455.6% more expensive\n\n**👤 MarcosFRG · 94.4% success**\n- **Leonardo Lucid Origin** 🔴 150% more expensive\n\n**👤 Saauf · 87.1% success**\n- **Flux 2 Klein 4B** 🔴 25% more expensive\n- **Flux 2 Klein 9B** 🔴 9.1% more expensive\n- **Llama Nemotron Embed VL 1B** 🔴 100% more expensive\n- **Muse Glimmer 30b** 🔵 Text output price added\n- **Nemotron 3 Embed 1B** 🔴 50% more expensive\n- **Nemotron 3.5 Embed 1B** 🔴 30% more expensive\n- **Recraft v4.1 Flash** 🔵 Now 💳 Paid\n- **Seedream 5.0 Lite** 🔴 4.3% more expensive\n- **Whisper Large v3 Turbo** 🔴 100% more expensive\n\n**👤 sharktide · 88.1% success**\n- **GPT-6-Luna \\(Promotion 25% off\\)** 🔵 Safety required: sexual → sexual, shield\n\n**👤 vendouple · 88.7% success**\n- **GLM 5.3** 🔵 Context: unspecified → 262000",
+          "color": 5793266
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🗑️ Removed",
+      "embeds": [
+        {
+          "description": "**👤 Catniti · 86.0% success**\nQwen3.8 Max\n\n**👤 CloudCompile · 92.5% success**\nReflection: Beam 1.0 \\(free\\)\n\n**👤 JustScriptzz · 42.0% success**\nGPT 5.6 Sol, Minimax M3.1 Flash\n\n**👤 sharktide · 88.1% success**\nFireworks GLM-5.2-Fast Data Zone\n\n**👤 vendouple · 88.7% success**\nDeepseek v3.2, DeepSeek V4 Flash, DeepSeek V4 Pro, Fable 5.1\n\n**👤 YoannDev90 · 91.7% success**\nBeam",
+          "color": 14981968
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "## Community agent updates\n### ✨ New",
+      "embeds": [
+        {
+          "description": "**👤 patbing · 100.0% success**\nBase: openai/gpt-5.4-mini · reasoning, tool calling · 🌱 Quest\n- **Tower Researcher**\n- **Tower Reviewer**\n- **Tower Writer**\n\n[Explore community models](https://enter.pollinations.ai/models?q=source%3Acommunity)",
+          "color": 11104483,
+          "footer": {
+            "text": "Publisher success over the last 7 days"
+          }
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    }
+  ]
+}

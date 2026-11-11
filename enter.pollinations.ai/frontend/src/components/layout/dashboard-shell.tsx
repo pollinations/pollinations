@@ -18,7 +18,6 @@ import {
     ScrollArea,
     useScrollLock,
     WalletIcon,
-    XIcon,
 } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type {
@@ -29,7 +28,7 @@ import type {
     ReactNode,
     RefObject,
 } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { pageMeta } from "../../page-meta.ts";
@@ -71,7 +70,6 @@ type DashboardShellProps = PropsWithChildren<{
     accountCard?: ReactNode;
     rowStatus?: Partial<Record<DashboardPage, ReactNode>>;
     signInBanner?: ReactNode;
-    showFooterLinks?: boolean;
     showQuestStatus?: boolean;
 }>;
 
@@ -94,7 +92,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     accountCard,
     rowStatus,
     signInBanner,
-    showFooterLinks = true,
     showQuestStatus = false,
     children,
 }) => {
@@ -175,7 +172,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             rowStatus={rowStatus}
             accountArea={accountArea}
             questStatus={questStatus}
-            showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
         />
     );
@@ -307,7 +303,6 @@ type DashboardRailProps = {
     rowStatus?: Partial<Record<DashboardPage, ReactNode>>;
     accountArea?: ReactNode;
     questStatus: string | null;
-    showFooterLinks: boolean;
     onNavigate: () => void;
 };
 
@@ -320,7 +315,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
     rowStatus,
     accountArea,
     questStatus,
-    showFooterLinks,
     onNavigate,
 }) => (
     <aside
@@ -329,20 +323,17 @@ const DashboardRail: FC<DashboardRailProps> = ({
         aria-label="Dashboard navigation"
     >
         {/* You first: your name (the way to Settings), or the sign-in
-            buttons, beside the phone's close button. */}
-        <div className="flex shrink-0 items-start gap-2 pb-1">
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
-                {accountName && (
-                    <AccountLink
-                        name={accountName}
-                        avatarUrl={avatarUrl}
-                        active={activePage === "account"}
-                        onNavigate={onNavigate}
-                    />
-                )}
-                {accountArea}
-            </div>
-            <CloseButton onClose={onNavigate} />
+            buttons. The phone's drawer closes by tapping outside it. */}
+        <div className="flex shrink-0 flex-col gap-2 pb-1">
+            {accountName && (
+                <AccountLink
+                    name={accountName}
+                    avatarUrl={avatarUrl}
+                    active={activePage === "account"}
+                    onNavigate={onNavigate}
+                />
+            )}
+            {accountArea}
         </div>
         <ScrollArea
             // A size container: the guides under Docs show by its height.
@@ -400,7 +391,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 NAV_LINE_CLASS,
             )}
         >
-            <DashboardFooter links={showFooterLinks ? footerLinks : []} />
+            <DashboardFooter />
         </div>
     </aside>
 );
@@ -466,18 +457,6 @@ const NavRow: FC<{
         )}
         {rowStatus?.[item.id]}
     </NavItem>
-);
-
-// Closes the phone's drawer; the desktop rail is always open.
-const CloseButton: FC<{ onClose: () => void }> = ({ onClose }) => (
-    <button
-        type="button"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque lg:hidden"
-        onClick={onClose}
-        aria-label="Close navigation"
-    >
-        <XIcon className="h-5 w-5" />
-    </button>
 );
 
 // Docs opens the docs site, so it is drawn as a link, not a page row: same
@@ -556,25 +535,33 @@ const DocGuides: FC = () => (
     </SubLines>
 );
 
-const DashboardFooter: FC<{
-    links: readonly FooterLink[];
-}> = ({ links }) => (
-    <div className="flex items-center justify-between gap-2 pl-1 text-xs leading-none text-theme-text-muted">
-        {/* The logo signs off the rail, beside the small print. */}
-        <a
-            href="https://pollinations.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex shrink-0 text-theme-text-strong"
-            aria-label="Pollinations"
+// The logo and the colour toggle sign off the rail; the small print sits
+// under them on its own line, so it never wraps between them.
+const DashboardFooter: FC = () => (
+    <div className="flex flex-col gap-2 pl-1">
+        <div className="flex items-center justify-between gap-2">
+            <a
+                href="https://pollinations.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex shrink-0 text-theme-text-strong"
+                aria-label="Pollinations"
+            >
+                <BrandMark variant="mark" className="h-6 w-6" />
+            </a>
+            {/* accent on the toggle's active icon, over the neutral rail */}
+            <span data-theme="accent" className="shrink-0">
+                <ColorModeToggle />
+            </span>
+        </div>
+        <nav
+            aria-label="Legal"
+            className="flex items-center gap-1.5 text-[11px] leading-none text-theme-text-muted"
         >
-            <BrandMark variant="mark" className="h-6 w-6" />
-        </a>
-        {links.length > 0 && (
-            <div className="flex flex-wrap gap-x-2 gap-y-1 leading-snug">
-                {links.map((link) => (
+            {footerLinks.map((link, index) => (
+                <Fragment key={link.href}>
+                    {index > 0 && <span aria-hidden="true">·</span>}
                     <a
-                        key={link.href}
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -582,13 +569,9 @@ const DashboardFooter: FC<{
                     >
                         {link.label}
                     </a>
-                ))}
-            </div>
-        )}
-        {/* accent on the toggle's active icon, over the neutral rail */}
-        <span data-theme="accent" className="ml-auto shrink-0">
-            <ColorModeToggle />
-        </span>
+                </Fragment>
+            ))}
+        </nav>
     </div>
 );
 

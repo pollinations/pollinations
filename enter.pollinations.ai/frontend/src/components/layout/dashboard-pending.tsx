@@ -52,6 +52,6 @@ export function DashboardPending() {
     return dashboardReady ? (
         content
     ) : (
-        <DashboardShell showFooterLinks={false}>{content}</DashboardShell>
+        <DashboardShell>{content}</DashboardShell>
     );
 }

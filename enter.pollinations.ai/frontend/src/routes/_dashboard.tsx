@@ -198,7 +198,6 @@ function DashboardLayout() {
                     <SignedOutAccountArea />
                 )
             }
-            showFooterLinks={Boolean(data.user) || data.sessionUnavailable}
             showQuestStatus={Boolean(data.user)}
             signInBanner={
                 data.user || data.sessionUnavailable ? undefined : (

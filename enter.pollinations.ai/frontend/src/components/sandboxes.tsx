@@ -130,14 +130,26 @@ const perSecond = (pricing: Pricing, template: string, size: Size) => {
 
 const pollen = (amount: number) => `${Number(amount.toPrecision(2))} pollen`;
 
-const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
-    `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
-
-const templateLabel = (id: string) => {
+// What a template gives you, as its title: "2 vCPU · 2 GB memory · 26 GB
+// disk". The size comes from the registry, or from the sandbox or pricing for
+// a template the registry doesn't list (no disk then).
+const templateTitle = (id: string, size?: Size) => {
     const template = sandboxTemplate(id);
-    return template
-        ? `${template.name} (${SANDBOX_PROVIDERS[template.provider].name})`
-        : id;
+    const { cpuCount, memoryMB } = size ?? template ?? {};
+    return [
+        cpuCount && `${cpuCount} vCPU`,
+        memoryMB && `${memoryMB / 1024} GB memory`,
+        template && `${Math.round(template.diskSizeMB / 1024)} GB disk`,
+    ]
+        .filter(Boolean)
+        .join(" · ");
+};
+
+// Where it runs, shown quieter beside the title; another E2B template shows
+// its own name.
+const templateSource = (id: string) => {
+    const template = sandboxTemplate(id);
+    return template ? SANDBOX_PROVIDERS[template.provider].name : id;
 };
 
 // Past half of E2B's longest timeout, it runs until it's stopped.
@@ -166,9 +178,9 @@ function TemplatePicker({
 }) {
     const option = (id: string, size: Size) => (
         <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
-            <span className="font-semibold">{templateLabel(id)}</span>
+            <span className="font-semibold">{templateTitle(id, size)}</span>
             <span className="text-xs font-normal text-theme-text-muted">
-                {sizeLabel(size)} ·{" "}
+                {templateSource(id)} ·{" "}
                 {pollen(perSecond(pricing, id, size) * 3600)}
                 /hour
             </span>
@@ -201,10 +213,18 @@ function TemplatePicker({
                             <span className="min-w-0 truncate">
                                 {custom
                                     ? "Other E2B template"
-                                    : templateLabel(template)}
+                                    : templateTitle(
+                                          template,
+                                          pricing.templates[template],
+                                      )}
                             </span>
-                            {!custom && pricing.templates[template] && (
+                            {!custom && (
                                 <span className="ml-auto whitespace-nowrap text-xs font-normal">
+                                    {templateSource(template)}
+                                </span>
+                            )}
+                            {!custom && pricing.templates[template] && (
+                                <span className="whitespace-nowrap text-xs font-normal">
                                     {pollen(
                                         perSecond(
                                             pricing,
@@ -318,8 +338,8 @@ function SandboxCard({
                         {sandbox.metadata?.name ?? sandbox.sandboxID}
                     </Text>
                     <Text size="sm" tone="muted">
-                        {templateLabel(templateOf(sandbox))} ·{" "}
-                        {sizeLabel(sandbox)} ·{" "}
+                        {templateTitle(templateOf(sandbox), sandbox)} ·{" "}
+                        {templateSource(templateOf(sandbox))} ·{" "}
                         {pollen(
                             perSecond(pricing, templateOf(sandbox), sandbox) *
                                 3600,
@@ -842,12 +862,16 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                                         Template
                                     </dt>
                                     <dd>
-                                        {templateLabel(
+                                        {templateTitle(
                                             templateOf(pending.sandbox),
+                                            pending.sandbox,
                                         )}
                                         <span className="text-theme-text-muted">
                                             {" "}
-                                            · {sizeLabel(pending.sandbox)}
+                                            ·{" "}
+                                            {templateSource(
+                                                templateOf(pending.sandbox),
+                                            )}
                                         </span>
                                     </dd>
                                     {pricing && (

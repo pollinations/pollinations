@@ -66,16 +66,20 @@ export const SandboxTemplateList: FC<{
                                 </div>
                             ))}
                         </dl>
-                        <span className="flex items-center gap-1.5 text-sm text-theme-text-muted">
-                            <ClockIcon className="h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong className="font-semibold text-theme-text-strong">
-                                    {pollen(perHour)}
-                                </strong>
-                                /hour · {pollen(perHour * HOURS_PER_MONTH)}
-                                /month always on
-                            </span>
-                        </span>
+                        {/* The hourly price, and under it, smaller, what
+                            it comes to left on all month. */}
+                        <div className="flex items-start gap-1.5 text-theme-text-muted">
+                            <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-sm font-semibold text-theme-text-strong">
+                                    {pollen(perHour)}/hour
+                                </span>
+                                <span className="text-xs">
+                                    {pollen(perHour * HOURS_PER_MONTH)}/month
+                                    always on
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     <CopyField
                         label={`Copy the command that creates a ${template.id} sandbox`}

@@ -60,9 +60,17 @@ afterEach(() => {
 });
 
 it("downloads only the earnings rows the picks show", async () => {
-    const { saveBlob } = await import(
-        "../frontend/src/components/activity/activity-csv"
-    );
+    // The earnings CSV is built in the browser; capture the saved Blob.
+    const saved: Blob[] = [];
+    vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+        saved.push(blob as Blob);
+        return "blob:csv";
+    });
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    vi.stubGlobal("document", {
+        createElement: () => ({ click() {}, remove() {} }),
+        body: { appendChild() {} },
+    });
     const query = {
         granularity: "month",
         period: "2026-10",
@@ -73,10 +81,8 @@ it("downloads only the earnings rows the picks show", async () => {
         new AbortController().signal,
     );
     async function exportCsv(picks: Picks) {
-        vi.mocked(saveBlob).mockClear();
         await download?.(picks);
-        const [blob] = vi.mocked(saveBlob).mock.calls[0];
-        return blob.text();
+        return saved.at(-1)?.text();
     }
 
     const all = await exportCsv({ keys: [], models: [] });

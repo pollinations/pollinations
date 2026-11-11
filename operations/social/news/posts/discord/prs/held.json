@@ -26,7 +26,6 @@
       "merge_sha": "0b1f4e457f8e021da0804c3d9afc47a97aa1d34a",
       "merged_at": "2026-11-11T09:00:21Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/mcp",
         "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
@@ -53,8 +52,7 @@
         "deploy-cloudflare-production.yml:Deploy apps/packages-mcp",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19380": {
@@ -75,7 +73,6 @@
       "merge_sha": "79523664b1fe12671ef636e144bf869135d266ef",
       "merged_at": "2026-11-11T09:00:38Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/monitoring/infra-watch",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]

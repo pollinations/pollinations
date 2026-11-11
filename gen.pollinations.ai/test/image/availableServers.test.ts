@@ -269,6 +269,35 @@ describe("fetchFromWeightedServer", () => {
     });
 });
 
+describe("getRegisteredServers", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("uses the production pool and excludes heartbeats at the 180-second cutoff", async () => {
+        const kv = makeKv();
+        const now = Date.now();
+        vi.spyOn(Date, "now").mockReturnValue(now);
+        setServerRegistryBinding(kv, "production");
+        for (const [environment, pool, id, age] of [
+            ["production", "sana", "live", 179_999],
+            ["production", "sana", "expired", 180_000],
+            ["staging", "sana", "staging", 0],
+            ["production", "flux", "flux", 0],
+        ] as const) {
+            await kv.put(
+                `image:server:${environment}:${pool}:${id}`,
+                JSON.stringify({
+                    url: `https://${id}`,
+                    lastHeartbeat: now - age,
+                }),
+            );
+        }
+        await kv.put("image:latency:production:sana:live", "2500");
+        expect(await getRegisteredServers("sana")).toEqual([
+            { url: "https://live", lastHeartbeat: now - 179_999, lastMs: 2500 },
+        ]);
+    });
+});
+
 describe("recordLatency", () => {
     beforeEach(() => {
         setServerRegistryBinding(makeKv(), "test");

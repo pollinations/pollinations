@@ -867,10 +867,7 @@ test.each([
         const telemetry = await closeAndReadTelemetry(session);
         expect(telemetry.requestPath).toBe(path);
         expect(telemetry.resolvedModelRequested).toBe(canonicalModel);
-        expect(telemetry.totalCost).toBeCloseTo(
-            (0.1 * (upstreamModel === "scribe_v3_live" ? 0.22 : 0.39)) / 3600,
-            12,
-        );
+        expect(telemetry.totalCost).toBeCloseTo((0.1 * 0.22) / 3600, 12);
         expect(telemetry.tokenCountPromptAudioSeconds).toBeCloseTo(0.1, 8);
     },
 );

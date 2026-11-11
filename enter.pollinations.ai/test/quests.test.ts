@@ -993,6 +993,50 @@ test("top-up quests ignore paid checkout pollen before quest launch", async ({
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
+test("top-up quests ignore a fully refunded checkout", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    const row = { userId: user.id, createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE };
+    await db.insert(schema.stripeCheckoutCredits).values([
+        {
+            ...row,
+            sessionId: "cs_test_refunded",
+            eventId: "evt_refunded_purchase",
+            eventType: "checkout.session.completed",
+            pollenCredited: 100,
+        },
+        // The refund webhook writes the reversal as a negative row.
+        {
+            ...row,
+            sessionId: "refund:cs_test_refunded",
+            eventId: "evt_refund",
+            eventType: "charge.refunded",
+            pollenCredited: -100,
+        },
+    ]);
+
+    const result = await checkQuestsForUser(env, user.id);
+
+    expect(result.progress).toContainEqual({
+        questId: TOP_UP_100_SINCE_LAUNCH_QUEST_ID,
+        current: 0,
+        target: 100,
+        unit: "pollen",
+    });
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+});
+
 test("top-up quests ignore Polar checkout pollen", async ({
     apiKey: _apiKey,
     mocks,

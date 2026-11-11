@@ -558,26 +558,33 @@ const handleCheckoutSessionCompleted = async (
     };
 };
 
-// A full refund is recorded as a negative credit row keyed by the refunded
-// session, so a repeated event hits the primary key and changes nothing.
-// Partial and failed refunds are corrected by hand.
+// A full refund of a pack bought at checkout is recorded as a negative credit
+// row keyed by the refunded session, so a repeated event hits the primary key
+// and changes nothing. Partial refunds, failed refunds and refunded automatic
+// top-ups are corrected by hand.
 async function reversePollenForRefund(
     env: CloudflareBindings,
     stripe: Stripe,
     event: Stripe.Event,
     charge: Stripe.Charge,
 ): Promise<void> {
+    if (charge.amount_refunded < charge.amount_captured) {
+        console.warn(
+            `Stripe refund: partial refund on charge ${charge.id} needs a manual Pollen adjustment`,
+        );
+        return;
+    }
     const paymentIntent =
         typeof charge.payment_intent === "string"
             ? charge.payment_intent
             : charge.payment_intent?.id;
-    if (!paymentIntent) return;
-
-    const sessions = await stripe.checkout.sessions.list({
-        payment_intent: paymentIntent,
-        limit: 1,
-    });
-    const sessionId = sessions.data[0]?.id;
+    const sessions = paymentIntent
+        ? await stripe.checkout.sessions.list({
+              payment_intent: paymentIntent,
+              limit: 1,
+          })
+        : null;
+    const sessionId = sessions?.data[0]?.id;
     const credit = sessionId
         ? await env.DB.prepare(
               "SELECT user_id AS userId, pollen_credited AS pollen FROM stripe_checkout_credits WHERE session_id = ?",
@@ -586,12 +593,8 @@ async function reversePollenForRefund(
               .first<{ userId: string; pollen: number }>()
         : null;
     if (!credit) {
-        console.warn(`Stripe refund: no Pollen credit for charge ${charge.id}`);
-        return;
-    }
-    if (charge.amount_refunded < charge.amount_captured) {
         console.warn(
-            `Stripe refund: partial refund on charge ${charge.id} needs a manual Pollen adjustment`,
+            `Stripe refund: no checkout credit for charge ${charge.id}, adjust Pollen by hand if it paid for any`,
         );
         return;
     }

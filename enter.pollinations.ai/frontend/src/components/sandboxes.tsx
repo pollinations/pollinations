@@ -159,28 +159,15 @@ const TemplateName = ({ id, size }: { id: string; size?: Size }) => (
     </>
 );
 
-// When a running sandbox stops, as a value and a small unit like the price
-// row: "3:30 PM" "in 30 min", or past two days "Nov 14" "in 3 d".
-const stopsAt = (endAt: string) => {
-    const end = new Date(endAt);
-    const minutes = Math.max(
-        0,
-        Math.round((end.getTime() - Date.now()) / 60000),
-    );
-    if (minutes >= 48 * 60) {
-        return {
-            at: end.toLocaleDateString([], { month: "short", day: "numeric" }),
-            left: `in ${Math.round(minutes / 1440)} d`,
-        };
-    }
-    return {
-        at: end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-        left:
-            minutes < 60
-                ? `in ${minutes} min`
-                : `in ${Math.round(minutes / 60)} h`,
-    };
-};
+// When a running sandbox stops, as a fixed time ("Nov 11, 5:11 PM"): a
+// countdown would go stale while the page stays open.
+const stopsAt = (endAt: string) =>
+    new Date(endAt).toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
 
 // Past half of E2B's longest timeout, it runs until it's stopped.
 const forever = (until: string) =>
@@ -361,9 +348,7 @@ function SandboxCard({
                     </Chip>
                     {running && (
                         <span className="text-sm text-theme-text-muted">
-                            {stops
-                                ? `until ${stops.at} · ${stops.left}`
-                                : "until you stop it"}
+                            {stops ? `until ${stops}` : "until you stop it"}
                         </span>
                     )}
                 </div>

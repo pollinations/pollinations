@@ -1,21 +1,27 @@
-import { UpstreamError } from "@shared/error.ts";
 /**
  * Video generation handler for Pollinations
  * Separate from image logic - no logo processing, no JPEG conversion, no EXIF metadata
  */
 
-import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
-import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
+import { callAlibabaVideo } from "./models/alibabaVideoModel.ts";
+import {
+    callFalFallbackVideo,
+    callMireloSfxAPI,
+} from "./models/falFallbackMediaModel.ts";
+import { callFluxMaxVideoAPI } from "./models/fluxMaxVideoModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
+import { callGrokReplicateVideoAPI } from "./models/grokReplicateVideoModel.ts";
+import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import {
     callMinimaxH3API,
+    callMinimaxH3MaxAPI,
     callMinimaxH3MaxTurboAPI,
 } from "./models/minimaxH3Model.ts";
-import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
+    callHeyGenVideoAPI,
     callOpenRouterGrokVideoAPI,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
@@ -33,6 +39,7 @@ import {
     callWanFastAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
+import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 
 export type { VideoGenerationResult };
@@ -40,36 +47,16 @@ export type { VideoGenerationResult };
 const logOps = debug("pollinations:video:ops");
 const VIDEO_MODEL_IDS = new Set(getVideoModelIds());
 
-export function validateVideoFrameCount(safeParams: ImageParams): void {
-    const definition = IMAGE_SERVICES[safeParams.model] as ModelDefinition;
-    const frameCount = safeParams.image.length;
-    const maxFrames = definition.maxReferenceImages ?? 0;
-
-    if (frameCount <= maxFrames) return;
-
-    const supportedFrames =
-        maxFrames === 0
-            ? "no frame images"
-            : maxFrames === 1
-              ? "one start-frame image (image[0])"
-              : `${maxFrames} frame images (image[0] as the start frame and image[1] as the end frame)`;
-
-    throw UpstreamError.fromProvider(400, {
-        message: `${definition.title} supports ${supportedFrames}; received ${frameCount}.`,
-    });
-}
-
 export async function createAndReturnVideo(
     prompt: string,
     safeParams: ImageParams,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
     logOps("Starting video generation:", { prompt, model: safeParams.model });
-    validateVideoFrameCount(safeParams);
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
         case "google/gemini-omni-1.1-flash":
+        case "google/gemini-omni-1.2-flash":
             result = await callGeminiOmniAPI(prompt, safeParams);
             break;
         case "google/veo-3.1-fast":
@@ -78,15 +65,20 @@ export async function createAndReturnVideo(
         case "google/veo-3.1-fast:replicate":
             result = await callVeoReplicateAPI(prompt, safeParams);
             break;
-        case "bytedance/seedance-1-pro-fast":
+        case "bytedance/seedance-1-pro-fast:replicate":
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
-        case "bytedance/seedance-1-pro-fast:fal":
+        case "bytedance/seedance-1-pro-fast":
         case "alibaba/wan-2.6:fal":
-        case "alibaba/wan-2.2-fast:fal":
-        case "x-ai/grok-imagine-video":
+        case "alibaba/wan-2.2-fast":
+        case "x-ai/grok-imagine-video:fal":
         case "x-ai/grok-imagine-video-1.5:fal":
+        case "kandinskylab/kandinsky-6.0-lite":
+        case "heygen/heygen-video-1":
             result = await callFalFallbackVideo(prompt, safeParams);
+            break;
+        case "mirelo/sfx-2.0":
+            result = await callMireloSfxAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.0":
         case "bytedance/seedance-2.0-mini":
@@ -94,26 +86,51 @@ export async function createAndReturnVideo(
             result = await callSeedanceV2API(prompt, safeParams);
             break;
         case "alibaba/wan-2.6":
+            result = await callAlibabaVideo(prompt, safeParams, "2.6");
+            break;
+        case "alibaba/wan-2.6:replicate":
             result = await callWanAPI(prompt, safeParams);
             break;
-        case "alibaba/wan-2.2-fast":
+        case "alibaba/wan-2.2-fast:replicate":
             result = await callWanFastAPI(prompt, safeParams);
             break;
         case "alibaba/wan-2.7":
             result = await callWanProAPI(prompt, safeParams);
             break;
         case "alibaba/wan-3.0":
+            result = await callAlibabaVideo(prompt, safeParams, "3.0");
+            break;
+        case "alibaba/wan-3.0:fal":
             result = await callWan3FalAPI(prompt, safeParams);
             break;
         case "prunaai/p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);
             break;
-        case "amazon/nova-reel-v1":
-            result = await callNovaReelAPI(prompt, safeParams, requestId);
+        case "x-ai/grok-imagine-video":
+            result = await callGrokReplicateVideoAPI(prompt, safeParams);
             break;
-        case "x-ai/grok-imagine-video:openrouter":
-        case "x-ai/grok-imagine-video-1.5":
+        case "x-ai/grok-imagine-video-1.5-lite:openrouter":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "kwaivgi/kling-v3.0-std":
+            result = await callKlingVideoAPI(prompt, safeParams);
+            break;
+        case "black-forest-labs/flux-3-max":
+            result = await callFluxMaxVideoAPI(prompt, safeParams);
+            break;
+        case "x-ai/grok-imagine-video-1.5":
+            result = await callXaiVideoAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-video-1.5",
+            );
+            break;
+        case "x-ai/grok-imagine-video-1.5-lite":
+            result = await callXaiVideoAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-video-1.5-lite",
+            );
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);
@@ -121,8 +138,14 @@ export async function createAndReturnVideo(
         case "alibaba/happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
             break;
+        case "heygen/heygen-video-1:openrouter":
+            result = await callHeyGenVideoAPI(prompt, safeParams);
+            break;
         case "minimax/minimax-h3":
             result = await callMinimaxH3API(prompt, safeParams);
+            break;
+        case "minimax/minimax-h3-max":
+            result = await callMinimaxH3MaxAPI(prompt, safeParams);
             break;
         case "minimax/minimax-h3-max-turbo":
             result = await callMinimaxH3MaxTurboAPI(prompt, safeParams);

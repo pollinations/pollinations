@@ -1,3 +1,4 @@
+import googleLogoUrl from "../../assets/google.svg";
 import type { IconProps } from "./types.ts";
 
 const strokeProps = {
@@ -266,6 +267,18 @@ export function GitHubIcon(props: IconProps) {
     );
 }
 
+/** Multicolor Google "G" brand asset; it keeps its colors instead of currentColor. */
+export function GoogleIcon({ className }: IconProps) {
+    return (
+        <img
+            src={googleLogoUrl}
+            alt=""
+            aria-hidden="true"
+            className={className}
+        />
+    );
+}
+
 export function ImageIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -382,7 +395,7 @@ export function TerminalIcon(props: IconProps) {
 export function ToolIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
-            <path d="M14.7 6.3a4 4 0 0 0-5-5l2.1 2.1-2.4 2.4-2.1-2.1a4 4 0 0 0 5 5l7.4 7.4a2 2 0 0 1-2.8 2.8l-7.4-7.4" />
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l2.1 2.1a1 1 0 0 0 1.4 0l4-4a6 6 0 0 1-8 8l-8 8a2.8 2.8 0 0 1-4-4l8-8a6 6 0 0 1 8-8l-4 4Z" />
         </svg>
     );
 }
@@ -458,6 +471,16 @@ export function WalletIcon(props: IconProps) {
     );
 }
 
+/** A paper receipt: what a price includes. */
+export function ReceiptIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21Z" />
+            <path d="M9 8h6M9 12h6M9 16h3" />
+        </svg>
+    );
+}
+
 export function MoonIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -520,6 +543,16 @@ export function EyeIcon(props: IconProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
             <circle cx="12" cy="12" r="3" />
+        </svg>
+    );
+}
+
+export function EyeOffIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M3 3l18 18" />
         </svg>
     );
 }
@@ -701,6 +734,41 @@ export function GlobeIcon(props: IconProps) {
             <circle cx="12" cy="12" r="10" />
             <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
             <path d="M2 12h20" />
+        </svg>
+    );
+}
+
+export function ArrowLeftIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M19 12H5" />
+            <path d="m12 19-7-7 7-7" />
+        </svg>
+    );
+}
+
+export function RefreshIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <path d="M21 3v6h-6" />
+        </svg>
+    );
+}
+
+export function PulseIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+    );
+}
+
+export function ShieldCheckIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="m9 12 2 2 4-4" />
         </svg>
     );
 }

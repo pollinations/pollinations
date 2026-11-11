@@ -1,29 +1,38 @@
 import {
     CardIcon,
-    ClockIcon,
     CopyButton,
-    GlobeIcon,
+    CopyStateIcon,
+    cn,
     InfoTip,
     InlineLink,
+    LockIcon,
     MailIcon,
+    ReceiptIcon,
+    RefreshIcon,
+    ShieldCheckIcon,
     SproutIcon,
     Surface,
+    useOnline,
     WalletIcon,
+    WarningIcon,
 } from "@pollinations/ui";
 import {
     formatPollen,
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
-import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
+import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-import { PollenPackPurchase } from "./pollen-pack-purchase.tsx";
+import { TopUpPanel } from "./top-up-panel.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
+    questPollenRestricted?: boolean;
     paidWeek?: number;
     tierWeek?: number;
     /** Only the two balance cards: no total row, no "how it works" footer. */
@@ -31,7 +40,8 @@ type PollenBalanceProps = {
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
-const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
+export const TERMS_URL = "https://pollinations.ai/terms";
+export const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
@@ -70,6 +80,7 @@ const TooltipList: FC<{
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
+    questPollenRestricted = false,
     paidWeek = 0,
     tierWeek = 0,
     compact = false,
@@ -77,9 +88,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
     const totalPollen = normalizeDisplayBalance(
-        displayTierBalance + displayPaidBalance,
+        (questPollenRestricted ? 0 : displayTierBalance) + displayPaidBalance,
     );
-    const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
+    const totalWeek = normalizeDisplayBalance(
+        paidWeek + (questPollenRestricted ? 0 : tierWeek),
+    );
 
     return (
         <div className="flex flex-col gap-3">
@@ -91,15 +104,15 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     value={formatPollen(displayPaidBalance)}
                     info={
                         <InfoTip
-                            label="About Paid Pollen"
+                            label="About Paid pollen"
                             text={
                                 <TooltipList
-                                    title="Paid Pollen"
+                                    title="Paid pollen"
                                     icon={<CardIcon className="h-4 w-4" />}
                                     items={[
-                                        "Pollen you bought",
+                                        "pollen you bought",
                                         "Earnings from paid-side spend in your apps",
-                                        "Used for paid-only models, or when Quest Pollen can't cover",
+                                        "Used for paid-only models, or when Quest pollen can't cover",
                                     ]}
                                     earned={paidWeek}
                                 />
@@ -120,18 +133,30 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 <WalletBalanceCard
                     kind="tier"
                     label="Quest"
-                    value={formatPollen(displayTierBalance)}
+                    value={
+                        <span
+                            className={
+                                questPollenRestricted
+                                    ? "text-theme-text-muted"
+                                    : undefined
+                            }
+                        >
+                            {formatPollen(displayTierBalance)}
+                        </span>
+                    }
                     info={
                         <InfoTip
-                            label="About Quest Pollen"
+                            label="About Quest pollen"
                             text={
                                 <TooltipList
-                                    title="Quest Pollen"
+                                    title="Quest pollen"
                                     icon={<SproutIcon className="h-4 w-4" />}
                                     items={[
-                                        "Pollen earned from completing Quests",
+                                        "pollen earned from completing Quests",
                                         "Earnings credited from your apps",
-                                        "Used first for regular models, when it can cover",
+                                        questPollenRestricted
+                                            ? "Available after your account is verified"
+                                            : "Used first for regular models, when it can cover",
                                     ]}
                                     earned={tierWeek}
                                 />
@@ -139,7 +164,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         />
                     }
                     footer={
-                        tierWeek > 0 ? (
+                        !questPollenRestricted && tierWeek > 0 ? (
                             <>
                                 +{formatPollen(tierWeek)}{" "}
                                 <span className="font-medium text-theme-text-muted">
@@ -154,37 +179,69 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             {!compact && (
                 <>
                     {/* Total + 7d earnings below */}
-                    <div className="flex items-start justify-between gap-3 pt-3">
-                        <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
-                            Total
-                        </span>
-                        <div className="flex flex-col items-end leading-tight">
-                            <span className="flex items-baseline gap-1.5">
-                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
-                                    {formatPollen(totalPollen)}
-                                </span>
-                                <span className="text-xs font-bold text-theme-text-soft">
-                                    pollen
-                                </span>
+                    <Surface className="flex flex-col gap-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
+                                {questPollenRestricted ? "Available" : "Total"}
                             </span>
-                            {totalWeek > 0 && (
-                                <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
-                                    +{formatPollen(totalWeek)}{" "}
-                                    <span className="font-medium text-theme-text-muted">
-                                        / 7d
+                            <div className="flex flex-col items-end leading-tight">
+                                <span className="flex items-baseline gap-1.5">
+                                    <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
+                                        {formatPollen(totalPollen)}
+                                    </span>
+                                    <span className="text-xs font-bold text-theme-text-soft">
+                                        pollen
                                     </span>
                                 </span>
-                            )}
+                                {totalWeek > 0 && (
+                                    <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
+                                        +{formatPollen(totalWeek)}{" "}
+                                        <span className="font-medium text-theme-text-muted">
+                                            / 7d
+                                        </span>
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                        {questPollenRestricted && (
+                            <p className="flex items-start gap-1.5 text-xs leading-relaxed text-theme-text-muted">
+                                <LockIcon
+                                    aria-hidden="true"
+                                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                                />
+                                <span>
+                                    <span className="font-semibold text-theme-text-strong">
+                                        {formatPollen(displayTierBalance)} Quest
+                                        pollen locked.
+                                    </span>{" "}
+                                    Verification needed:{" "}
+                                    <InlineLink
+                                        href="/pollen#buy-pollen"
+                                        tone="quiet"
+                                        showIcon={false}
+                                    >
+                                        make your first purchase
+                                    </InlineLink>{" "}
+                                    or{" "}
+                                    <InlineLink
+                                        href="mailto:hello@pollinations.ai"
+                                        tone="quiet"
+                                        showIcon={false}
+                                    >
+                                        contact us
+                                    </InlineLink>
+                                    .
+                                </span>
+                            </p>
+                        )}
+                    </Surface>
 
                     {/* Footer: learn more */}
-                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <Footnotes className="mt-2">
                         <p className="flex items-start gap-1.5">
                             <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Your wallet holds Pollen you've purchased plus
-                                Pollen you've earned.{" "}
+                                What you've purchased plus what you've earned.{" "}
                                 <InlineLink
                                     as={Link}
                                     to="/news"
@@ -195,7 +252,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 </InlineLink>
                             </span>
                         </p>
-                    </div>
+                    </Footnotes>
                 </>
             )}
         </div>
@@ -205,6 +262,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 type SidebarWalletProps = {
     tierBalance: number;
     packBalance: number;
+    questPollenRestricted?: boolean;
     paidWeek?: number;
     tierWeek?: number;
     onClick?: () => void;
@@ -213,6 +271,7 @@ type SidebarWalletProps = {
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
     packBalance,
+    questPollenRestricted = false,
     paidWeek = 0,
     tierWeek = 0,
 }) => {
@@ -241,12 +300,20 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
                     <WalletKindIcon kind="tier" />
                     Quest
+                    {questPollenRestricted && (
+                        <LockIcon
+                            aria-hidden={false}
+                            role="img"
+                            aria-label="Quest pollen needs verification"
+                            className="h-3 w-3 shrink-0 text-theme-text-muted"
+                        />
+                    )}
                 </span>
                 <span className="flex items-baseline gap-1.5">
                     <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
                         {formatPollen(displayTierBalance)}
                     </span>
-                    {tierWeek > 0 && (
+                    {!questPollenRestricted && tierWeek > 0 && (
                         <span className="text-micro font-bold tabular-nums text-intent-success-text">
                             +{formatPollen(tierWeek)}
                         </span>
@@ -257,68 +324,151 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     );
 };
 
+/** The drawer wallet while Pollinations is down: two rows, like the balances. */
+export const SidebarOutage: FC = () => {
+    const online = useOnline();
+    return (
+        <div
+            data-theme="accent"
+            className="px-3 py-1 flex flex-col gap-1 text-xs font-bold"
+        >
+            <span className="flex items-center gap-1.5 text-intent-warning-text">
+                <WarningIcon
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 shrink-0"
+                />
+                {online ? "Temporary outage" : "You’re offline"}
+            </span>
+            <span className="flex items-center gap-1.5 text-theme-text-soft">
+                <ShieldCheckIcon
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 shrink-0"
+                />
+                Your pollen is safe
+            </span>
+        </div>
+    );
+};
+
 type BuyPollenPanelProps = {
-    initialBillingState: BillingState | null;
-    selectedPackAmount: number;
-    onSelectedPackAmountChange: (amount: number) => void;
+    initialBilling: BillingOverview | null;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
+    /** Reload the wallet and billing after Top-up changed them. */
+    onWalletChange?: () => void;
+    initialPack?: PollenPackKey;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
-    initialBillingState,
-    selectedPackAmount,
-    onSelectedPackAmountChange,
+    initialBilling,
     returnToTopUp,
-}) => {
-    return (
-        <>
-            <PollenPackPurchase
-                selectedPackAmount={selectedPackAmount}
-                onSelectedPackAmountChange={onSelectedPackAmountChange}
+    onWalletChange,
+    initialPack,
+}) => (
+    <>
+        {/* The packs and their choices in an inner card, the small print
+            under it, as in every other section. */}
+        <Surface variant="card">
+            <TopUpPanel
+                initialBilling={initialBilling}
                 returnToTopUp={returnToTopUp}
+                onWalletChange={onWalletChange}
+                initialPack={initialPack}
             />
-            <Surface>
-                <AutoTopUpPanel
-                    initialBillingState={initialBillingState}
-                    returnToTopUp={returnToTopUp}
+        </Surface>
+        <Footnotes>
+            {/* When auto top-up charges, stated before anyone turns it on.
+                "Paid": Quest Pollen doesn't trigger it. */}
+            <p className="flex items-start gap-1.5">
+                <RefreshIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
                 />
-            </Surface>
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <PaymentTrustBadge className="mt-0 pt-0" />
-                <p className="flex items-start gap-1.5">
-                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Credits are instant, never expire, and follow our{" "}
-                        <InlineLink href={REFUND_POLICY_URL}>
-                            Refund Policy
-                        </InlineLink>
-                        .
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout.
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Payment issue or missing pollen?{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>{" "}
-                        — we reply same day.
-                    </span>
-                </p>
-            </div>
-        </>
-    );
-};
+                <span>
+                    Auto top-up buys its pack when your paid balance reaches{" "}
+                    {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen
+                </span>
+            </p>
+            <p className="flex items-start gap-1.5">
+                <ReceiptIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                />
+                <span>
+                    Prices include the {SERVICE_FEE_NAME.toLowerCase()}, plus
+                    tax at payment
+                </span>
+            </p>
+            <PaymentTrustBadge
+                className="mt-0 pt-0"
+                country={initialBilling?.ipCountry}
+            />
+        </Footnotes>
+    </>
+);
+
+/**
+ * The dashboard's footnote block: 8px between lines, 4px inset. The section's
+ * own gap sets the space above it, as on every other page.
+ */
+export const Footnotes: FC<{ className?: string; children: ReactNode }> = ({
+    className,
+    children,
+}) => (
+    <div
+        className={cn(
+            "space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted",
+            className,
+        )}
+    >
+        {children}
+    </div>
+);
+
+/**
+ * Who to ask and the terms of buying, in Billing on the Pollen page. The
+ * standalone top-up page says it in its footer instead.
+ */
+export const PaymentHelp: FC = () => (
+    <p className="flex items-start gap-1.5">
+        <MailIcon aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+            Payment help:{" "}
+            {/* The address, Terms and Refund wrap as one piece: on a phone
+                the line breaks after "Payment help:", never inside. */}
+            <span className="whitespace-nowrap">
+                {/* Styled like Terms and Refund; a copy icon where theirs
+                    has the arrow. The icon says copy and the text says
+                    Copied, so no tooltip. */}
+                <CopyButton
+                    value="billing@pollinations.ai"
+                    className="polli-link"
+                    data-tone="accent"
+                    tooltip={null}
+                >
+                    {(copied) => (
+                        <>
+                            {copied ? "Copied" : "billing@pollinations.ai"}
+                            <CopyStateIcon
+                                copied={copied}
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
+                            />
+                        </>
+                    )}
+                </CopyButton>
+                <LinkSeparator />
+                <InlineLink href={TERMS_URL}>Terms</InlineLink>
+                <LinkSeparator />
+                <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+            </span>
+        </span>
+    </p>
+);
+
+/** A dot between links, with room around it. */
+const LinkSeparator: FC = () => (
+    <span aria-hidden="true" className="mx-2 text-theme-text-muted">
+        ·
+    </span>
+);

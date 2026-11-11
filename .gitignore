@@ -12,7 +12,7 @@ pollinations-myceli-proxy/wrangler.generated.toml
 /_local/
 
 # Local treasury ingest source artifacts and generated data
-/operations/economics/ingest/data/
+/operations/dashboards/economics/ingest/data/
 
 # Keep private files stranded by the operations root move ignored. Git moves
 # tracked files but leaves local-only data at the legacy path.
@@ -308,7 +308,11 @@ dist
 venv/
 cursor-party/
 .aider*
+# Bare pattern: matches a `data/` directory at ANY depth, so source folders
+# that happen to be called data are swallowed too. Un-ignore them explicitly.
 data/
+!pollinations.ai/src/data/
+!pollinations.ai/public/data/
 text.pollinations.ai/v2/
 
 # Local Netlify folder

@@ -17,14 +17,15 @@ SQL >
         meter_source,
         input_text_tokens,
         input_cached_tokens,
+        input_cache_write_tokens,
         input_audio_tokens,
         input_audio_seconds,
-        input_image_tokens,
+        input_image_units AS input_image_tokens,
         output_text_tokens,
         output_reasoning_tokens,
         output_audio_tokens,
         output_audio_seconds,
-        output_image_tokens,
+        output_image_units AS output_image_tokens,
         output_video_seconds,
         price_usd as cost_usd,
         response_time_ms
@@ -33,10 +34,10 @@ SQL >
         user_id = {{ String(user_id, '') }}
         {% if defined(api_key_ids) %} AND activity_usage_events.api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
         {% if defined(models) %} AND activity_usage_events.resolved_model IN {{ Array(models, 'String') }} {% end %}
-        {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}
+        {% if defined(since) %} AND timestamp >= toDateTime({{ String(since) }}, {{ String(timezone, 'UTC') }})
         {% else %} AND timestamp >= now() - INTERVAL 30 DAY
         {% end %}
-        {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+        {% if defined(until) %} AND timestamp < toDateTime({{ String(until) }}, {{ String(timezone, 'UTC') }}) {% end %}
         {% if defined(before) and defined(before_event_id) %}
             AND (
                 timestamp < {{ DateTime(before) }}

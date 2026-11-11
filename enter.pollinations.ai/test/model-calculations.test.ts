@@ -55,50 +55,76 @@ describe("model per-pollen calculations", () => {
         expect(calculatePerPollen(freeModel)).toBe("∞");
     });
 
-    it.each([
-        undefined,
-        0,
-        0.02,
-    ])("does not mistake an agent's free wrapper for its run cost (%s)", (avgCost) => {
-        const prices = getModelPricesFromCatalog(
-            [
+    it.each([undefined, 0, 0.02])(
+        "does not mistake an agent's free wrapper for its run cost (%s)",
+        (avgCost) => {
+            const prices = getModelPricesFromCatalog(
+                [
+                    {
+                        name: "owner/agent",
+                        category: "text",
+                        agent: true,
+                        community: true,
+                        pricing: { currency: "pollen" },
+                    },
+                    {
+                        name: "free-model",
+                        category: "text",
+                        pricing: { currency: "pollen" },
+                    },
+                ],
+                avgCost === undefined
+                    ? undefined
+                    : {
+                          "owner/agent": { avgCost, requestCount: 3 },
+                      },
+            );
+            const [agent, freeModel] = prices;
+
+            expect(agent.free).toBe(false);
+            expect(calculatePerPollen(agent)).toBe(avgCost ? "50" : "—");
+            expect(
+                matchesModelQuery(agent, parseModelQuery("access:free")),
+            ).toBe(false);
+            expect(freeModel.free).toBe(true);
+            expect(calculatePerPollen(freeModel)).toBe("∞");
+            expect(
+                sortModels(prices, "price-low").map(({ name }) => name),
+            ).toEqual(["free-model", "owner/agent"]);
+            expect(
+                sortModels(prices, "price-high").map(({ name }) => name),
+            ).toEqual(
+                avgCost
+                    ? ["owner/agent", "free-model"]
+                    : ["free-model", "owner/agent"],
+            );
+        },
+    );
+});
+
+it("does not promise a whole request when one costs more than a Pollen", () => {
+    expect(calculatePerPollen(model({ realAvgCost: 2 }))).toBe("<1");
+});
+
+it("does not label a model with paid variants as wholly free", () => {
+    const [priced] = getModelPricesFromCatalog([
+        {
+            name: "example/mixed-pricing",
+            category: "video",
+            pricing: { currency: "pollen" },
+            pricing_variants: [
                 {
-                    name: "owner/agent",
-                    category: "text",
-                    agent: true,
-                    community: true,
-                    pricing: { currency: "pollen" },
-                },
-                {
-                    name: "free-model",
-                    category: "text",
-                    pricing: { currency: "pollen" },
+                    name: "hd",
+                    label: "HD",
+                    description: "HD output",
+                    pricing: {
+                        currency: "pollen",
+                        completionVideoSeconds: "0.1",
+                    },
                 },
             ],
-            avgCost === undefined
-                ? undefined
-                : {
-                      "owner/agent": { avgCost, requestCount: 3 },
-                  },
-        );
-        const [agent, freeModel] = prices;
-
-        expect(agent.free).toBe(false);
-        expect(calculatePerPollen(agent)).toBe(avgCost ? "50" : "—");
-        expect(matchesModelQuery(agent, parseModelQuery("access:free"))).toBe(
-            false,
-        );
-        expect(freeModel.free).toBe(true);
-        expect(calculatePerPollen(freeModel)).toBe("∞");
-        expect(sortModels(prices, "price-low").map(({ name }) => name)).toEqual(
-            ["free-model", "owner/agent"],
-        );
-        expect(
-            sortModels(prices, "price-high").map(({ name }) => name),
-        ).toEqual(
-            avgCost
-                ? ["owner/agent", "free-model"]
-                : ["free-model", "owner/agent"],
-        );
-    });
+        },
+    ]);
+    expect(priced.free).toBe(false);
+    expect(calculatePerPollen(priced)).toBe("—");
 });

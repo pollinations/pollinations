@@ -24,6 +24,20 @@ export const PRESETS = {
         pad: 0.175,
         theme: "field",
     },
+    "apple-touch-152": {
+        w: 152,
+        h: 152,
+        content: "mark",
+        pad: 0.175,
+        theme: "field",
+    },
+    "apple-touch-167": {
+        w: 167,
+        h: 167,
+        content: "mark",
+        pad: 0.175,
+        theme: "field",
+    },
     "maskable-512": {
         w: 512,
         h: 512,

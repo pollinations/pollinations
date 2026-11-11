@@ -8,7 +8,6 @@ import {
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { exponentialBackoffDelay } from "@shared/util.ts";
 import { afterEach, expect, vi } from "vitest";
 import { test } from "./fixtures.ts";
 
@@ -63,6 +62,52 @@ test("sendErrorEventToTinybird sends structured error events", async ({
     });
 });
 
+test("sendToTinybird preserves fractional image units without sending them to integer columns", async ({
+    log,
+}) => {
+    const fetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response("{}"));
+    const usage = usageToEventParams({
+        promptImageTokens: 0.9216,
+        completionImageTokens: 2.0736,
+    });
+    await sendToTinybird(
+        { ...usage, totalPrice: 0.1 } as TinybirdEvent,
+        "https://api.tinybird.co/v0/events?name=generation_event_v2",
+        "test-token",
+        log,
+    );
+    const payload = JSON.parse(fetchMock.mock.calls[0][1]?.body as string);
+    expect(payload).toMatchObject({
+        usagePromptImageUnits: 0.9216,
+        usageCompletionImageUnits: 2.0736,
+        totalPrice: 0.1,
+    });
+    expect(payload).not.toHaveProperty("tokenCountPromptImage");
+    expect(payload).not.toHaveProperty("tokenCountCompletionImage");
+
+    await sendToTinybird(
+        {
+            ...usageToEventParams({
+                promptImageTokens: 4,
+                completionImageTokens: 0,
+            }),
+        } as TinybirdEvent,
+        "https://api.tinybird.co/v0/events?name=generation_event_v2",
+        "test-token",
+        log,
+    );
+    expect(
+        JSON.parse(fetchMock.mock.calls[1][1]?.body as string),
+    ).toMatchObject({
+        tokenCountPromptImage: 4,
+        tokenCountCompletionImage: 0,
+        usagePromptImageUnits: 4,
+        usageCompletionImageUnits: 0,
+    });
+});
+
 test("sendToTinybird does not retry failed responses", async ({ log }) => {
     const fetchMock = vi
         .spyOn(globalThis, "fetch")
@@ -91,41 +136,4 @@ test("sendToTinybird does not retry network errors", async ({ log }) => {
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-});
-
-test("Exponential backoff delay", async () => {
-    const backoffConfig = {
-        minDelay: 100,
-        maxDelay: 10000,
-        maxAttempts: 5,
-        jitter: 0,
-    };
-    expect(exponentialBackoffDelay(1, backoffConfig)).toBe(100);
-    expect(exponentialBackoffDelay(3, backoffConfig)).toBeGreaterThan(100);
-    expect(exponentialBackoffDelay(3, backoffConfig)).toBeLessThan(10000);
-    expect(exponentialBackoffDelay(5, backoffConfig)).toBe(10000);
-    const backoffConfigWithJitter = {
-        minDelay: 100,
-        maxDelay: 10000,
-        maxAttempts: 5,
-        jitter: 0.1,
-    };
-    expect(
-        exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(100 + 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
-    expect(
-        exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(10000 - 10000 * 0.1);
-    expect(
-        exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
 });

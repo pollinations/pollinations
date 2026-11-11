@@ -22,41 +22,24 @@ jobs:
         with:
           github-token: ${{ steps.pollinations-ai.outputs.token }}
           script: |
-            const ORG = 'pollinations';
             const PROJECT_NUMBER = 20;
-            
-            // GraphQL query to get project items
+
+            // Only open issues can be closed, so search those (any org repo) instead of
+            // paging through every item in the project.
             const query = `
-              query($org: String!, $number: Int!) {
-                organization(login: $org) {
-                  projectV2(number: $number) {
-                    items(first: 100) {
-                      nodes {
-                        id
-                        fieldValues(first: 20) {
-                          nodes {
-                            ... on ProjectV2ItemFieldSingleSelectValue {
-                              name
-                              field {
-                                ... on ProjectV2SingleSelectField {
-                                  name
-                                }
-                              }
-                            }
-                          }
-                        }
-                        content {
-                          ... on Issue {
-                            id
-                            number
-                            state
-                            title
-                            repository {
-                              name
-                              owner {
-                                login
-                              }
-                            }
+              query($cursor: String) {
+                search(query: "org:pollinations is:issue is:open project:pollinations/${PROJECT_NUMBER}", type: ISSUE, first: 100, after: $cursor) {
+                  pageInfo { hasNextPage endCursor }
+                  nodes {
+                    ... on Issue {
+                      number
+                      title
+                      repository { name owner { login } }
+                      projectItems(first: 10) {
+                        nodes {
+                          project { number }
+                          status: fieldValueByName(name: "Status") {
+                            ... on ProjectV2ItemFieldSingleSelectValue { name }
                           }
                         }
                       }
@@ -66,54 +49,27 @@ jobs:
               }
             `;
 
-            try {
-              const result = await github.graphql(query, {
-                org: ORG,
-                number: PROJECT_NUMBER
-              });
+            let cursor = null;
+            let checked = 0;
+            do {
+              const { search } = await github.graphql(query, { cursor });
+              for (const issue of search.nodes) {
+                checked++;
+                const discarded = issue.projectItems.nodes.some(
+                  (item) => item.project.number === PROJECT_NUMBER && item.status?.name === 'Discarded'
+                );
+                if (!discarded) continue;
 
-              // Check if project data was returned
-              if (!result.organization || !result.organization.projectV2) {
-                 console.log('Project not found or accessible. Check PAT permissions.');
-                 return;
+                console.log(`Closing ${issue.repository.name}#${issue.number} "${issue.title}" (Status: Discarded)`);
+                await github.rest.issues.update({
+                  owner: issue.repository.owner.login,
+                  repo: issue.repository.name,
+                  issue_number: issue.number,
+                  state: 'closed',
+                  state_reason: 'not_planned'
+                });
               }
+              cursor = search.pageInfo.hasNextPage ? search.pageInfo.endCursor : null;
+            } while (cursor);
 
-              const items = result.organization.projectV2.items.nodes;
-              
-              console.log(`Found ${items.length} items in Project #${PROJECT_NUMBER}`);
-
-              for (const item of items) {
-                // Skip if content is not an issue or not loaded
-                if (!item.content || !item.content.number) continue;
-                
-                const issue = item.content;
-                
-                // Check if issue is OPEN
-                if (issue.state !== 'OPEN') continue;
-
-                // Check status field
-                let status = null;
-                for (const fieldValue of item.fieldValues.nodes) {
-                  if (fieldValue.field && fieldValue.field.name === 'Status') {
-                    status = fieldValue.name;
-                    break;
-                  }
-                }
-
-                if (status === 'Discarded') {
-                  console.log(`Closing Issue #${issue.number} "${issue.title}" (Status: Discarded)`);
-                  
-                  // Close the issue
-                  await github.rest.issues.update({
-                    owner: issue.repository.owner.login,
-                    repo: issue.repository.name,
-                    issue_number: issue.number,
-                    state: 'closed',
-                    state_reason: 'not_planned'
-                  });
-                }
-              }
-            } catch (error) {
-              console.error('Error querying project:', error);
-              core.setFailed(error.message);
-            }
+            console.log(`Checked ${checked} open issues in project #${PROJECT_NUMBER}`);

@@ -1,9 +1,8 @@
-import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders } from "@shared/error.ts";
 import debug from "debug";
-import {
-    CONTENT_POLICY_STATUS,
-    isContentPolicyViolation,
-} from "../image/utils/contentModeration.ts";
+import { createParser } from "eventsource-parser";
+import { bedrockCredentials, signBedrockHeaders } from "./auth/bedrock.js";
+import { apiErrorStatus } from "./errors.ts";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
@@ -13,30 +12,18 @@ import type {
     ServiceError,
     TransformOptions,
 } from "./types.js";
-import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
+import {
+    cleanNullAndUndefined,
+    isPlainObject,
+} from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
-function isClientInputError(details: unknown): boolean {
-    const serialized =
-        typeof details === "string" ? details : JSON.stringify(details);
-    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
-        serialized,
-    );
-}
-
-function apiErrorStatus(details: unknown, status: number): number {
-    if (isContentPolicyViolation(JSON.stringify(details))) {
-        return CONTENT_POLICY_STATUS;
-    }
-    return isClientInputError(details) ? 400 : remapUpstreamStatus(status);
-}
-
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
-function withUpstreamRequestUrl(
+export function withUpstreamRequestUrl(
     completion: ChatCompletion,
     requestUrl: URL,
 ): ChatCompletion {
@@ -81,6 +68,130 @@ function ensureOpenAISseDone(
     );
 }
 
+/** Translate Mistral thinking chunks into the existing OpenAI response fields. */
+function normalizeMistralContent(
+    completion: Pick<ChatCompletion, "choices">,
+): void {
+    for (const choice of completion.choices ?? []) {
+        for (const message of [choice.message, choice.delta]) {
+            if (!message || !Array.isArray(message.content)) continue;
+            const parts = message.content;
+            if (
+                !parts.every(
+                    (part) =>
+                        isPlainObject(part) &&
+                        (part.type === "text" || part.type === "thinking"),
+                )
+            )
+                continue;
+            let text = "";
+            let reasoning = "";
+            for (const part of parts) {
+                if (!isPlainObject(part)) continue;
+                if (part.type === "text" && typeof part.text === "string") {
+                    text += part.text;
+                } else if (
+                    part.type === "thinking" &&
+                    Array.isArray(part.thinking)
+                ) {
+                    for (const chunk of part.thinking) {
+                        if (
+                            isPlainObject(chunk) &&
+                            typeof chunk.text === "string"
+                        )
+                            reasoning += chunk.text;
+                    }
+                }
+            }
+            message.content = text;
+            if (reasoning) message.reasoning_content = reasoning;
+        }
+    }
+}
+
+/** Replay reasoning as Mistral's thinking chunk, the reverse of normalizeMistralContent. */
+export function withMistralThinking(messages: ChatMessage[]): ChatMessage[] {
+    return messages.map((message) => {
+        const { reasoning_content: reasoning, ...rest } = message;
+        if (
+            message.role !== "assistant" ||
+            typeof reasoning !== "string" ||
+            !reasoning
+        )
+            return message;
+        const content = Array.isArray(rest.content)
+            ? rest.content
+            : rest.content
+              ? [{ type: "text", text: rest.content }]
+              : [];
+        return {
+            ...rest,
+            content: [
+                {
+                    type: "thinking",
+                    thinking: [{ type: "text", text: reasoning }],
+                },
+                ...content,
+            ],
+        };
+    });
+}
+
+function removeReasoning(completion: Pick<ChatCompletion, "choices">): void {
+    for (const choice of completion.choices ?? []) {
+        for (const message of [choice.message, choice.delta]) {
+            if (!message) continue;
+            delete message.reasoning;
+            delete message.reasoning_content;
+            delete message.reasoning_details;
+        }
+    }
+}
+
+function transformStreamCompletions(
+    source: ReadableStream<Uint8Array>,
+    transform: (completion: ChatCompletion) => void,
+): ReadableStream<Uint8Array> {
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let parser: ReturnType<typeof createParser>;
+    return source.pipeThrough(
+        new TransformStream({
+            start(controller) {
+                parser = createParser({
+                    onEvent(event) {
+                        let data = event.data;
+                        if (data.trim() !== "[DONE]") {
+                            const completion = JSON.parse(
+                                data,
+                            ) as ChatCompletion;
+                            transform(completion);
+                            data = JSON.stringify(completion);
+                        }
+                        const fields: string[] = [];
+                        if (event.event !== undefined)
+                            fields.push(`event: ${event.event}`);
+                        if (event.id !== undefined)
+                            fields.push(`id: ${event.id}`);
+                        for (const line of data.split("\n"))
+                            fields.push(`data: ${line}`);
+                        controller.enqueue(
+                            encoder.encode(`${fields.join("\n")}\n\n`),
+                        );
+                    },
+                });
+            },
+            transform(chunk) {
+                parser.feed(decoder.decode(chunk, { stream: true }));
+            },
+            flush() {
+                parser.feed(`${decoder.decode()}\n\n`);
+                parser.reset({ consume: true });
+            },
+        }),
+    );
+}
+
 function extractErrorMessage(details: unknown): string | null {
     if (typeof details === "string") return details.trim() || null;
     if (!details || typeof details !== "object") return null;
@@ -99,8 +210,8 @@ function extractErrorMessage(details: unknown): string | null {
 
 /**
  * Some OpenAI-compatible gateways return an upstream rate limit inside an
- * otherwise successful completion. Normalize explicit rate limits and policy
- * rejections; other finish errors (e.g. malformed tool output) stay unchanged.
+ * otherwise successful completion. Normalize explicit rate limits and input/
+ * policy rejections; other finish errors (e.g. malformed tool output) stay unchanged.
  */
 function responseBodyError(
     completion: ChatCompletion,
@@ -115,7 +226,7 @@ function responseBodyError(
         if (
             embedded.code !== 429 &&
             embedded.status !== 429 &&
-            !isContentPolicyViolation(JSON.stringify(details))
+            apiErrorStatus(details, 502) >= 500
         )
             continue;
 
@@ -130,6 +241,117 @@ function responseBodyError(
             details,
         };
     }
+}
+
+function assertCompletionOk(
+    completion: ChatCompletion,
+    responseBody: string,
+    response: Response,
+    modelName: string,
+    requestUrl: URL,
+): void {
+    const responseError = responseBodyError(completion);
+    if (!responseError) return;
+    const details =
+        typeof responseError === "string"
+            ? { message: responseError }
+            : responseError;
+    const error = new Error(
+        details.message || "Text generation failed",
+    ) as ServiceError;
+    const upstreamStatus =
+        typeof details.status === "number"
+            ? details.status
+            : typeof details.code === "number" &&
+                details.code >= 400 &&
+                details.code <= 599
+              ? details.code
+              : undefined;
+    error.status = apiErrorStatus(details, upstreamStatus ?? 502);
+    error.upstreamStatus = upstreamStatus;
+    error.details = details.details ?? details;
+    error.responseBody = responseBody;
+    error.model = modelName;
+    error.requestUrl = requestUrl;
+    error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+    throw error;
+}
+
+/** Catch an opening error while fallback is still possible; replay every byte. */
+async function checkStreamStart(
+    body: ReadableStream<Uint8Array>,
+    response: Response,
+    modelName: string,
+    requestUrl: URL,
+): Promise<ReadableStream<Uint8Array>> {
+    if (!response.headers.get("content-type")?.includes("text/event-stream"))
+        return body;
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    const chunks: Uint8Array[] = [];
+    let bytes = 0;
+    let firstEventSeen = false;
+    let heartbeatSeen = false;
+    let ended = false;
+    const parser = createParser({
+        // Keepalives must reach the caller without waiting for model output.
+        onComment() {
+            heartbeatSeen = true;
+        },
+        onEvent(event) {
+            if (firstEventSeen || heartbeatSeen) return;
+            firstEventSeen = true;
+            const completion = parseJsonSafe(event.data);
+            if (completion && typeof completion === "object") {
+                assertCompletionOk(
+                    completion as ChatCompletion,
+                    event.data,
+                    response,
+                    modelName,
+                    requestUrl,
+                );
+            }
+        },
+    });
+    try {
+        // Bound lookahead for a missing separator or an oversized first event.
+        while (!firstEventSeen && !heartbeatSeen && bytes < 64 * 1024) {
+            const { value, done } = await reader.read();
+            if (done) {
+                ended = true;
+                parser.feed(`${decoder.decode()}\n\n`);
+                break;
+            }
+            chunks.push(value);
+            bytes += value.byteLength;
+            parser.feed(decoder.decode(value, { stream: true }));
+        }
+    } catch (error) {
+        void reader.cancel().catch(() => {});
+        reader.releaseLock();
+        throw withUpstreamContext(error, requestUrl);
+    }
+    return new ReadableStream({
+        start(controller) {
+            for (const chunk of chunks) controller.enqueue(chunk);
+            if (ended) {
+                reader.releaseLock();
+                controller.close();
+            }
+        },
+        async pull(controller) {
+            const { value, done } = await reader.read();
+            if (done) {
+                reader.releaseLock();
+                controller.close();
+            } else controller.enqueue(value);
+        },
+        cancel(reason) {
+            const cancelled = reader.cancel(reason);
+            reader.releaseLock();
+            return cancelled;
+        },
+    });
 }
 
 function createApiError(
@@ -183,6 +405,15 @@ export async function genericOpenAIClient(
     const { endpoint, additionalHeaders = {}, fetcher = fetch } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
+    const hideReasoning =
+        options.include_reasoning === false ||
+        (options.reasoning as { exclude?: boolean } | undefined)?.exclude ===
+            true;
+    const normalizeContent = options.modelConfig?.useMistralChatFormat === true;
+    const transformCompletion = (completion: ChatCompletion) => {
+        if (normalizeContent) normalizeMistralContent(completion);
+        if (hideReasoning) removeReasoning(completion);
+    };
     let requestUrl: URL | undefined;
 
     log(`[${requestId}] Starting request`, {
@@ -221,6 +452,25 @@ export async function genericOpenAIClient(
             ...cleanedOptions,
         });
 
+        if (normalizeContent && isPlainObject(requestBody)) {
+            if (requestBody.seed !== undefined) {
+                requestBody.random_seed = requestBody.seed;
+                delete requestBody.seed;
+            }
+            const reasoning = requestBody.reasoning;
+            if (
+                requestBody.reasoning_effort === undefined &&
+                isPlainObject(reasoning)
+            ) {
+                if (reasoning.enabled === false)
+                    requestBody.reasoning_effort = "none";
+                else if (typeof reasoning.effort === "string")
+                    requestBody.reasoning_effort = reasoning.effort;
+            }
+            delete requestBody.reasoning;
+            delete requestBody.include_reasoning;
+        }
+
         log(`[${requestId}] Request body prepared`, {
             model: modelName,
             messageCount: preparedMessages.length,
@@ -234,7 +484,7 @@ export async function genericOpenAIClient(
                 : endpoint;
         requestUrl = new URL(endpointUrl);
 
-        const headers = {
+        let headers: Record<string, string> = {
             "Content-Type": "application/json",
             ...additionalHeaders,
         };
@@ -243,11 +493,31 @@ export async function genericOpenAIClient(
 
         let response: Response;
         try {
+            const body = JSON.stringify(requestBody);
+            if (
+                options.modelConfig?.provider === "bedrock" &&
+                typeof options.modelConfig.directEndpoint === "string"
+            ) {
+                const credentials = bedrockCredentials(options.modelConfig);
+                if (!credentials) {
+                    const error = new Error(
+                        "Bedrock credentials are not configured",
+                    ) as ServiceError;
+                    error.status = 500;
+                    throw error;
+                }
+                headers = await signBedrockHeaders(
+                    requestUrl,
+                    body,
+                    headers,
+                    credentials,
+                );
+            }
             response = await fetcher(endpointUrl, {
                 method: "POST",
                 redirect: "manual",
                 headers,
-                body: JSON.stringify(requestBody),
+                body,
             });
         } catch (thrown: unknown) {
             throw withUpstreamContext(thrown, requestUrl);
@@ -285,7 +555,20 @@ export async function genericOpenAIClient(
                     requestUrl,
                 );
             }
-            const streamToReturn = ensureOpenAISseDone(response.body);
+            const checkedBody = await checkStreamStart(
+                response.body,
+                response,
+                modelName,
+                requestUrl,
+            );
+            const streamToReturn = ensureOpenAISseDone(
+                hideReasoning || normalizeContent
+                    ? transformStreamCompletions(
+                          checkedBody,
+                          transformCompletion,
+                      )
+                    : checkedBody,
+            );
             return withUpstreamRequestUrl(
                 {
                     id: `genericopenai-${requestId}`,
@@ -318,32 +601,8 @@ export async function genericOpenAIClient(
             error.upstreamHeaders = collectUpstreamHeaders(response.headers);
             throw error;
         }
-        const responseError = responseBodyError(data);
-        if (responseError) {
-            const errorDetails =
-                typeof responseError === "string"
-                    ? { message: responseError }
-                    : responseError;
-            const error = new Error(
-                errorDetails.message || "Text generation failed",
-            ) as ServiceError;
-            const upstreamStatus =
-                typeof errorDetails.status === "number"
-                    ? errorDetails.status
-                    : typeof errorDetails.code === "number" &&
-                        errorDetails.code >= 400 &&
-                        errorDetails.code <= 599
-                      ? errorDetails.code
-                      : undefined;
-            error.status = apiErrorStatus(errorDetails, upstreamStatus ?? 502);
-            error.upstreamStatus = upstreamStatus;
-            error.details = errorDetails.details ?? errorDetails;
-            error.responseBody = responseBody;
-            error.model = modelName;
-            error.requestUrl = requestUrl;
-            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
-            throw error;
-        }
+        transformCompletion(data);
+        assertCompletionOk(data, responseBody, response, modelName, requestUrl);
         log(
             `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
         );
@@ -351,6 +610,14 @@ export async function genericOpenAIClient(
         const choices = (data.choices?.length ? data.choices : [{}]).map(
             (choice): CompletionChoice => {
                 const formattedChoice = { ...choice };
+                if (formattedChoice.message) {
+                    const message = { ...formattedChoice.message };
+                    // DeepInfra returns null for optional fields that Chat
+                    // request messages require to be absent rather than null.
+                    if (message.name === null) delete message.name;
+                    if (message.tool_calls === null) delete message.tool_calls;
+                    formattedChoice.message = message;
+                }
                 // Some providers report "stop" even when they returned a tool
                 // call. Keep the compatibility fix without dropping choices.
                 if (formattedChoice.message?.tool_calls?.length) {

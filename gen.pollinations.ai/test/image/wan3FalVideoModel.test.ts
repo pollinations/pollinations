@@ -31,7 +31,6 @@ const baseParams: ImageParams = {
     reasoning: "balanced",
     audio: false,
     duration: 5,
-    aspectRatio: "16:9",
 };
 
 type ProviderRequest = {
@@ -42,6 +41,7 @@ type ProviderRequest = {
 function mockFalFetch(
     requests: ProviderRequest[],
     status: "COMPLETED" | "FAILED" = "COMPLETED",
+    reportedDuration: number | null = 5,
 ) {
     return vi
         .spyOn(globalThis, "fetch")
@@ -74,6 +74,7 @@ function mockFalFetch(
             }
             if (href === RESULT_URL) {
                 return Response.json({
+                    duration: reportedDuration,
                     video: { url: VIDEO_URL, content_type: "video/mp4" },
                 });
             }
@@ -93,10 +94,55 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
 describe("Wan 3.0 Prime via Fal", () => {
+    it("prefers an explicit ratio over width/height for text and reference video", async () => {
+        for (const reference_videos of [undefined, [REF_VIDEO_URL]]) {
+            const requests: ProviderRequest[] = [];
+            mockFalFetch(requests);
+            await callWan3FalAPI("a sailboat crossing a calm bay", {
+                ...baseParams,
+                width: 1024,
+                height: 1024,
+                aspectRatio: "16:9",
+                reference_videos,
+            });
+            expect(requests[0].url).toBe(
+                reference_videos ? R2V_ENDPOINT : TEXT_ENDPOINT,
+            );
+            expect(requests[0].body?.aspect_ratio).toBe("16:9");
+        }
+    });
+
+    it("waits beyond five minutes without submitting another generation", async () => {
+        vi.useFakeTimers();
+        const requests: ProviderRequest[] = [];
+        const fetchSpy = mockFalFetch(requests);
+        const fetchResult = fetchSpy.getMockImplementation();
+        if (!fetchResult)
+            throw new Error("Missing Fal test fetch implementation");
+        const started = Date.now();
+        fetchSpy.mockImplementation(async (url, init) => {
+            if (String(url) === STATUS_URL && Date.now() - started < 360_000) {
+                return Response.json({ status: "IN_PROGRESS" });
+            }
+            return fetchResult(url, init);
+        });
+        const generation = callWan3FalAPI("a slow generation", baseParams);
+        const assertion = expect(generation).resolves.toMatchObject({
+            buffer: Buffer.from(VIDEO_BYTES),
+            trackingData: { usage: { completionVideoSeconds: 5 } },
+        });
+        await vi.advanceTimersByTimeAsync(362_000);
+        await assertion;
+        expect(
+            requests.filter((request) => request.url === TEXT_ENDPOINT),
+        ).toHaveLength(1);
+    });
+
     it.each([
         [undefined, "480p", false, [], "16:9", TEXT_ENDPOINT],
         ["720p", "720p", true, [], "9:16", TEXT_ENDPOINT],
@@ -108,43 +154,49 @@ describe("Wan 3.0 Prime via Fal", () => {
             "adaptive",
             IMAGE_ENDPOINT,
         ],
-    ] as const)("routes resolution %s as %s", async (resolution, expectedResolution, audio, image, expectedAspectRatio, endpoint) => {
-        const requests: ProviderRequest[] = [];
-        mockFalFetch(requests);
+    ] as const)(
+        "routes resolution %s as %s",
+        async (resolution, expectedResolution, audio, image, expectedAspectRatio, endpoint) => {
+            const requests: ProviderRequest[] = [];
+            mockFalFetch(requests);
 
-        const result = await callWan3FalAPI("a sailboat crossing a calm bay", {
-            ...baseParams,
-            resolution,
-            audio,
-            image: [...image],
-            width: expectedAspectRatio === "9:16" ? 720 : 1280,
-            height: expectedAspectRatio === "9:16" ? 1280 : 720,
-        });
+            const result = await callWan3FalAPI(
+                "a sailboat crossing a calm bay",
+                {
+                    ...baseParams,
+                    resolution,
+                    audio,
+                    image: [...image],
+                    width: expectedAspectRatio === "9:16" ? 720 : 1280,
+                    height: expectedAspectRatio === "9:16" ? 1280 : 720,
+                },
+            );
 
-        expect(requests[0]).toEqual({
-            url: endpoint,
-            body: {
-                prompt: "a sailboat crossing a calm bay",
-                resolution: expectedResolution,
-                aspect_ratio: expectedAspectRatio,
-                duration: 5,
-                audio,
-                enable_prompt_expansion: true,
-                enable_safety_checker: true,
-                seed: 42,
-                ...(image[0] ? { start_image_url: image[0] } : {}),
-            },
-        });
-        expect(result).toMatchObject({
-            buffer: Buffer.from(VIDEO_BYTES),
-            mimeType: "video/mp4",
-            durationSeconds: 5,
-            trackingData: {
-                actualModel: "alibaba/wan-3.0",
-                usage: { completionVideoSeconds: 5 },
-            },
-        });
-    });
+            expect(requests[0]).toEqual({
+                url: endpoint,
+                body: {
+                    prompt: "a sailboat crossing a calm bay",
+                    resolution: expectedResolution,
+                    aspect_ratio: expectedAspectRatio,
+                    duration: 5,
+                    audio,
+                    enable_prompt_expansion: true,
+                    enable_safety_checker: true,
+                    seed: 42,
+                    ...(image[0] ? { start_image_url: image[0] } : {}),
+                },
+            });
+            expect(result).toMatchObject({
+                buffer: Buffer.from(VIDEO_BYTES),
+                mimeType: "video/mp4",
+                durationSeconds: 5,
+                trackingData: {
+                    actualModel: "alibaba/wan-3.0",
+                    usage: { completionVideoSeconds: 5 },
+                },
+            });
+        },
+    );
 
     it("surfaces a terminal provider failure", async () => {
         mockFalFetch([], "FAILED");
@@ -157,16 +209,28 @@ describe("Wan 3.0 Prime via Fal", () => {
         });
     });
 
-    it("rejects durations outside the five-second contract", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it("forwards longer durations and bills the duration fal reports", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests, "COMPLETED", 9.8);
+
+        const result = await callWan3FalAPI("a sailboat crossing a calm bay", {
+            ...baseParams,
+            duration: 10,
+        });
+
+        expect(requests[0].body?.duration).toBe(10);
+        expect(result).toMatchObject({
+            durationSeconds: 9.8,
+            trackingData: { usage: { completionVideoSeconds: 9.8 } },
+        });
+    });
+
+    it("refuses a result without a reported duration", async () => {
+        mockFalFetch([], "COMPLETED", null);
 
         await expect(
-            callWan3FalAPI("a sailboat crossing a calm bay", {
-                ...baseParams,
-                duration: 4,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
+            callWan3FalAPI("a sailboat crossing a calm bay", baseParams),
+        ).rejects.toMatchObject({ status: 502 });
     });
 
     it("I2V forwards end_image_url when image[1] is present", async () => {
@@ -178,6 +242,7 @@ describe("Wan 3.0 Prime via Fal", () => {
         await callWan3FalAPI("smooth transition", {
             ...baseParams,
             image: [START, END],
+            aspectRatio: "9:16",
         });
 
         expect(requests[0].url).toBe(IMAGE_ENDPOINT);

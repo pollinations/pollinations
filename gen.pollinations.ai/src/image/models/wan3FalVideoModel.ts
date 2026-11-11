@@ -12,8 +12,7 @@ const WAN_3_IMAGE_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
 const WAN_3_R2V_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
-const WAN_3_DURATION_SECONDS = 5;
-const WAN_3_TIMEOUT_MS = 5 * 60 * 1000;
+const WAN_3_DEFAULT_DURATION_SECONDS = 5;
 const WAN_3_POLL_INTERVAL_MS = 2_000;
 const WAN_3_ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
@@ -28,6 +27,7 @@ interface FalQueueStatus {
 }
 
 interface FalWan3Result {
+    duration?: number;
     video?: {
         url?: string;
         content_type?: string;
@@ -42,16 +42,6 @@ async function readJson<T>(response: Response, message: string): Promise<T> {
     }
 }
 
-function remainingTime(deadline: number): number {
-    const remaining = deadline - Date.now();
-    if (remaining <= 0) {
-        throw UpstreamError.fromProvider(504, {
-            message: "Wan 3.0 generation timed out",
-        });
-    }
-    return remaining;
-}
-
 export async function callWan3FalAPI(
     prompt: string,
     safeParams: ImageParams,
@@ -62,12 +52,7 @@ export async function callWan3FalAPI(
             message: "Wan 3.0 is not configured",
         });
 
-    const duration = safeParams.duration ?? WAN_3_DURATION_SECONDS;
-    if (duration !== WAN_3_DURATION_SECONDS) {
-        throw UpstreamError.fromProvider(400, {
-            message: "Wan 3.0 supports exactly 5 seconds",
-        });
-    }
+    const duration = safeParams.duration ?? WAN_3_DEFAULT_DURATION_SECONDS;
 
     const images = safeParams.image ?? [];
     const hasFrames = images.length > 0;
@@ -84,7 +69,6 @@ export async function callWan3FalAPI(
     }
 
     const resolution = safeParams.resolution ?? "480p";
-    const deadline = Date.now() + WAN_3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
 
     const endpoint = hasReference
@@ -97,13 +81,14 @@ export async function callWan3FalAPI(
         resolution,
         aspect_ratio: hasFrames
             ? "adaptive"
-            : closestRatioLogSpace(
+            : (safeParams.aspectRatio ??
+              closestRatioLogSpace(
                   safeParams.width,
                   safeParams.height,
                   WAN_3_ASPECT_RATIOS,
-              ),
+              )),
         duration,
-        audio: safeParams.audio,
+        audio: safeParams.audio ?? true,
         enable_prompt_expansion: true,
         enable_safety_checker: true,
         seed: safeParams.seed,
@@ -128,7 +113,6 @@ export async function callWan3FalAPI(
         method: "POST",
         headers: { ...authorization, "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Wan 3.0 submission failed",
     });
     const submission = await readJson<FalQueueSubmission>(
@@ -144,7 +128,6 @@ export async function callWan3FalAPI(
     while (true) {
         const statusResponse = await fetchUpstream(submission.status_url, {
             headers: authorization,
-            signal: AbortSignal.timeout(remainingTime(deadline)),
             errorLabel: "Wan 3.0 status check failed",
         });
         const status = await readJson<FalQueueStatus>(
@@ -162,12 +145,11 @@ export async function callWan3FalAPI(
                 message: "Wan 3.0 returned an invalid status",
             });
         }
-        await sleep(Math.min(WAN_3_POLL_INTERVAL_MS, remainingTime(deadline)));
+        await sleep(WAN_3_POLL_INTERVAL_MS);
     }
 
     const resultResponse = await fetchUpstream(submission.response_url, {
         headers: authorization,
-        signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Wan 3.0 result fetch failed",
     });
     const result = await readJson<FalWan3Result>(
@@ -179,9 +161,19 @@ export async function callWan3FalAPI(
             message: "Wan 3.0 returned no video",
         });
     }
+    // Bill the generated length fal reports, not the requested one.
+    const outputSeconds = result.duration;
+    if (
+        typeof outputSeconds !== "number" ||
+        !Number.isFinite(outputSeconds) ||
+        outputSeconds <= 0
+    ) {
+        throw UpstreamError.fromProvider(502, {
+            message: "Wan 3.0 returned no video duration",
+        });
+    }
 
     const videoResponse = await fetchUpstream(result.video.url, {
-        signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Failed to download Wan 3.0 output",
     });
     return {
@@ -190,10 +182,10 @@ export async function callWan3FalAPI(
             result.video.content_type ||
             videoResponse.headers.get("content-type") ||
             "video/mp4",
-        durationSeconds: duration,
+        durationSeconds: outputSeconds,
         trackingData: {
-            actualModel: "alibaba/wan-3.0",
-            usage: { completionVideoSeconds: duration },
+            actualModel: safeParams.model,
+            usage: { completionVideoSeconds: outputSeconds },
         },
     };
 }

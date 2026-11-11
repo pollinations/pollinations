@@ -12,10 +12,10 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
  */
 
 /**
- * The formats `buildTranscriptionResponse` can emit. srt/vtt are absent: cues
- * need real segment boundaries and none of these providers report them, so a
- * subtitle track here could only be invented. AssemblyAI serves those two
- * formats from its own rendered subtitles instead.
+ * The formats every provider can fill. srt/vtt are absent: cues need real
+ * segment boundaries and most providers report none, so a subtitle track
+ * could only be invented. whisper reports segments and opts in to both;
+ * AssemblyAI serves them from its own rendered subtitles.
  */
 export const TRANSCRIPTION_RESPONSE_FORMATS = [
     "json",
@@ -105,20 +105,66 @@ function toOpenAiDiarizedSegments(segments: NormalizedDiarizedSegment[]): {
     }));
 }
 
+/** SRT separates milliseconds with a comma, VTT with a dot. */
+function formatTimestamp(seconds: number, separator: "," | "."): string {
+    const ms = Math.round(seconds * 1000);
+    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
+    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
+    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
+    return `${h}:${m}:${s}${separator}${String(ms % 1000).padStart(3, "0")}`;
+}
+
+function toSubtitles(
+    segments: NormalizedSegment[],
+    kind: "srt" | "vtt",
+): string {
+    const separator = kind === "srt" ? "," : ".";
+    const cues = segments.map((segment, index) => {
+        const time = `${formatTimestamp(segment.start, separator)} --> ${formatTimestamp(segment.end, separator)}`;
+        const head = kind === "srt" ? `${index + 1}\n` : "";
+        return `${head}${time}\n${segment.text.trim()}`;
+    });
+    return kind === "vtt"
+        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
+        : `${cues.join("\n\n")}\n`;
+}
+
 export function buildTranscriptionResponse(opts: {
     normalized: NormalizedTranscript;
     responseFormat: string;
     usageHeaders: Record<string, string>;
+    /** Body usage for token-billed models; defaults to duration metering. */
+    usage?: Record<string, unknown>;
 }): Response {
     const { normalized, responseFormat, usageHeaders } = opts;
     const { text, duration } = normalized;
     // OpenAI defines usage.seconds and the top-level duration as the same
     // quantity — "duration of the input audio" — so they are one number here.
     // That is also what we bill, so the body and the usage headers agree.
-    const usage = { type: "duration" as const, seconds: duration };
+    const usage = opts.usage ?? {
+        type: "duration" as const,
+        seconds: duration,
+    };
 
     if (responseFormat === "text") {
         return new Response(text, {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "srt" || responseFormat === "vtt") {
+        // Text without segments means the provider reported no timings, and
+        // cues would have to be invented (#13552 shipped them empty).
+        if (text.trim() && !normalized.segments.length) {
+            throw new UpstreamError(502 as ContentfulStatusCode, {
+                message:
+                    "Transcription provider returned no segment timings for subtitles",
+            });
+        }
+        return new Response(toSubtitles(normalized.segments, responseFormat), {
             headers: {
                 "Content-Type": "text/plain; charset=utf-8",
                 ...usageHeaders,

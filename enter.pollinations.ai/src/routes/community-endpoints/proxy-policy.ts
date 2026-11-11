@@ -6,9 +6,7 @@ import {
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
-    type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
-    communityEndpointPrices,
     communityEndpointPricesForModality,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -111,25 +109,6 @@ function assertAdvertised(
     }
 }
 
-function visibilityPolicy(
-    visibility: CommunityEndpointVisibility,
-    requestedPaidOnly: boolean,
-    priceSource: Partial<Record<CommunityEndpointPriceKey, number>>,
-    modality: CommunityEndpointModality,
-    imagePricing: CommunityEndpointImagePricing,
-): Pick<ProxyPolicy, "paidOnly" | "prices"> {
-    return visibility === "private"
-        ? { paidOnly: false, prices: communityEndpointPrices({}) }
-        : {
-              paidOnly: requestedPaidOnly,
-              prices: communityEndpointPricesForModality(
-                  priceSource,
-                  modality,
-                  imagePricing,
-              ),
-          };
-}
-
 function validatePolicy(
     policy: ProxyPolicy,
     requestedAdvertised: CommunityEndpointAdvertised | undefined,
@@ -155,9 +134,8 @@ export function deriveCreateProxyPolicy(input: ProxyCreateInput): ProxyPolicy {
             inputModalities,
             advertised: normalizeAdvertised(input.advertised),
             perUserRpm: input.perUserRpm ?? null,
-            ...visibilityPolicy(
-                input.visibility,
-                input.paidOnly,
+            paidOnly: input.paidOnly,
+            prices: communityEndpointPricesForModality(
                 input,
                 modality,
                 imagePricing,
@@ -189,7 +167,6 @@ function updatePriceSource(
 export function deriveUpdatedProxyPolicy(
     stored: ProxyListingPayload,
     input: ProxyUpdateInput,
-    visibility: CommunityEndpointVisibility,
 ): ProxyPolicy {
     const modality = stored.modality;
     const imagePricing =
@@ -211,9 +188,8 @@ export function deriveUpdatedProxyPolicy(
                 input.perUserRpm === undefined
                     ? stored.perUserRpm
                     : input.perUserRpm,
-            ...visibilityPolicy(
-                visibility,
-                input.paidOnly ?? stored.paidOnly,
+            paidOnly: input.paidOnly ?? stored.paidOnly,
+            prices: communityEndpointPricesForModality(
                 updatePriceSource(stored, input, imagePricing),
                 modality,
                 imagePricing,

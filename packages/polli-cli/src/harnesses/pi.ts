@@ -21,7 +21,7 @@ import type {
 const ID = "pi";
 const LABEL = "Pi";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 
 export const piAgentDir = (ctx: HarnessContext): string => {
     const configured = ctx.env.PI_CODING_AGENT_DIR;
@@ -215,7 +215,7 @@ export const disablePi = (ctx: HarnessContext): HarnessResult => {
     return { ...result(ctx), configured: false, outcome };
 };
 
-export const pi: HarnessAdapter = {
+export const pi = {
     id: ID,
     label: LABEL,
     description: "Configure Pi as a Pollinations provider",
@@ -227,8 +227,9 @@ export const pi: HarnessAdapter = {
                 "Pi was not found. Install it first: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
             );
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels(model);
+        const { model, models } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
@@ -239,4 +240,4 @@ export const pi: HarnessAdapter = {
 
     off: disablePi,
     status: result,
-};
+} satisfies HarnessAdapter;

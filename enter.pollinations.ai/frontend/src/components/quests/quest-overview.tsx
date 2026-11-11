@@ -1,42 +1,51 @@
 import {
+    Alert,
     BeakerIcon,
     Button,
     CardIcon,
     CheckIcon,
     Chip,
     ClockIcon,
-    DiscordIcon,
-    GitHubIcon,
+    CopyField,
+    formatCount,
     InlineLink,
-    RocketIcon,
-    SearchIcon,
+    LoadingStatus,
+    OutageNotice,
     Section,
     SparkleIcon,
     SproutIcon,
     Surface,
     TargetIcon,
-    TerminalIcon,
     Text,
-    TrendUpIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { formatPollen } from "@pollinations/ui/wallet";
 import {
-    type ComponentType,
-    type FC,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
-import { apiClient } from "../../api.ts";
+    formatPollen,
+    WalletBalanceCard,
+    WalletKindIcon,
+} from "@pollinations/ui/wallet";
+import { useLoaderData, useRouter } from "@tanstack/react-router";
+import { type FC, useEffect, useMemo, useRef, useState } from "react";
+import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
     QuestCheckResult,
+    QuestStandingsResponse,
 } from "../../backend-types.ts";
+import { isOutageStatus, useOutage, useOutageRetry } from "../../lib/outage.ts";
+import {
+    CardLoading,
+    LoadError,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
+import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
+import { monthName, QuestStandings } from "./quest-standings.tsx";
+import { RedeemCode } from "./redeem-code.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
+
+type QuestOverviewProps = Record<string, never>;
 
 type QuestReward = {
     id: string;
@@ -49,16 +58,16 @@ type QuestReward = {
     url?: string | null;
 };
 
-type QuestOverviewProps = Record<string, never>;
-
 type FetchState = {
     catalog: QuestCatalogItem[];
     rewards: QuestReward[];
+    // Monthly leaderboard; null when it failed to load (the page still works).
+    standings: QuestStandingsResponse | null;
     progress: QuestProgress[];
     loading: boolean;
     checking: boolean;
     error: string | null;
-    claimingRewardId: string | null;
+    claimingRewardIds: string[];
     // Anonymous (logged-out) visitors get the public catalog only — the
     // per-user rewards endpoint 401s, so there is nothing to claim and every
     // quest is rendered open as a "here's what you can earn" preview.
@@ -68,15 +77,15 @@ type FetchState = {
 const INITIAL_STATE: FetchState = {
     catalog: [],
     rewards: [],
+    standings: null,
     progress: [],
     loading: true,
     checking: false,
     error: null,
-    claimingRewardId: null,
+    claimingRewardIds: [],
     anonymous: false,
 };
 
-type IconComponent = ComponentType<{ className?: string }>;
 type RewardIconKind = "paid" | "tier";
 
 // ── Category model ──────────────────────────────────────────────────────────
@@ -87,39 +96,32 @@ type CategoryKey = QuestCatalogItem["category"];
 type CategoryMeta = {
     key: CategoryKey;
     label: string;
-    icon: IconComponent;
 };
 
 const CATEGORIES: CategoryMeta[] = [
     {
         key: "setup",
         label: "Setup",
-        icon: RocketIcon,
     },
     {
         key: "grow",
         label: "Grow",
-        icon: TrendUpIcon,
     },
     {
         key: "build",
         label: "Build",
-        icon: TerminalIcon,
     },
     {
         key: "contribute",
         label: "Contribute",
-        icon: GitHubIcon,
     },
     {
         key: "community",
         label: "Community",
-        icon: DiscordIcon,
     },
     {
         key: "easteregg",
         label: "Easter eggs",
-        icon: SproutIcon,
     },
 ];
 
@@ -156,12 +158,13 @@ function deriveCardStatus(
 function cardSortRank(card: QuestCard): number {
     if (card.comingSoon) return 3;
     switch (card.status) {
+        // Waiting for Claim, then still to do, then done.
         case "claimable":
             return 0;
         case "claimed":
-            return 1;
-        default:
             return 2;
+        default:
+            return 1;
     }
 }
 
@@ -181,33 +184,50 @@ function rewardIconKind(
         : "tier";
 }
 
-type QuestData = Pick<FetchState, "catalog" | "rewards" | "anonymous">;
+type QuestData = Pick<
+    FetchState,
+    "catalog" | "rewards" | "standings" | "anonymous"
+>;
 
 async function loadQuestData(): Promise<QuestData> {
     // The catalog is public; the per-user rewards endpoint requires auth. A
     // logged-out visitor still gets the full catalog (rendered all-open as a
     // preview), so a 401 on rewards is expected, not an error.
-    const [catalogResponse, rewardsResponse] = await Promise.all([
-        apiClient.quests.catalog.$get(),
-        apiClient.quests.rewards.$get(),
-    ]);
+    // Rewards and standings fail on their own (null = no response); the
+    // list still shows.
+    const [catalogResponse, rewardsResponse, standingsResponse] =
+        await Promise.all([
+            apiClient.quests.catalog.$get(),
+            accountClient.quests.rewards.$get().catch(() => null),
+            apiClient.quests.standings.$get().catch(() => null),
+        ]);
     if (!catalogResponse.ok) {
         throw new Error(`Failed to load quests (${catalogResponse.status})`);
     }
     const catalog = (await catalogResponse.json()) as QuestCatalogResponse;
 
-    const anonymous = rewardsResponse.status === 401;
-    if (!rewardsResponse.ok && !anonymous) {
+    // During an outage the list still shows, without the user's rewards.
+    const anonymous =
+        rewardsResponse?.status === 401 ||
+        isOutageStatus(rewardsResponse?.status);
+    if (rewardsResponse && !rewardsResponse.ok && !anonymous) {
         throw new Error(`Failed to load quests (${rewardsResponse.status})`);
     }
-    const rewards = anonymous
-        ? []
-        : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
-              .rewards;
+    const account =
+        anonymous || !rewardsResponse
+            ? { rewards: [] }
+            : ((await rewardsResponse.json()) as {
+                  rewards: QuestReward[];
+              });
+
+    const standings = standingsResponse?.ok
+        ? ((await standingsResponse.json()) as QuestStandingsResponse)
+        : null;
 
     return {
         catalog: catalog.quests ?? [],
-        rewards: rewards ?? [],
+        rewards: account.rewards ?? [],
+        standings,
         anonymous,
     };
 }
@@ -243,150 +263,82 @@ const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
     tier: "polli-wallet-chip-tier",
 };
 
-// A single bucket-coloured tile — wallet-style well in the bucket's pale hue,
-// hosting one number (and, for pollen values, the bucket badge that tells you
-// it IS pollen without spelling the word). One of four in the summary 2×2.
-export function BucketCard({
-    kind,
-    value,
-    showBadge,
+function QuestSummary({
+    quests,
+    pollen,
+    preview = false,
+    claimable,
 }: {
-    kind: RewardIconKind;
-    value: React.ReactNode;
-    showBadge?: boolean;
-}) {
-    const panelClass =
-        kind === "paid" ? "polli-wallet-panel-paid" : "polli-wallet-panel-tier";
-    const BadgeIcon = kind === "paid" ? CardIcon : SproutIcon;
-    return (
-        <div
-            className={`flex items-center justify-center rounded-xl py-4 sm:py-5 ${panelClass}`}
-        >
-            <span className="flex items-center gap-1.5 text-3xl font-bold leading-none tracking-tight tabular-nums sm:gap-2 sm:text-5xl">
-                {showBadge && (
-                    <BadgeIcon className="h-7 w-7 shrink-0 sm:h-10 sm:w-10" />
-                )}
-                {value}
-            </span>
-        </div>
-    );
-}
-
-// A bucket-agnostic total — one neutral well, used when paid/Quest split would
-// be noise rather than signal (e.g. quest counts are all "a quest"). Uses
-// Surface card so the bg + well shadow match the Setup/quest rows exactly. The
-// glyph defaults to the sparkle; pass `icon` (and an `iconClassName` tint) to
-// label a different metric — e.g. a green sprout for the logged-out pollen
-// total, which must read as "on offer", never as an owned (green-well) balance.
-export function TotalCard({
-    value,
-    icon: Icon = SparkleIcon,
-    iconClassName,
-}: {
-    value: React.ReactNode;
-    icon?: IconComponent;
-    iconClassName?: string;
+    quests: number;
+    pollen: number;
+    preview?: boolean;
+    claimable?: {
+        count: number;
+        segments: { kind: RewardIconKind; pollen: number }[];
+    };
 }) {
     return (
-        <Surface
-            variant="card"
-            className="flex items-center justify-center py-4 sm:py-5"
-        >
-            <span className="flex items-center gap-1.5 text-3xl font-bold leading-none tracking-tight tabular-nums text-theme-text-base sm:gap-2 sm:text-5xl">
-                <Icon
-                    className={`h-7 w-7 shrink-0 sm:h-10 sm:w-10 ${iconClassName ?? ""}`}
-                />
-                {value}
-            </span>
-        </Surface>
-    );
-}
-
-// The summary card frame shared by the logged-in view (your completed quests +
-// claimed pollen) and the logged-out preview (quests + pollen on offer). One
-// layout, two callers: the caller supplies the already-styled pollen card
-// node(s) — green/amber owned wells when logged in, neutral tiles when logged
-// out — and this only positions them.
-//
-// We only ever render two or three cards (count + 1 or 2 pollen buckets):
-//   • two   → one row, side by side, at every width.
-//   • three → three across once the container is wide enough (@lg); below that,
-//     the count takes a full-width row and the pollen pair folds underneath.
-// Width-driven via a container query (not the viewport) because the panel is
-// narrower than the screen when the sidebar is open.
-function QuestSummaryGrid({
-    totalLabel,
-    totalValue,
-    pollenLabel,
-    pollenCards,
-}: {
-    totalLabel: string;
-    totalValue: React.ReactNode;
-    pollenLabel: string;
-    pollenCards: { key: string; node: React.ReactNode }[];
-}) {
-    const header = (label: string, className: string) => (
-        <Text
-            as="span"
-            size="sm"
-            weight="bold"
-            tone="muted"
-            className={`uppercase tracking-wide ${className}`}
-        >
-            {label}
-        </Text>
-    );
-    const totalCard = <TotalCard value={totalValue} />;
-
-    // No pollen on offer at all → just the count (kept for safety; in practice
-    // there is always at least the Quest Pollen bucket).
-    if (pollenCards.length === 0) {
-        return (
-            <div className="flex flex-col gap-2">
-                {header(totalLabel, "")}
-                <div className="sm:w-1/3">{totalCard}</div>
-            </div>
-        );
-    }
-
-    // Two cards (count + one pollen bucket) → one row, side by side, any width.
-    if (pollenCards.length === 1) {
-        return (
-            <div className="grid grid-cols-2 gap-x-2 gap-y-2">
-                {header(totalLabel, "col-span-1")}
-                {header(pollenLabel, "col-span-1")}
-                <div className="col-span-1">{totalCard}</div>
-                <div className="col-span-1">{pollenCards[0].node}</div>
-            </div>
-        );
-    }
-
-    // Three cards (count + Quest + paid) → three across when the container is
-    // wide enough; otherwise the count spans a full row and the pollen pair
-    // sits side by side beneath it.
-    return (
-        <div className="@container">
-            <div className="grid grid-cols-2 gap-x-2 gap-y-2 @lg:grid-cols-3">
-                {header(
-                    totalLabel,
-                    "col-span-2 @lg:col-span-1 @lg:col-start-1 @lg:row-start-1",
-                )}
-                <div className="col-span-2 @lg:col-span-1 @lg:col-start-1 @lg:row-start-2">
-                    {totalCard}
-                </div>
-                {header(
-                    pollenLabel,
-                    "col-span-2 @lg:col-span-2 @lg:col-start-2 @lg:row-start-1",
-                )}
-                {pollenCards.map((card, i) => (
-                    <div
-                        key={card.key}
-                        className={`${i === 1 ? "@lg:col-start-3" : "@lg:col-start-2"} @lg:row-start-2`}
-                    >
-                        {card.node}
-                    </div>
-                ))}
-            </div>
+        <div className="grid grid-cols-2 gap-3">
+            <WalletBalanceCard
+                tone="neutral"
+                kind="paid"
+                label={preview ? "Available quests" : "Quests"}
+                value={quests}
+                icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
+                footer={
+                    claimable && claimable.count > 0 ? (
+                        <Chip
+                            size="lg"
+                            className="polli:max-w-full polli:py-2 polli:font-semibold polli:leading-snug"
+                            style={{ height: "auto" }}
+                        >
+                            +{claimable.count}{" "}
+                            {claimable.count === 1 ? "quest" : "quests"} to
+                            claim
+                        </Chip>
+                    ) : undefined
+                }
+            />
+            <WalletBalanceCard
+                tone="neutral"
+                kind="tier"
+                label={preview ? "Potential Pollen" : "Pollen"}
+                value={formatRewardAmount(pollen)}
+                icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
+                footer={
+                    claimable && claimable.count > 0 ? (
+                        <span className="flex flex-wrap gap-1.5">
+                            {claimable.segments.map(({ kind, pollen }) => {
+                                const Icon =
+                                    kind === "paid" ? CardIcon : SproutIcon;
+                                return (
+                                    <Chip
+                                        key={kind}
+                                        intent="neutral"
+                                        size="lg"
+                                        className={`polli:max-w-full polli:py-2 polli:font-semibold polli:leading-snug gap-1.5 tabular-nums ${BUCKET_CHIP_CLASS[kind]}`}
+                                        style={{ height: "auto" }}
+                                    >
+                                        <Icon
+                                            className="h-4 w-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        <span>
+                                            <span className="sr-only">
+                                                {kind === "paid"
+                                                    ? "Paid Pollen:"
+                                                    : "Quest Pollen:"}{" "}
+                                            </span>
+                                            +{formatRewardAmount(pollen)} to
+                                            claim
+                                        </span>
+                                    </Chip>
+                                );
+                            })}
+                        </span>
+                    ) : undefined
+                }
+            />
         </div>
     );
 }
@@ -405,10 +357,16 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
         Math.max(0, (progress.current / progress.target) * 100),
     );
     const formatValue = (value: number) =>
-        progress.unit === "pollen"
-            ? formatPollen(value)
-            : value.toLocaleString();
+        progress.unit === "pollen" ? formatPollen(value) : formatCount(value);
 
+    // Nothing done yet: just the count, an empty bar reads as decoration.
+    if (progress.current <= 0)
+        return (
+            <span className="text-xs tabular-nums text-theme-text-muted">
+                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
+                {progress.unit}
+            </span>
+        );
     return (
         <div className="mt-1 flex max-w-sm items-center gap-2">
             <div
@@ -432,57 +390,43 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
     );
 }
 
-// Leading marker for a quest row, by lifecycle stage:
-//   open      → ambient theme tile + section icon (vanilla amber — the row's
-//                bucket lives on the reward chip; the marker is just "do this")
-//   claimable → muted theme well + check (works in light and dark — receded
-//                relative to the open tile, but readable on either surface)
-//   claimed   → no tile, muted check (banked already, fully receded)
+// Leading marker for a quest row: one icon per state, so the left column
+// reads as where you stand. Only a claimable row takes the amber accent;
+// the rest follow their title's text colour.
+//   open        → target, strong
+//   claimable   → sparkle, amber (matches the Claim button)
+//   claimed     → check, muted
+//   coming soon → clock, muted
 function QuestMarker({
-    icon: Icon,
     status,
     comingSoon,
 }: {
-    icon: IconComponent;
     status: QuestCardStatus;
     comingSoon?: boolean;
 }) {
-    // coming_soon → clock; open → the lane's section icon; otherwise the
-    // earned/banked check.
-    function resolveIcon(): IconComponent {
-        if (comingSoon) return ClockIcon;
-        if (status === "open") return Icon;
-        return CheckIcon;
-    }
-    // open → ambient active tile; claimable → muted well; claimed (and
-    // coming_soon, which always renders claimed) → no tile, muted glyph.
-    function resolveTile(): string {
-        if (!comingSoon && status === "open")
-            return "bg-theme-bg-active text-theme-text-strong";
-        if (status === "claimable")
-            return "bg-theme-bg-subtle text-theme-text-muted";
-        return "text-theme-text-muted";
-    }
-    const MarkerIcon = resolveIcon();
-    const tile = resolveTile();
+    const [Icon, tone] = comingSoon
+        ? [ClockIcon, "text-theme-text-muted"]
+        : status === "open"
+          ? [TargetIcon, "text-theme-text-strong"]
+          : status === "claimable"
+            ? [SparkleIcon, "text-theme-text-soft"]
+            : [CheckIcon, "text-theme-text-muted"];
     return (
         <span
             aria-hidden="true"
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tile}`}
+            className={`flex h-5 w-5 shrink-0 items-center justify-center ${tone}`}
         >
-            <MarkerIcon className="h-5 w-5" />
+            <Icon className="h-5 w-5" />
         </span>
     );
 }
 
 export function QuestRow({
     card,
-    icon,
     claiming,
     onClaim,
 }: {
     card: QuestCard;
-    icon: IconComponent;
     claiming: boolean;
     onClaim(rewardId: string): void;
 }) {
@@ -490,8 +434,10 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardId =
         card.status === "claimable" ? card.rewardId : undefined;
+    // A claimed quest no longer needs its progress bar — the reward is banked,
+    // so the "N / N" count is done and just adds noise.
     const progress =
-        !card.comingSoon && card.progress ? (
+        !card.comingSoon && !claimed && card.progress ? (
             <QuestProgressBar progress={card.progress} />
         ) : null;
     const rewardAmount = earned
@@ -502,9 +448,14 @@ export function QuestRow({
     // "pollen" would just repeat it. formatRewardAmount renders null as "TBD".
     const rewardLabel = formatRewardAmount(rewardAmount);
 
-    // Shared pieces, placed differently per breakpoint below.
+    // Shared pieces, placed differently per breakpoint below. A claimable
+    // title takes the amber accent, like its icon.
     const title = (
-        <Text as="span" weight="semibold" tone={claimed ? "muted" : "strong"}>
+        <Text
+            as="span"
+            weight="semibold"
+            tone={claimed ? "muted" : claimableRewardId ? "soft" : "strong"}
+        >
             {card.title}
         </Text>
     );
@@ -515,21 +466,13 @@ export function QuestRow({
         card.status !== "claimed" && card.description ? card.description : null;
     const issueLink =
         card.issueNumber != null && card.url ? (
-            <InlineLink
-                href={card.url}
-                showIcon={false}
-                className="text-sm tabular-nums"
-            >
+            <InlineLink href={card.url} className="text-sm tabular-nums">
                 #{card.issueNumber}
             </InlineLink>
         ) : null;
-    // One reward badge in every state, so it holds the same spot on the right —
-    // only its emphasis shifts. Open/claimable show the live bucket chip;
-    // claimed recedes to a transparent, muted-grey badge (no fill, no sign),
-    // so the badge never jumps when a quest is claimed. Raw glyph (not
-    // WalletKindIcon) so the icon inherits the chip's currentColor — bucket
-    // deep when open, muted grey when claimed — instead of being forced to
-    // the bucket hue regardless of state.
+    // One plain reward in every state, so it holds the same spot on the right;
+    // only the bucket icon carries colour, and a claimed reward goes muted grey
+    // (raw glyph, so it inherits the muted text colour).
     const RewardKindIcon = rewardIcon === "paid" ? CardIcon : SproutIcon;
     const rewardChip = card.comingSoon ? (
         <Chip
@@ -541,100 +484,87 @@ export function QuestRow({
             Coming soon
         </Chip>
     ) : (
-        <Chip
-            intent="neutral"
-            size="lg"
-            className={`gap-1.5 tabular-nums ${
-                claimed
-                    ? "bg-transparent text-theme-text-muted"
-                    : BUCKET_CHIP_CLASS[rewardIcon]
+        <span
+            className={`flex items-center gap-1 text-sm font-semibold tabular-nums ${
+                claimed ? "text-theme-text-muted" : "text-theme-text-strong"
             }`}
         >
-            <RewardKindIcon className="h-4 w-4 shrink-0" />
+            {claimed ? (
+                <RewardKindIcon className="h-4 w-4 shrink-0" />
+            ) : (
+                <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
+            )}
             {rewardLabel}
-        </Chip>
+        </span>
     );
+    // A claimable quest's reward becomes the Claim button on the right: the
+    // standard large action button, "Claim" over its reward.
     const claimButton = claimableRewardId ? (
         <Button
             type="button"
+            intent="commit"
+            size="lg"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
-            className="gap-1.5"
+            aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
+            className="flex-col justify-center gap-0.5 px-5 py-2 font-bold"
         >
-            <SparkleIcon className="h-4 w-4 shrink-0" />
-            {claiming ? "Claiming" : "Claim"}
+            <span className="text-sm leading-none">
+                {claiming ? "Claiming" : "Claim"}
+            </span>
+            {rewardChip}
         </Button>
     ) : null;
-    // Both layouts place the claim button and reward chip separately: claim
-    // beside the text, chip pinned to the right edge (ml-auto).
+    const details = (description || issueLink || progress) && (
+        <div className="flex min-w-0 flex-col gap-1">
+            {(description || issueLink) && (
+                <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
+                    {description && (
+                        <QuestDescription>{description}</QuestDescription>
+                    )}
+                    {description && issueLink ? " " : null}
+                    {issueLink}
+                </div>
+            )}
+            {progress}
+        </div>
+    );
+    const marker = (
+        <QuestMarker status={card.status} comingSoon={card.comingSoon} />
+    );
+    const reward = claimButton ?? rewardChip;
 
     return (
-        <Surface variant="card">
-            {/* Mobile: stacked. Icon centered with the (wrappable) title; the
-                description (issue link at its end) full-width below; action row
-                last, mirroring desktop — Claim on the left, reward chip pinned
-                right. */}
-            <div className="flex flex-col gap-3 sm:hidden">
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-4">
-                        <QuestMarker
-                            icon={icon}
-                            status={card.status}
-                            comingSoon={card.comingSoon}
-                        />
-                        <div className="min-w-0 flex-1">{title}</div>
-                    </div>
-                    {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted">
-                            {description && (
-                                <QuestDescription>
-                                    {description}
-                                </QuestDescription>
-                            )}
-                            {description && issueLink ? " " : null}
-                            {issueLink}
-                        </div>
-                    )}
-                    {progress}
+        // Open and claimable quests are white cards; done ones sit flat, in
+        // their muted colours.
+        <Surface
+            variant="card"
+            className={claimed ? "polli:bg-transparent" : undefined}
+        >
+            {/* Mobile: the title full width, then the description above the
+                reward or Claim button. */}
+            <div className="flex flex-col gap-2 sm:hidden">
+                <div className="flex items-center gap-4">
+                    {marker}
+                    <div className="min-w-0 flex-1">{title}</div>
                 </div>
-                <div className="flex items-center gap-2.5">
-                    {claimButton}
-                    <div className="ml-auto flex items-center gap-2.5">
-                        {rewardChip}
-                    </div>
+                {/* Indented past the icon, under the title. */}
+                <div className="flex flex-col gap-2 pl-9">
+                    {details}
+                    <div>{reward}</div>
                 </div>
             </div>
 
-            {/* Desktop: icon | content (title + description, with the issue link
-                at the end of the description) | claim | reward. The content is
-                sized to its text (no flex-1), so the claim button sits right
-                beside it; the reward chip is pushed to the far-right edge with
-                ml-auto so amounts line up in a column. Keeps the card to two
-                text rows. */}
+            {/* Desktop: icon | title and description | reward, or the Claim
+                button holding it. */}
             <div className="hidden items-center gap-4 sm:flex">
-                <QuestMarker
-                    icon={icon}
-                    status={card.status}
-                    comingSoon={card.comingSoon}
-                />
-                <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex items-center">{marker}</div>
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
                     <div>{title}</div>
-                    {(description || issueLink) && (
-                        <div className="text-sm text-theme-text-muted">
-                            {description && (
-                                <QuestDescription>
-                                    {description}
-                                </QuestDescription>
-                            )}
-                            {description && issueLink ? " " : null}
-                            {issueLink}
-                        </div>
-                    )}
-                    {progress}
+                    {details}
                 </div>
-                {claimButton}
-                <div className="ml-auto flex shrink-0 items-center gap-2.5">
-                    {rewardChip}
+                <div className="ml-auto flex shrink-0 items-center">
+                    {reward}
                 </div>
             </div>
         </Surface>
@@ -642,7 +572,37 @@ export function QuestRow({
 }
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
-    const [state, setState] = useState<FetchState>(INITIAL_STATE);
+    const { user, sessionUnavailable } = useLoaderData({ from: "/_dashboard" });
+    const [reloads, setReloads] = useState(0);
+    return (
+        <QuestOverviewContent
+            key={`${user?.id ?? "anonymous"}:${reloads}`}
+            userId={user?.id ?? null}
+            githubId={user?.githubId ?? null}
+            sessionUnavailable={sessionUnavailable}
+            onRecovered={() => setReloads((count) => count + 1)}
+        />
+    );
+};
+
+function QuestOverviewContent({
+    userId,
+    githubId,
+    sessionUnavailable,
+    onRecovered,
+}: {
+    userId: string | null;
+    githubId: number | null;
+    sessionUnavailable: boolean;
+    /** Rewards are back after an outage skipped the per-user check. */
+    onRecovered: () => void;
+}) {
+    const router = useRouter();
+    const [claimError, setClaimError] = useState<string | null>(null);
+    const [state, setState] = useState<FetchState>({
+        ...INITIAL_STATE,
+        anonymous: userId === null,
+    });
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
     // Logged-out visitors see a preview: every quest shown open (so all
@@ -650,7 +610,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     // relaxed, since there is no per-user progress to gate on.
     const previewAll = state.anonymous;
 
-    // On open: render cached quest data immediately (fast D1 read), THEN run one
+    // On open: load saved quest data from D1, THEN run one
     // automatic quest check (slow GitHub + Tinybird fan-out) and refresh. There
     // is no manual button — quests check themselves when the page opens. The
     // whole flow is inlined here (not a separate callback) so the mount-only
@@ -671,7 +631,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     // show the indicator for them.
                     checking: !questData.anonymous,
                     error: null,
-                    claimingRewardId: null,
+                    claimingRewardIds: [],
                 });
                 // No per-user check for logged-out visitors — the catalog
                 // preview is all they get.
@@ -697,7 +657,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             // warm) or any failure leaves the already-loaded quests intact and
             // does NOT surface a red error — the cached data is still valid.
             try {
-                const response = await apiClient.quests.check.$post();
+                const response = await accountClient.quests.check.$post();
                 if (cancelled) return;
                 if (response.ok) {
                     const checkResult =
@@ -712,6 +672,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         loading: false,
                         error: null,
                     }));
+                    window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
                     return;
                 }
                 // Not ok (throttled or failed) — just stop the indicator.
@@ -727,40 +688,60 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     }, []);
 
     async function handleClaimReward(rewardId: string): Promise<void> {
+        setClaimError(null);
         setState((current) => ({
             ...current,
-            claimingRewardId: rewardId,
-            error: null,
+            claimingRewardIds: [...current.claimingRewardIds, rewardId],
         }));
 
         try {
-            const response = await apiClient.quests.rewards[
+            const response = await accountClient.quests.rewards[
                 ":rewardId"
             ].claim.$post({
                 param: { rewardId },
             });
             if (!response.ok) {
-                throw new Error(`Failed to claim reward (${response.status})`);
+                throw new Error("Couldn’t claim the reward. Please try again.");
             }
+            void router.invalidate({
+                filter: (match) => match.routeId === "/_dashboard",
+            });
             const questData = await loadQuestData();
             setState((current) => ({
                 ...current,
                 ...questData,
-                claimingRewardId: null,
-                checking: false,
-                loading: false,
-                error: null,
+                claimingRewardIds: current.claimingRewardIds.filter(
+                    (id) => id !== rewardId,
+                ),
             }));
+            window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
         } catch (error) {
             setState((current) => ({
                 ...current,
-                claimingRewardId: null,
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : "Failed to claim reward",
+                claimingRewardIds: current.claimingRewardIds.filter(
+                    (id) => id !== rewardId,
+                ),
             }));
+            setClaimError(
+                error instanceof Error
+                    ? error.message
+                    : "Couldn’t claim the reward. Please try again.",
+            );
         }
+    }
+
+    async function refreshRewards(): Promise<void> {
+        void router.invalidate({
+            filter: (match) => match.routeId === "/_dashboard",
+        });
+        const questData = await loadQuestData();
+        // Reload once so the check the outage skipped runs, as on a visit.
+        if (!questData.anonymous && !autoCheckedRef.current) {
+            onRecovered();
+            return;
+        }
+        setState((current) => ({ ...current, ...questData, error: null }));
+        window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
     }
 
     // A reward's questId IS the catalog id it earned (one reward == one quest),
@@ -839,16 +820,10 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             });
         }
 
-        // Order per lane by lifecycle rank; within a rank, cheaper reward first.
+        // Order per lane by lifecycle rank only: a claim moves its own row and
+        // nothing else; within a rank the catalog's order stays (stable sort).
         for (const key of Object.keys(byCat) as CategoryKey[]) {
-            byCat[key].sort((a, b) => {
-                const rankDelta = cardSortRank(a) - cardSortRank(b);
-                if (rankDelta !== 0) return rankDelta;
-                return (
-                    (a.reward ?? Number.POSITIVE_INFINITY) -
-                    (b.reward ?? Number.POSITIVE_INFINITY)
-                );
-            });
+            byCat[key].sort((a, b) => cardSortRank(a) - cardSortRank(b));
         }
         return byCat;
     }, [
@@ -860,91 +835,66 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     ]);
 
     // Rewards created by a maintainer or another non-catalog source still need
-    // their own claim control. This is deliberately derived from the ledger —
-    // no synthetic catalog entry or special balance path.
+    // their own claim control, as do a repeatable quest's rewards beyond the
+    // one its catalog card shows. This is deliberately derived from the
+    // ledger — no synthetic catalog entry or special balance path.
     const bonusRewardCards = useMemo(() => {
         const catalogIds = new Set(state.catalog.map((quest) => quest.id));
-        return state.rewards
-            .filter(
-                (reward) =>
-                    reward.questId == null || !catalogIds.has(reward.questId),
-            )
-            .map<QuestCard>((reward) => ({
-                key: reward.id,
-                rewardId: reward.id,
-                title: reward.title,
-                url: reward.url ?? undefined,
-                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
-                reward: reward.pollenAmount,
-                balanceBucket: reward.balanceBucket,
-                status: reward.claimedAt ? "claimed" : "claimable",
-                earnedAmount: reward.pollenAmount,
-            }));
-    }, [state.catalog, state.rewards]);
+        return (
+            state.rewards
+                .filter(
+                    (reward) =>
+                        reward.questId == null ||
+                        !catalogIds.has(reward.questId) ||
+                        rewardByKey.get(reward.questId) !== reward,
+                )
+                .map<QuestCard>((reward) => ({
+                    key: reward.id,
+                    rewardId: reward.id,
+                    title: reward.title,
+                    description: reward.questId?.startsWith(
+                        "github:reported_issue:",
+                    )
+                        ? "Your issue was closed by a merged pull request."
+                        : undefined,
+                    url: reward.url ?? undefined,
+                    issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                    reward: reward.pollenAmount,
+                    balanceBucket: reward.balanceBucket,
+                    status: reward.claimedAt ? "claimed" : "claimable",
+                    earnedAmount: reward.pollenAmount,
+                }))
+                // Same order as the sections: to claim first, done last.
+                .sort((a, b) => cardSortRank(a) - cardSortRank(b))
+        );
+    }, [state.catalog, state.rewards, rewardByKey]);
 
-    // Logged-out totals for the summary cards: across every available quest
-    // shown (coming_soon excluded), how many there are and the pollen on offer,
-    // split per bucket so the preview shows a paid card exactly when (and only
-    // when) some available quest pays paid pollen — the same rule the logged-in
-    // view uses, with catalog potential instead of this user's history.
+    // Logged-out totals show what the public catalog offers, not an owned balance.
     const previewTotals = useMemo(() => {
-        const byBucket: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
+        let pollen = 0;
         for (const cards of Object.values(sections)) {
             for (const card of cards) {
                 if (card.comingSoon || card.reward == null) continue;
                 count += 1;
-                byBucket[rewardIconKind(card.balanceBucket)] += card.reward;
+                pollen += card.reward;
             }
         }
-        const usedBuckets: Record<RewardIconKind, boolean> = {
-            tier: byBucket.tier > 0,
-            paid: byBucket.paid > 0,
-        };
-        return { count, byBucket, usedBuckets };
+        return { count, pollen };
     }, [sections]);
 
-    // Which buckets the registry or earned rewards actually use — drives
-    // whether the matching summary card is rendered. If no quest/reward touches
-    // paid pollen, showing an always-zero paid card is just noise.
-    const usedBuckets = useMemo(() => {
-        const used: Record<RewardIconKind, boolean> = {
-            paid: false,
-            tier: false,
-        };
-        for (const quest of state.catalog) {
-            used[rewardIconKind(quest.balanceBucket)] = true;
-        }
-        for (const reward of state.rewards) {
-            used[rewardIconKind(reward.balanceBucket)] = true;
-        }
-        return used;
-    }, [state.catalog, state.rewards]);
-
-    // Per-bucket roll-up for the summary: a reward only counts once it has been
-    // claimed (banked into the balance). Both the count and the pollen total are
-    // gated on claimedAt, so an unclaimed reward inflates neither — it sits in
-    // the "ready to claim" banner instead.
-    const bucketStats = useMemo(() => {
-        const stats: Record<
-            RewardIconKind,
-            { claimed: number; pollen: number }
-        > = {
-            paid: { claimed: 0, pollen: 0 },
-            tier: { claimed: 0, pollen: 0 },
-        };
+    // Only banked rewards count as claimed; unclaimed rewards stay in the banner.
+    const claimedStats = useMemo(() => {
+        const stats = { quests: 0, pollen: 0 };
         for (const reward of state.rewards) {
             if (reward.claimedAt == null) continue;
-            const kind = rewardIconKind(reward.balanceBucket);
-            stats[kind].claimed += 1;
-            stats[kind].pollen += reward.pollenAmount;
+            stats.quests += 1;
+            stats.pollen += reward.pollenAmount;
         }
         return stats;
     }, [state.rewards]);
 
-    // Unclaimed rewards waiting to be banked. The banner shows: total quest
-    // count + per-bucket pollen amounts (each with its bucket glyph, since a
-    // pollen number without its bucket icon is ambiguous).
+    // Keep pending rewards separate from the claimed totals above them.
     const claimable = useMemo(() => {
         const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
@@ -961,279 +911,228 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return { count, segments };
     }, [state.rewards]);
 
-    // While the automatic quest check is running, dim the stats and cards so
-    // the panel reads as "refreshing" — the numbers may be about to change. The
-    // checking indicator itself stays outside this wrapper so it stays crisp.
-    const dimWhileChecking = state.checking
-        ? "pointer-events-none select-none opacity-50 transition-opacity duration-300"
-        : "transition-opacity duration-300";
+    // Quests the viewer can still earn, for the leaderboard's "next step" line.
+    const openQuests = useMemo(
+        () =>
+            Object.values(sections)
+                .flat()
+                .filter(
+                    (card) =>
+                        card.status === "open" &&
+                        !card.comingSoon &&
+                        (card.reward ?? 0) > 0,
+                )
+                .map((card) => ({
+                    title: card.title,
+                    reward: card.reward ?? 0,
+                })),
+        [sections],
+    );
+
+    const initialError =
+        state.catalog.length === 0 && state.rewards.length === 0
+            ? state.error
+            : null;
+    const showSummary = !initialError;
+    // During an outage the list still loads, but a possibly signed-in user's
+    // rewards and the standings don't: say so instead of showing 0 progress.
+    const rewardsDown = useOutage(["/account/quests/rewards"]);
+    const standingsDown = useOutage(["/api/quests/standings"]);
+    const progressUnavailable =
+        rewardsDown &&
+        state.anonymous &&
+        (sessionUnavailable || userId !== null);
+    const standingsUnavailable =
+        standingsDown && !state.loading && !state.standings;
+    // A failed first load retries through its own LoadError instead.
+    useOutageRetry(
+        (progressUnavailable || standingsUnavailable) && !state.error,
+        "quests",
+        refreshRewards,
+    );
 
     return (
-        <div className="flex flex-col gap-6">
-            {/* Summary panel. The per-user accounting (completed/claimed cards +
-                claimable banner + checking indicator) is hidden for logged-out
+        <>
+            {/* Summary. The per-user accounting (completed/claimed cards +
+                claimable footers + checking indicator) is hidden for logged-out
                 visitors, but the alpha + claim-flow footer stays so the preview
                 still explains how quests work. */}
-            <Surface variant="panel">
-                {!state.anonymous && (
-                    <>
-                        {/* Responsive summary. Bucket cards are conditional on the
-                    registry actually using that bucket (no point showing a
-                    permanent zero). Source order is the mobile reading order
-                    (header → total → header → pair); desktop uses explicit
-                    col-start/row-start to put both headers on row 1 and the
-                    cards on row 2. */}
-                        <div className={dimWhileChecking}>
-                            <QuestSummaryGrid
-                                totalLabel="Claimed quests"
-                                totalValue={
-                                    bucketStats.paid.claimed +
-                                    bucketStats.tier.claimed
-                                }
-                                pollenLabel="Claimed pollen"
-                                pollenCards={(["tier", "paid"] as const)
-                                    .filter((k) => usedBuckets[k])
-                                    .map((kind) => ({
-                                        key: kind,
-                                        node: (
-                                            <BucketCard
-                                                kind={kind}
-                                                value={formatRewardAmount(
-                                                    bucketStats[kind].pollen,
-                                                )}
-                                                showBadge
-                                            />
-                                        ),
-                                    }))}
-                            />
-                            {claimable.count > 0 && (
-                                <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
-                                    <SparkleIcon className="h-4 w-4 shrink-0" />
-                                    <span>
-                                        <span className="tabular-nums">
-                                            {claimable.count}
-                                        </span>{" "}
-                                        new{" "}
-                                        {claimable.count === 1
-                                            ? "quest"
-                                            : "quests"}{" "}
-                                        completed
-                                    </span>
-                                    {/* Reward amount pulled inline — "…completed
-                                        🌱 5 pollen ready to claim!" — so it reads
-                                        as one sentence, not a trailing chip. */}
-                                    {claimable.segments.map((seg, i) => {
-                                        const SegIcon =
-                                            seg.kind === "paid"
-                                                ? CardIcon
-                                                : SproutIcon;
-                                        return (
-                                            <span
-                                                key={seg.kind}
-                                                className="flex items-center gap-1.5"
-                                            >
-                                                {i > 0 && (
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className="opacity-60"
-                                                    >
-                                                        ·
-                                                    </span>
-                                                )}
-                                                <SegIcon className="h-4 w-4 shrink-0" />
-                                                <span className="tabular-nums">
-                                                    {formatRewardAmount(
-                                                        seg.pollen,
-                                                    )}
-                                                </span>
-                                            </span>
-                                        );
-                                    })}
-                                    <span>pollen ready to claim!</span>
-                                </div>
-                            )}
-                        </div>
-                        {/* Auto-check indicator: quests check themselves on open, so
-                    there's no button. Show a subtle "checking" line only while
-                    the automatic check is in flight; nothing when idle. */}
-                        {state.checking && (
-                            <div className="mt-3 flex justify-end">
-                                <span className="flex animate-[pulse_2s_ease-in-out_infinite] items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
-                                    <SearchIcon className="h-4 w-4 shrink-0" />
-                                    Checking for new quests…
-                                </span>
-                            </div>
-                        )}
-                    </>
-                )}
-                {/* Logged-out summary: the same two-card pair, but the numbers are
-                    catalog totals (how many quests are live, how much pollen they
-                    pay) instead of this visitor's completed/claimed history. */}
-                {state.anonymous && (
-                    <>
-                        {/* Same frame as the logged-in summary, but neutral tiles
-                            (not the green/amber owned wells) so the pollen on
-                            offer never reads as a balance the visitor holds. The
-                            bucket glyph still marks Quest (green sprout) vs paid
-                            (amber card). */}
-                        <QuestSummaryGrid
-                            totalLabel="Available quests"
-                            totalValue={previewTotals.count}
-                            pollenLabel="Available pollen"
-                            pollenCards={(["tier", "paid"] as const)
-                                .filter((k) => previewTotals.usedBuckets[k])
-                                .map((kind) => ({
-                                    key: kind,
-                                    node: (
-                                        <TotalCard
-                                            value={formatRewardAmount(
-                                                previewTotals.byBucket[kind],
-                                            )}
-                                            icon={
-                                                kind === "paid"
-                                                    ? CardIcon
-                                                    : SproutIcon
-                                            }
-                                            iconClassName={
-                                                kind === "paid"
-                                                    ? "polli-wallet-text-paid"
-                                                    : "polli-wallet-text-tier"
-                                            }
-                                        />
-                                    ),
-                                }))}
+            <Section
+                title={state.anonymous ? "Pollen you can earn" : "Claimed"}
+                action={
+                    state.checking && (
+                        <LoadingStatus>Checking quests…</LoadingStatus>
+                    )
+                }
+            >
+                <SectionContent
+                    loading={state.loading}
+                    className="h-22 sm:h-28"
+                >
+                    {state.error && (
+                        <LoadError
+                            onRetry={refreshRewards}
+                            paths={[
+                                "/api/quests/catalog",
+                                "/account/quests/rewards",
+                            ]}
+                        >
+                            {state.error}
+                        </LoadError>
+                    )}
+                    {progressUnavailable && <OutageNotice retrying />}
+                    {claimError && <Alert intent="danger">{claimError}</Alert>}
+                    {showSummary && !state.anonymous && (
+                        <QuestSummary
+                            quests={claimedStats.quests}
+                            pollen={claimedStats.pollen}
+                            claimable={claimable}
                         />
-                        {/* Same banner as the logged-in "ready to claim" line.
-                            Not a link yet; the real login CTA is a follow-up. */}
-                        <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
-                            Log in to start earning.
-                        </div>
-                    </>
-                )}
-                {/* Multi-line footer styled like the keys panel's footer —
-                    text-[13px] + leading-snug keeps the two lines visually
-                    tight. Always shown — explains quests to logged-out
-                    visitors too. */}
-                <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    )}
+                    {/* The preview counts available quests and their possible rewards. */}
+                    {showSummary && state.anonymous && (
+                        <QuestSummary
+                            preview
+                            quests={previewTotals.count}
+                            pollen={previewTotals.pollen}
+                        />
+                    )}
+                </SectionContent>
+                <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
                         <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             Complete → claim → credited to your{" "}
-                            <InlineLink href="/pollen" showIcon={false}>
-                                wallet
-                            </InlineLink>
-                            .
+                            <InlineLink href="/pollen">wallet</InlineLink>.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
                         <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Quests can be retroactive — if you qualify under a
-                            quest's rules, just claim the reward.
+                            Past activity may count. If you meet a quest's
+                            requirements, you can claim its reward.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
                         <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Early days — quests are in alpha, with more coming
-                            and rewards still evolving.
+                            Quests are in alpha. Availability and rewards may
+                            change.
                         </span>
                     </p>
                 </div>
-            </Surface>
+            </Section>
 
-            {state.error && (
-                <Text size="sm" className="text-intent-danger-text">
-                    {state.error}
-                </Text>
-            )}
-
-            {state.loading && (
-                <Surface
-                    variant="card"
-                    className="flex items-center gap-2 text-theme-text-muted"
+            {state.standings ? (
+                <QuestStandings
+                    standings={state.standings}
+                    openQuests={openQuests}
+                />
+            ) : state.loading ? (
+                <Section
+                    title={`${monthName(new Date().toISOString().slice(0, 7))} leaderboard`}
                 >
-                    <ClockIcon className="h-4 w-4 shrink-0" />
-                    <Text size="sm" tone="muted">
-                        Loading quests…
-                    </Text>
-                </Surface>
+                    <CardLoading className="h-49.5 sm:h-50.5" />
+                </Section>
+            ) : (
+                standingsUnavailable && (
+                    <Section title="Leaderboard">
+                        <OutageNotice retrying />
+                    </Section>
+                )
             )}
 
-            <div className={`flex flex-col gap-6 ${dimWhileChecking}`}>
-                {bonusRewardCards.length > 0 && (
+            {CATEGORIES.map((category) => {
+                const cards = sections[category.key];
+                if (state.loading || cards.length === 0) return null;
+                // The progress chip counts only real (grantable) quests —
+                // coming_soon rows are excluded from both done and total.
+                const liveCards = cards.filter((card) => !card.comingSoon);
+                const done = liveCards.filter(
+                    (card) => card.status !== "open",
+                ).length;
+                return (
                     <Section
-                        title="Bonus rewards"
-                        framed
-                        panelClassName="flex flex-col gap-2"
+                        key={category.key}
+                        title={category.label}
                         action={
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                className="tabular-nums"
-                            >
-                                {
-                                    bonusRewardCards.filter(
-                                        (card) => card.status === "claimed",
-                                    ).length
-                                }{" "}
-                                / {bonusRewardCards.length}
-                            </Chip>
+                            !initialError &&
+                            !progressUnavailable && (
+                                <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                                    {done} / {liveCards.length}
+                                </span>
+                            )
                         }
                     >
-                        {bonusRewardCards.map((card) => (
-                            <QuestRow
-                                key={card.key}
-                                card={card}
-                                icon={SparkleIcon}
-                                claiming={
-                                    state.claimingRewardId === card.rewardId
-                                }
-                                onClaim={handleClaimReward}
-                            />
-                        ))}
-                    </Section>
-                )}
-                {CATEGORIES.map((category) => {
-                    const cards = sections[category.key];
-                    if (cards.length === 0) return null;
-                    // The progress chip counts only real (grantable) quests —
-                    // coming_soon rows are excluded from both done and total.
-                    const liveCards = cards.filter((card) => !card.comingSoon);
-                    const done = liveCards.filter(
-                        (card) => card.status !== "open",
-                    ).length;
-                    return (
-                        <Section
-                            key={category.key}
-                            title={category.label}
-                            framed
-                            panelClassName="flex flex-col gap-2"
-                            action={
-                                <Chip
-                                    intent="neutral"
-                                    size="sm"
-                                    className="tabular-nums"
-                                >
-                                    {done} / {liveCards.length}
-                                </Chip>
-                            }
-                        >
+                        <div className="flex flex-col gap-2">
                             {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}
                                     card={card}
-                                    icon={category.icon}
-                                    claiming={
-                                        state.claimingRewardId === card.rewardId
-                                    }
+                                    claiming={state.claimingRewardIds.includes(
+                                        card.rewardId ?? "",
+                                    )}
                                     onClaim={handleClaimReward}
                                 />
                             ))}
-                        </Section>
-                    );
-                })}
-            </div>
-        </div>
+                        </div>
+                    </Section>
+                );
+            })}
+            {bonusRewardCards.length > 0 && (
+                <Section
+                    title="Bonus rewards"
+                    action={
+                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                            {
+                                bonusRewardCards.filter(
+                                    (card) => card.status === "claimed",
+                                ).length
+                            }{" "}
+                            / {bonusRewardCards.length}
+                        </span>
+                    }
+                >
+                    <div className="flex flex-col gap-2">
+                        {bonusRewardCards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                claiming={state.claimingRewardIds.includes(
+                                    card.rewardId ?? "",
+                                )}
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                    </div>
+                </Section>
+            )}
+            {!state.anonymous && !state.loading && (
+                <Section title="Invite link">
+                    <Text size="sm" tone="muted">
+                        Earn 2 Quest Pollen for each friend who signs up with
+                        your link and buys more than 2 Pollen.
+                    </Text>
+                    {githubId === null ? (
+                        // The link carries the inviter's GitHub id.
+                        <Text size="sm" tone="muted">
+                            <InlineLink href="/account">
+                                Connect GitHub
+                            </InlineLink>{" "}
+                            to get your invite link.
+                        </Text>
+                    ) : (
+                        <CopyField
+                            label="Copy invite link"
+                            value={`${window.location.origin}/?ref=${githubId}`}
+                        />
+                    )}
+                </Section>
+            )}
+            {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}
+            {!state.anonymous && !state.loading && (
+                <RedeemCode onRedeemed={() => void refreshRewards()} />
+            )}
+        </>
     );
-};
+}

@@ -1,5 +1,8 @@
-import type { ModelHealth } from "@shared/model-health.ts";
-import type { PublicPriceInfo } from "@shared/registry/public-pricing.ts";
+import type { ModelHealth } from "@shared/registry/model-info.ts";
+import type {
+    PricingDimension,
+    PublicPriceInfo,
+} from "@shared/registry/public-pricing.ts";
 
 export type ModelCategory =
     | "text"
@@ -8,13 +11,8 @@ export type ModelCategory =
     | "video"
     | "3d"
     | "embedding"
-    | "realtime";
-
-export type ModelDisplayCategory =
-    | ModelCategory
-    | "community-text"
-    | "community-image"
-    | "community-agent";
+    | "realtime"
+    | "decision";
 
 export type ModelCapability =
     | "tool_calling"
@@ -36,7 +34,14 @@ export type PriceKind =
 
 export type PriceDirection = "input" | "output";
 
-export type PriceUnit = "token" | "second" | "request";
+export type PriceUnit =
+    | "token"
+    | "second"
+    | "request"
+    | "megapixel"
+    | "character"
+    | "byte"
+    | "image";
 
 export type ModelPriceLine = {
     direction: PriceDirection;
@@ -61,6 +66,7 @@ export type ModelPrice = {
     community?: boolean;
     health?: ModelHealth;
     agent?: boolean;
+    verified?: boolean;
     baseModel?: string;
     perUserRpm?: number | null;
     displayName?: string;
@@ -81,6 +87,7 @@ export type ModelPrice = {
     prices: ModelPriceLine[];
     priceVariants?: ModelPriceVariant[];
     priceDefaultLabel?: string;
+    pricingDimensions?: PricingDimension[];
     priceAdjustments?: ModelPriceAdjustment[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;

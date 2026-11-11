@@ -5,6 +5,8 @@ import {
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 
+const REPO = "pollinations/pollinations";
+
 export type MockGithubState = {
     secretScanningPublicKeys: Array<{
         key_identifier: string;
@@ -27,20 +29,34 @@ export type MockGithubState = {
         created_at: string;
         updated_at: string;
         closed_at: string | null;
-        user: { login: string } | null;
+        user: { login: string; databaseId?: number | null } | null;
         assignees?: { login: string; databaseId?: number | null }[];
         labels?: Array<{ name: string }>;
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
-            author: { databaseId?: number | null } | null;
+            repository?: string;
+            headRefName?: string;
+            baseRefName?: string;
+            author: {
+                __typename?: string;
+                login?: string;
+                databaseId?: number | null;
+            } | null;
         }>;
     }>;
     mergedPullRequests: Array<{
         number: number;
         authorLogin: string;
         mergedAt: string;
+        authorId?: number;
+        base?: string;
+        labels?: string[];
+        // An issue number in this repository, or an issue elsewhere.
+        closingIssues?: (number | { number: number; repository: string })[];
     }>;
+    // Commit author GitHub ids per PR number, including co-authors.
+    commitAuthors: Record<number, number[]>;
     repos: Array<{
         name: string;
         fork?: boolean;
@@ -64,6 +80,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         },
         questIssues: [],
         mergedPullRequests: [],
+        commitAuthors: {},
         repos: [],
         requests: [],
         failQuestSearch: false,
@@ -106,27 +123,116 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ errors: [{ message: "rate limited" }] }, 200);
             }
             const body = (await c.req.json()) as {
-                variables?: { query?: string };
+                query?: string;
+                variables?: {
+                    query?: string;
+                    after?: string | null;
+                };
             };
+            // Commit authors arrive as one query with a `pr<number>:` alias
+            // per pull request.
+            const prNumbers = [
+                ...(body.query ?? "").matchAll(/pr(\d+):pullRequest/g),
+            ].map((match) => Number(match[1]));
+            if (prNumbers.length > 0) {
+                const repository = Object.fromEntries(
+                    prNumbers.map((prNumber) => [
+                        `pr${prNumber}`,
+                        {
+                            commits: {
+                                nodes: [
+                                    {
+                                        commit: {
+                                            authors: {
+                                                nodes: (
+                                                    state.commitAuthors[
+                                                        prNumber
+                                                    ] ?? []
+                                                ).map((databaseId) => ({
+                                                    user: { databaseId },
+                                                })),
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    ]),
+                );
+                return c.json({ data: { repository } });
+            }
             const search = body.variables?.query ?? "";
             if (search.includes("is:pr")) {
                 const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+                const base = search.match(/\bbase:([^\s]+)/)?.[1];
+                const mergedFrom = search.match(/\bmerged:>=(\S+)/)?.[1];
+                const mergedBefore = search.match(/\bmerged:<(\S+)/)?.[1];
                 const nodes = state.mergedPullRequests
-                    .filter((pr) => !author || pr.authorLogin === author)
-                    .slice(0, 1)
+                    .filter(
+                        (pr) =>
+                            (!author || pr.authorLogin === author) &&
+                            (!base || (pr.base ?? "main") === base) &&
+                            (!mergedFrom ||
+                                Date.parse(pr.mergedAt) >=
+                                    Date.parse(mergedFrom)) &&
+                            (!mergedBefore ||
+                                Date.parse(pr.mergedAt) <
+                                    Date.parse(mergedBefore)),
+                    )
                     .map((pr) => ({
                         number: pr.number,
+                        title: `PR ${pr.number}`,
+                        url: `https://github.com/${REPO}/pull/${pr.number}`,
                         mergedAt: pr.mergedAt,
+                        author: { databaseId: pr.authorId ?? state.user.id },
+                        labels: {
+                            nodes: (pr.labels ?? []).map((name) => ({ name })),
+                        },
+                        closingIssuesReferences: {
+                            nodes: (pr.closingIssues ?? []).map((issue) =>
+                                typeof issue === "number"
+                                    ? {
+                                          number: issue,
+                                          repository: { nameWithOwner: REPO },
+                                      }
+                                    : {
+                                          number: issue.number,
+                                          repository: {
+                                              nameWithOwner: issue.repository,
+                                          },
+                                      },
+                            ),
+                        },
                     }));
-                return c.json({ data: { search: { nodes } } });
+                return c.json({
+                    data: {
+                        search: {
+                            nodes,
+                            pageInfo: { hasNextPage: false, endCursor: null },
+                        },
+                    },
+                });
             }
 
-            const nodes = state.questIssues.map((issue) => ({
+            const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+            const label = search.match(/\blabel:([^\s]+)/)?.[1];
+            const issues = state.questIssues.filter(
+                (issue) =>
+                    (!author || issue.user?.login === author) &&
+                    (!label ||
+                        issue.labels?.some(({ name }) => name === label)),
+            );
+            const start = Number(body.variables?.after ?? 0);
+            const nodes = issues.slice(start, start + 100).map((issue) => ({
                 number: issue.number,
                 state: issue.state.toUpperCase(),
                 title: issue.title,
                 url: issue.html_url,
+                createdAt: issue.created_at,
                 body: issue.body,
+                author: issue.user
+                    ? { databaseId: issue.user.databaseId ?? null }
+                    : null,
                 assignees: {
                     nodes: (issue.assignees ?? []).map((assignee) => ({
                         login: assignee.login,
@@ -135,10 +241,30 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 },
                 labels: { nodes: issue.labels ?? [] },
                 closedByPullRequestsReferences: {
-                    nodes: issue.closedByPullRequestsReferences ?? [],
+                    nodes: (issue.closedByPullRequestsReferences ?? []).map(
+                        (pr) => ({
+                            ...pr,
+                            baseRefName: pr.baseRefName ?? "main",
+                            repository: {
+                                nameWithOwner: pr.repository ?? REPO,
+                            },
+                        }),
+                    ),
                 },
             }));
-            return c.json({ data: { search: { nodes } } });
+            const next = start + nodes.length;
+            return c.json({
+                data: {
+                    search: {
+                        nodes,
+                        pageInfo: {
+                            hasNextPage: next < issues.length,
+                            endCursor:
+                                next < issues.length ? String(next) : null,
+                        },
+                    },
+                },
+            });
         })
         .get("/user/emails", (c) => {
             return c.json([

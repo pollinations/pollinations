@@ -3,7 +3,6 @@ import { gen, requireKey } from "../lib/api.js";
 import {
     fail,
     getOutputMode,
-    printError,
     printInfo,
     printResult,
     printTable,
@@ -30,39 +29,16 @@ interface EarningsResponse {
 
 export type { EarningsRow };
 
-/** The API accepts a rolling window of at most 90 days. */
-export const MAX_EARNINGS_DAYS = 90;
-
-export function parseDaysWindow(value: string): number {
-    const days = Number(value);
-    if (!Number.isInteger(days) || days < 1) {
-        throw new Error("--days must be a positive integer");
-    }
-    if (days > MAX_EARNINGS_DAYS) {
-        throw new Error(`--days must be ${MAX_EARNINGS_DAYS} or less`);
-    }
-    return days;
-}
-
 export function totalPollenEarned(perEntity: EarningsRow[]): number {
     return perEntity.reduce((sum, row) => sum + row.pollen_earned, 0);
 }
 
 export const earningsCommand = new Command("earnings")
     .description("Show developer earnings from BYOP apps and community models")
-    .option("--days <n>", "Rolling window in days, max 90", "30")
+    .option("--days <n>", "Rolling window in days", "30")
     .action(async (opts) => {
         const key = requireKey();
-
-        let days: number;
-        try {
-            days = parseDaysWindow(opts.days);
-        } catch (err) {
-            printError(
-                err instanceof Error ? err.message : "Invalid --days value",
-            );
-            process.exit(1);
-        }
+        const days = opts.days;
 
         try {
             const data = await gen<EarningsResponse>(

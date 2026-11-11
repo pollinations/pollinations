@@ -2,8 +2,8 @@ import { SELF } from "cloudflare:test";
 import { expect } from "vitest";
 import { test } from "./fixtures.ts";
 
-const authHeaders = (sessionToken: string) => ({
-    Cookie: `better-auth.session_token=${sessionToken}`,
+const authHeaders = (accountToken: string) => ({
+    Authorization: `Bearer ${accountToken}`,
 });
 
 const earningsRow = (overrides: Record<string, unknown> = {}) => ({
@@ -23,8 +23,42 @@ const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
 });
 
+test("earnings charts and transactions use the selected calendar timezone", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    for (const path of ["earnings", "earnings/transactions"]) {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/${path}?granularity=month&period=2026-10&timezone=Australia/Lord_Howe`,
+            { headers: authHeaders(accountToken) },
+        );
+        expect(response.status).toBe(200);
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            timezone: "Australia/Lord_Howe",
+            since: "2026-10-01 00:00:00",
+            until: "2026-11-01 00:00:00",
+        });
+    }
+});
+
+test("earnings rejects invalid timezones before calling Tinybird", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    for (const path of ["earnings", "earnings/transactions"]) {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/${path}?timezone=Invalid/Zone`,
+            { headers: authHeaders(accountToken) },
+        );
+        expect(response.status).toBe(400);
+    }
+    expect(mocks.tinybird.state.pipeCalls).toHaveLength(0);
+});
+
 test("GET /api/account/earnings returns daily buckets and derived entity rollups", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -57,7 +91,7 @@ test("GET /api/account/earnings returns daily buckets and derived entity rollups
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/earnings?days=30",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(response.status).toBe(200);
 
@@ -113,7 +147,7 @@ test("GET /api/account/earnings returns daily buckets and derived entity rollups
 });
 
 test("GET /api/account/earnings emits daily earnings CSV", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -141,7 +175,7 @@ test("GET /api/account/earnings emits daily earnings CSV", async ({
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/earnings?days=30&format=csv",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("text/csv");
@@ -166,7 +200,7 @@ test("GET /api/account/earnings emits daily earnings CSV", async ({
 });
 
 test("GET /api/account/earnings/transactions returns trimmed feed rows", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -184,7 +218,7 @@ test("GET /api/account/earnings/transactions returns trimmed feed rows", async (
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/earnings/transactions?days=30&limit=50",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(response.status).toBe(200);
 
@@ -213,7 +247,7 @@ test("GET /api/account/earnings/transactions returns trimmed feed rows", async (
 });
 
 test("GET /api/account/earnings/transactions returns community model rewards", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -231,7 +265,7 @@ test("GET /api/account/earnings/transactions returns community model rewards", a
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/earnings/transactions?days=30&limit=10",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(response.status).toBe(200);
 
@@ -254,8 +288,50 @@ test("GET /api/account/earnings/transactions returns community model rewards", a
     expect(earningsCalls[0].query.limit).toBe("10");
 });
 
+test("GET /api/account/earnings/transactions forwards the complete reward cursor", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const cursor = new URLSearchParams({
+        limit: "16",
+        before: "2026-04-14T12:10:00.000Z",
+        before_event_id: "generation-1",
+        before_source: "community_model",
+        before_entity_id: "owner/model",
+    });
+    const response = await SELF.fetch(
+        `http://localhost:3000/api/account/earnings/transactions?${cursor}`,
+        { headers: authHeaders(accountToken) },
+    );
+    expect(response.status).toBe(200);
+    const calls = mocks.tinybird.state.pipeCalls.filter((call) =>
+        call.url.includes("activity_earnings_transactions.json"),
+    );
+    expect(calls).toHaveLength(1);
+    expect(calls[0].query).toMatchObject({
+        limit: "16",
+        before: "2026-04-14 12:10:00",
+        before_event_id: "generation-1",
+        before_source: "community_model",
+        before_entity_id: "owner/model",
+    });
+
+    cursor.delete("before_entity_id");
+    const incomplete = await SELF.fetch(
+        `http://localhost:3000/api/account/earnings/transactions?${cursor}`,
+        { headers: authHeaders(accountToken) },
+    );
+    expect(incomplete.status).toBe(400);
+    expect(
+        mocks.tinybird.state.pipeCalls.filter((call) =>
+            call.url.includes("activity_earnings_transactions.json"),
+        ),
+    ).toHaveLength(1);
+});
+
 test("GET /api/account/earnings?format=csv neutralizes app name formulas", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -268,7 +344,7 @@ test("GET /api/account/earnings?format=csv neutralizes app name formulas", async
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/earnings?days=30&format=csv",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
 
     expect(response.status).toBe(200);
@@ -276,4 +352,43 @@ test("GET /api/account/earnings?format=csv neutralizes app name formulas", async
     const [, row] = csv.split("\n");
 
     expect(row).toContain(`"'=HYPERLINK(""https://example.test"",""click"")"`);
+});
+
+test("GET /api/account/earnings accepts up to 365 days and rejects above", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    mocks.tinybird.state.earningsResponse = [earningsRow()];
+
+    const allowed = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=365",
+        { headers: authHeaders(accountToken) },
+    );
+    expect(allowed.status).toBe(200);
+
+    const rejected = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=366",
+        { headers: authHeaders(accountToken) },
+    );
+    expect(rejected.status).toBe(400);
+});
+
+test("GET /api/account/earnings/transactions accepts up to 365 days and rejects above", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const allowed = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings/transactions?days=365",
+        { headers: authHeaders(accountToken) },
+    );
+    expect(allowed.status).toBe(200);
+
+    const rejected = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings/transactions?days=366",
+        { headers: authHeaders(accountToken) },
+    );
+    expect(rejected.status).toBe(400);
 });

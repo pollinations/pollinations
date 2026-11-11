@@ -3,8 +3,10 @@ import { createInterface } from "node:readline";
 import chalk from "chalk";
 import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
+import { POLLI_CLIENT } from "../../lib/client.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
+import { numberOption } from "../../lib/number-option.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
 import { streamSSE } from "../../lib/stream.js";
 
@@ -14,7 +16,9 @@ interface Message {
 }
 
 interface ChatResponse {
-    choices: Array<{ message: { content: string } }>;
+    choices: Array<{
+        message: { content: string | null; refusal?: string | null };
+    }>;
     model: string;
     usage?: { total_tokens: number };
 }
@@ -22,15 +26,26 @@ interface ChatResponse {
 export function createChatCommand() {
     return new Command("chat")
         .description("Interactive multi-turn chat session")
-        .option(
-            "--model <model>",
-            "Text model (default: from config or 'openai')",
-        )
+        .option("--model <model>", "Text model (default: API default)")
         .option("--system <msg>", "System message")
         .option("--temperature <n>", "Randomness (0-2)")
         .option("--max-tokens <n>", "Maximum output tokens")
         .option("--save <path>", "Save conversation transcript on exit")
         .action(async (opts) => {
+            const temperature =
+                opts.temperature === undefined
+                    ? undefined
+                    : numberOption("--temperature", opts.temperature, 0, 2);
+            const maxTokens =
+                opts.maxTokens === undefined
+                    ? undefined
+                    : numberOption(
+                          "--max-tokens",
+                          opts.maxTokens,
+                          0,
+                          Number.MAX_SAFE_INTEGER,
+                          true,
+                      );
             const key = requireKey();
             const isJson = getOutputMode() !== "human";
 
@@ -44,7 +59,7 @@ export function createChatCommand() {
             if (!isJson) {
                 process.stderr.write(
                     chalk.green(
-                        `\nChat session started (model: ${opts.model})\n`,
+                        `\nChat session started (model: ${opts.model ?? "API default"})\n`,
                     ) +
                         chalk.dim(
                             "Type /exit to quit, /clear to reset, /save <path> to save\n\n",
@@ -66,10 +81,8 @@ export function createChatCommand() {
                     stream: !isJson,
                 };
                 if (opts.model) body.model = opts.model;
-                if (opts.temperature !== undefined)
-                    body.temperature = Number(opts.temperature);
-                if (opts.maxTokens !== undefined)
-                    body.max_tokens = Number(opts.maxTokens);
+                if (temperature !== undefined) body.temperature = temperature;
+                if (maxTokens !== undefined) body.max_tokens = maxTokens;
 
                 try {
                     const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
@@ -77,6 +90,7 @@ export function createChatCommand() {
                         headers: {
                             "Content-Type": "application/json",
                             Authorization: `Bearer ${key}`,
+                            "X-Polli-Client": POLLI_CLIENT,
                         },
                         body: JSON.stringify(body),
                     });
@@ -86,15 +100,22 @@ export function createChatCommand() {
                         const hint = await budgetHint(res.status, errText);
                         if (hint) {
                             printError(hint);
+                            stopped = true;
                             rl.close();
-                            process.exit(1);
+                            // Set the code and let the loop unwind: an
+                            // immediate process.exit() aborts libuv on
+                            // Windows after network I/O (nodejs/node#56645).
+                            process.exitCode = 1;
+                            return;
                         }
                         throw new Error(`${res.status}: ${errText}`);
                     }
 
                     if (isJson) {
                         const data = (await res.json()) as ChatResponse;
-                        const content = data.choices[0]?.message?.content ?? "";
+                        const message = data.choices[0]?.message;
+                        const content =
+                            message?.content || message?.refusal || "";
                         messages.push({ role: "assistant", content });
                         if (data.usage) totalTokens += data.usage.total_tokens;
                         printResult({
@@ -108,13 +129,17 @@ export function createChatCommand() {
 
                     process.stderr.write(`${chalk.yellow("ai")} > `);
                     let content = "";
-                    for await (const chunk of streamSSE(res)) {
+                    for await (const chunk of streamSSE(res, (event) => {
+                        if (typeof event.usage?.total_tokens === "number")
+                            totalTokens += event.usage.total_tokens;
+                    })) {
                         content += chunk;
                         process.stderr.write(chunk);
                     }
                     process.stderr.write("\n\n");
                     messages.push({ role: "assistant", content });
                 } catch (err) {
+                    process.exitCode = 1;
                     messages.pop();
                     printError(
                         err instanceof Error ? err.message : "Request failed",
@@ -130,24 +155,39 @@ export function createChatCommand() {
                             `${m.role === "user" ? "You" : "AI"}: ${m.content}`,
                     )
                     .join("\n\n");
-                writeFileSync(path, transcript, "utf-8");
+                try {
+                    writeFileSync(path, transcript, "utf-8");
+                } catch (err) {
+                    printError(
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to save transcript",
+                    );
+                    // Once readline closes, a failed autosave cannot be retried.
+                    if (closed) process.exitCode = 1;
+                    return;
+                }
                 if (!isJson) {
                     process.stderr.write(chalk.green(`Saved to ${path}\n`));
                 }
             };
 
+            let closed = false;
+            let stopped = false;
+            let pending: Promise<void> | undefined;
+
             rl.prompt();
 
-            rl.on("line", async (line) => {
+            const handleLine = async (line: string) => {
+                if (stopped) return;
                 const input = line.trim();
                 if (!input) {
-                    rl.prompt();
+                    if (!closed) rl.prompt();
                     return;
                 }
 
                 // Slash commands
                 if (input === "/exit" || input === "/quit") {
-                    if (opts.save) saveTranscript(opts.save);
                     if (!isJson) {
                         process.stderr.write(
                             chalk.dim(
@@ -155,8 +195,9 @@ export function createChatCommand() {
                             ),
                         );
                     }
+                    stopped = true;
                     rl.close();
-                    process.exit(0);
+                    return;
                 }
 
                 if (input === "/clear") {
@@ -170,24 +211,44 @@ export function createChatCommand() {
                             chalk.dim("Conversation cleared.\n\n"),
                         );
                     }
-                    rl.prompt();
+                    if (!closed) rl.prompt();
                     return;
                 }
 
                 if (input.startsWith("/save")) {
                     const path = input.slice(5).trim() || "chat.txt";
                     saveTranscript(path);
-                    rl.prompt();
+                    if (!closed) rl.prompt();
                     return;
                 }
 
                 await sendMessage(input);
-                rl.prompt();
+                // A fatal API error or EOF may have closed readline mid-turn.
+                if (!closed) rl.prompt();
+            };
+
+            rl.on("line", (line) => {
+                // Readline does not await handlers; serialize history changes.
+                const turn = (
+                    pending
+                        ? pending.then(() => handleLine(line))
+                        : handleLine(line)
+                ).finally(() => {
+                    if (pending === turn) pending = undefined;
+                });
+                pending = turn;
+                return turn;
             });
 
             rl.on("close", () => {
-                if (opts.save) saveTranscript(opts.save);
-                process.exit(0);
+                closed = true;
+                const finish = () => {
+                    if (opts.save) saveTranscript(opts.save);
+                    process.exitCode ??= 0;
+                };
+                // EOF closes input, not the conversation: drain accepted turns.
+                if (pending && !stopped) void pending.then(finish);
+                else finish();
             });
         });
 }

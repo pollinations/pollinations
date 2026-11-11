@@ -2,12 +2,12 @@ import {
     AccountIcon,
     AccountMenu,
     BookIcon,
+    BrandMark,
     BugIcon,
-    CheckIcon,
     Chip,
-    ClipboardIcon,
     ColorModeToggle,
     CopyButton,
+    CopyStateIcon,
     cn,
     DiscordIcon,
     ExternalLinkIcon,
@@ -23,7 +23,6 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
@@ -34,7 +33,13 @@ import type {
     RefObject,
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
+import { pageMeta } from "../../page-meta.ts";
+import {
+    QUEST_STATUS_UPDATED_EVENT,
+    questNavLabel,
+} from "../quests/quest-nav-status.ts";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
@@ -50,11 +55,6 @@ type DashboardNavItem = {
     icon: ComponentType<{ className?: string }>;
 };
 
-const brandWordmarkMask: CSSProperties = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
-
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
     accountName?: string;
@@ -62,7 +62,9 @@ type DashboardShellProps = PropsWithChildren<{
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    signInBanner?: ReactNode;
     showFooterLinks?: boolean;
+    showQuestStatus?: boolean;
 }>;
 
 type BrandLink = {
@@ -77,8 +79,6 @@ type SupportAction = {
     label: string;
     icon: ReactNode;
     copyLabel: string;
-    idleIcon: ReactNode;
-    successIcon: ReactNode;
     copyValue: string | (() => string | Promise<string>);
 };
 
@@ -109,7 +109,7 @@ const brandLinks: readonly BrandLink[] = [
         count: "5k",
     },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        href: "https://discord.gg/k9F7SyTgqn",
         label: "Discord community",
         icon: <DiscordIcon className="h-full w-full" />,
         text: "discord",
@@ -145,7 +145,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     onSignOut,
     accountArea,
     walletArea,
+    signInBanner,
     showFooterLinks = true,
+    showQuestStatus = false,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -157,34 +159,16 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         (item) => item.to === location.pathname,
     );
     const activePage = activeNavItem?.id;
-    const activePageLabel =
-        location.pathname === "/account"
-            ? "Account"
-            : (activeNavItem?.label ?? "Dashboard");
+    const questStatus = useQuestNavStatus(showQuestStatus);
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
 
     useEffect(() => {
-        const canonicalUrl = new URL(
-            location.pathname,
-            window.location.origin,
-        ).toString();
-        const title = `${activePageLabel} | pollinations.ai`;
-        document.title = title;
-        document
-            .querySelector('link[rel="canonical"]')
-            ?.setAttribute("href", canonicalUrl);
-        document
-            .querySelector('meta[property="og:url"]')
-            ?.setAttribute("content", canonicalUrl);
-        document
-            .querySelector('meta[property="og:title"]')
-            ?.setAttribute("content", title);
-        document
-            .querySelector('meta[name="twitter:title"]')
-            ?.setAttribute("content", title);
-    }, [activePageLabel, location.pathname]);
+        const meta = pageMeta(location.pathname);
+        if (!meta) return;
+        document.title = meta.title;
+    }, [location.pathname]);
 
     const closeDrawer = useCallback(() => {
         const activeElement = document.activeElement;
@@ -241,8 +225,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "Connect User Wallets",
-            href: `${genDocsUrl()}#tag/connect-user-wallets`,
+            label: "Pollinations Pay",
+            href: `${genDocsUrl()}#tag/pollinations-pay`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -280,10 +264,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         label: "Docs",
         icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
         copyLabel: "Copy All",
-        // No colour on the icons — they inherit the button's text colour so they
-        // match the filled idle/copied states.
-        idleIcon: <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />,
-        successIcon: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
         copyValue: async () => {
             const res = await fetch(`${genDocsUrl()}/llm.txt`);
             return res.text();
@@ -298,6 +278,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            questStatus={questStatus}
             showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
         />
@@ -329,14 +310,14 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
                     <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
                         <div className="flex items-center justify-between gap-2">
-                            <BrandMark size="drawer" />
+                            <DashboardBrand size="drawer" />
                             <button
                                 type="button"
                                 className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
@@ -360,9 +341,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
+                    className={cn(
+                        "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
+                        signInBanner ? "pt-3" : "pt-16",
+                    )}
                 >
-                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
+                    <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                        {signInBanner}
                         {children}
                     </main>
                 </ScrollArea>
@@ -370,6 +355,54 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         </div>
     );
 };
+
+function useQuestNavStatus(enabled: boolean): string | null {
+    const [label, setLabel] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!enabled) {
+            setLabel(null);
+            return;
+        }
+
+        let cancelled = false;
+        let requestId = 0;
+        const refresh = async () => {
+            const currentRequest = ++requestId;
+            try {
+                const [catalogResponse, rewardsResponse] = await Promise.all([
+                    apiClient.quests.catalog.$get(),
+                    accountClient.quests.rewards.$get(),
+                ]);
+                if (!catalogResponse.ok || !rewardsResponse.ok) {
+                    throw new Error("Quest status unavailable");
+                }
+                const [catalog, rewards] = await Promise.all([
+                    catalogResponse.json(),
+                    rewardsResponse.json(),
+                ]);
+                if (!cancelled && currentRequest === requestId) {
+                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
+                }
+            } catch {
+                if (!cancelled && currentRequest === requestId) setLabel(null);
+            }
+        };
+        const handleUpdate = () => void refresh();
+
+        void refresh();
+        window.addEventListener(QUEST_STATUS_UPDATED_EVENT, handleUpdate);
+        return () => {
+            cancelled = true;
+            window.removeEventListener(
+                QUEST_STATUS_UPDATED_EVENT,
+                handleUpdate,
+            );
+        };
+    }, [enabled]);
+
+    return label;
+}
 
 function useDashboardShellBodyClass(): void {
     useEffect(() => {
@@ -389,6 +422,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    questStatus: string | null;
     showFooterLinks: boolean;
     onNavigate: () => void;
 };
@@ -400,16 +434,17 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    questStatus,
     showFooterLinks,
     onNavigate,
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
         aria-label="Dashboard navigation"
     >
         <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
-            <BrandMark size="desktop" />
+            <DashboardBrand size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
         <ScrollArea
@@ -433,13 +468,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" || item.id === "quests") && (
+                        {(item.id === "sandboxes" ||
+                            (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                {item.id === "quests" ? "3 new!" : "New!"}
+                                {item.id === "quests" ? questStatus : "New!"}
                             </Chip>
                         )}
                     </NavItem>
@@ -462,7 +498,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
+        className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-surface-menu/80 text-theme-text-strong backdrop-blur-md hover:bg-surface-menu lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >
@@ -470,7 +506,7 @@ const MobileMenuButton: FC<{
     </button>
 );
 
-const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
+const DashboardBrand: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
     <a
         href="https://pollinations.ai"
         target="_blank"
@@ -479,13 +515,9 @@ const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
         aria-label="Pollinations"
     >
         <span className="sr-only">Pollinations</span>
-        <span
-            aria-hidden="true"
-            className={cn(
-                "block shrink-0 bg-current",
-                size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]",
-            )}
-            style={brandWordmarkMask}
+        <BrandMark
+            variant="lockup"
+            className={size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]"}
         />
     </a>
 );
@@ -498,11 +530,13 @@ const BrandLinks: FC<{ links: readonly BrandLink[] }> = ({ links }) => (
     </div>
 );
 
+// No noreferrer: GitHub's traffic report credits enter.pollinations.ai only
+// when the referrer travels, and it is our only count of clicks to the repo.
 const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
     <a
         href={href}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener"
         aria-label={label}
         className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
     >
@@ -538,7 +572,12 @@ const DashboardSupport: FC<{
                 >
                     {(copied) => (
                         <>
-                            {copied ? action.successIcon : action.idleIcon}
+                            {/* No colour: the icon inherits the button's
+                                text colour in both states. */}
+                            <CopyStateIcon
+                                copied={copied}
+                                className="h-3.5 w-3.5 shrink-0"
+                            />
                             {copied ? "Copied" : action.copyLabel}
                         </>
                     )}

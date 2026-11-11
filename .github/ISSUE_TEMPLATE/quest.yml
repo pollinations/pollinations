@@ -9,12 +9,15 @@ body:
       value: |
         Community quests are maintainer-owned tasks with a fixed Pollen reward earned after a linked PR is merged.
         Only maintainer-authored quest issues should receive the `POLLEN-QUEST` label. If a community member proposes a quest, a maintainer should create the final quest issue before labeling it.
+        A maintainer sets the reward with one `reward-N` label (1, 3, 5, 10, 15, 25 or 50 Pollen).
 
         1. Read the issue and submit a focused PR against `main`. Multiple contributors may submit solutions; no assignment is needed before starting.
         2. **Start the PR description with `Fixes #N`** so GitHub links it to this quest.
         3. Maintainers compare completed approaches and select the best one, preferring correctness, clarity, and minimal code.
         4. The author of the selected merged PR earns the reward; no issue assignment is needed.
         5. After merge, open [enter.pollinations.ai](https://enter.pollinations.ai/quests), check quests, and claim the pending reward.
+
+        For code quests, if you use a coding agent, ask it to read the [Ponytail skill](https://github.com/pollinations/pollinations/blob/main/.agents/skills/ponytail/SKILL.md). It favors the smallest correct change without skipping required checks.
 
         Need help? Drop a comment here or ask in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).
     validations:
@@ -50,7 +53,7 @@ body:
         - [ ]
         - [ ]
         - [ ] Tests passing locally (`npm run test`)
-        - [ ] `npx biome check --write` run on modified files
+        - [ ] `npx @biomejs/biome check --write` run on modified files
     validations:
       required: true
 
@@ -70,12 +73,3 @@ body:
       label: Parent issue
       description: If this quest comes from an existing issue or discussion, link it here.
       placeholder: "#1234 or https://github.com/pollinations/pollinations/issues/1234"
-
-  - type: input
-    id: reward
-    attributes:
-      label: Reward
-      description: Pollen reward amount
-      placeholder: "e.g. 20"
-    validations:
-      required: true

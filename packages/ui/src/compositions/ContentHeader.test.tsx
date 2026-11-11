@@ -2,8 +2,52 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 import { Callout } from "./Callout.tsx";
 import { ContentHeader } from "./ContentHeader.tsx";
+import { CopyField } from "./CopyField.tsx";
 
 describe("content compositions", () => {
+    test("shows the label for lazy copy values without evaluating them", () => {
+        let calls = 0;
+        const value = () => {
+            calls++;
+            return "actual-secret";
+        };
+        for (const lazy of [value, async () => value()]) {
+            const html = renderToStaticMarkup(
+                <CopyField label="Copy secret key" value={lazy} />,
+            );
+
+            expect(html).toContain(">Copy secret key</span>");
+            expect(html).not.toContain("=&gt;");
+            expect(html).not.toContain("actual-secret");
+        }
+        expect(calls).toBe(0);
+    });
+
+    test("preserves string copy values and explicit displays", () => {
+        const value = "openai/gpt-5.5";
+        const html = renderToStaticMarkup(
+            <CopyField label="Copy model" value={value} />,
+        );
+        expect(html).toContain(">openai/gpt-5.5</span>");
+
+        const display = renderToStaticMarkup(
+            <CopyField
+                label="Copy secret key"
+                value={() => {
+                    throw new Error("Lazy values must wait for a click");
+                }}
+                display={<strong>••••</strong>}
+            />,
+        );
+        expect(display).toContain("<strong>••••</strong>");
+        expect(display).not.toContain("Lazy values must wait for a click");
+
+        const empty = renderToStaticMarkup(
+            <CopyField label="Copy model" value={value} display="" />,
+        );
+        expect(empty).not.toContain(value);
+    });
+
     test("renders page headers with one semantic h1", () => {
         const html = renderToStaticMarkup(
             <ContentHeader
@@ -38,7 +82,7 @@ describe("content compositions", () => {
             </Callout>,
         );
 
-        expect(html).toContain("polli:bg-theme-bg-pale");
+        expect(html).toContain("polli:bg-surface-block");
         expect(html).not.toContain("polli:bg-theme-bg-active");
     });
 });

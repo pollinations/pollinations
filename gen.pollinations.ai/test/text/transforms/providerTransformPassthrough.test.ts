@@ -16,18 +16,13 @@ const messages = [
 
 describe("provider transform passthrough", () => {
     it.each([
-        "qwen3.8-2.4t-a95b",
         "mistral-small-3.2",
         "grok",
         "kimi",
         "kimi-code",
-        "kimi-k3",
-        "thinkingmachines/inkling",
-        "nemotron-3.5-lightning",
         "glm",
-        "glm-5.3",
-        "z-ai/glm-5.3-flash",
         "inception/mercury-2.5-preview",
+        "deepseek/deepseek-v4.1-flash",
     ])("preserves cache_control for %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -35,6 +30,52 @@ describe("provider transform passthrough", () => {
         const result = await transform(messages, {});
 
         expect(result.messages).toEqual(messages);
+    });
+
+    it.each([
+        "qwen/qwen3.8-2.4t-a95b",
+        "deepseek/deepseek-v4.1-flash:fireworks",
+        "moonshotai/kimi-k3",
+        "moonshotai/kimi-k3:fireworks",
+        "moonshotai/kimi-k3:deepinfra",
+        "thinkingmachines/inkling",
+        "nvidia/nemotron-3-ultra",
+        "nvidia/nemotron-3.5-lightning",
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3-flash",
+        "minimax/minimax-m3",
+        "meta/muse-spark-open",
+    ])("strips unsupported cache_control for %s", async (modelName) => {
+        const transform = findModelByName(modelName)?.transform;
+        if (!transform) throw new Error(`${modelName} transform missing`);
+
+        const result = await transform(
+            [
+                {
+                    role: "system",
+                    cache_control: { type: "ephemeral" },
+                    content: [
+                        {
+                            type: "text",
+                            text: "Be terse.",
+                            cache_control: { type: "ephemeral" },
+                        },
+                    ],
+                },
+                {
+                    role: "tool",
+                    tool_call_id: "call_1",
+                    content: "Done",
+                    cache_control: { type: "ephemeral" },
+                },
+            ],
+            {},
+        );
+
+        expect(result.messages).toEqual([
+            { role: "system", content: [{ type: "text", text: "Be terse." }] },
+            { role: "tool", tool_call_id: "call_1", content: "Done" },
+        ]);
     });
 
     it.each([

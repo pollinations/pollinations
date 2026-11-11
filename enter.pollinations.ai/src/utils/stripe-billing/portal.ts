@@ -1,3 +1,4 @@
+import type { PollenPackKey } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
@@ -10,10 +11,25 @@ import {
 } from "./constants.ts";
 import { getOrCreateStripeCustomerId } from "./customer.ts";
 
+/**
+ * Straight to one task, then back to us: "card" adds a card, which Stripe
+ * makes the default; "details" edits name, company, address and VAT ID.
+ */
+export type BillingPortalFlow = "card" | "details";
+
+const FLOW_TYPES = {
+    card: "payment_method_update",
+    details: "customer_update",
+} as const satisfies Record<
+    BillingPortalFlow,
+    Stripe.BillingPortal.SessionCreateParams.FlowData.Type
+>;
+
 export async function createBillingPortalSession(
     env: CloudflareBindings,
     userId: string,
     returnTo?: BillingReturn,
+    flow?: BillingPortalFlow,
 ): Promise<Stripe.BillingPortal.Session> {
     const stripe = createStripeClient(env);
     const customer = await getOrCreateStripeCustomerId(env, userId);
@@ -24,10 +40,20 @@ export async function createBillingPortalSession(
         env.STRIPE_AUTO_TOP_UP_PMC_ID || undefined,
     );
 
+    const back = getBillingReturnUrl(env, returnTo);
     return stripe.billingPortal.sessions.create({
         customer,
         configuration,
-        return_url: getBillingReturnUrl(env, returnTo),
+        return_url: back,
+        ...(flow && {
+            flow_data: {
+                type: FLOW_TYPES[flow],
+                after_completion: {
+                    type: "redirect",
+                    redirect: { return_url: back },
+                },
+            },
+        }),
     });
 }
 
@@ -138,7 +164,12 @@ function isBillingPortalConfigurationCurrent(
 }
 
 /** Where the portal sends the user back: the standalone page, else Pollen. */
-type BillingReturn = { topUp?: boolean; redirect?: string };
+/** The pack keeps the buyer's selection across the round trip. */
+type BillingReturn = {
+    topUp?: boolean;
+    redirect?: string;
+    pack?: PollenPackKey;
+};
 
 function getBillingReturnUrl(
     env: CloudflareBindings,
@@ -147,6 +178,7 @@ function getBillingReturnUrl(
     const baseUrl = env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
     const url = new URL(returnTo?.topUp ? "/top-up" : "/pollen", baseUrl);
     if (returnTo?.redirect) url.searchParams.set("redirect", returnTo.redirect);
+    if (returnTo?.pack) url.searchParams.set("pack", returnTo.pack);
     url.searchParams.set("stripe_billing_return", "true");
     return url.toString();
 }

@@ -6,7 +6,7 @@ Canonical vendor: `inferenceport`
 
 - Console: <https://console.inferenceport.ai>
 - Wallet API: `GET https://api.inferenceport.ai/v1/me`
-- Credit history API: `GET https://api.inferenceport.ai/v1/credits/ledger`
+- Credit history API: `GET https://api.inferenceport.ai/v1/credits/ledger?limit=500`
 - Both API calls accept the same bearer key used for generation. `/me` returns
   the live wallet balance, total purchased, total spent, and usage summary.
 - OP Pollen contains internal model usage. InferencePort is the independent
@@ -24,13 +24,20 @@ Collection steps:
      'curl -sS https://api.inferenceport.ai/v1/credits/ledger -H "Authorization: Bearer $INFERENCEPORT_API_KEY"'
    ```
 
-2. Preserve the generated JSON in `<collection-dir>/evidence/inferenceport/` and the monthly
+2. The credit ledger defaults to only 50 newest rows and accepts `limit` up to
+   500. Verify its oldest timestamp precedes the month start before treating
+   the month as complete. Preserve the generated JSON in
+   `<collection-dir>/evidence/inferenceport/` and the monthly
    accounting evidence folder in Google Drive.
 3. Record the API `collected_at` timestamp as the balance check time. Do not
    backdate the balance to month-end.
 4. Use credit-ledger entry types to distinguish purchased wallet funds from
-   promotional credits. Do not guess the paid/credit split from the aggregate
-   balance alone.
+   promotional credits. The live `/me` wallet may also expose `paid_credits`
+   and `promotional_credits`; reconcile those fields to `balance_credits`.
+   Do not guess the split from the aggregate balance alone. Keep purchases,
+   usage, and provider refund adjustments as separate facts, and reconcile
+   the opening balance plus movements to the current balance after any
+   post-month activity.
 5. Reconcile provider usage against OP Pollen without forcing equality when the
    provider exposes less model granularity.
 

@@ -1,5 +1,7 @@
 export {
     AccountIdentity,
+    AccountIdentityLink,
+    type AccountIdentityLinkProps,
     type AccountIdentityProps,
 } from "./compositions/AccountIdentity.tsx";
 export {
@@ -7,6 +9,7 @@ export {
     type AccountMenuProps,
 } from "./compositions/AccountMenu.tsx";
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
+export { AppBrand, type AppBrandProps } from "./compositions/AppBrand.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
 export {
@@ -39,19 +42,29 @@ export {
     type CollapsibleProps,
 } from "./compositions/Collapsible.tsx";
 export {
+    ConfirmationDialog,
+    type ConfirmationDialogProps,
+} from "./compositions/ConfirmationDialog.tsx";
+export {
     ContentHeader,
     type ContentHeaderProps,
 } from "./compositions/ContentHeader.tsx";
 export {
     CopyButton,
     type CopyButtonProps,
+    CopyStateIcon,
 } from "./compositions/CopyButton.tsx";
+export { CopyField, type CopyFieldProps } from "./compositions/CopyField.tsx";
 export {
     EditableCombobox,
     type EditableComboboxProps,
     EditableComboboxToken,
     type EditableComboboxTokenProps,
 } from "./compositions/EditableCombobox.tsx";
+export {
+    EmptyState,
+    type EmptyStateProps,
+} from "./compositions/EmptyState.tsx";
 export {
     ExternalLinkButton,
     type ExternalLinkButtonProps,
@@ -65,6 +78,7 @@ export {
     type FileUploadProps,
 } from "./compositions/FileUpload.tsx";
 export { InfoTip } from "./compositions/InfoTip.tsx";
+export { KeyChip, type KeyChipProps } from "./compositions/KeyChip.tsx";
 export { LinkCard, type LinkCardProps } from "./compositions/LinkCard.tsx";
 // Markdown and Prose live at @pollinations/ui/markdown — see src/markdown.ts.
 export {
@@ -77,10 +91,20 @@ export {
 } from "./compositions/MultiSelect.tsx";
 export { NavItem, type NavItemProps } from "./compositions/NavItem.tsx";
 export {
+    OUTAGE_MESSAGE,
+    OutageNotice,
+    type OutageNoticeProps,
+    useOnline,
+} from "./compositions/OutageNotice.tsx";
+export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./compositions/PeriodPicker.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
+export {
+    SocialCount,
+    type SocialCountProps,
+} from "./compositions/SocialCount.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
 export {
     ToolCallDetails,
@@ -88,6 +112,7 @@ export {
     type ToolCallStatus,
 } from "./compositions/ToolCallDetails.tsx";
 export { cn } from "./lib/cn-app.ts";
+export { formatCount } from "./lib/format-count.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
@@ -99,6 +124,7 @@ export {
     periodToWindow,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export { BrandMark, type BrandMarkProps } from "./primitives/BrandMark.tsx";
 export {
     Button,
     type ButtonAppearance,
@@ -117,6 +143,8 @@ export {
 } from "./primitives/ColorModeToggle.tsx";
 export {
     Dialog,
+    DialogBody,
+    type DialogBodyProps,
     DialogDescription,
     DialogFooter,
     type DialogFooterProps,
@@ -139,15 +167,29 @@ export {
     type IconButtonProps,
     type IconButtonVariant,
 } from "./primitives/IconButton.tsx";
+export { IconTile, type IconTileProps } from "./primitives/IconTile.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
+export { LiveDot } from "./primitives/LiveDot.tsx";
+export { LoadingStatus } from "./primitives/LoadingStatus.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
+export {
+    SegmentedControl,
+    type SegmentedControlOption,
+    type SegmentedControlProps,
+} from "./primitives/SegmentedControl.tsx";
+export { Skeleton, type SkeletonProps } from "./primitives/Skeleton.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
+export {
+    StableLabel,
+    type StableLabelProps,
+} from "./primitives/StableLabel.tsx";
 export { Surface, type SurfaceProps } from "./primitives/Surface.tsx";
 export {
     Switch,
     type SwitchProps,
+    type SwitchSize,
     type SwitchStatus,
 } from "./primitives/Switch.tsx";
 export {

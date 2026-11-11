@@ -24,6 +24,13 @@ curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
   -F "file=@image.jpg"
 
+# Stream a large file
+curl -X POST https://media.pollinations.ai/upload \
+  -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: video/mp4" \
+  -H "X-File-Name: video.mp4" \
+  --data-binary @video.mp4
+
 # Base64 JSON
 curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
@@ -116,7 +123,8 @@ Publishing requires a key attached to a user account.
 
 **Errors:**
 - `400` - No file provided, empty file, invalid JSON/base64, or invalid tags
-- `413` - File too large (max 100MB of decoded/file bytes)
+- `413` - File too large (max 400 MiB for multipart/raw uploads; 100 MiB for JSON)
+- `429` - Too many requests from one key, IP or account
 
 ### `GET /:id`
 
@@ -205,19 +213,16 @@ curl -X POST https://media.pollinations.ai/upload \
 ## 🏗️ Development
 
 ```bash
-# Install dependencies
+# From the repository root (media is a root workspace)
 npm install
-
-# Run locally
-npm run dev
-
-# Deploy to production
-npm run deploy:production
+npm run dev --workspace media.pollinations.ai
 ```
+
+Production deploys run through the `Deploy / Cloudflare production` workflow.
 
 ## 📊 Limits
 
-- **Max file size:** 100MB of decoded/file bytes
+- **Max file size:** 400 MiB for streamed multipart and raw uploads; 100 MiB for base64 JSON uploads. Existing FormData clients can use the larger limit without changing their request format. The `pollinations.ai` Cloudflare zone must allow at least 425 MB per request to accept 400 MiB uploads.
 - **Storage:** Cloudflare R2
 - **Default retention:** 30-day lifecycle; a GET refreshes objects once they are at least 15 days old
 
@@ -236,7 +241,7 @@ Each upload gets a unique id. That single id is the storage key, the retrieval i
 
 ## 🔑 Authentication
 
-Uploads require a pollinations.ai API key (`pk_` or `sk_`). Get one at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Uploads require a secret pollinations.ai API key (`sk_`). Get one at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 Pass the key via:
 - `Authorization: Bearer <key>` header (recommended)

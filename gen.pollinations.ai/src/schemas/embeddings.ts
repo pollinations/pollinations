@@ -57,7 +57,7 @@ export const ContentPartSchema = z.union([
 
 export const CreateEmbeddingRequestSchema = z
     .object({
-        model: z.string().default(DEFAULT_EMBEDDING_MODEL).meta({
+        model: z.string().min(1).default(DEFAULT_EMBEDDING_MODEL).meta({
             description: "Embedding model to use",
             example: "google/gemini-embedding-2",
         }),
@@ -113,7 +113,7 @@ const EmbeddingObjectSchema = z.object({
     object: z.literal("embedding"),
     embedding: z.union([z.array(z.number()), z.string()]).meta({
         description:
-            "Embedding vector — array of floats, or base64-encoded Float32 (little-endian) when `encoding_format=base64`.",
+            "Embedding vector: an array of floats, or base64-encoded Float32 (little-endian) when `encoding_format=base64`.",
     }),
     index: z.number().int().meta({
         description: "Index of the embedding in the list",

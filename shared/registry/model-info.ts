@@ -17,6 +17,7 @@ import {
     MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelName,
+    PRICE_UNITS,
     type PriceDefinition,
     VIDEO_CAPABILITIES,
 } from "./registry";
@@ -31,11 +32,44 @@ export const ModelCapabilitySchema = z.enum([
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 
+export const ModelHealthSchema = z
+    .object({
+        status: z.enum(["healthy", "degraded", "down", "unknown"]).meta({
+            description:
+                "Healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown with no measured requests.",
+        }),
+        success_rate: z.number().min(0).max(100).nullable().meta({
+            description:
+                "Success across the last 50 eligible final requests within seven days for community proxies, or the last 24 hours for other models; null with no measured requests.",
+        }),
+        requests: z.number().int().nonnegative().meta({
+            description:
+                "Number of eligible final responses in the health sample (at most 50 for community proxies).",
+        }),
+    })
+    .meta({
+        description:
+            "Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health.",
+    });
+
+export type ModelHealth = z.infer<typeof ModelHealthSchema>;
+
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
 //         promptAudioTokens, promptAudioSeconds, promptImageTokens,
 //         completionTextTokens, completionReasoningTokens, completionAudioTokens,
 //         completionImageTokens, completionVideoSeconds, completionVideoTokens
+// An agent has no price of its own: callers pay for the model and tool calls
+// it makes. Shared by the Pollinations and OpenAI-compatible model schemas.
+export const AGENT_FIELD_DESCRIPTIONS = {
+    agent: "True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models.",
+    verified: "True for agents published by an official Pollinations account.",
+    base_model:
+        "Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls.",
+    pricing:
+        "Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.",
+};
+
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
@@ -52,12 +86,20 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     community: z.boolean(),
-    agent: z.boolean().optional(),
-    base_model: z.string().optional(),
+    agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+    verified: z
+        .boolean()
+        .optional()
+        .describe(AGENT_FIELD_DESCRIPTIONS.verified),
+    base_model: z
+        .string()
+        .optional()
+        .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())
-        .and(z.object({ currency: z.literal("pollen") })),
+        .and(z.object({ currency: z.literal("pollen") }))
+        .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
     pricing_variants: z
         .array(
             z.object({
@@ -71,6 +113,20 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     pricing_default_label: z.string().optional(),
+    pricing_dimensions: z
+        .array(
+            z.object({
+                key: z.string(),
+                label: z.string(),
+                unit: z.string().optional(),
+                values: z
+                    .record(z.string(), z.string())
+                    .describe(
+                        "Display values keyed by pricing variant name; the empty key is base pricing.",
+                    ),
+            }),
+        )
+        .optional(),
     pricing_adjustments: z
         .array(
             z.object({
@@ -88,6 +144,9 @@ export const ModelInfoSchema = z.object({
                         value: z.string(),
                         label: z.string(),
                         default: z.boolean().optional(),
+                        groupLabel: z.string().optional(),
+                        valueLabel: z.string().optional(),
+                        unit: z.string().optional(),
                     })
                     .optional(),
             }),
@@ -131,10 +190,16 @@ export const ModelInfoSchema = z.object({
             "Maximum requested output tokens, including max_tokens, max_completion_tokens and max_output_tokens.",
         ),
     reasoning: z.boolean().optional(),
+    supports_streaming: z
+        .boolean()
+        .optional()
+        .describe(
+            "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+        ),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
-    paid_only: z.boolean().optional(),
+    paid_only: z.boolean(),
     pending_change: z
         .object({
             effective_at: z.string().datetime(),
@@ -146,7 +211,24 @@ export const ModelInfoSchema = z.object({
         .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
+    pricing_units: z
+        .record(
+            z.string(),
+            z.object({
+                unit: z.enum(PRICE_UNITS),
+                quantity: z
+                    .number()
+                    .positive()
+                    .optional()
+                    .describe("Usage units in one billed unit; defaults to 1."),
+            }),
+        )
+        .optional()
+        .describe(
+            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel.",
+        ),
     added_date: z.number().optional(),
+    health: ModelHealthSchema.optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -163,6 +245,7 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 type ModelInfoOptions = {
     community?: boolean;
     agent?: boolean;
+    verified?: boolean;
 };
 
 function pricingInfoFromDefinition(
@@ -200,31 +283,25 @@ export function modelInfoFromDefinition(
         brand_icon_url: service.brandIconUrl,
         community: options.community ?? false,
         agent: options.agent || undefined,
+        verified: options.verified || undefined,
         per_user_rpm: service.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata
-                ? Object.entries(service.costVariants).map(
-                      ([name, variantCost]) => {
-                          const metadata = service.costVariantMetadata?.[name];
-                          return {
-                              name,
-                              label: metadata?.label ?? name,
-                              description: metadata?.description ?? name,
-                              pricing: pricingInfoFromDefinition(
-                                  getPriceDefinitionForModel({
-                                      ...service,
-                                      cost: {
-                                          ...service.cost,
-                                          ...variantCost,
-                                      },
-                                  }),
-                              ),
-                          };
-                      },
-                  )
+                ? Object.keys(service.costVariants).map((name) => {
+                      const metadata = service.costVariantMetadata?.[name];
+                      return {
+                          name,
+                          label: metadata?.label ?? name,
+                          description: metadata?.description ?? name,
+                          pricing: pricingInfoFromDefinition(
+                              getPriceDefinitionForModel(service, name),
+                          ),
+                      };
+                  })
                 : undefined,
         pricing_default_label: service.defaultCostVariantLabel,
+        pricing_dimensions: service.pricingDimensions,
         pricing_adjustments: service.billing?.adjustments?.map((rule) =>
             pricingAdjustmentInfoFromRule(rule, service),
         ),
@@ -252,6 +329,7 @@ export function modelInfoFromDefinition(
         supports_structured_output: service.supportsStructuredOutput,
         max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
+        supports_streaming: service.supportsStreaming,
         context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,
@@ -262,6 +340,7 @@ export function modelInfoFromDefinition(
             (service.category === "image"
                 ? service.cost.promptTextTokens === undefined
                 : undefined),
+        pricing_units: service.priceUnits,
         added_date: service.addedDate,
     };
 }

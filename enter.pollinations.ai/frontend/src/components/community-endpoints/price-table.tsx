@@ -1,7 +1,6 @@
 import {
     Chip,
     Input,
-    Surface,
     Table,
     TableBody,
     TableCell,
@@ -68,7 +67,7 @@ export function PriceGroups({
     if (rows.length === 0) return null;
 
     return (
-        <Surface className="overflow-hidden p-0">
+        <div className="overflow-hidden">
             <div className="overflow-x-auto">
                 <Table className="min-w-[32rem]">
                     <TableHead>
@@ -103,7 +102,7 @@ export function PriceGroups({
                     </TableBody>
                 </Table>
             </div>
-        </Surface>
+        </div>
     );
 }
 
@@ -402,7 +401,10 @@ export function formWithVisiblePrices(
         ).map((field) => field.key),
     );
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-        if (!visiblePriceKeys.has(field.key) || !allowed.has(field.key)) {
+        if (
+            !allowed.has(field.key) ||
+            (form.visibility !== "private" && !visiblePriceKeys.has(field.key))
+        ) {
             next[field.key] = "";
         }
     }

@@ -70,6 +70,18 @@ TB_TOKEN="$(security find-generic-password -a "$USER" -s tinybird-staging-deploy
 export TB_HOST TB_TOKEN
 ```
 
+## Step 0: Deploy From a Clean origin/main
+
+A deployment makes the workspace match the local folder, so deploy only from a clean checkout of `origin/main`. A `--check` on a feature branch is fine for validating a PR. To test an unmerged PR end to end, staging may run a feature branch that is rebased on current `origin/main` and whose check table shows only that PR's changes; redeploy staging from `origin/main` after the merge.
+
+```bash
+git fetch origin && test -z "$(git status --porcelain)" && test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+```
+
+Then run Step 1 and read its change table: every `new` and `deleted` resource must map to a merged PR. If one does not, stop and find out why before deploying.
+
+For production, also check every `deleted` row against the code production runs, which lags `main`: `git grep -w <name> origin/production` must find no caller, or the production deploy waits until `main` is promoted. New resources can go first.
+
 ## Step 1: Validate (Dry Run)
 
 Always validate before deploying. This is safe to run against staging.
@@ -104,13 +116,17 @@ Staging and prod are separate approvals — don't batch them into one command, s
 Verify the staging deployment and test the deployed endpoints with the read token for the same workspace.
 
 ```bash
+set -o pipefail
 tb --staging --cloud --host "$TB_HOST" endpoint ls
 tb --cloud --host "$TB_HOST" deployment ls
 
 TINYBIRD_TOKEN="$(SOPS_AGE_KEY=$(security find-generic-password -a "$USER" -s sops-age-key -w 2>/dev/null || true) \
   sops -d ../secrets/staging.vars.json | jq -r '.TINYBIRD_READ_TOKEN')"
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.json?weeks_back=12" \
-  -H "Authorization: Bearer $TINYBIRD_TOKEN" | jq '.data | length'
+curl -fsS "https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.json?weeks_back=12" \
+  -H "Authorization: Bearer $TINYBIRD_TOKEN" | jq -e '
+    if has("error") then error(.error)
+    elif (.data | type) != "array" then error("Missing data array")
+    else .data | length end'
 ```
 
 For prod verification, swap `staging.vars.json` to `prod.vars.json` and do not use `--staging`.
@@ -135,11 +151,11 @@ For prod verification, swap `staging.vars.json` to `prod.vars.json` and do not u
 
 1. Create `.pipe` file in `endpoints/`
 2. Validate against staging
-3. Deploy to staging, verify, then prod only when requested
+3. After merge, deploy to staging from `origin/main` (Step 0), verify, then prod only when requested
 
 ## Modify Existing Pipe
 
-Same as above: edit, validate staging, deploy staging, verify, then prod only when requested.
+Same as above: edit, validate staging, merge, deploy staging from `origin/main`, verify, then prod only when requested.
 
 ## View Pipe in UI
 

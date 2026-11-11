@@ -9,6 +9,7 @@ type MockDiscordState = {
     membershipRequestCount: number;
     membershipStatus: number;
     membershipErrorCode: number;
+    memberRoles: string[];
 };
 
 export function createMockDiscord(): MockAPI<MockDiscordState> {
@@ -17,6 +18,7 @@ export function createMockDiscord(): MockAPI<MockDiscordState> {
         membershipRequestCount: 0,
         membershipStatus: 200,
         membershipErrorCode: 10007,
+        memberRoles: [] as string[],
     };
     const userProfile = {
         id: state.userId,
@@ -68,7 +70,7 @@ export function createMockDiscord(): MockAPI<MockDiscordState> {
             return c.json({
                 user: userProfile,
                 joined_at: "2021-09-10T11:09:04.586000+00:00",
-                roles: [],
+                roles: state.memberRoles,
             });
         });
 
@@ -78,6 +80,7 @@ export function createMockDiscord(): MockAPI<MockDiscordState> {
             state.membershipRequestCount = 0;
             state.membershipStatus = 200;
             state.membershipErrorCode = 10007;
+            state.memberRoles = [];
         },
         handlerMap: {
             "discord.com": createHonoMockHandler(discord),

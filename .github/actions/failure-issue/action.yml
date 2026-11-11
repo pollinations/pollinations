@@ -8,6 +8,9 @@ inputs:
   token:
     description: GitHub token with issues:write
     required: true
+  title:
+    description: Names the issue instead of the workflow, for a workflow with more than one job to report
+    required: false
 
 runs:
   using: composite
@@ -15,7 +18,7 @@ runs:
     - shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
-        TITLE: "Workflow failing: ${{ github.workflow }}"
+        TITLE: "Workflow failing: ${{ inputs.title || github.workflow }}"
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
         BODY="Run failed: $RUN_URL (ref \`$GITHUB_REF_NAME\`, event \`$GITHUB_EVENT_NAME\`)."

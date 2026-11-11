@@ -4,15 +4,30 @@ import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 
+// R2 rejects a put with more than 8,192 bytes of object metadata, so every
+// upload path stores at most 253 characters of the filename. Counting code
+// points keeps an emoji at the cut whole; 506 UTF-16 units always hold 253
+// of them, so a huge name is never split into a huge array.
+export function storedFileName(fileName: string | undefined): string {
+    return Array.from((fileName ?? "").slice(0, 506))
+        .slice(0, 253)
+        .join("");
+}
+
 type MediaStorageEnv = {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
 };
 
 export type UnlistedMediaUpload = {
+    id?: string;
     contentType: string;
     fileName?: string;
     size: number;
+    uploadedBy?: string;
+    keyType?: string;
+    keyId?: string;
+    userId?: string;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -21,6 +36,27 @@ export type UnlistedMediaUploadResult = {
     contentType: string;
     size: number;
 };
+
+const FILENAME_EXT_PARAM = /(?:^|;)\s*filename\*\s*=\s*UTF-8''([^;\s]+)/i;
+
+/**
+ * Original filename of a raw upload. Header values cannot carry CJK or emoji
+ * as-is, so clients send the UTF-8 name as an RFC 8187 `filename*` parameter
+ * of `Content-Disposition`. Plain `X-File-Name` stays the fallback.
+ */
+export function rawUploadFileName(headers: Headers): string | undefined {
+    const encoded = headers
+        .get("content-disposition")
+        ?.match(FILENAME_EXT_PARAM)?.[1];
+    if (encoded) {
+        try {
+            return decodeURIComponent(encoded);
+        } catch {
+            // Malformed percent-encoding: use X-File-Name instead.
+        }
+    }
+    return headers.get("x-file-name") ?? undefined;
+}
 
 export async function uploadUnlistedMedia(
     env: MediaStorageEnv,
@@ -35,23 +71,39 @@ export async function uploadUnlistedMedia(
         throw new Error(`Media exceeds ${maxSize} bytes`);
     }
 
-    const id = crypto.randomUUID();
+    if (input.id !== undefined && !/^[a-f0-9]{64}$/.test(input.id)) {
+        throw new Error("Invalid media ID");
+    }
+    const id = input.id ?? crypto.randomUUID();
     const contentType = input.contentType || "application/octet-stream";
+    if (input.id && (await env.MEDIA_BUCKET.head(id))) {
+        return {
+            id,
+            url: `https://media.pollinations.ai/${id}`,
+            contentType,
+            size: input.size,
+        };
+    }
     const upload = new FixedLengthStream(input.size);
-    body.pipeTo(upload.writable).catch(() => undefined);
+    const pipe = body.pipeTo(upload.writable);
     try {
-        await env.MEDIA_BUCKET.put(id, upload.readable, {
-            httpMetadata: {
-                contentType,
-                cacheControl: IMMUTABLE_CACHE_CONTROL,
-            },
-            customMetadata: {
-                uploadedAt: new Date().toISOString(),
-                originalName: input.fileName?.slice(0, 253) || "",
-                uploadedBy: "pollinations-service",
-                keyType: "service",
-            },
-        });
+        await Promise.all([
+            env.MEDIA_BUCKET.put(id, upload.readable, {
+                httpMetadata: {
+                    contentType,
+                    cacheControl: IMMUTABLE_CACHE_CONTROL,
+                },
+                customMetadata: {
+                    uploadedAt: new Date().toISOString(),
+                    originalName: storedFileName(input.fileName),
+                    uploadedBy: input.uploadedBy || "pollinations-service",
+                    keyType: input.keyType || "service",
+                    keyId: input.keyId ?? "",
+                    userId: input.userId ?? "",
+                },
+            }),
+            pipe,
+        ]);
     } catch (error) {
         throw new Error(
             `R2 upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -66,6 +118,19 @@ export async function uploadUnlistedMedia(
     };
 }
 
+// media.pollinations.ai is same-site with the rest of pollinations.ai, so a
+// file must never run script there. Only images, audio and video open in the
+// browser; SVG and other XML, HTML and everything else download. Browsers
+// read "image/png,text/html" as its last type, so lists never open inline.
+function opensInline(contentType: string): boolean {
+    const essence = contentType.split(";")[0].trim().toLowerCase();
+    return (
+        !contentType.includes(",") &&
+        /^(image|audio|video)\//.test(essence) &&
+        !essence.endsWith("xml")
+    );
+}
+
 /** The same file response is served to browsers and to the generation cache. */
 export async function readMedia(
     env: MediaStorageEnv,
@@ -78,25 +143,32 @@ export async function readMedia(
         : env.MEDIA_BUCKET.get(id));
     if (!object) return null;
 
+    const contentType =
+        object.httpMetadata?.contentType || "application/octet-stream";
+    const disposition = opensInline(contentType) ? "inline" : "attachment";
+    const originalName = object.customMetadata?.originalName;
     const headers = new Headers({
-        "Content-Type":
-            object.httpMetadata?.contentType || "application/octet-stream",
+        "Content-Type": contentType,
         "Cache-Control":
             object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
         "X-Content-Id": id,
         "X-Content-Size": object.size.toString(),
         Link: `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        "Content-Disposition": originalName
+            ? `${disposition}; filename*=UTF-8''${encodeURIComponent(originalName)}`
+            : disposition,
     });
+    // Generated files replay the headers gen chose for them. Only the trusted
+    // put() below writes header_* metadata; uploads never do.
     for (const [key, value] of Object.entries(object.customMetadata ?? {})) {
         if (key.startsWith("header_")) headers.set(key.slice(7), value);
     }
-    const originalName = object.customMetadata?.originalName;
-    if (originalName) {
-        headers.set(
-            "Content-Disposition",
-            `inline; filename*=UTF-8''${encodeURIComponent(originalName)}`,
-        );
-    }
+    // Set last: no stored header may let a file run script.
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set(
+        "Content-Security-Policy",
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    );
     if (!("body" in object)) {
         headers.set("Content-Length", object.size.toString());
         return new Response(null, { headers });

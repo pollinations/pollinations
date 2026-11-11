@@ -41,7 +41,7 @@ export function ContentHeader({
             )}
         >
             <div className="polli:flex polli:max-w-2xl polli:flex-col polli:gap-3">
-                <Eyebrow size="page">{eyebrow}</Eyebrow>
+                {eyebrow ? <Eyebrow size="page">{eyebrow}</Eyebrow> : null}
                 <Title className={titleClasses[variant]}>{title}</Title>
                 {subtitle && (
                     <p

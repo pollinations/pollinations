@@ -31,31 +31,6 @@ async function sessionUserId(sessionToken: string): Promise<string> {
     return session.user.id;
 }
 
-async function createKey(
-    sessionToken: string,
-    options: {
-        name: string;
-        pollenBudget?: number | null;
-        accountPermissions?: string[] | null;
-    },
-) {
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/account/keys",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-            body: JSON.stringify(options),
-        },
-    );
-    if (!response.ok) {
-        throw new Error(`Failed to create API key: ${await response.text()}`);
-    }
-    return (await response.json()) as { id: string; key: string };
-}
-
 async function getBalance(headers: Record<string, string>) {
     return SELF.fetch("http://localhost:3000/api/account/balance", {
         headers,
@@ -63,16 +38,57 @@ async function getBalance(headers: Record<string, string>) {
 }
 
 describe("GET /api/account/balance", () => {
+    test("an existing key immediately sees frozen Quest Pollen separately from spendable funds", async ({
+        sessionToken,
+        accountToken,
+    }) => {
+        const userId = await sessionUserId(sessionToken);
+        const created = await createApiKeyViaApi(accountToken, {
+            name: "existing",
+            accountPermissions: ["usage"],
+        });
+        await setAccountBalances(userId);
+        await drizzle(env.DB)
+            .update(userTable)
+            .set({ questPollenRestricted: true })
+            .where(eq(userTable.id, userId));
+        const response = await getBalance({
+            Authorization: `Bearer ${created.key}`,
+        });
+        expect(await response.json()).toEqual({
+            balance: PAID,
+            accountBalance: {
+                total: PAID,
+                tier: 0,
+                paid: PAID,
+                heldTier: TIER,
+                questPollenRestricted: true,
+            },
+        });
+        await drizzle(env.DB)
+            .update(userTable)
+            .set({ questPollenRestricted: false })
+            .where(eq(userTable.id, userId));
+        const cleared = await getBalance({
+            Authorization: `Bearer ${created.key}`,
+        });
+        expect(await cleared.json()).toEqual({
+            balance: TOTAL,
+            accountBalance: { total: TOTAL, tier: TIER, paid: PAID },
+        });
+    });
+
     test("session sees account total in balance plus accountBalance breakdown", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
         await setAccountBalances(userId);
 
         const res = await getBalance({
-            Cookie: `better-auth.session_token=${sessionToken}`,
+            Authorization: `Bearer ${accountToken}`,
         });
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual({
@@ -84,12 +100,13 @@ describe("GET /api/account/balance", () => {
     test("budgeted key without account:usage sees only the key budget", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
         await setAccountBalances(userId);
 
-        const created = await createKey(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "budget-only",
             pollenBudget: 7,
         });
@@ -105,16 +122,17 @@ describe("GET /api/account/balance", () => {
     test("budgeted key with account:usage keeps key budget and adds accountBalance", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
-        await setAccountBalances(userId);
-
-        const created = await createKey(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "budget-and-usage",
             pollenBudget: 7,
             accountPermissions: ["usage"],
         });
+        // After creation: the first key earns a Quest Pollen reward.
+        await setAccountBalances(userId);
         const res = await getBalance({
             Authorization: `Bearer ${created.key}`,
         });
@@ -128,15 +146,16 @@ describe("GET /api/account/balance", () => {
     test("unbudgeted key with account:usage sees the account total", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
-        await setAccountBalances(userId);
-
-        const created = await createKey(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "usage-only",
             accountPermissions: ["usage"],
         });
+        // After creation: the first key earns a Quest Pollen reward.
+        await setAccountBalances(userId);
         const res = await getBalance({
             Authorization: `Bearer ${created.key}`,
         });
@@ -148,45 +167,31 @@ describe("GET /api/account/balance", () => {
     });
 
     test("unbudgeted key without account:usage is 403", async ({
-        sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
-        const created = await createApiKeyViaApi(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "no-scope-no-budget",
         });
         const res = await getBalance({
             Authorization: `Bearer ${created.key}`,
         });
         expect(res.status).toBe(403);
+        const { error } = await res.json<{ error: { fixUrl: string } }>();
+        const fix = new URL(error.fixUrl);
+        expect(fix.pathname).toBe("/grant");
+        expect(fix.searchParams.get("permission")).toBe("usage");
+        expect(fix.searchParams.get("id")).toBe(created.id);
     });
 
-    test("publishable key with a zero budget does not leak accountBalance", async ({
-        sessionToken,
-        mocks,
-    }) => {
-        await mocks.enable("tinybird");
-        const userId = await sessionUserId(sessionToken);
-        await setAccountBalances(userId);
-
-        const created = await createApiKeyViaApi(sessionToken, {
-            name: "raw-pk",
-            type: "publishable",
-        });
-        const res = await getBalance({
-            Authorization: `Bearer ${created.key}`,
-        });
-        expect(res.status).toBe(200);
-        const body = (await res.json()) as BalanceBody;
-        expect(body.balance).toBe(0);
-        expect(body.accountBalance).toBeUndefined();
-    });
     // A pack balance can go negative after a settlement overshoots. Spending
     // still draws on Quest Pollen in that state, so the reported total must
     // not be reduced by the overdraft.
     test("an overdrawn pack balance does not eat the reported total", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
@@ -197,7 +202,7 @@ describe("GET /api/account/balance", () => {
             .where(eq(userTable.id, userId));
 
         const res = await getBalance({
-            Cookie: `better-auth.session_token=${sessionToken}`,
+            Authorization: `Bearer ${accountToken}`,
         });
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual({

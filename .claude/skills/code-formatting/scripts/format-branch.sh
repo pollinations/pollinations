@@ -22,7 +22,7 @@ echo "$FILES"
 echo ""
 
 echo "🔧 Running Biome format on changed files..."
-echo "$FILES" | xargs npx biome check --write
+echo "$FILES" | xargs npx @biomejs/biome check --write
 
 echo ""
 echo "✅ Done! Files formatted."

@@ -55,4 +55,6 @@ Follow PR format from AGENTS.md:
 - 3-5 bullets max
 - Simple titles: "fix:", "feat:", "Add"
 
+For PRs touching models, follow [model-management](../skills/model-management/SKILL.md#6-open-the-pr), including its required model change table with a `NEW`, `UPDATE`, or `RETIRE` action and exact before/after prices, balance access, capabilities, availability, and effective timing. Apply this when updating an existing PR description too.
+
 After a squash merge, check the squash commit kept every `Co-authored-by:` line. If one was dropped, never rewrite the shared branch to fix it.

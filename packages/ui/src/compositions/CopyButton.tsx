@@ -7,7 +7,19 @@ import {
     useState,
 } from "react";
 import { cn } from "../lib/cn.ts";
+import { Button, type ButtonProps } from "../primitives/Button.tsx";
+import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
+import type { IconProps } from "../primitives/icons/types.ts";
 import { Tooltip } from "../primitives/Tooltip.tsx";
+
+/** The copy state as an icon: a clipboard, then a check once copied. */
+export function CopyStateIcon({
+    copied,
+    ...props
+}: IconProps & { copied: boolean }) {
+    const Icon = copied ? CheckIcon : ClipboardIcon;
+    return <Icon {...props} />;
+}
 
 type CopyValue = string | (() => string | Promise<string>);
 
@@ -25,6 +37,9 @@ export type CopyButtonProps = Omit<
     copiedTooltip?: ReactNode;
     tooltipClassName?: string;
     className?: string | ((copied: boolean) => string);
+    variant?: "plain" | "button";
+    /** Button intent, used with `variant="button"`. */
+    intent?: ButtonProps<"button">["intent"];
     onCopied?: () => void;
     onCopyError?: (error: unknown) => void;
 };
@@ -33,13 +48,21 @@ export function CopyButton({
     value,
     children,
     copiedTimeoutMs = 2000,
-    tooltip = "📋 Click to copy",
+    tooltip = "Click to copy",
     tooltipAlign,
     tooltipClampToViewport,
     tooltipMaxWidth,
-    copiedTooltip = "✅ Copied!",
+    // Icons, never emoji: the check is the package's own CheckIcon.
+    copiedTooltip = (
+        <span className="polli:inline-flex polli:items-center polli:gap-1 polli:text-intent-success-text">
+            <CheckIcon className="polli:h-3.5 polli:w-3.5" />
+            Copied
+        </span>
+    ),
     tooltipClassName,
     className,
+    variant = "plain",
+    intent,
     onCopied,
     onCopyError,
     ...buttonProps
@@ -71,18 +94,23 @@ export function CopyButton({
         }
     }
 
+    const Control = variant === "button" ? Button : "button";
     const button = (
-        <button
+        <Control
             {...buttonProps}
+            {...(variant === "button" && intent ? { intent } : {})}
             type="button"
             onClick={handleCopy}
             className={cn(
                 "polli-control",
+                buttonProps.disabled
+                    ? "polli:cursor-not-allowed"
+                    : "polli:cursor-pointer",
                 typeof className === "function" ? className(copied) : className,
             )}
         >
             {typeof children === "function" ? children(copied) : children}
-        </button>
+        </Control>
     );
 
     // A copy button with its own visible label doesn't need a hover tooltip —
@@ -100,7 +128,12 @@ export function CopyButton({
             maxWidth={tooltipMaxWidth}
             displayContents
             tapEnabled={false}
-            className={tooltipClassName}
+            className={cn(
+                buttonProps.disabled
+                    ? "polli:cursor-not-allowed"
+                    : "polli:cursor-pointer",
+                tooltipClassName,
+            )}
         >
             {button}
         </Tooltip>

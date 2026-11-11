@@ -44,11 +44,18 @@ async function insertApiKey(userId: string) {
 }
 
 describe("Device Authorization Flow", () => {
-    test("POST /api/device/code issues device and user codes", async () => {
+    test("POST /api/device/code issues device and user codes", async ({
+        mocks,
+        pubApiKey,
+    }) => {
+        await mocks.enable("tinybird");
         const res = await SELF.fetch(`${BASE}/api/device/code`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_id: "test-cli", scope: "generate" }),
+            body: JSON.stringify({
+                client_id: pubApiKey,
+                scope: "generate",
+            }),
         });
         const body = (await res.json()) as {
             device_code: string;
@@ -79,9 +86,20 @@ describe("Device Authorization Flow", () => {
         };
         expect(info.status).toBe("pending");
         expect(info.scope).toBe("generate");
+        await mocks.clear();
+        expect(mocks.tinybird.state.productEvents).toContainEqual(
+            expect.objectContaining({
+                event: "device_code_issued",
+                user_id: "",
+                client_id: pubApiKey,
+                flow_id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+            }),
+        );
     });
 
-    test("POST /api/device/code accepts form encoding (RFC 8628 §3.1)", async () => {
+    test("POST /api/device/code accepts form encoding (RFC 8628 §3.1)", async ({
+        pubApiKey,
+    }) => {
         // Off-the-shelf clients discovering the endpoint via RFC 8414
         // metadata send application/x-www-form-urlencoded, not JSON.
         const res = await SELF.fetch(`${BASE}/api/device/code`, {
@@ -90,7 +108,7 @@ describe("Device Authorization Flow", () => {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
             body: new URLSearchParams({
-                client_id: "pk_form_client",
+                client_id: pubApiKey,
                 scope: "profile",
             }).toString(),
         });
@@ -106,6 +124,23 @@ describe("Device Authorization Flow", () => {
             scope: string;
         };
         expect(info.scope).toBe("profile");
+        expect(info.clientId).toBe(pubApiKey);
+    });
+
+    test("POST /api/device/code rejects an unknown client_id", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                client_id: "pk_TOTALLY_BOGUS",
+                scope: "generate",
+            }),
+        });
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual({
+            error: "invalid_client",
+            error_description: "Unknown or revoked client_id",
+        });
     });
 
     test("GET /api/device/info with valid code returns pending", async () => {
@@ -151,6 +186,19 @@ describe("Device Authorization Flow", () => {
         const body = (await tokenRes.json()) as { error: string };
         expect(tokenRes.status).toBe(400);
         expect(body.error).toBe("access_denied");
+        await mocks.clear();
+        expect(
+            mocks.tinybird.state.productEvents.filter((row) =>
+                String(row.event).startsWith("device_"),
+            ),
+        ).toEqual([
+            expect.objectContaining({
+                event: "device_denied",
+                flow_id: device.id,
+                client_id: "test-client",
+                user_id: expect.any(String),
+            }),
+        ]);
     }, 30000);
 
     test("expired code returns error on info and token", async () => {
@@ -200,6 +248,75 @@ describe("Device Authorization Flow", () => {
         const body = (await res.json()) as { error: string };
         expect(res.status).toBe(400);
         expect(body.error).toBe("authorization_pending");
+    });
+
+    test("malformed token bodies return 400 invalid_request, never 500 or SQL", async () => {
+        const bodies = [
+            "not json",
+            JSON.stringify({ device_code: { a: 1 } }),
+            JSON.stringify({ device_code: 123 }),
+            "null",
+            "[]",
+            "false",
+        ];
+        for (const body of bodies) {
+            const res = await SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body,
+            });
+            const text = await res.text();
+            expect(res.status).toBe(400);
+            expect(text).not.toContain("Failed query");
+            const parsed = JSON.parse(text) as { error: string };
+            expect(parsed.error).toBe("invalid_request");
+        }
+    });
+
+    test("POST /api/device/token accepts form-encoded device codes", async () => {
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ device_code: device.deviceCode }),
+        });
+        const body = (await res.json()) as { error: string };
+        expect(res.status).toBe(400);
+        expect(body.error).toBe("authorization_pending");
+    });
+
+    test("POST /api/device/code with a JSON null body still issues a code", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { device_code: string };
+        expect(body.device_code).toBeTruthy();
+    });
+
+    test("malformed deny bodies return 400, never 500", async ({
+        sessionToken,
+    }) => {
+        const bodies = [
+            "not json",
+            JSON.stringify({ userCode: { a: 1 } }),
+            "null",
+        ];
+        for (const body of bodies) {
+            const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body,
+            });
+            const text = await res.text();
+            expect(res.status).toBe(400);
+            expect(text).not.toContain("Failed query");
+        }
     });
 
     test("POST /api/device/approve without auth returns 401", async () => {
@@ -274,7 +391,70 @@ describe("Device Authorization Flow", () => {
         const replayBody = (await replayRes.json()) as { error: string };
         expect(replayRes.status).toBe(400);
         expect(replayBody.error).toBe("invalid_grant");
+
+        await mocks.clear();
+        expect(
+            mocks.tinybird.state.productEvents.filter((row) =>
+                String(row.event).startsWith("device_"),
+            ),
+        ).toEqual([
+            expect.objectContaining({
+                event: "device_approved",
+                flow_id: device.id,
+                client_id: "test-client",
+                user_id: session.user.id,
+            }),
+            expect.objectContaining({
+                event: "device_token_issued",
+                flow_id: device.id,
+                client_id: "test-client",
+                user_id: session.user.id,
+            }),
+        ]);
     }, 30000);
+
+    test("an approved key waits as long as its device code", async ({
+        sessionToken,
+    }) => {
+        const expiresAt = new Date(Date.now() + 25 * 60_000);
+        const device = await insertDeviceCode({ expiresAt });
+        const sessionRes = await SELF.fetch(`${BASE}/api/auth/get-session`, {
+            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+        });
+        const { user } = (await sessionRes.json()) as { user: { id: string } };
+        const { key, id } = await insertApiKey(user.id);
+        const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                userCode: device.userCode,
+                apiKey: key,
+                apiKeyId: id,
+            }),
+        });
+        expect(approveRes.status).toBe(200);
+
+        const kvKey = `device-key:${device.deviceCode}`;
+        const { keys } = await env.KV.list({ prefix: kvKey });
+        expect(keys[0]?.expiration).toBeGreaterThanOrEqual(
+            Math.floor(expiresAt.getTime() / 1000) - 5,
+        );
+
+        // KV may not show the key at the CLI's location yet: keep polling.
+        await env.KV.delete(kvKey);
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        expect(tokenRes.status).toBe(400);
+        expect(((await tokenRes.json()) as { error: string }).error).toBe(
+            "authorization_pending",
+        );
+    });
 
     test("approve with narrowed scope echoes the granted scope (RFC 6749 §5.1)", async ({
         sessionToken,
@@ -327,6 +507,95 @@ describe("Device Authorization Flow", () => {
         // Narrowed to zero: "" must still be echoed, not omitted
         const zeroed = await approveAndExchange("usage", "");
         expect(zeroed.scope).toBe("");
+    }, 30000);
+
+    test("approve echoes a valid expiresIn as the token's expires_in", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const device = await insertDeviceCode();
+        const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                userCode: device.userCode,
+                apiKey: "sk_test_device_expiry",
+                apiKeyId: "key-id",
+                expiresIn: 604800,
+            }),
+        });
+        expect(approveRes.status).toBe(200);
+
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        expect(tokenRes.status).toBe(200);
+        const tokenBody = (await tokenRes.json()) as { expires_in?: number };
+        expect(tokenBody.expires_in).toBe(604800);
+    }, 30000);
+
+    const invalidExpiresIn: [string, unknown][] = [
+        ["outside the Date range", 1e15],
+        ["negative", -60],
+        ["zero", 0],
+        ["fractional", 1.5],
+        ["a string", "3600"],
+    ];
+    for (const [label, expiresIn] of invalidExpiresIn) {
+        test(`approve rejects an expiresIn that is ${label}`, async ({
+            sessionToken,
+            mocks,
+        }) => {
+            await mocks.enable("tinybird", "github");
+            const device = await insertDeviceCode();
+            const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    userCode: device.userCode,
+                    apiKey: "sk_test_device_expiry",
+                    apiKeyId: "key-id",
+                    expiresIn,
+                }),
+            });
+            expect(approveRes.status).toBe(400);
+
+            // Nothing was parked for the CLI and the code is still pending
+            expect(
+                await env.KV.get(`device-key:${device.deviceCode}`),
+            ).toBeNull();
+            const db = drizzle(env.DB, { schema });
+            const row = await db.query.deviceCode.findFirst({
+                where: (t, { eq }) => eq(t.id, device.id),
+            });
+            expect(row?.status).toBe("pending");
+        }, 30000);
+    }
+
+    test("approve still requires userCode, apiKey and apiKeyId", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/approve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ userCode: device.userCode, apiKey: "" }),
+        });
+        expect(res.status).toBe(400);
     }, 30000);
 
     test("GET /api/device/userinfo returns OIDC-shaped profile", async ({

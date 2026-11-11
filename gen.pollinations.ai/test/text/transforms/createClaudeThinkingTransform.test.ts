@@ -144,6 +144,8 @@ describe("Claude thinking model wiring", () => {
         "anthropic/claude-opus-4.7",
         "anthropic/claude-fable-5",
         "anthropic/claude-fable-5.1",
+        "anthropic/claude-fable-5.2",
+        "anthropic/claude-fable-5.2:anthropic",
     ])("wires adaptive thinking on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -162,5 +164,19 @@ describe("Claude thinking model wiring", () => {
             {},
         );
         expect(options.thinking).toEqual({ type: "disabled" });
+    });
+
+    it("does not send unsupported disabled thinking to Bedrock Opus 5.5", async () => {
+        const transform = findModelByName(
+            "anthropic/claude-opus-5.5",
+        )?.transform;
+        if (!transform) throw new Error("Opus 5.5 transform missing");
+        for (const reasoning_effort of [undefined, "none"] as const) {
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                { reasoning_effort },
+            );
+            expect(options.thinking).toBeUndefined();
+        }
     });
 });

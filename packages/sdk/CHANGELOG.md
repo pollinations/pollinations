@@ -2,7 +2,193 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [Unreleased]
+## [5.1.0-alpha.27] - 2026-11-06
+
+### Fixed
+- `chat()` and `text()` reject buffered completions ending with
+  `finish_reason: "error"` instead of returning a partial answer as a success.
+
+## [5.1.0-alpha.26] - 2026-10-31
+
+### Removed
+- `KeyInfo.rateLimitEnabled`. `GET /account/key` no longer returns it: from
+  2026-11-01 publishable (`pk_`) App Keys only identify an app and can't
+  authenticate requests, so no key is rate limited per IP.
+
+## [5.1.0-alpha.25] - 2026-10-29
+
+### Added
+- `isOutageError(error)` tells a Pollinations outage (a 5xx, or no response)
+  from a request error such as 401 or 403. Exported from `@pollinations/sdk`
+  and `@pollinations/sdk/react`.
+
+### Changed
+- Account hooks retry on their own every 30 seconds while an outage lasts. A
+  network failure is a `PollinationsError` with status `0` and code
+  `NETWORK_ERROR`, so `isOutageError` recognises it.
+
+## [5.1.0-alpha.24] - 2026-10-28
+
+### Fixed
+- `imageUrl()` returns the stored media URL from the `rel="enclosure"` Link
+  header instead of an unauthenticated generation URL, and throws
+  `NO_IMAGE_URL` when it is absent. `ImageResponse.url` from `image()` is that
+  URL, or `""` without the header.
+- `accountUsage()` and `accountKeyUsage()` accept and forward
+  `before_event_id`; `UsageRecord` exposes `cursor_event_id`, so pages no
+  longer skip records that share a timestamp.
+- Aborting `authorizeDevice()` also aborts an in-flight token poll, and
+  `poll()` rejects with `CANCELLED` instead of returning a token.
+- `text()` and `textStream()` return refusal text instead of an empty answer.
+- The React Responses chat transport shows refusal deltas as answer text.
+
+## [5.1.0-alpha.23] - 2026-10-28
+
+### Fixed
+- Video responses expose the stored media URL from the `rel="enclosure"` Link
+  header, or `undefined` if absent, instead of the generation URL. `videoUrl()`
+  returns that shareable file URL or throws `NO_VIDEO_URL` when it is absent;
+  `video()` still returns the video buffer.
+
+## [5.1.0-alpha.22] - 2026-10-27
+
+### Security
+- `image()`, `video()` and `audio()` no longer add the API key to the request
+  URL as `?key=`. The key is sent only in the `Authorization` header, so it
+  stays out of proxy and HTTP debug logs.
+
+## [5.1.0-alpha.21] - 2026-10-23
+
+### Added
+- `decision` model category for models served at `/alpha/decisions`.
+
+## [5.1.0-alpha.20] - 2026-10-22
+
+### Added
+- `deploySite()`, `listSites()` and `deleteSite()` publish static sites at
+  `https://<name>.pollinations.app` with inline files (up to 5 MB per
+  request). Keys need the `machines` account permission.
+
+## [5.1.0-alpha.19] - 2026-10-14
+
+### Fixed
+- Errors whose body is `{ error: "message" }`, such as `accountEarnings()`
+  failures, keep the server's message instead of a generic
+  `Request failed with status N`.
+
+## [5.1.0-alpha.18] - 2026-10-14
+
+### Added
+- Headless image, text, audio, video and transcription hooks with cancellation
+  and rerun, using the signed-in user's key.
+- A `useChat` transport for `/v1/responses`, including server-run tool results,
+  conversation history and usage. `ai` remains an optional peer dependency.
+
+## [5.1.0-alpha.17] - 2026-10-14
+
+### Added
+- `model3d()` returns 3D files with their MIME type and a keyless URL;
+  `models("3d")` lists the available models.
+- `modelStatus()` returns typed model health rows and column metadata.
+- `audioSpeechWithTimestamps()` returns base64 audio, the original character
+  alignments and word timings grouped from normalized text when available.
+
+## [5.1.0-alpha.16] - 2026-10-14
+
+### Changed
+- README Discord link points to `discord.gg/k9F7SyTgqn`; the old invite
+  link no longer works.
+
+## [5.1.0-alpha.15] - 2026-10-13
+
+### Changed
+- README and JSDoc examples use `publisher/model` IDs, such as
+  `black-forest-labs/flux.1-schnell` instead of `flux`. Short aliases still work.
+- Key `models` and `allowedModels` accept model IDs that allow only that
+  model, next to categories. A model ID no longer widens to its category.
+
+### Added
+- `models(kind)` and `getModels(kind)` list one kind of model: `text`, `image`,
+  `video`, `audio` or `embeddings`.
+- `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
+  billed at the cache-write rate. Reads stay in `input_cached_tokens`.
+
+### Removed
+- `textModels()`, `imageModels()`, `getTextModels()` and `getImageModels()`.
+  Use `models("text")` or `getModels("text")`, and the same with `"image"`.
+- `Conversation` and `conversation()`. Nothing used them; keep the history in
+  your own `messages` array and pass it to `chat()` or `chatStream()`.
+
+### Fixed
+- `upload()` keeps an uploaded `File`'s name instead of always sending
+  `upload`, so the media service can detect its type from the extension.
+- `accountUsage({ format: "csv" })`, `accountUsageDaily({ format: "csv" })`,
+  `getUsage()` and `getDailyUsage()` return the CSV export as a string instead
+  of throwing a JSON `SyntaxError`.
+- `chatStream()` rejects prematurely closed responses without a terminal
+  finish event or `[DONE]` instead of silently returning partial text.
+- `transcribe()` derives unnamed audio Blob filename extensions from their MIME
+  types, excluding parameters and normalizing `x-` prefixes and MPEG to MP3.
+  File names, upload contents, and the MP3 fallback are preserved.
+
+## [5.1.0-alpha.14] - 2026-10-08
+
+### Changed
+- `ChatOptions.routing` is sent as `metadata`, with `text` as `metadata.model`.
+  Floret no longer accepts a top-level `routing` object.
+
+## [5.1.0-alpha.13] - 2026-10-07
+
+### Added
+- `referenceImages`, `referenceVideos`, and `referenceAudios` on video options
+  accept a URL or an array of URLs for guidance. `referenceImage` continues
+  to control first/last frames separately.
+
+## [5.1.0-alpha.12] - 2026-10-06
+
+### Removed
+- `imageGenerate()` no longer takes `n` and always returns one image. The API
+  generates one image per request and rejects `n` above 1.
+
+## [5.1.0-alpha.11] - 2026-10-06
+
+### Fixed
+- `transcribe()` keeps an uploaded `File`'s name instead of always sending
+  `audio.mp3`. Providers that read the format from the extension, such as
+  `openai/gpt-transcribe`, rejected WAV and other non-MP3 uploads.
+
+## [5.1.0-alpha.10] - 2026-10-06
+
+### Fixed
+- `authorizeDevice().poll()` errors keep the token endpoint's HTTP status
+  instead of always reporting 400.
+
+## [5.1.0-alpha.9] - 2026-10-06
+
+### Added
+- `questPollenOnly` on `createKey()` options and on `KeyInfo`, `AccountKey`
+  and `CreatedKey`: the key never spends paid Pollen, and requests stop when
+  Quest Pollen runs out.
+
+### Changed
+- `allowedModels` restricts a key to model categories (text, image, video,
+  audio, 3d, embedding, realtime). A model ID allows its whole category.
+
+## [5.1.0-alpha.8] - 2026-10-04
+
+### Added
+- `embeddings()` for `/v1/embeddings`, with the `Embedding*` types.
+- `audioTransform()` for voice-changer and voice-isolator, and `referenceAudio`
+  on speech options.
+
+### Fixed
+- `generateText({ raw: true })` sends `systemPrompt` and `json` like the
+  non-raw path.
+- Base64 images keep the media type the API sends instead of always PNG.
+- Cancellation stays active while a response body is read, and an
+  already-aborted signal rejects before the request is sent.
+- `PolliProvider` validates restored keys, recovers from browser auth failures,
+  and keeps the saved key when a re-login fails.
 
 ## [5.1.0-alpha.7] - 2026-09-05
 

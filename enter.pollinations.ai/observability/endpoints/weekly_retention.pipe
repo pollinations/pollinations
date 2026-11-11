@@ -1,6 +1,8 @@
 DESCRIPTION >
-    Weekly cohort retention - tracks user retention week over week.
-    Shows what percentage of users from each cohort returned in subsequent weeks.
+    Weekly cohort retention for the last N finished weeks. A cohort is the
+    users whose first regular request (user_first_activity_mv) fell in that
+    week; wN is the share of them making a regular request N weeks later.
+    A week that has not finished yet returns null.
 
 TOKEN tinybird_read READ
 
@@ -9,10 +11,12 @@ SQL >
     %
     SELECT
         user_id,
-        toStartOfWeek(min(start_time), 1) AS cohort_week
-    FROM generation_event_v2
-    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
+        toStartOfWeek(minMerge(first_activity_time), 1) AS cohort_week
+    FROM user_first_activity_mv
     GROUP BY user_id
+    HAVING
+        cohort_week >= toStartOfWeek(now(), 1) - INTERVAL {{Int32(weeks_back, 8)}} WEEK
+        AND cohort_week < toStartOfWeek(now(), 1)
 
 NODE weekly_activity
 SQL >
@@ -20,11 +24,18 @@ SQL >
     SELECT DISTINCT
         user_id,
         toStartOfWeek(start_time, 1) AS activity_week
-    FROM generation_event_v2
-    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
+    FROM generation_events_classified
+    WHERE
+        traffic_group = 'regular'  -- exclude legacy, company operations and development tests
+        -- Finished weeks after the oldest cohort's own week.
+        AND start_time >= toStartOfWeek(now(), 1) - INTERVAL {{Int32(weeks_back, 8)}} WEEK + INTERVAL 1 WEEK
+        AND start_time < toStartOfWeek(now(), 1)
+        -- Only cohort users can match; skipping the rest saves classifying them.
+        AND user_id IN (SELECT user_id FROM cohort_base)
 
 NODE weekly_retention_node
 SQL >
+    WITH toStartOfWeek(now(), 1) AS this_week
     SELECT
         formatDateTime(c.cohort_week, '%Y-%m-%d') AS cohort,
         count(DISTINCT c.user_id) AS cohort_size,
@@ -32,15 +43,13 @@ SQL >
         countIf(DISTINCT c.user_id, a.activity_week = c.cohort_week + INTERVAL 2 WEEK) AS w2_retained,
         countIf(DISTINCT c.user_id, a.activity_week = c.cohort_week + INTERVAL 3 WEEK) AS w3_retained,
         countIf(DISTINCT c.user_id, a.activity_week = c.cohort_week + INTERVAL 4 WEEK) AS w4_retained,
-        if(cohort_size > 0, round(w1_retained * 100.0 / cohort_size, 1), null) AS w1_retention,
-        if(cohort_size > 0, round(w2_retained * 100.0 / cohort_size, 1), null) AS w2_retention,
-        if(cohort_size > 0, round(w3_retained * 100.0 / cohort_size, 1), null) AS w3_retention,
-        if(cohort_size > 0, round(w4_retained * 100.0 / cohort_size, 1), null) AS w4_retention
+        if(c.cohort_week + INTERVAL 1 WEEK < this_week, round(w1_retained * 100.0 / cohort_size, 1), null) AS w1_retention,
+        if(c.cohort_week + INTERVAL 2 WEEK < this_week, round(w2_retained * 100.0 / cohort_size, 1), null) AS w2_retention,
+        if(c.cohort_week + INTERVAL 3 WEEK < this_week, round(w3_retained * 100.0 / cohort_size, 1), null) AS w3_retention,
+        if(c.cohort_week + INTERVAL 4 WEEK < this_week, round(w4_retained * 100.0 / cohort_size, 1), null) AS w4_retention
     FROM cohort_base c
     LEFT JOIN weekly_activity a ON c.user_id = a.user_id
     GROUP BY c.cohort_week
-    HAVING c.cohort_week <= now() - INTERVAL 1 WEEK
     ORDER BY c.cohort_week DESC
-    LIMIT 8
 
 TYPE endpoint

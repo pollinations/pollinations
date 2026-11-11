@@ -1,35 +1,35 @@
-import { Button, Dialog } from "@pollinations/ui";
+import { Alert, ConfirmationDialog } from "@pollinations/ui";
 import type { FC } from "react";
 
 interface DeleteConfirmationProps {
-    deleteId: string | null;
+    app: boolean | null;
+    error: string | null;
+    pending: boolean;
     onConfirm: () => void;
     onCancel: () => void;
 }
 
 export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
-    deleteId,
+    app,
+    error,
+    pending,
     onConfirm,
     onCancel,
 }) => (
-    <Dialog
-        open={!!deleteId}
-        onOpenChange={(open) => !open && onCancel()}
-        title="Delete API Key"
-        size="sm"
-        contentClassName="p-6"
+    <ConfirmationDialog
+        open={app !== null}
+        title={app ? "Delete app key?" : "Delete secret key?"}
+        description={
+            app
+                ? "Existing connections keep working, but you stop earning from them. Users won’t be able to connect or authorize again with this app key. Deleting it cannot be undone."
+                : "Requests using this secret key will stop working. Deleting it cannot be undone."
+        }
+        confirmLabel={pending ? "Deleting…" : "Delete"}
+        confirmDisabled={pending}
+        cancelDisabled={pending}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
     >
-        <p className="mb-6 mt-4">
-            Are you sure you want to delete this API key? This action cannot be
-            undone.
-        </p>
-        <div className="flex gap-2 justify-end">
-            <Button type="button" onClick={onCancel}>
-                Cancel
-            </Button>
-            <Button type="button" intent="danger" onClick={onConfirm}>
-                Delete
-            </Button>
-        </div>
-    </Dialog>
+        {error && <Alert intent="danger">{error}</Alert>}
+    </ConfirmationDialog>
 );

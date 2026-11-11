@@ -1,6 +1,7 @@
 import { parseScopeList } from "@shared/auth/authorize-config.ts";
 import { createFileRoute } from "@tanstack/react-router";
 import { Authorize } from "../components/auth/authorize.tsx";
+import { pageTitle } from "../page-meta.ts";
 
 function parseList(val: unknown): string[] | null {
     if (!val || typeof val !== "string") return null;
@@ -18,6 +19,15 @@ function parseNumber(val: unknown): number | null {
 }
 
 export const Route = createFileRoute("/authorize")({
+    head: ({ match }) => ({
+        meta: [
+            {
+                title: pageTitle(
+                    match.search.user_code ? "/device" : "/authorize",
+                ),
+            },
+        ],
+    }),
     component: Authorize,
     validateSearch: (search: Record<string, unknown>) => {
         const result: {

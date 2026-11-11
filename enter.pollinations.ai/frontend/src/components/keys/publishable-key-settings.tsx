@@ -1,11 +1,17 @@
-import { Button, Field, Input, Switch } from "@pollinations/ui";
+import { Button, Field, InfoTip, Input } from "@pollinations/ui";
+import { AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
+
+/**
+ * Pre-filled callback for app keys so local dev works out of the box. Loopback
+ * ports are wildcarded (RFC 8252 §7.3), so only the path needs editing. The
+ * dev sees it in the editor and should remove it before production.
+ */
+export const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];
     onRedirectUrisChange: (uris: string[]) => void;
-    earningsEnabled?: boolean;
-    onEarningsEnabledChange?: (enabled: boolean) => void;
     disabled?: boolean;
 };
 
@@ -19,8 +25,6 @@ type PublishableKeySettingsProps = {
 export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     redirectUris,
     onRedirectUrisChange,
-    earningsEnabled = false,
-    onEarningsEnabledChange,
     disabled = false,
 }) => {
     function update(index: number, value: string) {
@@ -39,34 +43,56 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     }
 
     return (
-        <div className="space-y-5">
-            <Field.Root className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                    <Field.Label className="text-sm font-semibold">
-                        Redirect URIs
-                    </Field.Label>
-                </div>
-                <p className="text-xs text-theme-text-soft">
-                    A localhost callback is pre-filled for local development —
-                    edit the path to match your dev server, and remove it before
-                    going to production.
-                </p>
+        <AuthInfoCard
+            title={
+                <>
+                    Redirect URLs
+                    <InfoTip
+                        text="Your app receives users at these URLs after consent. For local development, match a localhost redirect to your dev server’s path; remove it before production."
+                        label="Redirect URLs information"
+                    />
+                </>
+            }
+        >
+            <div className="space-y-2">
                 {redirectUris.map((uri, index) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
                         key={index}
                         className="flex items-center gap-2"
                     >
-                        <Input
-                            type="text"
-                            value={uri}
-                            onChange={(e) => update(index, e.target.value)}
-                            className="flex-1 focus:outline-none focus:ring-2 focus:ring-theme-border"
-                            placeholder="https://myapp.com/auth/callback"
-                            disabled={disabled}
-                        />
+                        <Field.Root className="min-w-0 flex-1">
+                            <Field.Label className="sr-only">
+                                Redirect URL {index + 1}
+                            </Field.Label>
+                            <Field.Input asChild>
+                                <Input
+                                    type="text"
+                                    value={uri}
+                                    onChange={(e) =>
+                                        update(index, e.target.value)
+                                    }
+                                    // Typing over the pre-filled default should
+                                    // replace it, not append to it.
+                                    onFocus={(e) => {
+                                        if (
+                                            uri === DEFAULT_LOCALHOST_REDIRECT
+                                        ) {
+                                            e.currentTarget.select();
+                                        }
+                                    }}
+                                    className="w-full"
+                                    placeholder="https://myapp.com/auth/callback"
+                                    disabled={disabled}
+                                />
+                            </Field.Input>
+                        </Field.Root>
                         <Button
                             type="button"
+                            size="sm"
+                            data-theme="neutral"
+                            className="polli:shrink-0"
+                            aria-label={`Remove redirect URL ${index + 1}`}
                             onClick={() => remove(index)}
                             disabled={disabled}
                         >
@@ -74,35 +100,16 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         </Button>
                     </div>
                 ))}
-                <div>
-                    <Button type="button" onClick={add} disabled={disabled}>
-                        + Add
-                    </Button>
-                </div>
-            </Field.Root>
-            {onEarningsEnabledChange && (
-                <div className="flex min-w-0 items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <div className="text-sm font-semibold">
-                            App earnings
-                        </div>
-                        <p className="mt-0.5 text-xs text-theme-text-soft">
-                            Users pay 25% over base rates. Markup credits to
-                            your balance.
-                        </p>
-                    </div>
-                    <Switch
-                        checked={earningsEnabled}
-                        onChange={onEarningsEnabledChange}
-                        disabled={disabled}
-                        ariaLabel={
-                            earningsEnabled
-                                ? "Turn off app earnings"
-                                : "Enable app earnings"
-                        }
-                    />
-                </div>
-            )}
-        </div>
+                <Button
+                    type="button"
+                    size="sm"
+                    data-theme="neutral"
+                    onClick={add}
+                    disabled={disabled}
+                >
+                    Add URL
+                </Button>
+            </div>
+        </AuthInfoCard>
     );
 };

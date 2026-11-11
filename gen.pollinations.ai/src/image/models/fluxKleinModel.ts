@@ -28,7 +28,6 @@ const getKleinGenerateUrl = (): string => {
     }
     return `${url}/generate`;
 };
-const MAX_INPUT_IMAGES = 10;
 
 /**
  * Calls the self-hosted Flux Klein 4B API. Production uses the Vast VPC binding.
@@ -39,9 +38,8 @@ export const callFluxKleinAPI = async (
 ): Promise<ImageGenerationResult> => {
     try {
         // Download and encode reference images if provided
-        const imageUrls = safeParams.image.slice(0, MAX_INPUT_IMAGES);
         const downloads = await Promise.all(
-            imageUrls.map((url) => downloadUserImage(url)),
+            safeParams.image.map((url) => downloadUserImage(url)),
         );
         const imagesB64 = downloads.map(({ buffer }) =>
             buffer.toString("base64"),
@@ -105,8 +103,6 @@ export const callFluxKleinAPI = async (
 
         return {
             buffer: imageBuffer,
-            isMature: false,
-            isChild: false,
             trackingData: {
                 actualModel: "black-forest-labs/flux.2-klein-4b",
                 usage: {

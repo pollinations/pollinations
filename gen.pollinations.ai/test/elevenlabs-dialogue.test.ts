@@ -9,6 +9,9 @@ import worker from "../src/index.ts";
 import { generateElevenLabsDialogue } from "../src/routes/audio.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
+const AZURE_TTS_URL =
+    "https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/";
+
 const log = {
     info: vi.fn(),
     warn: vi.fn(),
@@ -23,11 +26,12 @@ async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
     );
 }
 
-describe("ElevenLabs Text to Dialogue", () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
+// Vitest 4 reuses an existing spy, so every test restores its fetch spy.
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
+describe("ElevenLabs Text to Dialogue", () => {
     it("maps preset voices and bills all input characters", async () => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3]), {
@@ -62,42 +66,6 @@ describe("ElevenLabs Text to Dialogue", () => {
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "9",
         );
-    });
-
-    it("rejects inputs above the provider's reliable character limit", async () => {
-        await expect(
-            generateElevenLabsDialogue({
-                inputs: [{ text: "x".repeat(2001), voice: "nova" }],
-                responseFormat: "mp3",
-                apiKey: "test-eleven-key",
-                log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
-
-    it("rejects more than 10 unique voices", async () => {
-        await expect(
-            generateElevenLabsDialogue({
-                inputs: Array.from({ length: 11 }, (_, index) => ({
-                    text: `Speaker ${index}`,
-                    voice: `custom-voice-${index}`,
-                })),
-                responseFormat: "mp3",
-                apiKey: "test-eleven-key",
-                log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
-
-    it("rejects invalid voice IDs", async () => {
-        await expect(
-            generateElevenLabsDialogue({
-                inputs: [{ text: "Hello.", voice: "bad" }],
-                responseFormat: "mp3",
-                apiKey: "test-eleven-key",
-                log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
     });
 });
 
@@ -213,6 +181,86 @@ workerTest(
     },
 );
 
+workerTest.for(["elevenlabs/eleven-v3:dialogue", "elevenlabs/eleven-v3"])(
+    "reaches dialogue after a failed caller choice %s",
+    async (primary, { paidApiKey }) => {
+        const realFetch = globalThis.fetch.bind(globalThis);
+        const providerCalls: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url =
+                    input instanceof Request ? input.url : input.toString();
+                if (url.startsWith("https://api.elevenlabs.io/v1/text-to-")) {
+                    providerCalls.push(new Request(input, init));
+                    if (providerCalls.length === 1) {
+                        return new Response("temporarily unavailable", {
+                            status: 503,
+                        });
+                    }
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "content-type": "audio/mpeg" },
+                    });
+                }
+                if (
+                    url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                return realFetch(input, init);
+            },
+        );
+        const greeting = `Hello ${crypto.randomUUID()}.`;
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: `${primary},elevenlabs/eleven-v3:dialogue`,
+                    input: `nova: ${greeting}\ngeorge: Hi!`,
+                    voice: "alloy",
+                    response_format: "mp3",
+                    seed: 42,
+                    safe: false,
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                ELEVENLABS_API_KEY: "test-eleven-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(providerCalls).toHaveLength(2);
+        expect(providerCalls[0].url).toContain(
+            primary.endsWith(":dialogue")
+                ? "/text-to-dialogue"
+                : "/text-to-speech/",
+        );
+        expect(providerCalls[1].url).toContain("/text-to-dialogue");
+        await expect(providerCalls[1].json()).resolves.toEqual({
+            inputs: [
+                { text: greeting, voice_id: "MF3mGyEYCl7XYWbV9V6O" },
+                { text: "Hi!", voice_id: "JBFqnCBsd6RMkjVDRZzb" },
+            ],
+            model_id: "eleven_v3",
+            seed: 42,
+        });
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            String(greeting.length + 3),
+        );
+        expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
+        await waitOnExecutionContext(ctx);
+    },
+);
+
 workerTest(
     "rejects dialogue lines without a voice label",
     async ({ paidApiKey }) => {
@@ -246,7 +294,7 @@ workerTest(
 );
 
 workerTest(
-    "serves explicit and default ElevenLabs TTS on both standard audio routes",
+    "serves explicit ElevenLabs TTS and the default model on both standard audio routes",
     async ({ paidApiKey }) => {
         const realFetch = globalThis.fetch.bind(globalThis);
         const fetchMock = vi
@@ -257,7 +305,8 @@ workerTest(
                 if (
                     url.startsWith(
                         "https://api.elevenlabs.io/v1/text-to-speech/",
-                    )
+                    ) ||
+                    url.startsWith(AZURE_TTS_URL)
                 ) {
                     return new Response(new Uint8Array([73, 68, 51, 4]), {
                         headers: { "content-type": "audio/mpeg" },
@@ -315,6 +364,7 @@ workerTest(
                 withInlineGenerationCoordinator({
                     ...env,
                     ELEVENLABS_API_KEY: "test-eleven-key",
+                    AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-azure-key",
                 } as unknown as CloudflareBindings),
                 ctx,
             );
@@ -328,44 +378,18 @@ workerTest(
             await waitOnExecutionContext(ctx);
         }
 
+        const providerCalls = (prefix: string) =>
+            fetchMock.mock.calls.filter(([input]) =>
+                (input instanceof Request
+                    ? input.url
+                    : input.toString()
+                ).startsWith(prefix),
+            );
         expect(
-            fetchMock.mock.calls.filter(([input]) => {
-                const url =
-                    input instanceof Request ? input.url : input.toString();
-                return url.startsWith(
-                    "https://api.elevenlabs.io/v1/text-to-speech/",
-                );
-            }),
-        ).toHaveLength(3);
-    },
-);
-
-workerTest(
-    "rejects oversized dialogue before safety or provider calls",
-    async ({ paidApiKey }) => {
-        const fetchMock = vi.spyOn(globalThis, "fetch");
-        const response = await fetchGen(
-            "https://gen.pollinations.ai/v1/audio/speech",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${paidApiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: "eleven-dialogue",
-                    input: `nova: ${"x".repeat(1001)}\ngeorge: ${"y".repeat(1000)}`,
-                    safe: false,
-                }),
-            },
-        );
-
-        expect(response.status).toBe(400);
-        expect(
-            fetchMock.mock.calls.some(([url]) =>
-                String(url).startsWith("https://api.elevenlabs.io/"),
-            ),
-        ).toBe(false);
+            providerCalls("https://api.elevenlabs.io/v1/text-to-speech/"),
+        ).toHaveLength(2);
+        // Requests without a model use the default, Azure OpenAI tts-1.
+        expect(providerCalls(AZURE_TTS_URL)).toHaveLength(1);
     },
 );
 

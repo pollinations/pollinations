@@ -1,5 +1,6 @@
 import {
     APICallError,
+    jsonSchema,
     type ModelMessage,
     type ToolCallPart,
     type ToolResultPart,
@@ -265,11 +266,15 @@ async function inputMessages(
                 );
             }
             const isMcp = Boolean(parseFunctionName(call.name));
+            const outputText = functionOutputText(parsed.data.output);
             let output: z.infer<ReturnType<typeof z.json>>;
             try {
-                output = z
-                    .json()
-                    .parse(JSON.parse(functionOutputText(parsed.data.output)));
+                output = z.json().parse(JSON.parse(outputText));
+            } catch {
+                // Caller functions may return ordinary text, not only JSON.
+                output = outputText;
+            }
+            try {
                 if (isMcp) {
                     const result = objectValue(output, "input.output");
                     if (
@@ -282,9 +287,7 @@ async function inputMessages(
                 }
             } catch {
                 invalidRequest(
-                    isMcp
-                        ? "Function output must contain a JSON MCP result"
-                        : "Function output must contain JSON",
+                    "Function output must contain a JSON MCP result",
                     "input.output",
                 );
             }
@@ -404,10 +407,7 @@ function requestSettings(
     ) {
         invalidRequest("Invalid reasoning effort", "reasoning.effort");
     }
-    // Caller tools are ignored, not rejected: an agent runs its own tools, and
-    // clients attach theirs unprompted. Open WebUI injects builtin tool specs
-    // into every chat sent from its UI, so rejecting made agents unusable there.
-    if (request.tool_choice !== undefined) {
+    if (request.tool_choice !== undefined && request.tool_choice !== "auto") {
         invalidRequest(
             "Caller-provided tool choice is not supported by managed agents",
             "tool_choice",
@@ -510,7 +510,10 @@ function responseUsage(output: AgentOutput): ResponseUsage {
     });
 }
 
-function responseConfiguration(request: CreateResponseRequest) {
+function responseConfiguration(
+    request: CreateResponseRequest,
+    callerTools: ReadonlySet<string>,
+) {
     const reasoning = request.reasoning
         ? {
               effort:
@@ -523,7 +526,9 @@ function responseConfiguration(request: CreateResponseRequest) {
     return {
         previous_response_id: null,
         instructions: request.instructions ?? null,
-        tools: [],
+        tools: (request.tools ?? []).filter((tool) =>
+            callerTools.has(tool.name),
+        ),
         tool_choice: "auto",
         truncation: "disabled",
         parallel_tool_calls: true,
@@ -551,6 +556,7 @@ function responseObject(
     id: string,
     createdAt: number,
     items: AgentOutputItem[],
+    callerTools: ReadonlySet<string>,
 ) {
     const incomplete =
         output.finishReason === "length" ||
@@ -573,7 +579,7 @@ function responseObject(
         output: items,
         error: null,
         usage: responseUsage(output),
-        ...responseConfiguration(request),
+        ...responseConfiguration(request, callerTools),
     };
     CreateResponseResponseSchema.parse(response);
     return response;
@@ -614,6 +620,8 @@ function streamResponse(
     messages: ModelMessage[],
     settings: AgentGenerationSettings,
     signal: AbortSignal,
+    tools: ToolSet,
+    callerTools: ReadonlySet<string>,
 ): Response {
     const encoder = new TextEncoder();
     const responseId = `resp_${crypto.randomUUID()}`;
@@ -647,7 +655,7 @@ function streamResponse(
                 output: [],
                 error: null,
                 usage: null,
-                ...responseConfiguration(request),
+                ...responseConfiguration(request, callerTools),
             };
             const collected = collectOutput(send);
             // Do not block stream initialization on the run: cancel() must
@@ -661,6 +669,7 @@ function streamResponse(
                         signal: runSignal,
                         stream: true,
                         onPart: collected.onPart,
+                        tools,
                     });
                     if (cancelled) return;
                     runSignal.throwIfAborted();
@@ -669,7 +678,8 @@ function streamResponse(
                         output,
                         responseId,
                         createdAt,
-                        collected.finish(output.finishReason),
+                        collected.finish(output.finishReason, callerTools),
+                        callerTools,
                     );
                     send(
                         response.status === "incomplete"
@@ -712,19 +722,60 @@ function streamResponse(
     });
 }
 
+/** The request's function tools. Without execute, the SDK returns their calls
+ * for the caller to answer. */
+function requestTools(request: CreateResponseRequest): ToolSet {
+    const tools: ToolSet = Object.create(null);
+    for (const definition of request.tools ?? []) {
+        if (
+            !/^[a-zA-Z0-9_-]{1,64}$/.test(definition.name) ||
+            definition.name.startsWith("mcp__") ||
+            Object.hasOwn(tools, definition.name)
+        ) {
+            invalidRequest(
+                "Caller tool names must be unique, use 1–64 letters, digits, underscores or hyphens, and not start with mcp__",
+                "tools",
+            );
+        }
+        tools[definition.name] = {
+            description: definition.description ?? undefined,
+            inputSchema: jsonSchema(
+                definition.parameters ?? { type: "object", properties: {} },
+            ),
+            ...(definition.strict == null ? {} : { strict: definition.strict }),
+        };
+    }
+    return tools;
+}
+
 export async function handleAgentResponsesRequest(
     request: CreateResponseRequest,
     signal: AbortSignal,
     runner: AgentRunner,
-    tools?: ToolSet,
+    agentTools: ToolSet = {},
 ): Promise<Response> {
     try {
         signal.throwIfAborted();
+        // The agent's own tools win a name clash.
+        const tools = { ...requestTools(request), ...agentTools };
         const messages = await inputMessages(request, tools);
         signal.throwIfAborted();
         const settings = requestSettings(request);
+        const callerTools = new Set(
+            Object.entries(tools)
+                .filter(([, tool]) => !tool.execute)
+                .map(([name]) => name),
+        );
         if (request.stream) {
-            return streamResponse(request, runner, messages, settings, signal);
+            return streamResponse(
+                request,
+                runner,
+                messages,
+                settings,
+                signal,
+                tools,
+                callerTools,
+            );
         }
         const collected = collectOutput();
         const output = await runner({
@@ -733,6 +784,7 @@ export async function handleAgentResponsesRequest(
             signal,
             stream: false,
             onPart: collected.onPart,
+            tools,
         });
         signal.throwIfAborted();
         return Response.json(
@@ -741,7 +793,8 @@ export async function handleAgentResponsesRequest(
                 output,
                 `resp_${crypto.randomUUID()}`,
                 Math.floor(Date.now() / 1000),
-                collected.finish(output.finishReason),
+                collected.finish(output.finishReason, callerTools),
+                callerTools,
             ),
         );
     } catch (error) {

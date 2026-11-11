@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildWhisperForm } from "../src/routes/audio.ts";
 import {
     assertTranscriptionResponseFormat,
     buildTranscriptionResponse,
@@ -69,21 +70,61 @@ describe("whisper through the shared transcription formatter", () => {
         ]);
     });
 
-    it.each([
-        "srt",
-        "vtt",
-        "diarized_json",
-    ])("rejects %s, which whisper cannot produce", (responseFormat) => {
-        // OVH answers segments: [] on every request, so subtitles could
-        // only be invented here; #13552 was that they came back empty.
+    it("renders srt and vtt cues from the reported segments", async () => {
+        const srt = format(WHISPER, "srt");
+        expect(srt.headers.get("content-type")).toBe(
+            "text/plain; charset=utf-8",
+        );
+        expect(srt.headers.get("x-usage-seconds")).toBe("3.5");
+        expect(await srt.text()).toBe(
+            "1\n00:00:00,000 --> 00:00:01,500\nEl ciclo\n\n2\n00:00:01,500 --> 00:00:03,500\ndel agua\n",
+        );
+        expect(await format(WHISPER, "vtt").text()).toBe(
+            "WEBVTT\n\n00:00:00.000 --> 00:00:01.500\nEl ciclo\n\n00:00:01.500 --> 00:00:03.500\ndel agua\n",
+        );
+    });
+
+    it("fails instead of returning empty subtitles without segments", () => {
+        // #13552: OVH answered segments: [] and srt came back as one newline.
+        expect(() => format({ ...WHISPER, segments: [] }, "srt")).toThrow(
+            "no segment timings",
+        );
+    });
+
+    it("rejects diarized_json, which whisper is never asked for", () => {
         expect(() =>
             assertTranscriptionResponseFormat(
-                responseFormat,
+                "diarized_json",
                 "whisper model",
                 UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
             ),
         ).toThrow(
-            `Unsupported response_format for whisper model: ${responseFormat}`,
+            "Unsupported response_format for whisper model: diarized_json",
         );
+    });
+});
+
+describe("whisper request", () => {
+    it("forwards prompt and temperature, keeping temperature 0", () => {
+        for (const isDeepInfra of [true, false]) {
+            const form = buildWhisperForm({
+                file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
+                language: "en",
+                prompt: "Pollinations uses Pollen.",
+                temperature: 0,
+                isDeepInfra,
+            });
+            expect(form.get("prompt")).toBe("Pollinations uses Pollen.");
+            expect(form.get("temperature")).toBe("0");
+        }
+    });
+
+    it("omits prompt and temperature when not supplied", () => {
+        const form = buildWhisperForm({
+            file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
+            isDeepInfra: false,
+        });
+        expect(form.has("prompt")).toBe(false);
+        expect(form.has("temperature")).toBe(false);
     });
 });

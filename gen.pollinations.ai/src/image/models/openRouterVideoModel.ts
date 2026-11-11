@@ -16,11 +16,12 @@ const logError = debug("pollinations:openrouter-video:error");
 
 const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
-const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
-const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
+const HEYGEN_VIDEO_MODEL = "heygen/heygen-video-1";
+const GROK_VIDEO_15_LITE_MODEL = "x-ai/grok-imagine-video-1.5-lite";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+const HEYGEN_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const GROK_15_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
@@ -30,6 +31,15 @@ const HAPPYHORSE_ASPECT_RATIOS = [
     "3:4",
     "21:9",
     "9:21",
+] as const;
+
+const HEYGEN_ASPECT_RATIOS = [
+    "21:9",
+    "16:9",
+    "4:3",
+    "1:1",
+    "3:4",
+    "9:16",
 ] as const;
 
 interface OpenRouterVideoResponse {
@@ -58,20 +68,14 @@ function resolveDuration(duration?: number): number {
     return resolved;
 }
 
-function resolveAspectRatio(safeParams: ImageParams): string {
-    if (
-        safeParams.aspectRatio &&
-        HAPPYHORSE_ASPECT_RATIOS.includes(
-            safeParams.aspectRatio as (typeof HAPPYHORSE_ASPECT_RATIOS)[number],
-        )
-    ) {
+function resolveAspectRatio(
+    safeParams: ImageParams,
+    ratios: readonly string[] = HAPPYHORSE_ASPECT_RATIOS,
+): string {
+    if (safeParams.aspectRatio && ratios.includes(safeParams.aspectRatio)) {
         return safeParams.aspectRatio;
     }
-    return closestRatioLogSpace(
-        safeParams.width,
-        safeParams.height,
-        HAPPYHORSE_ASPECT_RATIOS,
-    );
+    return closestRatioLogSpace(safeParams.width, safeParams.height, ratios);
 }
 
 export async function callHappyHorseAPI(
@@ -102,6 +106,14 @@ export async function callHappyHorseAPI(
         requestBody,
         HAPPYHORSE_POLL_TIMEOUT_MS,
     );
+    if (
+        providerCost != null &&
+        (!Number.isFinite(providerCost) || providerCost < 0)
+    ) {
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter returned invalid HappyHorse billing cost",
+        });
+    }
 
     logOps("HappyHorse generation complete", {
         duration,
@@ -116,19 +128,69 @@ export async function callHappyHorseAPI(
         trackingData: {
             actualModel: "alibaba/happyhorse-1.1",
             usage: { completionVideoSeconds: duration },
+            // OpenRouter bills at least 5 seconds per clip.
+            ...(providerCost != null && {
+                providerBilling: { units: providerCost, unitCost: 1.055 },
+            }),
         },
     };
 }
 
-export function resolveGrokDuration(duration?: number): number {
-    const requested = duration || 5;
-    if (!Number.isInteger(requested)) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "Grok Video Pro duration must be an integer from 1 to 15 seconds",
+export async function callHeyGenVideoAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    const duration = safeParams.duration ?? 5;
+    const requestBody: Record<string, unknown> = {
+        model: HEYGEN_VIDEO_MODEL,
+        prompt,
+        resolution: safeParams.resolution ?? "480p",
+        aspect_ratio: resolveAspectRatio(safeParams, HEYGEN_ASPECT_RATIOS),
+        duration,
+        seed: safeParams.seed,
+    };
+
+    if (safeParams.image?.[0]) {
+        requestBody.frame_images = [
+            {
+                type: "image_url",
+                image_url: { url: safeParams.image[0] },
+                frame_type: "first_frame",
+            },
+        ];
+    }
+
+    const { buffer, providerCost } = await generateOpenRouterVideo(
+        requestBody,
+        HEYGEN_POLL_TIMEOUT_MS,
+    );
+    if (
+        providerCost != null &&
+        (!Number.isFinite(providerCost) || providerCost < 0)
+    ) {
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter returned invalid HeyGen billing cost",
         });
     }
-    return Math.min(Math.max(requested, 1), 15);
+
+    logOps("HeyGen Video 1 generation complete", {
+        duration,
+        providerCost,
+        bufferSize: buffer.length,
+    });
+
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: duration,
+        trackingData: {
+            actualModel: "heygen/heygen-video-1:openrouter",
+            usage: { completionVideoSeconds: duration },
+            ...(providerCost != null && {
+                providerBilling: { units: providerCost, unitCost: 1.055 },
+            }),
+        },
+    };
 }
 
 export function resolveGrokAspectRatio(
@@ -148,11 +210,10 @@ export async function callOpenRouterGrokVideoAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const duration = resolveGrokDuration(safeParams.duration);
-    const isVersion15 = safeParams.model === "x-ai/grok-imagine-video-1.5";
-    const resolution = isVersion15 ? (safeParams.resolution ?? "720p") : "720p";
+    const duration = safeParams.duration ?? 5;
+    const resolution = safeParams.resolution ?? "720p";
     const requestBody: Record<string, unknown> = {
-        model: isVersion15 ? GROK_VIDEO_15_MODEL : GROK_VIDEO_MODEL,
+        model: GROK_VIDEO_15_LITE_MODEL,
         prompt,
         resolution,
         duration,
@@ -173,8 +234,7 @@ export async function callOpenRouterGrokVideoAPI(
 
     const { buffer, providerCost } = await generateOpenRouterVideo(
         requestBody,
-        // Base Grok's 15-second clips can complete after the old 3-minute cutoff.
-        isVersion15 ? GROK_15_POLL_TIMEOUT_MS : 5 * 60 * 1000,
+        GROK_15_POLL_TIMEOUT_MS,
     );
 
     logOps("Grok Video Pro generation complete", {

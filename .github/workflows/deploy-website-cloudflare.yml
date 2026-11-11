@@ -23,10 +23,12 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ./pollinations.ai
+        run: |
+          npm ci
+          npm ci --prefix pollinations.ai
 
       - name: Build and deploy to Cloudflare
         env:

@@ -1,11 +1,12 @@
 import type { BillingRules } from "./registry";
 
 const OPENROUTER_CACHE_TTL_HOURS = 5 / 60;
-const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
+const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 const VERTEX_CACHE_TTL_HOURS = 1;
 
 type GeminiBillingOutput = {
     usage?: {
+        cost?: unknown;
         cache_creation_input_tokens?: unknown;
         prompt_tokens_details?: {
             cache_write_tokens?: unknown;
@@ -14,8 +15,16 @@ type GeminiBillingOutput = {
             web_search_requests?: unknown;
         };
     };
-    choices?: { groundingMetadata?: GroundingMetadata }[];
+    choices?: {
+        groundingMetadata?: GroundingMetadata;
+        message?: { provider_metadata?: GatewaySearchMetadata };
+        delta?: { provider_metadata?: GatewaySearchMetadata };
+    }[];
     streamEvents?: GeminiBillingOutput[];
+};
+
+type GatewaySearchMetadata = {
+    gateway?: { gatewayToolCalls?: { exa_search?: number } };
 };
 
 type GroundingMetadata = {
@@ -48,15 +57,16 @@ function webSearchQueryStrings(metadata: GroundingMetadata): string[] {
     );
 }
 
-function countGeminiGroundedPrompt(output: unknown): number {
+// Gemini 3.x charges per distinct search query. Streaming chunks repeat the
+// cumulative list, so deduplicate before billing.
+function countGeminiWebSearchQueries(output: unknown): number {
+    const queries = new Set<string>();
     for (const metadata of eachGroundingMetadata(output)) {
-        if (webSearchQueryStrings(metadata).length > 0) return 1;
-        const chunks = Array.isArray(metadata.groundingChunks)
-            ? metadata.groundingChunks
-            : [];
-        if (chunks.some((chunk) => chunk?.web?.uri)) return 1;
+        for (const query of webSearchQueryStrings(metadata)) {
+            queries.add(query.trim());
+        }
     }
-    return 0;
+    return queries.size || countReportedWebSearchRequests(output);
 }
 
 function positiveUsageCounter(
@@ -78,7 +88,9 @@ function positiveUsageCounter(
 }
 
 const countVertexCacheWriteTokens = positiveUsageCounter(
-    (event) => event.usage?.cache_creation_input_tokens,
+    (event) =>
+        event.usage?.cache_creation_input_tokens ??
+        event.usage?.prompt_tokens_details?.cache_write_tokens,
 );
 
 // OpenRouter reports the complete cached prefix in cache_write_tokens. Its
@@ -88,11 +100,52 @@ const countOpenRouterCacheWriteTokens = positiveUsageCounter(
     (event) => event.usage?.prompt_tokens_details?.cache_write_tokens,
 );
 
-// OpenRouter's native web-search tool reports the number of billed searches
-// directly in provider usage.
-const countOpenRouterWebSearchRequests = positiveUsageCounter(
-    (event) => event.usage?.server_tool_use_details?.web_search_requests,
+// Provider usage and gateway metadata report cumulative billed search counts.
+const countReportedWebSearchRequests = positiveUsageCounter(
+    (event) =>
+        event.usage?.server_tool_use_details?.web_search_requests ??
+        Math.max(
+            0,
+            ...(event.choices ?? []).map(
+                (choice) =>
+                    (choice.message ?? choice.delta)?.provider_metadata?.gateway
+                        ?.gatewayToolCalls?.exa_search ?? 0,
+            ),
+        ),
 );
+
+export const VERCEL_EXA_SEARCH_BILLING: BillingRules = {
+    resolveTotalCost: reportedTextCost(),
+    adjustments: [
+        {
+            id: "vercel.exa.web_search.v1",
+            description: "Exa search adds $7 / 1K provider-reported requests.",
+            kind: "search_request",
+            unit: "request",
+            unitCost: 7 / 1_000,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "search requests",
+            },
+            countUnits: countReportedWebSearchRequests,
+        },
+    ],
+};
+
+/** Server-tool loops report aggregate dollars more accurately than modality counters. */
+export function reportedTextCost(
+    fee = 1,
+): (output: unknown) => number | undefined {
+    return (output) => {
+        for (const event of [...outputEvents(output)].reverse()) {
+            const cost = event.usage?.cost;
+            if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0)
+                return cost * fee;
+        }
+        return undefined;
+    };
+}
 
 // Rates vary per model and route; each registry entry passes the current
 // true provider cost. Search is billed per request, cache storage per
@@ -108,7 +161,7 @@ export function openRouterGeminiBilling({
         adjustments: [
             {
                 id: "openrouter.google.web_search.v1",
-                description: `OpenRouter native Google Search adds $${searchCostPerThousandRequests} / 1K search requests reported by provider usage.`,
+                description: `OpenRouter web search adds $${searchCostPerThousandRequests} / 1K search requests reported by provider usage.`,
                 kind: "search_request",
                 unit: "request",
                 unitCost: searchCostPerThousandRequests / 1_000,
@@ -117,7 +170,7 @@ export function openRouterGeminiBilling({
                     quantity: 1_000,
                     unit: "search requests",
                 },
-                countUnits: countOpenRouterWebSearchRequests,
+                countUnits: countReportedWebSearchRequests,
             },
             {
                 id: "openrouter.google.cache_storage.v1",
@@ -166,21 +219,21 @@ export function withVertexCacheStorage(
     };
 }
 
-export const GEMINI_25_GROUNDING_BILLING: BillingRules = {
+export const GEMINI_3_SEARCH_BILLING: BillingRules = {
     adjustments: [
         {
-            id: "google.gemini_2.grounded_prompt.v1",
+            id: "google.gemini_3.search_query.v1",
             description:
-                "Google Search grounding adds $35 / 1K grounded prompts when grounding metadata is present.",
-            kind: "grounded_prompt",
-            unit: "prompt",
-            unitCost: GEMINI_25_GROUNDING_COST_PER_PROMPT,
+                "Google Search grounding adds $14 / 1K search queries when grounding metadata is present.",
+            kind: "search_query",
+            unit: "query",
+            unitCost: GEMINI_3_GROUNDING_COST_PER_QUERY,
             publicPricing: {
                 label: "Search",
                 quantity: 1_000,
-                unit: "grounded prompts",
+                unit: "search queries",
             },
-            countUnits: countGeminiGroundedPrompt,
+            countUnits: countGeminiWebSearchQueries,
         },
     ],
 };

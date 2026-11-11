@@ -2,71 +2,15 @@ import {
     Button,
     CardIcon,
     DownloadIcon,
-    MultiSelect,
+    formatCount,
     SproutIcon,
-    Surface,
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC, KeyboardEvent, ReactNode } from "react";
-import { formatActivityPollen } from "./format-activity-pollen";
+import { saveBlob } from "./activity-csv";
+import { formatActivityPollenThreshold } from "./format-activity-pollen";
 import type { Metric } from "./types";
-
-type ActivityFilterProps = {
-    label: string;
-    options: Array<{ value: string; label: string }>;
-    selected: string[];
-    onChange: (selected: string[]) => void;
-    emptyMessage: string;
-    missingLabel?: string;
-};
-
-export const ActivityFilter: FC<ActivityFilterProps> = ({
-    label,
-    options,
-    selected,
-    onChange,
-    emptyMessage,
-    missingLabel,
-}) => (
-    <div className="flex min-w-0 flex-col gap-1.5">
-        <span className="px-1 text-xs font-medium text-theme-text-muted">
-            {label}
-        </span>
-        <div
-            data-theme={selected.length ? undefined : "neutral"}
-            className="min-w-0"
-        >
-            {options.length === 0 && selected.length === 0 ? (
-                <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
-                    {emptyMessage}
-                </span>
-            ) : (
-                <MultiSelect
-                    fullWidth
-                    options={[
-                        ...options,
-                        ...selected
-                            .filter(
-                                (id) =>
-                                    !options.some(
-                                        (option) => option.value === id,
-                                    ),
-                            )
-                            .map((id) => ({
-                                value: id,
-                                label: missingLabel ?? id,
-                            })),
-                    ]}
-                    selected={selected}
-                    onChange={onChange}
-                    placeholder="All"
-                    align="start"
-                />
-            )}
-        </div>
-    </div>
-);
 
 export function clearActivitySelectionOnEscape(
     event: KeyboardEvent<HTMLElement>,
@@ -114,7 +58,7 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
             triggerAs="span"
             content={disabledReason}
             align="center"
-            className="inline-flex"
+            className="inline-flex polli:cursor-not-allowed"
         >
             {button}
         </Tooltip>
@@ -123,22 +67,26 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
     );
 };
 
-/** Same height as the chart and loading states so the card never jumps. */
+/** Same height as the chart so the card never jumps. */
 export const ActivityEmptyState: FC<{ children: ReactNode }> = ({
     children,
 }) => (
-    <Surface className="flex h-[180px] items-center justify-center text-center">
+    <div className="flex h-[180px] items-center justify-center text-center">
         <p className="max-w-md text-sm text-theme-text-muted">{children}</p>
-    </Surface>
+    </div>
 );
 
-export function downloadFile(url: string): void {
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.rel = "noopener";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+/**
+ * Saves a fetched attachment under the server's file name. The account API
+ * takes a bearer token, which a plain link navigation can't send.
+ */
+export async function downloadFile(response: Response): Promise<void> {
+    if (!response.ok) throw new Error(`Download failed (${response.status})`);
+    const filename =
+        response.headers
+            .get("Content-Disposition")
+            ?.match(/filename="([^"]+)"/)?.[1] ?? "download.csv";
+    saveBlob(await response.blob(), filename);
 }
 
 export function formatActivityChartDate(
@@ -182,17 +130,19 @@ export function PollenUsageBadges(usage: {
 }) {
     const isPollen = usage.metric === "pollen";
     const paid = isPollen
-        ? formatActivityPollen(usage.paidPollen)
-        : usage.paidRequests.toLocaleString();
+        ? formatActivityPollenThreshold(usage.paidPollen)
+        : formatCount(usage.paidRequests);
     const quest = isPollen
-        ? formatActivityPollen(usage.tierPollen)
-        : usage.tierRequests.toLocaleString();
+        ? formatActivityPollenThreshold(usage.tierPollen)
+        : formatCount(usage.tierRequests);
     const unit = isPollen ? "Pollen" : "requests";
     return (
-        <div className="grid min-w-44 grid-cols-2 items-center justify-items-start gap-2">
+        // Same-width chips with left-aligned digits, so rows line up; the pair
+        // sits at the right edge. 5.5rem fits the widest value, "<0.0001".
+        <div className="ml-auto grid w-max grid-cols-1 items-center gap-1 @[32rem]:grid-cols-2">
             <PaidChip
                 size="sm"
-                className="gap-2 whitespace-nowrap tabular-nums"
+                className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={`Paid ${unit}`}
                 aria-label={`${paid} Paid ${unit}`}
             >
@@ -201,7 +151,7 @@ export function PollenUsageBadges(usage: {
             </PaidChip>
             <TierChip
                 size="sm"
-                className="gap-2 whitespace-nowrap tabular-nums"
+                className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={`Quest ${unit}`}
                 aria-label={`${quest} Quest ${unit}`}
             >

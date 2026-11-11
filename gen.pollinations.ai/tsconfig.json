@@ -6,7 +6,7 @@
         "lib": ["esnext", "dom", "dom.iterable"],
         "types": [
             "@cloudflare/workers-types",
-            "@cloudflare/vitest-pool-workers",
+            "@cloudflare/vitest-plugin/types",
             "node"
         ],
         "strict": true,

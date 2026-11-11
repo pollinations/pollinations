@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "StretchText",
+    "url": "https://rekty.github.io/stretchtext",
+    "description": "Any page as stretchtext: skim the short version, click a phrase to grow it in place, and each request spends the reader's own Pollen via the device flow. No build step, live model list, tested.",
+    "language": "en",
+    "category": "writing",
+    "platform": "browser-ext",
+    "githubUsername": "rekty",
+    "githubUserId": "30191185",
+    "repositoryUrl": "https://github.com/rekty/stretchtext",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-26",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18473",
+    "approvedDate": "2026-11-11",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/4ccdc850-8339-45bb-97f7-03f72f36892e"
+  },
+  {
     "emoji": "🖼️",
     "name": "Pollinations Studio",
     "url": "https://pollinations-studio-1.vercel.app",

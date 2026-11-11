@@ -4714,6 +4714,16 @@ test("GET /api/stripe/billing lists saved payment methods and the customer's bil
 });
 
 const REFUNDED_PACK_BOUGHT_AT = Date.UTC(2026, 0, 15);
+// How Stripe finds the checkout session of a refunded payment.
+const REFUNDED_SESSION = {
+    id: "cs_refunded",
+    object: "checkout.session",
+    mode: "payment",
+    customer: "cus_refunded",
+    url: null,
+    status: "complete",
+    payment_intent: "pi_refunded",
+};
 
 /** A paid p10 checkout from January, credited through the webhook, that Stripe can find by its payment. Auto top-up is on. */
 async function buyRefundablePack(stripeState: MockStripeState) {
@@ -4723,15 +4733,7 @@ async function buyRefundablePack(stripeState: MockStripeState) {
         id: "refunded",
         allowRedisplay: "always",
     });
-    stripeState.checkoutSessions.push({
-        id: "cs_refunded",
-        object: "checkout.session",
-        mode: "payment",
-        customer: "cus_refunded",
-        url: null,
-        status: "complete",
-        payment_intent: "pi_refunded",
-    });
+    stripeState.checkoutSessions.push(REFUNDED_SESSION);
     await env.DB.batch([
         env.DB.prepare(
             "UPDATE stripe_checkout_credits SET created_at = ? WHERE user_id = ?",
@@ -4856,3 +4858,20 @@ test.for([
         });
     },
 );
+
+// Stripe does not order its events. Answering 200 here would lose the refund:
+// the purchase is credited when its own event arrives.
+test("charge.refunded fails, for Stripe to send it again, while its purchase is not credited yet", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    mocks.stripe.state.checkoutSessions.push(REFUNDED_SESSION);
+
+    const response = await postSignedStripeWebhook(
+        chargeRefundedEvent("evt_refund_early", 1000),
+    );
+
+    expect(response.status).toBe(500);
+});

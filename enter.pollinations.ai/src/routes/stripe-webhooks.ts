@@ -561,8 +561,7 @@ const handleCheckoutSessionCompleted = async (
 // A full refund of a pack bought at checkout is recorded as a negative credit
 // row keyed by the refunded session, so a repeated event hits the primary key
 // and changes nothing. Partial refunds, failed refunds and refunded automatic
-// top-ups are corrected by hand, and so is a refund that arrives before its
-// purchase was credited.
+// top-ups are corrected by hand.
 async function reversePollenForRefund(
     env: CloudflareBindings,
     stripe: Stripe,
@@ -594,8 +593,15 @@ async function reversePollenForRefund(
               .first<{ userId: string; pollen: number; createdAt: number }>()
         : null;
     if (!credit) {
+        // Stripe does not order its events: the purchase is credited when
+        // its own event arrives. Failing makes Stripe send the refund again.
+        if (sessionId) {
+            throw new Error(
+                `Stripe refund: checkout session ${sessionId} is not credited yet`,
+            );
+        }
         console.warn(
-            `Stripe refund: no checkout credit for charge ${charge.id}, adjust Pollen by hand if it paid for any`,
+            `Stripe refund: no checkout session for charge ${charge.id}, adjust Pollen by hand if it paid for any`,
         );
         return;
     }

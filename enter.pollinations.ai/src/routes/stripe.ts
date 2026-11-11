@@ -42,6 +42,10 @@ import {
 } from "../utils/stripe-card-gate.ts";
 import { expireOpenStripeCheckoutSessions } from "../utils/stripe-fraud-ban.ts";
 
+// How long after a purchase the webhook's own quest check may still be
+// running. The webhook writes the purchase time in milliseconds.
+const BONUS_SETTLE_MS = 10_000;
+
 /**
  * Stripe pack configuration
  * Checkout keeps pack pricing USD-native and lets Stripe Adaptive Pricing
@@ -100,18 +104,31 @@ export const stripeRoutes = new Hono<Env>()
         const sessionId = c.req.param("sessionId");
 
         const credit = await c.env.DB.prepare(
-            "SELECT pollen_credited FROM stripe_checkout_credits WHERE session_id = ? AND user_id = ?",
+            "SELECT pollen_credited, created_at FROM stripe_checkout_credits WHERE session_id = ? AND user_id = ?",
         )
             .bind(sessionId, user.id)
-            .first<{ pollen_credited: number }>();
+            .first<{ pollen_credited: number; created_at: number }>();
         if (credit) {
-            // The wallet reloads on this answer, and the webhook's own quest
+            // The wallet reloads on "credited", and the webhook's own quest
             // check may still be running: the top-up bonus is in first.
-            await checkQuestsForUser(c.env, user.id, [
+            const bonusSettled = await checkQuestsForUser(c.env, user.id, [
                 ACCOUNT_SETUP_QUEST_GROUP,
-            ]).catch((error) =>
-                console.error("Top-up quest check failed:", error),
+            ]).then(
+                (result) => result.success,
+                (error) => {
+                    console.error("Top-up quest check failed:", error);
+                    return false;
+                },
             );
+            // A check that failed right after the purchase: the next poll
+            // tries again. Later the pack is confirmed without the bonus,
+            // which the next quest check credits.
+            if (
+                !bonusSettled &&
+                Date.now() - credit.created_at < BONUS_SETTLE_MS
+            ) {
+                return c.json({ status: "pending" as const });
+            }
             return c.json({
                 status: "credited" as const,
                 pollen: credit.pollen_credited,

@@ -442,7 +442,8 @@ const TopUpBonusNote: FC<{ billing: BillingOverview | null }> = ({
         };
     }, [billing]);
 
-    if (!bonus) return null;
+    // Billing that failed to reload says nothing about the quest: no promise.
+    if (!billing || !bonus) return null;
     return (
         <p className="flex items-start gap-1.5">
             <WalletKindIcon kind="tier" className="mt-0.5" />
